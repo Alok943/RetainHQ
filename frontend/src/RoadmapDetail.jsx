@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink } from 'lucide-react';
 import ReactFlow, {
   Background,
   Controls,
@@ -380,18 +380,39 @@ function RoadmapDetail() {
             style={{ left: Math.min(contextNode.x, window.innerWidth - 300), top: Math.min(contextNode.y, window.innerHeight - 200) }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-2">
-              <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest flex items-center gap-1">
-                <StickyNote size={12} /> Notes
-              </div>
-              <button onClick={() => setContextNode(null)} className="text-[#94a3b8] hover:text-[#0F172A]">
-                <X size={14} />
-              </button>
-            </div>
-            <h4 className="font-sans text-sm font-semibold text-[#0F172A] mb-1.5">{contextNode.raw.title}</h4>
-            <p className="font-sans text-xs text-[#475569] leading-relaxed">
-              {contextNode.raw.description || 'No notes yet for this topic.'}
-            </p>
+            {(() => {
+              const desc = contextNode.raw.description;
+              const isLink = desc && /^https?:\/\//.test(desc.trim());
+              const isNeetcode = isLink && desc.includes('neetcode.io');
+              return (
+                <>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest flex items-center gap-1">
+                      <StickyNote size={12} /> {isLink ? 'Resource' : 'Notes'}
+                    </div>
+                    <button onClick={() => setContextNode(null)} className="text-[#94a3b8] hover:text-[#0F172A]">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <h4 className="font-sans text-sm font-semibold text-[#0F172A] mb-2">{contextNode.raw.title}</h4>
+                  {isLink ? (
+                    <a
+                      href={desc.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="kinetic-btn kinetic-accent-gradient w-full py-2 text-xs flex items-center justify-center gap-1.5 font-medium"
+                    >
+                      <ExternalLink size={13} /> {isNeetcode ? 'Solve on NeetCode' : 'Open link'}
+                    </a>
+                  ) : (
+                    <p className="font-sans text-xs text-[#475569] leading-relaxed">
+                      {desc || 'No notes yet for this topic.'}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
