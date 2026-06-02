@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Shield, LogOut, Trash2 } from 'lucide-react';
+import { User, Mail, Shield, LogOut, Trash2, Sun, Moon } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from './lib/theme';
 
 function Profile() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -103,6 +106,42 @@ function Profile() {
             className="w-full flex items-center justify-center gap-2 py-2.5 border border-[#0F172A] text-[#0F172A] hover:bg-slate-50 font-medium text-sm rounded transition-colors"
           >
             <LogOut size={16} /> Sign Out
+          </button>
+        </div>
+      </div>
+
+      {/* Appearance */}
+      <div className="kinetic-card bg-white p-6">
+        <h3 className="font-sans text-sm font-semibold text-[#0F172A] mb-4 uppercase tracking-widest">Appearance</h3>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[rgba(15,23,42,0.05)] flex items-center justify-center text-[#0891B2]">
+              {isDark ? <Moon size={16} /> : <Sun size={16} />}
+            </div>
+            <div>
+              <p className="font-sans text-sm font-semibold text-[#0F172A]">Dark Mode</p>
+              <p className="font-sans text-xs text-[#64748B]">
+                {isDark ? 'Dark theme is on.' : 'Switch to a low-light theme.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isDark}
+            aria-label="Toggle dark mode"
+            onClick={toggleTheme}
+            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0891B2] focus-visible:ring-offset-2 ${
+              isDark ? 'bg-[#0891B2]' : 'bg-slate-200'
+            }`}
+          >
+            <span
+              style={{ backgroundColor: '#ffffff' }}
+              className={`inline-block h-5 w-5 transform rounded-full shadow transition-transform duration-200 ${
+                isDark ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
           </button>
         </div>
       </div>
