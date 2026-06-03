@@ -47,19 +47,8 @@ function Home({ onStartReviews }) {
           <QuickStats dashboard={dashboard} loading={loading} />
         </div>
 
-        {/* Reviews Due Section (Action Required) */}
+        {/* Reviews Due Section */}
         <section>
-          <div className="flex justify-between items-end mb-4">
-            <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
-              <AlertCircle size={16} className="text-[#ba1a1a]" /> Action Required
-              {!loading && dueReviews.length > 0 && (
-                <span className="font-mono text-[10px] font-bold text-[#ba1a1a] bg-[#ba1a1a]/10 px-2 py-0.5 rounded-full ml-1">
-                  {dueReviews.length} due
-                </span>
-              )}
-            </h2>
-          </div>
-
           {loading ? (
             <div className="kinetic-card animate-pulse h-32 bg-white/50" />
           ) : fetchError ? (

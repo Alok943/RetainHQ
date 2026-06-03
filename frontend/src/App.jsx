@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import { useTheme } from './lib/theme';
 
 import Home from './Home';
 import Review from './Review';
@@ -16,6 +17,9 @@ import Logo from './Logo';
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  // Navy mark on light surfaces, white mark on dark.
+  const logoVariant = theme === 'dark' ? 'light' : 'dark';
   const [session, setSession] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -91,7 +95,7 @@ function App() {
         <div>
           <div className="mb-10">
             <div className="flex items-center gap-2.5 cursor-pointer w-max" onClick={() => navigate('/')}>
-              <Logo variant="dark" className="h-7 w-auto" />
+              <Logo variant={logoVariant} className="h-7 w-auto" />
               <h1 className="font-sans font-semibold text-2xl tracking-tight text-[#0F172A]">RetainHQ</h1>
             </div>
           </div>
@@ -140,7 +144,7 @@ function App() {
         {/* Mobile Header (Hidden on md+) */}
         <header className="md:hidden px-4 py-4 border-b border-[rgba(15,23,42,0.08)] bg-[#f9f9f6] sticky top-0 z-10 flex justify-between items-center">
           <div className="flex items-center gap-2" onClick={() => navigate('/')}>
-            <Logo variant="dark" className="h-6 w-auto" />
+            <Logo variant={logoVariant} className="h-6 w-auto" />
             <h1 className="font-sans font-semibold text-xl tracking-tight text-[#0F172A]">RetainHQ</h1>
           </div>
           <div className="flex items-center gap-3">
