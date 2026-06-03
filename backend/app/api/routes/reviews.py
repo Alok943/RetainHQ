@@ -64,7 +64,8 @@ async def complete_review(
     review.status = "completed"
     review.completed_at = datetime.utcnow()
     review.rating = review_in.rating
-    
+    review.recalled = review_in.recalled
+
     await db.commit()
     await db.refresh(review)
     

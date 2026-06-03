@@ -71,7 +71,8 @@ class Review(SQLModel, table=True):
     status: str = Field(default="due") # 'due', 'completed'
     scheduled_for: datetime
     completed_at: Optional[datetime] = None
-    rating: Optional[str] = None # 'easy', 'medium', 'hard'
+    rating: Optional[str] = None # 'easy', 'medium', 'hard' (subjective: how hard it felt)
+    recalled: Optional[bool] = None # objective: did they reconstruct it? (got-it / missed-it)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     activity: Optional[Activity] = Relationship(back_populates="reviews")
