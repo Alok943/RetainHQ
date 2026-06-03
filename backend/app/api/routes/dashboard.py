@@ -76,9 +76,21 @@ async def get_dashboard_stats(
     today_reviews = today_rev_res.scalar_one() or 0
     
     daily_progress = today_activities + today_reviews
-    
+
+    # 4. Lifetime totals (real, cheap counts — safe for launch)
+    total_act_stmt = select(func.count(Activity.id)).where(Activity.user_id == user_id)
+    total_activities = (await db.execute(total_act_stmt)).scalar_one() or 0
+
+    total_done_stmt = select(func.count(Review.id)).where(
+        Review.user_id == user_id,
+        Review.status == "completed",
+    )
+    total_reviews_completed = (await db.execute(total_done_stmt)).scalar_one() or 0
+
     return DashboardStats(
         due_count=due_count,
         consistency_window=consistency_window,
-        daily_progress=daily_progress
+        daily_progress=daily_progress,
+        total_activities=total_activities,
+        total_reviews_completed=total_reviews_completed,
     )

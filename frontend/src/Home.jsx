@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, TrendingUp, BookOpen, AlertCircle, Clock, Activity, Target, CheckCircle2, History, Database, Key } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 
 function getReviewDayLabel(scheduledFor, activityCreatedAt) {
@@ -13,6 +14,7 @@ function getReviewDayLabel(scheduledFor, activityCreatedAt) {
 }
 
 function Home({ onStartReviews }) {
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [dueReviews, setDueReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +131,10 @@ function Home({ onStartReviews }) {
               </p>
             </div>
             <div className="w-full md:w-auto shrink-0">
-              <button className="kinetic-btn bg-white text-[#0F172A] border border-[rgba(15,23,42,0.12)] w-full md:w-40 hover:bg-gray-50 text-sm">
+              <button
+                onClick={() => navigate('/roadmaps')}
+                className="kinetic-btn bg-white text-[#0F172A] border border-[rgba(15,23,42,0.12)] w-full md:w-40 hover:bg-gray-50 text-sm"
+              >
                 View Roadmap
               </button>
             </div>
