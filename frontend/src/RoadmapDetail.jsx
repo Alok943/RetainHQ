@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import ReactFlow, {
   Background,
   Controls,
@@ -313,6 +314,133 @@ function RoadmapDetail() {
     return { done: d, total: t, pct: t ? Math.round((d / t) * 100) : 0 };
   }, [rawNodes, statusMap]);
 
+  // Export the roadmap to a styled PDF (header band, progress bar, phase cards,
+  // checkboxes reflecting your progress, and tier badges).
+  const downloadPdf = useCallback(() => {
+    if (!meta || rawNodes.length === 0) return;
+    // jsPDF's built-in fonts are WinAnsi — normalise smart punctuation to ASCII.
+    const clean = (s) => (s || '').replace(/[—–]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+
+    const C = {
+      navy: [19, 27, 46], slate: [15, 23, 42], ink: [30, 41, 59], muted: [100, 116, 139],
+      cyan: [8, 145, 178], teal: [15, 118, 110], amber: [180, 83, 9], red: [185, 28, 28],
+      track: [226, 232, 240], card: [243, 246, 250], hair: [226, 232, 240],
+    };
+    const tierColor = (t) => (t === 'easy' ? C.teal : t === 'medium' ? C.amber : t === 'hard' ? C.red : C.cyan);
+
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 44;
+    const right = pageW - margin;
+    let y = 0;
+    const ensure = (h) => { if (y + h > pageH - 46) { doc.addPage(); y = margin; } };
+
+    // ---------- Header band ----------
+    doc.setFillColor(...C.navy); doc.rect(0, 0, pageW, 96, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+    doc.text(clean(meta.title), margin, 42, { maxWidth: pageW - margin * 2 });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(120, 200, 218);
+    doc.text('RETAINHQ  ·  LEARNING ROADMAP', margin, 58, { charSpace: 0.5 });
+    doc.setTextColor(210, 220, 235); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text(`${pct}%  ·  ${done}/${total} complete`, right, 58, { align: 'right' });
+    // progress bar
+    doc.setFillColor(44, 56, 82); doc.roundedRect(margin, 72, pageW - margin * 2, 7, 3.5, 3.5, 'F');
+    if (pct > 0) { doc.setFillColor(...C.cyan); doc.roundedRect(margin, 72, Math.max((pageW - margin * 2) * pct / 100, 5), 7, 3.5, 3.5, 'F'); }
+
+    y = 96 + 26;
+
+    // ---------- Description ----------
+    if (meta.description) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...C.muted);
+      const lines = doc.splitTextToSize(clean(meta.description), pageW - margin * 2);
+      ensure(lines.length * 12); doc.text(lines, margin, y); y += lines.length * 12 + 8;
+    }
+
+    const phases = [];
+    rawNodes.forEach((n) => { if (!phases.includes(n.phase)) phases.push(n.phase); });
+
+    phases.forEach((phase) => {
+      const inPhase = rawNodes.filter((n) => n.phase === phase);
+      const phDone = inPhase.filter((n) => statusMap[n.id] === 'done').length;
+
+      // phase card header
+      ensure(40); y += 6;
+      doc.setFillColor(...C.card); doc.roundedRect(margin, y, pageW - margin * 2, 26, 4, 4, 'F');
+      doc.setFillColor(...C.cyan); doc.roundedRect(margin, y, 4, 26, 2, 2, 'F');
+      doc.setTextColor(...C.navy); doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5);
+      doc.text(clean(phase), margin + 14, y + 17, { maxWidth: pageW - margin * 2 - 90 });
+      doc.setTextColor(...C.muted); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+      doc.text(`${phDone}/${inPhase.length}`, right - 10, y + 17, { align: 'right' });
+      y += 26 + 14;
+
+      const sections = [];
+      inPhase.forEach((n) => { if (!sections.includes(n.section)) sections.push(n.section); });
+      sections.forEach((section) => {
+        ensure(20);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...C.cyan);
+        doc.text(clean(section).toUpperCase(), margin + 4, y, { charSpace: 0.4 });
+        y += 13;
+
+        inPhase.filter((n) => n.section === section).forEach((n) => {
+          const isDone = statusMap[n.id] === 'done';
+          const tier = n.tier;
+          const badgeW = tier ? 52 : 0; // reserved slot for the right-aligned tier pill
+          const textX = margin + 6 + 11 + 6;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+          const wrapped = doc.splitTextToSize(clean(n.title), right - textX - badgeW - 6);
+          const rowH = wrapped.length * 11.5;
+          ensure(rowH + 6);
+          const baseline = y + 8;
+
+          // checkbox
+          const cbX = margin + 6, cbY = y + 1, cb = 10;
+          if (isDone) {
+            doc.setFillColor(...C.teal); doc.roundedRect(cbX, cbY, cb, cb, 2, 2, 'F');
+            doc.setDrawColor(255, 255, 255); doc.setLineWidth(1.3);
+            doc.line(cbX + 2.4, cbY + 5.2, cbX + 4.2, cbY + 7.2);
+            doc.line(cbX + 4.2, cbY + 7.2, cbX + 8, cbY + 2.8);
+          } else {
+            doc.setDrawColor(196, 204, 216); doc.setLineWidth(0.9);
+            doc.roundedRect(cbX, cbY, cb, cb, 2, 2, 'S');
+          }
+
+          // title
+          doc.setTextColor(...(isDone ? C.muted : C.slate));
+          doc.text(wrapped, textX, baseline);
+
+          // tier badge (right-aligned, on first line)
+          if (tier) {
+            const tc = tierColor(tier);
+            const label = tier.toUpperCase();
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+            const tw = doc.getTextWidth(label);
+            const bw = tw + 12, bh = 12, bx = right - bw, by = y;
+            doc.setDrawColor(...tc); doc.setLineWidth(0.8);
+            doc.roundedRect(bx, by, bw, bh, 6, 6, 'S');
+            doc.setTextColor(...tc); doc.text(label, bx + 6, by + 8.2);
+          }
+
+          y += rowH + 5;
+        });
+        y += 4;
+      });
+    });
+
+    // ---------- Footer on every page ----------
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(...C.hair); doc.setLineWidth(0.5);
+      doc.line(margin, pageH - 34, right, pageH - 34);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C.muted);
+      doc.text('Generated with RetainHQ', margin, pageH - 22);
+      doc.text(`Page ${i} of ${pages}`, right, pageH - 22, { align: 'right' });
+    }
+
+    doc.save(`${clean(meta.title).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}.pdf`);
+  }, [meta, rawNodes, statusMap, pct, done, total]);
+
   if (loading) return <div className="p-8 text-center text-[#64748B]">Loading roadmap...</div>;
   if (!meta) return <div className="p-8 text-center text-[#ba1a1a]">Roadmap not found.</div>;
 
@@ -337,6 +465,13 @@ function RoadmapDetail() {
             </div>
             <span className="font-mono text-sm font-semibold text-[#0F172A]">{pct}%</span>
             <span className="font-mono text-[11px] text-[#64748B]">{done}/{total}</span>
+            <button
+              onClick={downloadPdf}
+              title="Download this roadmap as a PDF"
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#0891B2] border border-[#0891B2]/30 hover:bg-[#0891B2]/10 rounded px-2.5 py-1.5 transition-colors"
+            >
+              <Download size={14} /> PDF
+            </button>
           </div>
         </div>
         {/* interaction hint */}
