@@ -1,5 +1,6 @@
 import jwt
 from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientError
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from app.core.config import settings
@@ -9,11 +10,13 @@ class SupabaseUser(BaseModel):
     email: str
     role: str
 
-# PyJWKClient fetches Supabase's public keys once and caches them.
-# This handles ES256 (asymmetric) tokens that newer Supabase projects generate.
+# PyJWKClient fetches Supabase's public keys and caches them for an hour, so a
+# transient network blip doesn't re-hit the JWKS endpoint on every request.
+# Handles ES256 (asymmetric) tokens that newer Supabase projects generate.
 _jwks_client = PyJWKClient(
     f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json",
     cache_keys=True,
+    lifespan=3600,
 )
 
 def verify_token(token: str) -> SupabaseUser:
@@ -23,7 +26,15 @@ def verify_token(token: str) -> SupabaseUser:
     verifies the signature, and returns the authenticated user.
     """
     try:
-        signing_key = _jwks_client.get_signing_key_from_jwt(token)
+        try:
+            signing_key = _jwks_client.get_signing_key_from_jwt(token)
+        except PyJWKClientError as e:
+            # JWKS endpoint unreachable (e.g. transient DNS/network blip).
+            # Fail clean with 503 instead of a 500 traceback so the client can retry.
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Auth service temporarily unreachable, please retry.",
+            ) from e
 
         payload = jwt.decode(
             token,

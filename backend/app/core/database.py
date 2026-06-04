@@ -8,9 +8,12 @@ if "?" in DB_URL:
     DB_URL = DB_URL.split("?")[0] # Strip pgbouncer query params if present for direct connection
 
 engine = create_async_engine(
-    DB_URL, 
-    echo=True, 
+    DB_URL,
+    echo=True,
     future=True,
+    # Validate a pooled connection before use so a dropped/stale connection
+    # (e.g. after a network blip) is recycled instead of raising mid-request.
+    pool_pre_ping=True,
     connect_args={
         "prepared_statement_cache_size": 0,
         "statement_cache_size": 0
