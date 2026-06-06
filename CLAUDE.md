@@ -109,9 +109,9 @@ Env: `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fronten
 
 ## Status & next priorities
 
-- **Phase 0 + Phase 1 (core loop): complete & validated.**
+- **Phase 0 done. Phase 1 core loop: mostly wired, but the ENTRY POINT is broken — `LogActivity.jsx` is still a UI-only mock (no field state, no `apiFetch`, the "Log & Schedule Review" button has no `onClick`). Activities cannot be created via the UI yet, so nothing downstream (reviews/dashboard) can be exercised by a real user. Backend `POST /api/activities/` works; the form just isn't connected.**
 - **Done since:** Home/Roadmaps/Analytics wired to live data (Analytics shows real stats + honest "Phase 2" placeholders, no fabricated numbers). **Review flow wired with the retrieval gate** (commit-before-reveal: type a free-recall answer or "I don't know" before reveal; then key_memory + your attempt + prior mistake; Easy/Med/Hard rating). Dark mode (Profile toggle). Landing/Login redesigned. 10 roadmaps seeded + PDF export.
-- **Next (high-leverage):** wire **node-complete → pre-filled Log modal** (design doc §9b — closes the roadmap→loop); funnel/activation events; then SM-2.
+- **Next (high-leverage, in order):** (1) **Wire `LogActivity.jsx` → `POST /api/activities/`** — the loop's dead entry point; #1 blocker, nothing in the funnel works until this is done. (2) node-complete → pre-filled Log modal (design doc §9b — closes the roadmap→loop). (3) funnel/activation events. (4) SM-2.
 - **Phase 2:** SM-2 then FSRS scheduling (rating+recalled already captured for it), real momentum/retention metrics, Re-entry Mode.
 
 ## Decisions / conventions (this build)
@@ -122,6 +122,7 @@ Env: `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fronten
 - **Supabase MCP** (read-only) configured in `.mcp.json` — good for read-only DB verification.
 
 ## Known debt
+- **`LogActivity.jsx` is NOT wired** — pure mock (no state, no `apiFetch`, button has no `onClick`); Track/Roadmap/Activity-Type selects are hardcoded options. The core loop's entry point. Highest-priority fix.
 - Momentum / Retention Strength / Review Compliance are Phase-2 (Analytics shows them as labelled placeholders).
 - Dev "Copy JWT" button in `Profile.jsx` pending pre-prod cleanup.
 - Roadmap progress counts subtopics as nodes. DSA roadmaps are topic/problem-level, not full A2Z problem list.
