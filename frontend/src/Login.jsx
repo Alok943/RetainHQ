@@ -22,13 +22,14 @@ function Login() {
     </button>
   );
 
-  // The actual scheduling cadence: +3 / +7 / +14 / +30 days.
+  // SM-2 cadence (illustrative): baseline now, then +1d, +6d, then intervals
+  // expand by your ease factor. Exact days adapt to how well you recall.
   const timeline = [
     { day: 'Day 0', label: 'Learn', sub: 'Log a new topic', state: 'done' },
-    { day: 'Day 3', label: 'Review', sub: 'First recall', state: 'done' },
-    { day: 'Day 7', label: 'Review', sub: 'Reinforce', state: 'active' },
-    { day: 'Day 14', label: 'Review', sub: 'Strengthen', state: 'todo' },
-    { day: 'Day 30', label: 'Mastered', sub: 'Long-term memory', state: 'goal' },
+    { day: 'Day 0', label: 'Baseline', sub: 'First recall', state: 'done' },
+    { day: 'Day 1', label: 'Review', sub: 'Reinforce', state: 'active' },
+    { day: 'Day 6', label: 'Review', sub: 'Strengthen', state: 'todo' },
+    { day: 'Day 15+', label: 'Mastered', sub: 'Spacing widens as it sticks', state: 'goal' },
   ];
 
   const features = [
@@ -66,7 +67,7 @@ function Login() {
         </nav>
 
         {/* ---------- Hero ---------- */}
-        <section className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center pt-10 md:pt-16 pb-20">
+        <section className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center pt-8 md:pt-12 pb-10">
           {/* Left */}
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 mb-6">
