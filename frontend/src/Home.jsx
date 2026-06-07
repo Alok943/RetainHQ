@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, TrendingUp, BookOpen, AlertCircle, Clock, Activity, Target, CheckCircle2, History, Database, Key } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
+import OnboardingGuide from './OnboardingGuide';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -47,6 +48,9 @@ function Home({ onStartReviews }) {
 
       {/* --- CENTER COLUMN (Main Content) --- */}
       <div className="flex-1 flex flex-col gap-8 min-w-0">
+
+        {/* Onboarding Guide — shown once for new users */}
+        <OnboardingGuide />
 
         {/* Momentum & Stats (Visible on Mobile/Tablet, Hidden on Desktop where Right Rail takes over) */}
         <div className="flex flex-col gap-6 lg:hidden">
