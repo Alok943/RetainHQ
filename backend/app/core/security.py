@@ -39,7 +39,7 @@ def verify_token(token: str) -> SupabaseUser:
         payload = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["ES256", "RS256", "HS256"],  # accept all Supabase variants
+            algorithms=["ES256"],  # Supabase JWKS issues ES256 only; HS256 removed to prevent algorithm-confusion attack
             audience="authenticated",
         )
 

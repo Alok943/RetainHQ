@@ -73,7 +73,7 @@ def apply_sm2(activity: Activity, quality: int, now: Optional[datetime] = None) 
         elif activity.repetitions == 2:
             activity.interval_days = 6
         else:  # rep 3+
-            activity.interval_days = round(activity.interval_days * activity.ease_factor)
+            activity.interval_days = min(365, round(activity.interval_days * activity.ease_factor))
 
     # EF is updated on every completion (including lapses) and floored at 1.3.
     activity.ease_factor = max(

@@ -158,27 +158,20 @@ async def set_node_progress(
     if not node:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Node not found")
 
-    existing = (
-        await db.execute(
-            select(UserProgress).where(
-                UserProgress.user_id == user_id,
-                UserProgress.node_id == node_id,
-            )
-        )
-    ).scalar_one_or_none()
-
-    if existing:
-        existing.status = body.status
-        existing.updated_at = datetime.utcnow()
-    else:
-        db.add(
-            UserProgress(
-                user_id=user_id,
-                node_id=node_id,
-                status=body.status,
-                updated_at=datetime.utcnow(),
-            )
-        )
-
+    from sqlalchemy.dialects.postgresql import insert
+    
+    stmt = insert(UserProgress).values(
+        user_id=user_id,
+        node_id=node_id,
+        status=body.status,
+        updated_at=datetime.utcnow()
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=['user_id', 'node_id'],
+        set_={"status": body.status, "updated_at": datetime.utcnow()}
+    )
+    
+    await db.execute(stmt)
     await db.commit()
+    
     return ProgressResult(node_id=node_id, status=body.status)

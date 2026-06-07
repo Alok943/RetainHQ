@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.models.models import Feedback
@@ -14,7 +15,7 @@ async def create_feedback(
     db: AsyncSession = Depends(get_db)
 ):
     feedback = Feedback(
-        user_id=current_user.id,
+        user_id=uuid.UUID(current_user.id),
         message=feedback_in.message
     )
     db.add(feedback)

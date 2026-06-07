@@ -54,7 +54,7 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 
 `App.jsx` (shell/routing), `Login.jsx`, `Home.jsx`, `LogActivity.jsx`, `Review.jsx`,
 `Roadmaps.jsx` + `RoadmapDetail.jsx` (React Flow + dagre flowchart), `KnowledgeVault.jsx` (browse captured key-memories; client-side search), `Analytics.jsx`,
-`Profile.jsx`, `Logo.jsx`, `lib/api.js`, `lib/supabase.js`, `lib/theme.jsx`. (`NodeDrawer.jsx` = dead code.)
+`Admin.jsx` (founder-only; funnel + feedback tabs, shown only when email === `ADMIN_EMAIL`), `Profile.jsx`, `Logo.jsx`, `lib/api.js`, `lib/supabase.js`, `lib/theme.jsx`. (`NodeDrawer.jsx` = dead code.)
 
 - **Dark mode:** `ThemeProvider` toggles a `.dark` class on `<html>` (persisted; pre-paint script in `index.html` avoids FOUC). Theming is a **centralized override layer in `index.css`** that remaps the app's hardcoded color utilities under `html.dark` — so new components inherit dark mode for free *if they reuse existing color classes*. The Login page is intentionally always-dark (theme-independent via inline styles). Logo variant is theme-aware in `App.jsx`.
 
@@ -65,6 +65,7 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 - **tracks** — user_id, name
 - **activities** — user_id, track_id?, topic, notes?, difficulty(1–5), needed_hint, key_memory, mistake?, **source_type?**(problem/lecture/video/book/article/course/project/other — plain string, for filtering + future analytics), created_at, **ease_factor**(SM-2, default 2.5), **repetitions**(SM-2, default 0), **interval_days**(SM-2, default 0), **last_reviewed_at?**, **next_review_at?** (mirrors the open due review)
 - **reviews** — user_id, activity_id, status('due'|'completed'), scheduled_for, completed_at?, rating?('easy'|'medium'|'hard'), **recalled?**(bool — objective got-it/missed-it, distinct from felt difficulty), **quality?**(int 0–5 — persisted SM-2 grade)
+- **feedbacks** — user_id, message, status('new'|'reviewed'|'resolved'), created_at (user-submitted suggestions; admin-readable)
 - **roadmaps** — title, description
 - **roadmap_nodes** — roadmap_id, phase, section, title, tier, order_index, description?, **parent_id?** (self-ref → subtopics are completable child nodes)
 - **user_progress** — user_id, node_id, status
@@ -81,6 +82,9 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 | `GET /api/roadmaps/` | List with server-computed `progress_pct` |
 | `GET /api/roadmaps/{id}` | Roadmap + nodes + per-node user status |
 | `PUT /api/roadmaps/nodes/{id}/progress` | Idempotent upsert of done/not_started |
+| `POST /api/feedback/` | Submit a feedback message (any authed user) |
+| `GET /api/admin/funnel` | **Admin-only** activation funnel (signups→logged→reviewed→returned) + per-user + by-source, from existing data |
+| `GET /api/admin/feedback` | **Admin-only** list of submitted feedback (joined to user email) |
 
 ## Core loop & metrics
 
@@ -112,13 +116,14 @@ Env: `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fronten
 
 - **Phase 0 done. Phase 1 core loop is now end-to-end wired through the UI:** `LogActivity.jsx` → `POST /api/activities/` → auto-scheduled reviews → `/reviews/due` → Review retrieval gate → `/complete` → dashboard. A real user can now create an activity and exercise everything downstream. (Backend `POST /api/activities/` already worked; the form is now connected: field state, `apiFetch`, submit gated on Topic+Key Memory, redirect to Home on success.)
 - **Done since:** **SM-2 adaptive scheduling live** (every activity is a card; first review +1d → +6d → ×ease-factor; completion maps rating+recalled → quality and schedules the next review; state on `activities`, logic in `services/scheduler.py`, migration `a7c3d9e1b240`). **`LogActivity.jsx` wired** (Topic/Key Memory/Mistake/Difficulty/needed-hint → `POST /api/activities/`; redirect Home). Home/Roadmaps/Analytics wired to live data (Analytics shows real stats + honest "Phase 2" placeholders, no fabricated numbers). **Review flow wired with the retrieval gate** (commit-before-reveal: type a free-recall answer or "I don't know" before reveal; then key_memory + your attempt + prior mistake; Easy/Med/Hard rating). Dark mode (Profile toggle). Landing/Login redesigned. 10 roadmaps seeded + PDF export.
-- **Done since:** **Knowledge Vault** (`KnowledgeVault.jsx` + `GET /api/activities/`) — browse all captured key-memories with client-side search; read-only for now. **Source Type** field on activities (`source_type`, Vault badge). **Activation funnel** = `docs/funnel.sql` (run in Supabase SQL editor): signup→logged→reviewed→returned + per-user breakdown + captures-by-source, derived from existing data (no instrumentation). Current cohort: 3 signups, 1 activated/reviewed/retained.
-- **Next (high-leverage, in order):** (1) **deploy for first users** (mostly ops: Vercel root=frontend, Render/Railway root=backend, env vars, CORS allow-list, `alembic upgrade head`). (2) node-complete → pre-filled Log modal (design doc §9b — closes the roadmap→loop). (3) Logged Reviews Vault (review history) — post-launch. (4) grow `ActivityCreate` to actually persist Track/Roadmap/Activity-Type (currently UI-only). (5) in-app funnel endpoint + admin login UI once past the first cohort.
+- **Done since:** **Knowledge Vault** (`KnowledgeVault.jsx` + `GET /api/activities/`) — browse all captured key-memories with client-side search; read-only for now. **Source Type** field on activities (`source_type`, Vault badge). **Activation funnel** — both `docs/funnel.sql` (Supabase SQL editor) **and** an in-app **Admin** page (`Admin.jsx`, founder-gated by `ADMIN_EMAIL`): `GET /api/admin/funnel` (signup→logged→reviewed→returned + per-user + by-source) and `GET /api/admin/feedback`. **User feedback** — Home "suggest a change" modal → `POST /api/feedback/` → `feedbacks` table (migration `b769ae00d904`) → Admin "User Feedback" tab. Current cohort: 3 signups, 1 activated/reviewed/retained.
+- **Next (high-leverage, in order):** (1) **deploy for first users** (mostly ops: Vercel root=frontend, Render/Railway root=backend, env vars incl. `ADMIN_EMAIL`, CORS allow-list, `alembic upgrade head`). (2) node-complete → pre-filled Log modal (design doc §9b — closes the roadmap→loop). (3) Logged Reviews Vault (review history) — post-launch. (4) grow `ActivityCreate` to actually persist Track/Roadmap/Activity-Type (currently UI-only). (5) feedback status workflow (new→reviewed→resolved) + full admin auth once past the first cohort.
 - **Phase 2:** FSRS scheduling (SM-2 done; rating+recalled feed it), real momentum/retention metrics, Re-entry Mode.
 
 ## Decisions / conventions (this build)
 - **Product thesis:** "Track what you remember, not what you complete." Rule: **ship the mechanic, freeze the intelligence.** Goal = 20 real users + activation funnel. (Full rationale: user's design-decisions doc.)
 - **Commits:** authored **solely by the user — NO `Co-Authored-By: Claude` trailer** (was explicitly removed from contributors). Work goes on `main` (solo, deploys from main).
+- **Admin gate (interim):** founder-only access is an **email check**, not a full admin auth system. Backend `get_admin_user` (`api/deps.py`) 403s unless `current_user.email == settings.ADMIN_EMAIL` (env, default `aloksingh98541@gmail.com`); frontend mirrors it with `ADMIN_EMAIL` in `App.jsx` (UX only — backend is the real gate). Reads `auth.users` directly (the app DB role can). Good enough for the first cohort; revisit with real admin auth later.
 - **LLM recall grader** = frozen/dormant: `backend/app/services/grader.py` (Groq, one call, grades free recall vs `key_memory`), behind `GRADER_ENABLED` flag + optional `[experiment]` extra. Not wired into the review endpoint. Groq env: `GROQ_API_KEY`, `GROQ_MODEL`.
 - **DB connection:** `DATABASE_URL` = Supabase **transaction pooler** (`...pooler.supabase.com:6543`) → engine needs `statement_cache_size=0` + `prepared_statement_cache_size=0` (already set) and `pool_pre_ping=True`. Direct `db.<ref>.supabase.co` is IPv6-only → avoid.
 - **Supabase MCP** (read-only) configured in `.mcp.json` — good for read-only DB verification.

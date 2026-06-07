@@ -9,8 +9,11 @@ if "?" in DB_URL:
 
 engine = create_async_engine(
     DB_URL,
-    echo=True,
+    echo=settings.DEBUG,  # only log SQL in dev; never in prod (leaks PII to logs)
     future=True,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
     # Validate a pooled connection before use so a dropped/stale connection
     # (e.g. after a network blip) is recycled instead of raising mid-request.
     pool_pre_ping=True,

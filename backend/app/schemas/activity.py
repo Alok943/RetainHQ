@@ -1,16 +1,18 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from typing import Optional, Literal
+from pydantic import BaseModel, ConfigDict, Field
 import uuid
 
+VALID_SOURCES = Literal["problem", "lecture", "video", "book", "article", "course", "project", "other"]
+
 class ActivityCreate(BaseModel):
-    topic: str
-    notes: Optional[str] = None
-    difficulty: int
+    topic: str = Field(max_length=300)
+    notes: Optional[str] = Field(default=None, max_length=5000)
+    difficulty: int = Field(ge=1, le=5)
     needed_hint: bool
-    key_memory: str
-    mistake: Optional[str] = None
-    source_type: Optional[str] = None
+    key_memory: str = Field(max_length=2000)
+    mistake: Optional[str] = Field(default=None, max_length=2000)
+    source_type: Optional[VALID_SOURCES] = None
 
 class ActivityResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

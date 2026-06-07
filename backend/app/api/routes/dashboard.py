@@ -52,12 +52,7 @@ async def get_dashboard_stats(
     active_dates = active_days_activities.union(active_days_reviews)
     consistency_window = len(active_dates)
     
-    # 3. Daily progress could be number of completed reviews today + activities logged today
-    today = now.date()
-    daily_progress = sum(1 for d in active_dates if d == today)
-    
-    # A slightly better daily_progress metric for the UI might be total items done today
-    # Let's count total activities today + total reviews completed today
+    # Count total activities today + total reviews completed today
     today_start = datetime(now.year, now.month, now.day)
     
     today_act_stmt = select(func.count(Activity.id)).where(

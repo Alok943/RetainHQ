@@ -2,16 +2,13 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import get_current_user
 from app.core.security import SupabaseUser
+from app.core.config import settings
 from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback
 
 app = FastAPI(title="RetainHQ API", version="1.0.0")
 
-# Configure CORS
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    # Add Vercel domain later
-]
+# Env-driven CORS allow-list (comma-separated in CORS_ORIGINS env var)
+origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

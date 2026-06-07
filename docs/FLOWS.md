@@ -123,6 +123,23 @@ The product's core mechanic: **commit before reveal.**
 
 ---
 
+## 8c. 🔒 User feedback — `Home.jsx` (FeedbackModal)
+
+- Home has a "Want to suggest a change? Tell us." link → opens **FeedbackModal**.
+- **Submit:** `POST /api/feedback/` `{ message }` → backend creates a `feedbacks` row (`user_id` from the JWT, `status='new'`). Shows "Thanks!" then auto-closes. Any authenticated user can submit.
+
+---
+
+## 8d. 🔒👑 Admin — `Admin.jsx` (founder-only)
+
+- **Visibility:** the **Admin** nav item + `/admin` route render only when `email === ADMIN_EMAIL` (client-side UX gate). The backend is the real gate: `get_admin_user` 403s anyone but `settings.ADMIN_EMAIL`. A non-admin hitting the API gets "Admin access required".
+- **Two tabs** (each loads on switch):
+  - **Activation Funnel** → `GET /api/admin/funnel`: summary (signups → activated → reviewed → retained, with %), per-user table (email, signup, activities, reviews, last active; 0-activity rows dimmed), and captures-by-source. Derived live from `auth.users` + `activities` + `reviews` (mirrors `docs/funnel.sql`).
+  - **User Feedback** → `GET /api/admin/feedback`: all submitted messages joined to the submitter's email, newest first.
+- **Refresh** button re-fetches the active tab.
+
+---
+
 ## 9. 🔒 Profile — `Profile.jsx`
 
 - **On mount:** `supabase.auth.getUser()` → renders email, initials, member-since, user id (Supabase client, not the backend — identity data only).
