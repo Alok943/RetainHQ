@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers } from 'lucide-react';
+import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers, CheckCircle2 } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import ComingSoon from './ComingSoon';
 
 const SOURCE_TYPES = [
   { value: 'problem', label: 'Problem Solving' },
@@ -26,6 +27,7 @@ function LogActivity() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const canSubmit = topic.trim().length > 0 && keyMemory.trim().length > 0 && !submitting;
 
@@ -197,6 +199,72 @@ function LogActivity() {
         </div>
       )}
 
+      <ComingSoon
+        id="log-track-roadmap"
+        title="Track & Roadmap Linking"
+        description="Link activities to learning tracks and roadmap nodes for structured progress."
+        onFeedback={() => setShowFeedback(true)}
+      />
+
+      {showFeedback && <LogFeedbackModal onClose={() => setShowFeedback(false)} />}
+    </div>
+  );
+}
+
+function LogFeedbackModal({ onClose }) {
+  const [msg, setMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const send = async () => {
+    if (!msg.trim()) return;
+    setSending(true);
+    try {
+      await apiFetch('/api/feedback/', {
+        method: 'POST',
+        body: JSON.stringify({ message: msg })
+      });
+      setDone(true);
+      setTimeout(onClose, 2000);
+    } catch (e) {
+      alert("Failed to send feedback: " + e.message);
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#131b2e]/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#f9f9f6] rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-[rgba(15,23,42,0.08)] flex justify-between items-center bg-white">
+          <h2 className="font-sans font-semibold text-[#0F172A]">Want this feature sooner?</h2>
+          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A] text-lg font-bold">✕</button>
+        </div>
+        <div className="p-4 bg-white flex flex-col gap-4">
+          {done ? (
+            <div className="text-center py-8 text-[#166534] font-medium flex flex-col items-center gap-2">
+              <CheckCircle2 size={32} />
+              Thanks for your feedback!
+            </div>
+          ) : (
+            <>
+              <textarea
+                className="w-full border border-[rgba(15,23,42,0.12)] rounded p-3 text-sm focus:outline-none focus:border-[#0891B2] focus:ring-1 focus:ring-[#0891B2] min-h-[120px] resize-y font-sans text-[#0F172A]"
+                placeholder="Tell us why this feature matters to you…"
+                value={msg}
+                onChange={e => setMsg(e.target.value)}
+                autoFocus
+              />
+              <button
+                onClick={send}
+                disabled={sending || !msg.trim()}
+                className="kinetic-btn kinetic-accent-gradient w-full py-2.5 disabled:opacity-50 flex items-center justify-center font-semibold"
+              >
+                {sending ? 'Sending...' : 'Send Feedback'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

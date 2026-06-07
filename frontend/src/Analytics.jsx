@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart2, CalendarCheck, Zap, ClipboardList, Target, Lock, TrendingUp, BrainCircuit } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import ComingSoonBanner from './ComingSoon';
 
 function Analytics() {
   const [stats, setStats] = useState(null);
@@ -89,6 +90,12 @@ function Analytics() {
           These need recall history to be meaningful. We're capturing the signals now (every review stores how you rated it and whether you recalled it) — the charts come once there's enough data.
         </p>
       </section>
+
+      <ComingSoonBanner
+        id="analytics-retention-by-source"
+        title="Retention by Source"
+        description="See which learning sources (books, videos, projects) lead to the strongest long-term retention."
+      />
 
     </div>
   );

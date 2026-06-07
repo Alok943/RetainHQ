@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import ComingSoon from './ComingSoon';
 
 // Each post-reveal choice carries BOTH signals at once:
 //   recalled = objective (did they reconstruct it?)   rating = subjective (how hard it felt)
@@ -101,6 +102,15 @@ function Review({ onBack }) {
         <button onClick={onBack} className="kinetic-btn kinetic-accent-gradient px-6 py-2.5 text-sm mt-2">
           Back to Dashboard
         </button>
+        {done && (
+          <div className="w-full max-w-md mt-4">
+            <ComingSoon
+              id="review-ai-grading"
+              title="AI-Powered Recall Grading"
+              description="An AI will analyze your recall answers and give you deeper feedback on accuracy."
+            />
+          </div>
+        )}
       </div>
     );
   }
