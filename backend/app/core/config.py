@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str
     DATABASE_URL: str
 
+    # Founder/admin gate (email-based; full admin auth deferred). Overridable via env.
+    ADMIN_EMAIL: str = "aloksingh98541@gmail.com"
+
     # Groq LLM recall grader (EXPERIMENT — frozen, off the launch path)
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.1-8b-instant"

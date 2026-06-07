@@ -3,31 +3,38 @@ import { Play, TrendingUp, BookOpen, AlertCircle, Clock, Activity, Target, Check
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 
-function getReviewDayLabel(scheduledFor, activityCreatedAt) {
-  const diffDays = Math.round(
-    (new Date(scheduledFor) - new Date(activityCreatedAt)) / (1000 * 60 * 60 * 24)
-  );
-  if (diffDays <= 5) return 'Day 3 Review';
-  if (diffDays <= 10) return 'Day 7 Review';
-  if (diffDays <= 20) return 'Day 14 Review';
-  return 'Day 30 Review';
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+// Honest due-state label (SM-2 intervals are adaptive — the old fixed Day 3/7/14/30
+// ladder no longer applies). Reviews returned by /api/reviews/due are always due now
+// or overdue.
+function getDueLabel(scheduledFor) {
+  const days = Math.floor((new Date() - new Date(scheduledFor)) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'Due now';
+  return `Overdue ${days} day${days === 1 ? '' : 's'}`;
 }
 
 function Home({ onStartReviews }) {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [dueReviews, setDueReviews] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     Promise.all([
       apiFetch('/api/dashboard/'),
       apiFetch('/api/reviews/due'),
+      apiFetch('/api/activities/'),
     ])
-      .then(([dashData, reviewsData]) => {
+      .then(([dashData, reviewsData, activitiesData]) => {
         setDashboard(dashData);
         setDueReviews(reviewsData);
+        setActivities(activitiesData);
       })
       .catch((err) => setFetchError(err.message))
       .finally(() => setLoading(false));
@@ -77,7 +84,7 @@ function Home({ onStartReviews }) {
                   </h3>
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <p className="font-mono text-xs text-[#64748B] flex items-center gap-1.5">
-                      {getReviewDayLabel(topReview.scheduled_for, topReview.activity.created_at)}
+                      {getDueLabel(topReview.scheduled_for)}
                       <span className="w-1 h-1 rounded-full bg-[#cbd5e1]"></span>
                       <Clock size={12} /> Spaced Review
                     </p>
@@ -130,12 +137,20 @@ function Home({ onStartReviews }) {
           </div>
         </section>
 
-        {/* Recent Activity — placeholder until activities list endpoint is available */}
+        {/* Recent Captures — a preview of the Knowledge Vault */}
         <section>
           <div className="flex justify-between items-end mb-4">
             <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
-              <Activity size={16} className="text-[#0F172A]" /> Recent Activity
+              <Database size={16} className="text-[#0891B2]" /> Recent Captures
             </h2>
+            {activities.length > 0 && (
+              <button
+                onClick={() => navigate('/vault')}
+                className="font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
+              >
+                View all →
+              </button>
+            )}
           </div>
 
           <div className="kinetic-card">
@@ -144,26 +159,36 @@ function Home({ onStartReviews }) {
                 <div className="h-4 bg-slate-100 rounded w-3/4" />
                 <div className="h-4 bg-slate-100 rounded w-1/2" />
               </div>
-            ) : dueReviews.length > 0 ? (
+            ) : activities.length > 0 ? (
               <div className="flex flex-col gap-0 relative">
                 <div className="absolute left-[11px] top-4 bottom-4 w-px bg-slate-200"></div>
-                {dueReviews.slice(0, 3).map((review, i) => (
+                {activities.slice(0, 4).map((activity, i) => (
                   <TimelineItem
-                    key={review.id}
-                    icon={<Clock size={12} className="text-[#ba1a1a]" />}
-                    title={`Due: ${review.activity.topic}`}
-                    time={getReviewDayLabel(review.scheduled_for, review.activity.created_at)}
-                    detail={review.activity.key_memory}
-                    isLast={i === Math.min(dueReviews.length, 3) - 1}
+                    key={activity.id}
+                    icon={<Key size={12} className="text-[#0891B2]" />}
+                    title={activity.topic}
+                    time={formatDate(activity.created_at)}
+                    detail={activity.key_memory}
+                    isLast={i === Math.min(activities.length, 4) - 1}
                   />
                 ))}
               </div>
             ) : (
               <p className="font-sans text-sm text-[#64748B]">
-                No pending reviews — log an activity to start building your history.
+                Nothing captured yet — log an activity to start your vault.
               </p>
             )}
           </div>
+        </section>
+
+        {/* Feedback Link */}
+        <section className="mt-4 pt-4 flex justify-center">
+          <button 
+            onClick={() => setShowFeedback(true)}
+            className="text-sm font-medium text-[#64748B] hover:text-[#0F172A] underline underline-offset-4 transition-colors"
+          >
+            Want to suggest a change? Tell us.
+          </button>
         </section>
       </div>
 
@@ -173,6 +198,7 @@ function Home({ onStartReviews }) {
         <QuickStats dashboard={dashboard} loading={loading} />
       </aside>
 
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
     </div>
   );
 }
@@ -275,6 +301,64 @@ function QuickStats({ dashboard, loading }) {
         <span className="font-mono text-xs font-medium text-[#0F172A]">
           {loading ? '…' : `${dailyProgress} Today`}
         </span>
+      </div>
+    </div>
+  );
+}
+
+function FeedbackModal({ onClose }) {
+  const [msg, setMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const send = async () => {
+    if (!msg.trim()) return;
+    setSending(true);
+    try {
+      await apiFetch('/api/feedback/', {
+        method: 'POST',
+        body: JSON.stringify({ message: msg })
+      });
+      setDone(true);
+      setTimeout(onClose, 2000);
+    } catch (e) {
+      alert("Failed to send feedback: " + e.message);
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#131b2e]/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#f9f9f6] rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-[rgba(15,23,42,0.08)] flex justify-between items-center bg-white">
+          <h2 className="font-sans font-semibold text-[#0F172A]">Suggest a Change</h2>
+          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A] text-lg font-bold">✕</button>
+        </div>
+        <div className="p-4 bg-white flex flex-col gap-4">
+          {done ? (
+            <div className="text-center py-8 text-[#166534] font-medium flex flex-col items-center gap-2">
+              <CheckCircle2 size={32} />
+              Thanks for your feedback!
+            </div>
+          ) : (
+            <>
+              <textarea 
+                className="w-full border border-[rgba(15,23,42,0.12)] rounded p-3 text-sm focus:outline-none focus:border-[#0891B2] focus:ring-1 focus:ring-[#0891B2] min-h-[120px] resize-y font-sans text-[#0F172A]"
+                placeholder="What needs to be changed or added?"
+                value={msg}
+                onChange={e => setMsg(e.target.value)}
+                autoFocus
+              />
+              <button 
+                onClick={send}
+                disabled={sending || !msg.trim()}
+                className="kinetic-btn kinetic-accent-gradient w-full py-2.5 disabled:opacity-50 flex items-center justify-center font-semibold"
+              >
+                {sending ? 'Sending...' : 'Send Feedback'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

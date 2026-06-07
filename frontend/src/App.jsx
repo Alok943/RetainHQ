@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut } from 'lucide-react';
+import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 
@@ -12,7 +12,12 @@ import Analytics from './Analytics';
 import RoadmapDetail from './RoadmapDetail';
 import Login from './Login';
 import Profile from './Profile';
+import KnowledgeVault from './KnowledgeVault';
+import Admin from './Admin';
 import Logo from './Logo';
+
+// Founder/admin gate (UX only — the backend /api/admin/* routes enforce the real check).
+const ADMIN_EMAIL = 'aloksingh98541@gmail.com';
 
 function App() {
   const location = useLocation();
@@ -68,7 +73,9 @@ function App() {
     if (path.startsWith('/reviews')) return 'review';
     if (path.startsWith('/log')) return 'log';
     if (path.startsWith('/roadmaps')) return 'roadmaps';
+    if (path.startsWith('/vault')) return 'vault';
     if (path.startsWith('/analytics')) return 'analytics';
+    if (path.startsWith('/admin')) return 'admin';
     return 'home';
   };
   
@@ -86,6 +93,7 @@ function App() {
   // Get user initials for avatar
   const email = session.user.email || '';
   const initials = email ? email.substring(0, 2).toUpperCase() : 'US';
+  const isAdmin = email === ADMIN_EMAIL;
 
   return (
     <div className="flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
@@ -104,7 +112,9 @@ function App() {
             <SidebarItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'home'} onClick={() => navigate('/')} />
             <SidebarItem icon={<CheckSquare size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} />
             <SidebarItem icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+            <SidebarItem icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
             <SidebarItem icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
+            {isAdmin && <SidebarItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
           </nav>
           
           <div className="mt-8">
@@ -168,18 +178,22 @@ function App() {
             <Route path="/log" element={<LogActivity />} />
             <Route path="/roadmaps" element={<Roadmaps />} />
             <Route path="/roadmaps/:id" element={<RoadmapDetail />} />
+            <Route path="/vault" element={<KnowledgeVault />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/profile" element={<Profile />} />
+            {isAdmin && <Route path="/admin" element={<Admin />} />}
           </Routes>
         </main>
 
         {/* Mobile Bottom Navigation (Hidden on md+) */}
-        <nav className="md:hidden absolute bottom-0 w-full bg-[#f9f9f6] border-t border-[rgba(15,23,42,0.08)] flex justify-around items-center px-2 py-3 z-20 pb-safe">
+        <nav className="md:hidden absolute bottom-0 w-full bg-[#f9f9f6] border-t border-[rgba(15,23,42,0.08)] flex justify-around items-center px-2 py-3 z-20 pb-safe overflow-x-auto gap-1">
           <NavItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'home'} onClick={() => navigate('/')} />
           <NavItem icon={<CheckSquare size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} />
           <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
           <NavItem icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+          <NavItem icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
           <NavItem icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
+          {isAdmin && <NavItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
         </nav>
       </div>
     </div>

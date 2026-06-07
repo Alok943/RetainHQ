@@ -58,8 +58,17 @@ class Activity(SQLModel, table=True):
     needed_hint: bool = Field(default=False)
     key_memory: str
     mistake: Optional[str] = None
+    source_type: Optional[str] = None  # e.g. problem/lecture/video/book/article/course/project/other
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
+    # SM-2 memory state (one activity = one card). Updated on each review completion.
+    # repetitions starts at 0 (only the Day-0 baseline scheduled, not yet recalled).
+    ease_factor: float = Field(default=2.5)
+    repetitions: int = Field(default=0)
+    interval_days: int = Field(default=0)
+    last_reviewed_at: Optional[datetime] = None  # set on each review completion
+    next_review_at: Optional[datetime] = None    # mirrors the open due review (cheap dashboard queries)
+
     track: Optional[Track] = Relationship(back_populates="activities")
     reviews: List["Review"] = Relationship(back_populates="activity")
 
@@ -73,6 +82,15 @@ class Review(SQLModel, table=True):
     completed_at: Optional[datetime] = None
     rating: Optional[str] = None # 'easy', 'medium', 'hard' (subjective: how hard it felt)
     recalled: Optional[bool] = None # objective: did they reconstruct it? (got-it / missed-it)
+    quality: Optional[int] = None # SM-2 quality grade (0-5) derived from rating+recalled; persisted for analytics
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     activity: Optional[Activity] = Relationship(back_populates="reviews")
+
+class Feedback(SQLModel, table=True):
+    __tablename__ = "feedbacks"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    message: str
+    status: str = Field(default="new") # new, reviewed, resolved
+    created_at: datetime = Field(default_factory=datetime.utcnow)

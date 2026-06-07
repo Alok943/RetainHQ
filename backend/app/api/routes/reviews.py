@@ -10,6 +10,7 @@ from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.models.models import Review, Activity
 from app.schemas.review import ReviewResponse, ReviewComplete
+from app.services.scheduler import quality_from_outcome, apply_sm2
 
 router = APIRouter()
 
@@ -61,12 +62,20 @@ async def complete_review(
     if review.status == "completed":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Review already completed")
         
+    now = datetime.utcnow()
     review.status = "completed"
-    review.completed_at = datetime.utcnow()
+    review.completed_at = now
     review.rating = review_in.rating
     review.recalled = review_in.recalled
 
+    # Advance the activity's SM-2 state from this outcome and schedule the next
+    # review. activity is eager-loaded above, so this is safe on the async session.
+    quality = quality_from_outcome(review_in.rating, review_in.recalled)
+    review.quality = quality  # persist the grade for later analytics
+    next_review = apply_sm2(review.activity, quality, now)
+    db.add(next_review)
+
     await db.commit()
     await db.refresh(review)
-    
+
     return review

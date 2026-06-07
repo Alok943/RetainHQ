@@ -51,27 +51,27 @@ This wraps **every** backend call in the app — read it once, then assume it ev
 
 ## 3. 🔒 ✅ Home dashboard — `Home.jsx`
 
-**On mount:** `Promise.all([ apiFetch('/api/dashboard/'), apiFetch('/api/reviews/due') ])`.
+**On mount:** `Promise.all([ apiFetch('/api/dashboard/'), apiFetch('/api/reviews/due'), apiFetch('/api/activities/') ])`.
 - `GET /api/dashboard/` → `{ due_count, consistency_window, daily_progress, total_activities, total_reviews_completed }` (all computed live, scoped to user).
 - `GET /api/reviews/due` → array of due reviews (status `due`, `scheduled_for ≤ now`), each with its `activity` eager-loaded (`selectinload`).
+- `GET /api/activities/` → the user's captured activities (newest first) for the Recent Captures preview.
 
 **Render states:** loading skeletons → error card → else:
-- **Top due review card:** first due review's `activity.topic` + `key_memory`, with a day-label derived from `scheduled_for − activity.created_at`. **"Start Reviews"** → `navigate('/reviews')`. If none due → "all caught up".
+- **Top due review card:** first due review (earliest `scheduled_for` = most overdue) — `activity.topic` + `key_memory`, with an honest **"Due now / Overdue Nd"** label (SM-2 intervals are adaptive; the old fixed Day 3/7/14/30 label was removed). **"Start Reviews"** → `navigate('/reviews')`. If none due → "all caught up".
+- **Recent Captures:** the latest ~4 captured key-memories (topic + `key_memory` + logged date) as a timeline, with **"View all →"** → `navigate('/vault')` (the full Knowledge Vault, §8b). Empty → prompt to log. This is the vault preview surfaced on Home.
 - **QuickStats:** real consistency / due / daily-progress from the dashboard payload.
 - **MomentumCard:** intentionally a **"Phase 2"** placeholder (no fabricated score).
 - **"View Roadmap"** → `navigate('/roadmaps')`.
 
 ---
 
-## 4. 🔒 ⚠️ Log Activity — `LogActivity.jsx`  **(NOT WIRED — top-priority fix)**
+## 4. 🔒 ✅ Log Activity — `LogActivity.jsx`
 
-**Intended flow:**
-1. User fills Topic, (Track/Roadmap/Type), Key Memory, optional Mistake, Difficulty (1–5), "needed a hint".
-2. Click **"Log & Schedule Review"** → `POST /api/activities/` with the form body.
-3. Backend creates the `activity`, then `services/scheduler.py` auto-creates **4 reviews at +3/+7/+14/+30 days IF `difficulty ≥ 4` OR `needed_hint`**.
-4. Redirect to Home; the new reviews eventually surface in `/reviews/due`.
-
-**Current reality:** ⚠️ The form is **static UI only** — no state for Topic/Key Memory/Mistake, no `apiFetch` import, and the submit button has **no `onClick`**. Track/Roadmap/Activity-Type are hardcoded `<option>`s. **Nothing is sent; no activity is created.** Until this is wired, the entire downstream loop can't run from the UI.
+**Flow:**
+1. User fills the form: Topic, **Source Type** (problem/lecture/video/book/…; defaults to "Problem Solving"), Key Memory, optional Mistake, Difficulty (1–5), "needed a hint". (The old unwired Track/Roadmap/Activity-Type/Retention selects were **removed** to cut logging friction; re-add real Track/Roadmap pickers once the backend models them. Note: post-SM-2, `difficulty`/`needed_hint` no longer gate scheduling — kept as cheap signals.)
+2. Click **"Log & Schedule Review"** → `POST /api/activities/` with `{ topic, key_memory, mistake?, difficulty, needed_hint, source_type }`. The button is **disabled until Topic and Key Memory are both non-empty**, and shows "Saving…" while in flight.
+3. Backend creates the `activity`, initializes its **SM-2 state** (`ease_factor=2.5, repetitions=0, interval_days=0`), and `services/scheduler.py` schedules a **Day-0 baseline review due now** (every activity — no difficulty/hint gate). The "Projected Review Schedule" preview says *"Baseline review now, then spaced out as you recall it."*
+4. On success → `navigate('/')` (Home); the **baseline review is immediately due** in `/reviews/due`, so Home shows "1 due" and the user can start it right away (proves the loop in seconds). On failure → inline error, button re-enables.
 
 ---
 
@@ -82,7 +82,7 @@ The product's core mechanic: **commit before reveal.**
 2. **Per card:** shows the cue (`activity.topic`). A textarea + **"I don't know"** — the **Reveal button stays disabled until the user types an answer or taps "I don't know"** (this is the gate; no peeking).
 3. **Reveal:** shows `activity.key_memory` (the answer) + the user's own attempt (self-compare) + prior `mistake` if any.
 4. **Rate:** Easy / Medium / Hard (+ an objective got-it/missed-it → `recalled`).
-5. **Submit:** `POST /api/reviews/{id}/complete` with `{ rating, recalled }`. Backend (IDOR-safe): 404 if not owned, 400 if already done; else sets `status='completed'`, `completed_at`, `rating`, `recalled`. **Rating is stored only — it does NOT reschedule anything yet** (SM-2 is Phase 2).
+5. **Submit:** `POST /api/reviews/{id}/complete` with `{ rating, recalled }`. Backend (IDOR-safe): 404 if not owned, 400 if already done; else sets `status='completed'`, `completed_at`, `rating`, `recalled`, and the persisted `quality`. **Then SM-2 runs:** `rating`+`recalled` → a quality grade (0–5) → the activity's `ease_factor`/`repetitions`/`interval_days`/`last_reviewed_at`/`next_review_at` advance and the **next review is scheduled** (baseline pass → +1d; then +6d, then ×ease-factor; lapse → back to +1d). See `services/scheduler.py`.
 6. Advance to next card; on finish → back to Home.
 
 ---
@@ -110,6 +110,16 @@ The product's core mechanic: **commit before reveal.**
 - **On mount:** `GET /api/dashboard/`.
 - **Real stat cards:** Consistency (x/7), Activities Logged, Reviews Completed, Reviews Due — all live.
 - **Retention insights:** Learning Momentum / Retention Strength / Review Compliance shown as labelled **"Phase 2" placeholders** (no fabricated numbers — they need recall history + the SM-2/metrics work first).
+
+---
+
+## 8b. 🔒 ✅ Knowledge Vault — `KnowledgeVault.jsx`
+
+- **On mount:** `GET /api/activities/` → all of the user's captured activities (scoped to user, newest first), each with its `key_memory`, `difficulty`, `mistake?`, and SM-2 fields (`next_review_at`, `last_reviewed_at`, `repetitions`).
+- **Render states:** loading skeletons → error card → **empty state** ("Nothing captured yet" + CTA → `/log`) → else a list of capture cards.
+- **Each card:** topic, a **source-type badge** + difficulty badge, the **key memory** (the point of the vault), logged date, a "Next review …" label derived from `next_review_at` (null→"—", ≤now→"Due now", else "in N days"), last-reviewed date if any, and the prior `mistake` inline.
+- **Search:** a client-side filter over `topic` + `key_memory` (no backend search — small data for the first cohort).
+- Read-only browse (no edit/delete yet). Reachable via the **Vault** nav item (sidebar + mobile).
 
 ---
 

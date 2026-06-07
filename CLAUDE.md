@@ -53,7 +53,7 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 ## Frontend layout (`frontend/src/`)
 
 `App.jsx` (shell/routing), `Login.jsx`, `Home.jsx`, `LogActivity.jsx`, `Review.jsx`,
-`Roadmaps.jsx` + `RoadmapDetail.jsx` (React Flow + dagre flowchart), `Analytics.jsx`,
+`Roadmaps.jsx` + `RoadmapDetail.jsx` (React Flow + dagre flowchart), `KnowledgeVault.jsx` (browse captured key-memories; client-side search), `Analytics.jsx`,
 `Profile.jsx`, `Logo.jsx`, `lib/api.js`, `lib/supabase.js`, `lib/theme.jsx`. (`NodeDrawer.jsx` = dead code.)
 
 - **Dark mode:** `ThemeProvider` toggles a `.dark` class on `<html>` (persisted; pre-paint script in `index.html` avoids FOUC). Theming is a **centralized override layer in `index.css`** that remaps the app's hardcoded color utilities under `html.dark` — so new components inherit dark mode for free *if they reuse existing color classes*. The Login page is intentionally always-dark (theme-independent via inline styles). Logo variant is theme-aware in `App.jsx`.
@@ -63,8 +63,8 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 ## Data model (Postgres, UUID PKs, naive-UTC timestamps)
 
 - **tracks** — user_id, name
-- **activities** — user_id, track_id?, topic, notes?, difficulty(1–5), needed_hint, key_memory, mistake?, created_at
-- **reviews** — user_id, activity_id, status('due'|'completed'), scheduled_for, completed_at?, rating?('easy'|'medium'|'hard'), **recalled?**(bool — objective got-it/missed-it, distinct from felt difficulty)
+- **activities** — user_id, track_id?, topic, notes?, difficulty(1–5), needed_hint, key_memory, mistake?, **source_type?**(problem/lecture/video/book/article/course/project/other — plain string, for filtering + future analytics), created_at, **ease_factor**(SM-2, default 2.5), **repetitions**(SM-2, default 0), **interval_days**(SM-2, default 0), **last_reviewed_at?**, **next_review_at?** (mirrors the open due review)
+- **reviews** — user_id, activity_id, status('due'|'completed'), scheduled_for, completed_at?, rating?('easy'|'medium'|'hard'), **recalled?**(bool — objective got-it/missed-it, distinct from felt difficulty), **quality?**(int 0–5 — persisted SM-2 grade)
 - **roadmaps** — title, description
 - **roadmap_nodes** — roadmap_id, phase, section, title, tier, order_index, description?, **parent_id?** (self-ref → subtopics are completable child nodes)
 - **user_progress** — user_id, node_id, status
@@ -73,9 +73,10 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 
 | Method & Path | Purpose |
 |---|---|
-| `POST /api/activities/` | Create activity; auto-schedules 4 reviews (+3/+7/+14/+30d) if difficulty ≥ 4 **or** needed_hint |
+| `GET /api/activities/` | List the user's captured activities (Knowledge Vault), newest first |
+| `POST /api/activities/` | Create activity; initializes SM-2 state and schedules a **Day-0 baseline review due now** (every activity, no gate) |
 | `GET /api/reviews/due` | Due reviews (status='due', scheduled_for ≤ now) with activity eager-loaded |
-| `POST /api/reviews/{id}/complete` | Complete with `rating`(easy/med/hard, schema-constrained) + optional `recalled`; IDOR-protected (400 if done, 404 if not owned) |
+| `POST /api/reviews/{id}/complete` | Complete with `rating`(easy/med/hard, schema-constrained) + optional `recalled`; IDOR-protected (400 if done, 404 if not owned). **Advances SM-2 state and schedules the next review.** |
 | `GET /api/dashboard/` | due_count, consistency_window, daily_progress, total_activities, total_reviews_completed |
 | `GET /api/roadmaps/` | List with server-computed `progress_pct` |
 | `GET /api/roadmaps/{id}` | Roadmap + nodes + per-node user status |
@@ -83,7 +84,7 @@ The frontend talks **only** to FastAPI; Supabase is auth + managed Postgres. Fas
 
 ## Core loop & metrics
 
-- **Scheduling:** difficulty ≥ 4 OR needed_hint → 4 reviews at +3/+7/+14/+30 days (fixed in v1; adaptive Easy/Med/Hard in v2).
+- **Scheduling (SM-2):** every logged activity is one SM-2 "card" (state on the activity: `ease_factor`/`repetitions`/`interval_days`, plus denormalized `last_reviewed_at`/`next_review_at`). Logging schedules a **Day-0 baseline review due now** (proves the loop instantly, beats the "dead week"). Completing it starts the ladder: +1d → +6d → `round(interval × ease_factor)`. Each completion maps `rating`+`recalled` → quality 0–5 (`recalled=False`→2 lapse→reset to 1d; else hard/med/easy→3/4/5), persists `quality` on the review, and schedules the **next** review. On lapse `repetitions` resets to **1** (so the next pass jumps to 6d — avoids an awkward 1d→1d). Logic in `services/scheduler.py` (`initial_review_for_activity`, `quality_from_outcome`, `apply_sm2`). FSRS is the v2 successor.
 - **Learning Momentum** = 40% Consistency + 25% Completion + 20% Review Compliance + 15% Balance.
 - **Retention Strength:** Mastered ≥90%, Strong 75–89%, Developing 50–74%, Weak <50% (recall: Easy=100, Med=70, Hard=30).
 - **Roadmaps:** React Flow + dagre flowchart. Left-click=complete, right-click=notes/link, double-click=subtopics. Camera follows progress. **Download PDF** button (jsPDF, styled). **10 seeded roadmaps** (each has a `seed_*.py`, idempotent, fixed UUID): Python for SWE, DSA—Striver A2Z, DSA—NeetCode 150 (links to neetcode.io), Core CS (OS/DBMS/Networks), Aptitude, Web Dev, System Design, Python Backend, SQL, AI Engineering. DSA is language-independent (no C++/Java split). `phase`=sub-track (step spine), `tier`∈{easy,medium,hard}.
@@ -109,10 +110,11 @@ Env: `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fronten
 
 ## Status & next priorities
 
-- **Phase 0 done. Phase 1 core loop: mostly wired, but the ENTRY POINT is broken — `LogActivity.jsx` is still a UI-only mock (no field state, no `apiFetch`, the "Log & Schedule Review" button has no `onClick`). Activities cannot be created via the UI yet, so nothing downstream (reviews/dashboard) can be exercised by a real user. Backend `POST /api/activities/` works; the form just isn't connected.**
-- **Done since:** Home/Roadmaps/Analytics wired to live data (Analytics shows real stats + honest "Phase 2" placeholders, no fabricated numbers). **Review flow wired with the retrieval gate** (commit-before-reveal: type a free-recall answer or "I don't know" before reveal; then key_memory + your attempt + prior mistake; Easy/Med/Hard rating). Dark mode (Profile toggle). Landing/Login redesigned. 10 roadmaps seeded + PDF export.
-- **Next (high-leverage, in order):** (1) **Wire `LogActivity.jsx` → `POST /api/activities/`** — the loop's dead entry point; #1 blocker, nothing in the funnel works until this is done. (2) node-complete → pre-filled Log modal (design doc §9b — closes the roadmap→loop). (3) funnel/activation events. (4) SM-2.
-- **Phase 2:** SM-2 then FSRS scheduling (rating+recalled already captured for it), real momentum/retention metrics, Re-entry Mode.
+- **Phase 0 done. Phase 1 core loop is now end-to-end wired through the UI:** `LogActivity.jsx` → `POST /api/activities/` → auto-scheduled reviews → `/reviews/due` → Review retrieval gate → `/complete` → dashboard. A real user can now create an activity and exercise everything downstream. (Backend `POST /api/activities/` already worked; the form is now connected: field state, `apiFetch`, submit gated on Topic+Key Memory, redirect to Home on success.)
+- **Done since:** **SM-2 adaptive scheduling live** (every activity is a card; first review +1d → +6d → ×ease-factor; completion maps rating+recalled → quality and schedules the next review; state on `activities`, logic in `services/scheduler.py`, migration `a7c3d9e1b240`). **`LogActivity.jsx` wired** (Topic/Key Memory/Mistake/Difficulty/needed-hint → `POST /api/activities/`; redirect Home). Home/Roadmaps/Analytics wired to live data (Analytics shows real stats + honest "Phase 2" placeholders, no fabricated numbers). **Review flow wired with the retrieval gate** (commit-before-reveal: type a free-recall answer or "I don't know" before reveal; then key_memory + your attempt + prior mistake; Easy/Med/Hard rating). Dark mode (Profile toggle). Landing/Login redesigned. 10 roadmaps seeded + PDF export.
+- **Done since:** **Knowledge Vault** (`KnowledgeVault.jsx` + `GET /api/activities/`) — browse all captured key-memories with client-side search; read-only for now. **Source Type** field on activities (`source_type`, Vault badge). **Activation funnel** = `docs/funnel.sql` (run in Supabase SQL editor): signup→logged→reviewed→returned + per-user breakdown + captures-by-source, derived from existing data (no instrumentation). Current cohort: 3 signups, 1 activated/reviewed/retained.
+- **Next (high-leverage, in order):** (1) **deploy for first users** (mostly ops: Vercel root=frontend, Render/Railway root=backend, env vars, CORS allow-list, `alembic upgrade head`). (2) node-complete → pre-filled Log modal (design doc §9b — closes the roadmap→loop). (3) Logged Reviews Vault (review history) — post-launch. (4) grow `ActivityCreate` to actually persist Track/Roadmap/Activity-Type (currently UI-only). (5) in-app funnel endpoint + admin login UI once past the first cohort.
+- **Phase 2:** FSRS scheduling (SM-2 done; rating+recalled feed it), real momentum/retention metrics, Re-entry Mode.
 
 ## Decisions / conventions (this build)
 - **Product thesis:** "Track what you remember, not what you complete." Rule: **ship the mechanic, freeze the intelligence.** Goal = 20 real users + activation funnel. (Full rationale: user's design-decisions doc.)
@@ -122,7 +124,7 @@ Env: `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fronten
 - **Supabase MCP** (read-only) configured in `.mcp.json` — good for read-only DB verification.
 
 ## Known debt
-- **`LogActivity.jsx` is NOT wired** — pure mock (no state, no `apiFetch`, button has no `onClick`); Track/Roadmap/Activity-Type selects are hardcoded options. The core loop's entry point. Highest-priority fix.
+- **`LogActivity.jsx` fields** = Topic, Source Type, Key Memory, Mistake?, Difficulty, needed-hint — all wired to `POST /api/activities/`. The unwired Track/Roadmap/Activity-Type/Retention selects (UI-only, two with hardcoded fake options) were **removed** to cut logging friction; re-add **real** Track/Roadmap pickers when the backend models them. `source_type` (problem/lecture/video/…) is a plain nullable string, surfaced as a Vault badge; consumed by analytics later. NOTE: post-SM-2, `difficulty`/`needed_hint` no longer gate scheduling (all activities schedule) — kept as cheap signals for future FSRS/metrics + Vault badges.
 - Momentum / Retention Strength / Review Compliance are Phase-2 (Analytics shows them as labelled placeholders).
 - Dev "Copy JWT" button in `Profile.jsx` pending pre-prod cleanup.
 - Roadmap progress counts subtopics as nodes. DSA roadmaps are topic/problem-level, not full A2Z problem list.
