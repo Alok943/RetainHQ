@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, ChevronLeft, Sparkles, PenLine, Brain, CalendarClock, Vault } from 'lucide-react';
 
-const DISMISSED_KEY = 'retainhq_onboarding_dismissed';
+const DISMISSED_KEY = 'retainhq_onboarding_dismiss_count';
+const MIN_DISMISS_COUNT = 2; // show at least on first 2 visits
 
 const STEPS = [
   {
@@ -58,20 +59,29 @@ const STEPS = [
 ];
 
 export default function OnboardingGuide() {
-  const [dismissed, setDismissed] = useState(true); // default hidden to avoid flash
+  const [visible, setVisible] = useState(false); // default hidden to avoid flash
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0); // -1 = left, 1 = right, 0 = initial
   const [animating, setAnimating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const wasDismissed = localStorage.getItem(DISMISSED_KEY);
-    if (!wasDismissed) setDismissed(false);
+    const count = parseInt(localStorage.getItem(DISMISSED_KEY) || '0', 10);
+    if (count < MIN_DISMISS_COUNT) setVisible(true);
   }, []);
 
+  // Explicit dismiss (X button or "Get started!") — increments counter
   const dismiss = () => {
-    setDismissed(true);
-    localStorage.setItem(DISMISSED_KEY, 'true');
+    setVisible(false);
+    const count = parseInt(localStorage.getItem(DISMISSED_KEY) || '0', 10);
+    localStorage.setItem(DISMISSED_KEY, String(count + 1));
+  };
+
+  // Soft hide (action links like "Try logging") — hides card for this
+  // page view but does NOT increment counter, so it reappears next visit
+  const hideAndNavigate = (path) => {
+    setVisible(false);
+    navigate(path);
   };
 
   const goTo = (nextStep) => {
@@ -84,7 +94,7 @@ export default function OnboardingGuide() {
     }, 250);
   };
 
-  if (dismissed) return null;
+  if (!visible) return null;
 
   const step = STEPS[currentStep];
   const Icon = step.icon;
@@ -160,8 +170,7 @@ export default function OnboardingGuide() {
               className="onboarding-action-link"
               style={{ color: step.accentColor }}
               onClick={() => {
-                dismiss();
-                navigate(step.action.path);
+                hideAndNavigate(step.action.path);
               }}
             >
               {step.action.label}
