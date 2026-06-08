@@ -146,7 +146,7 @@ function RoadmapDetail() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await apiFetch(`/api/roadmaps/${id}`);
+        const data = await apiFetch(`/api/roadmaps/${id}`, { optionalAuth: true });
         setMeta({ title: data.title, description: data.description });
         setRawNodes(data.nodes);
         const sm = {};

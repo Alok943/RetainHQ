@@ -7,25 +7,28 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
  * as a Bearer token to every request.
  */
 export const apiFetch = async (endpoint, options = {}) => {
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
-  if (sessionError || !session) {
-    console.error('No active session found, redirecting to login or failing request.');
+  // optionalAuth: allow the call to proceed without a session (public reads,
+  // e.g. roadmaps). The Bearer token is still attached when a session exists.
+  const { optionalAuth = false, ...fetchOptions } = options;
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session && !optionalAuth) {
+    console.error('No active session found, failing request.');
     throw new Error('Not authenticated');
   }
 
-  const token = session.access_token;
-  
   const headers = {
     'Content-Type': 'application/json',
-    ...options.headers,
-    'Authorization': `Bearer ${token}`
+    ...fetchOptions.headers,
   };
+  if (session) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
 
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
-  
+
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers
   });
 

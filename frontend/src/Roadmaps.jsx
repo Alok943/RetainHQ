@@ -115,7 +115,7 @@ function Roadmaps() {
     async function fetchRoadmaps() {
       try {
         // Backend returns each roadmap with real progress computed server-side
-        const data = await apiFetch('/api/roadmaps/');
+        const data = await apiFetch('/api/roadmaps/', { optionalAuth: true });
         setRoadmaps(data);
       } catch (err) {
         console.error('Failed to load roadmaps:', err);
