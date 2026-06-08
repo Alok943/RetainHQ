@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Map, ListChecks, ArrowRight,
+  Map, ListChecks, ArrowRight, Plus,
   Binary, Database, Globe, Server, Sparkles, Code2, Cpu, Calculator,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -112,10 +112,6 @@ function Roadmaps() {
   const { session } = useAuth();
 
   useEffect(() => {
-    if (!session) {
-      setLoading(false);
-      return;
-    }
     async function fetchRoadmaps() {
       try {
         // Backend returns each roadmap with real progress computed server-side
@@ -167,6 +163,31 @@ function Roadmaps() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5 mb-4">
+          <Sparkles size={16} className="text-[#0F172A]" /> Custom Roadmaps
+        </h2>
+        
+        <div className="kinetic-card bg-[rgba(15,23,42,0.02)] p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 border-dashed border-2 border-[rgba(15,23,42,0.1)] justify-between">
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="font-sans text-lg font-semibold text-[#0F172A] mb-2 flex items-center justify-center md:justify-start gap-2">
+              Bring Your Own Path
+              <span className="bg-[#0891B2]/10 text-[#0891B2] text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">
+                Coming Soon
+              </span>
+            </h3>
+            <p className="font-sans text-sm text-[#64748B] leading-relaxed max-w-xl">
+              Soon you'll be able to create custom roadmaps or upload your own curriculum (like a university syllabus or bootcamp schedule) and track your retention node-by-node.
+            </p>
+          </div>
+          <div className="shrink-0 flex gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white border border-[rgba(15,23,42,0.08)] flex items-center justify-center shadow-sm">
+              <Plus size={20} className="text-[#94a3b8]" />
+            </div>
+          </div>
+        </div>
       </section>
 
     </div>

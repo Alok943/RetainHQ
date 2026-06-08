@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, get_optional_user
 from app.core.security import SupabaseUser
 from app.models.models import Roadmap, RoadmapNode, UserProgress
 from app.schemas.roadmap import (
@@ -27,10 +27,10 @@ def _pct(done: int, total: int) -> int:
 @router.get("/", response_model=List[RoadmapListItem])
 async def list_roadmaps(
     db: AsyncSession = Depends(get_db),
-    current_user: SupabaseUser = Depends(get_current_user),
+    current_user: SupabaseUser | None = Depends(get_optional_user),
 ):
     """List all roadmaps with the current user's real progress computed server-side."""
-    user_id = uuid.UUID(current_user.id)
+    user_id = uuid.UUID(current_user.id) if current_user else None
 
     done_node = case((UserProgress.status == "done", UserProgress.node_id))
     stmt = (
@@ -45,7 +45,8 @@ async def list_roadmaps(
         .outerjoin(
             UserProgress,
             (UserProgress.node_id == RoadmapNode.id)
-            & (UserProgress.user_id == user_id),
+            & (UserProgress.user_id == user_id)
+            if user_id else False,
         )
         .group_by(Roadmap.id, Roadmap.title, Roadmap.description)
         .order_by(Roadmap.created_at)
@@ -72,10 +73,10 @@ async def list_roadmaps(
 async def get_roadmap(
     roadmap_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: SupabaseUser = Depends(get_current_user),
+    current_user: SupabaseUser | None = Depends(get_optional_user),
 ):
     """Return a roadmap with all its nodes and the current user's progress per node."""
-    user_id = uuid.UUID(current_user.id)
+    user_id = uuid.UUID(current_user.id) if current_user else None
 
     roadmap = (
         await db.execute(select(Roadmap).where(Roadmap.id == roadmap_id))
@@ -97,15 +98,17 @@ async def get_roadmap(
     )
 
     # This user's progress for these nodes -> {node_id: status}
-    progress_rows = (
-        await db.execute(
-            select(UserProgress.node_id, UserProgress.status).where(
-                UserProgress.user_id == user_id,
-                UserProgress.node_id.in_([n.id for n in nodes]) if nodes else False,
+    status_by_node = {}
+    if user_id:
+        progress_rows = (
+            await db.execute(
+                select(UserProgress.node_id, UserProgress.status).where(
+                    UserProgress.user_id == user_id,
+                    UserProgress.node_id.in_([n.id for n in nodes]) if nodes else False,
+                )
             )
-        )
-    ).all()
-    status_by_node = {nid: st for nid, st in progress_rows}
+        ).all()
+        status_by_node = {nid: st for nid, st in progress_rows}
 
     node_out = [
         RoadmapNodeOut(

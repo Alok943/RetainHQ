@@ -144,10 +144,6 @@ function RoadmapDetail() {
   const { session, requireAuth } = useAuth();
   
   useEffect(() => {
-    if (!session) {
-      setLoading(false);
-      return;
-    }
     async function load() {
       try {
         const data = await apiFetch(`/api/roadmaps/${id}`);
