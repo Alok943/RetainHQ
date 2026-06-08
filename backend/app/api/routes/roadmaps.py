@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, false
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_current_user, get_optional_user
@@ -46,7 +46,7 @@ async def list_roadmaps(
             UserProgress,
             (UserProgress.node_id == RoadmapNode.id)
             & (UserProgress.user_id == user_id)
-            if user_id else False,
+            if user_id else false(),
         )
         .group_by(Roadmap.id, Roadmap.title, Roadmap.description)
         .order_by(Roadmap.created_at)
@@ -99,12 +99,12 @@ async def get_roadmap(
 
     # This user's progress for these nodes -> {node_id: status}
     status_by_node = {}
-    if user_id:
+    if user_id and nodes:
         progress_rows = (
             await db.execute(
                 select(UserProgress.node_id, UserProgress.status).where(
                     UserProgress.user_id == user_id,
-                    UserProgress.node_id.in_([n.id for n in nodes]) if nodes else False,
+                    UserProgress.node_id.in_([n.id for n in nodes]),
                 )
             )
         ).all()
