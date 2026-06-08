@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck, LogIn } from 'lucide-react';
+import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck, LogIn, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -25,6 +25,22 @@ function AppLayout() {
   const { theme } = useTheme();
   const { session, showAuthModal } = useAuth();
   
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true' || location.pathname.startsWith('/roadmaps');
+  });
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/roadmaps')) {
+      setIsCollapsed(true);
+    }
+  }, [location.pathname]);
+
+  const toggleCollapse = () => {
+    const newVal = !isCollapsed;
+    setIsCollapsed(newVal);
+    localStorage.setItem('sidebar_collapsed', newVal.toString());
+  };
+
   const logoVariant = theme === 'dark' ? 'light' : 'dark';
 
   const handleSignOut = async () => {
@@ -52,60 +68,67 @@ function AppLayout() {
   return (
     <div className="flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
       {/* LEFT SIDEBAR (Desktop / Tablet) */}
-      <aside className="hidden md:flex flex-col w-[240px] border-r border-[rgba(15,23,42,0.08)] bg-[#f9f9f6] p-6 shrink-0 justify-between">
-        <div>
-          <div className="mb-10">
-            <div className="flex items-center gap-2.5 cursor-pointer w-max" onClick={() => navigate('/dashboard')}>
-              <Logo variant={logoVariant} className="h-7 w-auto" />
-              <h1 className="font-sans font-semibold text-2xl tracking-tight text-[#0F172A]">RetainHQ</h1>
+      <aside className={`hidden md:flex flex-col border-r border-[rgba(15,23,42,0.08)] bg-[#f9f9f6] shrink-0 justify-between transition-all duration-300 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6'}`}>
+        <div className="w-full">
+          <div className={`flex items-center mb-10 ${isCollapsed ? 'flex-col gap-4' : 'justify-between'}`}>
+            <div className="flex items-center gap-2.5 cursor-pointer overflow-hidden" onClick={() => navigate('/dashboard')}>
+              <Logo variant={logoVariant} className="h-7 w-auto shrink-0" />
+              {!isCollapsed && <h1 className="font-sans font-semibold text-2xl tracking-tight text-[#0F172A] whitespace-nowrap">RetainHQ</h1>}
             </div>
+            <button onClick={toggleCollapse} className="text-[#64748B] hover:text-[#0F172A] transition-colors p-1.5 rounded hover:bg-[rgba(15,23,42,0.05)] shrink-0">
+              {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
           </div>
           
-          <nav className="flex flex-col gap-2">
-            <SidebarItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-            <SidebarItem icon={<CheckSquare size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} />
-            <SidebarItem icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
-            <SidebarItem icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
-            <SidebarItem icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
-            {isAdmin && <SidebarItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
+          <nav className={`flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
+            <SidebarItem isCollapsed={isCollapsed} icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<CheckSquare size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
+            {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
           </nav>
           
           <div className="mt-8">
             <button 
               onClick={() => navigate('/log')}
-              className="kinetic-btn kinetic-accent-gradient w-full py-3 text-sm flex items-center justify-center gap-2"
+              title={isCollapsed ? 'Log Activity' : undefined}
+              className={`kinetic-btn kinetic-accent-gradient w-full py-3 text-sm flex items-center justify-center gap-2 ${isCollapsed ? 'px-0' : ''}`}
             >
-              <PlusSquare size={16} /> Log Activity
+              <PlusSquare size={16} className="shrink-0" /> {!isCollapsed && <span className="whitespace-nowrap">Log Activity</span>}
             </button>
           </div>
         </div>
 
         {/* User Profile Area */}
-        <div className="flex flex-col gap-4 pt-6 border-t border-[rgba(15,23,42,0.08)]">
+        <div className={`w-full flex ${isCollapsed ? 'flex-col items-center' : 'flex-col'} gap-4 pt-6 border-t border-[rgba(15,23,42,0.08)]`}>
           {session ? (
             <>
               <div 
                 onClick={() => navigate('/profile')}
-                className="flex items-center gap-3 cursor-pointer p-2 -mx-2 hover:bg-[rgba(15,23,42,0.03)] rounded transition-colors"
+                title={isCollapsed ? email : undefined}
+                className={`flex items-center gap-3 cursor-pointer p-2 hover:bg-[rgba(15,23,42,0.03)] rounded transition-colors ${isCollapsed ? 'justify-center mx-0' : '-mx-2'}`}
               >
                 <div className="h-8 w-8 bg-[#131b2e] rounded-full flex items-center justify-center text-xs font-mono font-medium text-white shrink-0">
                   {initials}
                 </div>
-                <span className="text-sm font-semibold text-[#0F172A] truncate" title={email}>{email}</span>
+                {!isCollapsed && <span className="text-sm font-semibold text-[#0F172A] truncate" title={email}>{email}</span>}
               </div>
               <button 
                 onClick={handleSignOut}
-                className="flex items-center gap-2 text-xs font-semibold text-[#64748B] hover:text-[#B91C1C] transition-colors pl-2"
+                title={isCollapsed ? 'Sign Out' : undefined}
+                className={`flex items-center gap-2 text-xs font-semibold text-[#64748B] hover:text-[#B91C1C] transition-colors ${isCollapsed ? 'justify-center p-2' : 'pl-2'}`}
               >
-                <LogOut size={14} /> Sign Out
+                <LogOut size={14} className="shrink-0" /> {!isCollapsed && 'Sign Out'}
               </button>
             </>
           ) : (
             <button 
               onClick={showAuthModal}
-              className="flex items-center gap-2 text-sm font-semibold text-[#0891B2] hover:text-[#06B6D4] transition-colors pl-2"
+              title={isCollapsed ? 'Sign In to Save Data' : undefined}
+              className={`flex items-center gap-2 text-sm font-semibold text-[#0891B2] hover:text-[#06B6D4] transition-colors ${isCollapsed ? 'justify-center p-2' : 'pl-2'}`}
             >
-              <LogIn size={16} /> Sign In to Save Data
+              <LogIn size={16} className="shrink-0" /> {!isCollapsed && 'Sign In'}
             </button>
           )}
         </div>
@@ -173,16 +196,19 @@ function AppLayout() {
   );
 }
 
-function SidebarItem({ icon, label, active, onClick }) {
+function SidebarItem({ icon, label, active, onClick, isCollapsed }) {
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded text-sm font-medium transition-colors w-full text-left ${
+      title={isCollapsed ? label : undefined}
+      className={`flex items-center gap-3 py-3 rounded text-sm font-medium transition-colors w-full ${
+        isCollapsed ? 'justify-center px-0' : 'px-4 text-left'
+      } ${
         active ? 'bg-[rgba(15,23,42,0.05)] text-[#0891B2]' : 'text-[#64748B] hover:bg-[rgba(15,23,42,0.02)] hover:text-[#0F172A]'
       }`}
     >
-      {icon}
-      <span>{label}</span>
+      <div className="shrink-0">{icon}</div>
+      {!isCollapsed && <span className="truncate">{label}</span>}
     </button>
   );
 }
