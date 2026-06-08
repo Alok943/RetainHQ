@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { useAuth } from './lib/AuthContext';
 import ReactFlow, {
   Background,
   Controls,
@@ -140,7 +141,13 @@ function RoadmapDetail() {
   }, []);
 
   // Fetch roadmap detail
+  const { session, requireAuth } = useAuth();
+  
   useEffect(() => {
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     async function load() {
       try {
         const data = await apiFetch(`/api/roadmaps/${id}`);
@@ -255,6 +262,8 @@ function RoadmapDetail() {
   /* ---- interactions ---- */
 
   const toggleComplete = useCallback(async (nodeId) => {
+    if (!requireAuth()) return;
+    
     const cur = statusMap[nodeId] || 'not_started';
     const next = cur === 'done' ? 'not_started' : 'done';
     setStatusMap((m) => ({ ...m, [nodeId]: next })); // optimistic

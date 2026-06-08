@@ -3,6 +3,7 @@ import { Database, Search, AlertCircle, Plus, Key, Clock, AlertTriangle, CheckCi
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
+import { useAuth } from './lib/AuthContext';
 
 const SOURCE_LABELS = {
   problem: 'Problem', lecture: 'Lecture', video: 'Video', book: 'Book',
@@ -29,8 +30,13 @@ function KnowledgeVault() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
+  const { session, requireAuth } = useAuth();
 
   useEffect(() => {
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     apiFetch('/api/activities/')
       .then((data) => setActivities(data))
       .catch((err) => setError(err.message))
@@ -91,7 +97,7 @@ function KnowledgeVault() {
             Log a learning session and the key memory you want to retain will live here.
           </p>
           <button
-            onClick={() => navigate('/log')}
+            onClick={() => requireAuth(() => navigate('/log'))}
             className="kinetic-btn kinetic-accent-gradient px-6 py-2.5 text-sm mt-1 flex items-center gap-2"
           >
             <Plus size={16} /> Log your first activity

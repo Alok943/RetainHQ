@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { BarChart2, CalendarCheck, Zap, ClipboardList, Target, Lock, TrendingUp, BrainCircuit } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import ComingSoonBanner from './ComingSoon';
+import { useAuth } from './lib/AuthContext';
 
 function Analytics() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { session } = useAuth();
 
   useEffect(() => {
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     apiFetch('/api/dashboard/')
       .then(setStats)
       .catch((e) => setError(e.message))

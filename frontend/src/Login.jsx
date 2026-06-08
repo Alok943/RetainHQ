@@ -1,9 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
 import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles } from 'lucide-react';
 
 function Login() {
+  const navigate = useNavigate();
+  
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -12,10 +15,10 @@ function Login() {
     if (error) console.error('Error logging in:', error.message);
   };
 
-  // Primary CTA — value-led label; Google is the only auth mechanism.
+  // Primary CTA navigates to dashboard for PLG exploration.
   const GetStarted = ({ className = '' }) => (
     <button
-      onClick={handleGoogleLogin}
+      onClick={() => navigate('/dashboard')}
       className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold px-7 py-3.5 text-white bg-gradient-to-r from-[#0891B2] to-[#06B6D4] shadow-lg shadow-[#0891B2]/25 hover:-translate-y-0.5 hover:shadow-[#0891B2]/40 transition-all ${className}`}
     >
       Get Started <ArrowRight size={17} />

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
+import { useAuth } from './lib/AuthContext';
 
 // Per-roadmap visual identity, matched by title keyword (no backend change).
 // First matching rule wins; order matters (specific before generic).
@@ -108,8 +109,13 @@ function Roadmaps() {
   const navigate = useNavigate();
   const [roadmaps, setRoadmaps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { session } = useAuth();
 
   useEffect(() => {
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     async function fetchRoadmaps() {
       try {
         // Backend returns each roadmap with real progress computed server-side

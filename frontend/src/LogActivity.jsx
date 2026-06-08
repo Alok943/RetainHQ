@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers, CheckCircle2 } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
+import { useAuth } from './lib/AuthContext';
 
 const SOURCE_TYPES = [
   { value: 'problem', label: 'Problem Solving' },
@@ -28,11 +29,38 @@ function LogActivity() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const { requireAuth } = useAuth();
+
+  // Persist draft to localStorage so it survives an OAuth redirect
+  useEffect(() => {
+    const draft = localStorage.getItem('retainhq_log_draft');
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.topic) setTopic(parsed.topic);
+        if (parsed.sourceType) setSourceType(parsed.sourceType);
+        if (parsed.keyMemory) setKeyMemory(parsed.keyMemory);
+        if (parsed.mistake) setMistake(parsed.mistake);
+        if (parsed.difficulty) setDifficulty(parsed.difficulty);
+        if (parsed.neededHint !== undefined) setNeededHint(parsed.neededHint);
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    const draft = { topic, sourceType, keyMemory, mistake, difficulty, neededHint };
+    localStorage.setItem('retainhq_log_draft', JSON.stringify(draft));
+  }, [topic, sourceType, keyMemory, mistake, difficulty, neededHint]);
 
   const canSubmit = topic.trim().length > 0 && keyMemory.trim().length > 0 && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
+    
+    // Protect action: pops modal if not logged in
+    const isAuthed = requireAuth();
+    if (!isAuthed) return;
+
     setSubmitting(true);
     setError(null);
     try {
@@ -47,7 +75,8 @@ function LogActivity() {
           source_type: sourceType,
         }),
       });
-      navigate('/');
+      localStorage.removeItem('retainhq_log_draft');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message);
       setSubmitting(false);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
+import { useAuth } from './lib/AuthContext';
 
 // Each post-reveal choice carries BOTH signals at once:
 //   recalled = objective (did they reconstruct it?)   rating = subjective (how hard it felt)
@@ -17,6 +18,7 @@ function Review({ onBack }) {
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { session } = useAuth();
 
   // Per-card state
   const [revealed, setRevealed] = useState(false);
@@ -25,6 +27,10 @@ function Review({ onBack }) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     apiFetch('/api/reviews/due')
       .then((data) => setReviews(data))
       .catch((err) => setError(err.message))

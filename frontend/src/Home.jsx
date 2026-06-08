@@ -3,6 +3,7 @@ import { Play, TrendingUp, BookOpen, AlertCircle, Clock, Activity, Target, Check
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import OnboardingGuide from './OnboardingGuide';
+import { useAuth } from './lib/AuthContext';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -24,9 +25,15 @@ function Home({ onStartReviews }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const { session, requireAuth } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
+    if (!session) {
+      setLoading(false);
+      return;
+    }
+
     Promise.all([
       apiFetch('/api/dashboard/'),
       apiFetch('/api/reviews/due'),
@@ -95,7 +102,7 @@ function Home({ onStartReviews }) {
                   </div>
                 </div>
                 <button
-                  onClick={onStartReviews}
+                  onClick={() => requireAuth(onStartReviews)}
                   className="kinetic-btn kinetic-accent-gradient w-full md:w-48 py-3.5 mt-auto"
                 >
                   <Play size={16} fill="currentColor" /> Start Reviews
