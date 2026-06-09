@@ -144,12 +144,12 @@ function Roadmaps() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="kinetic-card bg-white p-5 flex gap-4 items-center animate-pulse">
-                <div className="w-16 h-16 rounded-full bg-slate-100 shrink-0" />
+              <div key={i} className="kinetic-card bg-white p-5 flex gap-4 items-center">
+                <div className="skeleton w-16 h-16 rounded-full shrink-0" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-4 bg-slate-100 rounded w-2/3" />
-                  <div className="h-3 bg-slate-100 rounded w-full" />
-                  <div className="h-3 bg-slate-100 rounded w-1/3" />
+                  <div className="skeleton h-4 w-2/3" />
+                  <div className="skeleton h-3 w-full" />
+                  <div className="skeleton h-3 w-1/3" />
                 </div>
               </div>
             ))}

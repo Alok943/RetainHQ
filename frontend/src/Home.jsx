@@ -76,7 +76,12 @@ function Home({ onStartReviews }) {
         {/* Reviews Due Section */}
         <section>
           {loadingReviews ? (
-            <div className="kinetic-card animate-pulse h-32 bg-white/50" />
+            <div className="kinetic-card flex flex-col gap-3">
+              <div className="skeleton h-3 w-32" />
+              <div className="skeleton h-6 w-2/3" />
+              <div className="skeleton h-3 w-40" />
+              <div className="skeleton h-11 w-44 mt-3 rounded-lg" />
+            </div>
           ) : fetchError ? (
             <div className="kinetic-card flex items-center gap-4 text-[#ba1a1a]">
               <AlertCircle size={20} />
@@ -174,9 +179,16 @@ function Home({ onStartReviews }) {
 
           <div className="kinetic-card">
             {loadingActivities ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-slate-100 rounded w-3/4" />
-                <div className="h-4 bg-slate-100 rounded w-1/2" />
+              <div className="flex flex-col gap-5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex gap-4 items-start">
+                    <div className="skeleton w-6 h-6 rounded-full shrink-0" />
+                    <div className="flex-1 flex flex-col gap-2">
+                      <div className="skeleton h-3.5 w-1/2" />
+                      <div className="skeleton h-3 w-3/4" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : activities.length > 0 ? (
               <div className="flex flex-col gap-0 relative">

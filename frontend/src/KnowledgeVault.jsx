@@ -81,7 +81,11 @@ function KnowledgeVault() {
       {loading ? (
         <div className="flex flex-col gap-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="kinetic-card animate-pulse h-28 bg-white/50" />
+            <div key={i} className="kinetic-card flex flex-col gap-3">
+              <div className="skeleton h-4 w-1/2" />
+              <div className="skeleton h-3 w-3/4" />
+              <div className="skeleton h-3 w-1/3" />
+            </div>
           ))}
         </div>
       ) : error ? (
