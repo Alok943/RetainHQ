@@ -23,29 +23,37 @@ function Home({ onStartReviews }) {
   const [dashboard, setDashboard] = useState(null);
   const [dueReviews, setDueReviews] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Independent loading per section so each paints the moment its own call returns,
+  // instead of the whole page waiting on the slowest of three requests.
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [loadingActivities, setLoadingActivities] = useState(true);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const { session, requireAuth } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     if (!session) {
-      setLoading(false);
+      setLoadingReviews(false);
+      setLoadingActivities(false);
+      setLoadingDashboard(false);
       return;
     }
 
-    Promise.all([
-      apiFetch('/api/dashboard/'),
-      apiFetch('/api/reviews/due'),
-      apiFetch('/api/activities/'),
-    ])
-      .then(([dashData, reviewsData, activitiesData]) => {
-        setDashboard(dashData);
-        setDueReviews(reviewsData);
-        setActivities(activitiesData);
-      })
+    apiFetch('/api/reviews/due')
+      .then(setDueReviews)
       .catch((err) => setFetchError(err.message))
-      .finally(() => setLoading(false));
+      .finally(() => setLoadingReviews(false));
+
+    apiFetch('/api/activities/')
+      .then(setActivities)
+      .catch(() => {})
+      .finally(() => setLoadingActivities(false));
+
+    apiFetch('/api/dashboard/')
+      .then(setDashboard)
+      .catch(() => {})
+      .finally(() => setLoadingDashboard(false));
   }, []);
 
   const topReview = dueReviews[0] ?? null;
@@ -62,12 +70,12 @@ function Home({ onStartReviews }) {
         {/* Momentum & Stats (Visible on Mobile/Tablet, Hidden on Desktop where Right Rail takes over) */}
         <div className="flex flex-col gap-6 lg:hidden">
           <MomentumCard />
-          <QuickStats dashboard={dashboard} loading={loading} />
+          <QuickStats dashboard={dashboard} loading={loadingDashboard} />
         </div>
 
         {/* Reviews Due Section */}
         <section>
-          {loading ? (
+          {loadingReviews ? (
             <div className="kinetic-card animate-pulse h-32 bg-white/50" />
           ) : fetchError ? (
             <div className="kinetic-card flex items-center gap-4 text-[#ba1a1a]">
@@ -165,7 +173,7 @@ function Home({ onStartReviews }) {
           </div>
 
           <div className="kinetic-card">
-            {loading ? (
+            {loadingActivities ? (
               <div className="animate-pulse space-y-4">
                 <div className="h-4 bg-slate-100 rounded w-3/4" />
                 <div className="h-4 bg-slate-100 rounded w-1/2" />
@@ -206,7 +214,7 @@ function Home({ onStartReviews }) {
       {/* --- RIGHT RAIL (Visible only on Desktop lg+) --- */}
       <aside className="hidden lg:flex flex-col w-[320px] shrink-0 gap-6">
         <MomentumCard />
-        <QuickStats dashboard={dashboard} loading={loading} />
+        <QuickStats dashboard={dashboard} loading={loadingDashboard} />
       </aside>
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
