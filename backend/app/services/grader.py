@@ -26,6 +26,7 @@ class GraderVerdict(BaseModel):
     verdict: Literal["correct", "partial", "incorrect"]
     recalled: bool          # objective: did they reconstruct the key idea?
     feedback: str           # one short sentence, shown after reveal
+    revision_note: str      # 2-4 crisp points of what to remember, grounded in the reference
 
 
 _SYSTEM_PROMPT = (
@@ -37,7 +38,12 @@ _SYSTEM_PROMPT = (
     "3. 'correct' = key idea fully captured; 'partial' = some of it; 'incorrect' = missing or wrong.\n"
     "4. 'recalled' is true for correct or solid-partial, false otherwise.\n"
     "5. feedback: ONE short, encouraging sentence naming what they missed (if anything).\n"
-    'Respond ONLY as JSON: {"verdict": "correct|partial|incorrect", "recalled": true|false, "feedback": "..."}'
+    "6. revision_note: 2-4 short bullet lines (each prefixed with '- ') of the most crucial "
+    "points to remember for this topic. Ground it in the REFERENCE answer; you may add a "
+    "directly-related point ONLY if you are highly confident it is correct. Keep it concise "
+    "and factual — never invent specifics you are unsure about.\n"
+    'Respond ONLY as JSON: {"verdict": "correct|partial|incorrect", "recalled": true|false, '
+    '"feedback": "...", "revision_note": "- point one\\n- point two"}'
 )
 
 
@@ -56,6 +62,7 @@ async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderV
             verdict="incorrect",
             recalled=False,
             feedback="No answer given — review the key memory and try again next time.",
+            revision_note=key_memory.strip() or "Review the key memory for this topic.",
         )
 
     # Lazy import so the app runs fine without the `groq` package installed.
@@ -81,7 +88,7 @@ async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderV
             ],
             response_format={"type": "json_object"},
             temperature=0,
-            max_tokens=200,
+            max_tokens=400,  # room for the revision_note in addition to verdict/feedback
         )
         raw = resp.choices[0].message.content
         return GraderVerdict.model_validate_json(raw)

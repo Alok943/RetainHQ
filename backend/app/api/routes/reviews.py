@@ -161,4 +161,5 @@ async def grade_review(
         verdict=verdict.verdict,
         recalled=verdict.recalled,
         feedback=verdict.feedback,
+        revision_note=verdict.revision_note,
     )

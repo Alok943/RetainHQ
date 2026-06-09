@@ -254,7 +254,19 @@ function Review({ onBack }) {
                 {grading ? (
                   <p className="font-sans text-sm text-[#64748B] italic">Grading your recall…</p>
                 ) : (
-                  <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{aiResult.feedback}</p>
+                  <>
+                    <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{aiResult.feedback}</p>
+                    {aiResult.revision_note && (
+                      <div className="mt-3 pt-3 border-t border-[#0891B2]/15">
+                        <div className="font-sans text-[10px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
+                          Revision note
+                        </div>
+                        <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed whitespace-pre-line">
+                          {aiResult.revision_note}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

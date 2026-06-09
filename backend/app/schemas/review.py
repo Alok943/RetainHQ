@@ -37,3 +37,4 @@ class ReviewGradeResponse(BaseModel):
     verdict: Literal["correct", "partial", "incorrect"]
     recalled: bool
     feedback: str
+    revision_note: str
