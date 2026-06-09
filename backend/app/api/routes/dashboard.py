@@ -51,6 +51,9 @@ async def get_dashboard_stats(
             func.array_agg(distinct(cast(Review.completed_at, Date)))
             .filter(Review.status == "completed", Review.completed_at >= seven_days_ago)
             .label("active_dates"),
+            func.min(Review.scheduled_for)
+            .filter(Review.status == "due", Review.scheduled_for > now)
+            .label("next_review"),
         )
         .where(Review.user_id == user_id)
     )
@@ -68,4 +71,5 @@ async def get_dashboard_stats(
         daily_progress=daily_progress,
         total_activities=act.total or 0,
         total_reviews_completed=rev.total_completed or 0,
+        next_review_at=rev.next_review,
     )

@@ -299,10 +299,20 @@ function MomentumCard() {
   );
 }
 
+function formatUpcoming(iso) {
+  const d = new Date(iso);
+  const days = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  if (days < 7) return `in ${days}d`;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function QuickStats({ dashboard, loading }) {
   const dueCount = dashboard?.due_count ?? 0;
   const consistency = dashboard?.consistency_window ?? 0;
   const dailyProgress = dashboard?.daily_progress ?? 0;
+  const nextReviewAt = dashboard?.next_review_at ?? null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -314,13 +324,19 @@ function QuickStats({ dashboard, loading }) {
         </span>
       </div>
 
-      {/* Reviews Due Stat */}
-      <div className="kinetic-card py-3 px-4 flex justify-between items-center bg-white shadow-sm border-l-2 border-l-[#ba1a1a]">
+      {/* Reviews Due / Next Upcoming Stat */}
+      <div className={`kinetic-card py-3 px-4 flex justify-between items-center bg-white shadow-sm border-l-2 ${dueCount > 0 ? 'border-l-[#ba1a1a]' : 'border-l-[#0891B2]'}`}>
         <span className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest flex items-center gap-1.5">
           <Target size={14} /> Upcoming Reviews
         </span>
-        <span className="font-mono text-sm font-medium text-[#ba1a1a]">
-          {loading ? '…' : `${dueCount} Due`}
+        <span className={`font-mono text-sm font-medium ${dueCount > 0 ? 'text-[#ba1a1a]' : 'text-[#0891B2]'}`}>
+          {loading
+            ? '…'
+            : dueCount > 0
+              ? `${dueCount} Due`
+              : nextReviewAt
+                ? `Next ${formatUpcoming(nextReviewAt)}`
+                : 'All clear'}
         </span>
       </div>
 
