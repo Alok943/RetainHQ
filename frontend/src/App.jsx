@@ -176,8 +176,9 @@ function AppLayout() {
             <Route path="analytics" element={<Analytics />} />
             <Route path="profile" element={<Profile />} />
             {isAdmin && <Route path="admin" element={<Admin />} />}
-            {/* Fallback internal route */}
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
+            {/* Fallback internal route — absolute path: a relative "dashboard" inside
+                this splat route appends recursively (/dashboard/dashboard/...) into a loop. */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
 
