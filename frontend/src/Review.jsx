@@ -14,11 +14,13 @@ const OUTCOMES = [
 
 // Map the AI grader's verdict to a suggested outcome chip. Advisory only —
 // the user still clicks to confirm, so a wrong grade never auto-submits.
+// The AI can judge correctness (recalled vs not), but NOT how hard it felt —
+// that's the user's subjective call. So we only suggest the recalled/missed axis
+// and default any successful recall to "Good"; the user nudges to Hard/Easy by feel.
 function suggestedKeyFromAi(ai) {
   if (!ai) return null;
   if (!ai.recalled || ai.verdict === 'incorrect') return 'missed';
-  if (ai.verdict === 'partial') return 'hard';
-  return 'good'; // correct
+  return 'good'; // correct or partial that was still recalled
 }
 
 function Review({ onBack }) {
