@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper, Sparkles } from 'lucide-react';
 import { apiFetch } from './lib/api';
-import ComingSoon from './ComingSoon';
 import { useAuth } from './lib/AuthContext';
 
 // Each post-reveal choice carries BOTH signals at once:
@@ -12,6 +11,15 @@ const OUTCOMES = [
   { key: 'good',   label: 'Good',      rating: 'medium', recalled: true,  color: '#0891B2' },
   { key: 'easy',   label: 'Easy',      rating: 'easy',   recalled: true,  color: '#0F766E' },
 ];
+
+// Map the AI grader's verdict to a suggested outcome chip. Advisory only —
+// the user still clicks to confirm, so a wrong grade never auto-submits.
+function suggestedKeyFromAi(ai) {
+  if (!ai) return null;
+  if (!ai.recalled || ai.verdict === 'incorrect') return 'missed';
+  if (ai.verdict === 'partial') return 'hard';
+  return 'good'; // correct
+}
 
 function Review({ onBack }) {
   const [reviews, setReviews] = useState([]);
@@ -25,6 +33,8 @@ function Review({ onBack }) {
   const [answer, setAnswer] = useState('');
   const [skipped, setSkipped] = useState(false); // user committed "I don't know"
   const [submitting, setSubmitting] = useState(false);
+  const [aiResult, setAiResult] = useState(null); // {verdict, recalled, feedback} | null
+  const [grading, setGrading] = useState(false);
 
   useEffect(() => {
     if (!session) {
@@ -45,12 +55,28 @@ function Review({ onBack }) {
     setRevealed(false);
     setAnswer('');
     setSkipped(false);
+    setAiResult(null);
+    setGrading(false);
   };
 
   const handleReveal = () => {
     if (!committed) return;
     setRevealed(true);
+    // Non-blocking AI grade of the free-recall attempt. Advisory only — any
+    // failure (grader disabled / unavailable) silently falls back to manual rating.
+    if (answer.trim() && current) {
+      setGrading(true);
+      apiFetch(`/api/reviews/${current.id}/grade`, {
+        method: 'POST',
+        body: JSON.stringify({ answer: answer.trim() }),
+      })
+        .then((res) => setAiResult(res))
+        .catch(() => setAiResult(null))
+        .finally(() => setGrading(false));
+    }
   };
+
+  const suggestedKey = suggestedKeyFromAi(aiResult);
 
   const handleOutcome = async (outcome) => {
     if (!current || submitting) return;
@@ -108,15 +134,6 @@ function Review({ onBack }) {
         <button onClick={onBack} className="kinetic-btn kinetic-accent-gradient px-6 py-2.5 text-sm mt-2">
           Back to Dashboard
         </button>
-        {done && (
-          <div className="w-full max-w-md mt-4">
-            <ComingSoon
-              id="review-ai-grading"
-              title="AI-Powered Recall Grading"
-              description="An AI will analyze your recall answers and give you deeper feedback on accuracy."
-            />
-          </div>
-        )}
       </div>
     );
   }
@@ -228,21 +245,42 @@ function Review({ onBack }) {
           </div>
         ) : (
           <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {/* AI grade proposal — advisory; user still picks below */}
+            {(grading || aiResult) && (
+              <div className="w-full mb-5 rounded-lg border border-[#0891B2]/20 bg-[#0891B2]/5 p-4">
+                <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
+                  <Sparkles size={12} /> AI feedback
+                </div>
+                {grading ? (
+                  <p className="font-sans text-sm text-[#64748B] italic">Grading your recall…</p>
+                ) : (
+                  <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{aiResult.feedback}</p>
+                )}
+              </div>
+            )}
             <h3 className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest mb-4">How did it go?</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-              {OUTCOMES.map((o) => (
-                <button
-                  key={o.key}
-                  onClick={() => handleOutcome(o)}
-                  disabled={submitting}
-                  style={{ borderColor: o.color, color: o.color }}
-                  className="kinetic-btn bg-white border py-3 font-semibold text-sm transition-colors disabled:opacity-50"
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; }}
-                >
-                  {o.label}
-                </button>
-              ))}
+              {OUTCOMES.map((o) => {
+                const isSuggested = o.key === suggestedKey;
+                return (
+                  <button
+                    key={o.key}
+                    onClick={() => handleOutcome(o)}
+                    disabled={submitting}
+                    style={{ borderColor: o.color, color: o.color }}
+                    className={`kinetic-btn relative bg-white border py-3 font-semibold text-sm transition-colors disabled:opacity-50 ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; }}
+                  >
+                    {isSuggested && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#0891B2] text-white font-sans text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        Suggested
+                      </span>
+                    )}
+                    {o.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

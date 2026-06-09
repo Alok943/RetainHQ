@@ -83,8 +83,13 @@ class Review(SQLModel, table=True):
     rating: Optional[str] = None # 'easy', 'medium', 'hard' (subjective: how hard it felt)
     recalled: Optional[bool] = None # objective: did they reconstruct it? (got-it / missed-it)
     quality: Optional[int] = None # SM-2 quality grade (0-5) derived from rating+recalled; persisted for analytics
+    # LLM recall grader output (proposal only — user's rating/recalled stay authoritative).
+    # Stored to compute the calibration metric: self-reported `recalled` vs machine `ai_recalled`.
+    ai_verdict: Optional[str] = None   # 'correct' | 'partial' | 'incorrect'
+    ai_recalled: Optional[bool] = None # machine judgement of whether they reconstructed the key idea
+    ai_feedback: Optional[str] = None  # one short sentence shown after reveal
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     activity: Optional[Activity] = Relationship(back_populates="reviews")
 
 class Feedback(SQLModel, table=True):

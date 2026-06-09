@@ -8,9 +8,16 @@ from typing import List
 
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
+from app.core.config import settings
 from app.models.models import Review, Activity
-from app.schemas.review import ReviewResponse, ReviewComplete
+from app.schemas.review import (
+    ReviewResponse,
+    ReviewComplete,
+    ReviewGradeRequest,
+    ReviewGradeResponse,
+)
 from app.services.scheduler import quality_from_outcome, apply_sm2
+from app.services.grader import grade_recall, GraderError
 
 router = APIRouter()
 
@@ -93,3 +100,65 @@ async def complete_review(
     await db.refresh(review)
 
     return review
+
+
+@router.post("/{review_id}/grade", response_model=ReviewGradeResponse)
+async def grade_review(
+    review_id: uuid.UUID,
+    body: ReviewGradeRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Grade a free-recall attempt with the LLM grader (non-blocking proposal).
+
+    The verdict is advisory only — it pre-fills the suggested outcome in the UI but
+    the user's own rating/recalled (sent to /complete) remain authoritative. We persist
+    the AI verdict on the review to compute the self-report-vs-machine calibration metric.
+    """
+    if not settings.GRADER_ENABLED:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Grader is disabled")
+
+    user_id = uuid.UUID(current_user.id)
+
+    # Ownership + still-open check; eager-load the activity for topic/key_memory.
+    stmt = (
+        select(Review)
+        .where(
+            Review.id == review_id,
+            Review.user_id == user_id,
+            Review.status == "due",
+        )
+        .options(selectinload(Review.activity))
+    )
+    review = (await db.execute(stmt)).scalars().first()
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Review not found or already completed",
+        )
+
+    try:
+        verdict = await grade_recall(
+            topic=review.activity.topic,
+            key_memory=review.activity.key_memory,
+            user_answer=body.answer,
+        )
+    except GraderError as e:
+        # Never block the loop on a grader failure — the UI falls back to manual rating.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Grader unavailable: {e}",
+        )
+
+    # Persist the proposal (review stays 'due'; user still completes it manually).
+    review.ai_verdict = verdict.verdict
+    review.ai_recalled = verdict.recalled
+    review.ai_feedback = verdict.feedback
+    db.add(review)
+    await db.commit()
+
+    return ReviewGradeResponse(
+        verdict=verdict.verdict,
+        recalled=verdict.recalled,
+        feedback=verdict.feedback,
+    )
