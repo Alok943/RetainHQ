@@ -71,24 +71,9 @@ function Profile() {
               <span className="font-sans text-xs text-[#64748B]">Member Since</span>
               <span className="font-mono text-sm text-[#0F172A] font-medium">{joinedDate}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-[rgba(15,23,42,0.05)]">
+            <div className="flex justify-between items-center py-2">
               <span className="font-sans text-xs text-[#64748B]">User ID</span>
               <span className="font-mono text-xs text-[#0F172A] bg-slate-100 px-2 py-1 rounded truncate max-w-[120px]">{user.id}</span>
-            </div>
-
-            {/* DEV TOOL — remove before production */}
-            <div className="flex justify-between items-center py-2">
-              <span className="font-sans text-xs text-[#64748B]">Dev: JWT Token</span>
-              <button
-                onClick={async () => {
-                  const { data } = await supabase.auth.getSession();
-                  await navigator.clipboard.writeText(data.session.access_token);
-                  alert('JWT copied to clipboard!');
-                }}
-                className="font-mono text-xs text-[#0891B2] bg-[#0891B2]/10 px-2 py-1 rounded hover:bg-[#0891B2]/20 transition-colors"
-              >
-                Copy JWT
-              </button>
             </div>
           </div>
         </div>
