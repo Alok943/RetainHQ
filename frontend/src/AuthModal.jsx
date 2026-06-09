@@ -5,9 +5,14 @@ import Logo from './Logo';
 
 export default function AuthModal({ onClose }) {
   const handleGoogleLogin = async () => {
+    // Clean redirect target: keep the current PATH (so guests return to where they
+    // were, e.g. /log) but strip any existing hash/query. Using window.location.href
+    // re-appends the OAuth token hash every round-trip, growing the URL past the
+    // browser's 4096-byte limit and triggering a history-API loop.
+    const redirectTo = window.location.origin + window.location.pathname;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href },
+      options: { redirectTo },
     });
     if (error) console.error('Error logging in:', error.message);
   };
