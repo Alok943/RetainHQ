@@ -4,6 +4,7 @@ import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Data
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
+import { apiFetch } from './lib/api';
 
 import Home from './Home';
 import Review from './Review';
@@ -28,6 +29,20 @@ function AppLayout() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true' || location.pathname.startsWith('/roadmaps');
   });
+
+  // Due-count badge on the Reviews nav item — the habit cue has to live in the
+  // chrome, not just on Home. Re-fetched on route change so completing reviews
+  // clears it without a hard refresh.
+  const [dueCount, setDueCount] = useState(0);
+  useEffect(() => {
+    if (!session) {
+      setDueCount(0);
+      return;
+    }
+    apiFetch('/api/dashboard/')
+      .then((d) => setDueCount(d?.due_count ?? 0))
+      .catch(() => {});
+  }, [session, location.pathname]);
 
   useEffect(() => {
     if (location.pathname.startsWith('/roadmaps')) {
@@ -82,7 +97,7 @@ function AppLayout() {
           
           <nav className={`flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
             <SidebarItem isCollapsed={isCollapsed} icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<CheckSquare size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<CheckSquare size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
             <SidebarItem isCollapsed={isCollapsed} icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
             <SidebarItem isCollapsed={isCollapsed} icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
             <SidebarItem isCollapsed={isCollapsed} icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
@@ -185,7 +200,7 @@ function AppLayout() {
         {/* Mobile Bottom Navigation (Hidden on md+) */}
         <nav className="md:hidden absolute bottom-0 w-full bg-[#f9f9f6] border-t border-[rgba(15,23,42,0.08)] flex justify-around items-center px-2 py-3 z-20 pb-safe overflow-x-auto gap-1">
           <NavItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-          <NavItem icon={<CheckSquare size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} />
+          <NavItem icon={<CheckSquare size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
           <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
           <NavItem icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
           <NavItem icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
@@ -197,9 +212,9 @@ function AppLayout() {
   );
 }
 
-function SidebarItem({ icon, label, active, onClick, isCollapsed }) {
+function SidebarItem({ icon, label, active, onClick, isCollapsed, badge = 0 }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       title={isCollapsed ? label : undefined}
       className={`flex items-center gap-3 py-3 rounded text-sm font-medium transition-colors w-full ${
@@ -208,21 +223,40 @@ function SidebarItem({ icon, label, active, onClick, isCollapsed }) {
         active ? 'bg-[rgba(15,23,42,0.05)] text-[#0891B2]' : 'text-[#64748B] hover:bg-[rgba(15,23,42,0.02)] hover:text-[#0F172A]'
       }`}
     >
-      <div className="shrink-0">{icon}</div>
-      {!isCollapsed && <span className="truncate">{label}</span>}
+      <div className="shrink-0 relative">
+        {icon}
+        {badge > 0 && isCollapsed && (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#ba1a1a] text-white font-mono text-[9px] font-bold flex items-center justify-center">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
+      {!isCollapsed && <span className="truncate flex-1">{label}</span>}
+      {!isCollapsed && badge > 0 && (
+        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#ba1a1a] text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </button>
   );
 }
 
-function NavItem({ icon, label, active, onClick }) {
+function NavItem({ icon, label, active, onClick, badge = 0 }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className={`flex flex-col items-center justify-center w-16 gap-1 ${
         active ? 'text-[#0891B2]' : 'text-[#64748B] hover:text-[#0F172A]'
       } transition-colors`}
     >
-      {icon}
+      <div className="relative">
+        {icon}
+        {badge > 0 && (
+          <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#ba1a1a] text-white font-mono text-[9px] font-bold flex items-center justify-center">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
       <span className="font-sans text-[10px] font-medium">{label}</span>
     </button>
   );

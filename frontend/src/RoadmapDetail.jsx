@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { useAuth } from './lib/AuthContext';
 import ReactFlow, {
@@ -120,6 +120,17 @@ function RoadmapDetail() {
   const [loading, setLoading] = useState(true);
   const [contextNode, setContextNode] = useState(null); // {raw, x, y}
 
+  // List view is the default — it scans, works on touch, and matches the data's
+  // linear shape. The flowchart stays available as "Map".
+  const [view, setView] = useState(() => localStorage.getItem('retainhq_roadmap_view') || 'list');
+  const switchView = (v) => { setView(v); localStorage.setItem('retainhq_roadmap_view', v); };
+  const [collapsedPhases, setCollapsedPhases] = useState(null); // null until initialised from data
+  const [openTopic, setOpenTopic] = useState(null);             // node id with notes expanded inline
+  // "Log what you learned" prompt after checking a node off — a toast, not a
+  // redirect, so batch-checking several nodes isn't hijacked (design doc §9b).
+  const [logPrompt, setLogPrompt] = useState(null);             // node title | null
+  const logPromptTimer = useRef(null);
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -160,6 +171,18 @@ function RoadmapDetail() {
     }
     load();
   }, [id]);
+
+  // Collapse phases that are already 100% done, once, when data first arrives —
+  // so a long sheet opens scrolled-to-where-you-are instead of a wall of finished work.
+  useEffect(() => {
+    if (rawNodes.length === 0 || collapsedPhases !== null) return;
+    const byPhase = {};
+    rawNodes.forEach((n) => { (byPhase[n.phase] = byPhase[n.phase] || []).push(n); });
+    const done = new Set(
+      Object.keys(byPhase).filter((p) => byPhase[p].every((n) => statusMap[n.id] === 'done'))
+    );
+    setCollapsedPhases(done);
+  }, [rawNodes, statusMap, collapsedPhases]);
 
   // Group children by parent
   const childrenByParent = useMemo(() => {
@@ -259,11 +282,19 @@ function RoadmapDetail() {
 
   const toggleComplete = useCallback(async (nodeId) => {
     if (!requireAuth()) return;
-    
+
     const cur = statusMap[nodeId] || 'not_started';
     const next = cur === 'done' ? 'not_started' : 'done';
     setStatusMap((m) => ({ ...m, [nodeId]: next })); // optimistic
-    if (next === 'done') focusNode(nodeId); // pan to the topic just completed
+    if (next === 'done') focusNode(nodeId); // pan to the topic just completed (map view; no-op in list)
+    if (next === 'done') {
+      const raw = rawNodes.find((n) => n.id === nodeId);
+      if (raw) {
+        setLogPrompt(raw.title);
+        clearTimeout(logPromptTimer.current);
+        logPromptTimer.current = setTimeout(() => setLogPrompt(null), 8000);
+      }
+    }
     try {
       await apiFetch(`/api/roadmaps/nodes/${nodeId}/progress`, {
         method: 'PUT',
@@ -273,7 +304,9 @@ function RoadmapDetail() {
       console.error('Failed to save progress:', err);
       setStatusMap((m) => ({ ...m, [nodeId]: cur })); // revert
     }
-  }, [statusMap, focusNode]);
+  }, [statusMap, focusNode, rawNodes, requireAuth]);
+
+  useEffect(() => () => clearTimeout(logPromptTimer.current), []);
 
   // On load: center on the furthest-completed topic, or the first node if none done
   useEffect(() => {
@@ -477,18 +510,58 @@ function RoadmapDetail() {
             >
               <Download size={14} /> PDF
             </button>
+            <div className="flex rounded border border-[rgba(15,23,42,0.12)] overflow-hidden">
+              <button
+                onClick={() => switchView('list')}
+                className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 transition-colors ${view === 'list' ? 'bg-[rgba(15,23,42,0.06)] text-[#0F172A]' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+              >
+                <List size={13} /> List
+              </button>
+              <button
+                onClick={() => switchView('map')}
+                className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 transition-colors border-l border-[rgba(15,23,42,0.12)] ${view === 'map' ? 'bg-[rgba(15,23,42,0.06)] text-[#0F172A]' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+              >
+                <MapIcon size={13} /> Map
+              </button>
+            </div>
           </div>
         </div>
-        {/* interaction hint */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 font-sans text-[11px] text-[#64748B]">
-          <span className="flex items-center gap-1"><MousePointerClick size={12} /> Left-click: complete</span>
-          <span className="flex items-center gap-1"><StickyNote size={12} /> Right-click: notes</span>
-          <span className="flex items-center gap-1"><ChevronDown size={12} /> Double-click: subtopics</span>
-        </div>
+        {/* interaction hint — only the map view has hidden gestures to explain */}
+        {view === 'map' && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 font-sans text-[11px] text-[#64748B]">
+            <span className="flex items-center gap-1"><MousePointerClick size={12} /> Left-click: complete</span>
+            <span className="flex items-center gap-1"><StickyNote size={12} /> Right-click: notes</span>
+            <span className="flex items-center gap-1"><ChevronDown size={12} /> Double-click: subtopics</span>
+          </div>
+        )}
       </div>
 
+      {/* List view (default) */}
+      {view === 'list' && (
+        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+          <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+            <ListView
+              rawNodes={rawNodes}
+              statusMap={statusMap}
+              childrenByParent={childrenByParent}
+              collapsedPhases={collapsedPhases ?? new Set()}
+              onTogglePhase={(phase) =>
+                setCollapsedPhases((s) => {
+                  const ns = new Set(s ?? []);
+                  ns.has(phase) ? ns.delete(phase) : ns.add(phase);
+                  return ns;
+                })
+              }
+              openTopic={openTopic}
+              onOpenTopic={(id) => setOpenTopic((cur) => (cur === id ? null : id))}
+              onToggleComplete={toggleComplete}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Flow canvas */}
-      <div className="flex-1 relative" style={{ minHeight: 0 }}>
+      <div className={`flex-1 relative ${view === 'map' ? '' : 'hidden'}`} style={{ minHeight: 0 }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -556,6 +629,152 @@ function RoadmapDetail() {
           </div>
         )}
       </div>
+
+      {/* Post-completion nudge: close the roadmap → capture loop without hijacking
+          batch-checking. Auto-dismisses; "Log it" pre-fills the topic. */}
+      {logPrompt && (
+        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#131b2e] text-white rounded-lg shadow-xl px-4 py-3 animate-in fade-in slide-in-from-bottom-3 duration-200 max-w-[calc(100vw-2rem)]">
+          <Check size={16} className="text-[#5DCAA5] shrink-0" />
+          <span className="font-sans text-sm truncate max-w-[200px]">{logPrompt}</span>
+          <button
+            onClick={() => navigate(`/log?topic=${encodeURIComponent(logPrompt)}`)}
+            className="flex items-center gap-1.5 font-sans text-sm font-semibold text-[#22D3EE] hover:text-white transition-colors shrink-0"
+          >
+            <PlusSquare size={14} /> Log what you learned
+          </button>
+          <button onClick={() => setLogPrompt(null)} aria-label="Dismiss" className="text-[#7c839b] hover:text-white shrink-0">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- list view ---------------- */
+
+function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTogglePhase, openTopic, onOpenTopic, onToggleComplete }) {
+  const topLevel = rawNodes.filter((n) => !n.parent_id);
+  const phases = [];
+  topLevel.forEach((n) => { if (!phases.includes(n.phase)) phases.push(n.phase); });
+
+  return (
+    <div className="flex flex-col gap-3">
+      {phases.map((phase) => {
+        const inPhase = rawNodes.filter((n) => n.phase === phase);
+        const phDone = inPhase.filter((n) => statusMap[n.id] === 'done').length;
+        const allDone = phDone === inPhase.length;
+        const collapsed = collapsedPhases.has(phase);
+        const tops = topLevel.filter((n) => n.phase === phase).sort((a, b) => a.order_index - b.order_index);
+
+        const sections = [];
+        tops.forEach((n) => { if (!sections.includes(n.section)) sections.push(n.section); });
+        const showSectionHeaders = sections.length > 1 || (sections[0] && sections[0] !== phase);
+
+        return (
+          <section key={phase} className="bg-white rounded-lg border border-[rgba(15,23,42,0.1)] overflow-hidden">
+            <button
+              onClick={() => onTogglePhase(phase)}
+              className="w-full flex items-center gap-2.5 px-4 py-3 text-left hover:bg-[rgba(15,23,42,0.02)] transition-colors"
+            >
+              {collapsed ? <ChevronRight size={15} className="text-[#94a3b8] shrink-0" /> : <ChevronDown size={15} className="text-[#94a3b8] shrink-0" />}
+              <span className="font-sans text-sm font-semibold text-[#0F172A] flex-1">{phase}</span>
+              <span className={`font-mono text-[11px] px-2 py-0.5 rounded-full shrink-0 ${allDone ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'text-[#64748B]'}`}>
+                {phDone}/{inPhase.length}
+              </span>
+            </button>
+
+            {!collapsed && (
+              <div className="border-t border-[rgba(15,23,42,0.06)]">
+                {sections.map((section) => (
+                  <div key={section}>
+                    {showSectionHeaders && (
+                      <div className="px-4 pt-3 pb-1 font-sans text-[11px] font-semibold text-[#0891B2]">{section}</div>
+                    )}
+                    {tops.filter((n) => n.section === section).map((n) => (
+                      <React.Fragment key={n.id}>
+                        <TopicRow
+                          node={n}
+                          done={statusMap[n.id] === 'done'}
+                          open={openTopic === n.id}
+                          onOpen={() => onOpenTopic(n.id)}
+                          onToggle={() => onToggleComplete(n.id)}
+                        />
+                        {(childrenByParent[n.id] || []).map((c) => (
+                          <TopicRow
+                            key={c.id}
+                            node={c}
+                            done={statusMap[c.id] === 'done'}
+                            open={openTopic === c.id}
+                            onOpen={() => onOpenTopic(c.id)}
+                            onToggle={() => onToggleComplete(c.id)}
+                            isChild
+                          />
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function TopicRow({ node, done, open, onOpen, onToggle, isChild }) {
+  const desc = node.description;
+  const hasInfo = Boolean(desc);
+  const isLink = hasInfo && /^https?:\/\//.test(desc.trim());
+  const isNeetcode = isLink && desc.includes('neetcode.io');
+  const tierColor = TIER_COLORS[node.tier];
+
+  return (
+    <div className={`border-t border-[rgba(15,23,42,0.05)] ${isChild ? 'pl-6' : ''}`}>
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <button
+          onClick={onToggle}
+          aria-label={done ? 'Mark as not started' : 'Mark as done'}
+          className={`w-5 h-5 rounded shrink-0 flex items-center justify-center border transition-colors ${
+            done ? 'bg-[#0F766E] border-[#0F766E]' : 'border-[rgba(15,23,42,0.3)] hover:border-[#0891B2]'
+          }`}
+        >
+          {done && <Check size={12} className="text-white" />}
+        </button>
+
+        <button
+          onClick={hasInfo ? onOpen : onToggle}
+          className={`flex-1 min-w-0 text-left font-sans text-sm leading-snug ${done ? 'text-[#94a3b8] line-through' : 'text-[#0F172A]'}`}
+        >
+          {node.title}
+        </button>
+
+        {tierColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tierColor }} title={node.tier} />}
+        {hasInfo && (
+          <button onClick={onOpen} aria-label="Show notes" className="text-[#94a3b8] hover:text-[#0F172A] shrink-0">
+            {open ? <ChevronDown size={14} /> : <StickyNote size={13} />}
+          </button>
+        )}
+      </div>
+
+      {open && hasInfo && (
+        <div className="px-4 pb-3 pl-12 animate-in fade-in duration-150">
+          {isLink ? (
+            <a
+              href={desc.trim()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
+            >
+              <ExternalLink size={13} /> {isNeetcode ? 'Solve on NeetCode' : 'Open link'}
+            </a>
+          ) : (
+            <p className="font-sans text-xs text-[#475569] leading-relaxed">{desc}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

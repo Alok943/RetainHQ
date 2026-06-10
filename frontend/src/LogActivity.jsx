@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers, CheckCircle2 } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
@@ -18,6 +18,7 @@ const SOURCE_TYPES = [
 
 function LogActivity() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [topic, setTopic] = useState('');
   const [sourceType, setSourceType] = useState('problem');
@@ -45,6 +46,10 @@ function LogActivity() {
         if (parsed.neededHint !== undefined) setNeededHint(parsed.neededHint);
       } catch (e) {}
     }
+    // Arriving from a roadmap node ("Log what you learned") pre-fills the topic.
+    // Applied after the draft so an explicit hand-off wins over a stale draft.
+    const topicParam = new URLSearchParams(location.search).get('topic');
+    if (topicParam) setTopic(topicParam);
   }, []);
 
   useEffect(() => {
@@ -76,7 +81,9 @@ function LogActivity() {
         }),
       });
       localStorage.removeItem('retainhq_log_draft');
-      navigate('/dashboard');
+      // Send them straight into the Day-0 baseline review — the whole point is to
+      // prove the recall loop right after logging, not drop them back on Home.
+      navigate('/reviews');
     } catch (err) {
       setError(err.message);
       setSubmitting(false);
@@ -90,7 +97,7 @@ function LogActivity() {
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
           <PlusSquare size={24} className="text-[#0891B2]" /> Log Activity
         </h2>
-        <p className="font-sans text-sm text-[#64748B] mt-1">Record a new learning session and initiate the spaced repetition sequence.</p>
+        <p className="font-sans text-sm text-[#64748B] mt-1">Just learned something? Capture the one thing worth keeping — we'll test you on it later.</p>
       </header>
 
       <div className="kinetic-card flex flex-col gap-8 bg-white border-[rgba(15,23,42,0.12)]">
@@ -133,7 +140,7 @@ function LogActivity() {
           <label className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest">
             Key Memory
           </label>
-          <p className="font-sans text-xs text-[#64748B] mb-1">What is the single most important concept to retain from this session?</p>
+          <p className="font-sans text-xs text-[#64748B] mb-1">The one thing you want to still remember a month from now.</p>
           <textarea
             rows="2"
             value={keyMemory}

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Play, TrendingUp, BookOpen, AlertCircle, Clock, Activity, Target, CheckCircle2, History, Database, Key } from 'lucide-react';
+import { Play, AlertCircle, Clock, CheckCircle2, Key, PlusSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import OnboardingGuide from './OnboardingGuide';
+import FirstCapture from './FirstCapture';
 import { useAuth } from './lib/AuthContext';
+
+// Per-session opt-out: if a new user clicks "I'll look around first", don't re-gate
+// them on every Home visit this session (cleared on tab close).
+const SKIP_FIRST_CAPTURE_KEY = 'retainhq_skip_first_capture';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -31,6 +35,9 @@ function Home({ onStartReviews }) {
   const [fetchError, setFetchError] = useState(null);
   const { session, requireAuth } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [skipFirstCapture, setSkipFirstCapture] = useState(
+    () => sessionStorage.getItem(SKIP_FIRST_CAPTURE_KEY) === 'true'
+  );
 
   useEffect(() => {
     if (!session) {
@@ -58,18 +65,32 @@ function Home({ onStartReviews }) {
 
   const topReview = dueReviews[0] ?? null;
 
+  // First-run gate: a signed-in user with zero activities gets the full-screen
+  // first-capture flow instead of an empty dashboard — that's where our funnel
+  // shows people bouncing. Guests (no session) still get the normal explorable
+  // Home. We wait for the dashboard count so we don't flash the empty dashboard.
+  const isFirstRun =
+    session && !loadingDashboard && dashboard?.total_activities === 0 && !skipFirstCapture;
+
+  if (isFirstRun) {
+    return (
+      <FirstCapture
+        onSkip={() => {
+          sessionStorage.setItem(SKIP_FIRST_CAPTURE_KEY, 'true');
+          setSkipFirstCapture(true);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 p-4 md:p-8 max-w-7xl mx-auto w-full pb-20 md:pb-8">
 
       {/* --- CENTER COLUMN (Main Content) --- */}
       <div className="flex-1 flex flex-col gap-8 min-w-0">
 
-        {/* Onboarding Guide — shown once for new users */}
-        <OnboardingGuide />
-
-        {/* Momentum & Stats (Visible on Mobile/Tablet, Hidden on Desktop where Right Rail takes over) */}
-        <div className="flex flex-col gap-6 lg:hidden">
-          <MomentumCard />
+        {/* Stats (mobile/tablet only — desktop shows them in the right rail) */}
+        <div className="lg:hidden">
           <QuickStats dashboard={dashboard} loading={loadingDashboard} />
         </div>
 
@@ -86,6 +107,21 @@ function Home({ onStartReviews }) {
             <div className="kinetic-card flex items-center gap-4 text-[#ba1a1a]">
               <AlertCircle size={20} />
               <p className="font-sans text-sm">Failed to load reviews: {fetchError}</p>
+            </div>
+          ) : !topReview && !loadingActivities && activities.length === 0 ? (
+            // Brand-new user: no reviews because nothing's been logged yet.
+            // "All caught up" is the wrong message here — point them at the first action.
+            <div className="kinetic-card flex flex-col sm:flex-row sm:items-center gap-5">
+              <div className="flex-1">
+                <p className="font-sans font-semibold text-[#0F172A] text-lg">Capture your first thing to remember</p>
+                <p className="font-sans text-sm text-[#64748B] mt-1">Log one thing you've learned — we'll quiz you on it right away, then space out the reviews so it sticks.</p>
+              </div>
+              <button
+                onClick={() => requireAuth(() => navigate('/log'))}
+                className="kinetic-btn kinetic-accent-gradient w-full sm:w-auto px-6 py-3.5 shrink-0"
+              >
+                <PlusSquare size={16} /> Log your first activity
+              </button>
             </div>
           ) : !topReview ? (
             <div className="kinetic-card flex items-center gap-4">
@@ -135,38 +171,11 @@ function Home({ onStartReviews }) {
           )}
         </section>
 
-        {/* Suggested Learning — static placeholder until Phase 2 */}
+        {/* Recent Captures — a naked list (no card) so the due-review card stays
+            the only elevated element on the page. */}
         <section>
           <div className="flex justify-between items-end mb-4">
-            <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen size={16} className="text-[#0891B2]" /> Suggested Focus
-            </h2>
-          </div>
-
-          <div className="kinetic-card flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex-1">
-              <h3 className="font-sans text-lg font-semibold text-[#0F172A]">Explore Your Roadmap</h3>
-              <p className="font-sans text-sm text-[#64748B] mt-1.5 leading-relaxed max-w-xl">
-                Track your learning progress through structured roadmaps. Mark topics as complete and follow the path to mastery.
-              </p>
-            </div>
-            <div className="w-full md:w-auto shrink-0">
-              <button
-                onClick={() => navigate('/roadmaps')}
-                className="kinetic-btn bg-white text-[#0F172A] border border-[rgba(15,23,42,0.12)] w-full md:w-40 hover:bg-gray-50 text-sm"
-              >
-                View Roadmap
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Recent Captures — a preview of the Knowledge Vault */}
-        <section>
-          <div className="flex justify-between items-end mb-4">
-            <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
-              <Database size={16} className="text-[#0891B2]" /> Recent Captures
-            </h2>
+            <h2 className="font-sans text-sm font-semibold text-[#1a1c1b]">Recent captures</h2>
             {activities.length > 0 && (
               <button
                 onClick={() => navigate('/vault')}
@@ -177,39 +186,47 @@ function Home({ onStartReviews }) {
             )}
           </div>
 
-          <div className="kinetic-card">
-            {loadingActivities ? (
-              <div className="flex flex-col gap-5">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="flex gap-4 items-start">
-                    <div className="skeleton w-6 h-6 rounded-full shrink-0" />
-                    <div className="flex-1 flex flex-col gap-2">
-                      <div className="skeleton h-3.5 w-1/2" />
-                      <div className="skeleton h-3 w-3/4" />
-                    </div>
+          {loadingActivities ? (
+            <div className="flex flex-col gap-5">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex gap-4 items-start">
+                  <div className="skeleton w-6 h-6 rounded-full shrink-0" />
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="skeleton h-3.5 w-1/2" />
+                    <div className="skeleton h-3 w-3/4" />
                   </div>
-                ))}
-              </div>
-            ) : activities.length > 0 ? (
-              <div className="flex flex-col gap-0 relative">
-                <div className="absolute left-[11px] top-4 bottom-4 w-px bg-slate-200"></div>
-                {activities.slice(0, 4).map((activity, i) => (
-                  <TimelineItem
-                    key={activity.id}
-                    icon={<Key size={12} className="text-[#0891B2]" />}
-                    title={activity.topic}
-                    time={formatDate(activity.created_at)}
-                    detail={activity.key_memory}
-                    isLast={i === Math.min(activities.length, 4) - 1}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="font-sans text-sm text-[#64748B]">
-                Nothing captured yet — log an activity to start your vault.
-              </p>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          ) : activities.length > 0 ? (
+            <div className="flex flex-col gap-0 relative">
+              <div className="absolute left-[11px] top-4 bottom-4 w-px bg-slate-200"></div>
+              {activities.slice(0, 4).map((activity, i) => (
+                <TimelineItem
+                  key={activity.id}
+                  icon={<Key size={12} className="text-[#0891B2]" />}
+                  title={activity.topic}
+                  time={formatDate(activity.created_at)}
+                  detail={activity.key_memory}
+                  isLast={i === Math.min(activities.length, 4) - 1}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="font-sans text-sm text-[#64748B]">
+              Nothing captured yet — log an activity to start your vault.
+            </p>
+          )}
+
+          <p className="font-sans text-sm text-[#64748B] mt-6">
+            Want something structured to study?{' '}
+            <button
+              onClick={() => navigate('/roadmaps')}
+              className="font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
+            >
+              Explore the roadmaps →
+            </button>
+          </p>
         </section>
 
         {/* Feedback Link */}
@@ -224,8 +241,7 @@ function Home({ onStartReviews }) {
       </div>
 
       {/* --- RIGHT RAIL (Visible only on Desktop lg+) --- */}
-      <aside className="hidden lg:flex flex-col w-[320px] shrink-0 gap-6">
-        <MomentumCard />
+      <aside className="hidden lg:flex flex-col w-[280px] shrink-0">
         <QuickStats dashboard={dashboard} loading={loadingDashboard} />
       </aside>
 
@@ -251,54 +267,6 @@ function TimelineItem({ icon, title, time, detail, isLast }) {
   );
 }
 
-function MomentumCard() {
-  return (
-    <div className="kinetic-card border-l-2 border-l-[#0891B2] flex flex-col gap-4 bg-[#131b2e] border-[#131b2e]">
-      <div className="flex justify-between items-start">
-        <h3 className="font-sans text-xs font-semibold text-[#7c839b] uppercase tracking-widest">Learning Momentum</h3>
-        <span className="font-sans text-[10px] font-bold text-[#0891B2] bg-[#0891B2]/20 px-2 py-0.5 rounded-full flex items-center gap-1 tracking-normal border border-[#0891B2]/30 uppercase">
-          <TrendingUp size={10} /> Coming Soon
-        </span>
-      </div>
-
-      <div className="flex items-center gap-6 mt-2">
-        <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-          <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
-            <path
-              className="text-[#1e293b]"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <path
-              className="text-[#0891B2]"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              strokeDasharray="0, 100"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center font-mono text-sm font-medium text-[#7c839b] tracking-tighter">
-            —
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <div className="font-mono text-sm text-[#7c839b] flex items-center gap-1 font-semibold">
-            Phase 2
-          </div>
-          <div className="font-sans text-xs text-[#7c839b]">
-            Adaptive scoring coming soon
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function formatUpcoming(iso) {
   const d = new Date(iso);
   const days = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
@@ -308,47 +276,38 @@ function formatUpcoming(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+// Flat stat strip — number + label pairs separated by dividers, no per-stat cards.
+// The due-review card is the only elevated element on Home; stats stay quiet.
 function QuickStats({ dashboard, loading }) {
   const dueCount = dashboard?.due_count ?? 0;
   const consistency = dashboard?.consistency_window ?? 0;
   const dailyProgress = dashboard?.daily_progress ?? 0;
   const nextReviewAt = dashboard?.next_review_at ?? null;
 
+  const dueValue = loading
+    ? '…'
+    : dueCount > 0
+      ? `${dueCount} due`
+      : nextReviewAt
+        ? formatUpcoming(nextReviewAt)
+        : 'All clear';
+
   return (
-    <div className="flex flex-col gap-3">
-      {/* Consistency Window */}
-      <div className="kinetic-card py-3 px-4 flex justify-between items-center bg-white shadow-sm">
-        <span className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest">Consistency Window</span>
-        <span className="font-mono text-sm font-medium text-[#0F172A]">
-          {loading ? '…' : `${consistency} / 7 Days`}
-        </span>
-      </div>
+    <div className="flex items-stretch divide-x divide-[rgba(15,23,42,0.08)] border-y border-[rgba(15,23,42,0.08)] py-4">
+      <Stat label="Reviews" value={dueValue} emphasis={dueCount > 0} />
+      <Stat label="Consistency" value={loading ? '…' : `${consistency}/7d`} />
+      <Stat label="Today" value={loading ? '…' : `${dailyProgress}`} />
+    </div>
+  );
+}
 
-      {/* Reviews Due / Next Upcoming Stat */}
-      <div className={`kinetic-card py-3 px-4 flex justify-between items-center bg-white shadow-sm border-l-2 ${dueCount > 0 ? 'border-l-[#ba1a1a]' : 'border-l-[#0891B2]'}`}>
-        <span className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest flex items-center gap-1.5">
-          <Target size={14} /> Upcoming Reviews
-        </span>
-        <span className={`font-mono text-sm font-medium ${dueCount > 0 ? 'text-[#ba1a1a]' : 'text-[#0891B2]'}`}>
-          {loading
-            ? '…'
-            : dueCount > 0
-              ? `${dueCount} Due`
-              : nextReviewAt
-                ? `Next ${formatUpcoming(nextReviewAt)}`
-                : 'All clear'}
-        </span>
-      </div>
-
-      {/* Daily Progress */}
-      <div className="kinetic-card py-3 px-4 flex justify-between items-center bg-white shadow-sm">
-        <span className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest flex items-center gap-1.5">
-          <Activity size={14} /> Daily Progress
-        </span>
-        <span className="font-mono text-xs font-medium text-[#0F172A]">
-          {loading ? '…' : `${dailyProgress} Today`}
-        </span>
-      </div>
+function Stat({ label, value, emphasis }) {
+  return (
+    <div className="flex-1 px-4 first:pl-0 last:pr-0 flex flex-col gap-1">
+      <span className={`font-sans text-lg font-semibold leading-none ${emphasis ? 'text-[#ba1a1a]' : 'text-[#0F172A]'}`}>
+        {value}
+      </span>
+      <span className="font-sans text-xs text-[#64748B]">{label}</span>
     </div>
   );
 }

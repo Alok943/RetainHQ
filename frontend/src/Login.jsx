@@ -117,7 +117,7 @@ function Login() {
                     const goal = t.state === 'goal';
                     return (
                       <div
-                        key={t.day}
+                        key={`${t.day}-${t.label}`}
                         className="sr-row flex items-center gap-4 relative"
                         style={{ animationDelay: `${i * 140 + 150}ms` }}
                       >

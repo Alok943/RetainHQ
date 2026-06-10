@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper, Sparkles } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import Hint from './Hint';
 
 // Each post-reveal choice carries BOTH signals at once:
 //   recalled = objective (did they reconstruct it?)   rating = subjective (how hard it felt)
@@ -61,6 +62,14 @@ function Review({ onBack }) {
     setGrading(false);
   };
 
+  // "I don't know" is a committed answer — reveal in one click, don't make the
+  // failure path cost an extra tap.
+  const handleSkip = () => {
+    setSkipped(true);
+    setAnswer('');
+    setRevealed(true);
+  };
+
   const handleReveal = () => {
     if (!committed) return;
     setRevealed(true);
@@ -101,6 +110,29 @@ function Review({ onBack }) {
     }
   };
 
+  // Flashcard keyboard shortcuts: Ctrl/Cmd+Enter reveals; after reveal, 1–4 pick
+  // Missed / Hard / Good / Easy. 1–4 are safe post-reveal — no text input is
+  // focused once the answer box is gone.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (!current) return;
+      if (!revealed) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && committed) {
+          e.preventDefault();
+          handleReveal();
+        }
+        return;
+      }
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= OUTCOMES.length && !submitting) {
+        e.preventDefault();
+        handleOutcome(OUTCOMES[n - 1]);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  });
+
   /* ---------- non-card states ---------- */
 
   if (loading) {
@@ -133,6 +165,15 @@ function Review({ onBack }) {
             ? `You worked through ${total} review${total > 1 ? 's' : ''}. Nice — that's what builds long-term memory.`
             : 'No reviews are due right now. Log a new activity to keep the loop going.'}
         </p>
+        {done && (
+          <div className="max-w-sm w-full">
+            <Hint id="review_loop_scheduled">
+              Each one is rescheduled based on how you did — the next pass lands right
+              before you'd forget. Come back when Home shows reviews due; that's the
+              whole loop.
+            </Hint>
+          </div>
+        )}
         <button onClick={onBack} className="kinetic-btn kinetic-accent-gradient px-6 py-2.5 text-sm mt-2">
           Back to Dashboard
         </button>
@@ -159,9 +200,11 @@ function Review({ onBack }) {
           </div>
         </div>
         <div className="w-full h-1 bg-[rgba(15,23,42,0.08)] rounded-full overflow-hidden">
+          {/* Counts the revealed card as progress so the bar reaches 100% on the
+              last card instead of stalling just short of full. */}
           <div
             className="h-full bg-[#0891B2] transition-all duration-300"
-            style={{ width: `${(index / total) * 100}%` }}
+            style={{ width: `${((index + (revealed ? 1 : 0)) / total) * 100}%` }}
           />
         </div>
       </header>
@@ -181,21 +224,21 @@ function Review({ onBack }) {
           {!revealed ? (
             /* ---------- RECALL GATE: commit before reveal ---------- */
             <div className="mt-6 flex flex-col gap-4">
+              <Hint id="review_recall_gate">
+                Pulling it from memory is the workout — write what you remember before
+                you peek, even if it's rough. That effort is what makes it stick.
+              </Hint>
               <p className="font-sans text-sm text-[#64748B]">
                 Type what you remember — then check yourself. No peeking.
               </p>
               <textarea
                 value={answer}
-                onChange={(e) => { setAnswer(e.target.value); if (skipped) setSkipped(false); }}
-                disabled={skipped}
+                onChange={(e) => setAnswer(e.target.value)}
                 rows={4}
                 autoFocus
                 placeholder="Write your answer from memory…"
-                className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20 disabled:opacity-50"
+                className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
               />
-              {skipped && (
-                <p className="font-sans text-xs text-[#64748B] italic">Marked as "didn't recall" — reveal to see the answer.</p>
-              )}
             </div>
           ) : (
             /* ---------- REVEAL: their attempt vs the stored answer ---------- */
@@ -232,7 +275,7 @@ function Review({ onBack }) {
         {!revealed ? (
           <div className="w-full flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={() => { setSkipped(true); setAnswer(''); }}
+              onClick={handleSkip}
               className="kinetic-btn bg-white border border-[rgba(15,23,42,0.15)] text-[#64748B] hover:text-[#0F172A] py-3.5 px-6 text-sm font-medium"
             >
               I don't know
@@ -240,9 +283,11 @@ function Review({ onBack }) {
             <button
               onClick={handleReveal}
               disabled={!committed}
+              title="Ctrl+Enter"
               className="kinetic-btn kinetic-accent-gradient py-3.5 px-6 md:min-w-[260px] text-base disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Reveal answer
+              <span className="hidden md:inline font-mono text-[10px] opacity-70 ml-2">Ctrl+↵</span>
             </button>
           </div>
         ) : (
@@ -272,15 +317,22 @@ function Review({ onBack }) {
                 )}
               </div>
             )}
+            <div className="w-full mb-4">
+              <Hint id="review_honest_rating">
+                Your pick decides when this comes back — "Easy" pushes it out weeks,
+                "Missed it" brings it back tomorrow. Honest beats optimistic.
+              </Hint>
+            </div>
             <h3 className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest mb-4">How did it go?</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-              {OUTCOMES.map((o) => {
+              {OUTCOMES.map((o, i) => {
                 const isSuggested = o.key === suggestedKey;
                 return (
                   <button
                     key={o.key}
                     onClick={() => handleOutcome(o)}
                     disabled={submitting}
+                    title={`Press ${i + 1}`}
                     style={{ borderColor: o.color, color: o.color }}
                     className={`kinetic-btn relative bg-white border py-3 font-semibold text-sm transition-colors disabled:opacity-50 ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; }}
@@ -291,6 +343,7 @@ function Review({ onBack }) {
                         Suggested
                       </span>
                     )}
+                    <span className="hidden md:inline font-mono text-[10px] opacity-50 mr-1.5">{i + 1}</span>
                     {o.label}
                   </button>
                 );
