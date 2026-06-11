@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import UniqueConstraint
 
 class Roadmap(SQLModel, table=True):
     __tablename__ = "roadmaps"
@@ -98,4 +99,16 @@ class Feedback(SQLModel, table=True):
     user_id: uuid.UUID
     message: str
     status: str = Field(default="new") # new, reviewed, resolved
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ReminderLog(SQLModel, table=True):
+    """At-most-once-per-day ledger for due-review reminder emails. The unique
+    (user_id, sent_on) constraint is the idempotency guard — a second run on the
+    same day can't double-send (the INSERT conflicts)."""
+    __tablename__ = "reminder_log"
+    __table_args__ = (UniqueConstraint("user_id", "sent_on", name="uq_reminder_user_day"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    sent_on: date  # UTC date the reminder was sent
+    due_count: int = Field(default=0)  # how many were due at send time (for later analysis)
     created_at: datetime = Field(default_factory=datetime.utcnow)

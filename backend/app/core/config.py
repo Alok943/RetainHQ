@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
     GRADER_ENABLED: bool = False
 
+    # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
+    # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger
+    # endpoint — if unset, the endpoint refuses all callers (no open trigger).
+    RESEND_API_KEY: str = ""
+    RESEND_FROM: str = "RetainHQ <reviews@retainhq.app>"
+    CRON_SECRET: str = ""
+    APP_BASE_URL: str = "https://retainhq.app"  # used to build the one-tap review link
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()

@@ -1,0 +1,31 @@
+name: Daily review reminders
+
+# Sends due-review reminder emails once a day. Host-agnostic: it just POSTs to
+# the API with the shared secret, so moving Railway -> Render means updating the
+# REMINDERS_URL repo secret only.
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   REMINDERS_URL   e.g. https://<your-api-host>/api/internal/send-reminders
+#   CRON_SECRET     same value as the backend CRON_SECRET env var
+#
+# Note: GitHub Actions cron can lag ~15 min and pauses after 60 days of repo
+# inactivity. Fine for a daily nudge; switch to a host cron if that ever bites.
+
+on:
+  schedule:
+    - cron: "30 1 * * *"   # 01:30 UTC = 07:00 IST
+  workflow_dispatch: {}      # allow manual runs from the Actions tab
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder send
+        run: |
+          code=$(curl -sS -o /tmp/body -w "%{http_code}" -X POST \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.REMINDERS_URL }}")
+          echo "HTTP $code"
+          cat /tmp/body
+          echo
+          test "$code" = "200"
