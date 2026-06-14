@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Map, ListChecks, ArrowRight, Plus,
   Binary, Database, Globe, Server, Sparkles, Code2, Cpu, Calculator,
+  ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 
-// Per-roadmap visual identity, matched by title keyword (no backend change).
-// First matching rule wins; order matters (specific before generic).
+// Per-roadmap visual identity, matched by title keyword.
 const STYLE_RULES = [
   { match: ['neetcode', 'striver', 'dsa', 'algorithm', 'data structure'], Icon: Binary, accent: '#7C3AED' },
   { match: ['sql'], Icon: Database, accent: '#4F46E5' },
@@ -21,6 +21,31 @@ const STYLE_RULES = [
   { match: ['aptitude', 'quant', 'reasoning'], Icon: Calculator, accent: '#B45309' },
 ];
 
+// Groups — order matters: first match wins.
+const GROUPS = [
+  { label: 'DSA & Interviews',      match: (t) => /dsa|blind|lld|low.level|behavioral/.test(t) },
+  { label: 'AI & Machine Learning', match: (t) => /machine learning|deep learning|ai eng/.test(t) },
+  { label: 'Systems & DevOps',      match: (t) => /system design|devops|linux|git/.test(t) },
+  { label: 'Web & Backend',         match: (t) => /web|backend|sql/.test(t) },
+  { label: 'Languages',             match: (t) => /python|java|c\+\+|typescript/.test(t) },
+  { label: 'Core CS',               match: (t) => /core cs|aptitude/.test(t) },
+];
+
+const SORT_OPTIONS = [
+  { value: 'title-asc',     label: 'A → Z' },
+  { value: 'title-desc',    label: 'Z → A' },
+  { value: 'progress-desc', label: 'Progress ↑' },
+  { value: 'progress-asc',  label: 'Progress ↓' },
+];
+
+function getGroup(title = '') {
+  const t = title.toLowerCase();
+  for (const g of GROUPS) {
+    if (g.match(t)) return g.label;
+  }
+  return 'Other';
+}
+
 function getRoadmapStyle(title = '') {
   const t = title.toLowerCase();
   for (const rule of STYLE_RULES) {
@@ -29,7 +54,6 @@ function getRoadmapStyle(title = '') {
   return { Icon: Map, accent: '#0891B2' };
 }
 
-// Count a number up from 0 to target once on mount.
 function useCountUp(target, duration = 800) {
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -49,7 +73,7 @@ function useCountUp(target, duration = 800) {
 function ProgressRing({ pct, accent, Icon }) {
   const [shown, setShown] = useState(0);
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setShown(pct)); // trigger the fill transition after mount
+    const raf = requestAnimationFrame(() => setShown(pct));
     return () => cancelAnimationFrame(raf);
   }, [pct]);
   const ring = 'M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831';
@@ -85,7 +109,6 @@ function RoadmapCard({ rm, index, onClick }) {
       className="kinetic-card bg-white p-5 cursor-pointer group flex gap-4 items-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-in fade-in slide-in-from-bottom-3"
     >
       <ProgressRing pct={rm.progress_pct ?? 0} accent={accent} Icon={Icon} />
-
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start gap-3 mb-1">
           <h3 className="font-sans text-lg font-semibold text-[#0F172A] line-clamp-1">{rm.title}</h3>
@@ -105,16 +128,47 @@ function RoadmapCard({ rm, index, onClick }) {
   );
 }
 
+function CollapsibleGroup({ label, items, navigate }) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="mb-6">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 w-full text-left mb-3 group/hdr"
+      >
+        {open
+          ? <ChevronDown size={14} className="text-[#64748B] shrink-0" />
+          : <ChevronRight size={14} className="text-[#64748B] shrink-0" />}
+        <span className="font-sans text-xs font-semibold text-[#0F172A] uppercase tracking-wider">
+          {label}
+        </span>
+        <span className="font-mono text-[10px] text-[#94A3B8]">({items.length})</span>
+        <div className="flex-1 h-px bg-[rgba(15,23,42,0.07)] ml-1" />
+      </button>
+
+      {open && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {items.map((rm, i) => (
+            <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Roadmaps() {
   const navigate = useNavigate();
   const [roadmaps, setRoadmaps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('grouped'); // 'grouped' | 'list'
+  const [sortBy, setSortBy] = useState('title-asc');
   const { session } = useAuth();
 
   useEffect(() => {
     async function fetchRoadmaps() {
       try {
-        // Backend returns each roadmap with real progress computed server-side
         const data = await apiFetch('/api/roadmaps/', { optionalAuth: true });
         setRoadmaps(data);
       } catch (err) {
@@ -125,6 +179,31 @@ function Roadmaps() {
     }
     fetchRoadmaps();
   }, []);
+
+  const sorted = useMemo(() => {
+    const copy = [...roadmaps];
+    if (sortBy === 'title-asc')     return copy.sort((a, b) => a.title.localeCompare(b.title));
+    if (sortBy === 'title-desc')    return copy.sort((a, b) => b.title.localeCompare(a.title));
+    if (sortBy === 'progress-desc') return copy.sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
+    if (sortBy === 'progress-asc')  return copy.sort((a, b) => (a.progress_pct ?? 0) - (b.progress_pct ?? 0));
+    return copy;
+  }, [roadmaps, sortBy]);
+
+  const grouped = useMemo(() => {
+    const map = {};
+    for (const rm of roadmaps) {
+      const g = getGroup(rm.title);
+      if (!map[g]) map[g] = [];
+      map[g].push(rm);
+    }
+    // Return in GROUPS order, then 'Other' last
+    const result = [];
+    for (const { label } of GROUPS) {
+      if (map[label]?.length) result.push({ label, items: map[label] });
+    }
+    if (map['Other']?.length) result.push({ label: 'Other', items: map['Other'] });
+    return result;
+  }, [roadmaps]);
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8 max-w-5xl mx-auto w-full pb-20 md:pb-8 animate-in fade-in duration-300">
@@ -137,10 +216,58 @@ function Roadmaps() {
       </header>
 
       <section>
-        <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5 mb-4">
-          <ListChecks size={16} className="text-[#0F172A]" /> All Roadmaps
-        </h2>
+        {/* Controls bar */}
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
+            <ListChecks size={16} className="text-[#0F172A]" /> All Roadmaps
+          </h2>
 
+          <div className="flex items-center gap-2">
+            {/* Sort dropdown — only in list mode */}
+            {viewMode === 'list' && (
+              <div className="flex items-center gap-1.5">
+                <ArrowUpDown size={13} className="text-[#64748B]" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="text-xs font-sans text-[#0F172A] bg-white border border-[rgba(15,23,42,0.12)] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#0891B2] cursor-pointer"
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* View toggle */}
+            <div className="flex rounded-lg border border-[rgba(15,23,42,0.12)] overflow-hidden">
+              <button
+                onClick={() => setViewMode('grouped')}
+                title="Group by category"
+                className={`px-2.5 py-1.5 flex items-center gap-1 text-xs font-sans transition-colors ${
+                  viewMode === 'grouped'
+                    ? 'bg-[#0F172A] text-white'
+                    : 'bg-white text-[#64748B] hover:bg-[rgba(15,23,42,0.04)]'
+                }`}
+              >
+                <LayoutGrid size={13} /> Grouped
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                title="Sort & list all"
+                className={`px-2.5 py-1.5 flex items-center gap-1 text-xs font-sans border-l border-[rgba(15,23,42,0.12)] transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-[#0F172A] text-white'
+                    : 'bg-white text-[#64748B] hover:bg-[rgba(15,23,42,0.04)]'
+                }`}
+              >
+                <List size={13} /> All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[0, 1, 2, 3].map((i) => (
@@ -156,9 +283,15 @@ function Roadmaps() {
           </div>
         ) : roadmaps.length === 0 ? (
           <div className="p-8 text-center text-[#64748B] bg-white rounded border border-[rgba(15,23,42,0.1)]">No roadmaps found.</div>
+        ) : viewMode === 'grouped' ? (
+          <div>
+            {grouped.map(({ label, items }) => (
+              <CollapsibleGroup key={label} label={label} items={items} navigate={navigate} />
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {roadmaps.map((rm, i) => (
+            {sorted.map((rm, i) => (
               <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
             ))}
           </div>
@@ -169,7 +302,6 @@ function Roadmaps() {
         <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5 mb-4">
           <Sparkles size={16} className="text-[#0F172A]" /> Custom Roadmaps
         </h2>
-        
         <div className="kinetic-card bg-[rgba(15,23,42,0.02)] p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 border-dashed border-2 border-[rgba(15,23,42,0.1)] justify-between">
           <div className="flex-1 text-center md:text-left">
             <h3 className="font-sans text-lg font-semibold text-[#0F172A] mb-2 flex items-center justify-center md:justify-start gap-2">
