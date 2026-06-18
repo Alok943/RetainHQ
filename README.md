@@ -13,7 +13,7 @@ Live at **[retainhq.app](https://retainhq.app)**.
 The whole product is one loop, and every feature serves it:
 
 1. **Log** an activity (something you just learned) → captures the single **Key Memory** worth keeping.
-2. **Schedule** — logging immediately creates a **Day-0 baseline review, due now** (every activity, no gate). This proves the loop instantly and beats the "dead week" before a first review would otherwise appear.
+2. **Schedule** — logging schedules the first review for **tomorrow** (recall after a delay is what builds memory; an instant quiz just measures short-term recall and breeds review fatigue). The one exception: a user's **first-ever** activity gets a demo review *due now*, so a brand-new user sees the loop instantly. Reviews are capped per day (overflow rolls forward) so a backlog never balloons into a demoralizing "23 due".
 3. **Recall** — the Review screen makes you commit a free-recall answer *before* revealing the key memory (retrieval practice, not recognition).
 4. **Rate** how it went (Missed / Hard / Good / Easy) → this drives the **SM-2** scheduler, which spaces the next review based on how well you recalled.
 5. **Retain** — each review is rescheduled to land right before you'd forget. The spacing widens as the memory strengthens.
@@ -45,7 +45,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture.
 | **Frontend** | React 19 + Vite + Tailwind CSS, React Router, React Flow + dagre (roadmap flowchart), jsPDF (roadmap export). Deployed on **Vercel** (root = `frontend/`). |
 | **Backend** | FastAPI (Python 3.10+), SQLModel + Alembic + asyncpg, pydantic-settings, PyJWT (crypto). Deployed on **Railway** (Singapore region, for latency to Supabase Mumbai). |
 | **Database / Auth** | Supabase — Postgres (UUID PKs, naive-UTC timestamps) + Google OAuth. |
-| **AI (advisory)** | Groq (`llama-3.1-8b-instant` by default) for the optional LLM recall grader. |
+| **AI (advisory)** | Groq (`openai/gpt-oss-120b` by default) for the optional LLM recall grader + question mode. |
 
 ---
 
@@ -137,10 +137,10 @@ DATABASE_URL=postgresql+asyncpg://postgres.<ref>:<pw>@aws-1-ap-south-1.pooler.su
 SUPABASE_URL=https://<your-ref>.supabase.co
 SUPABASE_JWT_SECRET=<jwt secret>           # JWKS-based ES256 verification
 ADMIN_EMAIL=you@example.com                # founder-only Admin gate
-# Optional AI grader (off by default):
+# Optional AI grader + question mode (off by default):
 GRADER_ENABLED=false
 GROQ_API_KEY=<groq key>
-GROQ_MODEL=llama-3.1-8b-instant
+GROQ_MODEL=openai/gpt-oss-120b      # any Groq model; reasoning models get reasoning_effort=low
 ```
 
 > **DB connection gotchas** (hard-won while deploying): use the Supabase **transaction pooler** (`...pooler.supabase.com:6543`) — the engine sets `statement_cache_size=0` + `prepared_statement_cache_size=0` and `pool_pre_ping=True`. The host shard is **`aws-1`**, not `aws-0`. Use an **alphanumeric** DB password (special chars break the URL). The direct `db.<ref>.supabase.co` host is IPv6-only — avoid it.
@@ -176,10 +176,12 @@ All routes are under `/api` and require a Bearer JWT (some support `optionalAuth
 | Method & Path | Purpose |
 |---|---|
 | `GET /api/activities/` | List the user's captured activities (Knowledge Vault), newest first |
-| `POST /api/activities/` | Create activity; init SM-2 state + schedule a Day-0 baseline review due now |
-| `GET /api/reviews/due` | Due reviews (`status='due'`, `scheduled_for ≤ now`) with activity eager-loaded |
+| `POST /api/activities/` | Create activity; init SM-2 state + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. |
+| `GET /api/reviews/due` | Due reviews (`status='due'`, `scheduled_for ≤ now`) with activity eager-loaded. Capped to one session (overflow rolls forward). |
 | `POST /api/reviews/{id}/complete` | Complete with `rating` + optional `recalled`; advances SM-2 and schedules the next review (IDOR-protected) |
-| `POST /api/reviews/{id}/grade` | LLM grader (gated on `GRADER_ENABLED`): grades free recall vs `key_memory` → `{verdict, recalled, feedback, revision_note}`. Advisory only. |
+| `POST /api/reviews/{id}/grade` | LLM grader (gated on `GRADER_ENABLED`): grades free recall vs `key_memory` → `{verdict, recalled, feedback, revision_note, related_subtopics}`. Advisory only. |
+| `POST /api/reviews/{id}/questions` | **Question mode** (gated): generate 2–3 short-answer questions grounded in `key_memory`. 404 when disabled → UI falls back to free recall. |
+| `POST /api/reviews/{id}/grade-questions` | **Question mode** (gated): grade the answer set vs `key_memory` → `{recalled, feedback, items[], related_subtopics}`. Advisory only. |
 | `GET /api/dashboard/` | `due_count`, `consistency_window`, `daily_progress`, `total_activities`, `total_reviews_completed`, `next_review_at` |
 | `GET /api/roadmaps/` | List roadmaps with server-computed progress |
 | `GET /api/roadmaps/{id}` | Roadmap + nodes + per-node user status |
@@ -201,24 +203,33 @@ Full detail in [`docs/API.md`](docs/API.md). Interactive docs at `/docs` when th
 
 Every logged activity is a single SM-2 "card" — its scheduling state lives on the `activities` row. Logic is in [`backend/app/services/scheduler.py`](backend/app/services/scheduler.py).
 
-- Logging schedules a **Day-0 baseline review, due now**.
-- Completing it starts the ladder: **+1 day → +6 days → `round(interval × ease_factor)`**.
+- Logging schedules the first review for **tomorrow** (`repetitions=1`, so the ladder reads **+1 day → +6 days → `round(interval × ease_factor)`**). A user's **first-ever** activity instead gets a demo review *due now* (`immediate=True`, `repetitions=0`) as the onboarding aha — a one-time exception, not per-log, so it doesn't reintroduce fatigue.
 - Each completion maps `rating` + `recalled` → a quality score 0–5:
   - `recalled = false` → quality 2 (a **lapse** → interval resets to 1 day, `repetitions` resets to **1** so the next pass jumps to 6 days, avoiding an awkward 1d→1d).
   - otherwise Hard / Good / Easy → quality 3 / 4 / 5.
 - `quality` is persisted on the review; the **next** review is scheduled immediately.
+- **Daily session cap** (`REVIEW_SESSION_CAP`, default 10): the due queue and the dashboard `due_count` are both capped at one session's worth, oldest-first. Overdue cards beyond the cap stay `due` and roll forward — a fallen-behind user always sees a bounded, finishable set instead of the classic unbounded-backlog death spiral.
 
 FSRS is the planned v2 successor (the `rating` + `recalled` signals are already being captured to feed it).
 
 ---
 
-## The LLM recall grader (advisory)
+## The LLM recall grader + question mode (advisory)
 
-[`backend/app/services/grader.py`](backend/app/services/grader.py) — **shipped and wired, gated by `GRADER_ENABLED`** (off in prod until the env is set).
+[`backend/app/services/grader.py`](backend/app/services/grader.py) — **shipped and wired, gated by `GRADER_ENABLED`** (off in prod until the env is set). One Groq call per step; default model `openai/gpt-oss-120b`. gpt-oss is a *reasoning* model, so `_groq_json` pins `reasoning_effort=low` for it (gpt-oss-only flag) to bound latency and stop reasoning tokens from truncating the JSON. Uses `json_object` mode (not the stricter `json_schema`, which gpt-oss ignores).
 
-- One Groq call grades the user's free-recall answer **only against the stored `key_memory`** (the reference), never the model's outside knowledge.
-- Returns strict JSON: `{verdict, recalled, feedback, revision_note}`, validated with Pydantic.
-- **Advisory only** — it judges *recalled vs missed* and writes a short revision note, then suggests a rating chip in the UI. The user always makes the final call; the AI **never** auto-submits and never proposes "Hard" (felt difficulty is subjective — the human's to decide).
+**Free-recall grader** (`/grade`):
+- Grades the user's answer **only against the stored `key_memory`** (the reference), never the model's outside knowledge.
+- Returns strict JSON `{verdict, recalled, feedback, revision_note, related_subtopics}`, validated with Pydantic.
+- **Advisory only** — it judges *recalled vs missed* and writes a short revision note, then suggests a rating chip. The user always makes the final call; the AI **never** auto-submits and never proposes "Hard" (felt difficulty is subjective).
+
+**Question mode** (`/questions` + `/grade-questions`, prototype):
+- Instead of one open "describe the topic" prompt, the LLM turns the `key_memory` into **2–3 short-answer questions**, then grades the answer set. This probes the forgettable *edges* of what was captured rather than letting a two-line summary skate by.
+- Guardrail: questions must be answerable **solely from the `key_memory`** — no un-captured "gotcha" trivia (an unfair failure is exactly the friction that breeds fatigue). Open-ended short answer, never multiple choice. `key_memory` stays the single grading ground truth.
+- **Additive, not a replacement** — the UI probes `/questions` per card; a 404 (disabled) or any failure falls back to the single free-recall box, so the live path stays pristine.
+
+**Related subtopics** (both modes): each grade also returns 1–2 `related_subtopics` (`title` + one-line `explainer`) — adjacent topics worth learning next. These are **suggestions, never graded** — the constructive answer to "what about material they didn't capture?": surface it as a nudge, don't quiz them on it. Highlighted as a distinct callout in the Review UI.
+
 - Failures degrade silently (`GraderError` → 503 → frontend skips the AI box).
 - The gap between the AI's `ai_recalled` and the user's self-reported `recalled` is the calibration metric we care about.
 
@@ -275,10 +286,12 @@ FSRS is the planned v2 successor (the `rating` + `recalled` signals are already 
 
 ## Status & roadmap
 
-**Phase 1 (core loop) is live end-to-end and deployed to production.** A real user can sign up, log an activity, run the baseline review, and exercise the full spaced-repetition loop.
+**Phase 1 (core loop) is live end-to-end and deployed to production.** A real user can sign up, log an activity, run the scheduled review, and exercise the full spaced-repetition loop.
+
+**Anti-fatigue redesign (latest):** first review deferred to tomorrow (first-ever activity keeps an instant demo), daily review session cap with rollover, and an LLM **question mode** + **related-subtopics** suggestions — both gated behind `GRADER_ENABLED`, free recall stays the fallback.
 
 **Next, in order of leverage:**
-1. Flip the AI grader on in prod (`GRADER_ENABLED=true` + `GROQ_API_KEY` on Railway).
+1. Flip the AI grader + question mode on in prod (`GRADER_ENABLED=true`, `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` on Railway) and validate question/subtopic quality on real cards.
 2. Expand seed content (e.g. a proper Git section; fine-tuning + evals for AI Engineering).
 3. Logged Reviews Vault (review history).
 4. Real Track / Roadmap pickers on the log form (currently capture-only).

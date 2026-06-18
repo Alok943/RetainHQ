@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper, Sparkles, Lightbulb } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import Hint from './Hint';
@@ -39,6 +39,14 @@ function Review({ onBack }) {
   const [aiResult, setAiResult] = useState(null); // {verdict, recalled, feedback} | null
   const [grading, setGrading] = useState(false);
 
+  // Question mode (PROTOTYPE, gated server-side on GRADER_ENABLED). Populated only
+  // when /questions returns; otherwise we stay on the single free-recall box.
+  const [questions, setQuestions] = useState(null);    // string[] | null
+  const [qAnswers, setQAnswers] = useState([]);        // parallel to questions
+  const [qResult, setQResult] = useState(null);        // grade-questions response | null
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [questionModeOff, setQuestionModeOff] = useState(false); // session: grader disabled
+
   useEffect(() => {
     if (!session) {
       setLoading(false);
@@ -52,7 +60,10 @@ function Review({ onBack }) {
 
   const current = reviews[index] ?? null;
   const total = reviews.length;
-  const committed = answer.trim().length > 0 || skipped;
+  const questionMode = Array.isArray(questions) && questions.length > 0;
+  const committed = questionMode
+    ? (skipped || qAnswers.some((a) => a.trim().length > 0))
+    : (answer.trim().length > 0 || skipped);
 
   const resetCard = () => {
     setRevealed(false);
@@ -60,7 +71,38 @@ function Review({ onBack }) {
     setSkipped(false);
     setAiResult(null);
     setGrading(false);
+    setQuestions(null);
+    setQAnswers([]);
+    setQResult(null);
+    setLoadingQuestions(false);
   };
+
+  // Question mode: when a new card surfaces, try to fetch grounded questions.
+  // Gated server-side on GRADER_ENABLED — a "disabled" 404 means it's off, so we
+  // stop trying for the rest of the session (the live free-recall path stays
+  // pristine after the first card). Any other failure falls back for this card.
+  useEffect(() => {
+    if (!current || questionModeOff || revealed) return;
+    let cancelled = false;
+    setLoadingQuestions(true);
+    apiFetch(`/api/reviews/${current.id}/questions`, { method: 'POST' })
+      .then((res) => {
+        if (cancelled) return;
+        const qs = res?.questions ?? [];
+        if (qs.length) {
+          setQuestions(qs);
+          setQAnswers(qs.map(() => ''));
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (typeof err?.message === 'string' && err.message.includes('disabled')) {
+          setQuestionModeOff(true); // grader off → don't retry this session
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingQuestions(false); });
+    return () => { cancelled = true; };
+  }, [current?.id]);
 
   // "I don't know" is a committed answer — reveal in one click, don't make the
   // failure path cost an extra tap.
@@ -73,7 +115,24 @@ function Review({ onBack }) {
   const handleReveal = () => {
     if (!committed) return;
     setRevealed(true);
-    // Non-blocking AI grade of the free-recall attempt. Advisory only — any
+
+    // Question mode: grade the whole answer set in one call. Advisory only.
+    if (questionMode) {
+      const pairs = questions.map((q, i) => ({ question: q, answer: (qAnswers[i] || '').trim() }));
+      if (pairs.some((p) => p.answer) && current) {
+        setGrading(true);
+        apiFetch(`/api/reviews/${current.id}/grade-questions`, {
+          method: 'POST',
+          body: JSON.stringify({ answers: pairs }),
+        })
+          .then((res) => setQResult(res))
+          .catch(() => setQResult(null))
+          .finally(() => setGrading(false));
+      }
+      return;
+    }
+
+    // Free recall: non-blocking AI grade of the attempt. Advisory only — any
     // failure (grader disabled / unavailable) silently falls back to manual rating.
     if (answer.trim() && current) {
       setGrading(true);
@@ -87,7 +146,14 @@ function Review({ onBack }) {
     }
   };
 
-  const suggestedKey = suggestedKeyFromAi(aiResult);
+  const suggestedKey = questionMode
+    ? (qResult ? (qResult.recalled ? 'good' : 'missed') : null)
+    : suggestedKeyFromAi(aiResult);
+
+  // Adjacent topics the LLM suggests learning next — surfaced (highlighted) after
+  // reveal in either mode. Purely a suggestion; never affects the grade.
+  const relatedSubtopics =
+    (questionMode ? qResult?.related_subtopics : aiResult?.related_subtopics) ?? [];
 
   const handleOutcome = async (outcome) => {
     if (!current || submitting) return;
@@ -199,6 +265,10 @@ function Review({ onBack }) {
             {index + 1} / {total}
           </div>
         </div>
+        {/* Frame the queue as one short, finishable session — not an open-ended pile. */}
+        <p className="font-sans text-xs text-[#64748B]">
+          Today's review · {total} card{total > 1 ? 's' : ''} · ~{Math.max(1, Math.round(total * 0.7))} min
+        </p>
         <div className="w-full h-1 bg-[rgba(15,23,42,0.08)] rounded-full overflow-hidden">
           {/* Counts the revealed card as progress so the bar reaches 100% on the
               last card instead of stalling just short of full. */}
@@ -228,27 +298,86 @@ function Review({ onBack }) {
                 Pulling it from memory is the workout — write what you remember before
                 you peek, even if it's rough. That effort is what makes it stick.
               </Hint>
-              <p className="font-sans text-sm text-[#64748B]">
-                Type what you remember — then check yourself. No peeking.
-              </p>
-              <textarea
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                rows={4}
-                autoFocus
-                placeholder="Write your answer from memory…"
-                className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
-              />
+
+              {questionMode ? (
+                /* Question mode: answer each grounded question from memory. */
+                <div className="flex flex-col gap-5">
+                  {questions.map((q, i) => (
+                    <div key={i} className="flex flex-col gap-2">
+                      <label className="font-sans text-sm font-medium text-[#0F172A]">
+                        <span className="font-mono text-xs text-[#0891B2] mr-2">{i + 1}.</span>
+                        {q}
+                      </label>
+                      <textarea
+                        value={qAnswers[i] ?? ''}
+                        onChange={(e) =>
+                          setQAnswers((prev) => prev.map((a, j) => (j === i ? e.target.value : a)))
+                        }
+                        rows={2}
+                        autoFocus={i === 0}
+                        placeholder="Your answer from memory…"
+                        className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : loadingQuestions && !questionModeOff ? (
+                /* Brief while we check for question mode (only stalls the first card
+                   of a session when the grader is off; then falls back below). */
+                <p className="font-sans text-sm text-[#64748B] italic">Preparing your recall…</p>
+              ) : (
+                <>
+                  <p className="font-sans text-sm text-[#64748B]">
+                    Type what you remember — then check yourself. No peeking.
+                  </p>
+                  <textarea
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    rows={4}
+                    autoFocus
+                    placeholder="Write your answer from memory…"
+                    className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
+                  />
+                </>
+              )}
             </div>
           ) : (
             /* ---------- REVEAL: their attempt vs the stored answer ---------- */
             <div className="mt-6 flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div>
-                <div className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest mb-1.5">Your answer</div>
-                <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed bg-[rgba(15,23,42,0.03)] rounded p-3 whitespace-pre-wrap">
-                  {skipped || !answer.trim() ? <span className="italic text-[#64748B]">You skipped this one.</span> : answer}
-                </p>
-              </div>
+              {questionMode ? (
+                <div className="flex flex-col gap-3">
+                  <div className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest">Your answers</div>
+                  {questions.map((q, i) => {
+                    const item = qResult?.items?.find((it) => it.question === q) ?? null;
+                    return (
+                      <div key={i} className="bg-[rgba(15,23,42,0.03)] rounded p-3">
+                        <p className="font-sans text-sm font-medium text-[#0F172A] flex items-start gap-2">
+                          <span className="font-mono text-xs text-[#0891B2] mt-0.5">{i + 1}.</span>
+                          <span className="flex-1">{q}</span>
+                          {item && (
+                            <span className={`shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.correct ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-[#B91C1C]/10 text-[#B91C1C]'}`}>
+                              {item.correct ? 'Got it' : 'Missed'}
+                            </span>
+                          )}
+                        </p>
+                        <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed mt-1.5 whitespace-pre-wrap">
+                          {qAnswers[i]?.trim() ? qAnswers[i] : <span className="italic text-[#64748B]">No answer.</span>}
+                        </p>
+                        {item?.note && (
+                          <p className="font-sans text-xs text-[#64748B] mt-1.5">{item.note}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div>
+                  <div className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest mb-1.5">Your answer</div>
+                  <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed bg-[rgba(15,23,42,0.03)] rounded p-3 whitespace-pre-wrap">
+                    {skipped || !answer.trim() ? <span className="italic text-[#64748B]">You skipped this one.</span> : answer}
+                  </p>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-[rgba(15,23,42,0.08)]">
                 <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5 flex items-center gap-1">
@@ -292,15 +421,18 @@ function Review({ onBack }) {
           </div>
         ) : (
           <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {/* AI grade proposal — advisory; user still picks below */}
-            {(grading || aiResult) && (
-              <div className="w-full mb-5 rounded-lg border border-[#0891B2]/20 bg-[#0891B2]/5 p-4">
+            {/* AI grade proposal — advisory; user still picks below. Highlighted
+                (accent border + tint + shadow) so it doesn't get lost in the page. */}
+            {(grading || aiResult || qResult) && (
+              <div className="w-full mb-4 rounded-xl border border-[#0891B2]/30 border-l-4 border-l-[#0891B2] bg-[#0891B2]/[0.07] p-4 shadow-sm">
                 <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
                   <Sparkles size={12} /> AI feedback
                 </div>
                 {grading ? (
                   <p className="font-sans text-sm text-[#64748B] italic">Grading your recall…</p>
-                ) : (
+                ) : questionMode && qResult ? (
+                  <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{qResult.feedback}</p>
+                ) : aiResult ? (
                   <>
                     <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{aiResult.feedback}</p>
                     {aiResult.revision_note && (
@@ -314,9 +446,30 @@ function Review({ onBack }) {
                       </div>
                     )}
                   </>
-                )}
+                ) : null}
               </div>
             )}
+
+            {/* Suggested adjacent topics — distinct accent so they stand out from the
+                feedback above. A nudge to capture these next, never part of the grade. */}
+            {relatedSubtopics.length > 0 && (
+              <div className="w-full mb-5 rounded-xl border border-[#8B5CF6]/30 border-l-4 border-l-[#8B5CF6] bg-[#8B5CF6]/[0.06] p-4">
+                <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#8B5CF6] uppercase tracking-widest mb-2.5">
+                  <Lightbulb size={12} /> Worth exploring next
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  {relatedSubtopics.map((s, i) => (
+                    <div key={i} className="flex flex-col">
+                      <span className="font-sans text-sm font-semibold text-[#0F172A]">{s.title}</span>
+                      {s.explainer && (
+                        <span className="font-sans text-xs text-[#64748B] leading-relaxed">{s.explainer}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="w-full mb-4">
               <Hint id="review_honest_rating">
                 Your pick decides when this comes back — "Easy" pushes it out weeks,

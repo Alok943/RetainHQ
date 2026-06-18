@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import List
 import uuid
 from app.api.deps import get_db, get_current_user
@@ -33,7 +33,17 @@ async def log_activity(
     current_user: SupabaseUser = Depends(get_current_user)
 ):
     user_id = uuid.UUID(current_user.id)
-    
+
+    # Is this the user's first-ever activity? If so it gets a one-time demo review
+    # due now (instant proof of the recall loop); every later activity's first
+    # review waits until tomorrow. Count before inserting so we don't count this one.
+    existing_count = (
+        await db.execute(
+            select(func.count()).select_from(Activity).where(Activity.user_id == user_id)
+        )
+    ).scalar_one()
+    is_first = existing_count == 0
+
     # Create the activity
     activity = Activity(
         user_id=user_id,
@@ -52,9 +62,9 @@ async def log_activity(
     await db.refresh(activity)
 
     # Every activity enters the SM-2 rotation: initialize its memory state and
-    # schedule the first review (+1 day). Subsequent reviews are scheduled on
-    # completion (see reviews.complete_review).
-    first_review = initial_review_for_activity(activity)
+    # schedule the first review (tomorrow, or now for the first-ever demo card).
+    # Subsequent reviews are scheduled on completion (see reviews.complete_review).
+    first_review = initial_review_for_activity(activity, immediate=is_first)
     db.add(first_review)
 
     await db.commit()
@@ -72,5 +82,6 @@ async def log_activity(
         key_memory=activity.key_memory,
         mistake=activity.mistake,
         created_at=activity.created_at,
-        reviews_scheduled=1
+        reviews_scheduled=1,
+        review_due_now=is_first,
     )

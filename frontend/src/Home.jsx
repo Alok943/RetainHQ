@@ -114,7 +114,7 @@ function Home({ onStartReviews }) {
             <div className="kinetic-card flex flex-col sm:flex-row sm:items-center gap-5">
               <div className="flex-1">
                 <p className="font-sans font-semibold text-[#0F172A] text-lg">Capture your first thing to remember</p>
-                <p className="font-sans text-sm text-[#64748B] mt-1">Log one thing you've learned — we'll quiz you on it right away, then space out the reviews so it sticks.</p>
+                <p className="font-sans text-sm text-[#64748B] mt-1">Log one thing you've learned — we'll bring it back tomorrow for your first recall, then space out the reviews so it sticks.</p>
               </div>
               <button
                 onClick={() => requireAuth(() => navigate('/log'))}

@@ -8,6 +8,7 @@ from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.models.models import Review, Activity
 from app.schemas.dashboard import DashboardStats
+from app.services.scheduler import REVIEW_SESSION_CAP
 
 router = APIRouter()
 
@@ -65,8 +66,11 @@ async def get_dashboard_stats(
     consistency_window = len(act_dates | rev_dates)
     daily_progress = (act.today or 0) + (rev.today or 0)
 
+    # Cap the surfaced due count to one session's worth — it must match the
+    # bounded queue from /reviews/due so Home never shows a scary backlog number
+    # the user can't actually clear in one sitting (the "23 due" death spiral).
     return DashboardStats(
-        due_count=rev.due or 0,
+        due_count=min(rev.due or 0, REVIEW_SESSION_CAP),
         consistency_window=consistency_window,
         daily_progress=daily_progress,
         total_activities=act.total or 0,

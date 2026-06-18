@@ -11,7 +11,10 @@ const EXAMPLES = ['Binary search', 'TCP handshake', 'SQL joins', 'Big-O of quick
 // Full-screen first-capture gate. Shown instead of the dashboard when a signed-in
 // user has zero activities — the post-login leak our funnel shows is right here, so
 // we give them exactly one thing to do: capture a memory, then go straight into the
-// baseline review (the actual aha moment).
+// one-time demo review (the actual aha moment). Because this gate only renders for a
+// zero-activity user, the activity logged here is always their first — the backend
+// schedules its review due now, so /reviews has a card waiting. (Second and later
+// activities, logged from the normal Log page, defer their first review to tomorrow.)
 export default function FirstCapture({ onSkip }) {
   const navigate = useNavigate();
   const { requireAuth } = useAuth();
@@ -45,7 +48,8 @@ export default function FirstCapture({ onSkip }) {
           needed_hint: false,
         }),
       });
-      // Straight into the Day-0 review that logging just scheduled.
+      // First-ever activity: the backend scheduled its review due now. Drop them
+      // straight into that one-time demo review — the activation aha moment.
       navigate('/reviews');
     } catch (err) {
       setError(err.message);

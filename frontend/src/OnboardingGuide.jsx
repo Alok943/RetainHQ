@@ -29,10 +29,10 @@ const STEPS = [
   {
     icon: Brain,
     accentColor: '#F59E0B',
-    title: '2. Test yourself immediately',
-    subtitle: 'Baseline Review',
+    title: '2. Recall it the next day',
+    subtitle: 'First Review',
     description:
-      'RetainHQ doesn\'t wait — you get a baseline recall right away. Type what you remember before the reveal. Real recall, not recognition.',
+      'Your first review lands the next day — recall after a delay is what builds memory, not a quiz seconds after logging. Type what you remember before the reveal. Real recall, not recognition.',
     tip: 'Rating honestly (Easy / Good / Hard) teaches the algorithm how quickly you forget.',
     action: null,
   },

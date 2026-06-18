@@ -28,6 +28,10 @@ class ActivityResponse(BaseModel):
     mistake: Optional[str] = None
     created_at: datetime
     reviews_scheduled: int = 0
+    # True only for a user's first-ever activity, which gets a demo review due
+    # now; the UI uses this to send them straight into that review. Later
+    # activities schedule their first review for tomorrow (review_due_now=False).
+    review_due_now: bool = False
 
 class ActivityListItem(BaseModel):
     """A single captured activity for the Knowledge Vault (browse view)."""

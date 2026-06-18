@@ -12,25 +12,56 @@ from app.models.models import Activity, Review
 MIN_EASE_FACTOR = 1.3
 DEFAULT_EASE_FACTOR = 2.5
 
+# Max reviews surfaced (and counted as "due") in a single day. Overdue cards
+# beyond this stay status='due' and roll forward to later sessions — the queue
+# is ordered oldest-first — so a user who falls behind always sees a bounded,
+# finishable session instead of a demoralizing backlog. An unbounded "23 due"
+# count is the classic SRS death spiral: people see it and stop opening the app.
+REVIEW_SESSION_CAP = 10
 
-def initial_review_for_activity(activity: Activity, now: Optional[datetime] = None) -> Review:
+
+def initial_review_for_activity(
+    activity: Activity, now: Optional[datetime] = None, immediate: bool = False
+) -> Review:
     """
-    Initialize an activity's SM-2 state and return its Day-0 baseline review,
-    scheduled immediately (due now) so the user can prove the loop in seconds
-    right after logging. Completing it kicks off the SM-2 ladder (+1d, +6d, ...).
+    Initialize an activity's SM-2 state and return its first review.
+
+    Default (immediate=False): the first review is scheduled for TOMORROW (+1 day).
+    Quizzing a topic seconds after logging it measures short-term memory, not
+    retention, and a batch of log-then-quiz prompts is the main source of review
+    fatigue (log 4 topics -> 4 instant exams). The forgetting curve only starts
+    to bite after a delay, so the first recall is worth far more a day later.
+    Completing it advances the SM-2 ladder straight to +6d, then x ease.
+
+    immediate=True: schedule the first review NOW. This is the one-time onboarding
+    demo for a user's very FIRST activity — a brand-new user sees the recall loop
+    instantly (our activation funnel leaks right after the first capture). It's a
+    single demo card, not a per-log behavior, so it doesn't reintroduce fatigue.
+
     Every logged activity enters the rotation (no difficulty/hint gate).
     The activity must be flushed so it has an id before calling this.
     """
     now = now or datetime.utcnow()
     activity.ease_factor = DEFAULT_EASE_FACTOR
-    activity.repetitions = 0
-    activity.interval_days = 0
-    activity.next_review_at = now
+    if immediate:
+        # Demo review due now. repetitions=0 so completing it still produces the
+        # standard now -> +1d -> +6d ladder for this first card.
+        activity.repetitions = 0
+        activity.interval_days = 0
+        due_at = now
+    else:
+        # repetitions=1 (not 0) treats the tomorrow review as the first banked
+        # recall, so completing it jumps the ladder to +6d — the classic SM-2
+        # 1->6 schedule — instead of an awkward +1d -> +1d. Mirrors the lapse reset.
+        activity.repetitions = 1
+        activity.interval_days = 1
+        due_at = now + timedelta(days=1)
+    activity.next_review_at = due_at
     return Review(
         user_id=activity.user_id,
         activity_id=activity.id,
         status="due",
-        scheduled_for=now,
+        scheduled_for=due_at,
     )
 
 
@@ -65,8 +96,8 @@ def apply_sm2(activity: Activity, quality: int, now: Optional[datetime] = None) 
         activity.repetitions = 1
         activity.interval_days = 1
     else:
-        # repetitions counts successful recalls. The Day-0 baseline is rep 1
-        # (+1d), the next is rep 2 (+6d), then interval x ease_factor.
+        # repetitions counts successful recalls. The first (tomorrow) review is
+        # rep 1, so completing it lands on rep 2 (+6d), then interval x ease_factor.
         activity.repetitions += 1
         if activity.repetitions == 1:
             activity.interval_days = 1

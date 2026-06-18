@@ -15,9 +15,17 @@ from app.schemas.review import (
     ReviewComplete,
     ReviewGradeRequest,
     ReviewGradeResponse,
+    ReviewQuestionsResponse,
+    ReviewGradeQuestionsRequest,
+    ReviewGradeQuestionsResponse,
 )
-from app.services.scheduler import quality_from_outcome, apply_sm2
-from app.services.grader import grade_recall, GraderError
+from app.services.scheduler import quality_from_outcome, apply_sm2, REVIEW_SESSION_CAP
+from app.services.grader import (
+    grade_recall,
+    generate_questions,
+    grade_question_set,
+    GraderError,
+)
 
 router = APIRouter()
 
@@ -29,8 +37,9 @@ async def get_due_reviews(
     user_id = uuid.UUID(current_user.id)
     now = datetime.utcnow()
     
-    # Crucial: selectinload is required for AsyncSession to avoid MissingGreenlet error
-    # Cap at 20 to avoid flooding the UI after a long break (overdue backlog).
+    # Crucial: selectinload is required for AsyncSession to avoid MissingGreenlet error.
+    # Cap the session (oldest-first) so a long-overdue backlog surfaces as a bounded,
+    # finishable set — the rest stay 'due' and roll forward to the next session.
     stmt = (
         select(Review)
         .where(
@@ -40,7 +49,7 @@ async def get_due_reviews(
         )
         .options(selectinload(Review.activity))
         .order_by(Review.scheduled_for.asc())
-        .limit(20)
+        .limit(REVIEW_SESSION_CAP)
     )
     
     result = await db.execute(stmt)
@@ -162,4 +171,111 @@ async def grade_review(
         recalled=verdict.recalled,
         feedback=verdict.feedback,
         revision_note=verdict.revision_note,
+        related_subtopics=[
+            {"title": s.title, "explainer": s.explainer} for s in verdict.related_subtopics
+        ],
+    )
+
+
+async def _load_open_review(db: AsyncSession, review_id: uuid.UUID, user_id: uuid.UUID) -> Review:
+    """Fetch a still-due review owned by the user, with its activity eager-loaded.
+
+    Raises 404 if not found / not owned / already completed (shared by question mode).
+    """
+    stmt = (
+        select(Review)
+        .where(
+            Review.id == review_id,
+            Review.user_id == user_id,
+            Review.status == "due",
+        )
+        .options(selectinload(Review.activity))
+    )
+    review = (await db.execute(stmt)).scalars().first()
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Review not found or already completed",
+        )
+    return review
+
+
+@router.post("/{review_id}/questions", response_model=ReviewQuestionsResponse)
+async def get_review_questions(
+    review_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Question mode (PROTOTYPE, gated on GRADER_ENABLED): generate 2-3 short-answer
+    questions from the activity's key_memory. Advisory layer over free recall — the
+    frontend falls back to the single free-recall box if this 404s (disabled) or 503s.
+    """
+    if not settings.GRADER_ENABLED:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question mode is disabled")
+
+    user_id = uuid.UUID(current_user.id)
+    review = await _load_open_review(db, review_id, user_id)
+
+    try:
+        generated = await generate_questions(
+            topic=review.activity.topic,
+            key_memory=review.activity.key_memory,
+            notes=review.activity.notes,
+            mistake=review.activity.mistake,
+        )
+    except GraderError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Question generation unavailable: {e}",
+        )
+
+    return ReviewQuestionsResponse(questions=generated.questions)
+
+
+@router.post("/{review_id}/grade-questions", response_model=ReviewGradeQuestionsResponse)
+async def grade_review_questions(
+    review_id: uuid.UUID,
+    body: ReviewGradeQuestionsRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Grade the question-mode answers against the key_memory (one LLM call). Advisory:
+    persists the verdict on the review (reusing the ai_* columns) but the user's own
+    rating/recalled sent to /complete remain authoritative.
+    """
+    if not settings.GRADER_ENABLED:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question mode is disabled")
+
+    user_id = uuid.UUID(current_user.id)
+    review = await _load_open_review(db, review_id, user_id)
+
+    try:
+        graded = await grade_question_set(
+            topic=review.activity.topic,
+            key_memory=review.activity.key_memory,
+            qa_pairs=[{"question": qa.question, "answer": qa.answer} for qa in body.answers],
+        )
+    except GraderError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Question grader unavailable: {e}",
+        )
+
+    # Persist as the review's AI proposal (same columns as free-recall grading).
+    review.ai_verdict = "correct" if graded.recalled else "incorrect"
+    review.ai_recalled = graded.recalled
+    review.ai_feedback = graded.feedback
+    db.add(review)
+    await db.commit()
+
+    return ReviewGradeQuestionsResponse(
+        recalled=graded.recalled,
+        feedback=graded.feedback,
+        items=[
+            {"question": it.question, "correct": it.correct, "note": it.note}
+            for it in graded.items
+        ],
+        related_subtopics=[
+            {"title": s.title, "explainer": s.explainer} for s in graded.related_subtopics
+        ],
     )

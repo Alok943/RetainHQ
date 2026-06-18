@@ -29,6 +29,7 @@ function LogActivity() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [logged, setLogged] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const { requireAuth } = useAuth();
 
@@ -59,6 +60,17 @@ function LogActivity() {
 
   const canSubmit = topic.trim().length > 0 && keyMemory.trim().length > 0 && !submitting;
 
+  const resetForm = () => {
+    setTopic('');
+    setSourceType('problem');
+    setKeyMemory('');
+    setMistake('');
+    setDifficulty(3);
+    setNeededHint(false);
+    setError(null);
+    setLogged(false);
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     
@@ -69,7 +81,7 @@ function LogActivity() {
     setSubmitting(true);
     setError(null);
     try {
-      await apiFetch('/api/activities/', {
+      const res = await apiFetch('/api/activities/', {
         method: 'POST',
         body: JSON.stringify({
           topic: topic.trim(),
@@ -81,14 +93,49 @@ function LogActivity() {
         }),
       });
       localStorage.removeItem('retainhq_log_draft');
-      // Send them straight into the Day-0 baseline review — the whole point is to
-      // prove the recall loop right after logging, not drop them back on Home.
-      navigate('/reviews');
+      // A user's first-ever activity gets a demo review due now — send them
+      // straight into it so they see the recall loop. Every later activity's
+      // first review waits until tomorrow (recall after a delay builds memory),
+      // so we confirm instead of dropping them into an empty queue.
+      if (res?.review_due_now) {
+        navigate('/reviews');
+        return;
+      }
+      setLogged(true);
+      setSubmitting(false);
     } catch (err) {
       setError(err.message);
       setSubmitting(false);
     }
   };
+
+  if (logged) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-5 p-8 max-w-md mx-auto w-full text-center min-h-[60vh] animate-in fade-in duration-300">
+        <CheckCircle2 size={44} className="text-[#0F766E]" />
+        <h2 className="font-sans text-2xl font-semibold text-[#0F172A]">Captured</h2>
+        <p className="font-sans text-sm text-[#64748B] leading-relaxed">
+          Your first review lands <span className="font-semibold text-[#0F172A]">tomorrow</span>.
+          Recalling it after a day is what actually builds memory — quizzing you right now
+          would only test short-term recall.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-2">
+          <button
+            onClick={resetForm}
+            className="kinetic-btn bg-white border border-[rgba(15,23,42,0.15)] text-[#0F172A] px-6 py-3 text-sm font-medium"
+          >
+            Log another
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="kinetic-btn kinetic-accent-gradient px-6 py-3 text-sm"
+          >
+            Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full pb-20 md:pb-8 animate-in fade-in duration-300">
@@ -214,7 +261,7 @@ function LogActivity() {
           <div>
             <div className="font-sans text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Projected Review Schedule</div>
             <div className="font-mono text-sm font-semibold text-[#0F172A] mt-0.5">
-              Baseline review now, then spaced out as you recall it
+              First review tomorrow, then spaced out as you recall it
             </div>
           </div>
         </div>

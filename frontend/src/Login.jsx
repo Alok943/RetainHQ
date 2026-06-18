@@ -25,13 +25,12 @@ function Login() {
     </button>
   );
 
-  // SM-2 cadence (illustrative): baseline now, then +1d, +6d, then intervals
+  // SM-2 cadence (illustrative): first recall at +1d, then +6d, then intervals
   // expand by your ease factor. Exact days adapt to how well you recall.
   const timeline = [
     { day: 'Day 0', label: 'Learn', sub: 'Log a new topic', state: 'done' },
-    { day: 'Day 0', label: 'Baseline', sub: 'First recall', state: 'done' },
-    { day: 'Day 1', label: 'Review', sub: 'Reinforce', state: 'active' },
-    { day: 'Day 6', label: 'Review', sub: 'Strengthen', state: 'todo' },
+    { day: 'Day 1', label: 'First recall', sub: 'Pull it from memory', state: 'active' },
+    { day: 'Day 7', label: 'Review', sub: 'Reinforce', state: 'todo' },
     { day: 'Day 15+', label: 'Mastered', sub: 'Spacing widens as it sticks', state: 'goal' },
   ];
 

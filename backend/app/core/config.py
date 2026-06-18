@@ -21,9 +21,12 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 10
     DB_POOL_TIMEOUT: int = 30
 
-    # Groq LLM recall grader (EXPERIMENT — frozen, off the launch path)
+    # Groq LLM recall grader (EXPERIMENT — frozen, off the launch path).
+    # gpt-oss-120b: strong instruction-following + JSON for question gen/grading.
+    # It's a reasoning model — grader._groq_json pins reasoning_effort=low for it.
+    # Override via env (GROQ_MODEL) to fall back to e.g. llama-3.3-70b-versatile.
     GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
     GRADER_ENABLED: bool = False
 
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
