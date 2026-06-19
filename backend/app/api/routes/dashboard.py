@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.models.models import Review, Activity
-from app.schemas.dashboard import DashboardStats
+from app.schemas.dashboard import DashboardStats, HeatmapDay, HeatmapResponse
 from app.services.scheduler import REVIEW_SESSION_CAP
 
 router = APIRouter()
@@ -76,4 +76,89 @@ async def get_dashboard_stats(
         total_activities=act.total or 0,
         total_reviews_completed=rev.total_completed or 0,
         next_review_at=rev.next_review,
+    )
+
+
+@router.get("/heatmap", response_model=HeatmapResponse)
+async def get_heatmap(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    user_id = uuid.UUID(current_user.id)
+    now = datetime.utcnow()
+    window_start = now - timedelta(days=365)
+
+    # Single round-trip: per-day count + recalled count for the last 365 days.
+    # func.count(...).filter(...) is the same FILTER-clause aggregate style used
+    # everywhere else in this module.
+    stmt = (
+        select(
+            cast(Review.completed_at, Date).label("day"),
+            func.count(Review.id).label("count"),
+            func.count(Review.id).filter(Review.recalled == True).label("recalled"),
+        )
+        .where(
+            Review.user_id == user_id,
+            Review.status == "completed",
+            Review.completed_at >= window_start,
+        )
+        .group_by(cast(Review.completed_at, Date))
+        .order_by(cast(Review.completed_at, Date))
+    )
+    rows = (await db.execute(stmt)).all()
+
+    # Build the days list and collect the set of active date objects for streak math.
+    days: list[HeatmapDay] = []
+    active_dates: set = set()
+    total_reviews = 0
+
+    for row in rows:
+        days.append(HeatmapDay(
+            date=row.day.isoformat(),
+            count=row.count,
+            recalled=row.recalled,
+        ))
+        active_dates.add(row.day)
+        total_reviews += row.count
+
+    # Streak computation in Python — clean and correct.
+    # Anchor: today if today is active, else yesterday if yesterday is active,
+    # else current_streak = 0.
+    from datetime import date as date_type
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+
+    if today in active_dates:
+        anchor = today
+    elif yesterday in active_dates:
+        anchor = yesterday
+    else:
+        anchor = None
+
+    current_streak = 0
+    if anchor is not None:
+        cursor = anchor
+        while cursor in active_dates:
+            current_streak += 1
+            cursor -= timedelta(days=1)
+
+    # Longest streak: walk all active dates in sorted order.
+    longest_streak = 0
+    if active_dates:
+        sorted_dates = sorted(active_dates)
+        run = 1
+        for i in range(1, len(sorted_dates)):
+            if (sorted_dates[i] - sorted_dates[i - 1]).days == 1:
+                run += 1
+            else:
+                longest_streak = max(longest_streak, run)
+                run = 1
+        longest_streak = max(longest_streak, run)
+
+    return HeatmapResponse(
+        days=days,
+        current_streak=current_streak,
+        longest_streak=longest_streak,
+        total_reviews=total_reviews,
+        active_days=len(active_dates),
     )

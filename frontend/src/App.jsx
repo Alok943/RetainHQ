@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck, LogIn, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck, LogIn, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -83,7 +83,7 @@ function AppLayout() {
   return (
     <div className="flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
       {/* LEFT SIDEBAR (Desktop / Tablet) */}
-      <aside className={`hidden md:flex flex-col border-r border-[rgba(15,23,42,0.08)] bg-[#f9f9f6] shrink-0 justify-between transition-all duration-300 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6'}`}>
+      <aside className={`hidden md:flex flex-col border-r glass-nav shrink-0 justify-between transition-all duration-300 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6'}`}>
         <div className="w-full">
           <div className={`flex items-center mb-10 ${isCollapsed ? 'flex-col gap-4' : 'justify-between'}`}>
             <div className="flex items-center gap-2.5 cursor-pointer overflow-hidden" onClick={() => navigate('/dashboard')}>
@@ -153,7 +153,7 @@ function AppLayout() {
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
         
         {/* Mobile Header (Hidden on md+) */}
-        <header className="md:hidden px-4 py-4 border-b border-[rgba(15,23,42,0.08)] bg-[#f9f9f6] sticky top-0 z-10 flex justify-between items-center">
+        <header className="md:hidden px-4 py-4 border-b glass-nav sticky top-0 z-10 flex justify-between items-center">
           <div className="flex items-center gap-2" onClick={() => navigate('/dashboard')}>
             <Logo variant={logoVariant} className="h-6 w-auto" />
             <h1 className="font-sans font-semibold text-xl tracking-tight text-[#0F172A]">RetainHQ</h1>
@@ -198,7 +198,7 @@ function AppLayout() {
         </main>
 
         {/* Mobile Bottom Navigation (Hidden on md+) */}
-        <nav className="md:hidden absolute bottom-0 w-full bg-[#f9f9f6] border-t border-[rgba(15,23,42,0.08)] flex justify-around items-center px-2 py-3 z-20 pb-safe overflow-x-auto gap-1">
+        <nav className="md:hidden absolute bottom-0 w-full glass-nav border-t flex justify-around items-center px-2 py-3 z-20 pb-safe overflow-x-auto gap-1">
           <NavItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
           <NavItem icon={<CheckSquare size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
           <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
@@ -207,6 +207,16 @@ function AppLayout() {
           <NavItem icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
           {isAdmin && <NavItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
         </nav>
+
+        {/* Floating Action Button — quick-log shortcut, desktop only (mobile has the Log tab in the bottom nav) */}
+        <button
+          aria-label="Log Activity"
+          onClick={() => navigate('/log')}
+          className="hidden md:flex fixed bottom-6 right-6 z-30 h-14 w-14 items-center justify-center rounded-full glass-nav border text-[#0891B2] shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
+          style={{ boxShadow: '0 4px 20px -4px rgba(8,145,178,0.35), 0 2px 8px -2px rgba(15,23,42,0.15)' }}
+        >
+          <Plus size={24} strokeWidth={2.5} />
+        </button>
       </div>
     </div>
   );

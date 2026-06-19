@@ -179,6 +179,31 @@ html.dark .glass-card {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+/* ---------------------------------------------------------------------------
+   GLASS NAV (Apple-style frosted nav bar) — used by the desktop sidebar and
+   the mobile bottom navigation in App.jsx.
+   More opaque than .glass-card so text/icons stay legible at any scroll depth.
+   The content-facing border (right edge on sidebar, top edge on bottom nav)
+   is a single 1px hairline so the edge reads cleanly against the content area.
+--------------------------------------------------------------------------- */
+.glass-nav {
+  background: rgba(249, 249, 246, 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow:
+    1px 0 0 rgba(15, 23, 42, 0.06),
+    4px 0 24px -8px rgba(15, 23, 42, 0.08);
+}
+
+html.dark .glass-nav {
+  background: rgba(14, 17, 23, 0.60);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.05),
+    4px 0 24px -8px rgba(0, 0, 0, 0.5);
+}
+
 /* Soft accent "aurora" behind the glass. Sits in an overflow-hidden wrapper so
    the blur bleed never causes horizontal scroll. */
 .aurora {

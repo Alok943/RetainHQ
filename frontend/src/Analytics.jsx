@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart2, CalendarCheck, Zap, ClipboardList, Target, Lock, TrendingUp, BrainCircuit } from 'lucide-react';
+import { BarChart2, CalendarCheck, Zap, ClipboardList, Target, Lock, TrendingUp, BrainCircuit, CalendarDays } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import ComingSoonBanner from './ComingSoon';
 import { useAuth } from './lib/AuthContext';
+import ReviewHeatmap from './ReviewHeatmap';
 
 function Analytics() {
   const [stats, setStats] = useState(null);
@@ -67,6 +68,16 @@ function Analytics() {
           icon={<Target size={16} />}
           color="#ba1a1a"
         />
+      </section>
+
+      {/* REVIEW ACTIVITY HEATMAP */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
+            <CalendarDays size={15} className="text-[#0891B2]" /> Review activity
+          </h3>
+        </div>
+        <ReviewHeatmap />
       </section>
 
       {/* PHASE 2 — honest placeholders, no fabricated numbers */}
