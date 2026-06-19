@@ -1,25 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  Map, ListChecks, ArrowRight, Plus,
-  Binary, Database, Globe, Server, Sparkles, Code2, Cpu, Calculator,
+  Map, ListChecks, ArrowRight, Plus, Sparkles,
   ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
-
-// Per-roadmap visual identity, matched by title keyword.
-const STYLE_RULES = [
-  { match: ['neetcode', 'striver', 'dsa', 'algorithm', 'data structure'], Icon: Binary, accent: '#7C3AED' },
-  { match: ['sql'], Icon: Database, accent: '#4F46E5' },
-  { match: ['web'], Icon: Globe, accent: '#0891B2' },
-  { match: ['system design'], Icon: Server, accent: '#0F766E' },
-  { match: ['ai eng', 'machine learning', 'deep learning'], Icon: Sparkles, accent: '#C026D3' },
-  { match: ['backend'], Icon: Server, accent: '#059669' },
-  { match: ['python'], Icon: Code2, accent: '#2563EB' },
-  { match: ['core cs', 'operating system', 'dbms', 'network'], Icon: Cpu, accent: '#475569' },
-  { match: ['aptitude', 'quant', 'reasoning'], Icon: Calculator, accent: '#B45309' },
-];
+import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
 
 // Groups — order matters: first match wins.
 const GROUPS = [
@@ -46,14 +33,6 @@ function getGroup(title = '') {
   return 'Other';
 }
 
-function getRoadmapStyle(title = '') {
-  const t = title.toLowerCase();
-  for (const rule of STYLE_RULES) {
-    if (rule.match.some((m) => t.includes(m))) return rule;
-  }
-  return { Icon: Map, accent: '#0891B2' };
-}
-
 function useCountUp(target, duration = 800) {
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -70,7 +49,7 @@ function useCountUp(target, duration = 800) {
   return val;
 }
 
-function ProgressRing({ pct, accent, Icon }) {
+function ProgressRing({ pct, accent, Icon, title }) {
   const [shown, setShown] = useState(0);
   useEffect(() => {
     const raf = requestAnimationFrame(() => setShown(pct));
@@ -91,8 +70,8 @@ function ProgressRing({ pct, accent, Icon }) {
           d={ring}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center" style={{ color: accent }}>
-        <Icon size={20} />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <RoadmapLogo title={title} Icon={Icon} accent={accent} size={22} />
       </div>
     </div>
   );
@@ -106,9 +85,9 @@ function RoadmapCard({ rm, index, onClick }) {
     <article
       onClick={onClick}
       style={{ borderLeftWidth: '3px', borderLeftColor: accent, animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-      className="kinetic-card bg-white p-5 cursor-pointer group flex gap-4 items-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg animate-in fade-in slide-in-from-bottom-3"
+      className="glass-card p-5 cursor-pointer group flex gap-4 items-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
     >
-      <ProgressRing pct={rm.progress_pct ?? 0} accent={accent} Icon={Icon} />
+      <ProgressRing pct={rm.progress_pct ?? 0} accent={accent} Icon={Icon} title={rm.title} />
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start gap-3 mb-1">
           <h3 className="font-sans text-lg font-semibold text-[#0F172A] line-clamp-1">{rm.title}</h3>
@@ -206,7 +185,14 @@ function Roadmaps() {
   }, [roadmaps]);
 
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-5xl mx-auto w-full pb-20 md:pb-8 animate-in fade-in duration-300">
+    <div className="relative max-w-5xl mx-auto w-full p-4 md:p-8 pb-20 md:pb-8 animate-in fade-in duration-300">
+      {/* Aurora backdrop — gives the glass cards something colorful to frost.
+          Wrapped in overflow-hidden so the blur bleed never adds horizontal scroll. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="aurora" />
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-8">
 
       <header className="mb-2">
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
@@ -271,7 +257,7 @@ function Roadmaps() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="kinetic-card bg-white p-5 flex gap-4 items-center">
+              <div key={i} className="glass-card p-5 flex gap-4 items-center">
                 <div className="skeleton w-16 h-16 rounded-full shrink-0" />
                 <div className="flex-1 space-y-3">
                   <div className="skeleton h-4 w-2/3" />
@@ -322,6 +308,7 @@ function Roadmaps() {
         </div>
       </section>
 
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { apiFetch } from './lib/api';
 import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { useAuth } from './lib/AuthContext';
+import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
 import ReactFlow, {
   Background,
   Controls,
@@ -482,6 +483,8 @@ function RoadmapDetail() {
   if (loading) return <div className="p-8 text-center text-[#64748B]">Loading roadmap...</div>;
   if (!meta) return <div className="p-8 text-center text-[#ba1a1a]">Roadmap not found.</div>;
 
+  const { Icon: RoadmapIcon, accent } = getRoadmapStyle(meta.title);
+
   return (
     <div className="flex flex-col h-full" onClick={() => setContextNode(null)}>
       {/* Header */}
@@ -493,9 +496,18 @@ function RoadmapDetail() {
           <ArrowLeft size={16} /> Back to Roadmaps
         </button>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-          <div>
-            <h1 className="font-sans text-xl md:text-2xl font-semibold text-[#0F172A]">{meta.title}</h1>
-            <p className="font-sans text-xs text-[#64748B] mt-0.5 max-w-2xl">{meta.description}</p>
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Official logo / themed glyph — matches the roadmap list card identity */}
+            <div
+              className="glass-card shrink-0 w-12 h-12 flex items-center justify-center !rounded-xl"
+              style={{ borderBottomColor: accent, borderBottomWidth: '2px' }}
+            >
+              <RoadmapLogo title={meta.title} Icon={RoadmapIcon} accent={accent} size={24} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-sans text-xl md:text-2xl font-semibold text-[#0F172A] truncate">{meta.title}</h1>
+              <p className="font-sans text-xs text-[#64748B] mt-0.5 max-w-2xl line-clamp-1">{meta.description}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-40 h-2 bg-[rgba(15,23,42,0.06)] rounded-full overflow-hidden">
@@ -672,7 +684,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
         const showSectionHeaders = sections.length > 1 || (sections[0] && sections[0] !== phase);
 
         return (
-          <section key={phase} className="bg-white rounded-lg border border-[rgba(15,23,42,0.1)] overflow-hidden">
+          <section key={phase} className="glass-card !p-0 overflow-hidden">
             <button
               onClick={() => onTogglePhase(phase)}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-left hover:bg-[rgba(15,23,42,0.02)] transition-colors"
