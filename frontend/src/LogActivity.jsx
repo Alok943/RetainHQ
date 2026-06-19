@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers, CheckCircle2 } from 'lucide-react';
+import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers, CheckCircle2, Sparkles, Plus, Map } from 'lucide-react';
 import { apiFetch } from './lib/api';
-import ComingSoon from './ComingSoon';
 import { useAuth } from './lib/AuthContext';
+
+const KEY_MEMORY_MAX = 500; // ~6 lines: one testable claim, not a paragraph dump
 
 const SOURCE_TYPES = [
   { value: 'problem', label: 'Problem Solving' },
@@ -26,11 +27,17 @@ function LogActivity() {
   const [mistake, setMistake] = useState('');
   const [difficulty, setDifficulty] = useState(3);
   const [neededHint, setNeededHint] = useState(false);
+  const [roadmapId, setRoadmapId] = useState('');
+  const [roadmaps, setRoadmaps] = useState([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [logged, setLogged] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
+  // Capture-assist (gated): suggested key points the user can recognize + insert.
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState(null);
+  const [assistUnavailable, setAssistUnavailable] = useState(false); // 404 = grader off
   const { requireAuth } = useAuth();
 
   // Persist draft to localStorage so it survives an OAuth redirect
@@ -45,18 +52,40 @@ function LogActivity() {
         if (parsed.mistake) setMistake(parsed.mistake);
         if (parsed.difficulty) setDifficulty(parsed.difficulty);
         if (parsed.neededHint !== undefined) setNeededHint(parsed.neededHint);
+        if (parsed.roadmapId) setRoadmapId(parsed.roadmapId);
       } catch (e) {}
     }
-    // Arriving from a roadmap node ("Log what you learned") pre-fills the topic.
-    // Applied after the draft so an explicit hand-off wins over a stale draft.
-    const topicParam = new URLSearchParams(location.search).get('topic');
+    // Arriving from a roadmap node ("Log what you learned") pre-fills the topic
+    // (and roadmap, if the link passes one). Applied after the draft so an explicit
+    // hand-off wins over a stale draft.
+    const params = new URLSearchParams(location.search);
+    const topicParam = params.get('topic');
     if (topicParam) setTopic(topicParam);
+    const roadmapParam = params.get('roadmap_id');
+    if (roadmapParam) setRoadmapId(roadmapParam);
   }, []);
 
+  // Load roadmaps for the picker, in-progress ones first (less search friction).
+  // optionalAuth so guests exploring the form still see the list. Failure is silent
+  // — the picker just stays empty (it's an optional field).
   useEffect(() => {
-    const draft = { topic, sourceType, keyMemory, mistake, difficulty, neededHint };
+    apiFetch('/api/roadmaps/', { optionalAuth: true })
+      .then((data) => {
+        const sorted = [...(data || [])].sort(
+          (a, b) => (b.progress_pct || 0) - (a.progress_pct || 0)
+        );
+        setRoadmaps(sorted);
+      })
+      .catch(() => {});
+  }, []);
+
+  const startedRoadmaps = roadmaps.filter((r) => (r.progress_pct || 0) > 0);
+  const otherRoadmaps = roadmaps.filter((r) => (r.progress_pct || 0) === 0);
+
+  useEffect(() => {
+    const draft = { topic, sourceType, keyMemory, mistake, difficulty, neededHint, roadmapId };
     localStorage.setItem('retainhq_log_draft', JSON.stringify(draft));
-  }, [topic, sourceType, keyMemory, mistake, difficulty, neededHint]);
+  }, [topic, sourceType, keyMemory, mistake, difficulty, neededHint, roadmapId]);
 
   const canSubmit = topic.trim().length > 0 && keyMemory.trim().length > 0 && !submitting;
 
@@ -67,8 +96,45 @@ function LogActivity() {
     setMistake('');
     setDifficulty(3);
     setNeededHint(false);
+    setRoadmapId('');
     setError(null);
     setLogged(false);
+    setSuggestions([]);
+    setSuggestError(null);
+  };
+
+  // On-demand capture aid: ask the LLM for the core points under this topic. Fires
+  // only when the user clicks (no cost/latency on every log). Suggestions are
+  // recognition prompts — the user inserts what they actually learned, nothing is
+  // auto-applied. Silently disables itself if the grader is off (404).
+  const handleSuggest = async () => {
+    if (!topic.trim() || suggesting) return;
+    if (!requireAuth()) return; // guests get the sign-in modal, not a vague error
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const res = await apiFetch('/api/activities/suggest-key-points', {
+        method: 'POST',
+        body: JSON.stringify({ topic: topic.trim(), draft: keyMemory.trim() || null }),
+      });
+      setSuggestions(res?.points || []);
+    } catch (err) {
+      if (err.status === 404) setAssistUnavailable(true); // grader disabled
+      else setSuggestError("Couldn't get suggestions — try again.");
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  // Append a recognized point as its own line, respecting the char cap, then drop
+  // it from the list. The user stays the author — they choose what goes in.
+  const insertPoint = (point) => {
+    setKeyMemory((prev) => {
+      const line = `• ${point}`;
+      const next = prev.trim() ? `${prev.replace(/\s+$/, '')}\n${line}` : line;
+      return next.length <= KEY_MEMORY_MAX ? next : prev; // skip if it wouldn't fit
+    });
+    setSuggestions((prev) => prev.filter((p) => p !== point));
   };
 
   const handleSubmit = async () => {
@@ -90,6 +156,7 @@ function LogActivity() {
           difficulty,
           needed_hint: neededHint,
           source_type: sourceType,
+          roadmap_id: roadmapId || null,
         }),
       });
       localStorage.removeItem('retainhq_log_draft');
@@ -163,22 +230,54 @@ function LogActivity() {
           />
         </div>
 
-        {/* Source Type */}
-        <div className="flex flex-col gap-2 max-w-xs">
-          <label className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest">
-            Source Type
-          </label>
-          <div className="relative">
-            <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
-            <select
-              value={sourceType}
-              onChange={(e) => setSourceType(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 bg-[rgba(15,23,42,0.02)] border border-[rgba(15,23,42,0.12)] rounded font-sans text-sm text-[#0F172A] focus:outline-none focus:border-[#0891B2] transition-colors appearance-none cursor-pointer"
-            >
-              {SOURCE_TYPES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+        {/* Source Type + Roadmap (both optional metadata) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest">
+              Source Type
+            </label>
+            <div className="relative">
+              <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+              <select
+                value={sourceType}
+                onChange={(e) => setSourceType(e.target.value)}
+                className="w-full pl-9 pr-4 py-3 bg-[rgba(15,23,42,0.02)] border border-[rgba(15,23,42,0.12)] rounded font-sans text-sm text-[#0F172A] focus:outline-none focus:border-[#0891B2] transition-colors appearance-none cursor-pointer"
+              >
+                {SOURCE_TYPES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Roadmap link — in-progress roadmaps surfaced first to cut search friction */}
+          <div className="flex flex-col gap-2">
+            <label className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
+              Roadmap
+              <span className="bg-[rgba(15,23,42,0.05)] text-[#64748B] px-1.5 py-0.5 rounded font-mono text-[9px] tracking-normal">OPTIONAL</span>
+            </label>
+            <div className="relative">
+              <Map size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+              <select
+                value={roadmapId}
+                onChange={(e) => setRoadmapId(e.target.value)}
+                className="w-full pl-9 pr-4 py-3 bg-[rgba(15,23,42,0.02)] border border-[rgba(15,23,42,0.12)] rounded font-sans text-sm text-[#0F172A] focus:outline-none focus:border-[#0891B2] transition-colors appearance-none cursor-pointer"
+              >
+                <option value="">No roadmap</option>
+                {startedRoadmaps.length > 0 && (
+                  <optgroup label="In progress">
+                    {startedRoadmaps.map((r) => (
+                      <option key={r.id} value={r.id}>{r.title} · {r.progress_pct}%</option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label={startedRoadmaps.length > 0 ? 'All roadmaps' : 'Roadmaps'}>
+                  {otherRoadmaps.map((r) => (
+                    <option key={r.id} value={r.id}>{r.title}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -191,10 +290,55 @@ function LogActivity() {
           <textarea
             rows="2"
             value={keyMemory}
+            maxLength={KEY_MEMORY_MAX}
             onChange={(e) => setKeyMemory(e.target.value)}
             placeholder="Write a concise, testable statement..."
             className="w-full px-4 py-3 bg-[rgba(15,23,42,0.02)] border border-[rgba(15,23,42,0.12)] rounded font-sans text-sm text-[#0F172A] focus:outline-none focus:border-[#0891B2] transition-colors resize-none placeholder-[#94a3b8]"
           ></textarea>
+
+          {/* Char counter + on-demand "suggest key points" assist (hidden if grader off) */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {!assistUnavailable ? (
+              <button
+                type="button"
+                onClick={handleSuggest}
+                disabled={!topic.trim() || suggesting}
+                title={!topic.trim() ? 'Add a topic first' : 'Suggest the core points under this topic'}
+                className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#8B5CF6] hover:text-[#7c3aed] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Sparkles size={13} /> {suggesting ? 'Thinking…' : "Stuck? Suggest key points"}
+              </button>
+            ) : <span />}
+            <span className={`font-mono text-[11px] ${keyMemory.length >= KEY_MEMORY_MAX ? 'text-[#B45309]' : 'text-[#94a3b8]'}`}>
+              {keyMemory.length}/{KEY_MEMORY_MAX}
+            </span>
+          </div>
+
+          {suggestError && (
+            <p className="font-sans text-xs text-[#B45309]">{suggestError}</p>
+          )}
+
+          {/* Recognition, not instruction: keep what you actually learned, ignore the rest. */}
+          {suggestions.length > 0 && (
+            <div className="mt-1 rounded-lg border border-[#8B5CF6]/25 bg-[#8B5CF6]/[0.05] p-3 flex flex-col gap-2">
+              <p className="font-sans text-[11px] text-[#64748B]">
+                Key points often under this topic — tap to add the ones <span className="italic">you</span> learned, ignore the rest.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((p, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => insertPoint(p)}
+                    className="group flex items-start gap-1.5 text-left rounded-md border border-[#8B5CF6]/30 bg-white px-2.5 py-1.5 font-sans text-xs text-[#0F172A] hover:border-[#8B5CF6] hover:bg-[#8B5CF6]/[0.06] transition-colors"
+                  >
+                    <Plus size={12} className="mt-0.5 shrink-0 text-[#8B5CF6]" />
+                    <span>{p}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ROW 4: Mistake Made & Hints */}
@@ -281,73 +425,6 @@ function LogActivity() {
           <AlertTriangle size={16} /> {error}
         </div>
       )}
-
-      <ComingSoon
-        id="log-track-roadmap"
-        title="Track & Roadmap Linking"
-        description="Link activities to learning tracks and roadmap nodes for structured progress."
-        onFeedback={() => setShowFeedback(true)}
-      />
-
-      {showFeedback && <LogFeedbackModal onClose={() => setShowFeedback(false)} />}
-    </div>
-  );
-}
-
-function LogFeedbackModal({ onClose }) {
-  const [msg, setMsg] = useState('');
-  const [sending, setSending] = useState(false);
-  const [done, setDone] = useState(false);
-
-  const send = async () => {
-    if (!msg.trim()) return;
-    setSending(true);
-    try {
-      await apiFetch('/api/feedback/', {
-        method: 'POST',
-        body: JSON.stringify({ message: msg })
-      });
-      setDone(true);
-      setTimeout(onClose, 2000);
-    } catch (e) {
-      alert("Failed to send feedback: " + e.message);
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#131b2e]/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#f9f9f6] rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-[rgba(15,23,42,0.08)] flex justify-between items-center bg-white">
-          <h2 className="font-sans font-semibold text-[#0F172A]">Want this feature sooner?</h2>
-          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A] text-lg font-bold">✕</button>
-        </div>
-        <div className="p-4 bg-white flex flex-col gap-4">
-          {done ? (
-            <div className="text-center py-8 text-[#166534] font-medium flex flex-col items-center gap-2">
-              <CheckCircle2 size={32} />
-              Thanks for your feedback!
-            </div>
-          ) : (
-            <>
-              <textarea
-                className="w-full border border-[rgba(15,23,42,0.12)] rounded p-3 text-sm focus:outline-none focus:border-[#0891B2] focus:ring-1 focus:ring-[#0891B2] min-h-[120px] resize-y font-sans text-[#0F172A]"
-                placeholder="Tell us why this feature matters to you…"
-                value={msg}
-                onChange={e => setMsg(e.target.value)}
-                autoFocus
-              />
-              <button
-                onClick={send}
-                disabled={sending || !msg.trim()}
-                className="kinetic-btn kinetic-accent-gradient w-full py-2.5 disabled:opacity-50 flex items-center justify-center font-semibold"
-              >
-                {sending ? 'Sending...' : 'Send Feedback'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -158,14 +158,14 @@ python seed_striver_a2z.py    # each roadmap has its own idempotent seed_*.py wi
 
 Postgres, UUID primary keys, naive-UTC timestamps.
 
-- **activities** — `user_id`, `topic`, `key_memory`, `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?`, `created_at`, plus SM-2 card state: `ease_factor` (2.5), `repetitions` (0), `interval_days` (0), `last_reviewed_at?`, `next_review_at?`.
+- **activities** — `user_id`, `topic`, `key_memory` (capped at 500 chars on create), `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?`, `roadmap_id?` (optional FK → `roadmaps`, ON DELETE SET NULL), `created_at`, plus SM-2 card state: `ease_factor` (2.5), `repetitions` (0), `interval_days` (0), `last_reviewed_at?`, `next_review_at?`.
 - **reviews** — `user_id`, `activity_id`, `status('due'|'completed')`, `scheduled_for`, `completed_at?`, `rating?('easy'|'medium'|'hard')`, `recalled?` (objective got-it/missed-it), `quality?` (0–5 SM-2 grade), and AI grader output `ai_verdict?` / `ai_recalled?` / `ai_feedback?`.
 - **roadmaps** — `title`, `description`.
 - **roadmap_nodes** — `roadmap_id`, `phase`, `section`, `title`, `tier(easy|medium|hard)`, `order_index`, `description?`, `parent_id?` (self-ref → subtopics are completable child nodes).
 - **user_progress** — `user_id`, `node_id`, `status`.
 - **feedbacks** — `user_id`, `message`, `status('new'|'reviewed'|'resolved')`, `created_at`.
 
-> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `c2f5a9b3d701`.
+> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `f4a9c2e1b370`.
 
 ---
 
@@ -176,7 +176,8 @@ All routes are under `/api` and require a Bearer JWT (some support `optionalAuth
 | Method & Path | Purpose |
 |---|---|
 | `GET /api/activities/` | List the user's captured activities (Knowledge Vault), newest first |
-| `POST /api/activities/` | Create activity; init SM-2 state + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. |
+| `POST /api/activities/` | Create activity (optional `roadmap_id`); init SM-2 state + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. |
+| `POST /api/activities/suggest-key-points` | **Capture assist** (gated): `{topic, draft?}` → `{points[]}` — core sub-points under the topic so a stuck user can recognize + keep what they learned. Suggestion only, never auto-applied. |
 | `GET /api/reviews/due` | Due reviews (`status='due'`, `scheduled_for ≤ now`) with activity eager-loaded. Capped to one session (overflow rolls forward). |
 | `POST /api/reviews/{id}/complete` | Complete with `rating` + optional `recalled`; advances SM-2 and schedules the next review (IDOR-protected) |
 | `POST /api/reviews/{id}/grade` | LLM grader (gated on `GRADER_ENABLED`): grades free recall vs `key_memory` → `{verdict, recalled, feedback, revision_note, related_subtopics}`. Advisory only. |
@@ -229,6 +230,8 @@ FSRS is the planned v2 successor (the `rating` + `recalled` signals are already 
 - **Additive, not a replacement** — the UI probes `/questions` per card; a 404 (disabled) or any failure falls back to the single free-recall box, so the live path stays pristine.
 
 **Related subtopics** (both modes): each grade also returns 1–2 `related_subtopics` (`title` + one-line `explainer`) — adjacent topics worth learning next. These are **suggestions, never graded** — the constructive answer to "what about material they didn't capture?": surface it as a nudge, don't quiz them on it. Highlighted as a distinct callout in the Review UI.
+
+**Capture assist** (`/suggest-key-points`, prototype): the LLM also runs at *log* time, not just review time. When a user is stuck summarizing what they learned, an on-demand "Suggest key points" button returns the core sub-points under the topic so they can **recognize and keep** the ones they actually studied (recognition is far easier than blank-page recall). It's a suggestion the user curates — **never auto-applied** — so they never end up capturing (and later being quizzed on) material they didn't learn.
 
 - Failures degrade silently (`GraderError` → 503 → frontend skips the AI box).
 - The gap between the AI's `ai_recalled` and the user's self-reported `recalled` is the calibration metric we care about.

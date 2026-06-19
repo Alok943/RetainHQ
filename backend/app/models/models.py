@@ -53,6 +53,9 @@ class Activity(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID
     track_id: Optional[uuid.UUID] = Field(default=None, foreign_key="tracks.id")
+    # Optional link to the roadmap this capture belongs to (roadmap-level, not node).
+    # Powers the Log form's roadmap picker + future "captures by roadmap" views.
+    roadmap_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmaps.id")
     topic: str
     notes: Optional[str] = None
     difficulty: int = Field(ge=1, le=5)

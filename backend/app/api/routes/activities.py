@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import List
 import uuid
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
+from app.core.config import settings
 from app.models.models import Activity
-from app.schemas.activity import ActivityCreate, ActivityResponse, ActivityListItem
+from app.schemas.activity import (
+    ActivityCreate, ActivityResponse, ActivityListItem,
+    KeyPointsRequest, KeyPointsResponse,
+)
 from app.services.scheduler import initial_review_for_activity
+from app.services.grader import suggest_key_points, GraderError
 
 router = APIRouter()
 
@@ -25,6 +30,26 @@ async def list_activities(
     )
     result = await db.execute(stmt)
     return result.scalars().all()
+
+@router.post("/suggest-key-points", response_model=KeyPointsResponse)
+async def suggest_key_points_endpoint(
+    body: KeyPointsRequest,
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Capture aid (gated): suggest the core sub-points under a topic so a stuck
+    learner can KEEP the ones they actually studied. Recognition, not a grade —
+    never auto-applied. No DB access; pre-submit, so it hangs off activities, not
+    a review id. 404 when disabled → UI hides the feature; 503 on LLM failure."""
+    if not settings.GRADER_ENABLED:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disabled")
+    if not body.topic.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Topic required")
+    try:
+        result = await suggest_key_points(body.topic, body.draft)
+    except GraderError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    return KeyPointsResponse(points=result.points)
+
 
 @router.post("/", response_model=ActivityResponse)
 async def log_activity(
@@ -53,7 +78,8 @@ async def log_activity(
         needed_hint=activity_in.needed_hint,
         key_memory=activity_in.key_memory,
         mistake=activity_in.mistake,
-        source_type=activity_in.source_type
+        source_type=activity_in.source_type,
+        roadmap_id=activity_in.roadmap_id,
     )
     db.add(activity)
     
@@ -75,6 +101,7 @@ async def log_activity(
         id=activity.id,
         user_id=activity.user_id,
         track_id=activity.track_id,
+        roadmap_id=activity.roadmap_id,
         topic=activity.topic,
         notes=activity.notes,
         difficulty=activity.difficulty,

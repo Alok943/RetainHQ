@@ -10,9 +10,23 @@ class ActivityCreate(BaseModel):
     notes: Optional[str] = Field(default=None, max_length=5000)
     difficulty: int = Field(ge=1, le=5)
     needed_hint: bool
-    key_memory: str = Field(max_length=2000)
+    # Capped at 500 chars (~6 lines): a Key Memory is ONE testable claim, not a
+    # paragraph dump (a wall of text makes recall feel like failure). Also bounds
+    # what we send to the LLM. Only validates new logs — existing rows untouched.
+    key_memory: str = Field(max_length=500)
     mistake: Optional[str] = Field(default=None, max_length=2000)
     source_type: Optional[VALID_SOURCES] = None
+    roadmap_id: Optional[uuid.UUID] = None  # optional link to the roadmap it belongs to
+
+
+class KeyPointsRequest(BaseModel):
+    """Ask the LLM to suggest the core sub-points under a topic (capture aid)."""
+    topic: str = Field(max_length=300)
+    draft: Optional[str] = Field(default=None, max_length=500)
+
+
+class KeyPointsResponse(BaseModel):
+    points: list[str]  # 3-5 short recognition prompts; the user keeps what they learned
 
 class ActivityResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -20,6 +34,7 @@ class ActivityResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     track_id: Optional[uuid.UUID] = None
+    roadmap_id: Optional[uuid.UUID] = None
     topic: str
     notes: Optional[str] = None
     difficulty: int
@@ -45,6 +60,7 @@ class ActivityListItem(BaseModel):
     needed_hint: bool
     mistake: Optional[str] = None
     source_type: Optional[str] = None
+    roadmap_id: Optional[uuid.UUID] = None
     created_at: datetime
     repetitions: int
     next_review_at: Optional[datetime] = None

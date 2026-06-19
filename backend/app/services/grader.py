@@ -231,6 +231,62 @@ _QGRADE_SYSTEM_PROMPT = (
 )
 
 
+# =========================================================================== #
+# CAPTURE ASSIST (PROTOTYPE — gated behind GRADER_ENABLED).
+#
+# Runs at LOG time, not review time. When a user is stuck summarizing what they
+# learned, this suggests the core sub-points under the topic so they can KEEP the
+# ones they actually studied — recognition is far easier than blank-page recall.
+#
+# Design guardrails (deliberate):
+#   - It is a SUGGESTION the user curates, never auto-applied to the field. The
+#     endpoint just returns a list; the UI lets the user pick/edit. This is the
+#     answer to "I can't articulate it" WITHOUT making them capture (and later be
+#     quizzed on) material they never actually learned.
+#   - Surface the core, commonly-taught points — not obscure trivia.
+# =========================================================================== #
+
+
+class KeyPointSuggestions(BaseModel):
+    points: List[str]  # 3-5 short recognition prompts
+
+
+_KEYPOINTS_SYSTEM_PROMPT = (
+    "You help a learner CAPTURE what they just studied — you are NOT testing them.\n"
+    "Given a TOPIC (and maybe a rough DRAFT note), list the 3-5 most important "
+    "sub-points or subtopics that typically fall under this topic.\n"
+    "Rules:\n"
+    "1. These are RECOGNITION PROMPTS: the learner keeps the ones they actually "
+    "learned and ignores the rest. List the CORE, commonly-taught points — not "
+    "obscure trivia or edge cases.\n"
+    "2. Each point is ONE short line: a concrete fact or idea, self-contained, not "
+    "a vague heading. Plain language, no preamble, no numbering.\n"
+    "3. Stay tightly on the TOPIC. Build on the DRAFT if given; you may include core "
+    "points the draft missed, but do not contradict it.\n"
+    'Respond ONLY as JSON: {"points": ["...", "..."]}'
+)
+
+
+async def suggest_key_points(topic: str, draft: Optional[str] = None) -> KeyPointSuggestions:
+    """Suggest the core sub-points under a topic to help a stuck learner capture.
+
+    A capture AID, not a grader — the user curates which to keep. Raises GraderError
+    if not configured or on a malformed/empty response.
+    """
+    extra = f"\n\nTHEIR DRAFT SO FAR:\n{draft.strip()}" if draft and draft.strip() else ""
+    user_msg = f"TOPIC: {topic.strip()}{extra}"
+
+    raw = await _groq_json(_KEYPOINTS_SYSTEM_PROMPT, user_msg, max_tokens=600)
+    try:
+        result = KeyPointSuggestions.model_validate_json(raw)
+    except ValidationError as e:
+        raise GraderError(f"Key-point suggester returned malformed JSON: {e}") from e
+    result.points = [p.strip() for p in result.points if p and p.strip()][:5]
+    if not result.points:
+        raise GraderError("Key-point suggester returned no usable points.")
+    return result
+
+
 async def grade_question_set(
     topic: str, key_memory: str, qa_pairs: List[dict]
 ) -> QuestionSetGrade:

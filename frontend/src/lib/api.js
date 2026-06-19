@@ -34,7 +34,9 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.detail || `API request failed with status ${response.status}`);
+    const err = new Error(errorData?.detail || `API request failed with status ${response.status}`);
+    err.status = response.status; // let callers branch on it (e.g. 404 = feature gated off)
+    throw err;
   }
 
   return response.json();
