@@ -11,13 +11,23 @@ const AuthContext = createContext({
 
 export const useAuth = () => useContext(AuthContext);
 
+// DEV ONLY: pretend we're signed in locally so the authenticated app renders
+// without Google OAuth. `import.meta.env.DEV` is false in production builds, so
+// this is dead-code-eliminated from any deployed bundle — it cannot ship.
+const DEV_AUTH_BYPASS =
+  import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
+const DEV_SESSION = { access_token: 'dev-bypass', user: { id: 'dev', email: 'dev@localhost' } };
+
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(DEV_AUTH_BYPASS ? DEV_SESSION : null);
+  const [loading, setLoading] = useState(!DEV_AUTH_BYPASS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
   useEffect(() => {
+    // Dev bypass: skip all Supabase auth wiring.
+    if (DEV_AUTH_BYPASS) return;
+
     // Initial fetch
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);

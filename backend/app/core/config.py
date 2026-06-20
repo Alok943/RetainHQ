@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     # Founder/admin gate — must be set via env (no hardcoded default).
     ADMIN_EMAIL: str
 
+    # DEV ONLY — local auth bypass so the authenticated app can be previewed
+    # without Google OAuth. Defaults False and MUST NEVER be set in production
+    # (Railway). When True, get_current_user returns the DEV_USER_EMAIL account
+    # (resolved from auth.users, falling back to ADMIN_EMAIL) without verifying
+    # any JWT. Set DEV_USER_ID to skip the email->id lookup.
+    DEV_AUTH_BYPASS: bool = False
+    DEV_USER_EMAIL: str = ""
+    DEV_USER_ID: str = ""
+
     # DB pool tuning (match to your deploy worker count)
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10
