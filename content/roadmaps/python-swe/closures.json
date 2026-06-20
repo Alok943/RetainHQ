@@ -1,0 +1,50 @@
+{
+  "slug": "closures",
+  "title": "Closures",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["functions", "scope", "first-class-functions"],
+    "unlocks": ["decorators"],
+    "project_usage": ["FastAPI", "micrograd"]
+  },
+  "overview": {
+    "what": "A closure is a function that remembers variables from the scope where it was created, even after that outer scope has finished running. Think of it as a backpack the inner function carries: when the outer function returns, the inner function keeps the variables it packed.",
+    "why": "Closures let you build functions with private, persistent state without a class, and they are the mechanism that makes decorators possible. Any time you 'configure' a function by wrapping it, a closure is doing the remembering.",
+    "where_used": ["FastAPI", "Pydantic validators", "micrograd", "functools"]
+  },
+  "why_learning_this": [
+    "Unlocks decorators, which power every FastAPI route, dependency, and middleware",
+    "Lets you write configurable function factories (e.g. a parametrised logger)",
+    "Explains why micrograd's backward functions can 'see' the values from their forward pass"
+  ],
+  "common_mistakes": [
+    { "title": "Late binding in loops", "explanation": "Closures capture the variable, not its value at creation time, so `[lambda: i for i in range(3)]` all return 2. Bind it explicitly with a default arg: `lambda i=i: i`." },
+    { "title": "Assuming you can reassign the outer variable", "explanation": "Reading an enclosing variable works, but assigning to it makes Python treat it as local. Use the `nonlocal` keyword to rebind the captured variable." },
+    { "title": "Confusing closures with global state", "explanation": "Each call to the outer function creates a fresh, independent closure — two counters from the same factory do not share their count." }
+  ],
+  "recall_questions": [
+    { "q": "In one sentence, what does a closure 'remember'?", "answer": "The variables from the enclosing scope where the inner function was defined, even after that outer scope has returned.", "tier": "tier1" },
+    { "q": "Why does building a decorator require a closure?", "answer": "The wrapper function needs to remember the original function it is wrapping; that reference is captured from the enclosing decorator scope — a closure.", "tier": "tier2" },
+    { "q": "What problem do closures solve that you would otherwise reach for a class to do?", "answer": "Keeping private, persistent state attached to a function without the ceremony of defining a class and instance.", "tier": "tier2" }
+  ],
+  "practice_tasks": [
+    { "title": "Closure counter", "prompt": "Write a `make_counter()` factory that returns a function which returns 1, 2, 3, ... on successive calls, using a closure (no class, no global).", "solution": "def make_counter():\n    count = 0\n    def counter():\n        nonlocal count\n        count += 1\n        return count\n    return counter\n\nc = make_counter()\nprint(c(), c(), c())  # 1 2 3" },
+    { "title": "Parametrised multiplier", "prompt": "Write `multiplier(n)` that returns a function multiplying its argument by n. Show that `times3 = multiplier(3); times3(10)` returns 30.", "solution": "def multiplier(n):\n    def mul(x):\n        return x * n\n    return mul\n\ntimes3 = multiplier(3)\nprint(times3(10))  # 30" }
+  ],
+  "challenge": {
+    "title": "Implement a logging decorator",
+    "prompt": "Using a closure, write a `@log_calls` decorator that prints the function name and arguments before calling it, then prints the return value. Preserve the wrapped function's name with functools.wraps.",
+    "solution": "import functools\n\ndef log_calls(fn):\n    @functools.wraps(fn)\n    def wrapper(*args, **kwargs):\n        print(f\"calling {fn.__name__}({args}, {kwargs})\")\n        result = fn(*args, **kwargs)\n        print(f\"{fn.__name__} -> {result}\")\n        return result\n    return wrapper\n\n@log_calls\ndef add(a, b):\n    return a + b\n\nadd(2, 3)"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#index-33",
+    "https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement",
+    "https://docs.python.org/3/library/functools.html#functools.wraps"
+  ]
+}
