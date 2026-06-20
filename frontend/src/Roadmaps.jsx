@@ -57,7 +57,7 @@ function RoadmapCard({ rm, index, onClick }) {
     <article
       onClick={onClick}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-      className="glass-card !rounded-3xl p-5 cursor-pointer group flex flex-col min-h-[300px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
+      className="glass-card !rounded-3xl p-5 cursor-pointer group flex flex-col min-h-[210px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
     >
       {/* Top: logo tile + percent */}
       <div className="flex items-start justify-between mb-4">
@@ -121,7 +121,7 @@ function CollapsibleGroup({ label, items, navigate }) {
       </button>
 
       {open && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((rm, i) => (
             <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
           ))}
@@ -249,9 +249,9 @@ function Roadmaps() {
 
         {/* Content */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="glass-card !rounded-3xl p-5 flex flex-col min-h-[300px]">
+              <div key={i} className="glass-card !rounded-3xl p-5 flex flex-col min-h-[210px]">
                 <div className="skeleton w-12 h-12 rounded-2xl mb-4" />
                 <div className="flex-1 space-y-2">
                   <div className="skeleton h-4 w-2/3" />
@@ -271,7 +271,7 @@ function Roadmaps() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {sorted.map((rm, i) => (
               <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
             ))}
