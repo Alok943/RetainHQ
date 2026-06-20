@@ -1,0 +1,73 @@
+{
+  "slug": "type-conversion",
+  "title": "Type conversion: implicit vs explicit casting",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["primitive-types", "dynamic-typing"],
+    "unlocks": [],
+    "project_usage": ["FastAPI query/path params", "parsing env vars", "JSON payload handling"]
+  },
+  "overview": {
+    "what": "Type conversion turns a value of one type into another. Implicit conversion happens automatically, but ONLY between numeric types — e.g. 5 + 2.0 promotes the int to a float and gives 7.0. Explicit conversion (casting) is when you call a constructor yourself: int('42') -> 42, str(42) -> '42', float('3.5') -> 3.5. Across non-numeric types Python never converts for you — 'id_' + 5 raises a TypeError. Think of implicit conversion as Python quietly widening compatible numbers, and explicit casting as you manually translating — a translation that can fail (int('abc') raises ValueError).",
+    "why": "APIs hand you strings (query params, env vars), so you constantly cast '42' to 42 — and that cast can fail, so it must be guarded. Knowing implicit conversion applies only to numbers explains why concatenating a string and an int throws instead of auto-casting.",
+    "where_used": ["FastAPI query/path params", "parsing env vars", "JSON payload handling"]
+  },
+  "why_learning_this": [
+    "Casting string inputs (query params, env vars) to int/float before use, and handling bad input",
+    "Understanding why 'id_' + 5 raises a TypeError instead of auto-casting"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming Python auto-casts str and int",
+      "explanation": "'count: ' + 5 raises a TypeError because Python only converts implicitly between numeric types. Fix: str(5) or an f-string like f'count: {5}'."
+    },
+    {
+      "title": "Unguarded int() on user input",
+      "explanation": "int('12abc') raises a ValueError. Fix: wrap the cast in try/except (or validate first) when the input is not trusted."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between implicit and explicit type conversion?",
+      "answer": "Implicit conversion happens automatically (Python widening numeric types, e.g. int + float -> float); explicit conversion is when you call a constructor like int(), float(), or str() yourself.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Between which kinds of types does Python convert implicitly?",
+      "answer": "Only between numeric types; it does not implicitly convert between, for example, str and int.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What can go wrong with explicit casting?",
+      "answer": "It can fail at runtime — for example int('abc') raises a ValueError.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Safe integer cast",
+      "prompt": "Write to_int(value, fallback) that returns int(value) when it can be parsed, otherwise returns fallback. Test it with '42' and with 'abc'.",
+      "starter_code": "def to_int(value, fallback):\n    pass",
+      "solution": "def to_int(value, fallback):\n    try:\n        return int(value)\n    except ValueError:\n        return fallback\n\nprint(to_int('42', 0))\nprint(to_int('abc', 0))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "total = 5 + 2.0\nprint(total)\n\nage = int('30')\nprint(age + 1)",
+    "focus": "5 + 2.0 auto-promotes the int to a float (implicit — note 7.0, not 7); the string '30' must be cast with int() before arithmetic (explicit)."
+  },
+  "challenge": {
+    "title": "Parse a port from config",
+    "prompt": "Write parse_port(raw) that takes a value from an env var and returns it as an int, defaulting to 8000 when raw is None or not a valid integer. Print calls with '5432', 'abc', and None.",
+    "solution": "def parse_port(raw):\n    if raw is None:\n        return 8000\n    try:\n        return int(raw)\n    except ValueError:\n        return 8000\n\nprint(parse_port('5432'))\nprint(parse_port('abc'))\nprint(parse_port(None))"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/functions.html#int",
+    "https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex"
+  ]
+}

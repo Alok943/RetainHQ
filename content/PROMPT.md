@@ -13,13 +13,14 @@ people who can prompt an AI to write code but cannot yet read, debug, or write i
 independently. Your job is to teach UNDERSTANDING and EXECUTION FLOW, not syntax memorisation.
 
 TOPIC:    {{TOPIC}}
+SLUG:     {{SLUG}}   (use EXACTLY this for the "slug" field — do NOT invent your own)
 ROADMAP:  {{ROADMAP}}
 PREREQS ALREADY IN THIS ROADMAP (use these exact slugs where relevant): {{PREREQS}}
 
 Return ONE JSON object matching this exact shape. No markdown, no commentary, JSON only:
 
 {
-  "slug": "kebab-case-id",
+  "slug": "{{SLUG}}",
   "title": "Human Title",
   "roadmap": "{{ROADMAP}}",
   "kind": "concept",                      // "concept" (teaches) or "milestone" (a build task that proves a skill)
@@ -68,6 +69,9 @@ HARD RULES:
    fastapi.tiangolo.com, docs.pydantic.dev, numpy.org). Never invent a URL or an API.
    Each source is a PLAIN url string ("https://docs.python.org/...") — NOT markdown
    link syntax "[text](url)".
+   SOURCE VALIDATION: every URL must DIRECTLY discuss this specific topic; prefer the most
+   specific official page (e.g. functions.html#type, not the generic datamodel.html page).
+   Do not pad with generic docs when a more specific page exists.
 2. NO TOY EXAMPLES. Never use `class Dog`, `foo/bar`, or `add(a,b)`. Anchor every code
    sample to real-world code: FastAPI routes, Pydantic models, training loops, stdlib.
 3. RECALL QUESTIONS must be answerable from `overview` — no gotcha trivia the learner
@@ -108,6 +112,9 @@ HARD RULES:
 17. WALKTHROUGH DESIGN: code_walkthrough demonstrates EXACTLY ONE concept — the learner can point to
     one line and say "that reveals the lesson." Prefer 4-8 lines over 12-15. focus names the single
     most important state change. Never combine multiple concepts in one walkthrough.
+    The PRINTED OUTPUT must visibly demonstrate the concept — a learner should grasp the lesson from
+    the code + the focus line + the output alone. Bad: `x=[]; x.append(1); print('done')` (output
+    teaches nothing). Good: `x=[]; y=x; y.append(1); print(x); print(y)` (output reveals aliasing).
 18. RECALL ANSWER CONSTRAINT: answers may contain ONLY information already in overview. Do not add
     implementation, memory, or performance details, or terminology that was not explicitly taught.
 19. IMPORTANCE CALIBRATION (metadata.importance): 10 = foundational concepts that explain many later
@@ -135,6 +142,7 @@ HARD RULES:
 ## Filling the placeholders
 
 - `{{TOPIC}}` — e.g. `Closures`
+- `{{SLUG}}` — the canonical slug from `_TODO.md`, e.g. `mutable-vs-immutable`. This becomes the filename `<slug>.json`.
 - `{{ROADMAP}}` — e.g. `python-swe`
 - `{{PREREQS}}` — paste the slugs already curated in this roadmap so Gemini reuses them
   instead of inventing new ones, e.g. `functions, scope, first-class-functions, args-kwargs`

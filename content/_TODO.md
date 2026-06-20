@@ -9,49 +9,52 @@ Feed already-done titles into the next topic's `{{PREREQS}}`.
 
 ## Phase 1 — Python Fundamentals  (32 topics)
 
+Format: `- [ ] <exact title>  →  <slug>` (slug = filename `<slug>.json` AND the `slug`
+field inside). Slugs are canonical — reuse them in other topics' prerequisites/unlocks.
+
 ### Variables & Types
-- [x] Primitive types: int, float, bool, str
-- [x] Dynamic typing and type()
-- [ ] Mutable vs immutable objects
-- [ ] Object identity: id() and memory references
-- [ ] Type conversion: implicit vs explicit casting
-- [ ] Mutable default argument pitfall
+- [x] Primitive types: int, float, bool, str  →  `primitive-types`
+- [x] Dynamic typing and type()  →  `dynamic-typing`
+- [x] Mutable vs immutable objects  →  `mutable-vs-immutable`
+- [x] Object identity: id() and memory references  →  `object-identity`
+- [ ] Type conversion: implicit vs explicit casting  →  `type-conversion`
+- [ ] Mutable default argument pitfall  →  `mutable-default-argument`
 
 ### Control Flow
-- [ ] if/elif/else and Python truthiness
-- [ ] match-case statement
-- [ ] for and while loops
-- [ ] break, continue, loop else clause
-- [ ] Ternary expressions
+- [ ] if/elif/else and Python truthiness  →  `if-elif-else`
+- [ ] match-case statement  →  `match-case`
+- [ ] for and while loops  →  `loops`
+- [ ] break, continue, loop else clause  →  `break-continue-else`
+- [ ] Ternary expressions  →  `ternary-expressions`
 
 ### Functions
-- [ ] Defining functions and return values
-- [ ] *args and **kwargs
-- [ ] Keyword-only and positional-only parameters
-- [ ] LEGB rule: variable scope in Python
-- [ ] Lambda functions and when to use them
-- [ ] First-class functions: passing and returning functions
+- [ ] Defining functions and return values  →  `functions`
+- [ ] *args and **kwargs  →  `args-kwargs`
+- [ ] Keyword-only and positional-only parameters  →  `keyword-positional-params`
+- [ ] LEGB rule: variable scope in Python  →  `scope`
+- [ ] Lambda functions and when to use them  →  `lambda-functions`
+- [ ] First-class functions: passing and returning functions  →  `first-class-functions`
 
 ### Collections
-- [ ] Lists: indexing, slicing, methods
-- [ ] Tuples: immutability and use cases
-- [ ] Dictionaries: operations and use cases
-- [ ] Sets: operations and use cases
-- [ ] Time complexity of collection operations
-- [ ] Shallow copy vs deep copy in Python
+- [ ] Lists: indexing, slicing, methods  →  `lists`
+- [ ] Tuples: immutability and use cases  →  `tuples`
+- [ ] Dictionaries: operations and use cases  →  `dictionaries`
+- [ ] Sets: operations and use cases  →  `sets`
+- [ ] Time complexity of collection operations  →  `collection-complexity`
+- [ ] Shallow copy vs deep copy in Python  →  `shallow-vs-deep-copy`
 
 ### Comprehensions
-- [ ] List comprehensions
-- [ ] Dictionary and set comprehensions
-- [ ] Nested comprehensions
-- [ ] Generator expressions vs list comprehensions
+- [ ] List comprehensions  →  `list-comprehensions`
+- [ ] Dictionary and set comprehensions  →  `dict-set-comprehensions`
+- [ ] Nested comprehensions  →  `nested-comprehensions`
+- [ ] Generator expressions vs list comprehensions  →  `generator-expressions`
 
 ### Error Handling
-- [ ] try/except with specific exception types
-- [ ] else and finally blocks
-- [ ] Raising exceptions with raise
-- [ ] Custom exception classes
-- [ ] Exception chaining with raise from
+- [ ] try/except with specific exception types  →  `try-except`
+- [ ] else and finally blocks  →  `else-finally`
+- [ ] Raising exceptions with raise  →  `raising-exceptions`
+- [ ] Custom exception classes  →  `custom-exceptions`
+- [ ] Exception chaining with raise from  →  `exception-chaining`
 
 ---
 
