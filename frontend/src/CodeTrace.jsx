@@ -47,7 +47,7 @@ export default function CodeTrace({ code, focus }) {
 
       <div className="grid md:grid-cols-2">
         {/* code with active-line highlight */}
-        <pre className="m-0 p-3 text-[12.5px] leading-relaxed font-mono overflow-x-auto bg-[#0b1220] text-[#e2e8f0]">
+        <pre className="m-0 p-3 text-[12.5px] leading-relaxed font-mono overflow-x-auto bg-[#0b1220] text-[#e2e8f0] min-w-0 max-w-full">
           {lines.map((ln, i) => {
             const active = cur && cur.line === i + 1;
             return (
@@ -60,7 +60,7 @@ export default function CodeTrace({ code, focus }) {
         </pre>
 
         {/* runtime state */}
-        <div className="p-3 border-t md:border-t-0 md:border-l border-[rgba(15,23,42,0.08)] flex flex-col gap-3 min-h-[150px]">
+        <div className="p-3 border-t md:border-t-0 md:border-l border-[rgba(15,23,42,0.08)] flex flex-col gap-3 min-h-[150px] min-w-0">
           {!steps ? (
             <div className="flex-1 flex items-center justify-center">
               <button
@@ -87,7 +87,7 @@ export default function CodeTrace({ code, focus }) {
                       <div key={k} className="font-mono text-[12px] flex gap-2">
                         <span className="text-[#0F766E] font-semibold shrink-0">{k}</span>
                         <span className="text-[#94a3b8]">=</span>
-                        <span className="text-[#0F172A] truncate">{v}</span>
+                        <span className="text-[#0F172A] truncate min-w-0">{v}</span>
                       </div>
                     ))}
                   </div>
@@ -121,7 +121,12 @@ export default function CodeTrace({ code, focus }) {
             max={steps.length - 1}
             value={idx}
             onChange={(e) => setIdx(Number(e.target.value))}
-            className="flex-1 accent-[#0891B2]"
+            aria-label="Execution step"
+            className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer outline-none
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#0891B2] [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110
+              [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#0891B2] [&::-moz-range-thumb]:border-solid
+              [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent"
+            style={{ background: `linear-gradient(to right, #0891B2 ${(idx / (steps.length - 1)) * 100}%, rgba(15,23,42,0.15) ${(idx / (steps.length - 1)) * 100}%)` }}
           />
           <button
             onClick={() => setIdx((i) => Math.min(steps.length - 1, i + 1))}
