@@ -49,34 +49,6 @@ function useCountUp(target, duration = 800) {
   return val;
 }
 
-function ProgressRing({ pct, accent, Icon, title }) {
-  const [shown, setShown] = useState(0);
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setShown(pct));
-    return () => cancelAnimationFrame(raf);
-  }, [pct]);
-  const ring = 'M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831';
-  return (
-    <div className="relative w-16 h-16 shrink-0">
-      <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
-        <path stroke="rgba(148,163,184,0.25)" strokeWidth="3" fill="none" d={ring} />
-        <path
-          stroke={accent}
-          strokeWidth="3"
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={`${shown}, 100`}
-          style={{ transition: 'stroke-dasharray 0.8s ease-out' }}
-          d={ring}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <RoadmapLogo title={title} Icon={Icon} accent={accent} size={22} />
-      </div>
-    </div>
-  );
-}
-
 function RoadmapCard({ rm, index, onClick }) {
   const { Icon, accent } = getRoadmapStyle(rm.title);
   const pct = useCountUp(rm.progress_pct ?? 0);
@@ -84,20 +56,42 @@ function RoadmapCard({ rm, index, onClick }) {
   return (
     <article
       onClick={onClick}
-      style={{ borderLeftWidth: '3px', borderLeftColor: accent, animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-      className="glass-card p-5 cursor-pointer group flex gap-4 items-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
+      style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
+      className="glass-card !rounded-3xl p-5 cursor-pointer group flex flex-col min-h-[300px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
     >
-      <ProgressRing pct={rm.progress_pct ?? 0} accent={accent} Icon={Icon} title={rm.title} />
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start gap-3 mb-1">
-          <h3 className="font-sans text-lg font-semibold text-[#0F172A] line-clamp-1">{rm.title}</h3>
-          <span className="font-mono text-sm font-semibold shrink-0" style={{ color: accent }}>{pct}%</span>
+      {/* Top: logo tile + percent */}
+      <div className="flex items-start justify-between mb-4">
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${accent}14`, border: `1px solid ${accent}26` }}
+        >
+          <RoadmapLogo title={rm.title} Icon={Icon} accent={accent} size={24} />
         </div>
-        <p className="font-sans text-xs text-[#64748B] line-clamp-2 min-h-[32px] mb-2">{rm.description}</p>
+        <span className="font-mono text-sm font-semibold" style={{ color: accent }}>{pct}%</span>
+      </div>
+
+      {/* Middle: title + description (grows to fill the tall card) */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-sans text-base md:text-lg font-semibold text-[#0F172A] leading-snug line-clamp-2 mb-1.5">
+          {rm.title}
+        </h3>
+        <p className="font-sans text-xs text-[#64748B] leading-relaxed line-clamp-3">
+          {rm.description}
+        </p>
+      </div>
+
+      {/* Bottom: progress bar + topic count */}
+      <div className="mt-4">
+        <div className="w-full h-1.5 rounded-full bg-[rgba(15,23,42,0.06)] overflow-hidden mb-2.5">
+          <div
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${rm.progress_pct ?? 0}%`, backgroundColor: accent }}
+          />
+        </div>
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] text-[#64748B]">{rm.done_nodes} / {rm.total_nodes} topics complete</span>
+          <span className="font-mono text-[10px] text-[#64748B]">{rm.done_nodes}/{rm.total_nodes} topics</span>
           <ArrowRight
-            size={16}
+            size={15}
             style={{ color: accent }}
             className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"
           />
@@ -127,7 +121,7 @@ function CollapsibleGroup({ label, items, navigate }) {
       </button>
 
       {open && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {items.map((rm, i) => (
             <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
           ))}
@@ -255,15 +249,16 @@ function Roadmaps() {
 
         {/* Content */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="glass-card p-5 flex gap-4 items-center">
-                <div className="skeleton w-16 h-16 rounded-full shrink-0" />
-                <div className="flex-1 space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="glass-card !rounded-3xl p-5 flex flex-col min-h-[300px]">
+                <div className="skeleton w-12 h-12 rounded-2xl mb-4" />
+                <div className="flex-1 space-y-2">
                   <div className="skeleton h-4 w-2/3" />
                   <div className="skeleton h-3 w-full" />
-                  <div className="skeleton h-3 w-1/3" />
+                  <div className="skeleton h-3 w-1/2" />
                 </div>
+                <div className="skeleton h-1.5 w-full rounded-full mt-4" />
               </div>
             ))}
           </div>
@@ -276,7 +271,7 @@ function Roadmaps() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {sorted.map((rm, i) => (
               <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
             ))}
