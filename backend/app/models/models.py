@@ -65,8 +65,14 @@ class Activity(SQLModel, table=True):
     source_type: Optional[str] = None  # e.g. problem/lecture/video/book/article/course/project/other
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # SM-2 memory state (one activity = one card). Updated on each review completion.
-    # repetitions starts at 0 (only the Day-0 baseline scheduled, not yet recalled).
+    # Spaced-repetition memory state (one activity = one card). Updated on each
+    # review completion. See services/scheduler.py.
+    # FSRS state: stability (days to target decay) + difficulty (1-10). Both NULL
+    # until the first GRADED review — NULL == a brand-new card with no memory yet.
+    stability: Optional[float] = None
+    difficulty_fsrs: Optional[float] = None  # distinct from `difficulty` (the user's 1-5 self-rating)
+    # Legacy SM-2 columns: still written so old rows/NOT NULL keep working, but
+    # interval_days/last_reviewed_at/next_review_at are the live fields.
     ease_factor: float = Field(default=2.5)
     repetitions: int = Field(default=0)
     interval_days: int = Field(default=0)

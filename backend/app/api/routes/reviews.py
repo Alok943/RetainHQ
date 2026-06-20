@@ -19,7 +19,12 @@ from app.schemas.review import (
     ReviewGradeQuestionsRequest,
     ReviewGradeQuestionsResponse,
 )
-from app.services.scheduler import quality_from_outcome, apply_sm2, REVIEW_SESSION_CAP
+from app.services.scheduler import (
+    quality_from_outcome,
+    fsrs_rating_from_outcome,
+    apply_fsrs,
+    REVIEW_SESSION_CAP,
+)
 from app.services.grader import (
     grade_recall,
     generate_questions,
@@ -65,7 +70,10 @@ async def complete_review(
 ):
     user_id = uuid.UUID(current_user.id)
     now = datetime.utcnow()
+    # quality (0-5) is persisted for analytics continuity; the FSRS grade (1-4)
+    # drives scheduling. Both derive from the same (rating, recalled) signals.
     quality = quality_from_outcome(review_in.rating, review_in.recalled)
+    fsrs_rating = fsrs_rating_from_outcome(review_in.rating, review_in.recalled)
 
     # Atomic: only transition due→completed once. Prevents double-completion race
     # where two concurrent requests both schedule a next review.
@@ -101,8 +109,8 @@ async def complete_review(
     )
     review = (await db.execute(stmt)).scalars().first()
 
-    # Advance the activity's SM-2 state and schedule next review
-    next_review = apply_sm2(review.activity, quality, now)
+    # Advance the activity's FSRS state and schedule next review
+    next_review = apply_fsrs(review.activity, fsrs_rating, now)
     db.add(next_review)
 
     await db.commit()
