@@ -51,6 +51,10 @@ Return ONE JSON object matching this exact shape. No markdown, no commentary, JS
   "practice_tasks": [
     { "title": "Task name", "prompt": "What to build, one paragraph.", "starter_code": "optional", "solution": "working code" }
   ],
+  "code_walkthrough": {
+    "code": "<=15 lines, self-contained, runnable, deterministic, prints output — the snippet the step-through visualizer animates",
+    "focus": "one line: the state change to watch as it runs (what reveals the concept)"
+  },
   "challenge": {
     "title": "Production-flavoured task",
     "prompt": "A realistic task that combines this topic with its prerequisites.",
@@ -62,6 +66,8 @@ Return ONE JSON object matching this exact shape. No markdown, no commentary, JS
 HARD RULES:
 1. DOCS-AS-TRUTH: `sources` must contain real official documentation URLs (docs.python.org,
    fastapi.tiangolo.com, docs.pydantic.dev, numpy.org). Never invent a URL or an API.
+   Each source is a PLAIN url string ("https://docs.python.org/...") — NOT markdown
+   link syntax "[text](url)".
 2. NO TOY EXAMPLES. Never use `class Dog`, `foo/bar`, or `add(a,b)`. Anchor every code
    sample to real-world code: FastAPI routes, Pydantic models, training loops, stdlib.
 3. RECALL QUESTIONS must be answerable from `overview` — no gotcha trivia the learner
@@ -69,9 +75,13 @@ HARD RULES:
 4. COMMON MISTAKES must be real, named bugs an intermediate dev actually hits
    (e.g. late binding, losing __name__ metadata, mutable defaults). 2-4 of them.
 5. prerequisites/unlocks are SLUGS, lowercase-kebab-case, reusing the provided roadmap slugs.
-6. If TOPIC is a milestone (a build task, not a concept), set "kind":"milestone",
+6. code_walkthrough.code: a SELF-CONTAINED runnable snippet (<=15 lines) that DEMONSTRATES the
+   concept's execution — no input(), no file/network access, deterministic, and it must print
+   output. This is what the step-through visualizer animates, so favour a few variables changing
+   over a long program.
+7. If TOPIC is a milestone (a build task, not a concept), set "kind":"milestone",
    put the spec in `challenge`, and leave practice_tasks as a single warm-up.
-7. Output ONLY the JSON object. No ```json fences, no prose before or after.
+8. Output ONLY the JSON object. No ```json fences, no prose before or after.
 ```
 
 ---

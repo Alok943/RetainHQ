@@ -42,6 +42,10 @@
     "prompt": "Using a closure, write a `@log_calls` decorator that prints the function name and arguments before calling it, then prints the return value. Preserve the wrapped function's name with functools.wraps.",
     "solution": "import functools\n\ndef log_calls(fn):\n    @functools.wraps(fn)\n    def wrapper(*args, **kwargs):\n        print(f\"calling {fn.__name__}({args}, {kwargs})\")\n        result = fn(*args, **kwargs)\n        print(f\"{fn.__name__} -> {result}\")\n        return result\n    return wrapper\n\n@log_calls\ndef add(a, b):\n    return a + b\n\nadd(2, 3)"
   },
+  "code_walkthrough": {
+    "code": "def make_counter():\n    count = 0\n    def counter():\n        nonlocal count\n        count += 1\n        return count\n    return counter\n\nc = make_counter()\nprint(c())\nprint(c())\nprint(c())",
+    "focus": "Watch `count` survive between calls — it lives in the closure, not a global."
+  },
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#index-33",
     "https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement",

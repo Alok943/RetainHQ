@@ -109,6 +109,10 @@ def main():
             if not isinstance(rq, dict) or not rq.get("q") or not rq.get("answer"):
                 err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
 
+        cw = d.get("code_walkthrough")
+        if cw is not None and (not isinstance(cw, dict) or not cw.get("code")):
+            err(rel, "code_walkthrough must be an object with a non-empty 'code' string")
+
         if d.get("roadmap"):
             by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
 
