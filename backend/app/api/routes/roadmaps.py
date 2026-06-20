@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_current_user, get_optional_user
 from app.core.security import SupabaseUser
-from app.models.models import Roadmap, RoadmapNode, UserProgress
+from app.models.models import Roadmap, RoadmapNode, UserProgress, RoadmapNodePrerequisite
 from app.schemas.roadmap import (
     RoadmapListItem,
     RoadmapDetailOut,
@@ -110,6 +110,22 @@ async def get_roadmap(
         ).all()
         status_by_node = {nid: st for nid, st in progress_rows}
 
+    # Dependency edges among these nodes -> prerequisites + reverse (unlocks) per node.
+    prereqs_by_node: dict = {}
+    unlocks_by_node: dict = {}
+    if nodes:
+        edge_rows = (
+            await db.execute(
+                select(
+                    RoadmapNodePrerequisite.node_id,
+                    RoadmapNodePrerequisite.prerequisite_node_id,
+                ).where(RoadmapNodePrerequisite.node_id.in_([n.id for n in nodes]))
+            )
+        ).all()
+        for nid, pid in edge_rows:
+            prereqs_by_node.setdefault(nid, []).append(pid)
+            unlocks_by_node.setdefault(pid, []).append(nid)
+
     node_out = [
         RoadmapNodeOut(
             id=n.id,
@@ -121,6 +137,8 @@ async def get_roadmap(
             description=n.description,
             parent_id=n.parent_id,
             status=status_by_node.get(n.id, "not_started"),
+            prerequisites=prereqs_by_node.get(n.id, []),
+            unlocks=unlocks_by_node.get(n.id, []),
         )
         for n in nodes
     ]

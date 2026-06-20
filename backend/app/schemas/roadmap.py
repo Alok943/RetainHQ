@@ -27,6 +27,8 @@ class RoadmapNodeOut(BaseModel):
     description: Optional[str] = None
     parent_id: Optional[uuid.UUID] = None
     status: str = "not_started"  # 'done' | 'not_started'
+    prerequisites: List[uuid.UUID] = []  # node ids that must come before this one
+    unlocks: List[uuid.UUID] = []         # node ids this one is a prerequisite for
 
 
 class RoadmapDetailOut(BaseModel):

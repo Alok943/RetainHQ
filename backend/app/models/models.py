@@ -29,6 +29,18 @@ class RoadmapNode(SQLModel, table=True):
     roadmap: Optional[Roadmap] = Relationship(back_populates="nodes")
     progress: List["UserProgress"] = Relationship(back_populates="node")
 
+class RoadmapNodePrerequisite(SQLModel, table=True):
+    """Directed dependency edge between two nodes in the SAME roadmap:
+    `node_id` requires `prerequisite_node_id` to be understood first. Powers the
+    dependency graph + root-cause diagnosis ("you failed Decorators -> the likely
+    blocker is Closures"). Edges are seeded by title (node UUIDs are regenerated
+    on every node re-seed), see seed_*_prereqs.py."""
+    __tablename__ = "roadmap_node_prerequisites"
+    __table_args__ = (UniqueConstraint("node_id", "prerequisite_node_id", name="uq_node_prereq"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE")
+    prerequisite_node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE")
+
 class UserProgress(SQLModel, table=True):
     __tablename__ = "user_progress"
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
