@@ -18,14 +18,14 @@ field inside). Slugs are canonical — reuse them in other topics' prerequisites
 - [x] Mutable vs immutable objects  →  `mutable-vs-immutable`
 - [x] Object identity: id() and memory references  →  `object-identity`
 - [ ] Type conversion: implicit vs explicit casting  →  `type-conversion`
-- [ ] Mutable default argument pitfall  →  `mutable-default-argument`
+- [x] Mutable default argument pitfall  →  `mutable-default-argument`
 
 ### Control Flow
-- [ ] if/elif/else and Python truthiness  →  `if-elif-else`
-- [ ] match-case statement  →  `match-case`
-- [ ] for and while loops  →  `loops`
-- [ ] break, continue, loop else clause  →  `break-continue-else`
-- [ ] Ternary expressions  →  `ternary-expressions`
+- [x] if/elif/else and Python truthiness  →  `if-elif-else`
+- [x] match-case statement  →  `match-case`
+- [x] for and while loops  →  `loops`
+- [x] break, continue, loop else clause  →  `break-continue-else`
+- [x] Ternary expressions  →  `ternary-expressions`
 
 ### Functions
 - [ ] Defining functions and return values  →  `functions`
