@@ -1,0 +1,73 @@
+{
+  "slug": "dynamic-typing",
+  "title": "Dynamic typing and type()",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["primitive-types"],
+    "unlocks": ["type-conversion", "mutable-vs-immutable"],
+    "project_usage": ["FastAPI", "Pydantic", "SQLAlchemy"]
+  },
+  "overview": {
+    "what": "Dynamic typing means variable names are bound to objects at runtime, rather than being locked to a specific data type at compile time. Think of variables as sticky notes with names written on them that can be peeled off an integer and slapped onto a string, while type() is the barcode scanner that reveals the actual object's underlying nature.",
+    "why": "It enables rapid prototyping and highly flexible code since you do not need to declare types upfront. However, this flexibility requires discipline, as a variable unexpectedly pointing to a different type can crash your application deep in the call stack.",
+    "where_used": ["Data validation pipelines", "JSON payload parsing", "Duck-typing interfaces"]
+  },
+  "why_learning_this": [
+    "Debugging type errors in JSON payloads where an API expects an integer but receives a numeric string",
+    "Writing type-safe Pydantic models by understanding how Python's runtime handles dynamic reassignment"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming variables have types",
+      "explanation": "Developers from strictly typed languages often think the variable itself holds the type, leading to confusion when user_id = 123 later becomes user_id = '123_abc'. Fix: Remember that types live on the object in memory, not on the variable name."
+    },
+    {
+      "title": "Misusing type() for inheritance checks",
+      "explanation": "Checking types with type(obj) == dict fails if the object is a subclass of dict, like an OrderedDict. Fix: Use isinstance(obj, dict) instead when validating object types to safely account for inheritance."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does dynamic typing mean in Python?",
+      "answer": "It means variable names are bound to objects at runtime and can be reassigned to objects of completely different types without throwing a compilation error.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Where does the data type information reside in Python?",
+      "answer": "The type information is attached to the object itself, not to the variable name, which acts merely as a reference.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What built-in function lets you inspect the underlying class or data type of an object at runtime?",
+      "answer": "The type() function.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Runtime Type Logger",
+      "prompt": "Write a function log_payload_type(payload) that returns a string like 'Processed payload {payload} of type {type_name}'. Hint: use type(payload).__name__ to get just the type's name.",
+      "starter_code": "def log_payload_type(payload):\n    pass",
+      "solution": "def log_payload_type(payload):\n    type_name = type(payload).__name__\n    return f'Processed payload {payload} of type {type_name}'"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "api_response = 404\nprint('Value:', api_response, '| type:', type(api_response).__name__)\n\napi_response = {'error': 'Not Found'}\nprint('Value:', api_response, '| type:', type(api_response).__name__)",
+    "focus": "Same name, different type: api_response goes from int to dict, and type().__name__ follows the object, not the name."
+  },
+  "challenge": {
+    "title": "API Response Normalizer",
+    "prompt": "Build a webhook receiver helper normalize_webhook_data(data) that inspects the dynamic type of data. If it is a str, return it converted to int (assume a valid numeric string). If it is already an int, return it as-is. If it is a float, return it cast to int. Otherwise return 0. Use type(data) here to practice strict runtime type checking.",
+    "solution": "def normalize_webhook_data(data):\n    data_type = type(data)\n    if data_type is str:\n        return int(data)\n    elif data_type is int:\n        return data\n    elif data_type is float:\n        return int(data)\n    else:\n        return 0"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html",
+    "https://docs.python.org/3/library/functions.html#type"
+  ]
+}

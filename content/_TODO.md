@@ -10,8 +10,8 @@ Feed already-done titles into the next topic's `{{PREREQS}}`.
 ## Phase 1 — Python Fundamentals  (32 topics)
 
 ### Variables & Types
-- [ ] Primitive types: int, float, bool, str
-- [ ] Dynamic typing and type()
+- [x] Primitive types: int, float, bool, str
+- [x] Dynamic typing and type()
 - [ ] Mutable vs immutable objects
 - [ ] Object identity: id() and memory references
 - [ ] Type conversion: implicit vs explicit casting
