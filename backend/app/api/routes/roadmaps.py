@@ -1,4 +1,5 @@
 import uuid
+from collections import deque
 from datetime import datetime
 from typing import List
 
@@ -13,6 +14,8 @@ from app.schemas.roadmap import (
     RoadmapListItem,
     RoadmapDetailOut,
     RoadmapNodeOut,
+    BlockerOut,
+    BlockersOut,
     ProgressUpdate,
     ProgressResult,
 )
@@ -154,6 +157,103 @@ async def get_roadmap(
         progress_pct=_pct(done, total),
         nodes=node_out,
     )
+
+
+@router.get("/{roadmap_id}/blockers", response_model=BlockersOut)
+async def get_roadmap_blockers(
+    roadmap_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser | None = Depends(get_optional_user),
+):
+    """"Why am I stuck?" — diagnose the dependency graph against the user's progress.
+
+    Returns the *ready frontier*: incomplete topics whose prerequisites are already
+    done (so they can be started now), ranked by how many still-incomplete topics
+    they transitively unblock. The biggest unlocks are the fastest way forward.
+    Works for guests too (no progress -> everything incomplete -> the roadmap roots
+    surface as the natural starting points).
+    """
+    user_id = uuid.UUID(current_user.id) if current_user else None
+
+    exists = (
+        await db.execute(select(Roadmap.id).where(Roadmap.id == roadmap_id))
+    ).scalar_one_or_none()
+    if not exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+
+    node_rows = (
+        await db.execute(
+            select(RoadmapNode.id, RoadmapNode.title, RoadmapNode.section).where(
+                RoadmapNode.roadmap_id == roadmap_id
+            )
+        )
+    ).all()
+    if not node_rows:
+        return BlockersOut(roadmap_id=roadmap_id, total_incomplete=0, blockers=[])
+
+    node_ids = [r.id for r in node_rows]
+    title_by = {r.id: r.title for r in node_rows}
+    section_by = {r.id: r.section for r in node_rows}
+
+    status_by = {}
+    if user_id:
+        prog = (
+            await db.execute(
+                select(UserProgress.node_id, UserProgress.status).where(
+                    UserProgress.user_id == user_id,
+                    UserProgress.node_id.in_(node_ids),
+                )
+            )
+        ).all()
+        status_by = {nid: st for nid, st in prog}
+    incomplete = {nid for nid in node_ids if status_by.get(nid) != "done"}
+
+    edges = (
+        await db.execute(
+            select(
+                RoadmapNodePrerequisite.node_id,
+                RoadmapNodePrerequisite.prerequisite_node_id,
+            ).where(RoadmapNodePrerequisite.node_id.in_(node_ids))
+        )
+    ).all()
+    prereqs_of: dict = {}
+    dependents_of: dict = {}
+    for nid, pid in edges:
+        prereqs_of.setdefault(nid, []).append(pid)
+        dependents_of.setdefault(pid, []).append(nid)
+
+    def downstream_incomplete(start: uuid.UUID) -> list:
+        # BFS over dependents (graph is a DAG); collect still-incomplete descendants.
+        seen: set = set()
+        q = deque(dependents_of.get(start, []))
+        while q:
+            x = q.popleft()
+            if x in seen:
+                continue
+            seen.add(x)
+            q.extend(dependents_of.get(x, []))
+        return [x for x in seen if x in incomplete]
+
+    ranked = []
+    for nid in incomplete:
+        # "ready" = every prerequisite is already done.
+        if all(p not in incomplete for p in prereqs_of.get(nid, [])):
+            ds = downstream_incomplete(nid)
+            if ds:
+                ranked.append((nid, ds))
+    ranked.sort(key=lambda t: (-len(t[1]), title_by[t[0]]))
+
+    blockers = [
+        BlockerOut(
+            node_id=nid,
+            title=title_by[nid],
+            section=section_by[nid],
+            unlocks_count=len(ds),
+            unlocks_sample=[title_by[x] for x in ds[:3]],
+        )
+        for nid, ds in ranked[:6]
+    ]
+    return BlockersOut(roadmap_id=roadmap_id, total_incomplete=len(incomplete), blockers=blockers)
 
 
 @router.put("/nodes/{node_id}/progress", response_model=ProgressResult)

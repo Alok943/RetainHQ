@@ -41,6 +41,20 @@ class RoadmapDetailOut(BaseModel):
     nodes: List[RoadmapNodeOut] = []
 
 
+class BlockerOut(BaseModel):
+    node_id: uuid.UUID
+    title: str
+    section: str
+    unlocks_count: int            # how many incomplete topics this transitively unblocks
+    unlocks_sample: List[str] = []  # a few of those downstream titles
+
+
+class BlockersOut(BaseModel):
+    roadmap_id: uuid.UUID
+    total_incomplete: int = 0
+    blockers: List[BlockerOut] = []
+
+
 class ProgressUpdate(BaseModel):
     status: str  # 'done' | 'not_started'
 

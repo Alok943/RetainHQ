@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
@@ -120,6 +120,11 @@ function RoadmapDetail() {
   const [expanded, setExpanded] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   const [contextNode, setContextNode] = useState(null); // {raw, x, y}
+
+  // "Why am I stuck?" — dependency-graph diagnosis panel.
+  const [blockersOpen, setBlockersOpen] = useState(false);
+  const [blockers, setBlockers] = useState(null);       // { blockers: [], total_incomplete }
+  const [blockersLoading, setBlockersLoading] = useState(false);
 
   // List view is the default — it scans, works on touch, and matches the data's
   // linear shape. The flowchart stays available as "Map".
@@ -308,6 +313,21 @@ function RoadmapDetail() {
   }, [statusMap, focusNode, rawNodes, requireAuth]);
 
   useEffect(() => () => clearTimeout(logPromptTimer.current), []);
+
+  // Re-fetch each open so it reflects current progress (cheap, no caching).
+  const openBlockers = useCallback(async () => {
+    setBlockersOpen(true);
+    setBlockersLoading(true);
+    try {
+      const data = await apiFetch(`/api/roadmaps/${id}/blockers`, { optionalAuth: true });
+      setBlockers(data);
+    } catch (err) {
+      console.error('Failed to load blockers:', err);
+      setBlockers({ blockers: [], total_incomplete: 0 });
+    } finally {
+      setBlockersLoading(false);
+    }
+  }, [id]);
 
   // On load: center on the furthest-completed topic, or the first node if none done
   useEffect(() => {
@@ -516,6 +536,13 @@ function RoadmapDetail() {
             <span className="font-mono text-sm font-semibold text-[#0F172A]">{pct}%</span>
             <span className="font-mono text-[11px] text-[#64748B]">{done}/{total}</span>
             <button
+              onClick={openBlockers}
+              title="See which foundational topics to tackle first"
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#0891B2] border border-[#0891B2]/30 hover:bg-[#0891B2]/10 rounded px-2.5 py-1.5 transition-colors"
+            >
+              <Compass size={14} /> Why am I stuck?
+            </button>
+            <button
               onClick={downloadPdf}
               title="Download this roadmap as a PDF"
               className="flex items-center gap-1.5 text-xs font-semibold text-[#0891B2] border border-[#0891B2]/30 hover:bg-[#0891B2]/10 rounded px-2.5 py-1.5 transition-colors"
@@ -641,6 +668,69 @@ function RoadmapDetail() {
           </div>
         )}
       </div>
+
+      {/* "Why am I stuck?" — dependency-graph diagnosis */}
+      {blockersOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30"
+          onClick={() => setBlockersOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-xl shadow-2xl border border-[rgba(15,23,42,0.12)] max-h-[80vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(15,23,42,0.08)] sticky top-0 bg-white">
+              <div className="flex items-center gap-2">
+                <Compass size={16} className="text-[#0891B2]" />
+                <h3 className="font-sans text-sm font-semibold text-[#0F172A]">Why am I stuck?</h3>
+              </div>
+              <button onClick={() => setBlockersOpen(false)} className="text-[#94a3b8] hover:text-[#0F172A]">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5">
+              {blockersLoading ? (
+                <p className="font-sans text-sm text-[#64748B] text-center py-8">Analyzing your progress…</p>
+              ) : !blockers || blockers.blockers.length === 0 ? (
+                <p className="font-sans text-sm text-[#64748B] text-center py-8 leading-relaxed">
+                  Nothing's blocking you on this roadmap — the foundations are covered. Keep going.
+                </p>
+              ) : (
+                <>
+                  <p className="font-sans text-xs text-[#64748B] mb-4 leading-relaxed">
+                    These are ready to learn now (their prerequisites are done) and they unlock the
+                    most of what's ahead. Start here — it's the fastest way forward.
+                  </p>
+                  <div className="flex flex-col gap-2.5">
+                    {blockers.blockers.map((b, i) => (
+                      <div key={b.node_id} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
+                        <div className="flex items-start gap-2.5">
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-[#0891B2]/10 text-[#0891B2] font-mono text-[11px] font-bold flex items-center justify-center mt-0.5">
+                            {i + 1}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-sans text-sm font-semibold text-[#0F172A] leading-snug">{b.title}</div>
+                            <div className="font-sans text-[11px] text-[#64748B] mt-0.5">{b.section}</div>
+                            <div className="font-sans text-[11px] text-[#0F766E] font-medium mt-1.5">
+                              Unlocks {b.unlocks_count} topic{b.unlocks_count === 1 ? '' : 's'}
+                              {b.unlocks_sample?.length > 0 && (
+                                <span className="text-[#94a3b8] font-normal">
+                                  {' · '}{b.unlocks_sample.join(', ')}
+                                  {b.unlocks_count > b.unlocks_sample.length ? '…' : ''}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Post-completion nudge: close the roadmap → capture loop without hijacking
           batch-checking. Auto-dismisses; "Log it" pre-fills the topic. */}
