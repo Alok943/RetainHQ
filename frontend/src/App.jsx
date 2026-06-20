@@ -197,8 +197,12 @@ function AppLayout() {
           </Routes>
         </main>
 
-        {/* Mobile Bottom Navigation (Hidden on md+) */}
-        <nav className="md:hidden absolute bottom-0 w-full glass-nav border-t flex justify-around items-center px-2 py-3 z-20 pb-safe overflow-x-auto gap-1">
+        {/* Mobile Bottom Navigation (Hidden on md+). `fixed` (not absolute) so it
+            pins to the visible viewport bottom on real phones — an `absolute bottom-0`
+            inside an h-screen/100vh container renders below the fold on mobile, where
+            100vh is taller than the visible area (the classic mobile-100vh bug). Pages
+            already reserve pb-20 for it. */}
+        <nav className="md:hidden fixed inset-x-0 bottom-0 glass-nav border-t flex justify-around items-center px-2 py-3 z-30 pb-safe overflow-x-auto gap-1">
           <NavItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
           <NavItem icon={<CheckSquare size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
           <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
