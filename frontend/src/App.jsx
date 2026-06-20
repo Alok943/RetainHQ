@@ -12,6 +12,7 @@ import LogActivity from './LogActivity';
 import Roadmaps from './Roadmaps';
 import Analytics from './Analytics';
 import RoadmapDetail from './RoadmapDetail';
+import LessonView from './LessonView';
 import Login from './Login';
 import Profile from './Profile';
 import KnowledgeVault from './KnowledgeVault';
@@ -187,6 +188,7 @@ function AppLayout() {
             <Route path="log" element={<LogActivity />} />
             <Route path="roadmaps" element={<Roadmaps />} />
             <Route path="roadmaps/:id" element={<RoadmapDetail />} />
+            <Route path="roadmaps/:id/learn/:slug" element={<LessonView />} />
             <Route path="vault" element={<KnowledgeVault />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="profile" element={<Profile />} />

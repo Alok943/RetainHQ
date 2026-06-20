@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass, BookOpen } from 'lucide-react';
+import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import { jsPDF } from 'jspdf';
 import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
@@ -137,6 +138,10 @@ function RoadmapDetail() {
   const [logPrompt, setLogPrompt] = useState(null);             // node title | null
   const logPromptTimer = useRef(null);
 
+  // Content manifest: { [nodeTitle]: slug } for the current roadmap
+  const [slugByTitle, setSlugByTitle] = useState({});
+  const [contentKey, setContentKey] = useState(null);
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -165,6 +170,8 @@ function RoadmapDetail() {
       try {
         const data = await apiFetch(`/api/roadmaps/${id}`, { optionalAuth: true });
         setMeta({ title: data.title, description: data.description });
+        const ck = CONTENT_KEY_BY_TITLE[data.title] || null;
+        setContentKey(ck);
         setRawNodes(data.nodes);
         const sm = {};
         data.nodes.forEach((n) => { sm[n.id] = n.status; });
@@ -177,6 +184,15 @@ function RoadmapDetail() {
     }
     load();
   }, [id]);
+
+  // Fetch the content manifest once to know which nodes have lessons
+  useEffect(() => {
+    if (!contentKey) return;
+    fetch('/content/manifest.json')
+      .then((r) => r.ok ? r.json() : {})
+      .then((manifest) => setSlugByTitle(manifest[contentKey] || {}))
+      .catch(() => {});
+  }, [contentKey]);
 
   // Collapse phases that are already 100% done, once, when data first arrives —
   // so a long sheet opens scrolled-to-where-you-are instead of a wall of finished work.
@@ -594,6 +610,9 @@ function RoadmapDetail() {
               openTopic={openTopic}
               onOpenTopic={(id) => setOpenTopic((cur) => (cur === id ? null : id))}
               onToggleComplete={toggleComplete}
+              slugByTitle={slugByTitle}
+              roadmapId={id}
+              contentKey={contentKey}
             />
           </div>
         </div>
@@ -755,7 +774,7 @@ function RoadmapDetail() {
 
 /* ---------------- list view ---------------- */
 
-function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTogglePhase, openTopic, onOpenTopic, onToggleComplete }) {
+function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTogglePhase, openTopic, onOpenTopic, onToggleComplete, slugByTitle, roadmapId, contentKey }) {
   const topLevel = rawNodes.filter((n) => !n.parent_id);
   const phases = [];
   topLevel.forEach((n) => { if (!phases.includes(n.phase)) phases.push(n.phase); });
@@ -801,6 +820,9 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                           open={openTopic === n.id}
                           onOpen={() => onOpenTopic(n.id)}
                           onToggle={() => onToggleComplete(n.id)}
+                          learnSlug={slugByTitle[n.title]}
+                          roadmapId={roadmapId}
+                          contentKey={contentKey}
                         />
                         {(childrenByParent[n.id] || []).map((c) => (
                           <TopicRow
@@ -811,6 +833,9 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                             onOpen={() => onOpenTopic(c.id)}
                             onToggle={() => onToggleComplete(c.id)}
                             isChild
+                            learnSlug={slugByTitle[c.title]}
+                            roadmapId={roadmapId}
+                            contentKey={contentKey}
                           />
                         ))}
                       </React.Fragment>
@@ -826,7 +851,8 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
   );
 }
 
-function TopicRow({ node, done, open, onOpen, onToggle, isChild }) {
+function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, roadmapId, contentKey }) {
+  const navigate = useNavigate();
   const desc = node.description;
   const hasInfo = Boolean(desc);
   const isLink = hasInfo && /^https?:\/\//.test(desc.trim());
@@ -853,6 +879,14 @@ function TopicRow({ node, done, open, onOpen, onToggle, isChild }) {
           {node.title}
         </button>
 
+        {learnSlug && (
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate(`/roadmaps/${roadmapId}/learn/${learnSlug}`, { state: { contentKey } }); }}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-[#0891B2] bg-[#0891B2]/10 hover:bg-[#0891B2]/20 transition-colors shrink-0"
+          >
+            <BookOpen size={12} /> Learn
+          </button>
+        )}
         {tierColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tierColor }} title={node.tier} />}
         {hasInfo && (
           <button onClick={onOpen} aria-label="Show notes" className="text-[#94a3b8] hover:text-[#0F172A] shrink-0">
