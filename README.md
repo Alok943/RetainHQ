@@ -15,7 +15,7 @@ The whole product is one loop, and every feature serves it:
 1. **Log** an activity (something you just learned) → captures the single **Key Memory** worth keeping.
 2. **Schedule** — logging schedules the first review for **tomorrow** (recall after a delay is what builds memory; an instant quiz just measures short-term recall and breeds review fatigue). The one exception: a user's **first-ever** activity gets a demo review *due now*, so a brand-new user sees the loop instantly. Reviews are capped per day (overflow rolls forward) so a backlog never balloons into a demoralizing "23 due".
 3. **Recall** — the Review screen makes you commit a free-recall answer *before* revealing the key memory (retrieval practice, not recognition).
-4. **Rate** how it went (Missed / Hard / Good / Easy) → this drives the **SM-2** scheduler, which spaces the next review based on how well you recalled.
+4. **Rate** how it went (Missed / Hard / Good / Easy) → this drives the **FSRS** scheduler, which spaces the next review based on how well you recalled.
 5. **Retain** — each review is rescheduled to land right before you'd forget. The spacing widens as the memory strengthens.
 
 > **Design rule:** *Ship the mechanic, freeze the intelligence.* The immediate goal is validating the core loop with ~20 real users — not piling on features.
@@ -87,7 +87,7 @@ RetainHQ/
 │       │   └── routes/       # activities, reviews, dashboard, roadmaps, feedback, admin
 │       ├── schemas/          # Pydantic request/response models
 │       ├── services/
-│       │   ├── scheduler.py  # SM-2 scheduling logic
+│       │   ├── scheduler.py  # FSRS scheduling logic
 │       │   └── grader.py     # LLM recall grader (Groq)
 │       ├── models/models.py  # single source of truth for the schema
 │       ├── alembic/versions/ # migrations
@@ -158,14 +158,14 @@ python seed_striver_a2z.py    # each roadmap has its own idempotent seed_*.py wi
 
 Postgres, UUID primary keys, naive-UTC timestamps.
 
-- **activities** — `user_id`, `topic`, `key_memory` (capped at 500 chars on create), `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?`, `roadmap_id?` (optional FK → `roadmaps`, ON DELETE SET NULL), `created_at`, plus SM-2 card state: `ease_factor` (2.5), `repetitions` (0), `interval_days` (0), `last_reviewed_at?`, `next_review_at?`.
+- **activities** — `user_id`, `topic`, `key_memory` (capped at 500 chars on create), `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?`, `roadmap_id?` (optional FK → `roadmaps`, ON DELETE SET NULL), `created_at`, plus FSRS card state: `stability?`, `difficulty_fsrs?` (both NULL until the first graded review = a new card), `interval_days`, `last_reviewed_at?`, `next_review_at?`. Legacy SM-2 columns `ease_factor`/`repetitions` are still written so old rows keep working.
 - **reviews** — `user_id`, `activity_id`, `status('due'|'completed')`, `scheduled_for`, `completed_at?`, `rating?('easy'|'medium'|'hard')`, `recalled?` (objective got-it/missed-it), `quality?` (0–5 SM-2 grade), and AI grader output `ai_verdict?` / `ai_recalled?` / `ai_feedback?`.
 - **roadmaps** — `title`, `description`.
 - **roadmap_nodes** — `roadmap_id`, `phase`, `section`, `title`, `tier(easy|medium|hard)`, `order_index`, `description?`, `parent_id?` (self-ref → subtopics are completable child nodes).
 - **user_progress** — `user_id`, `node_id`, `status`.
 - **feedbacks** — `user_id`, `message`, `status('new'|'reviewed'|'resolved')`, `created_at`.
 
-> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `f4a9c2e1b370`.
+> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `a1b2c3d4e5f6` (adds the FSRS `stability`/`difficulty_fsrs` columns).
 
 ---
 
@@ -176,10 +176,10 @@ All routes are under `/api` and require a Bearer JWT (some support `optionalAuth
 | Method & Path | Purpose |
 |---|---|
 | `GET /api/activities/` | List the user's captured activities (Knowledge Vault), newest first |
-| `POST /api/activities/` | Create activity (optional `roadmap_id`); init SM-2 state + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. |
+| `POST /api/activities/` | Create activity (optional `roadmap_id`); init FSRS card + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. |
 | `POST /api/activities/suggest-key-points` | **Capture assist** (gated): `{topic, draft?}` → `{points[]}` — core sub-points under the topic so a stuck user can recognize + keep what they learned. Suggestion only, never auto-applied. |
 | `GET /api/reviews/due` | Due reviews (`status='due'`, `scheduled_for ≤ now`) with activity eager-loaded. Capped to one session (overflow rolls forward). |
-| `POST /api/reviews/{id}/complete` | Complete with `rating` + optional `recalled`; advances SM-2 and schedules the next review (IDOR-protected) |
+| `POST /api/reviews/{id}/complete` | Complete with `rating` + optional `recalled`; advances FSRS and schedules the next review (IDOR-protected) |
 | `POST /api/reviews/{id}/grade` | LLM grader (gated on `GRADER_ENABLED`): grades free recall vs `key_memory` → `{verdict, recalled, feedback, revision_note, related_subtopics}`. Advisory only. |
 | `POST /api/reviews/{id}/questions` | **Question mode** (gated): generate 2–3 short-answer questions grounded in `key_memory`. 404 when disabled → UI falls back to free recall. |
 | `POST /api/reviews/{id}/grade-questions` | **Question mode** (gated): grade the answer set vs `key_memory` → `{recalled, feedback, items[], related_subtopics}`. Advisory only. |
@@ -200,18 +200,19 @@ Full detail in [`docs/API.md`](docs/API.md). Interactive docs at `/docs` when th
 
 ---
 
-## How scheduling works (SM-2)
+## How scheduling works (FSRS)
 
-Every logged activity is a single SM-2 "card" — its scheduling state lives on the `activities` row. Logic is in [`backend/app/services/scheduler.py`](backend/app/services/scheduler.py).
+Every logged activity is a single **FSRS** "card" — its memory state lives on the `activities` row. Logic is in [`backend/app/services/scheduler.py`](backend/app/services/scheduler.py). FSRS (the successor to SM-2) models two continuous variables per card instead of a fixed ease ladder:
 
-- Logging schedules the first review for **tomorrow** (`repetitions=1`, so the ladder reads **+1 day → +6 days → `round(interval × ease_factor)`**). A user's **first-ever** activity instead gets a demo review *due now* (`immediate=True`, `repetitions=0`) as the onboarding aha — a one-time exception, not per-log, so it doesn't reintroduce fatigue.
-- Each completion maps `rating` + `recalled` → a quality score 0–5:
-  - `recalled = false` → quality 2 (a **lapse** → interval resets to 1 day, `repetitions` resets to **1** so the next pass jumps to 6 days, avoiding an awkward 1d→1d).
-  - otherwise Hard / Good / Easy → quality 3 / 4 / 5.
-- `quality` is persisted on the review; the **next** review is scheduled immediately.
+- **stability** — days until predicted recall decays to the target retention
+- **difficulty** (`difficulty_fsrs`, 1–10) — how intrinsically hard the card is
+
+Both are `NULL` until the **first graded review** (`NULL` == a brand-new card with no memory yet). Published studies put FSRS at ~30% fewer reviews than SM-2 for the same retention, because well-remembered cards space out faster and shaky ones come back sooner.
+
+- **First review timing is unchanged:** logging schedules the first review for **tomorrow** (+1 day); a user's **first-ever** activity instead gets a demo review *due now* (the onboarding aha — one-time, not per-log).
+- **Each completion** maps `rating` + `recalled` → an FSRS grade (1=Again / 2=Hard / 3=Good / 4=Easy; a miss is always Again). FSRS updates stability + difficulty from the *elapsed* time and the grade, then picks the next interval so predicted recall equals `DESIRED_RETENTION` (0.9). The next review is scheduled immediately.
+- **Legacy SM-2 columns** (`ease_factor`, `repetitions`) are still written so old rows and NOT NULL constraints keep working, but `stability`/`difficulty_fsrs`/`interval_days` are the live fields. The `quality` (0–5) on each review is still persisted for analytics continuity; FSRS scheduling uses the 1–4 grade.
 - **Daily session cap** (`REVIEW_SESSION_CAP`, default 10): the due queue and the dashboard `due_count` are both capped at one session's worth, oldest-first. Overdue cards beyond the cap stay `due` and roll forward — a fallen-behind user always sees a bounded, finishable set instead of the classic unbounded-backlog death spiral.
-
-FSRS is the planned v2 successor (the `rating` + `recalled` signals are already being captured to feed it).
 
 ---
 
@@ -301,7 +302,7 @@ FSRS is the planned v2 successor (the `rating` + `recalled` signals are already 
 5. Feedback status workflow + full admin auth.
 6. Rate limiting (slowapi) on write endpoints.
 
-**Phase 2:** FSRS scheduling, real momentum / retention-strength metrics, Re-entry Mode, custom user roadmaps ("Bring Your Own Path").
+**Phase 2:** real momentum / retention-strength metrics, Re-entry Mode, custom user roadmaps ("Bring Your Own Path"). *(FSRS scheduling — originally Phase 2 — is now live.)*
 
 ---
 
