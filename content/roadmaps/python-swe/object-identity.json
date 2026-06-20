@@ -61,6 +61,12 @@
     "code": "a = {'id': 1}\nb = {'id': 1}\nc = a\nprint(a == b)\nprint(a is b)\nprint(a is c)",
     "focus": "a and b are equal (==) but not identical (is); only c, assigned from a, is the same object."
   },
+  "aha_moment": {
+    "code": "a = 256\nb = 256\nprint(a is b)\n\nbig = 1000\nprint(big is int('1000'))",
+    "prediction": "Both lines compare equal integers with `is`. What does each print?",
+    "common_guess": "True for both",
+    "why": "CPython caches small integers (-5 to 256), so 256 is always that one cached object (is is True). 1000 is outside the cache, and int('1000') builds a fresh object at runtime, so it is a different object (is is False). Use == for values; reserve is for None/True/False."
+  },
   "challenge": {
     "title": "A correct None check",
     "prompt": "Write get_or_default(value, default) that returns default ONLY when value is None — not when value is 0, '', or an empty list. Use the correct operator, then print three calls to prove 0 and '' are kept.",

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import CodeTrace from './CodeTrace';
@@ -28,11 +28,15 @@ export default function LessonView() {
     });
   }, []);
 
+  // Predict-before-reveal gate for the aha_moment block.
+  const [ahaRevealed, setAhaRevealed] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
+      setAhaRevealed(false);
       try {
         // Get the content key — prefer router state if passed, else fetch roadmap meta
         let contentKey = location.state?.contentKey;
@@ -146,6 +150,34 @@ export default function LessonView() {
           </div>
         )}
       </Section>
+
+      {/* --- Predict & reveal (the aha moment) --- */}
+      {lesson.aha_moment && (
+        <Section icon={<Sparkles size={16} />} title="Predict the output" accent="#7C3AED">
+          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3">{lesson.aha_moment.prediction}</p>
+          <pre className="m-0 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[12.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0 mb-3">{lesson.aha_moment.code}</pre>
+          {!ahaRevealed ? (
+            <button
+              onClick={() => setAhaRevealed(true)}
+              className="flex items-center gap-2 text-sm font-semibold text-white bg-[#7C3AED] hover:bg-[#6D28D9] rounded px-3.5 py-2 transition-colors"
+            >
+              <Eye size={15} /> Reveal what actually happens
+            </button>
+          ) : (
+            <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+              <div className="rounded-lg border border-[#B45309]/20 bg-[#B45309]/[0.04] p-3">
+                <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B45309] mb-1">Most people guess</div>
+                <pre className="m-0 font-mono text-[13px] text-[#0F172A] whitespace-pre-wrap">{lesson.aha_moment.common_guess}</pre>
+              </div>
+              <CodeTrace code={lesson.aha_moment.code} />
+              <div className="rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
+                <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">Why</div>
+                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{lesson.aha_moment.why}</p>
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* --- §2 Why learn this --- */}
       {lesson.why_learning_this?.length > 0 && (
@@ -290,7 +322,7 @@ export default function LessonView() {
 function Section({ icon, title, accent, children }) {
   const color = accent || '#0891B2';
   return (
-    <section className="glass-card mb-4 overflow-hidden">
+    <section className="glass-card mb-4 p-5">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[rgba(15,23,42,0.06)]">
         <span style={{ color }}>{icon}</span>
         <h2 className="font-sans text-sm font-bold text-[#0F172A] uppercase tracking-wider">{title}</h2>

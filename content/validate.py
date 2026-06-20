@@ -113,6 +113,13 @@ def main():
         if cw is not None and (not isinstance(cw, dict) or not cw.get("code")):
             err(rel, "code_walkthrough must be an object with a non-empty 'code' string")
 
+        am = d.get("aha_moment")
+        if am is not None and (
+            not isinstance(am, dict)
+            or not all(am.get(k) for k in ("code", "prediction", "common_guess", "why"))
+        ):
+            err(rel, "aha_moment must have non-empty code, prediction, common_guess, and why")
+
         if d.get("roadmap"):
             by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
 

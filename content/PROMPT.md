@@ -56,6 +56,12 @@ Return ONE JSON object matching this exact shape. No markdown, no commentary, JS
     "code": "<=15 lines, self-contained, runnable, deterministic, prints output — the snippet the step-through visualizer animates",
     "focus": "one line: the state change to watch as it runs (what reveals the concept)"
   },
+  "aha_moment": {                           // OPTIONAL but high-value: the predict-before-reveal moment
+    "code": "<=12 lines, runnable, prints output, with a SURPRISING result; the visualizer runs it — do NOT store the output",
+    "prediction": "What does this print? (learner answers BEFORE revealing)",
+    "common_guess": "the wrong answer most beginners give",
+    "why": "1-2 sentences that rebuild the correct mental model once the real output surprises them"
+  },
   "challenge": {
     "title": "Production-flavoured task",
     "prompt": "A realistic task that combines this topic with its prerequisites.",
@@ -133,7 +139,17 @@ HARD RULES:
 24. QUALITY BAR — silently reject and regenerate if: the walkthrough teaches multiple concepts; a
     recall answer introduces new information; the practice task is harder than the overview; the
     challenge depends on an unstated assumption; or the overview lacks concrete examples.
-25. OUTPUT: return exactly ONE raw JSON object. Do NOT wrap it in markdown fences. No commentary,
+25. AHA MOMENT (the highest-value teaching field): aha_moment.code is a SHORT snippet (<=12 lines)
+    whose result genuinely SURPRISES a beginner — usually due to references/aliasing, evaluation timing,
+    mutation, or scope. `prediction` is the question the learner answers BEFORE seeing output; `common_guess`
+    is the WRONG answer most beginners give; `why` rebuilds the correct mental model in 1-2 sentences. Do
+    NOT store the actual output — the visualizer executes the code and shows the real result (runtime is the
+    source of truth). Omit aha_moment only if the topic has no genuinely surprising behaviour; prefer to include one.
+26. TEACH THE UNDERLYING MODEL: lead overview.what with the mechanism that EXPLAINS the surface facts,
+    not the facts alone. For anything touching references/objects (mutability, identity, copy, default args,
+    function arguments), use the model "variables are labels, objects are boxes, many labels can point to one
+    box." Favour progressive revelation (show code -> provoke a prediction -> explain) over a flat definition.
+27. OUTPUT: return exactly ONE raw JSON object. Do NOT wrap it in markdown fences. No commentary,
     no explanations, no preamble, no epilogue.
 ```
 
