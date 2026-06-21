@@ -1,0 +1,82 @@
+{
+  "slug": "mutable-default-argument",
+  "title": "Mutable default argument pitfall",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["mutable-vs-immutable", "primitive-types"],
+    "unlocks": ["functions", "shallow-vs-deep-copy"],
+    "project_usage": ["FastAPI dependency factories", "Pydantic validators", "data pipelines"]
+  },
+  "overview": {
+    "what": "Python evaluates default argument values once when the function is defined — not each time the function is called. If that default is a mutable object (list, dict, or set), all calls that omit the argument share the SAME object in memory.\n\nExample of the bug:\n\n  def append_tag(tag, result=[]):\n      result.append(tag)\n      return result\n\nCalling append_tag('a') then append_tag('b') returns ['a', 'b'] on the second call — the list was mutated between calls and was never reset.\n\nThe idiomatic fix is to use None as the default sentinel and create the mutable object inside the body:\n\n  def append_tag(tag, result=None):\n      if result is None:\n          result = []\n      result.append(tag)\n      return result\n\nThink of the default as a sticky note stapled to the function when Python first reads its definition — every call reads the same note, not a fresh copy printed for each call.",
+    "why": "This bug is invisible at a glance: the signature looks correct and the very first call always works. The symptom is mysterious state persistence across calls — data from one request leaking into the next in API handlers, or factory functions producing objects that share hidden state.",
+    "where_used": ["FastAPI dependency factories", "Pydantic model_validator helpers", "argument accumulator patterns in CLI tools"]
+  },
+  "why_learning_this": [
+    "Prevents a persistent cross-call mutation bug in any function that uses a list or dict as a default parameter",
+    "A canonical Python interview question — examiners probe this explicitly with 'why does this function remember values between calls?'"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a list or dict directly as a default",
+      "explanation": "def process(items=[]) mutates the same list across all calls that omit items. Fix: use None and initialize inside the body with if items is None: items = []."
+    },
+    {
+      "title": "Thinking the bug only affects lists",
+      "explanation": "Any mutable default — dict, set, custom object — has the same problem. Even datetime.now() as a default captures the startup time, not the call time."
+    },
+    {
+      "title": "Guarding with `or` instead of `is None`",
+      "explanation": "Writing result = result or [] silently replaces a valid explicitly-passed empty list. Use if result is None: to guard only the missing-argument case."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "When are default argument values evaluated in Python?",
+      "answer": "Once, when the function is defined — not each time the function is called.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is using a mutable object as a default argument dangerous?",
+      "answer": "All calls that omit that argument share the same object, so mutations in one call persist into future calls.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the idiomatic fix for the mutable default argument pitfall?",
+      "answer": "Use None as the default and initialize the mutable object inside the function body, guarded by if result is None: result = [].",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `result = result or []` an unsafe guard for this fix?",
+      "answer": "It replaces any falsy value including a valid explicitly-passed empty list, not just the missing-argument case. The correct guard is if result is None.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix a leaking tag accumulator",
+      "prompt": "The function below accumulates tags across calls because of a mutable default. Fix it so each call without a tags argument starts fresh. Print three separate calls to prove the lists are independent.",
+      "starter_code": "def build_tags(name, tags=[]):\n    tags.append(name)\n    return tags",
+      "solution": "def build_tags(name, tags=None):\n    if tags is None:\n        tags = []\n    tags.append(name)\n    return tags\n\nprint(build_tags('admin'))\nprint(build_tags('user'))\nprint(build_tags('guest'))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def add_field(key, store={}):\n    store[key] = True\n    return store\n\nprint(add_field('name'))\nprint(add_field('email'))\nprint(add_field('age'))",
+    "focus": "store is created once at function definition; each call without an explicit argument mutates the same dict, so the printed output grows with every call — the bug in action."
+  },
+  "challenge": {
+    "title": "Request header builder",
+    "prompt": "Write add_header(key, value, headers=None) that adds key:value to a headers dict and returns it. Demonstrate that two independent call chains each produce their own dict — no shared state between them. Print both dicts at the end.",
+    "solution": "def add_header(key, value, headers=None):\n    if headers is None:\n        headers = {}\n    headers[key] = value\n    return headers\n\nh1 = add_header('Content-Type', 'application/json')\nh1 = add_header('Authorization', 'Bearer abc', h1)\n\nh2 = add_header('Accept', 'text/html')\n\nprint(h1)\nprint(h2)"
+  },
+  "sources": [
+    "https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects",
+    "https://docs.python.org/3/reference/compound_stmts.html#function-definitions"
+  ]
+}

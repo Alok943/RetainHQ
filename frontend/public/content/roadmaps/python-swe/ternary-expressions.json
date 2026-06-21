@@ -1,0 +1,76 @@
+{
+  "slug": "ternary-expressions",
+  "title": "Ternary expressions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["if-elif-else"],
+    "unlocks": ["list-comprehensions"],
+    "project_usage": ["FastAPI response serialization", "Pydantic computed fields", "logging"]
+  },
+  "overview": {
+    "what": "A ternary expression (also called a conditional expression) evaluates to one of two values based on a condition, all in a single line:\n\n  value_if_true if condition else value_if_false\n\nExamples:\n\n  label = 'admin' if user['role'] == 'superuser' else 'member'\n  display = name if name else 'Anonymous'\n  status_text = 'enabled' if config.get('debug') else 'disabled'\n\nThe expression evaluates the condition first, then returns exactly ONE of the two branches — the other is never evaluated. It is an expression, not a statement, so it can appear anywhere a value is expected: assignment, function argument, f-string, list element. Think of it as a compressed two-branch decision that returns a value — not a replacement for multi-branch logic.",
+    "why": "Ternary expressions compress routine two-outcome decisions (present vs missing, enabled vs disabled, role A vs role B) into one readable line. They become unreadable when nested or when the condition or branches are complex — those cases still call for a full if/else block.",
+    "where_used": ["FastAPI response field serialization", "Pydantic computed_field values", "log message formatting"]
+  },
+  "why_learning_this": [
+    "Compressing simple two-branch assignments in FastAPI serializers and Pydantic models to a single readable line",
+    "Reading library code and open-source projects that use conditional expressions extensively"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Nesting ternary expressions",
+      "explanation": "a if x else b if y else c is legal but hard to read. Replace with a full if/elif/else block when there are more than two outcomes."
+    },
+    {
+      "title": "Confusing the syntax order",
+      "explanation": "Python's order is value_if_true if condition else value_if_false — the opposite of C's `condition ? true : false`. Write it as 'give me X, IF this is true, ELSE Y'."
+    },
+    {
+      "title": "Using a ternary when the branches have side effects",
+      "explanation": "Ternary expressions are for selecting values, not for branching on actions. If either branch calls a function for its side effect, a full if/else block is clearer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the syntax of a Python ternary expression?",
+      "answer": "value_if_true if condition else value_if_false.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When the condition is False, which branch is evaluated — the true branch or the false branch?",
+      "answer": "Only the false branch (after else) is evaluated; the true branch is skipped entirely.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When should you prefer a full if/else block over a ternary expression?",
+      "answer": "When there are more than two outcomes, when the branches have side effects, or when the expression would need to be nested — all of which hurt readability.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Role label formatter",
+      "prompt": "Write format_role(user) that returns 'Admin (<name>)' when user['role'] == 'admin' and 'User (<name>)' otherwise, using a ternary expression. Test with an admin and a regular user.",
+      "starter_code": "def format_role(user):\n    pass",
+      "solution": "def format_role(user):\n    prefix = 'Admin' if user['role'] == 'admin' else 'User'\n    return f'{prefix} ({user[\"name\"]})'\n\nprint(format_role({'name': 'alice', 'role': 'admin'}))\nprint(format_role({'name': 'bob', 'role': 'member'}))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "user = {'name': 'alice', 'role': 'admin'}\nlabel = 'Super User' if user['role'] == 'admin' else 'Regular User'\nprint(label)",
+    "focus": "The ternary evaluates the condition (role == 'admin') and returns exactly one of the two string values — the other branch is never touched."
+  },
+  "challenge": {
+    "title": "Response status line builder",
+    "prompt": "Write status_line(code, message=None) that returns a formatted string. Use a ternary so that when message is provided it reads '<code> <message>' and when it is None it reads '<code> (no message)'. Test with (200, 'OK'), (404, 'Not Found'), and (500, None).",
+    "solution": "def status_line(code, message=None):\n    body = message if message is not None else '(no message)'\n    return f'{code} {body}'\n\nprint(status_line(200, 'OK'))\nprint(status_line(404, 'Not Found'))\nprint(status_line(500))"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/expressions.html#conditional-expressions"
+  ]
+}

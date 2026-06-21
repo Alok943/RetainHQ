@@ -61,6 +61,12 @@
     "code": "nums = [1, 2]\nnums.append(3)\nprint(nums)\n\ntext = 'hi'\ntext.upper()\nprint(text)",
     "focus": "The list prints [1, 2, 3] (changed in place); the string still prints 'hi' because .upper() built a new string we ignored."
   },
+  "aha_moment": {
+    "code": "cart = ['laptop']\nbackup = cart\nbackup.append('mouse')\nprint(cart)",
+    "prediction": "backup looks like a safe copy of cart. After appending 'mouse' to backup, what does print(cart) show?",
+    "common_guess": "['laptop']",
+    "why": "backup = cart binds a SECOND label to the same list object — it does not copy. So backup.append('mouse') mutates the one list both names point to, and cart sees it too. For an independent copy use cart.copy()."
+  },
   "challenge": {
     "title": "Merge config without mutating",
     "prompt": "Write merge_config(base, override) that returns a NEW dict combining both (override wins) WITHOUT mutating base. Then print the result and base to prove base is unchanged.",
