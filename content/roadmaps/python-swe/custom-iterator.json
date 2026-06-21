@@ -1,0 +1,80 @@
+{
+  "slug": "custom-iterator",
+  "title": "Custom Iterator Class",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["iter-next-dunders", "everything-is-an-object"],
+    "unlocks": ["generator-expressions"],
+    "project_usage": ["Custom Data Streams", "Database Cursors", "Pagination"]
+  },
+  "overview": {
+    "what": "A custom iterator class is a class that implements both the `__iter__()` and `__next__()` dunder methods, allowing its instances to be looped over with a `for` loop. `__iter__()` returns the iterator object itself (usually `self`), and `__next__()` returns the next value in the sequence or raises `StopIteration` when the sequence is exhausted. Think of it like a Pez dispenser: the dispenser is the iterator (handling `__iter__`), and each time you push the head back, you call `__next__` to get a candy. Once empty, it raises a signal that there's no more candy.",
+    "why": "It allows you to create custom, memory-efficient data streams that compute or fetch values lazily, instead of loading everything into memory at once.",
+    "where_used": ["FastAPI", "Django ORM", "Data Pipelines"]
+  },
+  "why_learning_this": [
+    "Build memory-efficient paginators for APIs.",
+    "Understand how Python's 'for' loop actually works under the hood.",
+    "Create streaming data processors."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to raise StopIteration",
+      "explanation": "If `__next__()` does not raise `StopIteration`, a `for` loop over the object will run infinitely."
+    },
+    {
+      "title": "Not returning self in __iter__",
+      "explanation": "If `__iter__()` does not return `self` on an iterator, passing the iterator itself into a loop or `iter()` will fail."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two dunder methods must a class implement to be a complete custom iterator?",
+      "answer": "It must implement `__iter__()` and `__next__()`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What exception must `__next__()` raise to signal that the iteration is finished?",
+      "answer": "It must raise `StopIteration`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What should the `__iter__()` method typically return when defined on an iterator class?",
+      "answer": "It should return `self`.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Build a Countdown Iterator",
+      "prompt": "Create a class `Countdown` that takes a `start` number. It should be a custom iterator that counts down to 1. When it reaches 0, it should raise `StopIteration`.",
+      "starter_code": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n\n    # Implement __iter__ and __next__",
+      "solution": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class CountTwo:\n    def __init__(self):\n        self.count = 0\n    def __iter__(self):\n        return self\n    def __next__(self):\n        if self.count >= 2:\n            raise StopIteration\n        self.count += 1\n        return self.count\n\nfor n in CountTwo():\n    print(n)",
+    "focus": "if self.count >= 2: raise StopIteration"
+  },
+  "aha_moment": {
+    "code": "class Exhaustible:\n    def __init__(self):\n        self.val = 2\n    def __iter__(self):\n        return self\n    def __next__(self):\n        if self.val == 0: raise StopIteration\n        self.val -= 1\n        return self.val\n\niterator = Exhaustible()\nprint(list(iterator))\nprint(list(iterator))",
+    "prediction": "What will the two print statements output?",
+    "common_guess": "[1, 0] followed by [1, 0]",
+    "why": "Iterators maintain their internal state. Once `val` reaches 0 and raises `StopIteration`, the iterator is exhausted. A second attempt to iterate over it does nothing and returns an empty list."
+  },
+  "challenge": {
+    "title": "Pagination Iterator",
+    "prompt": "Create an iterator class `Paginator` that takes a list of `items` and a `page_size`. Each iteration should return the next slice of the list of size `page_size`. When no items remain, raise `StopIteration`.",
+    "solution": "class Paginator:\n    def __init__(self, items, page_size):\n        self.items = items\n        self.page_size = page_size\n        self.index = 0\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.index >= len(self.items):\n            raise StopIteration\n        page = self.items[self.index : self.index + self.page_size]\n        self.index += self.page_size\n        return page"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#iterators",
+    "https://docs.python.org/3/library/stdtypes.html#iterator-types"
+  ]
+}

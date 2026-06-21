@@ -1,0 +1,86 @@
+{
+  "slug": "is-vs-equals",
+  "title": "is vs == : Identity vs Equality",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "object-identity",
+      "primitive-types"
+    ],
+    "unlocks": [
+      "mutable-vs-immutable",
+      "shallow-vs-deep-copy"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "SQLAlchemy"
+    ]
+  },
+  "overview": {
+    "what": "The `==` operator compares the VALUES of two objects (equality), while the `is` operator compares the MEMORY ADDRESSES of two objects (identity). Two distinct objects can have the exact same value (`==` is True), but because they live in different places in memory, they are not the same object (`is` is False). Think of `==` as asking 'Do these two houses look identical?' and `is` as asking 'Are these two addresses pointing to the exact same house?'. In Python, `is` checks if `id(a) == id(b)`.",
+    "why": "Mixing up `is` and `==` causes subtle bugs. Use `==` when you want to know if the data matches. Only use `is` when you need to know if two variables refer to the exact same object in memory (most commonly, checking `is None`).",
+    "where_used": [
+      "FastAPI",
+      "Pydantic",
+      "Django"
+    ]
+  },
+  "why_learning_this": [
+    "Preventing subtle bugs when comparing collections",
+    "Checking correctly for singletons like `None`"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using `is` for value comparison",
+      "explanation": "Using `is` instead of `==` for strings or numbers might sometimes work due to Python caching (interning) small integers and short strings, but it will randomly fail for larger values or dynamic inputs. Always use `==` for value comparison."
+    },
+    {
+      "title": "Using `==` to check for None",
+      "explanation": "While `x == None` works, the Pythonic and safer way is `x is None`. Some objects (like pandas DataFrames or SQLAlchemy models) override `==` to return an array of booleans or a query expression, which breaks the truth value testing. `is None` cannot be overridden."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between `==` and `is`?",
+      "answer": "`==` checks if the values are equal (equality), while `is` checks if they are the exact same object in memory (identity).",
+      "tier": "tier1"
+    },
+    {
+      "q": "When is it appropriate to use the `is` operator?",
+      "answer": "When you need to check if two variables point to the exact same object, most commonly when checking for singletons like `None`.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Identity vs Equality Check",
+      "prompt": "Write a function `check_lists(list1, list2)` that takes two lists. It should return a tuple of two booleans: the first boolean is True if the lists have equal values, and the second boolean is True if they are the exact same object in memory.",
+      "starter_code": "def check_lists(list1, list2):\n    # Return (are_values_equal, are_same_object)\n    pass",
+      "solution": "def check_lists(list1, list2):\n    return (list1 == list2, list1 is list2)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "a = [1, 2, 3]\nb = [1, 2, 3]\nprint(a == b)\nprint(a is b)",
+    "focus": "print(a is b)"
+  },
+  "aha_moment": {
+    "code": "a = 256\nb = 256\nprint(a is b)\n\nx = 257\ny = 257\nprint(x is y)",
+    "prediction": "What will these two prints output?",
+    "common_guess": "True, True",
+    "why": "Python pre-caches (interns) small integers (-5 to 256) for performance. So `256` reuses the same memory object (True), but `257` creates a new object in memory each time, so `is` returns False. This is why you must never use `is` for value comparison."
+  },
+  "challenge": {
+    "title": "Safe None Checking",
+    "prompt": "You are writing a database connector. Write a function `process_record(record)` that takes a record (which could be a dictionary or `None`). If `record` is exactly `None`, return the string 'No data'. Otherwise, return the string 'Processing'. You must use the safest comparison operator for `None`.",
+    "solution": "def process_record(record):\n    if record is None:\n        return 'No data'\n    return 'Processing'"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/expressions.html#is-not"
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "slug": "exception-chaining",
+  "title": "Exception chaining with raise from",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 6,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "try-except",
+      "raising-exceptions",
+      "custom-exceptions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "wrapping database driver errors in service layers",
+      "converting third-party SDK errors",
+      "clean API error responses"
+    ]
+  },
+  "overview": {
+    "what": "Exception chaining links a new exception to the original exception that caused it using the syntax `raise NewError() from original_error`. This explicitly sets the `__cause__` attribute on the new exception. When the traceback is printed, Python shows both: 'The above exception was the direct cause of the following exception'. If you want to intentionally hide the original error (e.g., hiding database internals from a user), you use `raise NewError() from None` to suppress the chain.",
+    "why": "When building professional applications, you don't want low-level errors (like `psycopg2.IntegrityError`) leaking into your high-level business logic. You catch the database error and raise a clean domain error like `DuplicateUserError`. However, if you don't chain them, you lose the original database traceback, making debugging a nightmare. `raise from` solves this by giving callers a clean domain error to catch, while preserving the full diagnostic history for the logs.",
+    "where_used": [
+      "Service layers hiding repository/database implementation details",
+      "API clients translating HTTP errors into SDK-specific exceptions",
+      "Suppressing sensitive tracebacks using `from None`"
+    ]
+  },
+  "why_learning_this": [
+    "Preserving the root cause of an error while translating it to a domain-specific exception",
+    "Suppressing noisy or sensitive tracebacks with `raise ... from None`",
+    "Understanding implicit chaining (when Python automatically sets `__context__` because an error happened inside an `except` block)"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Losing the traceback",
+      "explanation": "If you catch an error and just `raise MyCustomError()` without the `from` clause, Python implicitly links them, but it signals that the new error happened *during the handling* of the first one, not that it is a direct translation. Using `from e` is the semantic way to translate errors."
+    },
+    {
+      "title": "Chaining the wrong object",
+      "explanation": "You must chain from the exception instance, not the class. `raise MyError from ValueError` is invalid. You must catch the instance: `except ValueError as e: raise MyError from e`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the syntax for explicitly chaining a new exception to an original one you just caught?",
+      "answer": "You use the `from` keyword: `raise NewError() from original_error`.",
+      "tier": "tier3"
+    },
+    {
+      "q": "How do you completely suppress the original exception's traceback when raising a new exception?",
+      "answer": "You use `raise NewError() from None`.",
+      "tier": "tier3"
+    },
+    {
+      "q": "Why is exception chaining preferred over simply catching an error and raising a new one?",
+      "answer": "Because it preserves the original traceback for debugging purposes, while still allowing the caller to catch a clean, high-level domain error.",
+      "tier": "tier3"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Translate a database error",
+      "prompt": "Write a function `create_user(username)` that calls a hypothetical `db_insert(username)` function (which you must also define to always raise a `KeyError`). Inside `create_user`, catch the `KeyError` and raise a `ValueError` with the message 'User exists', chained explicitly from the original `KeyError`.",
+      "solution": "def db_insert(username):\n    raise KeyError('Duplicate key')\n\ndef create_user(username):\n    try:\n        db_insert(username)\n    except KeyError as e:\n        raise ValueError('User exists') from e\n\ntry:\n    create_user('admin')\nexcept ValueError as e:\n    print(f'Caught: {e}')\n    print(f'Caused by: {e.__cause__}')"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def parse_config(data):\n    try:\n        return int(data['port'])\n    except (KeyError, ValueError) as e:\n        raise RuntimeError(\"Invalid config file\") from e\n\ntry:\n    parse_config({})\nexcept RuntimeError as e:\n    print(f\"High-level error: {e}\")\n    print(f\"Low-level root cause: {type(e.__cause__).__name__}\")",
+    "focus": "The caller catches `RuntimeError` cleanly, but the `__cause__` attribute retains the original `KeyError` for logging."
+  },
+  "challenge": {
+    "title": "Hide internal errors",
+    "prompt": "Write `fetch_data()` that catches a `ConnectionError` and raises a `ServiceUnavailableError` from None to suppress the internal network stack trace.",
+    "solution": "class ServiceUnavailableError(Exception): pass\n\ntry:\n    try:\n        raise ConnectionError('Socket timeout')\n    except ConnectionError:\n        raise ServiceUnavailableError('Service down') from None\nexcept ServiceUnavailableError as e:\n    print(f'{e}, cause: {e.__cause__}')"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/errors.html#exception-chaining",
+    "https://docs.python.org/3/reference/simple_stmts.html#the-raise-statement"
+  ]
+}

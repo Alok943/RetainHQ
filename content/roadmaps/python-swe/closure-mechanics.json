@@ -1,0 +1,69 @@
+{
+  "slug": "closure-mechanics",
+  "title": "Closure Mechanics",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["closures", "scope"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Django"]
+  },
+  "overview": {
+    "what": "Closures in Python are implemented using cell objects. When a nested function references a variable from its enclosing scope, Python creates a 'cell' to store that variable. The inner function's `__closure__` attribute is a tuple of these cell objects. Each cell acts as an indirect pointer to the value. This is the mental model: 'variables are labels, objects are boxes, and a closure cell is a special box that holds another label'.",
+    "why": "Understanding how closures hold references rather than values explains why late-binding closures inside loops behave unexpectedly, and how the `nonlocal` keyword can mutate state across function calls.",
+    "where_used": ["FastAPI dependency injection", "Django signals", "Decorator state"]
+  },
+  "why_learning_this": [
+    "Debugging unexpected behaviour in loop-generated callbacks",
+    "Writing advanced stateful decorators"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Late binding in loops",
+      "explanation": "Creating closures in a loop capturing the loop variable results in all closures pointing to the same final value. The fix is to use default arguments to capture the value eagerly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does Python internally store the variables captured by a closure?",
+      "answer": "It stores them in cell objects accessible via the inner function's `__closure__` attribute.",
+      "tier": "tier3"
+    },
+    {
+      "q": "Does a closure capture a variable's value at definition time or a reference to the variable itself?",
+      "answer": "It captures a reference (via a cell object), meaning the inner function sees the most recently updated value of the variable.",
+      "tier": "tier3"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Inspect a Closure",
+      "prompt": "Write a factory function `make_api_client(base_url)` that returns a nested function `fetch_endpoint(path)`. The inner function should return the combined URL. Then, inspect the returned function's `__closure__` to print the `cell_contents` storing the `base_url`.",
+      "starter_code": "def make_api_client(base_url):\n  def fetch_endpoint(path):\n    return base_url + path\n  return fetch_endpoint\n\n# Get the closure cell contents",
+      "solution": "def make_api_client(base_url):\n  def fetch_endpoint(path):\n    return base_url + path\n  return fetch_endpoint\n\nclient = make_api_client('https://api.example.com')\nval = client.__closure__[0].cell_contents\nprint(val)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def rate_limiter(limit):\n  calls = 0\n  def check_limit():\n    nonlocal calls\n    calls += 1\n    return calls <= limit\n  return check_limit\n\nlimiter = rate_limiter(5)\nlimiter()\nlimiter()\nprint(limiter.__closure__[0].cell_contents)",
+    "focus": "print(limiter.__closure__[0].cell_contents) shows the 'calls' cell holding the updated value of 2"
+  },
+  "aha_moment": {
+    "code": "handlers = []\nfor endpoint in ['/users', '/posts', '/comments']:\n  handlers.append(lambda: f'Handling {endpoint}')\n\nprint([h() for h in handlers])",
+    "prediction": "What does this print?",
+    "common_guess": "['Handling /users', 'Handling /posts', 'Handling /comments']",
+    "why": "Closures capture the variable itself (via a cell), not the value at definition time. When the lambdas run, the loop has finished and `endpoint` is '/comments', so they all return that. This is called late binding."
+  },
+  "challenge": {
+    "title": "Fix the Late Binding Callback Loop",
+    "prompt": "The following code tries to create a list of route handlers for different endpoints, but they all return 'Handling /comments' due to late binding. Fix the code so each handler captures the correct endpoint using a default argument.",
+    "solution": "handlers = []\nfor endpoint in ['/users', '/posts', '/comments']:\n  def handler(e=endpoint):\n    return f'Handling {e}'\n  handlers.append(handler)\n\nprint([h() for h in handlers])"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy"
+  ]
+}

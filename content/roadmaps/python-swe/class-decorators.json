@@ -1,0 +1,85 @@
+{
+  "slug": "class-decorators",
+  "title": "Class decorators",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "decorators",
+      "everything-is-an-object"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "dataclasses",
+      "FastAPI",
+      "SQLAlchemy"
+    ]
+  },
+  "overview": {
+    "what": "A class decorator is a function that takes a class object as an argument and returns a modified class. Instead of modifying instances, it alters the class definition itself, such as adding properties, methods, or registering the class. Think of it like a car factory adding a custom spoiler to every car model before any cars are actually produced.",
+    "why": "It reduces boilerplate when you need to apply the same structural changes (like adding standard methods or registering to a central store) across many classes.",
+    "where_used": [
+      "dataclasses (@dataclass)",
+      "pytest (@pytest.mark)",
+      "SQLAlchemy"
+    ]
+  },
+  "why_learning_this": [
+    "Understand how @dataclass magically adds __init__ and __repr__ to your classes",
+    "Learn to register classes automatically upon definition"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to return the class",
+      "explanation": "If your class decorator doesn't return the class object, the class name will be bound to None (or whatever you returned)."
+    },
+    {
+      "title": "Mutating the original class unexpectedly",
+      "explanation": "Class decorators usually mutate the class in-place and return it. If multiple parts of the codebase expect the unmodified class, this can cause hidden bugs."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What argument does a class decorator function receive?",
+      "answer": "It receives the class object itself, not an instance of the class.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you use a class decorator instead of standard inheritance?",
+      "answer": "Class decorators are useful for applying standard modifications (like adding boilerplate methods or registering the class) without enforcing a rigid inheritance hierarchy.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Registering Plugins",
+      "prompt": "Write a class decorator named `register_plugin` that takes a class and appends it to a global list called `PLUGINS`, then returns the class unmodified. Apply it to a class `MyPlugin`.",
+      "starter_code": "PLUGINS = []\n\n# Write your decorator here\n\n\n# Apply it to this class\nclass MyPlugin:\n    pass\n",
+      "solution": "PLUGINS = []\n\ndef register_plugin(cls):\n    PLUGINS.append(cls)\n    return cls\n\n@register_plugin\nclass MyPlugin:\n    pass\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def add_id(cls):\n    cls.id_field = 'default_id'\n    return cls\n\n@add_id\nclass User:\n    pass\n\nprint(User.id_field)",
+    "focus": "cls.id_field = 'default_id' # The class object is mutated directly"
+  },
+  "aha_moment": {
+    "code": "def oops_decorator(cls):\n    print('Decorated!')\n    # forgot to return cls\n\n@oops_decorator\nclass App:\n    pass\n\nprint(type(App))",
+    "prediction": "What is the type of App?",
+    "common_guess": "<class 'type'>",
+    "why": "Because `oops_decorator` didn't return anything, it implicitly returned `None`. The name `App` is now bound to `None`, not the class."
+  },
+  "challenge": {
+    "title": "Adding a class-level timestamp",
+    "prompt": "Create a class decorator `add_timestamp` that adds a class attribute `created_at` to the decorated class. Set its value to `'2023-01-01'`. Apply this decorator to a class `Record` and print `Record.created_at`.",
+    "solution": "def add_timestamp(cls):\n    cls.created_at = '2023-01-01'\n    return cls\n\n@add_timestamp\nclass Record:\n    pass\n\nprint(Record.created_at)\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/compound_stmts.html#class-definitions",
+    "https://docs.python.org/3/glossary.html#term-decorator"
+  ]
+}

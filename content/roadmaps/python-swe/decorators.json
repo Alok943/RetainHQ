@@ -1,0 +1,93 @@
+{
+  "slug": "decorators",
+  "title": "Function Decorators",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "functions",
+      "first-class-functions",
+      "closures"
+    ],
+    "unlocks": [
+      "functools-wraps",
+      "decorator-factories"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Flask",
+      "Django"
+    ]
+  },
+  "overview": {
+    "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure) that replaces the original function. It acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.",
+    "why": "Decorators allow you to cleanly extract reusable cross-cutting concerns—like logging, authentication, or timing—away from the core business logic of your functions.",
+    "where_used": [
+      "FastAPI route definitions (@app.get)",
+      "Flask routes (@app.route)",
+      "Built-in class properties (@property)"
+    ]
+  },
+  "why_learning_this": [
+    "You can wrap dozens of functions with repetitive logic like access control with just one line of code.",
+    "It is the foundational mechanism for web framework routing in Python."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to return the wrapper",
+      "explanation": "If your decorator forgets to `return wrapper` at the end, the decorated function becomes `None`."
+    },
+    {
+      "title": "Forgetting to return the original function's result",
+      "explanation": "If the inner wrapper forgets to return `func(*args, **kwargs)`, the decorated function will unexpectedly return `None`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the equivalent manual code for `@my_decorator\\ndef my_func(): pass`?",
+      "answer": "It is exactly equivalent to `my_func = my_decorator(my_func)`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What kind of object does a decorator function typically return?",
+      "answer": "A decorator typically returns a new wrapper function (a closure) that replaces the original function.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why use decorators instead of just writing the logic inside the function?",
+      "answer": "Decorators separate cross-cutting concerns (like logging or timing) from the core logic, keeping the code clean and reusable.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Write a logging decorator",
+      "prompt": "Create a decorator `log_call` that prints 'Calling function' before executing the decorated function, and 'Function finished' after. Apply it to a simple function `say_hello` that prints 'Hello!'.",
+      "starter_code": "def say_hello():\n  print('Hello!')\n\nsay_hello()",
+      "solution": "def log_call(func):\n  def wrapper():\n    print('Calling function')\n    func()\n    print('Function finished')\n  return wrapper\n\n@log_call\ndef say_hello():\n  print('Hello!')\n\nsay_hello()"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def uppercase(func):\n  def wrapper():\n    original_result = func()\n    return original_result.upper()\n  return wrapper\n\n@uppercase\ndef greet():\n  return 'hello'\n\nprint(greet())",
+    "focus": "return original_result.upper()"
+  },
+  "aha_moment": {
+    "code": "def no_op(func):\n  pass\n\n@no_op\ndef greet():\n  return 'hello'\n\nprint(greet())",
+    "prediction": "What does this code print?",
+    "common_guess": "It prints 'hello', assuming the decorator does nothing.",
+    "why": "It throws a TypeError. Since `no_op` doesn't explicitly return anything, it returns `None`. The decorator syntax does `greet = no_op(greet)`, so `greet` is now `None`."
+  },
+  "challenge": {
+    "title": "Write a timing decorator that accepts arguments",
+    "prompt": "Create a decorator `timer` that measures the execution time of a function. It must accept any number of positional and keyword arguments (`*args`, `**kwargs`), run the original function, print the time taken in seconds (you can mock the time or use `import time`), and return the original function's result.",
+    "solution": "import time\n\ndef timer(func):\n  def wrapper(*args, **kwargs):\n    start = time.time()\n    result = func(*args, **kwargs)\n    end = time.time()\n    print(f'Time taken: {end - start}')\n    return result\n  return wrapper\n\n@timer\ndef slow_add(a, b):\n  time.sleep(0.1)\n  return a + b"
+  },
+  "sources": [
+    "https://docs.python.org/3/glossary.html#term-decorator"
+  ]
+}

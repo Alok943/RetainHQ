@@ -1,0 +1,70 @@
+{
+  "slug": "str-vs-repr",
+  "title": "__str__ vs __repr__",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["everything-is-an-object", "functions"],
+    "unlocks": [],
+    "project_usage": ["Logging", "Debugging", "FastAPI"]
+  },
+  "overview": {
+    "what": "Python uses two main dunder methods to convert objects to strings: `__str__` for readable output and `__repr__` for unambiguous developer representations. By default, both print `<__main__.MyClass object at 0x...>`, but overriding them gives meaningful descriptions. Think of `__str__` as the 'display name' for a user and `__repr__` as the 'technical ID card' for a developer.",
+    "why": "It solves the problem of opaque object representations. Clear string representations make logging, debugging, and user interfaces significantly easier by avoiding memory addresses in terminal output.",
+    "where_used": ["Logging configuration", "Pydantic error messages", "REPL debugging"]
+  },
+  "why_learning_this": [
+    "Makes debugging faster by displaying object state instead of memory addresses in the REPL.",
+    "Allows custom string formatting in logging or UI without writing extra `to_string()` methods."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Implementing only __str__",
+      "explanation": "If you only implement `__str__`, collections like lists or dicts will still use `__repr__` when printed, showing memory addresses. Fix: Implement `__repr__` first; Python uses it as a fallback for `__str__`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary difference in purpose between `__str__` and `__repr__`?",
+      "answer": "`__str__` is for readable user-facing display, while `__repr__` is for unambiguous developer-facing debugging.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If an object only implements `__repr__`, what happens when you call `str(obj)`?",
+      "answer": "Python will fallback to using the `__repr__` output.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Basic User Representation",
+      "prompt": "Create a `User` class with `name` and `role` attributes. Implement `__repr__` to return a string like `User(name='Alice', role='admin')` and `__str__` to return `Alice (admin)`.",
+      "starter_code": "class User:\n  def __init__(self, name, role):\n    self.name = name\n    self.role = role\n\nu = User('Alice', 'admin')\nprint(repr(u))\nprint(str(u))",
+      "solution": "class User:\n  def __init__(self, name, role):\n    self.name = name\n    self.role = role\n\n  def __repr__(self):\n    return f'User(name={self.name!r}, role={self.role!r})'\n\n  def __str__(self):\n    return f'{self.name} ({self.role})'\n\nu = User('Alice', 'admin')\nprint(repr(u))\nprint(str(u))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Config:\n  def __init__(self, env):\n    self.env = env\n  def __repr__(self):\n    return f'Config(env={self.env!r})'\n\nc = Config('prod')\nprint(c)\nprint([c])",
+    "focus": "print([c])"
+  },
+  "aha_moment": {
+    "code": "class Task:\n  def __init__(self, name):\n    self.name = name\n  def __str__(self):\n    return self.name\n\nt = Task('build')\nprint([t])",
+    "prediction": "What does this print?",
+    "common_guess": "['build']",
+    "why": "Collections like lists always use `__repr__` to format their elements, even if you print the list using `str()`. Since `Task` lacks a `__repr__`, you get the default memory address."
+  },
+  "challenge": {
+    "title": "Logging Context",
+    "prompt": "Write an `APIRequest` class taking `method` and `url`. Implement `__repr__` so that logging a list of requests shows them clearly as `APIRequest(method='GET', url='/users')`. Do not implement `__str__`.",
+    "solution": "class APIRequest:\n  def __init__(self, method, url):\n    self.method = method\n    self.url = url\n\n  def __repr__(self):\n    return f'APIRequest(method={self.method!r}, url={self.url!r})'\n\nreqs = [APIRequest('GET', '/users'), APIRequest('POST', '/login')]\nprint(reqs)"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#object.__repr__",
+    "https://docs.python.org/3/reference/datamodel.html#object.__str__"
+  ]
+}

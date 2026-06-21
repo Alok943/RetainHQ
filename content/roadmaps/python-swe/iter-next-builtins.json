@@ -1,0 +1,79 @@
+{
+  "slug": "iter-next-builtins",
+  "title": "iter() and next() builtins",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["iterable-protocol", "iterator-protocol"],
+    "unlocks": ["custom-iterator"],
+    "project_usage": ["Data pipelines", "Streaming APIs"]
+  },
+  "overview": {
+    "what": "The `iter()` builtin calls an object's `__iter__()` method to get an iterator, while `next()` calls the iterator's `__next__()` method to get the next value. It's the user-facing interface for the iterator protocol. Think of `iter()` as 'give me a bookmark' and `next()` as 'turn to the next page'. This mechanism powers every `for` loop under the hood.",
+    "why": "It allows manual traversal of iterables. This is critical when you need more control than a standard `for` loop provides, such as advancing conditionally or passing the iterator across different functions.",
+    "where_used": ["Parsing large CSV files line-by-line", "Custom paginated API clients"]
+  },
+  "why_learning_this": [
+    "You can manually process streams of data without loading everything into memory",
+    "You will understand the exact mechanism Python's `for` loop uses"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling next() on an iterable",
+      "explanation": "You cannot call `next()` directly on a list or string; you must first obtain an iterator using `iter()`, and then call `next()` on that iterator."
+    },
+    {
+      "title": "Not handling StopIteration",
+      "explanation": "If you call `next()` until the iterator is exhausted, it raises a `StopIteration` exception. You must catch this or provide a default value via `next(iterator, default)`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of the `iter()` builtin?",
+      "answer": "It takes an iterable object and returns an iterator object by calling the iterable's `__iter__()` method.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you manually retrieve the next item from an iterator?",
+      "answer": "By calling the `next()` builtin function on the iterator object.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when `next()` is called on an exhausted iterator without a default value?",
+      "answer": "It raises a `StopIteration` exception.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Manual List Traversal",
+      "prompt": "Write a function `first_and_third(items)` that takes a list, manually obtains an iterator using `iter()`, and returns a tuple of the first and third items. Ignore the second item by advancing the iterator without storing it.",
+      "starter_code": "def first_and_third(items):\n    pass",
+      "solution": "def first_and_third(items):\n    it = iter(items)\n    first = next(it)\n    next(it)\n    third = next(it)\n    return (first, third)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "colors = ['red', 'green', 'blue']\n\ncolor_iterator = iter(colors)\nfirst = next(color_iterator)\nsecond = next(color_iterator)\n\nprint(first)\nprint(second)",
+    "focus": "first = next(color_iterator)"
+  },
+  "aha_moment": {
+    "code": "nums = [10, 20]\nit1 = iter(nums)\nit2 = iter(nums)\n\nnext(it1)\nprint(next(it2))",
+    "prediction": "What does this print?",
+    "common_guess": "20",
+    "why": "Calling `iter()` creates a NEW iterator object each time. `it1` and `it2` are independent bookmarks in the same list, so advancing `it1` does not affect `it2`."
+  },
+  "challenge": {
+    "title": "Safe Advancement",
+    "prompt": "Write a function `get_next_or_none(iterator)` that accepts an iterator and returns the next value. If the iterator is exhausted, it should return `None` instead of letting a `StopIteration` exception crash the program. You must use the `next()` builtin's two-argument form.",
+    "solution": "def get_next_or_none(iterator):\n    return next(iterator, None)"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/functions.html#iter",
+    "https://docs.python.org/3/library/functions.html#next"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "slug": "decorator-factories",
+  "title": "Decorator Factories with Arguments",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "decorators",
+      "closures",
+      "functools-wraps"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI dependency injection",
+      "Flask routing parameters",
+      "Celery task configuration"
+    ]
+  },
+  "overview": {
+    "what": "A decorator factory is a function that returns a decorator. Standard decorators only accept one argument (the function being decorated). To pass custom arguments to a decorator, we create an outer function that receives those arguments and returns the actual decorator.\n\n  @retry(max_retries=3)\n  def fetch_data():\n      pass\n\nThis forms three nested levels: the factory (takes config), the decorator (takes the target function), and the wrapper (takes the function's arguments). Think of the factory as a machine that configures and builds a custom decorator based on the specs you give it.",
+    "why": "It enables configurable decorators. Instead of writing separate decorators for different behaviors, you write one configurable factory.",
+    "where_used": [
+      "Flask routing (@app.route('/login'))",
+      "FastAPI endpoints (@app.get('/items'))",
+      "Pytest parametrization (@pytest.mark.parametrize)"
+    ]
+  },
+  "why_learning_this": [
+    "Allows you to write dynamic and highly reusable decorators.",
+    "Required to understand how modern Python web frameworks handle routing and configuration."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Missing a level of nesting",
+      "explanation": "Writing a factory with only two levels (factory and wrapper) instead of three. The factory must return a decorator, which in turn returns a wrapper."
+    },
+    {
+      "title": "Applying the factory without calling it",
+      "explanation": "Writing `@retry` instead of `@retry()`. Even if the factory has default arguments, you must call it with parentheses so it executes and returns the actual decorator."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is a third level of nesting required when creating a decorator that takes arguments?",
+      "answer": "Because the standard decorator syntax automatically passes the target function as the single argument. The outermost factory function is needed to capture the custom configuration arguments and return the actual decorator that will receive the target function.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does the outermost function in a decorator factory return?",
+      "answer": "It returns the middle function, which acts as the actual decorator.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Write a retry factory",
+      "prompt": "Write a decorator factory called `timeout_retry` that takes an integer `max_attempts`. The decorator should execute the decorated function the specified number of times, and return the result of the final execution. For this task, we will simulate a network request.",
+      "starter_code": "def timeout_retry(max_attempts):\n  pass\n\n@timeout_retry(max_attempts=3)\ndef fetch_user_profile(user_id):\n  print(f'Fetching {user_id}')\n  return {'id': user_id, 'name': 'Alice'}",
+      "solution": "import functools\n\ndef timeout_retry(max_attempts):\n  def decorator(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n      result = None\n      for _ in range(max_attempts):\n        result = func(*args, **kwargs)\n      return result\n    return wrapper\n  return decorator"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def multiply_result_by(factor):\n  def decorator(func):\n    def wrapper(*args, **kwargs):\n      return func(*args, **kwargs) * factor\n    return wrapper\n  return decorator\n\n@multiply_result_by(1.2)\ndef get_base_price(item_id):\n  return 50.0\n\nprint(get_base_price('item_42'))",
+    "focus": "return func(*args, **kwargs) * factor"
+  },
+  "aha_moment": {
+    "code": "def route(path):\n  print(f'Registering {path}')\n  def decorator(func):\n    print('Decorator attached')\n    def wrapper(*args, **kwargs):\n      print('Handling request')\n      return func(*args, **kwargs)\n    return wrapper\n  return decorator\n\n@route('/home')\ndef home_view():\n  return 'Welcome'\n\nprint('App started')",
+    "prediction": "What is the exact order of the printed lines when this script runs?",
+    "common_guess": "App started\nRegistering /home\nDecorator attached\nHandling request",
+    "why": "The factory and decorator run at module load time to register the route before the app even starts. The wrapper only runs when a client actually makes a request, which doesn't happen here."
+  },
+  "challenge": {
+    "title": "Rate Limiting Factory",
+    "prompt": "Create a decorator factory `rate_limit` that accepts an integer `max_requests`. It should decorate a function representing an API endpoint. If the endpoint is called more than `max_requests` times, the wrapper should return the string `'Rate limit exceeded'`. Otherwise, it should increment a counter and return the function's result. You can use an attribute on the wrapper itself to store the call count.",
+    "solution": "import functools\n\ndef rate_limit(max_requests):\n  def decorator(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n      if wrapper.calls >= max_requests:\n        return 'Rate limit exceeded'\n      wrapper.calls += 1\n      return func(*args, **kwargs)\n    wrapper.calls = 0\n    return wrapper\n  return decorator"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/compound_stmts.html#function-definitions",
+    "https://docs.python.org/3/library/functools.html#functools.wraps"
+  ]
+}

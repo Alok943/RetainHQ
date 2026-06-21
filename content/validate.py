@@ -110,8 +110,14 @@ def main():
                 err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
 
         cw = d.get("code_walkthrough")
-        if cw is not None and (not isinstance(cw, dict) or not cw.get("code")):
-            err(rel, "code_walkthrough must be an object with a non-empty 'code' string")
+        if not isinstance(cw, dict) or not cw.get("code"):
+            err(rel, "code_walkthrough is required: an object with a non-empty 'code' string")
+        elif not cw.get("focus"):
+            err(rel, "code_walkthrough.focus is required (the one state change to watch)")
+
+        ch = d.get("challenge")
+        if not isinstance(ch, dict) or not all(ch.get(k) for k in ("title", "prompt", "solution")):
+            err(rel, "challenge is required: an object with non-empty 'title', 'prompt', and 'solution'")
 
         am = d.get("aha_moment")
         if am is not None and (

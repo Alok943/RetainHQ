@@ -1,0 +1,79 @@
+{
+  "slug": "iter-next-dunders",
+  "title": "__iter__ and __next__",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["everything-is-an-object", "init-vs-new"],
+    "unlocks": ["iterable-protocol", "iterator-protocol"],
+    "project_usage": ["FastAPI", "Django", "Pydantic"]
+  },
+  "overview": {
+    "what": "The `__iter__` and `__next__` dunder methods form the foundation of Python's iteration protocol. `__iter__` returns an iterator object (often `self`), and `__next__` returns the next item in the sequence or raises `StopIteration` when exhausted. Just like a bookmark in a book, the iterator keeps track of your current page (`__next__` turns the page), while `__iter__` is simply the act of grabbing a new bookmark for that book.",
+    "why": "They allow custom objects to behave like built-in sequences (e.g., lists or strings) in `for` loops, comprehensions, and functions like `sum()` or `list()`.",
+    "where_used": ["Custom data structures", "Database cursors", "Streaming APIs"]
+  },
+  "why_learning_this": [
+    "You can make your own classes work seamlessly in `for` loops.",
+    "You will understand exactly how Python's built-in `iter()` and `next()` functions work under the hood."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting StopIteration",
+      "explanation": "If `__next__` doesn't raise `StopIteration`, `for` loops will run infinitely."
+    },
+    {
+      "title": "Not returning an iterator in __iter__",
+      "explanation": "If `__iter__` returns something that lacks a `__next__` method (like returning a list directly instead of an iterator), iteration will fail."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the specific responsibility of the `__next__` method?",
+      "answer": "To return the next value in the sequence and raise `StopIteration` when there are no more values.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What must the `__iter__` method return?",
+      "answer": "An iterator object, which is an object that implements the `__next__` method.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a `for` loop know when to stop iterating over an object?",
+      "answer": "It catches the `StopIteration` exception raised by the object's `__next__` method.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Create a countdown iterator",
+      "prompt": "Write a `Countdown` class that takes a starting integer in `__init__`. Implement `__iter__` and `__next__` so that iterating over the object counts down to 1. Raise `StopIteration` when reaching 0.",
+      "starter_code": "class Countdown:\n  def __init__(self, start):\n    self.current = start",
+      "solution": "class Countdown:\n  def __init__(self, start):\n    self.current = start\n\n  def __iter__(self):\n    return self\n\n  def __next__(self):\n    if self.current <= 0:\n      raise StopIteration\n    value = self.current\n    self.current -= 1\n    return value"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Counter:\n  def __init__(self, limit):\n    self.limit = limit\n    self.val = 0\n  def __iter__(self):\n    return self\n  def __next__(self):\n    if self.val >= self.limit:\n      raise StopIteration\n    self.val += 1\n    return self.val\n\nfor num in Counter(2):\n  print(num)",
+    "focus": "if self.val >= self.limit: raise StopIteration"
+  },
+  "aha_moment": {
+    "code": "class Single:\n  def __iter__(self):\n    return self\n  def __next__(self):\n    return 42\n\nprint(next(iter(Single())))",
+    "prediction": "What does this code print?",
+    "common_guess": "An error, because there is no __init__ method or StopIteration.",
+    "why": "It prints 42. You don't actually need state or `StopIteration` if you just want an infinite sequence. `iter()` calls `__iter__`, and `next()` calls `__next__` exactly once."
+  },
+  "challenge": {
+    "title": "A Repeating Sequence",
+    "prompt": "Create a `Repeater` class initialized with a single value and a maximum count. It should yield that same value `count` times when iterated over. For example, `Repeater('A', 3)` should yield 'A', 'A', 'A' and then stop. Implement this using `__iter__` and `__next__`.",
+    "solution": "class Repeater:\n  def __init__(self, value, count):\n    self.value = value\n    self.count = count\n    self.current = 0\n\n  def __iter__(self):\n    return self\n\n  def __next__(self):\n    if self.current >= self.count:\n      raise StopIteration\n    self.current += 1\n    return self.value"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#object.__iter__",
+    "https://docs.python.org/3/library/stdtypes.html#iterator.__next__"
+  ]
+}

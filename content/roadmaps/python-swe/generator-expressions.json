@@ -1,0 +1,90 @@
+{
+  "slug": "generator-expressions",
+  "title": "Generator expressions vs list comprehensions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "list-comprehensions",
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "streaming large query results",
+      "processing log files",
+      "aggregating metrics without loading all into memory"
+    ]
+  },
+  "overview": {
+    "what": "A generator expression looks just like a list comprehension, but uses parentheses `()` instead of square brackets `[]`. Instead of building an entire list in memory all at once, a generator expression uses lazy evaluation. It calculates and yields exactly one item at a time, pausing execution until the next item is requested. This means a generator expression takes up virtually no memory, regardless of how many items it will eventually produce. You can use them directly inside aggregation functions like `sum()`, `max()`, or `any()`.",
+    "why": "When processing millions of database rows or gigabytes of log files, loading the entire dataset into memory with a list comprehension will crash your application with an OutOfMemory error. Generator expressions allow you to process massive datasets in a constant O(1) memory footprint.",
+    "where_used": [
+      "Aggregating data directly (e.g. `sum(x for x in data)`)",
+      "Reading large files line-by-line",
+      "Processing streams of API data"
+    ]
+  },
+  "why_learning_this": [
+    "Understanding lazy evaluation and memory efficiency",
+    "Knowing when to trade the random-access capability of lists for the memory savings of generators",
+    "Understanding why a generator appears 'empty' if you try to iterate over it twice"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Iterating a generator twice",
+      "explanation": "A generator expression is exhausted as it produces items. If you loop over it a second time, it yields nothing because all items have already been consumed. If you need multiple passes, use a list."
+    },
+    {
+      "title": "Trying to index or slice",
+      "explanation": "Generators only know how to produce the *next* item. You cannot access `gen[5]` or check its `len()` because the items don't exist yet."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary difference in memory usage between a list comprehension and a generator expression?",
+      "answer": "A list comprehension allocates memory for the entire resulting list at once. A generator expression yields one item at a time (lazy evaluation), taking up minimal memory regardless of the total item count.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What syntax difference separates a list comprehension from a generator expression?",
+      "answer": "A list comprehension is enclosed in square brackets `[]`, while a generator expression is enclosed in parentheses `()`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you try to loop over the same generator expression twice?",
+      "answer": "The second loop will execute zero times. A generator is exhausted upon its first traversal; it does not reset.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Memory-efficient sum",
+      "prompt": "Write a generator expression inside the `sum()` function to calculate the sum of the squares of all numbers from 1 to 1000. Do not use square brackets.",
+      "solution": "total = sum(x * x for x in range(1, 1001))\nprint(total)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "numbers = [1, 2, 3]\ngen = (x * 10 for x in numbers)\n\nprint(next(gen))\nprint(next(gen))\nprint(next(gen))",
+    "focus": "The `next()` function pulls exactly one value out of the generator expression at a time, proving it evaluates lazily."
+  },
+  "aha_moment": {
+    "code": "gen = (x for x in [1, 2, 3])\n\nfirst_pass = list(gen)\nsecond_pass = list(gen)\n\nprint(second_pass)",
+    "prediction": "What will `second_pass` contain?",
+    "common_guess": "[1, 2, 3]",
+    "why": "A generator expression is consumed as it is read. The `first_pass` exhausted the generator. When `second_pass` tried to read from it, there were no items left, returning an empty list."
+  },
+  "challenge": {
+    "title": "Any big numbers?",
+    "prompt": "Using a generator expression with the `any()` function, check if there are any numbers greater than 100 in the list `[10, 50, 99, 101, 2]`. Print the boolean result.",
+    "solution": "nums = [10, 50, 99, 101, 2]\nhas_big = any(x > 100 for x in nums)\nprint(has_big)"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/expressions.html#generator-expressions",
+    "https://docs.python.org/3/tutorial/classes.html#generator-expressions"
+  ]
+}

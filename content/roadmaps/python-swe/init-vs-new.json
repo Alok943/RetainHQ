@@ -1,0 +1,78 @@
+{
+  "slug": "init-vs-new",
+  "title": "__init__ and __new__",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["classes", "dunder-methods"],
+    "unlocks": ["metaclasses", "singleton-pattern"],
+    "project_usage": ["Django ORM", "Pydantic"]
+  },
+  "overview": {
+    "what": "When creating an object in Python, `__new__` is called first to allocate memory and return an uninitialized instance. `__init__` is then called on that instance to initialize its state. Most developers only use `__init__`. You only need `__new__` when you need to control the creation of a new instance (like returning an existing one for a Singleton) or subclassing immutable types like `tuple` or `str`. It is like building a house: `__new__` lays the foundation and frames the structure, while `__init__` paints the walls and moves the furniture in.",
+    "why": "Understanding the two-step instantiation process allows you to implement advanced patterns like Singletons, flyweight objects, and custom metaclasses.",
+    "where_used": ["Django ORM model instantiation", "Pydantic model creation", "Standard library singletons"]
+  },
+  "why_learning_this": [
+    "Allows implementation of the Singleton pattern.",
+    "Enables subclassing immutable types like str or tuple."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to return the instance in __new__",
+      "explanation": "If `__new__` doesn't return an instance of the class, `__init__` is never called. Always return `super().__new__(cls)`."
+    },
+    {
+      "title": "Trying to return a value from __init__",
+      "explanation": "`__init__` must return `None`. It modifies the instance in-place. If you want to return a different object, do it in `__new__`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which method is responsible for actually creating and returning a new instance in memory?",
+      "answer": "The `__new__` method.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If `__new__` does not return an instance of the current class, what happens to `__init__`?",
+      "answer": "It is not called at all.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the primary reason you would override `__new__` instead of `__init__`?",
+      "answer": "To control the creation of a new instance, such as returning an existing one (Singleton pattern) or subclassing immutable types.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Subclassing float",
+      "prompt": "Create a `PositiveFloat` class that inherits from `float`. It should ensure that the value passed is always absolute. Because `float` is immutable, you must do this by overriding `__new__` rather than `__init__`.",
+      "starter_code": "class PositiveFloat(float):\n    pass\n\np = PositiveFloat(-3.14)\nprint(p)",
+      "solution": "class PositiveFloat(float):\n    def __new__(cls, value):\n        return super().__new__(cls, abs(value))\n\np = PositiveFloat(-3.14)\nprint(p)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Person:\n    def __new__(cls, name):\n        print('1. Creating instance')\n        return super().__new__(cls)\n    def __init__(self, name):\n        print('2. Initializing instance')\n        self.name = name\n\np = Person('Alice')",
+    "focus": "return super().__new__(cls)"
+  },
+  "aha_moment": {
+    "code": "class Singleton:\n    _instance = None\n    def __new__(cls):\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n        return cls._instance\n\na = Singleton()\nb = Singleton()\nprint(a is b)",
+    "prediction": "What does this print?",
+    "common_guess": "False",
+    "why": "Because `__new__` intercepts the creation step, it can return an already-existing object. Here, it returns the same instance for both `a` and `b`, making `a is b` true."
+  },
+  "challenge": {
+    "title": "Implementing a basic Singleton",
+    "prompt": "Implement a `DatabaseConnection` class using the Singleton pattern. It should have an `__init__` method that sets `self.connected = True` ONLY if the connection hasn't been established yet. Overriding `__new__` will let you ensure only one instance is ever created.",
+    "solution": "class DatabaseConnection:\n    _instance = None\n    def __new__(cls):\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n            cls._instance._initialized = False\n        return cls._instance\n    \n    def __init__(self):\n        if not self._initialized:\n            self.connected = True\n            self._initialized = True"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#object.__new__"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "slug": "iterator-protocol",
+  "title": "Iterator Protocol and StopIteration",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["loops", "try-except", "everything-is-an-object"],
+    "unlocks": ["generator-expressions"],
+    "project_usage": ["FastAPI streams", "Data processing", "Database cursors"]
+  },
+  "overview": {
+    "what": "The Iterator Protocol is Python's standard mechanism for looping over collections. It consists of two steps: getting an iterator (an object that tracks state) from an iterable (like a list), and repeatedly asking the iterator for its next value until it raises a `StopIteration` exception to signal it is empty. Think of an iterable as a book, and an iterator as a bookmark that remembers which page you are on. When a `for` loop runs, it secretly catches `StopIteration` to know when to terminate.",
+    "why": "It provides a unified interface for iteration, meaning a `for` loop works identically on lists, files, network streams, or infinite sequences without needing to know their internal structure.",
+    "where_used": ["File reading", "Database cursors", "Generators"]
+  },
+  "why_learning_this": [
+    "Understanding how `for` loops actually work under the hood.",
+    "Enables creating custom iterable objects that can be used in standard loops.",
+    "Required for working with data streams that are too large to fit in memory."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Exhausted Iterators",
+      "explanation": "Iterators are stateful and can only be consumed once. Attempting to loop over an iterator a second time yields nothing. The fix is to either recreate the iterator or convert it to a list first."
+    },
+    {
+      "title": "Confusing Iterable and Iterator",
+      "explanation": "An iterable (like a list) can spawn multiple iterators, but it is not an iterator itself. Calling `next()` directly on a list fails; you must call `iter()` on it first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What exception is raised to signal the end of an iterator?",
+      "answer": "StopIteration.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between an iterable and an iterator?",
+      "answer": "An iterable is a collection that can be looped over (like a book). An iterator is a stateful object created from an iterable that tracks the current position during iteration (like a bookmark).",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does a standard `for` loop know when to stop looping?",
+      "answer": "It automatically catches the StopIteration exception raised by the iterator.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Manual Iteration",
+      "prompt": "Given a list of numbers, use the `iter()` and `next()` functions to print the first two elements without using a `for` loop.",
+      "starter_code": "numbers = [10, 20, 30, 40]\n# Your code here",
+      "solution": "numbers = [10, 20, 30, 40]\n\nmy_iter = iter(numbers)\nprint(next(my_iter))\nprint(next(my_iter))\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "nums = [1, 2]\nnums_iter = iter(nums)\nprint(next(nums_iter))\nprint(next(nums_iter))\n# next(nums_iter) would raise StopIteration\nprint('Done')",
+    "focus": "nums_iter = iter(nums) # Creates the stateful iterator object"
+  },
+  "aha_moment": {
+    "code": "my_list = [1, 2, 3]\nmy_iter = iter(my_list)\nfor item in my_iter:\n  print(item)\nprint('Second loop:')\nfor item in my_iter:\n  print(item)",
+    "prediction": "What is printed during the second loop?",
+    "common_guess": "1\n2\n3",
+    "why": "The second loop prints nothing because the iterator `my_iter` was exhausted by the first loop. It reached the end and will continuously raise `StopIteration`, unlike the original list."
+  },
+  "challenge": {
+    "title": "Simulating a For Loop",
+    "prompt": "Write a `while` loop that behaves exactly like a `for` loop to iterate over a list of names. Use `iter()`, `next()`, and a `try...except StopIteration` block to print each name and terminate cleanly.",
+    "solution": "names = ['Alice', 'Bob', 'Charlie']\n\nnames_iter = iter(names)\nwhile True:\n  try:\n    name = next(names_iter)\n    print(name)\n  except StopIteration:\n    break\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#iterators",
+    "https://docs.python.org/3/library/exceptions.html#StopIteration"
+  ]
+}

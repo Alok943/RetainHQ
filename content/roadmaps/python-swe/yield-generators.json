@@ -1,0 +1,96 @@
+{
+  "slug": "yield-generators",
+  "title": "yield keyword and generator functions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "functions",
+      "iterable-protocol",
+      "iterator-protocol",
+      "iter-next-builtins"
+    ],
+    "unlocks": [
+      "lazy-evaluation",
+      "yield-from",
+      "generator-send"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "A generator function is a function that contains the `yield` keyword. Unlike a normal function that computes a result and returns it all at once, destroying its local state, a generator function pauses its execution at each `yield`, returning a value to the caller but keeping its local variables and execution pointer intact. When `next()` is called on it again, it resumes exactly where it left off. You can think of a generator function as a resumable machine: instead of building the entire product and handing it over at the end, it spits out one piece on demand, pauses, and waits for you to ask for the next piece.",
+    "why": "Generators allow you to produce sequences of values over time without having to load all of them into memory at once, enabling efficient processing of large datasets, infinite sequences, or streams.",
+    "where_used": [
+      "FastAPI dependency injection (yield for cleanup)",
+      "pytest fixtures (yield for teardown)",
+      "Processing large CSV files or database queries"
+    ]
+  },
+  "why_learning_this": [
+    "Processing files larger than your available RAM",
+    "Writing FastAPI dependencies with setup and teardown steps",
+    "Creating efficient data pipelines"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling the function instead of iterating",
+      "explanation": "Calling a generator function `gen()` doesn't execute its body; it just returns a generator object. You must iterate over it (e.g., using `for` or `next()`) to run the code."
+    },
+    {
+      "title": "Consuming a generator more than once",
+      "explanation": "Generators are exhausted once they yield all their values. If you try to iterate over the same generator object a second time, it will yield nothing. You must create a new generator object."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the key difference in how a function's state is handled when it uses `yield` compared to `return`?",
+      "answer": "When a function hits `yield`, it pauses execution and preserves its local variables and execution pointer so it can resume later. `return` destroys the function's local state and ends execution completely.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you choose to write a generator function instead of returning a list?",
+      "answer": "To produce values over time without loading the entire sequence into memory at once, which is efficient for large datasets or streams.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you call a generator function, what does it actually return before any iteration happens?",
+      "answer": "It returns a generator object without executing the function body.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Build a Simple Counter",
+      "prompt": "Write a generator function `countdown(start)` that yields integers from `start` down to 1. When called and iterated over, it should produce the descending sequence.",
+      "starter_code": "def countdown(start):\n    pass",
+      "solution": "def countdown(start):\n    while start > 0:\n        yield start\n        start -= 1"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def one_two_three():\n    yield 1\n    yield 2\n    yield 3\n\ngen = one_two_three()\nprint(next(gen))\nprint(next(gen))",
+    "focus": "print(next(gen))"
+  },
+  "aha_moment": {
+    "code": "def tricky_gen():\n    print('Starting')\n    yield 1\n    print('Continuing')\n    yield 2\n\ng = tricky_gen()\nprint('Created generator')",
+    "prediction": "What does this print when executed?",
+    "common_guess": "'Starting', then 'Created generator'",
+    "why": "Calling `tricky_gen()` only creates the generator object; it doesn't execute the function body at all. The code inside the generator function only runs when `next()` or a loop is used, so 'Starting' is never printed here."
+  },
+  "challenge": {
+    "title": "Batch Processor",
+    "prompt": "Write a generator function `batch_items(items, batch_size)` that takes a list of `items` and yields sub-lists of length `batch_size`. If the remaining items are fewer than `batch_size`, yield them as the final batch. For example, `list(batch_items([1, 2, 3, 4, 5], 2))` should result in `[[1, 2], [3, 4], [5]]`.",
+    "solution": "def batch_items(items, batch_size):\n    for i in range(0, len(items), batch_size):\n        yield items[i:i + batch_size]"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#generators",
+    "https://docs.python.org/3/reference/expressions.html#yieldexpr"
+  ]
+}

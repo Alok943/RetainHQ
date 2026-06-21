@@ -1,0 +1,84 @@
+{
+  "slug": "else-finally",
+  "title": "else and finally blocks",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "try-except"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "database connection cleanup",
+      "file handle management",
+      "resource release in API handlers"
+    ]
+  },
+  "overview": {
+    "what": "Python's exception handling includes two optional blocks: `else` and `finally`. The `else` block runs ONLY if the `try` block completes successfully without raising any exceptions. The `finally` block ALWAYS runs, regardless of whether an exception occurred, whether it was caught, or even if the `try` block contains a `return` statement. The standard pattern is: try to do something dangerous, except handle the error, else do the happy-path continuation, finally clean up resources.",
+    "why": "The `finally` block guarantees that critical cleanup—like closing a database connection or releasing a lock—happens even if your code crashes halfway through. The `else` block improves readability by separating the code that might fail from the code that should only run if the dangerous operation succeeded, keeping your `try` blocks perfectly minimized.",
+    "where_used": [
+      "Ensuring database cursors are closed",
+      "Cleaning up temporary files after an upload",
+      "Releasing threading or async locks"
+    ]
+  },
+  "why_learning_this": [
+    "Preventing database connection leaks by putting `.close()` in a `finally` block",
+    "Minimizing the size of `try` blocks by moving non-risky 'happy path' code to the `else` block",
+    "Understanding that `finally` runs even if you execute a `return` statement inside the `try` block"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Putting everything in the try block",
+      "explanation": "If you put 10 lines of code in a `try` block, and a `ValueError` happens, you don't know which line caused it. Put only the one risky line in `try`, and the remaining 9 lines in `else`."
+    },
+    {
+      "title": "Returning from finally",
+      "explanation": "If you put a `return` statement in a `finally` block, it overrides any `return` or raised exceptions from the `try` or `except` blocks. This leads to extremely confusing bugs where exceptions silently vanish. Never return from `finally`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Under what exact conditions does the `else` block execute in a `try/except/else` statement?",
+      "answer": "The `else` block executes only if the `try` block completes successfully without raising any exceptions.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If a `try` block encounters an exception, and the `except` block handles it and then hits a `return` statement, will the `finally` block still run?",
+      "answer": "Yes, the `finally` block is guaranteed to run, even if a `return` statement is executed in the `try` or `except` blocks.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Guaranteed cleanup",
+      "prompt": "Write a function `process_data(data)` that tries to execute `result = 100 / data`. If it succeeds, print 'Success'. If it raises a `ZeroDivisionError`, print 'Failed'. Regardless of the outcome, it must ALWAYS print 'Cleanup done'. Do this using the full `try/except/else/finally` structure.",
+      "solution": "def process_data(data):\n    try:\n        result = 100 / data\n    except ZeroDivisionError:\n        print('Failed')\n    else:\n        print('Success')\n    finally:\n        print('Cleanup done')\n\nprocess_data(0)\nprocess_data(10)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def divide(a, b):\n    try:\n        res = a / b\n    except ZeroDivisionError:\n        print(\"Error\")\n    else:\n        print(f\"Result: {res}\")\n    finally:\n        print(\"Done\")\n\ndivide(10, 2)",
+    "focus": "Because the division succeeds, the `except` block is skipped, the `else` block prints the result, and the `finally` block executes last to wrap things up."
+  },
+  "aha_moment": {
+    "code": "def test_return():\n    try:\n        return \"Trying\"\n    finally:\n        print(\"Finally runs anyway!\")\n\nprint(test_return())",
+    "prediction": "What prints first: 'Trying' or 'Finally runs anyway!'?",
+    "common_guess": "'Trying', because the function returns immediately.",
+    "why": "Python intercepts the `return` statement in the `try` block. It executes the `finally` block FIRST, and only after the `finally` block completes does it actually return the value 'Trying' to the caller."
+  },
+  "challenge": {
+    "title": "Safe file reader",
+    "prompt": "Write `read_file(filename)`. Try to open it and read it. Handle `FileNotFoundError`. Use `else` to return the content. Use `finally` to ensure the file is closed (if it was opened). Note: you can use a mock `File` class with `.close()` for the solution.",
+    "solution": "class MockFile:\n    def close(self): print('closed')\n\ndef read_file(filename):\n    f = None\n    try:\n        if filename == 'bad': raise FileNotFoundError()\n        f = MockFile()\n        content = 'data'\n    except FileNotFoundError:\n        return None\n    else:\n        return content\n    finally:\n        if f: f.close()\n\nprint(read_file('good'))"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/errors.html#defining-clean-up-actions",
+    "https://docs.python.org/3/reference/compound_stmts.html#the-try-statement"
+  ]
+}

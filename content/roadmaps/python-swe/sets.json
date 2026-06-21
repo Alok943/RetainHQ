@@ -1,0 +1,93 @@
+{
+  "slug": "sets",
+  "title": "Sets: operations and use cases",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "primitive-types",
+      "mutable-vs-immutable",
+      "lists"
+    ],
+    "unlocks": [
+      "collection-complexity",
+      "dict-set-comprehensions"
+    ],
+    "project_usage": [
+      "deduplicating API payloads",
+      "permission/role checks",
+      "tag filtering"
+    ]
+  },
+  "overview": {
+    "what": "A set is an unordered collection of unique, hashable elements. It is defined using curly braces `{1, 2, 3}` or the `set()` constructor. Unlike a list, a set automatically discards duplicate values and cannot be accessed by index. Think of a set like a VIP guest list: someone is either on the list or they aren't (O(1) membership check), but their exact position in line doesn't matter (unordered). Sets support mathematical operations like union `|`, intersection `&`, and difference `-`.",
+    "why": "Sets are optimized for two things: answering 'is this item in the collection?' instantly, and guaranteeing uniqueness. When you need to check if a user has a specific permission out of thousands, a set makes that check extremely fast compared to scanning a list.",
+    "where_used": [
+      "API scope validation",
+      "Deduplicating database rows",
+      "Feature flags"
+    ]
+  },
+  "why_learning_this": [
+    "Deduplicating lists of IDs or tags automatically",
+    "Fast permission and role checks (e.g. `if required_role in user_roles`)",
+    "Finding commonalities or differences between two datasets using intersections and differences"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using {} for an empty set",
+      "explanation": "`{}` creates an empty dictionary, not an empty set. To create an empty set, you must explicitly use `set()`."
+    },
+    {
+      "title": "Trying to add mutable items",
+      "explanation": "Set elements must be hashable. Trying to add a list or dictionary to a set raises a `TypeError`. Use tuples or `frozenset` instead."
+    },
+    {
+      "title": "Assuming order is preserved",
+      "explanation": "Sets do not preserve the order of elements you add to them. If you iterate over a set, the items will appear in an arbitrary order."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you try to add a duplicate element to a set?",
+      "answer": "The set silently ignores the duplicate. Sets only maintain unique elements.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it faster to check if an item exists in a set compared to a list?",
+      "answer": "Because a set uses a hash table behind the scenes, allowing it to look up the item instantly (O(1)), whereas a list must scan elements one by one (O(n)).",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you create an empty set, and why can't you use `{}`?",
+      "answer": "You create an empty set using `set()`. You cannot use `{}` because that syntax is reserved for creating an empty dictionary.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Find missing scopes",
+      "prompt": "Write a function `get_missing_scopes(user_scopes, required_scopes)` that takes two lists of strings. It should return a set of scopes that are in `required_scopes` but not in `user_scopes`.",
+      "starter_code": "def get_missing_scopes(user_scopes, required_scopes):\n    pass",
+      "solution": "def get_missing_scopes(user_scopes, required_scopes):\n    user_set = set(user_scopes)\n    required_set = set(required_scopes)\n    return required_set - user_set\n\n# Test\nprint(get_missing_scopes(['read', 'write'], ['read', 'delete']))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "roles = ['admin', 'user', 'admin', 'editor']\n\nunique_roles = set(roles)\nprint(unique_roles)\n\nrequired = {'admin', 'superuser'}\nprint(required & unique_roles)",
+    "focus": "Converting the list to a set automatically removes the duplicate 'admin'; using the `&` operator instantly finds the intersection."
+  },
+  "challenge": {
+    "title": "Validate user permissions",
+    "prompt": "You are building an API middleware that checks if a user has access to an endpoint. Write a function `has_access(user_roles, required_roles)` that takes two iterables. Return True if the user has ALL of the required roles, and False otherwise. Additionally, verify you don't use `list` operations.",
+    "solution": "def has_access(user_roles, required_roles):\n    user_set = set(user_roles)\n    required_set = set(required_roles)\n    # issubset is True if all elements of required_set are in user_set\n    return required_set.issubset(user_set)\n\nprint(has_access(['admin', 'editor'], ['editor']))\nprint(has_access(['user'], ['admin']))"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/datastructures.html#sets",
+    "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+  ]
+}

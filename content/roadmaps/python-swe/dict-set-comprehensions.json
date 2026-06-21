@@ -1,0 +1,89 @@
+{
+  "slug": "dict-set-comprehensions",
+  "title": "Dictionary and set comprehensions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "dictionaries",
+      "sets",
+      "list-comprehensions"
+    ],
+    "unlocks": [
+      "nested-comprehensions"
+    ],
+    "project_usage": [
+      "building response mappings",
+      "indexing database rows by ID",
+      "deduplicating tags"
+    ]
+  },
+  "overview": {
+    "what": "Just like list comprehensions, Python allows you to build dictionaries and sets using a concise one-line syntax. A dictionary comprehension uses curly braces with a key-value mapping: `{key: value for item in iterable}`. A set comprehension uses curly braces with just a single expression: `{expression for item in iterable}`. Think of them as a fast, readable factory pipeline that maps or filters data directly into a hashed lookup structure instead of a flat list.",
+    "why": "When processing database rows or API results, you frequently need to index data by ID for fast O(1) lookups later, or invert a mapping. Doing this with a standard `for` loop requires initializing an empty dict and repeatedly assigning keys. A comprehension does this in a single, highly readable expression.",
+    "where_used": [
+      "Indexing list of ORM objects by their primary key",
+      "Inverting mappings (swapping keys and values)",
+      "Extracting unique tags from a list"
+    ]
+  },
+  "why_learning_this": [
+    "Quickly converting a list of API results into a dictionary indexed by ID",
+    "Inverting an existing dictionary mapping in one line",
+    "Filtering out duplicate values while transforming them"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing set and dict comprehensions",
+      "explanation": "Both use `{}`. If you provide a colon `key: value`, it's a dict comprehension. If you just provide `expression`, it's a set comprehension."
+    },
+    {
+      "title": "Un-hashable keys in dict comprehensions",
+      "explanation": "Like normal dictionaries, the `key` expression in `{key: value for...}` must evaluate to a hashable type (like a string or int). If it evaluates to a list, Python raises a `TypeError`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does Python distinguish between a set comprehension and a dictionary comprehension?",
+      "answer": "By looking at the expression before the `for` keyword. If it contains a colon (`key: value`), it is a dict comprehension. If it's a single expression, it is a set comprehension.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the main advantage of using a dict comprehension to build a lookup table over a regular `for` loop?",
+      "answer": "It is more concise and readable, allowing you to create and populate the dictionary in a single expression without needing to initialize an empty dict first.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Index users by ID",
+      "prompt": "You have a list of user dictionaries: `[{'id': 101, 'name': 'Alice'}, {'id': 102, 'name': 'Bob'}]`. Write a dict comprehension that creates a mapping from `id` to the entire user dictionary.",
+      "starter_code": "users = [{'id': 101, 'name': 'Alice'}, {'id': 102, 'name': 'Bob'}]",
+      "solution": "users = [{'id': 101, 'name': 'Alice'}, {'id': 102, 'name': 'Bob'}]\nuser_by_id = {u['id']: u for u in users}\nprint(user_by_id)"
+    },
+    {
+      "title": "Extract unique domains",
+      "prompt": "Given a list of email addresses, use a set comprehension to extract a set of just the unique domain names (the part after the '@').",
+      "starter_code": "emails = ['a@gmail.com', 'b@yahoo.com', 'c@gmail.com']",
+      "solution": "emails = ['a@gmail.com', 'b@yahoo.com', 'c@gmail.com']\ndomains = {email.split('@')[1] for email in emails}\nprint(domains)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "status_codes = {200: 'OK', 404: 'Not Found'}\n\ninverted = {v: k for k, v in status_codes.items()}\n\nprint(inverted)",
+    "focus": "The `{v: k for k, v in ...}` pattern iterates over the key-value pairs and reverses them, instantly creating an inverted lookup table."
+  },
+  "challenge": {
+    "title": "Filter and index products",
+    "prompt": "You are given a list of products. Create a dict mapping `product_id` to `name`, but ONLY for products that have `in_stock` set to True. Use a single dict comprehension with an `if` clause.",
+    "solution": "products = [\n    {'id': 1, 'name': 'Laptop', 'in_stock': True},\n    {'id': 2, 'name': 'Mouse', 'in_stock': False},\n    {'id': 3, 'name': 'Keyboard', 'in_stock': True}\n]\n\navailable = {p['id']: p['name'] for p in products if p['in_stock']}\nprint(available)"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/datastructures.html#dictionaries",
+    "https://docs.python.org/3/reference/expressions.html#displays-for-lists-sets-and-dictionaries"
+  ]
+}

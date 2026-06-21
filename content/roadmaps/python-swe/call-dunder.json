@@ -1,0 +1,74 @@
+{
+  "slug": "call-dunder",
+  "title": "__call__: Making Objects Callable",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["classes-and-objects"],
+    "unlocks": ["decorators-with-state"],
+    "project_usage": ["FastAPI", "PyTorch", "Django"]
+  },
+  "overview": {
+    "what": "The `__call__` dunder method allows an instance of a class to be executed exactly like a function. Variables are labels, objects are boxes; when you add `()` to a label, Python looks for `__call__` on the box. This means an object can maintain internal state (like a database connection or a counter) while exposing a simple, function-like interface. For example, PyTorch models use `__call__` to run the forward pass, and FastAPI uses it for dependency injection classes.",
+    "why": "It lets you combine the statefulness of a class with the clean syntax of a function call. It is the foundation for stateful decorators and many framework APIs.",
+    "where_used": ["FastAPI", "PyTorch", "Django"]
+  },
+  "why_learning_this": [
+    "Building stateful decorators",
+    "Understanding PyTorch model execution (model(x))",
+    "Writing FastAPI dependencies that require configuration"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling the class vs the instance",
+      "explanation": "Adding `()` to the class calls `__init__` to create an instance. Adding `()` to the instance calls `__call__`. Beginners often confuse `MyClass(args)` with `my_instance(args)`."
+    },
+    {
+      "title": "Forgetting to return a value",
+      "explanation": "Just like a regular function, `__call__` must explicitly `return` a value if you want the caller to receive one. Otherwise, it implicitly returns `None`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when you add parentheses `()` to an instance of a class?",
+      "answer": "Python looks for the `__call__` method on the object and executes it.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why would you use an object with `__call__` instead of a regular function?",
+      "answer": "To combine the statefulness of a class (remembering data between calls) with the clean syntax of a function.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Stateful Counter API",
+      "prompt": "Create a `RateLimiter` class. It should take a `max_requests` integer in its `__init__`. Its `__call__` method should take no arguments, increment an internal counter, and return `True` if the counter is within the limit, or `False` if the limit is exceeded.",
+      "starter_code": "class RateLimiter:\n  def __init__(self, max_requests):\n    pass\n\nlimiter = RateLimiter(2)",
+      "solution": "class RateLimiter:\n  def __init__(self, max_requests):\n    self.max_requests = max_requests\n    self.requests = 0\n\n  def __call__(self):\n    self.requests += 1\n    return self.requests <= self.max_requests\n\nlimiter = RateLimiter(2)\nprint(limiter())\nprint(limiter())\nprint(limiter())"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Greeter:\n  def __init__(self, greeting):\n    self.greeting = greeting\n\n  def __call__(self, name):\n    return f'{self.greeting}, {name}'\n\nhello_greeter = Greeter('Hello')\nprint(hello_greeter('Alice'))",
+    "focus": "hello_greeter('Alice')"
+  },
+  "aha_moment": {
+    "code": "class Multiplier:\n  def __init__(self, factor):\n    self.factor = factor\n\n  def __call__(self, value):\n    return self.factor * value\n\ndouble = Multiplier(2)\ntriple = Multiplier(3)\nprint(double(5) + triple(4))",
+    "prediction": "What does the final print statement output?",
+    "common_guess": "It raises a TypeError because you cannot call an object.",
+    "why": "Since `Multiplier` defines `__call__`, the instances `double` and `triple` act exactly like functions. `double(5)` returns 10, `triple(4)` returns 12, so the sum is 22."
+  },
+  "challenge": {
+    "title": "A Configurable Caching Decorator",
+    "prompt": "Write a `Cache` class. The `__init__` should take a function. The `__call__` method should accept a single argument, check if it's in an internal dictionary cache, return the cached value if present, or call the original function, store the result, and return it.",
+    "solution": "class Cache:\n  def __init__(self, func):\n    self.func = func\n    self.cache = {}\n\n  def __call__(self, arg):\n    if arg not in self.cache:\n      self.cache[arg] = self.func(arg)\n    return self.cache[arg]\n\ndef slow_square(n):\n  return n * n\n\ncached_square = Cache(slow_square)\nprint(cached_square(4))\nprint(cached_square(4))"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#object.__call__"
+  ]
+}

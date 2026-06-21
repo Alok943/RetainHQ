@@ -63,8 +63,8 @@ Return ONE JSON object matching this exact shape. No markdown, no commentary, JS
     "why": "1-2 sentences that rebuild the correct mental model once the real output surprises them"
   },
   "challenge": {
-    "title": "Production-flavoured task",
-    "prompt": "A realistic task that combines this topic with its prerequisites.",
+    "title": "Applied task (this topic + prereqs only)",
+    "prompt": "A slightly harder, realistic application of THIS topic. May lean on the listed prerequisites, but NOTHING beyond them. Not a brain-teaser — a learner who just read the overview should be able to solve it.",
     "solution": "working code"
   },
   "sources": ["https://docs.python.org/3/..."]  // 1-3 OFFICIAL doc URLs. Required. No invented links.
@@ -105,8 +105,11 @@ HARD RULES:
     must first appear in overview. Never test a concept that was not introduced.
 13. PRACTICE TASK QUALITY: reinforce the primary concept, not niche edge cases. A tier1 learner
     should be able to solve it using only the overview and prerequisites.
-14. CHALLENGE SAFETY: if using copy(), slicing, or similar, state explicitly whether the
-    behaviour is shallow or deep. Never teach an incorrect mental model.
+14. CHALLENGE SCOPE & DIFFICULTY: the challenge is one notch above the practice task — NOT a hard
+    puzzle. It must be solvable using ONLY this topic + the listed prerequisites; never require a
+    concept, library, or API that has not been taught yet in this roadmap (no forward references,
+    no clever tricks, no edge-case trivia). If using copy(), slicing, or similar, state explicitly
+    whether the behaviour is shallow or deep — never teach an incorrect mental model.
 15. FINAL SELF-CHECK before returning — verify ALL of these, and silently repair the JSON if
     any fail: JSON parses; all code runs; sources are official-doc URLs (no markdown links);
     recall answerable from overview; no toy examples; no invented APIs; code_walkthrough <=15

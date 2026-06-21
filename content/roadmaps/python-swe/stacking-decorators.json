@@ -1,0 +1,73 @@
+{
+  "slug": "stacking-decorators",
+  "title": "Stacking Multiple Decorators",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["decorators"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Flask", "Django"]
+  },
+  "overview": {
+    "what": "When you apply multiple decorators to a function (stacking them with `@`), they are applied bottom-to-top (closest to the function first). The original function is passed to the bottom decorator, the result of that is passed to the decorator above it, and so on. Think of it like wrapping a gift: the first box (bottom decorator) wraps the item directly, and the next box (top decorator) wraps the inner box.",
+    "why": "It allows composing small, reusable behaviors—like adding both authentication and logging to a single web route without writing a single monolithic decorator.",
+    "where_used": ["FastAPI routes", "Flask views", "Class method definitions"]
+  },
+  "why_learning_this": [
+    "You will often need to apply multiple middleware-like functions to a single endpoint in web frameworks.",
+    "It helps debug which decorator is breaking your function's signature."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Order of execution confusion",
+      "explanation": "Assuming decorators execute top-to-bottom. They are applied bottom-to-top, meaning the bottommost decorator wraps the function first."
+    },
+    {
+      "title": "Losing function metadata",
+      "explanation": "If any decorator in the stack forgets to use `@functools.wraps`, the final returned function will have the wrong name and docstring."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In what order are stacked decorators applied to a function?",
+      "answer": "Bottom-to-top. The decorator closest to the `def` statement is applied first.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you stack decorators instead of writing one large decorator?",
+      "answer": "To compose small, reusable behaviors, like combining separate authentication and logging decorators on a single function.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Stacking formatters",
+      "prompt": "Apply two decorators to the `get_message` function: `@strip_whitespace` (closest to the function) and `@make_uppercase` (on top). The decorators are already defined. The final output for ' error ' should be 'ERROR'.",
+      "starter_code": "def make_uppercase(func):\n  def wrapper():\n    return func().upper()\n  return wrapper\n\ndef strip_whitespace(func):\n  def wrapper():\n    return func().strip()\n  return wrapper\n\ndef get_message():\n  return '  error  '\n",
+      "solution": "def make_uppercase(func):\n  def wrapper():\n    return func().upper()\n  return wrapper\n\ndef strip_whitespace(func):\n  def wrapper():\n    return func().strip()\n  return wrapper\n\n@make_uppercase\n@strip_whitespace\ndef get_message():\n  return '  error  '\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def strong(func):\n  def wrapper():\n    return f'<strong>{func()}</strong>'\n  return wrapper\n\ndef emphasize(func):\n  def wrapper():\n    return f'<em>{func()}</em>'\n  return wrapper\n\n@strong\n@emphasize\ndef render_text():\n  return 'Warning'\n\nprint(render_text())\n",
+    "focus": "The output is <strong><em>Warning</em></strong> because `@emphasize` is applied first (wrapping 'Warning'), then `@strong` wraps the result."
+  },
+  "aha_moment": {
+    "code": "def log_request(func):\n  print('Applying logger')\n  return func\n\ndef auth_check(func):\n  print('Applying auth')\n  return func\n\n@log_request\n@auth_check\ndef get_user_data():\n  pass\n",
+    "prediction": "What order are the 'Applying' messages printed when this script runs?",
+    "common_guess": "'Applying logger' then 'Applying auth'",
+    "why": "Decorators are applied bottom-to-top at definition time. The interpreter first passes `get_user_data` to `auth_check()`, printing 'Applying auth', and then passes that result to `log_request()`, printing 'Applying logger'."
+  },
+  "challenge": {
+    "title": "Authentication and Timing",
+    "prompt": "You have a `fetch_data` function. Apply `@require_auth` (defined first) and then `@timer` (defined second) to it. Ensure `require_auth` is closest to the function so we only time the function if authentication succeeds.",
+    "solution": "import time\n\ndef timer(func):\n  def wrapper(*args, **kwargs):\n    start = time.time()\n    res = func(*args, **kwargs)\n    print('Time:', time.time() - start)\n    return res\n  return wrapper\n\ndef require_auth(func):\n  def wrapper(user, *args, **kwargs):\n    if not user.get('is_admin'):\n      raise PermissionError('Not admin')\n    return func(user, *args, **kwargs)\n  return wrapper\n\n@timer\n@require_auth\ndef fetch_data(user):\n  return 'Secret Data'\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/compound_stmts.html#function"
+  ]
+}

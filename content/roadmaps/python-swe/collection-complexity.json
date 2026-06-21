@@ -1,0 +1,63 @@
+{
+  "slug": "collection-complexity",
+  "title": "Time Complexity of Collection Operations",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["lists", "tuples", "dictionaries", "sets"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Django", "SQLAlchemy"]
+  },
+  "overview": {
+    "what": "Every Python collection operation has a time complexity — a measure of how the number of steps grows as the collection grows. Big-O notation describes that growth rate:\n\n  O(1) — constant time, the same speed regardless of size (like opening a book to a page number you already know).\n  O(n) — linear time, you must scan every element in the worst case.\n  O(n log n) — log-linear time, typical of efficient sorting algorithms.\n\nThink of a dict or set as a filing cabinet with labelled drawers: you walk straight to the right drawer in O(1). A list used for membership testing is an unlabelled pile: you must rifle through every item, O(n).\n\nHere are the key operations and their average-case complexities:\n\n  list: index access `xs[i]` O(1), append O(1) amortised, insert/delete at position 0 O(n), `x in xs` O(n), sort O(n log n).\n\n  dict: get/set/delete by key O(1), `key in d` O(1).\n\n  set: add/discard/`x in s` O(1).\n\n  tuple: index access `t[i]` O(1), `x in t` O(n) (tuples have no hash table — they are scanned linearly, just like lists).\n\nThe practical takeaway: whenever you need to check whether a value exists in a collection, convert it to a set or use a dict. A membership test against a list of 1 000 000 items is up to 1 000 000× slower than the same test against a set.\n\nExample — filtering allowed user IDs from an API request:\n\n  allowed = {'u-101', 'u-202', 'u-303'}        # set, O(1) lookup\n  payload_ids = ['u-202', 'u-999', 'u-101']\n  valid = [uid for uid in payload_ids if uid in allowed]\n\nExample — building a fast cache index:\n\n  cache = {}                                     # dict, O(1) lookup\n  for record in db_rows:\n      cache[record['id']] = record",
+    "why": "Choosing the wrong collection for the job is the most common performance mistake in Python. A single `if item in big_list` inside a loop can silently turn an O(n) endpoint into an O(n²) endpoint. Understanding these costs lets you pick the right structure before profiling tells you something is slow.",
+    "where_used": ["API response filtering", "database query result processing", "in-memory caches", "Django querysets", "FastAPI dependency checks"]
+  },
+  "why_learning_this": [
+    "Explains why swapping a list for a set can turn a slow API endpoint from seconds to milliseconds",
+    "Gives you a mental checklist when choosing between list, dict, set, and tuple in production code",
+    "Commonly tested in interviews: 'Why is dict lookup O(1)?' and 'What is the cost of list.insert(0, x)?'"
+  ],
+  "common_mistakes": [
+    { "title": "Using `in` on a list inside a loop", "explanation": "`x in my_list` is O(n). If this sits inside a loop over m items, total cost is O(m × n). Convert the list to a set before the loop: `my_set = set(my_list)`, then test `x in my_set` for O(1) each." },
+    { "title": "Inserting at the front of a list", "explanation": "`my_list.insert(0, val)` is O(n) because every existing element must shift right. If you need fast prepends, use `collections.deque` which offers O(1) appendleft." },
+    { "title": "Assuming dict/set are always O(1)", "explanation": "O(1) is the average case. In pathological situations with many hash collisions, lookup degrades toward O(n). In practice this is extremely rare with built-in types, but custom __hash__ implementations that return a constant will trigger it." },
+    { "title": "Sorting a list on every request", "explanation": "list.sort() is O(n log n). If the data rarely changes, sort once and reuse the result, or maintain a sorted structure, instead of re-sorting on every API call." }
+  ],
+  "recall_questions": [
+    { "q": "What is the time complexity of checking `x in my_list` versus `x in my_set`, and why are they different?", "answer": "list membership is O(n) because Python must scan each element linearly. set membership is O(1) on average because sets use a hash table to jump directly to the right bucket.", "tier": "tier1" },
+    { "q": "Name two list operations that are O(1) and one that is O(n).", "answer": "Index access `xs[i]` and append are O(1). Insert or delete at position 0 is O(n) because every element must shift.", "tier": "tier1" },
+    { "q": "Why is choosing a set or dict for membership checks the single most impactful optimisation for collection code?", "answer": "Because membership testing drops from O(n) to O(1), and when that test is inside a loop the total cost drops from O(m × n) to O(m).", "tier": "tier2" },
+    { "q": "What is the average-case complexity of dict get, set, and delete operations?", "answer": "All three are O(1) on average because dicts use a hash table for direct key access.", "tier": "tier1" },
+    { "q": "Why does `x in my_tuple` have the same complexity as `x in my_list`?", "answer": "Tuples have no hash table — they are scanned linearly just like lists, so membership is O(n).", "tier": "tier2" }
+  ],
+  "practice_tasks": [
+    { "title": "Deduplicate API results fast", "prompt": "You receive a list of user email strings from a paginated API. Write a function `unique_emails(emails: list) -> list` that returns emails with duplicates removed, preserving the original order. Use a set for O(1) 'already seen' checks instead of scanning the result list.", "solution": "def unique_emails(emails):\n    seen = set()\n    result = []\n    for email in emails:\n        if email not in seen:\n            seen.add(email)\n            result.append(email)\n    return result\n\nemails = ['a@x.co', 'b@x.co', 'a@x.co', 'c@x.co', 'b@x.co']\nprint(unique_emails(emails))" },
+    { "title": "Fast permission check", "prompt": "Given a list of allowed role strings and a list of user roles, write a function `has_permission(allowed: list, user_roles: list) -> bool` that returns True if any user role is in the allowed list. Convert the allowed list to a set first so each check is O(1).", "solution": "def has_permission(allowed, user_roles):\n    allowed_set = set(allowed)\n    for role in user_roles:\n        if role in allowed_set:\n            return True\n    return False\n\nallowed = ['admin', 'editor', 'moderator']\nuser_roles = ['viewer', 'editor']\nprint(has_permission(allowed, user_roles))" }
+  ],
+  "code_walkthrough": {
+    "code": "import time\n\nids = list(range(1_000_000))\nid_set = set(ids)\ntarget = 999_999\n\nt0 = time.perf_counter()\ntarget in ids\nlist_ms = (time.perf_counter() - t0) * 1000\n\nt0 = time.perf_counter()\ntarget in id_set\nset_ms = (time.perf_counter() - t0) * 1000\n\nprint(f'list: {list_ms:.4f} ms, set: {set_ms:.4f} ms')",
+    "focus": "The set lookup finishes in microseconds while the list scan takes milliseconds — same data, same question, wildly different cost."
+  },
+  "aha_moment": {
+    "code": "data = list(range(100_000))\ndata_set = set(data)\nmissing = -1\n\ncount = 0\nfor _ in range(1000):\n    if missing in data:\n        count += 1\n\ncount2 = 0\nfor _ in range(1000):\n    if missing in data_set:\n        count2 += 1\nprint(f'list hits: {count}, set hits: {count2}')",
+    "prediction": "Both loops run 1000 iterations and neither finds -1. But which loop finishes noticeably slower?",
+    "common_guess": "They take about the same time because neither finds the item",
+    "why": "Not finding an item in a list is the worst case: Python must scan all 100 000 elements every iteration, making 100 million comparisons. The set checks a hash bucket and returns immediately each time, finishing almost instantly."
+  },
+  "challenge": {
+    "title": "Build a fast request-dedup middleware cache",
+    "prompt": "Write a class `RequestDedup` that stores recently seen request fingerprints (strings). It must support: `add(fingerprint)` to record a request, `is_duplicate(fingerprint) -> bool` to check in O(1), and `clear_older_than(cutoff: float)` that removes entries added before a Unix timestamp. Store each fingerprint with its timestamp. Choose data structures so that `add` and `is_duplicate` are O(1) average.",
+    "solution": "import time\n\nclass RequestDedup:\n    def __init__(self):\n        self._seen = {}  # fingerprint -> timestamp\n\n    def add(self, fingerprint):\n        self._seen[fingerprint] = time.time()\n\n    def is_duplicate(self, fingerprint):\n        return fingerprint in self._seen\n\n    def clear_older_than(self, cutoff):\n        self._seen = {\n            fp: ts for fp, ts in self._seen.items() if ts >= cutoff\n        }\n\ndedup = RequestDedup()\ndedup.add('abc123')\ndedup.add('def456')\nprint(dedup.is_duplicate('abc123'))\nprint(dedup.is_duplicate('xyz789'))"
+  },
+  "sources": [
+    "https://wiki.python.org/moin/TimeComplexity",
+    "https://docs.python.org/3/library/stdtypes.html#set",
+    "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+  ]
+}

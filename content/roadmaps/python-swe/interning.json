@@ -1,0 +1,81 @@
+{
+  "slug": "interning",
+  "title": "Integer and String Interning",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "object-identity",
+      "mutable-vs-immutable"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic"
+    ]
+  },
+  "overview": {
+    "what": "Python pre-allocates and caches small integers (-5 to 256) and certain strings (like identifiers or short strings without spaces) to save memory and improve performance. This is called 'interning'. When you assign one of these cached values to a variable, Python reuses the existing object in memory rather than creating a new one. Think of it like a library keeping multiple copies of popular books (the interned values) ready at the front desk, while rarely requested books (large numbers or long strings) have to be fetched from the back (created dynamically). For example, `status_code = 200` and `default_status = 200` in a FastAPI route will point to the exact same object in memory, but `timeout = 1000` and `max_retries = 1000` might not.",
+    "why": "It optimizes memory usage and allows Python to use fast pointer comparison (identity check via `is`) instead of slower character-by-character comparison (equality check via `==`) for common values like dictionary keys or HTTP status codes.",
+    "where_used": [
+      "Dictionary keys",
+      "HTTP status codes in FastAPI",
+      "Enum comparisons"
+    ]
+  },
+  "why_learning_this": [
+    "Explains why `is` sometimes behaves surprisingly compared to `==`.",
+    "Helps understand memory optimization in Python.",
+    "Prevents bugs where developers incorrectly rely on object identity for integers or strings."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using `is` for value comparison",
+      "explanation": "Using `is` to check if two integers or strings are equal can fail unpredictably across different environments. `a is b` checks if they are the exact same object in memory, which is only guaranteed for interned values like small integers. Always use `==` for value comparison."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the specific range of integers that Python automatically interns?",
+      "answer": "Python automatically interns small integers from -5 to 256.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does Python intern certain strings and integers?",
+      "answer": "To save memory by reusing common objects and to improve performance by allowing fast identity checks instead of slower value checks.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Identity vs Equality in Status Codes",
+      "prompt": "Write a short script simulating an HTTP response. Create two variables, `status1` and `status2`, both set to 200. Print whether they evaluate to True using the `is` operator. Then, create two variables, `large_status1` and `large_status2`, both set to 500. Print whether they evaluate to True using the `is` operator.",
+      "starter_code": "status1 = 200\nstatus2 = 200\n# check identity\n\nlarge_status1 = 500\nlarge_status2 = 500\n# check identity\n",
+      "solution": "status1 = 200\nstatus2 = 200\nprint(status1 is status2)\n\nlarge_status1 = 500\nlarge_status2 = 500\nprint(large_status1 is large_status2)\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "status_ok = 200\nresponse_status = 200\nprint(status_ok is response_status)\n\ntimeout_ms = 1000\nmax_timeout = 1000\nprint(timeout_ms is max_timeout)\n",
+    "focus": "The second print outputs False because integers above 256 are not guaranteed to be interned."
+  },
+  "aha_moment": {
+    "code": "retry_count_1 = 256\nretry_count_2 = 256\nprint(retry_count_1 is retry_count_2)\n\nerror_code_1 = 257\nerror_code_2 = 257\nprint(error_code_1 is error_code_2)\n",
+    "prediction": "What will the two print statements output?",
+    "common_guess": "True, True",
+    "why": "Python only caches integers up to 256. For 257, it creates two separate objects in memory, so `is` evaluates to False because they point to different memory locations."
+  },
+  "challenge": {
+    "title": "Checking identity of dictionary keys",
+    "prompt": "You are building a caching system where you track if the user provided the exact same key object. Create a variable `key1` with the string 'user_id' and another variable `key2` with the same string. Then create a dictionary `cache` and use `key1` to store the value 'data'. Print True if `key2` is the exact same object as `key1` (using identity), and print the value from `cache` using `key2`.",
+    "solution": "key1 = 'user_id'\nkey2 = 'user_id'\ncache = {key1: 'data'}\n\nprint(key1 is key2)\nprint(cache[key2])\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/c-api/long.html",
+    "https://docs.python.org/3/library/sys.html#sys.intern"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "slug": "everything-is-an-object",
+  "title": "Everything is an object in Python",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["dynamic-typing", "functions", "first-class-functions"],
+    "unlocks": ["is-vs-equals", "reference-counting"],
+    "project_usage": ["FastAPI dependency registries", "plugin systems", "introspection tooling"]
+  },
+  "overview": {
+    "what": "In Python, every value is an object — an entity with a type, a unique identity, and attributes. This includes things other languages treat as 'not values': functions, classes, and modules are all objects too.\n\nThree consequences you can see directly:\n\n1. Everything has a type, and types are themselves objects: type(42) is int, and type(int) is type.\n\n  print(type(42))     # <class 'int'>\n  print(type(int))    # <class 'type'>\n\n2. Functions are objects, so they have attributes and can even carry custom ones:\n\n  def handler(): pass\n  print(handler.__name__)   # 'handler'\n  handler.route = '/health' # attach a custom attribute\n\n3. Anything that is an object can be stored in a variable, put in a list, or passed as an argument — including functions and classes:\n\n  registry = [int, str, handler]\n\nThink of Python as a world where there are no 'primitives' standing outside the object system — even an integer is a full object with methods (42 .bit_length()). The uniform rule 'it's an object' is what makes introspection (type(), getattr, dir) work on everything.",
+    "why": "This uniformity is why Python can pass functions as arguments, build registries of classes, and introspect any value at runtime. Frameworks like FastAPI rely on it: a route decorator receives your function as an object and stores it; dependency injection stores classes in a registry. Understanding it explains why function.attribute, type(x), and storing a class in a dict all just work.",
+    "where_used": ["FastAPI route/dependency registries (functions and classes stored as objects)", "Plugin systems that map names to classes", "Runtime introspection with type() and getattr()"]
+  },
+  "why_learning_this": [
+    "Explains how FastAPI stores your route functions and dependency classes in registries — they are objects",
+    "Enables introspection: using type(), getattr(), and attaching metadata to functions"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking ints and strings are 'primitives' without methods",
+      "explanation": "Unlike Java, Python has no primitive types — (42).bit_length() and 'hi'.upper() work because int and str are full objects. There is no separate boxed/unboxed distinction."
+    },
+    {
+      "title": "Calling a function object when you meant to reference it",
+      "explanation": "Storing handler() in a registry stores its return value; storing handler stores the function object itself. Omit the parentheses to keep the object."
+    },
+    {
+      "title": "Assuming classes cannot be passed around",
+      "explanation": "A class is an object (an instance of type), so it can be stored in a variable, put in a list, or passed to a function — that is how factory and plugin patterns work."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What three things does every object in Python have?",
+      "answer": "A type, a unique identity, and attributes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name two things that are objects in Python even though many languages don't treat them as values.",
+      "answer": "Functions, classes, and modules are all objects (any two of these).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why can you store a function or a class inside a list or dict?",
+      "answer": "Because they are objects, and any object can be assigned to a variable, stored in a collection, or passed as an argument.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does (42).bit_length() work — isn't 42 just a primitive?",
+      "answer": "Python has no primitives; 42 is a full int object with methods, so calling a method on it is valid.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Build a handler registry",
+      "prompt": "Create three small functions (health, users, items) that each return a string. Store the function OBJECTS (not their results) in a dict keyed by route path. Then look up and call the '/users' handler, printing its result.",
+      "starter_code": "def health():\n    return 'ok'\n\n# define users, items, build the registry, call one",
+      "solution": "def health():\n    return 'ok'\n\ndef users():\n    return 'user list'\n\ndef items():\n    return 'item list'\n\nregistry = {'/health': health, '/users': users, '/items': items}\nhandler = registry['/users']\nprint(handler())"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def handler():\n    return 'ok'\n\nprint(type(handler))\nprint(handler.__name__)\nhandler.route = '/health'\nprint(handler.route)",
+    "focus": "handler is an object: it has a type (function), a built-in __name__ attribute, and you can even attach a brand-new custom attribute (route) to it."
+  },
+  "aha_moment": {
+    "code": "def ping():\n    return 'pong'\n\nping.call_count = 0\nping.call_count += 1\nprint(ping.call_count)",
+    "prediction": "Can you attach your own attribute (call_count) to a function and read it back?",
+    "common_guess": "Error — functions can't hold custom attributes",
+    "why": "A function is an object, so it has a writable attribute namespace just like any instance. ping.call_count = 0 stores state directly on the function object, and ping.call_count reads it back — printing 1."
+  },
+  "challenge": {
+    "title": "Type-keyed serializer dispatch",
+    "prompt": "Write serialize(value) that uses type(value) as a dict key to pick a serializer function. Map int -> a function returning 'num:<v>', str -> 'str:<v>', and bool -> 'bool:<v>'. Store the serializer functions as objects in the dict. Test with 42 and 'hello'. (Note: check bool before int is not required here since the keys are exact types.)",
+    "solution": "def ser_int(v):\n    return f'num:{v}'\n\ndef ser_str(v):\n    return f'str:{v}'\n\ndef ser_bool(v):\n    return f'bool:{v}'\n\nserializers = {int: ser_int, str: ser_str, bool: ser_bool}\n\ndef serialize(value):\n    fn = serializers.get(type(value))\n    return fn(value) if fn else f'raw:{value}'\n\nprint(serialize(42))\nprint(serialize('hello'))"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#objects-values-and-types",
+    "https://docs.python.org/3/library/functions.html#type"
+  ]
+}

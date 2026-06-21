@@ -1,0 +1,94 @@
+{
+  "slug": "shallow-vs-deep-copy",
+  "title": "Shallow vs Deep Copy",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["mutable-vs-immutable", "object-identity", "lists", "dictionaries"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Pydantic", "Django"]
+  },
+  "overview": {
+    "what": "Python variables are labels that point to objects (boxes). Assignment with `=` never copies an object — it attaches a second label to the same box. When you need a real copy, you choose between *shallow* and *deep*.\n\nA shallow copy creates a new outer container but keeps the same references to the inner objects. Every built-in shortcut — `list.copy()`, `dict.copy()`, `copy.copy()`, `list[:]`, and `list()` — does a shallow copy:\n\n  original = [[1, 2], [3, 4]]\n  import copy\n  shallow = copy.copy(original)\n  print(original is shallow)              # False — new outer list\n  print(original[0] is shallow[0])        # True  — inner list still shared\n\nA deep copy, via `copy.deepcopy()`, recursively copies every nested object so nothing is shared:\n\n  deep = copy.deepcopy(original)\n  print(original[0] is deep[0])           # False — independent inner list\n\nMental model: shallow copy makes a new box whose labels still point to the same inner boxes. Deep copy makes new boxes all the way down.\n\nShallow copy is safe and sufficient when the collection is flat and contains only immutables (strings, ints, tuples of immutables). You need `deepcopy` when the structure contains nested mutable values — lists inside lists, dicts inside dicts — and you want to mutate one copy without affecting the other.",
+    "why": "Real-world Python code constantly clones data — duplicating a config dict before overriding keys, snapshotting nested API payloads, or isolating state between test runs. Choosing the wrong copy level is a silent, hard-to-trace bug: you modify what you think is an independent copy and corrupt the original.",
+    "where_used": ["FastAPI", "Pydantic", "Django", "pytest"]
+  },
+  "why_learning_this": [
+    "Prevents silent data corruption when duplicating config dicts or API response payloads",
+    "Explains why mutating a 'copied' nested list still changes the original — a top interview question",
+    "Required for safely snapshotting state in test fixtures and caching layers"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming assignment copies",
+      "explanation": "Writing `backup = settings` creates a second label for the same dict — every change to `backup` changes `settings`. Use `settings.copy()` or `copy.deepcopy(settings)` to get a real copy."
+    },
+    {
+      "title": "Using shallow copy on nested structures",
+      "explanation": "Calling `payload.copy()` on a dict whose values are lists gives a new outer dict, but the lists are still shared. Mutating `payload_copy['items'].append(x)` silently corrupts the original. Use `copy.deepcopy()` when inner values are mutable."
+    },
+    {
+      "title": "Forgetting deepcopy handles cycles",
+      "explanation": "`copy.deepcopy()` tracks already-copied objects with a memo dict to avoid infinite recursion on circular references. Rolling your own recursive copy will crash or loop; prefer `deepcopy` for arbitrary nested data."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does assignment (`=`) actually do — does it copy the object?",
+      "answer": "No. Assignment attaches a second label to the same object. Both names point to the same box in memory; no copying occurs.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between a shallow copy and a deep copy?",
+      "answer": "A shallow copy creates a new outer container but keeps references to the same inner objects. A deep copy recursively copies every nested object so nothing is shared between the original and the copy.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name three ways to create a shallow copy of a list.",
+      "answer": "list.copy(), list[:] (slice), and copy.copy(). Calling list() on an existing list also produces a shallow copy.",
+      "tier": "tier2"
+    },
+    {
+      "q": "When is a shallow copy sufficient, and when do you need deepcopy?",
+      "answer": "Shallow copy is sufficient when the collection is flat and contains only immutables. You need deepcopy when the structure contains nested mutable values and you want to mutate one copy without affecting the other.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Safe config override",
+      "prompt": "You have a `base_config` dict with string keys and string values. Write a function `override_config(base, overrides)` that returns a new dict with the overrides applied, without mutating `base_config`. Since all values are immutable strings, a shallow copy is safe here. Demonstrate that mutating the returned dict does not affect the original.",
+      "solution": "base_config = {'host': 'localhost', 'port': '8000', 'debug': 'false'}\n\ndef override_config(base, overrides):\n    merged = base.copy()\n    merged.update(overrides)\n    return merged\n\nstaging = override_config(base_config, {'host': 'staging.api.com', 'debug': 'true'})\nprint(staging)\nprint(base_config)\n# base_config is unchanged"
+    },
+    {
+      "title": "Deep-clone nested API payload",
+      "prompt": "Given a nested `order` dict containing a list of item dicts, write code that creates a fully independent copy using `copy.deepcopy()`. Append a new item to the copy and print both to prove the original is unchanged.",
+      "solution": "import copy\n\norder = {\n    'customer': 'acme-corp',\n    'items': [\n        {'sku': 'WIDGET-01', 'qty': 5},\n        {'sku': 'BOLT-07', 'qty': 100}\n    ]\n}\n\norder_copy = copy.deepcopy(order)\norder_copy['items'].append({'sku': 'NUT-03', 'qty': 50})\n\nprint('original items:', len(order['items']))   # 2\nprint('copy items:', len(order_copy['items']))  # 3"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import copy\n\noriginal = {'db': 'prod', 'replicas': ['r1', 'r2']}\nshallow = copy.copy(original)\ndeep = copy.deepcopy(original)\n\nshallow['replicas'].append('r3')\n\nprint('original:', original['replicas'])\nprint('shallow :', shallow['replicas'])\nprint('deep    :', deep['replicas'])",
+    "focus": "Watch `shallow['replicas'].append('r3')` — the inner list is shared, so `original['replicas']` also gains 'r3'. The deep copy stays independent."
+  },
+  "aha_moment": {
+    "code": "grid = [[0, 0, 0]] * 3\ngrid[0][1] = 7\nprint(grid)",
+    "prediction": "What does `grid` look like after setting grid[0][1] to 7?",
+    "common_guess": "[[0, 7, 0], [0, 0, 0], [0, 0, 0]] — only the first row changed",
+    "why": "The `*` operator does not copy the inner list — all three rows are the same object. Mutating one row mutates all of them. This is the same shared-reference problem that shallow copy creates. To get independent rows, use a comprehension: `[[0, 0, 0] for _ in range(3)]`."
+  },
+  "challenge": {
+    "title": "Snapshot middleware for request context",
+    "prompt": "Write a function `snapshot_context(ctx)` that receives a nested dict representing a request context (with keys like 'user', 'headers' as a dict, and 'query_params' as a list). It should return a frozen snapshot — a deep copy — so that downstream handlers can mutate their own copy while the original context remains pristine. Demonstrate by modifying the snapshot's 'query_params' and showing the original is unaffected.",
+    "solution": "import copy\n\ndef snapshot_context(ctx):\n    return copy.deepcopy(ctx)\n\nctx = {\n    'user': 'alice',\n    'headers': {'content-type': 'application/json', 'x-request-id': 'abc-123'},\n    'query_params': ['page=1', 'limit=20']\n}\n\nsnap = snapshot_context(ctx)\nsnap['query_params'].append('sort=desc')\nsnap['headers']['x-trace'] = 'xyz'\n\nprint('original params:', ctx['query_params'])\nprint('snapshot params:', snap['query_params'])\nprint('original headers:', ctx['headers'])\nprint('snapshot headers:', snap['headers'])"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/copy.html",
+    "https://docs.python.org/3/library/stdtypes.html#mutable-sequence-types",
+    "https://docs.python.org/3/library/stdtypes.html#dict.copy"
+  ]
+}

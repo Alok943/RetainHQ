@@ -1,0 +1,92 @@
+{
+  "slug": "iterable-protocol",
+  "title": "The Iterable Protocol",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "iter-next-dunders",
+      "loops"
+    ],
+    "unlocks": [
+      "generator-expressions"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic"
+    ]
+  },
+  "overview": {
+    "what": "The Iterable Protocol is Python's mechanism for traversing containers. An object is an *iterable* if it implements `__iter__()` returning an *iterator*. An *iterator* implements `__next__()` to yield elements one at a time and raises `StopIteration` when exhausted. When you run a `for` loop, Python automatically calls `iter()` to get an iterator, then repeatedly calls `next()` until the exception is caught. Think of an iterable as a book (a collection of pages) and an iterator as a bookmark (the current reading state); you can have many bookmarks in the same book.",
+    "why": "It allows Python to loop over any object uniformly (lists, strings, files, or custom streams) without needing to know its internal structure, enabling infinite sequences and lazy evaluation to save memory.",
+    "where_used": [
+      "SQLAlchemy query results",
+      "Streaming file lines",
+      "FastAPI request bodies"
+    ]
+  },
+  "why_learning_this": [
+    "Allows you to create custom collections that behave like built-in lists in `for` loops.",
+    "Explains why iterators are exhausted after one pass, unlike lists.",
+    "Underpins how lazy evaluation saves memory when processing massive datasets."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Exhausted Iterators",
+      "explanation": "Trying to iterate over an iterator twice yields nothing the second time. Fix: Convert it to a list if you need multiple passes, or create a fresh iterator by calling `iter()` again."
+    },
+    {
+      "title": "Confusing Iterable and Iterator",
+      "explanation": "Returning `self` in `__iter__` for a container that shouldn't hold state. Fix: An iterable's `__iter__` should return a *new* iterator object, while an iterator's `__iter__` returns `self`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between an iterable and an iterator?",
+      "answer": "An iterable is a collection that implements `__iter__()` to return an iterator. An iterator implements `__next__()` to return the next value and keeps track of its current state.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a `for` loop know when to stop iterating?",
+      "answer": "It continuously calls `next()` on the iterator and catches the `StopIteration` exception, which signals that no more items are available.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can you loop over a list multiple times, but an iterator only once?",
+      "answer": "A list is an iterable that creates a fresh iterator every time `iter()` is called on it. An iterator returns itself, so once it raises `StopIteration`, it remains exhausted.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Create a Custom Range Iterable",
+      "prompt": "Implement a `Countdown` iterable class that takes a starting integer and counts down to 1. It must return a new iterator each time so it can be looped over multiple times.",
+      "starter_code": "class Countdown:\n    def __init__(self, start):\n        pass",
+      "solution": "class CountdownIterator:\n    def __init__(self, start):\n        self.current = start\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value\n\nclass Countdown:\n    def __init__(self, start):\n        self.start = start\n\n    def __iter__(self):\n        return CountdownIterator(self.start)\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "nums = [1, 2]\niterator = iter(nums)\nprint(next(iterator))\nprint(next(iterator))\ntry:\n    print(next(iterator))\nexcept StopIteration:\n    print('Done!')",
+    "focus": "print(next(iterator))"
+  },
+  "aha_moment": {
+    "code": "nums = [1, 2]\niterator = iter(nums)\nfor x in iterator:\n    print(x)\nfor x in iterator:\n    print('Again:', x)",
+    "prediction": "What will be printed by the second `for` loop?",
+    "common_guess": "It will print 'Again: 1' and 'Again: 2'.",
+    "why": "The first `for` loop exhausts the iterator. The second `for` loop calls `iter(iterator)`, which returns the exhausted iterator itself, immediately raising `StopIteration`."
+  },
+  "challenge": {
+    "title": "Paginated API Iterator",
+    "prompt": "Write an iterable class `PaginatedResults` that simulates fetching data from an API. It takes a list of lists (representing pages of data). When iterated, it should yield individual items across all pages sequentially. You MUST separate the iterable and the iterator into two classes so it can be consumed multiple times.",
+    "solution": "class PageIterator:\n    def __init__(self, pages):\n        self.pages = pages\n        self.page_idx = 0\n        self.item_idx = 0\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        while self.page_idx < len(self.pages):\n            page = self.pages[self.page_idx]\n            if self.item_idx < len(page):\n                item = page[self.item_idx]\n                self.item_idx += 1\n                return item\n            self.page_idx += 1\n            self.item_idx = 0\n        raise StopIteration\n\nclass PaginatedResults:\n    def __init__(self, pages):\n        self.pages = pages\n\n    def __iter__(self):\n        return PageIterator(self.pages)\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/stdtypes.html#iterator-types",
+    "https://docs.python.org/3/glossary.html#term-iterable"
+  ]
+}

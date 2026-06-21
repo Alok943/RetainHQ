@@ -1,0 +1,79 @@
+{
+  "slug": "late-binding-closures",
+  "title": "Late Binding Closures Gotcha",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "closures"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Dynamically generated routes",
+      "Event callbacks",
+      "List comprehensions with lambdas"
+    ]
+  },
+  "overview": {
+    "what": "Python's closures bind to variables (names), not their values at the time the closure is created. When you create functions inside a loop (like a list of lambdas), they all keep a reference to the same loop variable. When the loop finishes, that variable holds its final value, so all the closures see that final value when called. Think of it like giving a group of people a link to a live Google Doc (the variable) instead of handing each person a printed PDF (the value) at different times. When they look at the doc later, they all see the latest version.",
+    "why": "This is a very common bug when dynamically generating callbacks, event listeners, or routes in a loop, leading to all callbacks executing with the arguments intended for the final iteration.",
+    "where_used": [
+      "FastAPI route generation",
+      "Tkinter UI event callbacks",
+      "Factory functions returning lambdas"
+    ]
+  },
+  "why_learning_this": [
+    "Prevent subtle runtime bugs in dynamically created functions",
+    "Understand how Python's name binding differs from other languages"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting closures bind to names",
+      "explanation": "Assuming a lambda `lambda: x` captures the value of `x` at that instant. Fix: Use a default argument like `lambda x=x: x` to force eager evaluation, capturing the value at definition time."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why do dynamically generated callbacks in a loop often end up doing the exact same thing when called?",
+      "answer": "Because closures in Python are late-binding. They capture a reference to the loop variable, not its value. By the time the callbacks are executed, the loop has finished and the variable holds its final value.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How can you force a closure to capture the current value of a variable in a loop?",
+      "answer": "By passing the variable as a default argument (e.g., `lambda x=x: x`). Default arguments are evaluated eagerly at function definition time, capturing the value.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the Multiplier Factory",
+      "prompt": "The function `create_multipliers` returns a list of functions where the first is supposed to multiply by 0, the second by 1, up to 4. However, currently they all multiply by 4. Fix the bug by forcing early binding.",
+      "starter_code": "def create_multipliers():\n  return [lambda x: x * i for i in range(5)]",
+      "solution": "def create_multipliers():\n  return [lambda x, i=i: x * i for i in range(5)]"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "funcs = []\nfor i in range(3):\n  funcs.append(lambda: i)\n\nprint(funcs[0]())\nprint(funcs[1]())\nprint(funcs[2]())",
+    "focus": "funcs.append(lambda: i)  # i is not evaluated here, it is looked up when the lambda is called"
+  },
+  "aha_moment": {
+    "code": "def make_printers():\n  printers = []\n  for i in [1, 2, 3]:\n    printers.append(lambda: i)\n  return printers\n\nfor p in make_printers():\n  print(p())",
+    "prediction": "What does this code print?",
+    "common_guess": "1\n2\n3",
+    "why": "It prints 3\n3\n3. The lambdas capture the variable 'i', not the value it had. By the time the lambdas are called, the loop is over and 'i' is 3."
+  },
+  "challenge": {
+    "title": "Dynamic Routing Handlers",
+    "prompt": "You are generating a list of mock route handlers. Iterate over `endpoints = ['/home', '/about', '/contact']`. Write a list comprehension that creates a list of lambda functions, where each lambda takes no arguments and returns the string 'Handling ' followed by the endpoint. Ensure each lambda captures the correct endpoint value.",
+    "solution": "endpoints = ['/home', '/about', '/contact']\nhandlers = [lambda e=e: 'Handling ' + e for e in endpoints]"
+  },
+  "sources": [
+    "https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result"
+  ]
+}

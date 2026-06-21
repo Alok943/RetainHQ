@@ -1,0 +1,100 @@
+{
+  "slug": "dictionaries",
+  "title": "Dictionaries: operations and use cases",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 35,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["primitive-types", "mutable-vs-immutable", "lists"],
+    "unlocks": ["collection-complexity", "dict-set-comprehensions"],
+    "project_usage": ["FastAPI", "Pydantic", "SQLModel"]
+  },
+  "overview": {
+    "what": "A dict maps hashable keys to values using a hash table, giving O(1) average-time lookups, inserts, and deletes. Keys must be immutable (str, int, tuple) — lists and dicts cannot be keys. Since Python 3.7+ dicts preserve insertion order.\n\nCreate one with braces or dict():\n\n  user = {'name': 'sam', 'role': 'admin', 'active': True}\n\nAccess a value by key — direct access raises KeyError if the key is missing, while .get() returns a default instead:\n\n  user['name']              # 'sam'\n  user['email']             # KeyError!\n  user.get('email', 'n/a')  # 'n/a' — safe fallback\n\n.keys(), .values(), and .items() return live view objects — they reflect changes to the dict without copying:\n\n  for k, v in user.items():\n      print(k, v)\n\nMutation methods:\n  user['email'] = 'sam@co.io'          # add or overwrite a key\n  del user['active']                    # remove a key (KeyError if missing)\n  user.pop('role', None)                # remove and return value, or default\n  user.setdefault('plan', 'free')       # insert 'plan' only if absent\n  user.update({'active': False})        # merge another dict in place\n\nDict unpacking (**) merges dicts into a new one without mutating either source:\n\n  merged = {**defaults, **overrides}\n\nCommon pattern — grouping items by a key:\n\n  groups = {}\n  for item in items:\n      groups.setdefault(item['team'], []).append(item)\n\nThink of a dict as a filing cabinet: each drawer has a unique label (key) and holds one document (value). You open a drawer by its label in constant time — you never search drawer-by-drawer.",
+    "why": "Dicts are the backbone of Python data handling — JSON payloads are dicts, FastAPI response models serialize to dicts, config files parse into dicts, and ORM row objects expose dict-like access. Choosing .get() over direct access prevents crashes on optional fields, and understanding view objects avoids wasteful copies in hot loops.",
+    "where_used": ["FastAPI response models", "JSON API payloads", "config dicts and env var mappings", "ORM query results"]
+  },
+  "why_learning_this": [
+    "Reading and building JSON payloads in FastAPI endpoints — every request body and response is a dict under the hood",
+    "Grouping database rows by category or counting occurrences without external libraries",
+    "Safely accessing optional config keys with .get() instead of crashing on KeyError"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using direct access on optional keys",
+      "explanation": "config['timeout'] raises KeyError if 'timeout' was never set. Use config.get('timeout', 30) to supply a default, or guard with 'timeout' in config."
+    },
+    {
+      "title": "Iterating and mutating at the same time",
+      "explanation": "Adding or deleting keys while iterating over a dict raises RuntimeError: dictionary changed size during iteration. Iterate over a snapshot instead: for k in list(d.keys())."
+    },
+    {
+      "title": "Expecting dict.update() to return the merged dict",
+      "explanation": "update() mutates in place and returns None — just like list.append(). To merge into a NEW dict, use unpacking: merged = {**base, **extra}."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What types of objects can be used as dict keys, and why?",
+      "answer": "Only hashable (immutable) objects — str, int, tuple, etc. Lists and dicts are mutable so they cannot be keys.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between d['key'] and d.get('key', default)?",
+      "answer": "Direct access d['key'] raises KeyError if the key is missing; .get('key', default) returns the default value instead.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are view objects and which dict methods return them?",
+      "answer": ".keys(), .values(), and .items() return live view objects that reflect changes to the dict without making a copy.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does dict unpacking (**) differ from .update()?",
+      "answer": "Unpacking ({**a, **b}) creates a NEW dict without mutating the originals; .update() merges in place, mutates the dict, and returns None.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does .setdefault(key, value) do?",
+      "answer": "It inserts key with the given value only if the key is not already present, then returns the value for that key.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Safe config reader",
+      "prompt": "Write get_config(config, key, fallback) that returns the value for key from a config dict, or fallback if the key is missing. Do NOT use try/except — use the appropriate dict method. Print results for a present key and a missing key.",
+      "starter_code": "def get_config(config, key, fallback):\n    pass",
+      "solution": "def get_config(config, key, fallback):\n    return config.get(key, fallback)\n\nconfig = {'host': 'localhost', 'port': 8000}\nprint(get_config(config, 'port', 3000))\nprint(get_config(config, 'timeout', 30))"
+    },
+    {
+      "title": "Group users by role",
+      "prompt": "Given a list of user dicts each having 'name' and 'role' keys, write group_by_role(users) that returns a dict mapping each role to a list of names. Use .setdefault() for grouping.",
+      "solution": "def group_by_role(users):\n    groups = {}\n    for u in users:\n        groups.setdefault(u['role'], []).append(u['name'])\n    return groups\n\nusers = [\n    {'name': 'alice', 'role': 'admin'},\n    {'name': 'bob', 'role': 'viewer'},\n    {'name': 'carol', 'role': 'admin'},\n]\nprint(group_by_role(users))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "defaults = {'debug': False, 'region': 'us-east-1'}\noverrides = {'debug': True, 'timeout': 30}\nconfig = {**defaults, **overrides}\nprint(config)\nprint(config.get('retries', 3))",
+    "focus": "Dict unpacking merges both dicts into a new one — overrides wins on 'debug', and .get() safely returns a default for the missing 'retries' key."
+  },
+  "aha_moment": {
+    "code": "settings = {'debug': False}\nalias = settings\nalias['debug'] = True\nprint(settings['debug'])",
+    "prediction": "After changing alias['debug'] to True, what does settings['debug'] print?",
+    "common_guess": "False",
+    "why": "alias = settings does not copy the dict — both names point to the same object. Mutating through alias is visible through settings. To get an independent copy use settings.copy()."
+  },
+  "challenge": {
+    "title": "Merge environment configs with precedence",
+    "prompt": "Write merge_env(base, env_overrides, cli_overrides) that returns a NEW config dict with precedence: cli_overrides > env_overrides > base. Do not mutate any input dict. Then demonstrate that the base dict is unchanged after the merge.",
+    "solution": "def merge_env(base, env_overrides, cli_overrides):\n    return {**base, **env_overrides, **cli_overrides}\n\nbase = {'debug': False, 'port': 8000, 'workers': 4}\nenv = {'debug': True, 'port': 9000}\ncli = {'port': 3000}\nresult = merge_env(base, env, cli)\nprint(result)\nprint(base)"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict",
+    "https://docs.python.org/3/tutorial/datastructures.html#dictionaries",
+    "https://docs.python.org/3/library/stdtypes.html#dict.get"
+  ]
+}

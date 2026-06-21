@@ -1,0 +1,91 @@
+{
+  "slug": "operator-overloading",
+  "title": "Operator Overloading: __add__, __eq__, __lt__",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "everything-is-an-object",
+      "is-vs-equals"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Pandas",
+      "Pydantic",
+      "Pathlib"
+    ]
+  },
+  "overview": {
+    "what": "In Python, operators like `+`, `==`, and `<` are syntactic sugar for method calls on objects. When you run `a + b`, Python translates it to `a.__add__(b)`. Operator overloading allows you to define these double-underscore (dunder) methods in your own classes, giving your objects custom behaviour for built-in operators. For instance, defining `__eq__` lets you compare two separate instances by their data rather than their memory identity, and defining `__lt__` (less than) is required for built-in functions like `sorted()` to work. Think of operators as universal remotes: the button `+` is standard, but the specific device (the object) decides what action is taken when the button is pressed. When a dunder method doesn't know how to handle the other operand's type, it must return the singleton `NotImplemented`, which tells Python to try the reverse operation (like `__radd__`) on the other object. Lastly, operators like `+` should return a completely new instance, leaving the original operands unchanged.",
+    "why": "It allows custom objects to integrate seamlessly with Python's built-in syntax and functions, making code cleaner and more expressive. It also enables objects to be sorted or compared for equality without writing custom method names.",
+    "where_used": [
+      "Pandas",
+      "NumPy",
+      "Pathlib"
+    ]
+  },
+  "why_learning_this": [
+    "Customizing equality logic for comparing objects in tests",
+    "Using `sorted()` or `max()` on lists of custom models",
+    "Writing intuitive vector or point math objects"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning NotImplemented vs NotImplementedError",
+      "explanation": "When an operator method doesn't know how to handle the other operand's type, it should return the singleton `NotImplemented`, not raise `NotImplementedError`. Returning `NotImplemented` signals Python to try the reverse operation on the other object."
+    },
+    {
+      "title": "Mutating self instead of returning a new object",
+      "explanation": "For operations like `+`, beginners sometimes mutate `self` and return it. Operators like `+` should return a completely new instance, leaving the original operands unchanged."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens internally when you use the `+` operator on two objects?",
+      "answer": "Python translates the `+` syntax into a method call on the left object, specifically invoking its `__add__` method with the right object as the argument.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you want to allow instances of a custom class to be sorted using the built-in `sorted()` function, which dunder method must you implement?",
+      "answer": "You must implement the `__lt__` (less than) dunder method, which Python uses to determine the ordering of objects.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What should an operator method return if it does not know how to handle the type of the other operand?",
+      "answer": "It should return the singleton `NotImplemented`, which tells Python to try the reverse operation on the other object.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement Equality for a Model",
+      "prompt": "Create a `User` class that initializes with a `user_id` and a `username`. Implement the appropriate dunder method so that two `User` instances are considered equal (`==`) if they have the exact same `user_id`, regardless of their `username`. If the other object is not a `User`, return `NotImplemented`.",
+      "starter_code": "class User:\n  def __init__(self, user_id, username):\n    self.user_id = user_id\n    self.username = username\n\n  # Implement equality here",
+      "solution": "class User:\n  def __init__(self, user_id, username):\n    self.user_id = user_id\n    self.username = username\n\n  def __eq__(self, other):\n    if not isinstance(other, User):\n      return NotImplemented\n    return self.user_id == other.user_id"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Point:\n  def __init__(self, x, y):\n    self.x = x\n    self.y = y\n\n  def __add__(self, other):\n    return Point(self.x + other.x, self.y + other.y)\n\np1 = Point(1, 2)\np2 = Point(3, 4)\np3 = p1 + p2\nprint(p3.x, p3.y)",
+    "focus": "p3 = p1 + p2"
+  },
+  "aha_moment": {
+    "code": "class Box:\n  def __init__(self, value):\n    self.value = value\n\nb1 = Box(10)\nb2 = Box(10)\nprint(b1 == b2)",
+    "prediction": "What does this print?",
+    "common_guess": "True",
+    "why": "By default, custom classes use object identity for equality (like `is`), so two separate instances evaluate to False. You must explicitly implement `__eq__` to compare their values."
+  },
+  "challenge": {
+    "title": "Vector Mathematics",
+    "prompt": "Write a `Vector` class that initializes with `x` and `y` components. Implement `__add__` to add two vectors together returning a new `Vector`. Also implement `__eq__` so that two vectors are equal if their `x` and `y` components are identical. Ensure that if `__add__` or `__eq__` is used with a non-Vector object, it returns `NotImplemented`.",
+    "solution": "class Vector:\n  def __init__(self, x, y):\n    self.x = x\n    self.y = y\n\n  def __add__(self, other):\n    if not isinstance(other, Vector):\n      return NotImplemented\n    return Vector(self.x + other.x, self.y + other.y)\n\n  def __eq__(self, other):\n    if not isinstance(other, Vector):\n      return NotImplemented\n    return self.x == other.x and self.y == other.y"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types",
+    "https://docs.python.org/3/reference/datamodel.html#object.__eq__"
+  ]
+}

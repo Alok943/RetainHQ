@@ -1,0 +1,70 @@
+{
+  "slug": "lexical-scope",
+  "title": "Lexical Scope and Free Variables",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["scope", "functions", "first-class-functions"],
+    "unlocks": ["closures", "closure-mechanics"],
+    "project_usage": ["Decorators", "Callbacks", "Event Handlers"]
+  },
+  "overview": {
+    "what": "Lexical scope means that a function's access to variables is determined by where the function is defined in the source code, not where it is called. When an inner function references a variable from an outer function, that variable is called a 'free variable'. Even if the outer function finishes executing, the inner function retains access to this free variable. Think of lexical scope like looking through a one-way mirror: the inner function can see out to the environment where it was born, but the outside cannot see in.",
+    "why": "Lexical scope is the foundation for closures and decorators. It allows functions to carry state without relying on global variables or classes.",
+    "where_used": ["React-like state management", "FastAPI dependency injection", "Decorators"]
+  },
+  "why_learning_this": [
+    "Understanding closures and decorators",
+    "Avoiding late-binding bugs in loops",
+    "Writing clean, class-less stateful functions"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Modifying a free variable without nonlocal",
+      "explanation": "If you try to reassign a free variable inside an inner function, Python assumes you are creating a new local variable instead. You must use the `nonlocal` keyword to explicitly tell Python to modify the free variable."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What determines a function's access to variables under lexical scoping?",
+      "answer": "Where the function is defined in the source code, rather than where it is executed.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is a 'free variable'?",
+      "answer": "A variable referenced by an inner function that is defined in an enclosing outer function.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Identify the Free Variable",
+      "prompt": "Write a function `make_multiplier` that takes an argument `factor` and returns an inner function. The inner function should take a `value` and return `value * factor`. Observe how `factor` acts as a free variable.",
+      "starter_code": "def make_multiplier(factor):\n  # Define and return an inner function\n  pass",
+      "solution": "def make_multiplier(factor):\n  def multiplier(value):\n    return value * factor\n  return multiplier"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def outer():\n  x = 10\n  def inner():\n    print(x)\n  return inner\n\nfunc = outer()\nfunc()",
+    "focus": "print(x)"
+  },
+  "aha_moment": {
+    "code": "def create_greeters():\n  name = 'Alice'\n  def greeter():\n    print(f'Hello, {name}')\n  name = 'Bob'\n  return greeter\n\nfn = create_greeters()\nfn()",
+    "prediction": "What does fn() print?",
+    "common_guess": "Hello, Alice",
+    "why": "Lexical scope binds the inner function to the variable itself, not the value it had at the exact moment the function was defined. When `fn()` runs, it looks up the current value of `name`, which is now 'Bob'."
+  },
+  "challenge": {
+    "title": "Stateful Counter",
+    "prompt": "Create a function `make_counter` that takes a `start` value. It should return an inner function that, when called without arguments, increments the `start` value by 1 and returns the new value. You will need to modify a free variable.",
+    "solution": "def make_counter(start):\n  def counter():\n    nonlocal start\n    start += 1\n    return start\n  return counter"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/executionmodel.html#naming-and-binding"
+  ]
+}

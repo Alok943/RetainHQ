@@ -1,0 +1,95 @@
+{
+  "slug": "tuples",
+  "title": "Tuples: immutability and use cases",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["primitive-types", "mutable-vs-immutable", "lists"],
+    "unlocks": ["collection-complexity"],
+    "project_usage": ["FastAPI status tuples", "database row results", "composite dict keys"]
+  },
+  "overview": {
+    "what": "A tuple is an ordered, immutable sequence. You create one with parentheses or just commas — the commas are what actually make the tuple, not the parentheses:\n\n  coords = (40.7128, -74.0060)\n  same = 40.7128, -74.0060\n\nA single-element tuple REQUIRES a trailing comma — without it Python sees plain parentheses:\n\n  one = (42,)    # tuple with one int\n  not_a_tuple = (42)  # just the int 42\n\nBecause tuples are immutable, you cannot append, remove, or reassign an element after creation. But immutability makes tuples hashable (as long as every element inside is also hashable), so they can serve as dict keys or set members:\n\n  cache = {}\n  cache[('users', 'page', 2)] = [{'id': 7}, {'id': 8}]\n\nTuple unpacking lets you extract elements into named variables in one step:\n\n  status, body = (200, {'ok': True})\n\nThis is why functions that return multiple values actually return a tuple — `return status, body` packs them, and the caller unpacks.\n\nThink of a tuple as a sealed envelope: once you put items inside and close it, you can read the contents but cannot swap, add, or remove anything. That seal is what makes it safe to use as a dict key.",
+    "why": "Tuples give you a lightweight, read-only container for fixed-size data: coordinates, status-and-body pairs, composite cache keys. Their immutability guarantees the data will not change by accident, and their hashability lets you use multi-part keys in dicts and sets — something a list cannot do.",
+    "where_used": ["FastAPI returning (status, body) pairs", "Database row results from cursor.fetchall()", "Composite dict keys for caching and lookups"]
+  },
+  "why_learning_this": [
+    "Enables composite dict keys for caches and lookup tables — a pattern used in every non-trivial backend",
+    "Explains how Python functions actually return multiple values (they return a tuple you unpack)",
+    "Prepares you for understanding namedtuple and dataclass freeze patterns"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the trailing comma on a single-element tuple",
+      "explanation": "(42) is just the integer 42 wrapped in parentheses — Python's grouping syntax. You need (42,) with a trailing comma to create a tuple. This often causes 'int is not iterable' errors when you try to loop over what you thought was a tuple."
+    },
+    {
+      "title": "Trying to use a tuple containing a list as a dict key",
+      "explanation": "A tuple is only hashable if ALL its elements are hashable. ('host', [80, 443]) raises TypeError because the inner list is mutable. Replace the list with a tuple: ('host', (80, 443))."
+    },
+    {
+      "title": "Attempting to mutate a tuple element",
+      "explanation": "t[0] = 'new' raises TypeError because tuples do not support item assignment. If you need a modified version, create a new tuple: t = ('new',) + t[1:]."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What actually makes a tuple in Python — the parentheses or the commas?",
+      "answer": "The commas make the tuple. Parentheses are optional grouping syntax; it is the commas that create the tuple.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can a tuple serve as a dict key but a list cannot?",
+      "answer": "Tuples are immutable and therefore hashable (as long as every element inside is also hashable), which is required for dict keys. Lists are mutable and not hashable.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you create a single-element tuple, and what goes wrong if you forget?",
+      "answer": "Use a trailing comma: (42,). Without the comma, (42) is just the integer 42 in parentheses, not a tuple.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When a function uses 'return status, body', what type is actually returned?",
+      "answer": "A tuple. The commas pack the values into a tuple, and the caller can unpack them with status, body = func().",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Composite cache key",
+      "prompt": "Write a function get_cached(cache, tenant, resource, page) that uses a tuple (tenant, resource, page) as the dict key. If the key exists, return its value; otherwise store the string 'fetched-{tenant}-{resource}-{page}' and return it. Print results for two different keys and one repeated key to show the cache hit.",
+      "starter_code": "def get_cached(cache, tenant, resource, page):\n    pass",
+      "solution": "def get_cached(cache, tenant, resource, page):\n    key = (tenant, resource, page)\n    if key not in cache:\n        cache[key] = f'fetched-{tenant}-{resource}-{page}'\n    return cache[key]\n\ncache = {}\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(get_cached(cache, 'acme', 'users', 2))\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(len(cache))"
+    },
+    {
+      "title": "Unpack function results",
+      "prompt": "Write parse_status_line(line) that splits a string like '200 OK' into an integer status code and a text reason, returning them as a tuple. The caller should unpack them into two variables and print each.",
+      "solution": "def parse_status_line(line):\n    parts = line.split(' ', 1)\n    return int(parts[0]), parts[1]\n\ncode, reason = parse_status_line('200 OK')\nprint(code)\nprint(reason)\n\ncode2, reason2 = parse_status_line('404 Not Found')\nprint(code2)\nprint(reason2)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "row = ('srv-1', 8080, 'healthy')\nhost, port, status = row\nprint(host)\nprint(port)\nprint(status)\nprint(type(row))",
+    "focus": "Unpacking assigns each tuple element to a named variable in one step — host, port, status each get their value from the corresponding position in row."
+  },
+  "aha_moment": {
+    "code": "a = (1, 2, [3, 4])\na[2].append(5)\nprint(a)",
+    "prediction": "Tuples are immutable. What happens when you try to mutate the list inside the tuple?",
+    "common_guess": "TypeError — you cannot change a tuple",
+    "why": "The tuple is immutable: you cannot reassign a[2] to a different object. But the list AT a[2] is still a mutable object — you can change its contents. Immutability freezes the references in the tuple, not the objects those references point to."
+  },
+  "challenge": {
+    "title": "Build a request-rate counter by endpoint",
+    "prompt": "Write count_requests(logs) where logs is a list of (method, path) tuples like [('GET', '/users'), ('POST', '/users'), ('GET', '/users')]. Return a dict mapping each (method, path) tuple to its count. Print the result for a sample log list.",
+    "solution": "def count_requests(logs):\n    counts = {}\n    for entry in logs:\n        counts[entry] = counts.get(entry, 0) + 1\n    return counts\n\nlogs = [\n    ('GET', '/users'),\n    ('POST', '/users'),\n    ('GET', '/users'),\n    ('GET', '/health'),\n    ('POST', '/users'),\n]\nresult = count_requests(logs)\nfor key, total in result.items():\n    print(f'{key}: {total}')"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/stdtypes.html#tuples",
+    "https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences",
+    "https://docs.python.org/3/reference/expressions.html#expression-lists"
+  ]
+}

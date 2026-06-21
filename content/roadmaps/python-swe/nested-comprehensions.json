@@ -1,0 +1,79 @@
+{
+  "slug": "nested-comprehensions",
+  "title": "Nested comprehensions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "list-comprehensions",
+      "dict-set-comprehensions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "flattening paginated API results",
+      "matrix operations",
+      "cross-product generation"
+    ]
+  },
+  "overview": {
+    "what": "A nested comprehension allows you to put multiple `for` clauses in a single comprehension, or place a comprehension completely inside another one. When combining multiple `for` clauses like `[x for row in matrix for x in row]`, the order reads left-to-right exactly as the loops would be nested top-to-bottom in standard code. Alternatively, you can nest the comprehensions themselves: `[[0 for _ in range(3)] for _ in range(3)]` creates a grid of lists.",
+    "why": "Nested data structures like lists of lists are common (e.g. database rows containing JSON arrays, paginated API endpoints returning pages of results). Nested comprehensions provide a concise way to flatten those structures or generate combinatorial cross-products without verbose loop boilerplate.",
+    "where_used": [
+      "Flattening nested lists into a single flat list",
+      "Generating combinations or Cartesian products",
+      "Initialising 2D matrices"
+    ]
+  },
+  "why_learning_this": [
+    "Flattening a list of pages returned by an API into a single list of items",
+    "Understanding the execution order of multiple `for` clauses",
+    "Knowing when a nested comprehension becomes too complex and should be rewritten as standard loops"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Getting the loop order backwards",
+      "explanation": "When flattening, developers often write `[x for x in sublist for sublist in matrix]`, which raises a NameError. The correct order matches nested `for` loops exactly: the outer loop (`for sublist in matrix`) comes first, then the inner loop (`for x in sublist`)."
+    },
+    {
+      "title": "Ignoring readability",
+      "explanation": "Nesting three or more loops inside a single comprehension makes the code nearly unreadable. If the comprehension requires mental gymnastics to parse, use standard `for` loops."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If you have a nested comprehension with multiple `for` clauses, what order are they evaluated in?",
+      "answer": "They are evaluated from left to right, which corresponds exactly to top-to-bottom nesting in standard `for` loops.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the primary use case for `[item for sublist in matrix for item in sublist]`?",
+      "answer": "It is used to flatten a list of lists (a matrix) into a single, one-dimensional list.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Flatten a list of tuples",
+      "prompt": "You have a list of coordinate tuples: `coords = [(1, 2), (3, 4), (5, 6)]`. Write a single list comprehension that flattens this into `[1, 2, 3, 4, 5, 6]`.",
+      "starter_code": "coords = [(1, 2), (3, 4), (5, 6)]",
+      "solution": "coords = [(1, 2), (3, 4), (5, 6)]\nflat = [num for pair in coords for num in pair]\nprint(flat)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "pages = [['item1', 'item2'], ['item3']]\n\n# Equivalent to:\n# for page in pages:\n#     for item in page:\nflat_items = [item for page in pages for item in page]\n\nprint(flat_items)",
+    "focus": "The outer loop `for page in pages` appears first on the left, followed immediately by the inner loop `for item in page`, successfully flattening the nested list."
+  },
+  "challenge": {
+    "title": "Extract positive values",
+    "prompt": "Given a matrix `[[-1, 2], [3, -4]]`, write a nested list comprehension that flattens it AND filters it to only include positive numbers `> 0`.",
+    "solution": "matrix = [[-1, 2], [3, -4]]\npositives = [num for row in matrix for num in row if num > 0]\nprint(positives)"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/datastructures.html#nested-list-comprehensions"
+  ]
+}

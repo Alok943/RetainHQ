@@ -1,0 +1,74 @@
+{
+  "slug": "generator-send",
+  "title": "Generator send() for Two-Way Communication",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["generators", "yield"],
+    "unlocks": ["coroutines", "async-await"],
+    "project_usage": ["asyncio", "FastAPI background tasks", "data pipelines"]
+  },
+  "overview": {
+    "what": "The `.send()` method allows passing data back IN to a generator. Instead of just yielding values out, `yield` becomes an expression that evaluates to the value sent in. Think of generators as mini-programs paused at `yield`: `.send()` resumes them and hands them a value. This is the foundation of coroutines and asynchronous programming in Python.",
+    "why": "It transforms generators from simple data producers (one-way) into stateful coroutines that can receive data, process it, and respond (two-way).",
+    "where_used": ["asyncio event loops", "custom state machines", "data streaming pipelines"]
+  },
+  "why_learning_this": [
+    "Understanding how async/await actually works under the hood",
+    "Building memory-efficient data pipelines that react to input",
+    "Creating custom coroutines that maintain internal state"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Sending to an unprimed generator",
+      "explanation": "You cannot `.send()` a non-None value to a generator that hasn't started yet. You must first prime it with `next(gen)` or `gen.send(None)` to advance it to the first `yield`."
+    },
+    {
+      "title": "Ignoring the yielded value",
+      "explanation": "When you call `.send()`, the generator runs until the NEXT `yield` and returns that value. Beginners often discard this return value, missing half the communication."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you try to send a value to a newly created generator before calling next()?",
+      "answer": "It raises a TypeError because the generator hasn't reached a yield statement yet to receive the value.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between a normal generator and a coroutine using send()?",
+      "answer": "A normal generator only produces values (one-way). A coroutine using send() can both produce values and receive values back at the yield expression (two-way).",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Running Average Generator",
+      "prompt": "Create a generator `running_average()` that receives numbers via `.send()` and yields the current average of all numbers received so far. The first yield should just be an initialization (e.g., yielding 0.0 or None).",
+      "solution": "def running_average():\n    total = 0\n    count = 0\n    avg = yield 0.0\n    while True:\n        total += avg\n        count += 1\n        avg = yield total / count"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def greeter():\n  print('Starting')\n  while True:\n    name = yield\n    print(f'Hello {name}')\n\ng = greeter()\nnext(g)\ng.send('Alice')\ng.send('Bob')",
+    "focus": "name = yield"
+  },
+  "aha_moment": {
+    "code": "def echo():\n  received = yield 'Started'\n  yield f'You said: {received}'\n\ne = echo()\nprint(next(e))\nprint(e.send('Python'))",
+    "prediction": "What does the second print output?",
+    "common_guess": "You said: Started",
+    "why": "The `yield` evaluates to the value sent IN ('Python'), which is assigned to `received`, and then the generator yields the formatted string back OUT."
+  },
+  "challenge": {
+    "title": "Stateful Filter Coroutine",
+    "prompt": "Write a generator `threshold_filter(limit)` that receives numbers. If the received number is greater than `limit`, it yields the number. Otherwise, it yields None. Remember to handle the first `yield` which is needed just to prime the generator.",
+    "solution": "def threshold_filter(limit):\n    value = yield\n    while True:\n        if value > limit:\n            value = yield value\n        else:\n            value = yield None"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/expressions.html#generator.send",
+    "https://docs.python.org/3/howto/functional.html#generators"
+  ]
+}

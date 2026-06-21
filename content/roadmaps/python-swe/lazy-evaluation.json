@@ -1,0 +1,80 @@
+{
+  "slug": "lazy-evaluation",
+  "title": "Lazy Evaluation and Memory Efficiency",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["generator-expressions", "iterator-protocol"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Data pipelines", "Celery", "SQLAlchemy"]
+  },
+  "overview": {
+    "what": "Lazy evaluation is a strategy where an expression is not computed until its value is strictly needed. Instead of materializing an entire sequence in memory at once (like a list), Python can yield one item at a time upon request. This acts like a streaming pipeline. The mental model: computing a result 'just in time' rather than 'all in advance', reducing both initial startup time and total memory consumption.",
+    "why": "It prevents memory exhaustion when processing massive datasets (e.g., parsing a 50GB log file or querying millions of database rows) and allows processing to begin immediately without waiting for the full dataset to load.",
+    "where_used": ["Pandas chunking", "Django QuerySets", "SQLAlchemy cursors", "File reading"]
+  },
+  "why_learning_this": [
+    "Processing files larger than available RAM",
+    "Writing high-performance API endpoints that stream data to clients",
+    "Optimizing database query iterators to fetch rows in batches"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Exhausting the iterator silently",
+      "explanation": "Because lazy objects compute items on-the-fly and don't store them, they can only be iterated over once. Iterating a second time yields nothing."
+    },
+    {
+      "title": "Accidentally materializing to a list",
+      "explanation": "Calling `list()` on a lazy iterator immediately evaluates all elements, pulling everything into memory and completely defeating the purpose of lazy evaluation."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does lazy evaluation reduce memory consumption compared to eager evaluation?",
+      "answer": "By yielding one item at a time upon request, lazy evaluation avoids storing the entire sequence or dataset in memory at once.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you try to iterate over a lazy generator expression twice?",
+      "answer": "It will yield nothing the second time, because lazy objects produce items on-the-fly and are exhausted after a single pass.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is it dangerous to call `list()` on a lazy iterator when processing a massive log file?",
+      "answer": "Calling `list()` forces the iterator to process and store all items in memory immediately, which can cause a memory exhaustion error (OOM) if the file is larger than available RAM.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Processing a large stream safely",
+      "prompt": "You have a generator expression `logs = (process(line) for line in file_stream)` representing parsed log entries. Write a loop that lazily processes each log entry and prints it if its 'status' is 'ERROR'. Do not materialize the logs into a list.",
+      "starter_code": "def print_errors(logs):\n    # Write your lazy loop here\n    pass",
+      "solution": "def print_errors(logs):\n    for log in logs:\n        if log.get('status') == 'ERROR':\n            print(log)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def process():\n    print('Computing...')\n    return 42\n\nlazy_result = (process() for _ in range(2))\nprint('Created')\nfirst = next(lazy_result)\nprint('Done')",
+    "focus": "first = next(lazy_result)"
+  },
+  "aha_moment": {
+    "code": "nums = [1, 2, 3]\nlazy_squares = (n * n for n in nums)\nnums.clear()\nprint(next(lazy_squares, 'Empty'))",
+    "prediction": "What will be printed when we call `next()` on the generator expression after clearing the source list?",
+    "common_guess": "1",
+    "why": "The generator expression evaluates lazily and fetches from the `nums` list when `next()` is called. Since the list was cleared beforehand, it yields the default 'Empty'."
+  },
+  "challenge": {
+    "title": "Lazy batch filtering",
+    "prompt": "You are given an iterator `records` that yields thousands of dictionaries representing API payloads. Each payload has a 'size' key. Create a lazy generator expression `large_records` that yields only the payloads where 'size' > 1000. Then use `next()` to return the very first large payload without processing the rest of the stream. Return `None` if no such payload exists.",
+    "solution": "def get_first_large_record(records):\n    large_records = (r for r in records if r.get('size', 0) > 1000)\n    return next(large_records, None)"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#generator-expressions",
+    "https://docs.python.org/3/howto/functional.html#generators"
+  ]
+}

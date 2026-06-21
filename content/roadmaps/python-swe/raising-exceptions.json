@@ -1,0 +1,88 @@
+{
+  "slug": "raising-exceptions",
+  "title": "Raising exceptions with raise",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "try-except",
+      "functions"
+    ],
+    "unlocks": [
+      "custom-exceptions",
+      "exception-chaining"
+    ],
+    "project_usage": [
+      "FastAPI input validation",
+      "Pydantic validators",
+      "Service layer business rules"
+    ]
+  },
+  "overview": {
+    "what": "The `raise` statement forces an exception to occur immediately. You use it to signal that an error condition has happened, passing the problem up to whoever called your function. You instantiate an exception (e.g. `raise ValueError('Age cannot be negative')`) to halt execution. Inside an `except` block, calling `raise` with no arguments re-raises the exact exception that was just caught, letting you log an error but still pass it up the chain.",
+    "why": "Functions should rarely fail silently. If a function is asked to do something impossible (like withdraw money from an empty account, or parse a missing file), it should scream loudly by raising an exception. This forces the calling code to deal with the problem (via `try/except`) rather than continuing with corrupted state or returning confusing `None` values. Choosing the right built-in type—like `ValueError` for bad data, or `TypeError` for the wrong data type—helps callers know what went wrong.",
+    "where_used": [
+      "Validating function inputs and enforcing rules",
+      "Re-raising errors after logging them",
+      "Signaling business logic failures (e.g. InsufficientFunds)"
+    ]
+  },
+  "why_learning_this": [
+    "Knowing how to actively protect your functions from bad input by raising `ValueError`",
+    "Understanding the difference between `return None` (silent failure) and `raise` (loud failure)",
+    "Learning how to intercept an error to log it, and then use a bare `raise` to pass it up"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using exceptions for normal control flow",
+      "explanation": "Exceptions are relatively slow. You shouldn't raise an exception to signal a normal, expected outcome (like hitting the end of a loop). Raise them for exceptional, error conditions only."
+    },
+    {
+      "title": "Raising the class instead of an instance",
+      "explanation": "While `raise ValueError` works, it provides no context. You should always instantiate it with a helpful message: `raise ValueError('Invalid user ID')`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you use the `raise` keyword without any arguments inside an `except` block?",
+      "answer": "It re-raises the exact exception that was just caught, preserving its original traceback and passing it up to the caller.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a function receives a string when it explicitly requires an integer, which built-in exception is the most appropriate to raise?",
+      "answer": "`TypeError`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a function receives an integer, but the integer is negative and the function requires a positive age, which built-in exception is the most appropriate to raise?",
+      "answer": "`ValueError`.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Input validation",
+      "prompt": "Write a function `set_age(age)` that takes an integer. If `age` is less than 0, raise a `ValueError` with the message 'Age cannot be negative'. Otherwise, return the age.",
+      "starter_code": "def set_age(age):\n    pass",
+      "solution": "def set_age(age):\n    if age < 0:\n        raise ValueError('Age cannot be negative')\n    return age\n\nprint(set_age(25))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def process_payment(amount):\n    if amount <= 0:\n        raise ValueError(\"Amount must be positive\")\n    print(\"Processing...\")\n\ntry:\n    process_payment(-50)\nexcept ValueError as e:\n    print(f\"Caught: {e}\")",
+    "focus": "The `raise ValueError(...)` immediately stops execution of `process_payment`, skips the 'Processing...' print, and jumps straight into the caller's `except` block."
+  },
+  "challenge": {
+    "title": "Validate configuration",
+    "prompt": "Write `check_config(cfg)` that takes a dict. If 'host' is missing, raise a `KeyError`. If 'port' is not an int, raise a `TypeError`. If 'port' < 1024, raise a `ValueError`.",
+    "solution": "def check_config(cfg):\n    if 'host' not in cfg:\n        raise KeyError('Missing host')\n    if not isinstance(cfg['port'], int):\n        raise TypeError('Port must be int')\n    if cfg['port'] < 1024:\n        raise ValueError('Port must be >= 1024')\n    return True\n\ncheck_config({'host': 'localhost', 'port': 8080})"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/errors.html#raising-exceptions",
+    "https://docs.python.org/3/reference/simple_stmts.html#the-raise-statement"
+  ]
+}

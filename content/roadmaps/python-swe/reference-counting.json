@@ -1,0 +1,90 @@
+{
+  "slug": "reference-counting",
+  "title": "Reference Counting in CPython",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "object-identity",
+      "everything-is-an-object"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Memory Profiling",
+      "C Extensions",
+      "Debugging Memory Leaks"
+    ]
+  },
+  "overview": {
+    "what": "In CPython, every object keeps a count of how many labels (variables, list elements, attributes) point to it. This is called the reference count. When a reference count drops to zero, the object is immediately destroyed and its memory is reclaimed. Think of an object as a balloon and references as strings holding it down. Every time you assign a variable or append it to a list, you tie a new string to the balloon. Every time a variable goes out of scope, you cut a string. When the last string is cut, the balloon flies away.",
+    "why": "Understanding reference counting explains when Python cleans up objects, why `__del__` is called (or not called), and how circular references can cause memory leaks.",
+    "where_used": [
+      "Memory optimization",
+      "Writing C extensions",
+      "Debugging with objgraph"
+    ]
+  },
+  "why_learning_this": [
+    "You can predict exactly when objects are destroyed, avoiding surprising resource leaks with files or network sockets.",
+    "It forms the foundation for understanding circular references and the generational garbage collector."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming del deletes the object",
+      "explanation": "`del x` only removes the variable name `x` and decrements the object's reference count. The object itself is only deleted if its reference count reaches zero."
+    },
+    {
+      "title": "Creating circular references",
+      "explanation": "If object A points to object B, and object B points to A, their reference counts will never drop to zero even if no variables point to them. The garbage collector eventually cleans this up, but it delays memory release."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens immediately when an object's reference count drops to zero in CPython?",
+      "answer": "The object is immediately destroyed and its memory is reclaimed.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does using `del` on a variable guarantee that the object it points to is deleted?",
+      "answer": "No, it only removes the name and decrements the reference count. The object is deleted only if no other references exist.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does reference counting behave if two objects only refer to each other?",
+      "answer": "Their reference counts will never drop to zero, creating a circular reference that requires the generational garbage collector to clean up.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Observe reference counting with sys.getrefcount",
+      "prompt": "Import the `sys` module. Create a list `[1, 2, 3]` and assign it to a variable `a`. Print the reference count of `a` using `sys.getrefcount(a)`. Then, create a second variable `b` that points to `a`, and print the reference count again. Note: `sys.getrefcount` temporarily increases the count by 1 because the function argument itself creates a reference.",
+      "starter_code": "import sys\n\n# Your code here\n",
+      "solution": "import sys\n\na = [1, 2, 3]\nprint(sys.getrefcount(a))\n\nb = a\nprint(sys.getrefcount(a))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import sys\n\ndata = {'key': 'value'}\nprint(sys.getrefcount(data))\n\nalias = data\nprint(sys.getrefcount(data))\n\ndel alias\nprint(sys.getrefcount(data))",
+    "focus": "The reference count explicitly increments when `alias` is created and decrements when `alias` is deleted."
+  },
+  "aha_moment": {
+    "code": "class Tracked:\n    def __del__(self):\n        print('Destroyed!')\n\nobj = Tracked()\nalias = obj\ndel obj\nprint('End of script')",
+    "prediction": "When does 'Destroyed!' print? Before or after 'End of script'?",
+    "common_guess": "Before 'End of script', because we called `del obj`.",
+    "why": "It prints AFTER 'End of script'. `del obj` removes the name `obj` and decrements the reference count to 1 (because `alias` still points to it). The object isn't destroyed until the script ends and `alias` is cleaned up."
+  },
+  "challenge": {
+    "title": "Tracking Object Destruction",
+    "prompt": "Create a class `Resource` with an `__init__` method that prints 'Created' and a `__del__` method that prints 'Destroyed'. Write a short script where you instantiate a `Resource` and assign it to a variable `x`. Then assign `x` to another variable `y`. Delete `x` and print 'x deleted'. Finally, delete `y` and print 'y deleted'. Observe exactly when 'Destroyed' is printed.",
+    "solution": "class Resource:\n    def __init__(self):\n        print('Created')\n    def __del__(self):\n        print('Destroyed')\n\nx = Resource()\ny = x\nprint('Deleting x')\ndel x\nprint('x deleted')\nprint('Deleting y')\ndel y\nprint('y deleted')"
+  },
+  "sources": [
+    "https://docs.python.org/3/c-api/refcounting.html",
+    "https://docs.python.org/3/library/sys.html#sys.getrefcount"
+  ]
+}

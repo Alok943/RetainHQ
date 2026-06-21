@@ -1,0 +1,74 @@
+{
+  "slug": "stateful-closures",
+  "title": "Stateful Functions Using Closures",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["closures", "scope"],
+    "unlocks": ["decorators"],
+    "project_usage": ["FastAPI", "React-like state in Python", "Callbacks"]
+  },
+  "overview": {
+    "what": "A stateful closure is a function that remembers and updates data between calls, without using global variables or a full class. It does this by using the `nonlocal` keyword to modify variables trapped in its enclosing scope. Think of it like a function carrying around a hidden, persistent backpack of data. This allows you to encapsulate state perfectly within a single callable.",
+    "why": "It provides a lightweight alternative to writing a class when you only need a single function that remembers some history, like a counter or an accumulator. It keeps state strictly private and avoids polluting the global namespace.",
+    "where_used": ["FastAPI dependencies", "Rate limiters", "Event callbacks"]
+  },
+  "why_learning_this": [
+    "Replacing simple single-method classes with clean, functional code",
+    "Building lightweight function factories that maintain isolated state"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the nonlocal keyword",
+      "explanation": "If you try to rebind an immutable enclosed variable without `nonlocal`, Python treats it as a new local variable assignment, causing an `UnboundLocalError`. You must explicitly declare `nonlocal var_name` to modify the trapped state."
+    },
+    {
+      "title": "Accidental shared state",
+      "explanation": "If multiple functions close over the exact same variable and modify it, they will interfere with each other's state. You must create a new closure instance (by calling the factory function again) for independent state."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does a closure maintain state between function calls without using global variables?",
+      "answer": "It traps variables from its enclosing scope. By using the `nonlocal` keyword, the inner function can modify these trapped variables, allowing them to persist and change across multiple calls.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why might you use a stateful closure instead of creating a new class?",
+      "answer": "When you only need a single callable function that remembers some history, a stateful closure is much more lightweight and avoids the boilerplate of defining a class with an `__init__` and `__call__` method.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Build a Simple Counter",
+      "prompt": "Write a function `make_counter()` that takes no arguments. It should return a function that, when called, returns an integer starting at 1 and incrementing by 1 on each subsequent call.",
+      "starter_code": "def make_counter():\n  # your code here\n  pass",
+      "solution": "def make_counter():\n  count = 0\n  def increment():\n    nonlocal count\n    count += 1\n    return count\n  return increment"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def make_accumulator():\n  total = 0\n  def add(value):\n    nonlocal total\n    total += value\n    return total\n  return add\n\nacc1 = make_accumulator()\nprint(acc1(5))\nprint(acc1(10))",
+    "focus": "nonlocal total"
+  },
+  "aha_moment": {
+    "code": "def make_counter():\n  count = 0\n  def inc():\n    nonlocal count\n    count += 1\n    return count\n  return inc\n\nc1 = make_counter()\nc2 = make_counter()\nc1()\nprint(c2())",
+    "prediction": "What does print(c2()) output?",
+    "common_guess": "2",
+    "why": "Each time `make_counter()` is called, it creates a brand new enclosing scope with its own separate `count` variable. `c1` and `c2` have completely independent 'backpacks' of state, so `c2()` returns 1 regardless of what `c1` does."
+  },
+  "challenge": {
+    "title": "Moving Average Closure",
+    "prompt": "Create a function `make_averager()` that returns a function. The returned function should take a single numeric value as an argument, add it to a running series, and return the average (mean) of all values passed to it so far. Hint: You can use a mutable list in the closure without `nonlocal`, or use `nonlocal` with sum and count variables.",
+    "solution": "def make_averager():\n  total = 0\n  count = 0\n  def averager(new_value):\n    nonlocal total, count\n    total += new_value\n    count += 1\n    return total / count\n  return averager"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement",
+    "https://docs.python.org/3/faq/programming.html#why-am-i-getting-an-unboundlocalerror-when-the-variable-has-a-value"
+  ]
+}

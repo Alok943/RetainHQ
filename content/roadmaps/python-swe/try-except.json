@@ -1,0 +1,90 @@
+{
+  "slug": "try-except",
+  "title": "try/except with specific exception types",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "functions",
+      "type-conversion"
+    ],
+    "unlocks": [
+      "else-finally",
+      "raising-exceptions",
+      "custom-exceptions"
+    ],
+    "project_usage": [
+      "parsing user input in FastAPI",
+      "handling database connection errors",
+      "validating JSON payloads"
+    ]
+  },
+  "overview": {
+    "what": "The `try/except` block is how Python handles errors (exceptions) without crashing the program. You put risky code in the `try` block. If an error occurs, Python stops executing the `try` block immediately and jumps to the `except` block. You should always catch specific exception types (like `ValueError` or `KeyError`) rather than using a bare `except:`. A bare except catches absolutely everything, including `SystemExit` and `KeyboardInterrupt` (Ctrl+C), making your program impossible to stop and hiding unrelated bugs.",
+    "why": "In the real world, things fail: networks drop, users send 'abc' instead of an age, and files go missing. `try/except` lets your program recover gracefully, logging the error or returning a 400 Bad Request instead of terminating entirely. Catching specific exceptions ensures you only handle the exact error you anticipate, letting unexpected bugs crash loudly so they can be fixed.",
+    "where_used": [
+      "Guarding API endpoints against malformed input",
+      "Retrying failed database transactions",
+      "Safely parsing third-party JSON"
+    ]
+  },
+  "why_learning_this": [
+    "Preventing your entire application from crashing due to one bad user request",
+    "Understanding why bare `except:` is considered a severe anti-pattern in professional codebases",
+    "Capturing the exception object (e.g. `except ValueError as e`) to log its message"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a bare except",
+      "explanation": "Writing just `except:` catches `BaseException`, which includes `KeyboardInterrupt`. If your script loops with a bare except, you won't be able to stop it with Ctrl+C. Always use at least `except Exception:` or, ideally, the specific error like `except KeyError:`."
+    },
+    {
+      "title": "Catching exceptions too broadly",
+      "explanation": "Wrapping a massive block of code in `try... except ValueError:` makes it hard to know which line actually failed. Keep `try` blocks as small as possible."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it dangerous to use a bare `except:` without specifying an exception type?",
+      "answer": "A bare `except:` catches everything, including `KeyboardInterrupt` and `SystemExit`, which can make a program impossible to terminate cleanly and can hide unrelated logic bugs.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you capture the actual exception object inside the `except` block so you can log its error message?",
+      "answer": "You use the `as` keyword: `except ValueError as e:`.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Safe dictionary lookup",
+      "prompt": "Write a function `get_user_name(user_dict)` that returns the value of the 'name' key. If the key is missing, catch the `KeyError` and return 'Anonymous'.",
+      "starter_code": "def get_user_name(user_dict):\n    pass",
+      "solution": "def get_user_name(user_dict):\n    try:\n        return user_dict['name']\n    except KeyError:\n        return 'Anonymous'\n\nprint(get_user_name({'id': 1}))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def parse_age(value):\n    try:\n        age = int(value)\n        print(f\"Age is {age}\")\n    except ValueError as e:\n        print(f\"Invalid input: {e}\")\n\nparse_age('twenty')",
+    "focus": "The `int('twenty')` call raises a ValueError, causing execution to instantly jump to the `except ValueError as e` block, preventing a crash."
+  },
+  "aha_moment": {
+    "code": "import sys\n\ntry:\n    sys.exit(\"Quitting time!\")\nexcept:\n    print(\"I caught the exit signal! Not quitting.\")\n\nprint(\"Program is still running...\")",
+    "prediction": "What happens when you run this code?",
+    "common_guess": "The program exits immediately because sys.exit() is called.",
+    "why": "A bare `except:` catches literally everything, including the `SystemExit` exception raised by `sys.exit()`. This completely breaks standard application shutdown mechanisms, proving why you must always specify the exception type."
+  },
+  "challenge": {
+    "title": "Robust API handler",
+    "prompt": "Write a function `handle_request(payload)` that tries to access `payload['user']['age']` and convert it to `int`. Catch `KeyError` (print 'Missing field') and `ValueError` (print 'Invalid format') separately.",
+    "solution": "def handle_request(payload):\n    try:\n        age = int(payload['user']['age'])\n        print(f'Age is {age}')\n    except KeyError:\n        print('Missing field')\n    except ValueError:\n        print('Invalid format')\n\nhandle_request({'user': {}})\nhandle_request({'user': {'age': 'abc'}})"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/errors.html#handling-exceptions",
+    "https://docs.python.org/3/library/exceptions.html#exception-hierarchy"
+  ]
+}
