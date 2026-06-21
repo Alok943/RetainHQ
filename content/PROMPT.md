@@ -115,6 +115,9 @@ HARD RULES:
 16. OVERVIEW COMPLETENESS: overview.what must explicitly teach the core definition, 2-3 concrete
     examples, and the single most important mental model — not the analogy alone. Any example or
     fact referenced by a recall question, practice task, or challenge must already appear in overview.
+    FORMATTING: put each code example on its own lines, indented 2 spaces, with a BLANK LINE before
+    and after it (separate \n\n), so the lesson view renders it as a code block instead of collapsing
+    it into a run-on paragraph. Keep prose and code in distinct blocks.
 17. WALKTHROUGH DESIGN: code_walkthrough demonstrates EXACTLY ONE concept — the learner can point to
     one line and say "that reveals the lesson." Prefer 4-8 lines over 12-15. focus names the single
     most important state change. Never combine multiple concepts in one walkthrough.

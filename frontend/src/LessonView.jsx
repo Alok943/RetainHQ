@@ -138,8 +138,8 @@ export default function LessonView() {
 
       {/* --- §1 Overview --- */}
       <Section icon={<BookOpen size={16} />} title="Overview">
-        <p className="font-sans text-sm text-[#0F172A] leading-relaxed mb-3">{lesson.overview.what}</p>
-        <p className="font-sans text-sm text-[#475569] leading-relaxed">{lesson.overview.why}</p>
+        <RichText text={lesson.overview.what} />
+        <div className="mt-3"><RichText text={lesson.overview.why} tone="muted" /></div>
         {lesson.overview.where_used?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
             {lesson.overview.where_used.map((tag) => (
@@ -314,6 +314,33 @@ export default function LessonView() {
           </ul>
         </Section>
       )}
+    </div>
+  );
+}
+
+/** Renders a content string as structured blocks: paragraphs separated by blank
+ *  lines, with indented blocks rendered as real code. Overviews embed code examples
+ *  this way, and a plain <p> would collapse the newlines into one run-on blob. */
+function RichText({ text, tone = 'ink' }) {
+  const color = tone === 'muted' ? 'text-[#475569]' : 'text-[#0F172A]';
+  const blocks = String(text || '').split(/\n[ \t]*\n/).filter((b) => b.trim() !== '');
+  return (
+    <div className="flex flex-col gap-3">
+      {blocks.map((block, i) => {
+        const lines = block.replace(/\n+$/, '').split('\n');
+        const isCode = lines.some((l) => l.trim()) && lines.every((l) => l.trim() === '' || /^[ \t]/.test(l));
+        if (isCode) {
+          const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^[ \t]*/)[0].length);
+          const min = indents.length ? Math.min(...indents) : 0;
+          const code = lines.map((l) => l.slice(min)).join('\n').trim();
+          return (
+            <pre key={i} className="m-0 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[12.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0">{code}</pre>
+          );
+        }
+        return (
+          <p key={i} className={`font-sans text-sm ${color} leading-relaxed`}>{block.trim()}</p>
+        );
+      })}
     </div>
   );
 }
