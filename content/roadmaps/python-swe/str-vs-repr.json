@@ -9,14 +9,25 @@
     "estimated_minutes": 15,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["everything-is-an-object", "functions"],
+    "prerequisites": [
+      "everything-is-an-object",
+      "functions"
+    ],
     "unlocks": [],
-    "project_usage": ["Logging", "Debugging", "FastAPI"]
+    "project_usage": [
+      "Logging",
+      "Debugging",
+      "FastAPI"
+    ]
   },
   "overview": {
     "what": "Python uses two main dunder methods to convert objects to strings: `__str__` for readable output and `__repr__` for unambiguous developer representations. By default, both print `<__main__.MyClass object at 0x...>`, but overriding them gives meaningful descriptions. Think of `__str__` as the 'display name' for a user and `__repr__` as the 'technical ID card' for a developer.",
     "why": "It solves the problem of opaque object representations. Clear string representations make logging, debugging, and user interfaces significantly easier by avoiding memory addresses in terminal output.",
-    "where_used": ["Logging configuration", "Pydantic error messages", "REPL debugging"]
+    "where_used": [
+      "Logging configuration",
+      "Pydantic error messages",
+      "REPL debugging"
+    ]
   },
   "why_learning_this": [
     "Makes debugging faster by displaying object state instead of memory addresses in the REPL.",
@@ -66,5 +77,20 @@
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#object.__repr__",
     "https://docs.python.org/3/reference/datamodel.html#object.__str__"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does this code output?",
+      "code": "class Box:\n    def __repr__(self):\n        return 'Box()'\n\nb = Box()\nprint(str(b))",
+      "answer": "Box()",
+      "why": "When `__str__` is not explicitly defined, Python falls back to calling the object's `__repr__` method."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why is it important to implement `__repr__` for an object instead of only `__str__`?",
+      "answer": "Because collections like lists and dictionaries use `__repr__` to display their elements, even if you print them using `str()`.",
+      "why": "If you only implement `__str__`, printing a list of your objects will still show unhelpful memory addresses."
+    }
   ]
 }

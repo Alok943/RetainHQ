@@ -1,0 +1,89 @@
+{
+  "slug": "dataclass-field",
+  "title": "field() and default_factory",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["dataclass-basics", "mutable-default-argument"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Pydantic configuration", "Data processing scripts"]
+  },
+  "overview": {
+    "what": "In Python dataclasses, the `field()` function allows you to customize individual attributes. Its most important use is `default_factory`, which takes a zero-argument callable (like `list` or `dict`) to generate a fresh default value for each new instance.\n\nThe mental model is 'factory vs. shared box': a standard default like `items = []` shares the exact same list across all instances. A `default_factory=list` calls `list()` to mint a brand-new box every time a new object is instantiated.",
+    "why": "It prevents the infamous 'mutable default argument' bug in dataclasses by ensuring each instance gets its own independent mutable object.",
+    "where_used": ["Initializing lists or dicts in dataclasses", "Excluding fields from __repr__", "Generating unique IDs on creation"]
+  },
+  "why_learning_this": [
+    "You can safely use lists, dictionaries, or sets as default values in your data models.",
+    "You can exclude sensitive fields (like passwords) from the automatically generated `__repr__`."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling the factory function",
+      "explanation": "You must pass the function object itself to `default_factory`, not the result of calling it. Use `default_factory=list`, not `default_factory=list()`."
+    },
+    {
+      "title": "Using default instead of default_factory for mutables",
+      "explanation": "If you try to write `items: list = field(default=[])`, the dataclass decorator will proactively raise a `ValueError` to protect you from the shared state bug."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why should you use `default_factory` instead of `default` for lists or dictionaries in a dataclass?",
+      "answer": "To ensure each instance gets a fresh, independent copy of the mutable object, avoiding shared state across instances.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What kind of argument does `default_factory` expect?",
+      "answer": "It expects a zero-argument callable, like the `list` or `dict` class, or a custom function with no arguments.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from dataclasses import dataclass, field\n\ndef get_id():\n    return 99\n\n@dataclass\nclass User:\n    uid: int = field(default_factory=get_id)\n\nu = User()\nprint(u.uid)",
+      "question": "What does this code print?",
+      "answer": "99",
+      "why": "When User() is instantiated without a uid, it calls the get_id() function passed to default_factory to generate the default value."
+    },
+    {
+      "type": "find-bug",
+      "code": "from dataclasses import dataclass\n\n@dataclass\nclass Box:\n    items: list = []",
+      "question": "What happens when you define this class?",
+      "answer": "It raises a ValueError.",
+      "why": "The dataclass decorator detects the mutable default list `[]` and intentionally crashes to prevent the shared-state bug. It forces you to use default_factory."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Order:\n    items: list = field(default_factory=list)\n\no1 = Order()\no2 = Order()\no1.items.append('apple')\nprint(o2.items)",
+    "focus": "items: list = field(default_factory=list)"
+  },
+  "aha_moment": {
+    "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Secret:\n    password: str = field(repr=False)\n\ns = Secret('12345')\nprint(s)",
+    "prediction": "What does printing the dataclass output?",
+    "common_guess": "Secret(password='12345')",
+    "why": "It prints Secret(). Because we passed repr=False to the field() function, the dataclass generator excludes the password from the automatically created __repr__ method."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a dynamic default",
+      "prompt": "Modify the Group dataclass so that members defaults to an empty list. You must use field() and default_factory to do this safely.",
+      "starter_code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Group:\n    name: str\n    members: list",
+      "solution": "from dataclasses import dataclass, field\n\n@dataclass\nclass Group:\n    name: str\n    members: list = field(default_factory=list)"
+    }
+  ],
+  "challenge": {
+    "title": "Exclude from string representation",
+    "prompt": "Create a dataclass User with username (str) and token (str). Use field() so that token does not appear when the object is printed.",
+    "solution": "from dataclasses import dataclass, field\n\n@dataclass\nclass User:\n    username: str\n    token: str = field(repr=False)"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/dataclasses.html#mutable-default-values"
+  ]
+}

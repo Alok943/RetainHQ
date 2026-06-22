@@ -1,0 +1,96 @@
+{
+  "slug": "distinct",
+  "title": "DISTINCT",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["select-from", "where-operators"],
+    "unlocks": [],
+    "project_usage": ["dropdown filter values", "unique category lists", "data quality checks"]
+  },
+  "overview": {
+    "what": "DISTINCT removes duplicate rows from the result set. It operates on the entire selected row — two rows are duplicates only if every column value matches.\n\nIn the logical query flow: FROM → WHERE → SELECT → DISTINCT → ORDER BY. DISTINCT runs after SELECT has picked the columns, comparing complete rows.\n\n  SELECT DISTINCT category\n  FROM products\n  ORDER BY category;\n\nProducts has 6 rows spanning 3 categories. Without DISTINCT you would get 6 rows (Electronics three times, Furniture twice, Stationery once). With DISTINCT, you get 3 rows: Electronics, Furniture, Stationery.\n\nDISTINCT on multiple columns deduplicates based on the combination:\n\n  SELECT DISTINCT country, status\n  FROM customers c\n  JOIN orders o ON o.customer_id = c.id\n  ORDER BY country, status;\n\nThis returns only the unique (country, status) pairs, not unique countries or unique statuses separately.\n\nDISTINCT treats NULLs as equal to each other — if two rows both have NULL in a column, DISTINCT considers them duplicates on that column:\n\n  SELECT DISTINCT country\n  FROM customers\n  ORDER BY country;\n\nReturns 5 rows: AE, JP, MX, UK, US — plus one NULL row for Emma. Even if multiple customers had NULL country, only one NULL row would appear.\n\nMental model: DISTINCT is a row-level deduplication filter that runs after SELECT. It answers 'what unique combinations exist?' — not 'how many of each?' (that's GROUP BY + COUNT).",
+    "why": "DISTINCT is essential for extracting the set of unique values — populating a dropdown of countries, listing which categories exist, or checking data quality by finding unexpected duplicates.",
+    "where_used": ["populating filter dropdowns in a UI", "data quality checks for unexpected duplicates", "analytics queries needing unique value lists"]
+  },
+  "why_learning_this": [
+    "Building filter dropdowns (unique countries, categories, statuses) requires DISTINCT to avoid showing duplicates to the user",
+    "Understanding that DISTINCT compares entire rows prevents confusion when using it with multiple columns"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using DISTINCT when GROUP BY is needed",
+      "explanation": "DISTINCT removes duplicate rows, but if you need a count per group, you need GROUP BY + COUNT. Writing SELECT DISTINCT category, COUNT(*) is a syntax error — use GROUP BY category instead."
+    },
+    {
+      "title": "Thinking DISTINCT applies to only the first column",
+      "explanation": "DISTINCT operates on the whole row. SELECT DISTINCT country, status deduplicates on the (country, status) pair, not just country."
+    },
+    {
+      "title": "Assuming NULL values are not deduplicated",
+      "explanation": "Unlike comparison operators (where NULL = NULL is NULL), DISTINCT treats two NULLs as equal. Multiple NULL rows collapse into one."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "When you write SELECT DISTINCT col_a, col_b, what determines whether two rows are duplicates?",
+      "answer": "Both col_a and col_b must match. DISTINCT compares the entire row — the combination of all selected columns.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does DISTINCT treat NULL values — as equal or not equal?",
+      "answer": "DISTINCT treats NULLs as equal to each other. Multiple rows with NULL in the same column collapse into one.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Where does DISTINCT fit in the logical query flow?",
+      "answer": "DISTINCT runs after SELECT has picked the columns: FROM → WHERE → SELECT → DISTINCT → ORDER BY.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT DISTINCT category\nFROM products\nORDER BY category;",
+      "question": "How many rows come back, and what are they?",
+      "answer": "3 rows: Electronics, Furniture, Stationery.",
+      "why": "Products has 6 rows across 3 categories (Electronics x3, Furniture x2, Stationery x1). DISTINCT collapses duplicates, keeping one row per unique category value."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT DISTINCT status\nFROM orders\nORDER BY status;",
+      "question": "What distinct statuses appear?",
+      "answer": "3 rows: cancelled, paid, pending.",
+      "why": "The 8 orders have statuses: paid (5 times), pending (1), cancelled (1). DISTINCT removes the 4 duplicate 'paid' rows, leaving 3 unique values sorted alphabetically."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT DISTINCT category\nFROM products\nORDER BY category;",
+    "flow_stages": ["from", "select", "distinct", "order_by"],
+    "visualization": "result-table",
+    "focus": "Watch DISTINCT collapse 6 product rows into 3 unique category values — the duplicates vanish between SELECT and ORDER BY."
+  },
+  "practice_tasks": [
+    {
+      "title": "Find unique countries with orders",
+      "prompt": "This query lists all customer countries including duplicates. Modify it to return only the distinct countries by adding the DISTINCT keyword. Keep the ordering.",
+      "starter_code": "SELECT country\nFROM customers\nORDER BY country;",
+      "solution": "SELECT DISTINCT country\nFROM customers\nORDER BY country;"
+    }
+  ],
+  "challenge": {
+    "title": "Unique order statuses per customer country",
+    "prompt": "Write a query that returns the distinct (country, status) pairs by joining customers and orders. Order by country, then status. This shows which order statuses exist in each country.",
+    "solution": "SELECT DISTINCT c.country, o.status\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nORDER BY c.country, o.status;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-select.html#SQL-DISTINCT",
+    "https://www.postgresql.org/docs/current/queries-select-lists.html#QUERIES-DISTINCT"
+  ]
+}

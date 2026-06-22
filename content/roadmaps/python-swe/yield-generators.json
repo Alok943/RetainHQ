@@ -49,6 +49,21 @@
       "explanation": "Generators are exhausted once they yield all their values. If you try to iterate over the same generator object a second time, it will yield nothing. You must create a new generator object."
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does the following code print?",
+      "code": "def my_gen():\n    yield 1\n    yield 2\n\ng = my_gen()\nprint(next(g))",
+      "answer": "1",
+      "why": "Calling `next(g)` resumes the generator, executing it until the first `yield` statement, which returns 1."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer expects calling `process_data()` to immediately execute the first part of the function and print 'Starting...'. Why doesn't it?",
+      "answer": "Because `process_data()` is a generator function, calling it only returns a generator object. It doesn't start executing the body.",
+      "why": "A generator function's body only begins running when `next()` is called on the resulting generator object or when it is iterated over."
+    }
+  ],
   "recall_questions": [
     {
       "q": "What is the key difference in how a function's state is handled when it uses `yield` compared to `return`?",
@@ -68,9 +83,9 @@
   ],
   "practice_tasks": [
     {
-      "title": "Build a Simple Counter",
-      "prompt": "Write a generator function `countdown(start)` that yields integers from `start` down to 1. When called and iterated over, it should produce the descending sequence.",
-      "starter_code": "def countdown(start):\n    pass",
+      "title": "Convert List to Generator",
+      "prompt": "The `countdown` function currently builds a complete list of numbers in memory and returns it. Modify it to be a generator function that `yield`s each number one by one instead.",
+      "starter_code": "def countdown(start):\n    result = []\n    while start > 0:\n        result.append(start)\n        start -= 1\n    return result",
       "solution": "def countdown(start):\n    while start > 0:\n        yield start\n        start -= 1"
     }
   ],

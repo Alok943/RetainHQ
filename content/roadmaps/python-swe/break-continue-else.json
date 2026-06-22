@@ -9,14 +9,27 @@
     "estimated_minutes": 25,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["loops", "if-elif-else"],
-    "unlocks": ["list-comprehensions"],
-    "project_usage": ["FastAPI search logic", "retry loops", "validation pipelines"]
+    "prerequisites": [
+      "loops",
+      "if-elif-else"
+    ],
+    "unlocks": [
+      "list-comprehensions"
+    ],
+    "project_usage": [
+      "FastAPI search logic",
+      "retry loops",
+      "validation pipelines"
+    ]
   },
   "overview": {
-    "what": "Three keywords that control loop flow:\n\nbreak exits the loop immediately — the remaining items are never visited:\n\n  for user in users:\n      if user['role'] == 'admin':\n          admin = user\n          break\n\ncontinue skips the rest of the current iteration and jumps to the next item:\n\n  for record in records:\n      if record['status'] == 'deleted':\n          continue\n      process(record)\n\nThe else clause on a loop runs ONLY when the loop completes without hitting a break. It does NOT run if break was used:\n\n  for route in routes:\n      if route == '/admin':\n          print('found')\n          break\n  else:\n      print('/admin not registered')\n\nThe loop else is the correct way to express 'search completed with no match found' — no flag variable required.",
+    "what": "Three keywords that control loop flow:\n\nbreak exits the loop immediately \u2014 the remaining items are never visited:\n\n  for user in users:\n      if user['role'] == 'admin':\n          admin = user\n          break\n\ncontinue skips the rest of the current iteration and jumps to the next item:\n\n  for record in records:\n      if record['status'] == 'deleted':\n          continue\n      process(record)\n\nThe else clause on a loop runs ONLY when the loop completes without hitting a break. It does NOT run if break was used:\n\n  for route in routes:\n      if route == '/admin':\n          print('found')\n          break\n  else:\n      print('/admin not registered')\n\nThe loop else is the correct way to express 'search completed with no match found' \u2014 no flag variable required.",
     "why": "Without break you must add a boolean flag to track whether a search succeeded. Without continue you must nest all your processing inside an if block. The loop else pattern eliminates an entire class of 'found it / not found' flag variables.",
-    "where_used": ["Searching for a matching config entry", "Skipping soft-deleted records before processing", "Validating a list of permissions — stop on first failure or confirm all passed"]
+    "where_used": [
+      "Searching for a matching config entry",
+      "Skipping soft-deleted records before processing",
+      "Validating a list of permissions \u2014 stop on first failure or confirm all passed"
+    ]
   },
   "why_learning_this": [
     "Eliminating flag variables (found = False ... if not found:) with the loop else clause",
@@ -25,7 +38,7 @@
   "common_mistakes": [
     {
       "title": "Thinking loop else means 'if the loop body never ran'",
-      "explanation": "The else clause runs when no break occurred — even if the loop executed zero iterations. It is about break, not about iteration count."
+      "explanation": "The else clause runs when no break occurred \u2014 even if the loop executed zero iterations. It is about break, not about iteration count."
     },
     {
       "title": "Using break in a nested loop expecting it to exit the outer loop",
@@ -49,26 +62,42 @@
     },
     {
       "q": "When does a loop's else clause run?",
-      "answer": "Only when the loop completes without hitting a break — not when break was used to exit early.",
+      "answer": "Only when the loop completes without hitting a break \u2014 not when break was used to exit early.",
       "tier": "tier2"
     },
     {
       "q": "What problem does the loop else clause solve cleanly?",
-      "answer": "The 'search completed with no match found' pattern — it eliminates the need for a separate boolean flag variable.",
+      "answer": "The 'search completed with no match found' pattern \u2014 it eliminates the need for a separate boolean flag variable.",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
-      "title": "Find first active user",
-      "prompt": "Write first_active(users) that searches a list of user dicts for the first one where status == 'active'. Return that user dict, or None if none are active. Use break and the loop else clause — no flag variable.",
-      "starter_code": "def first_active(users):\n    pass",
-      "solution": "def first_active(users):\n    for user in users:\n        if user['status'] == 'active':\n            found = user\n            break\n    else:\n        found = None\n    return found\n\nusers = [\n    {'name': 'alice', 'status': 'inactive'},\n    {'name': 'bob', 'status': 'active'},\n    {'name': 'carol', 'status': 'active'},\n]\nprint(first_active(users))\nprint(first_active([{'name': 'dan', 'status': 'inactive'}]))"
+      "title": "Remove the Flag Variable",
+      "prompt": "The function `first_active` currently uses a boolean flag variable to check if an active user was found. Refactor the code to remove the `found` flag. Use a `break` statement and the loop's `else` clause instead.",
+      "starter_code": "def first_active(users):\n    found = False\n    active_user = None\n    for user in users:\n        if user['status'] == 'active':\n            found = True\n            active_user = user\n            break\n    if not found:\n        active_user = None\n    return active_user\n",
+      "solution": "def first_active(users):\n    for user in users:\n        if user['status'] == 'active':\n            active_user = user\n            break\n    else:\n        active_user = None\n    return active_user\n"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "for x in [1, 2, 3]:\n    if x == 2:\n        continue\n    print(x)\nelse:\n    print('done')",
+      "question": "What is the output of this code?",
+      "answer": "It prints 1, 3, and 'done'.",
+      "why": "When `x == 2`, `continue` skips the rest of the loop body (skipping `print(x)`). The loop finishes normally without any `break`, so the `else` block executes."
+    },
+    {
+      "type": "predict-output",
+      "code": "for x in []:\n    print(x)\n    break\nelse:\n    print('empty')",
+      "question": "What is the output of this code?",
+      "answer": "It prints 'empty'.",
+      "why": "The loop body never executes because the list is empty, so `break` is never encountered. Therefore, the `else` block runs."
     }
   ],
   "code_walkthrough": {
     "code": "routes = ['/health', '/users', '/items']\nfor route in routes:\n    if route == '/admin':\n        print('admin route found')\n        break\nelse:\n    print('/admin not registered')",
-    "focus": "The loop checks all three routes without hitting break, so the else clause runs and prints '/admin not registered' — no flag variable needed."
+    "focus": "The loop checks all three routes without hitting break, so the else clause runs and prints '/admin not registered' \u2014 no flag variable needed."
   },
   "challenge": {
     "title": "Permission validator",

@@ -58,11 +58,27 @@
       "tier": "tier2"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will be printed when this code is executed?",
+      "code": "class AppError(Exception): pass\nclass AuthError(AppError): pass\n\ntry:\n    raise AuthError(\"Token expired\")\nexcept AppError:\n    print(\"Caught AppError\")\nexcept AuthError:\n    print(\"Caught AuthError\")",
+      "answer": "Caught AppError",
+      "why": "Because `AuthError` inherits from `AppError`, the `except AppError` block matches the exception first. When catching exceptions, you must put the most specific subclasses before the more general base classes."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A junior developer wants to ensure their custom exception `FatalSystemError` cannot be caught by accidental `except Exception:` blocks, so they inherit from `BaseException`. What is the danger of this?",
+      "answer": "Inheriting from `BaseException` means typical `try/except Exception:` blocks won't catch it, potentially bypassing cleanup logic or global error handlers.",
+      "why": "`BaseException` is the root of all exceptions in Python, intended only for system-exiting exceptions like `KeyboardInterrupt` or `SystemExit`. Inheriting from it breaks the assumption made by most frameworks and libraries that all standard errors subclass `Exception`."
+    }
+  ],
   "practice_tasks": [
     {
-      "title": "Create a domain error",
-      "prompt": "Define a custom exception `UserNotFoundError` that inherits from `Exception`. Then write a function `get_user(user_id)` that raises this exception with the message 'User 404 not found' if `user_id` is 404. Otherwise, return 'Success'.",
-      "solution": "class UserNotFoundError(Exception):\n    pass\n\ndef get_user(user_id):\n    if user_id == 404:\n        raise UserNotFoundError('User 404 not found')\n    return 'Success'\n\ntry:\n    get_user(404)\nexcept UserNotFoundError as e:\n    print(e)"
+      "name": "Add Context to a Custom Exception",
+      "description": "Modify the `APIError` exception to accept a `status_code` argument in its `__init__`, save it as an instance attribute, and call `super().__init__(message)`. Then modify `fetch_data` to raise `APIError` with the message 'Not Found' and status_code 404 when the id is not found.",
+      "starter_code": "class APIError(Exception):\n    pass\n\ndef fetch_data(item_id):\n    if item_id == -1:\n        # TODO: Raise APIError with message 'Not Found' and status_code 404\n        raise APIError('Not Found')\n    return {'data': 'Success'}",
+      "solution_code": "class APIError(Exception):\n    def __init__(self, message, status_code):\n        super().__init__(message)\n        self.status_code = status_code\n\ndef fetch_data(item_id):\n    if item_id == -1:\n        raise APIError('Not Found', 404)\n    return {'data': 'Success'}"
     }
   ],
   "code_walkthrough": {
@@ -71,8 +87,7 @@
   },
   "challenge": {
     "title": "Build a custom validation error",
-    "prompt": "Create an `InvalidEmailError` that takes an invalid email string. Write `validate_email(email)` that raises it if there's no '@'. Catch it and print its message.",
-    "solution": "class InvalidEmailError(Exception):\n    pass\n\ndef validate_email(email):\n    if '@' not in email:\n        raise InvalidEmailError(f'Missing @ in {email}')\n\ntry:\n    validate_email('bad_email.com')\nexcept InvalidEmailError as e:\n    print(e)"
+    "prompt": "Create an `InvalidEmailError` that takes an invalid email string. Write `validate_email(email)` that raises it if there's no '@'. Catch it and print its message."
   },
   "sources": [
     "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions",

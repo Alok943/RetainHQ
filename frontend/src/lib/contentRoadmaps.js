@@ -2,4 +2,5 @@
 // Extend as more roadmaps get curated. (Interim until roadmaps carry a slug column.)
 export const CONTENT_KEY_BY_TITLE = {
   'Python for SWE': 'python-swe',
+  'SQL — Querying & Modeling': 'sql',
 };

@@ -1,0 +1,96 @@
+{
+  "slug": "correlated-subqueries",
+  "title": "Correlated Subqueries",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "high",
+    "prerequisites": ["subqueries"],
+    "unlocks": [],
+    "project_usage": ["row-level comparisons", "existence checks in analytics", "interview questions"]
+  },
+  "overview": {
+    "what": "A correlated subquery references a column from the outer query, so it is re-evaluated for every row the outer query considers. This is the key difference from a regular (non-correlated) subquery, which runs once and produces a fixed result.\n\nThe most common pattern is EXISTS:\n\n  SELECT c.name\n  FROM customers c\n  WHERE EXISTS (\n    SELECT 1 FROM orders o\n    WHERE o.customer_id = c.id AND o.status = 'paid'\n  )\n  ORDER BY c.name;\n\nFor each customer row, the inner query checks: 'does at least one paid order exist for THIS customer?' The reference to c.id makes it correlated. Result: Alice, Bob, Carlos, Emma, Farah.\n\nCorrelated scalar subqueries also work — returning one value per outer row:\n\n  SELECT c.name,\n         (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS order_count\n  FROM customers c\n  ORDER BY c.name;\n\nFor each customer, the inner query counts THAT customer's orders. Greg and Hana get 0.\n\nMental model: a regular subquery is a constant — computed once, plugged in. A correlated subquery is a function — called once per outer row with that row's values as arguments.",
+    "why": "Correlated subqueries express per-row logic that is awkward or impossible with plain JOINs or non-correlated subqueries. 'Find employees earning more than their department average' or 'find customers who have at least one paid order' map naturally to correlated patterns. EXISTS in particular is the idiomatic way to test for the presence or absence of related rows.",
+    "where_used": ["existence checks (does this user have at least one X?)", "per-row aggregates in SELECT without GROUP BY", "row-by-row comparisons against group-level statistics"]
+  },
+  "why_learning_this": [
+    "Express 'for each row, check or compute something against related rows' — a pattern that appears in nearly every analytics dashboard",
+    "Use EXISTS / NOT EXISTS for clean, index-friendly existence checks instead of awkward LEFT JOIN + IS NULL or IN subqueries"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the correlation — writing a non-correlated subquery by accident",
+      "explanation": "If the inner WHERE does not reference the outer table, the subquery runs once and returns the same result for every outer row. Always check that the inner query references an outer alias (e.g. WHERE o.customer_id = c.id)."
+    },
+    {
+      "title": "Using SELECT * inside EXISTS",
+      "explanation": "EXISTS only checks whether at least one row is returned — the actual columns are irrelevant. SELECT 1 or SELECT * both work, but SELECT 1 makes the intent clear and avoids confusion."
+    },
+    {
+      "title": "Performance surprise: correlated subqueries run per-row",
+      "explanation": "Because the inner query executes for each outer row, performance can degrade on large tables. Modern Postgres often rewrites them as joins internally, but if a query is slow, consider rewriting as an explicit JOIN or CTE."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What makes a subquery 'correlated'?",
+      "answer": "It references a column from the outer query, so it must be re-evaluated for each row of the outer query.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does EXISTS return?",
+      "answer": "TRUE if the inner query returns at least one row, FALSE otherwise. It does not return the actual rows or values.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does NOT EXISTS differ from NOT IN when the inner query can return NULLs?",
+      "answer": "NOT EXISTS still works correctly — it just checks for zero rows. NOT IN with NULLs in the list returns UNKNOWN for every comparison, causing the outer query to return no rows at all. EXISTS is generally safer.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT c.name\nFROM customers c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.customer_id = c.id\n)\nORDER BY c.name;",
+      "question": "Which customer names appear?",
+      "answer": "Greg, Hana",
+      "why": "NOT EXISTS returns TRUE when the inner query finds zero rows. Greg (id=7) and Hana (id=8) have no rows in orders, so for them the inner query is empty and NOT EXISTS is TRUE."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT e.name, e.salary\nFROM employees e\nWHERE e.salary > (\n  SELECT AVG(e2.salary)\n  FROM employees e2\n  WHERE e2.department = e.department\n)\nORDER BY e.name;",
+      "question": "Which employees appear and why?",
+      "answer": "Tom (150000), Wendy (130000)",
+      "why": "For each employee, the inner query computes the average salary of THAT employee's department. Executive avg = 200000 — Sara equals it (200000 > 200000 is false). Engineering avg = (150000+120000+110000)/3 = 126666.67 — only Tom (150000) exceeds it. Sales avg = (130000+95000+90000)/3 = 105000 — only Wendy (130000) exceeds it. So only Tom and Wendy appear."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.name\nFROM customers c\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.customer_id = c.id AND o.status = 'paid'\n)\nORDER BY c.name;",
+    "flow_stages": ["from", "where", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "For each customer row, watch the correlated subquery check whether any paid order exists for THAT customer. The reference to c.id is what makes it correlated."
+  },
+  "practice_tasks": [
+    {
+      "title": "Flip EXISTS to NOT EXISTS",
+      "prompt": "This query finds customers who have at least one paid order. Modify it to find customers who do NOT have any paid orders. Keep the ORDER BY.",
+      "starter_code": "SELECT c.name\nFROM customers c\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.customer_id = c.id AND o.status = 'paid'\n)\nORDER BY c.name;",
+      "solution": "SELECT c.name\nFROM customers c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.customer_id = c.id AND o.status = 'paid'\n)\nORDER BY c.name;"
+    }
+  ],
+  "challenge": {
+    "title": "Employees earning above their department average",
+    "prompt": "Write a query that returns the name and salary of every employee whose salary is strictly above the average salary in their own department. Order by name.",
+    "solution": "SELECT e.name, e.salary\nFROM employees e\nWHERE e.salary > (\n  SELECT AVG(e2.salary)\n  FROM employees e2\n  WHERE e2.department = e.department\n)\nORDER BY e.name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/functions-subquery.html",
+    "https://www.postgresql.org/docs/current/sql-select.html"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "slug": "dotenv",
+  "title": "python-dotenv for .env files",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": ["environment-variables"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Django", "Data Engineering"]
+  },
+  "overview": {
+    "what": "The `python-dotenv` library reads key-value pairs from a `.env` file and adds them to `os.environ`. This allows you to manage configuration (like API keys, database URLs, and debug flags) outside your codebase. It acts like a local bridge, simulating system environment variables during development without requiring you to set them in your shell.",
+    "why": "Hardcoding secrets in your code is a major security risk, and setting environment variables manually in every terminal session is tedious. `python-dotenv` automates loading local configuration while keeping secrets out of version control.",
+    "where_used": ["FastAPI configuration", "Database connection scripts", "Local development scripts"]
+  },
+  "why_learning_this": [
+    "Load secrets locally without risking exposing them in Git",
+    "Use different configuration values for development, testing, and production",
+    "Standardize local development environments across your team"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Committing .env to version control",
+      "explanation": "Beginners often forget to add `.env` to `.gitignore`, leaking sensitive API keys to GitHub. Always ignore `.env` and commit a `.env.example` template instead."
+    },
+    {
+      "title": "Assuming types are preserved",
+      "explanation": "Everything loaded from a `.env` file is a string. If your `.env` has `DEBUG=True`, `os.environ.get('DEBUG')` returns the string `'True'`, not a boolean."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of the `python-dotenv` library?",
+      "answer": "It reads key-value pairs from a `.env` file and adds them to the application's environment variables (`os.environ`).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it important to use a `.env` file instead of putting secrets in your Python code?",
+      "answer": "To prevent hardcoding sensitive information like API keys and database passwords in the codebase, which could otherwise be leaked into version control.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import os\nfrom dotenv import load_dotenv\n\n# Assuming .env contains: PORT=8080\n\nload_dotenv()\nport_val = os.environ.get('PORT')\nprint(repr(port_val))",
+      "question": "What is the output of this code, and why?",
+      "answer": "'8080'",
+      "why": "Environment variables are always loaded as strings, even if they look like integers in the `.env` file."
+    },
+    {
+      "type": "find-bug",
+      "code": "import os\nfrom dotenv import load_dotenv\n\n# .env contains: ENABLE_FEATURE=False\nload_dotenv()\nif os.environ.get('ENABLE_FEATURE'):\n    print('Feature is enabled!')",
+      "question": "Why does this print 'Feature is enabled!' when the .env says False?",
+      "answer": "The string 'False' is truthy in Python.",
+      "why": "`os.environ.get()` returns the string `'False'`. In Python, any non-empty string evaluates to `True` in a boolean context. You must explicitly check `== 'True'` or parse it."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import os\nfrom dotenv import load_dotenv\n\n# Before loading\nprint(os.environ.get('API_KEY'))\n\n# Load variables from .env into os.environ\nload_dotenv()\n\n# After loading\nprint(os.environ.get('API_KEY'))",
+    "focus": "load_dotenv()"
+  },
+  "aha_moment": {
+    "code": "import os\nfrom dotenv import load_dotenv\n\n# Environment already has: DB_HOST=production.db\n# .env file has: DB_HOST=localhost\n\nos.environ['DB_HOST'] = 'production.db'\nload_dotenv()\n\nprint(os.environ.get('DB_HOST'))",
+    "prediction": "What does this print?",
+    "common_guess": "'localhost'",
+    "why": "By default, `load_dotenv()` does NOT overwrite existing environment variables. It only sets variables that don't already exist in `os.environ`."
+  },
+  "practice_tasks": [
+    {
+      "title": "Force overwrite environment variables",
+      "prompt": "Given this code that loads a `.env` file, modify it so that `load_dotenv` overwrites any existing environment variables with the values from the `.env` file. (Hint: look at the `override` parameter).",
+      "starter_code": "import os\nfrom dotenv import load_dotenv\n\nos.environ['APP_ENV'] = 'production'\n# Modify the line below\nload_dotenv()\n\nprint(os.environ.get('APP_ENV'))",
+      "solution": "import os\nfrom dotenv import load_dotenv\n\nos.environ['APP_ENV'] = 'production'\n# Modify the line below\nload_dotenv(override=True)\n\nprint(os.environ.get('APP_ENV'))"
+    }
+  ],
+  "challenge": {
+    "title": "Parse a boolean flag from dotenv",
+    "prompt": "Write a snippet that loads `.env`, retrieves a `DEBUG` variable, and sets a Python boolean variable `is_debug` to `True` ONLY if the value is exactly the string `'True'` (or `'true'`). Fall back to `False` if it's not set.",
+    "solution": "import os\nfrom dotenv import load_dotenv\n\nload_dotenv()\ndebug_str = os.environ.get('DEBUG', 'False')\nis_debug = debug_str.lower() == 'true'\nprint(is_debug)"
+  },
+  "sources": [
+    "https://pypi.org/project/python-dotenv/",
+    "https://docs.python.org/3/library/os.html#os.environ"
+  ]
+}

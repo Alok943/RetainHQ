@@ -1,0 +1,91 @@
+{
+  "slug": "multi-column-grouping",
+  "title": "Multi-Column Grouping",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["group-by", "aggregate-functions"],
+    "unlocks": [],
+    "project_usage": ["cross-tab reports", "analytics dashboards", "pivot-style summaries"]
+  },
+  "overview": {
+    "what": "When you GROUP BY two or more columns, the database creates one group for each unique COMBINATION of values across those columns. A single-column GROUP BY country gives one row per country; adding a second column, e.g. GROUP BY country, status, gives one row per (country, status) pair.\n\nAgainst the shared dataset:\n\n  SELECT c.country, o.status, COUNT(*) AS n\n  FROM customers c\n  JOIN orders o ON o.customer_id = c.id\n  GROUP BY c.country, o.status\n  ORDER BY c.country, o.status;\n\nThis produces one row for each (country, status) combination that exists in the data. US has both 'paid' and 'pending' orders, so US gets two rows.\n\nThink of multi-column grouping as creating a grid: each axis is a grouping column, each cell that has data becomes a result row.",
+    "why": "Real-world reports almost always need more than one dimension — revenue by country AND year, count by department AND status. Multi-column grouping is how you produce these cross-tabulated summaries.",
+    "where_used": ["cross-tab and pivot reports", "multi-dimensional analytics", "breakdown-by dashboards"]
+  },
+  "why_learning_this": [
+    "Building any report with two or more dimensions (e.g. sales by country and product category) requires multi-column GROUP BY",
+    "Understanding how grouping key combinations work prevents confusion about why GROUP BY produces more rows than expected"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Expecting fewer rows than actual groups",
+      "explanation": "GROUP BY country, status does NOT return one row per country — it returns one row per (country, status) combination. If a country has 3 different statuses, it appears in 3 rows. Count the unique combinations to predict row count."
+    },
+    {
+      "title": "Grouping by too many columns accidentally",
+      "explanation": "Adding a high-cardinality column (like customer id) to GROUP BY creates nearly one group per row, defeating the purpose of summarisation. Only include columns that represent the dimensions you actually want in the report."
+    },
+    {
+      "title": "Forgetting that column order in GROUP BY does not affect groups",
+      "explanation": "GROUP BY country, status produces the same groups as GROUP BY status, country — column order only matters for readability and in ORDER BY. However, many people confuse GROUP BY order with result ordering; always add an explicit ORDER BY."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does GROUP BY a, b differ from GROUP BY a alone?",
+      "answer": "GROUP BY a creates one group per unique value of a. GROUP BY a, b creates one group per unique (a, b) combination, which is typically more groups.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does changing the order of columns in GROUP BY (e.g. GROUP BY b, a vs GROUP BY a, b) change the resulting groups?",
+      "answer": "No. The same set of unique combinations is produced regardless of column order in GROUP BY. Only ORDER BY controls the result ordering.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT c.country, o.status, COUNT(*) AS n\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE c.country IS NOT NULL\nGROUP BY c.country, o.status\nORDER BY c.country, o.status;",
+      "question": "What rows does this return?",
+      "answer": "AE | paid | 1\nMX | paid | 1\nUK | cancelled | 1\nUS | paid | 3\nUS | pending | 1",
+      "why": "JOIN matches customers to their orders (excludes Greg/Hana with no orders). WHERE removes Emma (NULL country). The remaining 7 rows group by (country, status): AE-Farah has 1 paid; MX-Carlos has 1 paid; UK-Diana has 1 cancelled; US-paid has 3 (Alice orders 1,2 + Bob order 8); US-pending has 1 (Bob order 3)."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT category, COUNT(*) AS n\nFROM products\nGROUP BY category\nORDER BY category;",
+      "question": "If you changed this to GROUP BY category, price — how many rows would the result have?",
+      "answer": "6 rows — every product has a unique price, so each (category, price) combination maps to exactly one product. Multi-column grouping produces the same number of rows as the original table.",
+      "why": "When the added grouping column has all unique values, every row becomes its own group. This demonstrates that adding high-cardinality columns to GROUP BY defeats summarisation."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.country, o.status, COUNT(*) AS n\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE c.country IS NOT NULL\nGROUP BY c.country, o.status\nORDER BY c.country, o.status;",
+    "flow_stages": ["from", "join", "where", "group_by", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch how 7 joined rows (after excluding Emma's NULL country) collapse into 5 groups when grouped by (country, status) — US splits into two rows because it has both paid and pending orders."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a second grouping dimension",
+      "prompt": "This query counts orders by status only. Add customer_id as a second grouping column so you get one row per (customer_id, status) pair. Keep the ORDER BY matching the GROUP BY columns.",
+      "starter_code": "SELECT status, COUNT(*) AS n\nFROM orders\nGROUP BY status\nORDER BY status;",
+      "solution": "SELECT customer_id, status, COUNT(*) AS n\nFROM orders\nGROUP BY customer_id, status\nORDER BY customer_id, status;"
+    }
+  ],
+  "challenge": {
+    "title": "Product category breakdown by order status",
+    "prompt": "Write a query that shows each (category, status) combination with the total quantity of items ordered. Join products and order_items and orders. Order by category, then status.",
+    "solution": "SELECT p.category, o.status, SUM(oi.quantity) AS total_qty\nFROM order_items oi\nJOIN products p ON p.id = oi.product_id\nJOIN orders o ON o.id = oi.order_id\nGROUP BY p.category, o.status\nORDER BY p.category, o.status;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP",
+    "https://www.postgresql.org/docs/current/tutorial-agg.html"
+  ]
+}

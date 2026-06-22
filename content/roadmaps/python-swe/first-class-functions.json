@@ -9,17 +9,29 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["functions", "scope", "lambda-functions"],
+    "prerequisites": [
+      "functions",
+      "scope",
+      "lambda-functions"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI middleware", "Pydantic validators", "retry decorators"]
+    "project_usage": [
+      "FastAPI middleware",
+      "Pydantic validators",
+      "retry decorators"
+    ]
   },
   "overview": {
-    "what": "In Python, functions are objects — they can be assigned to variables, stored in collections, passed as arguments, and returned from other functions. This is called first-class function support.\n\nAssigning and passing:\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions (function factory pattern):\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function add_prefix remembers prefix from the outer scope even after make_prefixer has returned — this is a closure.",
+    "what": "In Python, functions are objects \u2014 they can be assigned to variables, stored in collections, passed as arguments, and returned from other functions. This is called first-class function support.\n\nAssigning and passing:\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions (function factory pattern):\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function add_prefix remembers prefix from the outer scope even after make_prefixer has returned \u2014 this is a closure.",
     "why": "Higher-order functions (functions that take or return functions) are the foundation of decorators, middleware pipelines, retry wrappers, and dependency injection. Without first-class functions, each of these patterns would require explicit subclassing instead of composable functions.",
-    "where_used": ["FastAPI middleware and dependency injection (Depends receives a function)", "Retry decorator wrapping route handlers", "Pydantic field_validator receiving a validation function"]
+    "where_used": [
+      "FastAPI middleware and dependency injection (Depends receives a function)",
+      "Retry decorator wrapping route handlers",
+      "Pydantic field_validator receiving a validation function"
+    ]
   },
   "why_learning_this": [
-    "Understanding how FastAPI's Depends() and decorator @app.get() work — both receive functions as arguments",
+    "Understanding how FastAPI's Depends() and decorator @app.get() work \u2014 both receive functions as arguments",
     "Writing retry wrappers and middleware that accept a handler function and return an augmented version"
   ],
   "common_mistakes": [
@@ -39,7 +51,7 @@
   "recall_questions": [
     {
       "q": "What does it mean for functions to be 'first-class' objects in Python?",
-      "answer": "Functions can be assigned to variables, passed as arguments to other functions, and returned from functions — just like any other value.",
+      "answer": "Functions can be assigned to variables, passed as arguments to other functions, and returned from functions \u2014 just like any other value.",
       "tier": "tier1"
     },
     {
@@ -61,14 +73,30 @@
   "practice_tasks": [
     {
       "title": "Pipeline runner",
-      "prompt": "Write run_pipeline(value, steps) where steps is a list of functions. Apply each function in order, passing the output of one as the input to the next, and return the final result. Test it by passing a raw string through [str.strip, str.lower, str.split].",
-      "starter_code": "def run_pipeline(value, steps):\n    pass",
-      "solution": "def run_pipeline(value, steps):\n    for fn in steps:\n        value = fn(value)\n    return value\n\nresult = run_pipeline('  Hello World  ', [str.strip, str.lower, str.split])\nprint(result)"
+      "prompt": "Modify the `process_text` function. Currently, it hardcodes calling `str.strip`, `str.lower`, and `str.split`. Change it to `run_pipeline(value, steps)`, which accepts a starting value and a list of functions (`steps`). It should iterate through the steps, passing the result of each step to the next function, and return the final value.",
+      "starter_code": "def process_text(value):\n    # Modify this to run_pipeline(value, steps)\n    step1 = str.strip(value)\n    step2 = str.lower(step1)\n    step3 = str.split(step2)\n    return step3\n\nprint(process_text('  Hello World  '))",
+      "solution": "def run_pipeline(value, steps):\n    for fn in steps:\n        value = fn(value)\n    return value\n\nprint(run_pipeline('  Hello World  ', [str.strip, str.lower, str.split]))"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def multiply_by(factor):\n    def multiplier(n):\n        return n * factor\n    return multiplier\n\ndouble = multiply_by(2)\ntriple = multiply_by(3)\nprint(double(4), triple(4))",
+      "question": "What is the output of this code?",
+      "answer": "8 12",
+      "why": "multiply_by is a function factory. It creates closures that remember the 'factor' variable. double remembers 2, triple remembers 3. double(4) is 4 * 2 = 8, triple(4) is 4 * 3 = 12."
+    },
+    {
+      "type": "find-bug",
+      "code": "def apply_twice(fn, value):\n    return fn(fn(value))\n\ndef add_one(x):\n    return x + 1\n\nresult = apply_twice(add_one(), 5)",
+      "question": "Why does this code fail with an error?",
+      "answer": "It calls add_one() immediately instead of passing the function object.",
+      "why": "By adding parentheses in apply_twice(add_one(), 5), we call add_one without arguments (which raises a TypeError) and pass its return value. We should pass the function itself: apply_twice(add_one, 5)."
     }
   ],
   "code_walkthrough": {
     "code": "def make_prefixer(prefix):\n    def add_prefix(text):\n        return f'{prefix}: {text}'\n    return add_prefix\n\nerror = make_prefixer('ERROR')\nwarn = make_prefixer('WARN')\nprint(error('disk full'))\nprint(warn('high memory'))",
-    "focus": "make_prefixer returns a new function each time; each returned function closes over its own prefix value — two independent prefixers from one factory."
+    "focus": "make_prefixer returns a new function each time; each returned function closes over its own prefix value \u2014 two independent prefixers from one factory."
   },
   "challenge": {
     "title": "Retry wrapper",

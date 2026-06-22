@@ -1,0 +1,95 @@
+{
+  "slug": "logging-basics",
+  "title": "Logging levels and basicConfig",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": ["functions"],
+    "unlocks": [],
+    "project_usage": ["Debugging in production", "Server logs"]
+  },
+  "overview": {
+    "what": "Python's `logging` module replaces `print()` for production code. It categorizes messages into five severity levels (DEBUG, INFO, WARNING, ERROR, CRITICAL). `logging.basicConfig()` configures the root logger, setting the minimum level to display and the format of the output. By default, the logging level is set to WARNING, meaning DEBUG and INFO messages are ignored.",
+    "why": "Unlike `print()`, logging gives you a dial to control output volume without changing code (e.g., hiding DEBUG logs in production). It also automatically includes metadata like timestamps and module names.",
+    "where_used": ["Web servers (Django/FastAPI)", "Data pipelines", "CLI tools"]
+  },
+  "why_learning_this": [
+    "Write production-ready code that emits searchable, structured logs instead of scattered print statements.",
+    "Control the verbosity of your application's output."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling basicConfig multiple times",
+      "explanation": "`logging.basicConfig()` does nothing if the root logger is already configured. To reconfigure it, you must pass `force=True`."
+    },
+    {
+      "title": "Wondering where INFO logs went",
+      "explanation": "The default logging level is WARNING. If you call `logging.info('hello')` without configuring the logger, nothing will print."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the default logging level if you don't configure the logger?",
+      "answer": "WARNING.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which function is used to configure the root logger's level and format?",
+      "answer": "`logging.basicConfig()`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name the five standard logging levels in increasing order of severity.",
+      "answer": "DEBUG, INFO, WARNING, ERROR, CRITICAL.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import logging\n\nlogging.basicConfig(level=logging.ERROR)\nlogging.warning('A')\nlogging.error('B')\nlogging.critical('C')",
+      "question": "What is printed to the console (ignoring format metadata)?",
+      "answer": "ERROR:root:B\nCRITICAL:root:C",
+      "why": "The level is set to ERROR. WARNING is below ERROR, so 'A' is ignored. ERROR and CRITICAL are high enough to be printed."
+    },
+    {
+      "type": "predict-output",
+      "code": "import logging\n\nlogging.info('Hello')\nlogging.warning('World')",
+      "question": "What is printed to the console (assuming fresh execution)?",
+      "answer": "WARNING:root:World",
+      "why": "Because no configuration was explicitly set, the default level is WARNING. The INFO message is discarded."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import logging\n\nlogging.basicConfig(\n  level=logging.INFO,\n  format='%(levelname)s - %(message)s'\n)\n\nlogging.debug('Hidden')\nlogging.info('Visible')",
+    "focus": "level=logging.INFO,"
+  },
+  "aha_moment": {
+    "code": "import logging\n\nlogging.basicConfig(level=logging.INFO)\nlogging.basicConfig(level=logging.DEBUG)\n\nlogging.debug('Can you see me?')",
+    "prediction": "Will the debug message be printed?",
+    "common_guess": "Yes, because the level was changed to DEBUG.",
+    "why": "It won't print. `basicConfig()` only works the FIRST time it is called. The second call does nothing, so the level remains INFO."
+  },
+  "practice_tasks": [
+    {
+      "title": "Configure Logging Level",
+      "prompt": "Given this code, modify the `basicConfig` call so that ONLY 'Critical issue' is printed.",
+      "starter_code": "import logging\n\nlogging.basicConfig(level=logging.WARNING)\nlogging.error('Bad')\nlogging.critical('Critical issue')",
+      "solution": "import logging\n\nlogging.basicConfig(level=logging.CRITICAL)\nlogging.error('Bad')\nlogging.critical('Critical issue')"
+    }
+  ],
+  "challenge": {
+    "title": "Force Configuration",
+    "prompt": "Write a script that first calls `basicConfig` with INFO level, then uses `basicConfig` again to change the level to DEBUG by passing `force=True`, and finally prints a debug message 'Testing'.",
+    "solution": "import logging\nlogging.basicConfig(level=logging.INFO)\nlogging.basicConfig(level=logging.DEBUG, force=True)\nlogging.debug('Testing')"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/logging.html#logging.basicConfig",
+    "https://docs.python.org/3/howto/logging.html"
+  ]
+}

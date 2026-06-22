@@ -1,0 +1,96 @@
+{
+  "slug": "inner-join",
+  "title": "INNER JOIN",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["select-from", "where-operators"],
+    "unlocks": ["left-right-join", "full-cross-join", "self-join"],
+    "project_usage": ["analytics queries", "API list endpoints", "reporting dashboards"]
+  },
+  "overview": {
+    "what": "INNER JOIN combines rows from two tables where a condition is true — typically matching a foreign key in one table to a primary key in another. Rows that have no match in the other table are silently dropped from the result.\n\nThink of it as a filter across two tables: start with every possible pair of rows (the Cartesian product), then keep only the pairs where the ON condition is true.\n\nAgainst the shared dataset:\n\n  SELECT c.name, o.id AS order_id\n  FROM customers c\n  INNER JOIN orders o ON o.customer_id = c.id\n  ORDER BY c.name, o.id;\n\nThis returns 8 rows — one for every order matched to its customer. Customers Greg and Hana appear nowhere because they have no orders; the join silently excludes them.\n\nMental model: INNER JOIN = 'give me only the rows that exist in BOTH tables'.",
+    "why": "INNER JOIN is the most common join type. Almost every multi-table query starts here — listing orders with customer names, showing line items with product details, connecting any two related tables. Understanding that unmatched rows vanish is the key insight that separates it from outer joins.",
+    "where_used": ["order detail pages joining orders to products", "analytics dashboards combining customers and orders", "API endpoints returning enriched records"]
+  },
+  "why_learning_this": [
+    "Querying across two or more tables is the single most common SQL task — you cannot build any realistic report without joins",
+    "Understanding which rows INNER JOIN drops prepares you to choose LEFT JOIN when you need to keep unmatched rows"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the ON clause",
+      "explanation": "Omitting ON (or writing JOIN without a condition) produces a Cartesian product — every row paired with every other row. For 8 customers × 8 orders that's 64 rows instead of 8. Always specify the join condition."
+    },
+    {
+      "title": "Joining on the wrong column",
+      "explanation": "Writing ON c.id = o.id instead of ON c.id = o.customer_id joins customer IDs to order IDs, which happen to match by coincidence in small datasets but produces completely wrong results. Check which column is the foreign key."
+    },
+    {
+      "title": "Not realizing INNER JOIN drops unmatched rows",
+      "explanation": "If a customer has no orders, INNER JOIN silently removes them. This is the correct behavior when you want 'only customers who ordered', but a bug when you want 'all customers, with their orders if any' — use LEFT JOIN for that."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens to a row in table A when it has no matching row in table B during an INNER JOIN?",
+      "answer": "It is excluded from the result entirely — INNER JOIN only returns rows that match in both tables.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the result of an INNER JOIN without an ON clause?",
+      "answer": "A Cartesian product — every row from the left table paired with every row from the right table.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is 'JOIN' the same as 'INNER JOIN' in PostgreSQL?",
+      "answer": "Yes — JOIN without a qualifier defaults to INNER JOIN.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT c.name, o.status\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nWHERE o.status = 'paid'\nORDER BY c.name;",
+      "question": "Which customer names and statuses does this return?",
+      "answer": "Alice, paid\nAlice, paid\nBob, paid\nCarlos, paid\nEmma, paid\nFarah, paid",
+      "why": "There are 8 orders total; INNER JOIN matches all 8 to their customers. The WHERE clause then keeps only the 6 with status = 'paid', dropping Bob's pending order (order 3) and Diana's cancelled order (order 5)."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT c.name, COUNT(*) AS order_count\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nGROUP BY c.name\nORDER BY order_count DESC, c.name;",
+      "question": "What names and counts appear? Do Greg and Hana appear?",
+      "answer": "Alice, 2\nBob, 2\nCarlos, 1\nDiana, 1\nEmma, 1\nFarah, 1\n\nGreg and Hana do NOT appear.",
+      "why": "INNER JOIN drops customers with no matching orders. Greg and Hana have zero orders, so they never enter the joined row set and cannot be counted. To include them with a count of 0 you would need a LEFT JOIN with COUNT(o.id)."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.name, p.name AS product, oi.quantity\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nINNER JOIN order_items oi ON oi.order_id = o.id\nINNER JOIN products p ON p.id = oi.product_id\nWHERE c.name = 'Alice'\nORDER BY o.id, p.name;",
+    "flow_stages": ["from", "join", "where", "select", "order_by"],
+    "visualization": "join-diagram",
+    "focus": "Watch four tables chain together: customers → orders → order_items → products. Each INNER JOIN narrows the result to only matching rows, and the WHERE further filters to Alice's rows only."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add product prices to the order items",
+      "prompt": "This query lists order items with their product names. Modify it to also show each product's price by adding the missing column from the products table. Keep the existing JOIN and ordering.",
+      "starter_code": "SELECT oi.id, p.name AS product\nFROM order_items oi\nINNER JOIN products p ON p.id = oi.product_id\nORDER BY oi.id;",
+      "solution": "SELECT oi.id, p.name AS product, p.price\nFROM order_items oi\nINNER JOIN products p ON p.id = oi.product_id\nORDER BY oi.id;"
+    }
+  ],
+  "challenge": {
+    "title": "Total spend per customer",
+    "prompt": "Write a query that shows each customer's name and their total spend (quantity × price across all their order items). Only include customers who have orders. Order by total spend descending, then by name ascending.",
+    "solution": "SELECT c.name, SUM(oi.quantity * p.price) AS total_spend\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nINNER JOIN order_items oi ON oi.order_id = o.id\nINNER JOIN products p ON p.id = oi.product_id\nGROUP BY c.name\nORDER BY total_spend DESC, c.name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN",
+    "https://www.postgresql.org/docs/current/tutorial-join.html"
+  ]
+}

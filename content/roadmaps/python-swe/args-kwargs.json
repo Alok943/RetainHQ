@@ -9,14 +9,28 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["functions", "mutable-vs-immutable"],
-    "unlocks": ["keyword-positional-params", "first-class-functions"],
-    "project_usage": ["FastAPI dependency wrappers", "logging helpers", "decorator factories"]
+    "prerequisites": [
+      "functions",
+      "mutable-vs-immutable"
+    ],
+    "unlocks": [
+      "keyword-positional-params",
+      "first-class-functions"
+    ],
+    "project_usage": [
+      "FastAPI dependency wrappers",
+      "logging helpers",
+      "decorator factories"
+    ]
   },
   "overview": {
     "what": "*args and **kwargs let a function accept a variable number of arguments.\n\n*args collects any extra positional arguments into a TUPLE:\n\n  def log(*messages):\n      for m in messages:\n          print(m)\n\n  log('start', 'processing', 'done')  # messages = ('start', 'processing', 'done')\n\n**kwargs collects any extra keyword arguments into a DICT:\n\n  def create_record(**fields):\n      return fields\n\n  create_record(name='alice', role='admin')  # fields = {'name': 'alice', 'role': 'admin'}\n\nBoth can be combined in one signature: def f(*args, **kwargs). The * and ** can also be used at the call site to UNPACK a sequence or dict into positional/keyword arguments:\n\n  params = {'host': 'localhost', 'port': 5432}\n  connect(**params)  # same as connect(host='localhost', port=5432)\n\nThink of *args as a tuple-shaped funnel that catches extra positional values, and **kwargs as a dict-shaped funnel that catches extra keyword values.",
     "why": "Wrapper functions, decorators, and logging helpers must accept any combination of arguments to forward them. *args/**kwargs are the tool for writing these adaptors without hard-coding every parameter.",
-    "where_used": ["FastAPI dependency injection wrappers", "logging helper functions", "decorator factories that forward arguments"]
+    "where_used": [
+      "FastAPI dependency injection wrappers",
+      "logging helper functions",
+      "decorator factories that forward arguments"
+    ]
   },
   "why_learning_this": [
     "Writing decorator wrappers that forward any arguments to the wrapped function without listing every parameter",
@@ -61,14 +75,30 @@
   "practice_tasks": [
     {
       "title": "Flexible request logger",
-      "prompt": "Write log_request(method, *path_parts, **headers) that prints the HTTP method, joins path_parts with '/' to form a URL path, and prints each header as 'key: value'. Call it with GET, two path parts, and two headers.",
-      "starter_code": "def log_request(method, *path_parts, **headers):\n    pass",
-      "solution": "def log_request(method, *path_parts, **headers):\n    path = '/' + '/'.join(path_parts)\n    print(f'{method} {path}')\n    for key, value in headers.items():\n        print(f'{key}: {value}')\n\nlog_request('GET', 'api', 'users', Authorization='Bearer xyz', Accept='application/json')"
+      "prompt": "The `log_request` function currently only logs a single path string and a single predefined header. Modify the function signature and implementation so it can accept ANY number of path parts as positional arguments (`*args`), which should be joined by '/', and ANY number of headers as keyword arguments (`**kwargs`), which should be printed as 'key: value'.",
+      "starter_code": "def log_request(method, path, auth_header=None):\n    print(f'{method} /{path}')\n    if auth_header:\n        print(f'Authorization: {auth_header}')\n\nlog_request('GET', 'api/users', auth_header='Bearer xyz')\n",
+      "solution": "def log_request(method, *path_parts, **headers):\n    path = '/' + '/'.join(path_parts)\n    print(f'{method} {path}')\n    for key, value in headers.items():\n        print(f'{key}: {value}')\n\nlog_request('GET', 'api', 'users', Authorization='Bearer xyz', Accept='application/json')\n"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def show(*args, **kwargs):\n    print(type(args), type(kwargs))\n\nshow(1, 2, a=3)",
+      "question": "What is printed by the function call?",
+      "answer": "<class 'tuple'> <class 'dict'>",
+      "why": "`*args` collects positional arguments into a tuple, and `**kwargs` collects keyword arguments into a dict."
+    },
+    {
+      "type": "find-bug",
+      "code": "def process_user(name, **kwargs):\n    if kwargs.get('admin'):\n        print('Admin')\n\nparams = {'admin': True}\nprocess_user('Alice', params)",
+      "question": "Why does this code throw a TypeError?",
+      "answer": "The `params` dictionary is being passed as a positional argument, not unpacked into keyword arguments.",
+      "why": "To pass the dictionary as keyword arguments, you must use the `**` operator at the call site: `process_user('Alice', **params)`. Otherwise, `params` is assigned to a positional parameter. Since the function only takes one positional argument (`name`), Python complains that too many positional arguments were given."
     }
   ],
   "code_walkthrough": {
     "code": "def connect(host, port, **options):\n    print(f'connecting to {host}:{port}')\n    print(f'options: {options}')\n\ncreds = {'timeout': 30, 'ssl': True}\nconnect('localhost', 5432, **creds)",
-    "focus": "**creds at the call site unpacks the dict into keyword arguments; inside connect they are re-collected into the options dict — showing the unpack/collect round-trip."
+    "focus": "**creds at the call site unpacks the dict into keyword arguments; inside connect they are re-collected into the options dict \u2014 showing the unpack/collect round-trip."
   },
   "challenge": {
     "title": "Generic function forwarder",

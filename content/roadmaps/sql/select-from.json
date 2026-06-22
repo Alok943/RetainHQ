@@ -1,0 +1,96 @@
+{
+  "slug": "select-from",
+  "title": "SELECT, FROM & Columns",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["where-operators", "inner-join"],
+    "project_usage": ["analytics queries", "API list endpoints", "reporting dashboards"]
+  },
+  "overview": {
+    "what": "Every SQL query is a row-set transformation: you start with a set of rows and transform it into a new set. SELECT and FROM are the two minimum clauses that make a valid query.\n\nFROM names the source table — the initial row-set. The database loads every row of that table into a working set.\n\nSELECT names which columns to keep (or compute) in the output. Think of FROM as 'which filing cabinet?' and SELECT as 'which columns from each sheet?'\n\nSELECT * returns all columns:\n\n  SELECT *\n  FROM customers;\n\nReturns all 8 rows with columns id, name, country, signup_date.\n\nSELECT with specific columns narrows the output:\n\n  SELECT name, country\n  FROM customers\n  ORDER BY id;\n\nReturns 8 rows but only the name and country columns.\n\nYou can also create computed columns with expressions and aliases using AS:\n\n  SELECT name, price, price * 1.1 AS price_with_tax\n  FROM products\n  ORDER BY id;\n\nReturns 6 rows, each with the original price and a computed price_with_tax column.\n\nKey mental model: in the logical query flow, FROM runs first (builds the full row-set), then SELECT runs (picks/computes columns). Even though you write SELECT first in the text, the database processes FROM first.",
+    "why": "SELECT and FROM are the foundation of every SQL statement. You cannot write any query — filtering, joining, aggregating — without them. Understanding that FROM runs before SELECT prevents the #1 beginner mistake: trying to use a SELECT alias in the same SELECT list or in a WHERE clause.",
+    "where_used": ["every SQL query ever written", "API list endpoints", "data exploration in psql or pgAdmin"]
+  },
+  "why_learning_this": [
+    "Every other SQL concept (WHERE, JOIN, GROUP BY) builds on SELECT + FROM — they are the skeleton of every query",
+    "Understanding column aliases (AS) is required for readable output in API responses and reports"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using SELECT * in production queries",
+      "explanation": "SELECT * pulls every column, including ones you don't need. It breaks if the table schema changes (new columns appear unexpectedly). Always list the columns you want explicitly."
+    },
+    {
+      "title": "Thinking SELECT runs before FROM",
+      "explanation": "You write SELECT first, but the database processes FROM first to build the row-set, then SELECT to pick columns. This is why you cannot reference a SELECT alias in a WHERE clause in the same query."
+    },
+    {
+      "title": "Forgetting AS for computed columns",
+      "explanation": "Without an alias, a computed expression like price * 1.1 gets an auto-generated column name that varies by database. Always use AS to give it a clear name: price * 1.1 AS price_with_tax."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In the logical query flow, which clause does the database process first — SELECT or FROM?",
+      "answer": "FROM runs first (it builds the full row-set from the table), then SELECT picks or computes the output columns.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does SELECT * return compared to SELECT name, country?",
+      "answer": "SELECT * returns all columns of the table. SELECT name, country returns only those two columns. Both return the same number of rows.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does the AS keyword do in a SELECT clause?",
+      "answer": "AS gives a column or expression an alias — a human-readable name in the output, such as price * 1.1 AS price_with_tax.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name, price * 2 AS double_price\nFROM products\nWHERE category = 'Stationery'\nORDER BY name;",
+      "question": "What rows and columns does this query return?",
+      "answer": "One row: name = 'Notebook', double_price = 9.98.",
+      "why": "FROM loads all 6 products, WHERE keeps only Stationery (Notebook, price 4.99), then SELECT computes the two output columns: name and 4.99 * 2 = 9.98."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT country\nFROM customers\nORDER BY id;",
+      "question": "How many rows come back, and what appears in the country column for every row?",
+      "answer": "8 rows. The country values in order are: US, US, MX, UK, NULL, AE, US, JP.",
+      "why": "FROM loads all 8 customers, SELECT keeps only the country column. Emma (id 5) has NULL country, which appears as NULL in the output — SELECT does not skip NULLs."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, price, price * 1.1 AS price_with_tax\nFROM products\nORDER BY name;",
+    "flow_stages": ["from", "select", "order_by"],
+    "visualization": "result-table",
+    "focus": "Watch how FROM loads all 6 product rows, then SELECT keeps only name and price and computes a new column price_with_tax from an expression."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a computed discount column",
+      "prompt": "This query shows product names and prices. Modify it to also include a column called discounted_price that shows each price reduced by 10% (price * 0.9). Keep the existing columns and ordering.",
+      "starter_code": "SELECT name, price\nFROM products\nORDER BY name;",
+      "solution": "SELECT name, price, price * 0.9 AS discounted_price\nFROM products\nORDER BY name;"
+    }
+  ],
+  "challenge": {
+    "title": "Customer signup roster",
+    "prompt": "Write a query that returns only the name and signup_date columns from the customers table, ordered by signup_date (earliest first).",
+    "solution": "SELECT name, signup_date\nFROM customers\nORDER BY signup_date;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-select.html",
+    "https://www.postgresql.org/docs/current/tutorial-select.html"
+  ]
+}

@@ -58,11 +58,27 @@
       "tier": "tier1"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "event = {'type': 'login', 'user': 'alok'}\nmatch event:\n    case {'type': 'login'}:\n        print('A')\n    case {'type': 'login', 'user': user}:\n        print('B')",
+      "question": "What does this print, and why?",
+      "answer": "A",
+      "why": "Two rules combine: the first matching case wins, AND a mapping pattern matches any dict that CONTAINS the given keys (extra keys are allowed). So {'type': 'login'} already matches the event, and the broader case fires first — the more specific case is never reached. Most people guess B."
+    },
+    {
+      "type": "predict-output",
+      "code": "status = 500\nmatch status:\n    case 200:\n        print('ok')\n    case 404:\n        print('missing')\nprint('done')",
+      "question": "What does this print?",
+      "answer": "done",
+      "why": "No case matches 500 and there is no wildcard case _, so the match statement simply does nothing — it is not an error. Execution continues to the print after the match."
+    }
+  ],
   "practice_tasks": [
     {
       "title": "HTTP method dispatcher",
-      "prompt": "Write dispatch(method) that uses match-case to return 'read' for 'GET', 'write' for 'POST' or 'PUT', 'delete' for 'DELETE', and 'unsupported' for anything else. Print results for GET, POST, and PATCH.",
-      "starter_code": "def dispatch(method):\n    pass",
+      "prompt": "Modify the given `dispatch(method)` function. Replace the `pass` statement with a `match-case` block that returns 'read' for 'GET', 'write' for 'POST' or 'PUT', 'delete' for 'DELETE', and 'unsupported' for anything else.",
+      "starter_code": "def dispatch(method):\n    # TODO: Modify this function using match-case\n    pass\n\nprint(dispatch('GET'))\nprint(dispatch('POST'))\nprint(dispatch('PATCH'))",
       "solution": "def dispatch(method):\n    match method:\n        case 'GET':\n            return 'read'\n        case 'POST' | 'PUT':\n            return 'write'\n        case 'DELETE':\n            return 'delete'\n        case _:\n            return 'unsupported'\n\nprint(dispatch('GET'))\nprint(dispatch('POST'))\nprint(dispatch('PATCH'))"
     }
   ],

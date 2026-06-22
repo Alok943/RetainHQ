@@ -9,14 +9,27 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["classes", "dunder-methods"],
-    "unlocks": ["metaclasses", "singleton-pattern"],
-    "project_usage": ["Django ORM", "Pydantic"]
+    "prerequisites": [
+      "classes",
+      "dunder-methods"
+    ],
+    "unlocks": [
+      "metaclasses",
+      "singleton-pattern"
+    ],
+    "project_usage": [
+      "Django ORM",
+      "Pydantic"
+    ]
   },
   "overview": {
     "what": "When creating an object in Python, `__new__` is called first to allocate memory and return an uninitialized instance. `__init__` is then called on that instance to initialize its state. Most developers only use `__init__`. You only need `__new__` when you need to control the creation of a new instance (like returning an existing one for a Singleton) or subclassing immutable types like `tuple` or `str`. It is like building a house: `__new__` lays the foundation and frames the structure, while `__init__` paints the walls and moves the furniture in.",
     "why": "Understanding the two-step instantiation process allows you to implement advanced patterns like Singletons, flyweight objects, and custom metaclasses.",
-    "where_used": ["Django ORM model instantiation", "Pydantic model creation", "Standard library singletons"]
+    "where_used": [
+      "Django ORM model instantiation",
+      "Pydantic model creation",
+      "Standard library singletons"
+    ]
   },
   "why_learning_this": [
     "Allows implementation of the Singleton pattern.",
@@ -52,7 +65,7 @@
   "practice_tasks": [
     {
       "title": "Subclassing float",
-      "prompt": "Create a `PositiveFloat` class that inherits from `float`. It should ensure that the value passed is always absolute. Because `float` is immutable, you must do this by overriding `__new__` rather than `__init__`.",
+      "prompt": "The provided code subclasses \float but doesn't change its behavior. Modify it by overriding __new__ so that any value passed to PositiveFloat is converted to its absolute value before initialization.",
       "starter_code": "class PositiveFloat(float):\n    pass\n\np = PositiveFloat(-3.14)\nprint(p)",
       "solution": "class PositiveFloat(float):\n    def __new__(cls, value):\n        return super().__new__(cls, abs(value))\n\np = PositiveFloat(-3.14)\nprint(p)"
     }
@@ -74,5 +87,21 @@
   },
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#object.__new__"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code print when executed?",
+      "code": "class Custom:\n    def __new__(cls):\n        print('new')\n        return super().__new__(cls)\n    def __init__(self):\n        print('init')\n\nc = Custom()",
+      "answer": "new\ninit",
+      "why": "Python first calls __new__ which allocates the instance and returns it, and since the instance returned is of type Custom, Python immediately calls __init__."
+    },
+    {
+      "type": "predict-output",
+      "question": "What will this code print when executed?",
+      "code": "class MissingReturn:\n    def __new__(cls):\n        print('new')\n    def __init__(self):\n        print('init')\n\nm = MissingReturn()",
+      "answer": "new",
+      "why": "Because __new__ does not explicitly return the newly created instance, it implicitly returns None. Since it didn't return an instance of MissingReturn, __init__ is never called."
+    }
   ]
 }

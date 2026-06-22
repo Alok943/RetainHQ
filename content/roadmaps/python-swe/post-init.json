@@ -1,0 +1,94 @@
+{
+  "slug": "post-init",
+  "title": "__post_init__ Processing",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["dataclasses"],
+    "unlocks": [],
+    "project_usage": ["Data validation", "Derived fields", "API payload normalization"]
+  },
+  "overview": {
+    "what": "The `__post_init__` method is a special method in dataclasses that runs immediately after the auto-generated `__init__` finishes. It allows you to execute custom logic like validating data, normalizing inputs (e.g., lowercasing strings), or computing dependent fields (fields whose values depend on other fields). Mental model: `__init__` puts the raw data into the box, and `__post_init__` inspects or modifies the box before handing it back to the caller.",
+    "why": "Because `@dataclass` generates `__init__` for you, you can't easily add validation or compute fields inside the constructor. `__post_init__` provides a hook to perform these actions automatically every time an instance is created.",
+    "where_used": ["Configuration parsing", "Data validation pipelines", "Pydantic-like early validation"]
+  },
+  "why_learning_this": [
+    "You can validate data at creation time rather than dealing with invalid state later.",
+    "You can auto-calculate fields based on the raw inputs provided by the user."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to type-hint the derived field",
+      "explanation": "If you want a field to be computed in `__post_init__`, it still needs to be declared as a dataclass field. To avoid requiring it in `__init__`, you must use `field(init=False)`."
+    },
+    {
+      "title": "Assigning to fields in a frozen dataclass",
+      "explanation": "In a `frozen=True` dataclass, you cannot assign `self.attr = value` in `__post_init__`. You must use `object.__setattr__(self, 'attr', value)` instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "When does the `__post_init__` method execute?",
+      "answer": "It executes immediately after the automatically generated `__init__` method finishes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are two common use cases for `__post_init__`?",
+      "answer": "Validating the input data (e.g., ensuring a number is positive) and computing/deriving the values of dependent fields.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If you want a field to be populated in `__post_init__` but not required during initialization, how do you define it?",
+      "answer": "By using `dataclasses.field(init=False)` when defining the class attribute.",
+      "tier": "tier3"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from dataclasses import dataclass\n\n@dataclass\nclass Product:\n    price: float\n\n    def __post_init__(self):\n        if self.price < 0:\n            self.price = 0.0\n\np = Product(-50)\nprint(p.price)",
+      "question": "What is printed when this code is executed?",
+      "answer": "0.0",
+      "why": "The auto-generated `__init__` sets `self.price = -50`. Then `__post_init__` runs, sees the negative price, and overwrites it with `0.0`."
+    },
+    {
+      "type": "find-bug",
+      "code": "from dataclasses import dataclass\n\n@dataclass\nclass Circle:\n    radius: float\n    area: float\n\n    def __post_init__(self):\n        self.area = 3.14 * (self.radius ** 2)\n\nc = Circle(2.0)\nprint(c.area)",
+      "question": "Why does this code fail to run as intended?",
+      "answer": "TypeError: __init__() missing 1 required positional argument: 'area'",
+      "why": "Because `area` is defined as a normal field, the auto-generated `__init__` requires it to be passed. To compute it in `__post_init__` without requiring it, it should be defined with `field(init=False)`."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass User:\n    username: str\n    is_admin: bool = field(init=False)\n\n    def __post_init__(self):\n        self.is_admin = self.username.startswith('admin_')\n\nu = User('admin_alice')\nprint(u.is_admin)",
+    "focus": "self.is_admin = ... calculates the dependent field after username is set."
+  },
+  "aha_moment": {
+    "code": "from dataclasses import dataclass\n\n@dataclass\nclass Rectangle:\n    width: int\n    height: int\n\n    def __post_init__(self):\n        print(f'Validating {self.width}x{self.height}')\n        if self.width <= 0:\n            raise ValueError('Width must be positive')\n\nRectangle(10, 5)",
+    "prediction": "Will the 'Validating...' print statement execute if you create a valid Rectangle?",
+    "common_guess": "No, or I have to call validate() manually.",
+    "why": "Yes, it prints 'Validating 10x5'. `__post_init__` is guaranteed to run automatically at the very end of instantiation, intercepting and verifying the data before the caller receives the object."
+  },
+  "practice_tasks": [
+    {
+      "title": "Normalize the Username",
+      "prompt": "Given this dataclass, modify it by adding a `__post_init__` method that normalizes `username` to be entirely lowercase.",
+      "starter_code": "from dataclasses import dataclass\n\n@dataclass\nclass Account:\n    username: str",
+      "solution": "from dataclasses import dataclass\n\n@dataclass\nclass Account:\n    username: str\n\n    def __post_init__(self):\n        self.username = self.username.lower()"
+    }
+  ],
+  "challenge": {
+    "title": "Data Validation on Init",
+    "prompt": "Create a dataclass `Temperature` that takes one float field `celsius`. Implement `__post_init__` to raise a `ValueError` if `celsius` is below absolute zero (-273.15).",
+    "solution": "from dataclasses import dataclass\n\n@dataclass\nclass Temperature:\n    celsius: float\n\n    def __post_init__(self):\n        if self.celsius < -273.15:\n            raise ValueError('Temperature below absolute zero')"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/dataclasses.html#post-init-processing"
+  ]
+}

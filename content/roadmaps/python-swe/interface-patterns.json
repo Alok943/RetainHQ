@@ -1,0 +1,113 @@
+{
+  "slug": "interface-patterns",
+  "title": "Interface patterns in Python",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "abc-abstract-methods",
+      "protocols",
+      "duck-typing"
+    ],
+    "unlocks": [
+      "srp",
+      "ocp",
+      "lsp",
+      "isp",
+      "dip"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic",
+      "SQLAlchemy"
+    ]
+  },
+  "overview": {
+    "what": "In Python, an interface is a contract that defines the methods a class must implement, without specifying how they work. Since Python lacks an `interface` keyword, we build interfaces using one of three patterns: informal interfaces (Duck Typing), formal interfaces using Abstract Base Classes (`abc`), or structural typing using `typing.Protocol`. Think of an interface like a USB port: the port defines the shape and the pins (the interface), and any device (mouse, keyboard, drive) that fits that shape can be plugged in and used by the computer, regardless of its internal circuitry.",
+    "why": "Interfaces decouple the code that uses an object from the code that implements it, allowing you to swap dependencies (like databases or payment gateways) without changing the core business logic.",
+    "where_used": [
+      "Dependency Injection",
+      "Plugin Systems",
+      "Mocking in Tests"
+    ]
+  },
+  "why_learning_this": [
+    "Write code that depends on abstractions rather than concrete classes, making it easier to test.",
+    "Implement SOLID principles effectively, particularly Dependency Inversion and Open/Closed.",
+    "Create pluggable architectures where new features can be added without modifying existing code."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Violating the contract",
+      "explanation": "Implementing an interface but changing the method signature (e.g., accepting different arguments or returning a different type). This breaks the code that relies on the interface."
+    },
+    {
+      "title": "Fat interfaces",
+      "explanation": "Putting too many unrelated methods into a single interface. Classes are forced to implement methods they don't need. The fix is to split the interface into smaller, focused ones (Interface Segregation Principle)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of an interface in Python?",
+      "answer": "An interface defines a contract specifying which methods a class must implement without defining how they work. This allows decoupling the usage of an object from its concrete implementation.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are interfaces useful when dealing with dependencies like databases or external APIs?",
+      "answer": "Interfaces allow you to swap dependencies without modifying the core business logic. For example, you can write code that depends on a generic 'Database' interface and swap between PostgreSQL, MySQL, or a test mock as long as they adhere to the interface.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What are the three main patterns used to implement interfaces in Python?",
+      "answer": "Informal interfaces (Duck Typing), formal interfaces (Abstract Base Classes with `abc`), and structural subtyping (`typing.Protocol`).",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Enforce the Interface",
+      "prompt": "The provided code defines a basic Notifier interface but doesn't strictly enforce it. Modify Notifier to use the \u0007bc module so that subclasses are forced to implement the send method before they can be instantiated.",
+      "starter_code": "class Notifier:\n    def send(self, message: str):\n        pass\n\nclass EmailNotifier(Notifier):\n    def send(self, message: str):\n        print(f'Email: {message}')\n\nclass BadNotifier(Notifier):\n    pass\n\nb = BadNotifier()\nb.send('Hello')",
+      "solution": "from abc import ABC, abstractmethod\n\nclass Notifier(ABC):\n    @abstractmethod\n    def send(self, message: str):\n        pass\n\nclass EmailNotifier(Notifier):\n    def send(self, message: str):\n        print(f'Email: {message}')\n\nclass BadNotifier(Notifier):\n    pass\n\n# b = BadNotifier() will now raise an error if uncommented"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import Protocol\n\nclass Logger(Protocol):\n    def log(self, msg: str) -> None:\n        ...\n\nclass ConsoleLogger:\n    def log(self, msg: str) -> None:\n        print(f'CONSOLE: {msg}')\n\ndef process_data(logger: Logger):\n    logger.log('Data processed')\n\nlogger = ConsoleLogger()\nprocess_data(logger)\n",
+    "focus": "def process_data(logger: Logger):"
+  },
+  "aha_moment": {
+    "code": "from abc import ABC, abstractmethod\n\nclass PaymentGateway(ABC):\n    @abstractmethod\n    def pay(self, amount: int):\n        pass\n\nclass StripeGateway(PaymentGateway):\n    pass\n\ngateway = StripeGateway()\n",
+    "prediction": "What happens when we instantiate StripeGateway?",
+    "common_guess": "It creates a StripeGateway object.",
+    "why": "It raises a TypeError: \"Can't instantiate abstract class StripeGateway with abstract methods pay\". An abstract base class strictly enforces its contract; subclasses cannot be instantiated unless all abstract methods are implemented."
+  },
+  "challenge": {
+    "title": "A Pluggable Data Exporter",
+    "prompt": "Using `typing.Protocol`, define an interface `Exporter` with an `export(data: dict) -> str` method. Implement a `JSONExporter` that returns the data as a JSON string and a `CSVExporter` that returns the data as comma-separated values (keys on the first line, values on the second). Finally, write a function `export_data(exporter, data)` that takes an `Exporter` and returns the exported string.",
+    "solution": "import json\nfrom typing import Protocol\n\nclass Exporter(Protocol):\n    def export(self, data: dict) -> str:\n        ...\n\nclass JSONExporter:\n    def export(self, data: dict) -> str:\n        return json.dumps(data)\n\nclass CSVExporter:\n    def export(self, data: dict) -> str:\n        keys = ','.join(str(k) for k in data.keys())\n        values = ','.join(str(v) for v in data.values())\n        return f'{keys}\\n{values}'\n\ndef export_data(exporter: Exporter, data: dict) -> str:\n    return exporter.export(data)\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/abc.html",
+    "https://docs.python.org/3/library/typing.html#typing.Protocol"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What happens when this code runs?",
+      "code": "from abc import ABC, abstractmethod\nclass Animal(ABC):\n    @abstractmethod\n    def speak(self):\n        pass\n\nclass Dog(Animal):\n    pass\n\nd = Dog()",
+      "answer": "It raises a TypeError.",
+      "why": "Dog inherits from an Abstract Base Class but fails to implement the abstract method speak(). Python enforces this contract at instantiation time."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why would you use \typing.Protocol instead of \u0007bc.ABC for an interface?",
+      "answer": "With Protocol, classes don't need to explicitly inherit from it (structural subtyping). They only need to implement the required methods.",
+      "why": "This is extremely useful when you want to define an interface for classes you don't control, or when you want loose coupling without the strictness of explicit inheritance."
+    }
+  ]
+}

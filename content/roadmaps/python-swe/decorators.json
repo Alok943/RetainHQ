@@ -26,7 +26,7 @@
   },
   "overview": {
     "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure) that replaces the original function. It acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.",
-    "why": "Decorators allow you to cleanly extract reusable cross-cutting concerns—like logging, authentication, or timing—away from the core business logic of your functions.",
+    "why": "Decorators allow you to cleanly extract reusable cross-cutting concerns\u2014like logging, authentication, or timing\u2014away from the core business logic of your functions.",
     "where_used": [
       "FastAPI route definitions (@app.get)",
       "Flask routes (@app.route)",
@@ -64,12 +64,28 @@
       "tier": "tier1"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code print?",
+      "code": "def make_bold(func):\n    def wrapper():\n        return f\"<b>{func()}</b>\"\n    return wrapper\n\n@make_bold\ndef get_text():\n    return \"Hello\"\n\nprint(get_text())",
+      "answer": "<b>Hello</b>",
+      "why": "The decorator `make_bold` wraps `get_text`. When `get_text()` is called, it actually calls `wrapper()`, which evaluates `func()` (returning 'Hello'), wraps it in `<b>` tags, and returns the result."
+    },
+    {
+      "type": "find-bug",
+      "question": "This decorator is meant to log the execution of a function, but calling `add(2, 3)` returns `None`. Why?",
+      "code": "def log_execution(func):\n    def wrapper(*args, **kwargs):\n        print(\"Executing function...\")\n        func(*args, **kwargs)\n    return wrapper\n\n@log_execution\ndef add(a, b):\n    return a + b\n\nresult = add(2, 3)",
+      "answer": "The `wrapper` function forgot to return the result of `func(*args, **kwargs)`.",
+      "why": "In a decorator, the `wrapper` replaces the original function. If the original function calculates a value but the `wrapper` doesn't explicitly return it, the caller will implicitly receive `None`."
+    }
+  ],
   "practice_tasks": [
     {
-      "title": "Write a logging decorator",
-      "prompt": "Create a decorator `log_call` that prints 'Calling function' before executing the decorated function, and 'Function finished' after. Apply it to a simple function `say_hello` that prints 'Hello!'.",
-      "starter_code": "def say_hello():\n  print('Hello!')\n\nsay_hello()",
-      "solution": "def log_call(func):\n  def wrapper():\n    print('Calling function')\n    func()\n    print('Function finished')\n  return wrapper\n\n@log_call\ndef say_hello():\n  print('Hello!')\n\nsay_hello()"
+      "name": "Add Logging to a Decorator",
+      "description": "The current `log_call` decorator doesn't do anything yet. Modify it so that it prints 'Calling function' before executing the decorated function, and 'Function finished' after. Apply it to the `say_hello` function.",
+      "starter_code": "def log_call(func):\n    def wrapper():\n        # TODO: Print 'Calling function', call func(), print 'Function finished'\n        return func()\n    return wrapper\n\n# TODO: Decorate this function\ndef say_hello():\n    print('Hello!')\n\nsay_hello()",
+      "solution_code": "def log_call(func):\n    def wrapper():\n        print('Calling function')\n        func()\n        print('Function finished')\n    return wrapper\n\n@log_call\ndef say_hello():\n    print('Hello!')\n\nsay_hello()"
     }
   ],
   "code_walkthrough": {
@@ -84,8 +100,7 @@
   },
   "challenge": {
     "title": "Write a timing decorator that accepts arguments",
-    "prompt": "Create a decorator `timer` that measures the execution time of a function. It must accept any number of positional and keyword arguments (`*args`, `**kwargs`), run the original function, print the time taken in seconds (you can mock the time or use `import time`), and return the original function's result.",
-    "solution": "import time\n\ndef timer(func):\n  def wrapper(*args, **kwargs):\n    start = time.time()\n    result = func(*args, **kwargs)\n    end = time.time()\n    print(f'Time taken: {end - start}')\n    return result\n  return wrapper\n\n@timer\ndef slow_add(a, b):\n  time.sleep(0.1)\n  return a + b"
+    "prompt": "Create a decorator `timer` that measures the execution time of a function. It must accept any number of positional and keyword arguments (`*args`, `**kwargs`), run the original function, print the time taken in seconds (you can mock the time or use `import time`), and return the original function's result."
   },
   "sources": [
     "https://docs.python.org/3/glossary.html#term-decorator"

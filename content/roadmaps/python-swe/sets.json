@@ -72,22 +72,37 @@
   "practice_tasks": [
     {
       "title": "Find missing scopes",
-      "prompt": "Write a function `get_missing_scopes(user_scopes, required_scopes)` that takes two lists of strings. It should return a set of scopes that are in `required_scopes` but not in `user_scopes`.",
-      "starter_code": "def get_missing_scopes(user_scopes, required_scopes):\n    pass",
-      "solution": "def get_missing_scopes(user_scopes, required_scopes):\n    user_set = set(user_scopes)\n    required_set = set(required_scopes)\n    return required_set - user_set\n\n# Test\nprint(get_missing_scopes(['read', 'write'], ['read', 'delete']))"
+      "prompt": "The `get_missing_scopes` function takes two lists of strings. Modify it to return a set of scopes that are in `required_scopes` but NOT in `user_scopes`.",
+      "starter_code": "def get_missing_scopes(user_scopes, required_scopes):\n    # Return required scopes that the user does not have\n    pass\n",
+      "solution": "def get_missing_scopes(user_scopes, required_scopes):\n    return set(required_scopes) - set(user_scopes)\n"
     }
   ],
-  "code_walkthrough": {
-    "code": "roles = ['admin', 'user', 'admin', 'editor']\n\nunique_roles = set(roles)\nprint(unique_roles)\n\nrequired = {'admin', 'superuser'}\nprint(required & unique_roles)",
-    "focus": "Converting the list to a set automatically removes the duplicate 'admin'; using the `&` operator instantly finds the intersection."
-  },
   "challenge": {
     "title": "Validate user permissions",
     "prompt": "You are building an API middleware that checks if a user has access to an endpoint. Write a function `has_access(user_roles, required_roles)` that takes two iterables. Return True if the user has ALL of the required roles, and False otherwise. Additionally, verify you don't use `list` operations.",
     "solution": "def has_access(user_roles, required_roles):\n    user_set = set(user_roles)\n    required_set = set(required_roles)\n    # issubset is True if all elements of required_set are in user_set\n    return required_set.issubset(user_set)\n\nprint(has_access(['admin', 'editor'], ['editor']))\nprint(has_access(['user'], ['admin']))"
   },
+  "code_walkthrough": {
+    "code": "user_roles = ['user', 'admin', 'user']\nunique_roles = set(user_roles)\nprint(unique_roles)",
+    "focus": "Notice how passing the list into `set()` instantly strips out the duplicate 'user' entry."
+  },
   "sources": [
     "https://docs.python.org/3/tutorial/datastructures.html#sets",
     "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the output of this code?",
+      "code": "user_roles = ['user', 'admin', 'user']\nrole_set = set(user_roles)\nprint(len(role_set))",
+      "answer": "2",
+      "why": "Sets automatically discard duplicate values. The resulting set is `{'user', 'admin'}`."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer writes `empty_set = {}` to initialize an empty set. Why is this incorrect?",
+      "answer": "Because `{}` creates an empty dictionary, not an empty set.",
+      "why": "Python uses `{}` for dictionaries. To create an empty set, you must explicitly use the `set()` constructor."
+    }
   ]
 }

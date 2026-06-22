@@ -1,0 +1,78 @@
+{
+  "slug": "isp",
+  "title": "Interface Segregation Principle",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["protocols"],
+    "unlocks": ["dip"],
+    "project_usage": ["FastAPI dependencies", "Protocol definitions"]
+  },
+  "overview": {
+    "what": "The Interface Segregation Principle (ISP) states that no client should be forced to depend on methods it does not use. In Python, this usually means designing small, focused `Protocol`s or abstract base classes rather than massive 'god interfaces' with dozens of methods. For example, instead of a single `CloudStorage` interface that requires implementing `read`, `write`, `delete`, and `set_permissions`, you might split it into a `Reader` and a `Writer`. That way, a component that only needs to write logs can accept a `Writer` and doesn't care if the object also supports reading.",
+    "why": "It prevents sprawling, fragile interfaces where changing a method breaks clients that didn't even use that method. Small interfaces make your classes easier to mock in tests and highly reusable.",
+    "where_used": ["FastAPI dependencies", "Unit testing mocks", "Domain-driven design"]
+  },
+  "why_learning_this": [
+    "Writing smaller, composable Protocols instead of massive base classes",
+    "Making unit testing easier by requiring narrower mocks"
+  ],
+  "common_mistakes": [
+    {
+      "title": "The God Interface",
+      "explanation": "Creating a massive base class with dozens of methods because 'all cloud providers do these things', forcing every subclass to implement methods that don't make sense for them (often by raising NotImplementedError)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core idea of the Interface Segregation Principle?",
+      "answer": "Clients should not be forced to depend on methods they do not use, meaning interfaces should be small and focused rather than large and comprehensive.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "What is the primary consequence of violating the Interface Segregation Principle?",
+      "answer": "Classes are forced to implement methods they don't actually need, often resulting in dummy methods or `NotImplementedError` exceptions.",
+      "why": "When an interface is too broad (a 'god interface'), subclasses must provide implementations for every method defined in the interface, even if those methods don't make logical sense for the specific subclass."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer argues that having a single `CloudProvider` protocol with 50 methods is better than 10 small protocols because 'all cloud providers eventually do everything'. Why is this reasoning flawed according to ISP?",
+      "answer": "Because clients consuming the protocol rarely use all 50 methods, and changing one method forces unrelated clients or providers to update.",
+      "why": "ISP focuses on the clients using the interface. Even if the provider implements everything, a function that only uploads a file shouldn't depend on an interface that also defines database backup methods."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Split the Protocol",
+      "prompt": "The provided code defines a massive `MultiFunctionDevice` protocol that forces read-only devices to implement a `write_doc` method they can't use. Modify the code to split this into two smaller protocols: `Reader` (with `read_doc`) and `Writer` (with `write_doc`), and make `ReadOnlyDevice` only inherit from `Reader`.",
+      "starter_code": "from typing import Protocol\n\nclass MultiFunctionDevice(Protocol):\n    def read_doc(self) -> None: ...\n    def write_doc(self) -> None: ...\n\nclass ReadOnlyDevice(MultiFunctionDevice):\n    def read_doc(self) -> None:\n        pass\n    def write_doc(self) -> None:\n        raise NotImplementedError('Cannot write!')",
+      "solution": "from typing import Protocol\n\nclass Reader(Protocol):\n    def read_doc(self) -> None: ...\n\nclass Writer(Protocol):\n    def write_doc(self) -> None: ...\n\nclass ReadOnlyDevice(Reader):\n    def read_doc(self) -> None:\n        pass"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import Protocol\n\nclass Writer(Protocol):\n    def write(self, text: str) -> None:\n        ...\n\ndef log_message(logger: Writer, msg: str) -> None:\n    logger.write(f'LOG: {msg}')\n\nclass Console:\n    def write(self, text: str) -> None:\n        print(text)\n\nlog_message(Console(), 'Hello')",
+    "focus": "The `log_message` function only demands a `Writer` (an object with a `write` method), not a full `FileStorage` or `Database`."
+  },
+  "aha_moment": {
+    "code": "class BaseDevice:\n    def read(self):\n        raise NotImplementedError\n    def write(self):\n        raise NotImplementedError\n\nclass ReadOnlyDevice(BaseDevice):\n    def read(self):\n        return 'data'\n    def write(self):\n        raise Exception('Cannot write to ReadOnlyDevice!')\n\ndev = ReadOnlyDevice()\nprint(dev.read())\ntry:\n    dev.write()\nexcept Exception as e:\n    print(e)",
+    "prediction": "What happens when you call write on the read-only device?",
+    "common_guess": "It silently fails or does nothing.",
+    "why": "It crashes. Forcing a read-only device to implement a `write` method violates ISP. The device shouldn't even have a `write` method. If we segregated the interfaces, `ReadOnlyDevice` would simply not implement `Writer`."
+  },
+  "challenge": {
+    "title": "Refactor a God Class",
+    "prompt": "Create two Protocols, `Worker` and `Eater`. Then create a `Human` class that implements both, and a `Robot` class that implements only `Worker`.",
+    "solution": "from typing import Protocol\n\nclass Worker(Protocol):\n    def work(self) -> None:\n        ...\n\nclass Eater(Protocol):\n    def eat(self) -> None:\n        ...\n\nclass Human:\n    def work(self) -> None:\n        print('Human working')\n    def eat(self) -> None:\n        print('Human eating')\n\nclass Robot:\n    def work(self) -> None:\n        print('Robot working')"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.Protocol"
+  ]
+}

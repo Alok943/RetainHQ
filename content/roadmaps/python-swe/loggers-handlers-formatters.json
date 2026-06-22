@@ -1,0 +1,85 @@
+{
+  "slug": "loggers-handlers-formatters",
+  "title": "Loggers, Handlers, and Formatters",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["logging-basics", "class-basics"],
+    "unlocks": ["structured-logging", "log-rotation"],
+    "project_usage": ["FastAPI", "Django", "Celery"]
+  },
+  "overview": {
+    "what": "Python's `logging` module separates concerns into three parts: Loggers (the interface you call), Handlers (where the logs go), and Formatters (what the logs look like). When `logger.error('msg')` is called, the Logger packages it into a LogRecord, then passes it to all attached Handlers. Each Handler uses its Formatter to turn the record into text, and sends it to its destination (console, file, network). Think of it like a newsroom: the Logger is the reporter writing the story, the Formatter is the editor formatting it for print or web, and the Handlers are the delivery trucks taking it to different audiences.",
+    "why": "It allows a single application to send different log levels to different destinations (e.g., debug logs to a file, errors to standard error and an alerting service) without changing the logging calls in the business logic.",
+    "where_used": ["FastAPI", "Celery", "Production Web Apps"]
+  },
+  "why_learning_this": [
+    "Route error logs to a file while keeping info logs in the console",
+    "Configure complex third-party library logging behavior",
+    "Format logs specifically for log aggregation systems"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Duplicate logs",
+      "explanation": "Adding the same handler multiple times, or not realizing a child logger's messages propagate to the root logger's handlers by default."
+    },
+    {
+      "title": "Formatter attached to Logger",
+      "explanation": "Formatters are attached to Handlers, not Loggers. Attaching one to a Logger doesn't work because different destinations need different formats."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the specific responsibility of a Handler in Python's logging system?",
+      "answer": "A Handler determines the destination of the log message, such as the console, a file, or over the network.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are Formatters attached to Handlers instead of Loggers?",
+      "answer": "Because different destinations might require different text formats (e.g., plain text for a console, JSON for a file aggregator), even if they come from the same Logger.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import logging\nimport sys\nlogger = logging.getLogger('my_app')\nlogger.setLevel(logging.INFO)\nhandler = logging.StreamHandler(sys.stdout)\nformatter = logging.Formatter('PREFIX: %(message)s')\nhandler.setFormatter(formatter)\nlogger.addHandler(handler)\nlogger.info('System start')",
+      "question": "What is printed to stdout?",
+      "answer": "PREFIX: System start",
+      "why": "The Logger generates the LogRecord, passes it to the StreamHandler, which applies the Formatter's template string before writing to stdout."
+    },
+    {
+      "type": "find-bug",
+      "code": "import logging\nimport sys\nlogger = logging.getLogger('demo')\nlogger.setLevel(logging.INFO)\nhandler = logging.StreamHandler(sys.stdout)\nlogger.setFormatter(logging.Formatter('%(message)s'))\nlogger.addHandler(handler)\nlogger.info('Hello')",
+      "question": "Why does this code fail with an AttributeError?",
+      "answer": "The code attempts to call `logger.setFormatter()`, but formatters must be attached to handlers (`handler.setFormatter()`), not loggers.",
+      "why": "Formatters belong to Handlers because a single Logger might have multiple Handlers, each needing a different format."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import logging\nimport sys\nlogger = logging.getLogger('walkthrough')\nlogger.setLevel(logging.DEBUG)\n\nconsole = logging.StreamHandler(sys.stdout)\nconsole.setLevel(logging.INFO)\nconsole.setFormatter(logging.Formatter('CONSOLE: %(message)s'))\n\nlogger.addHandler(console)\nlogger.debug('Debug msg')\nlogger.info('Info msg')",
+    "focus": "console.setLevel(logging.INFO)"
+  },
+  "aha_moment": {
+    "code": "import logging\nimport sys\nroot = logging.getLogger()\nroot.addHandler(logging.StreamHandler(sys.stdout))\n\nchild = logging.getLogger('my.child')\nchild.addHandler(logging.StreamHandler(sys.stdout))\n\nchild.warning('Watch this space')",
+    "prediction": "How many times will 'Watch this space' print?",
+    "common_guess": "Once, because the child logger only has one handler.",
+    "why": "It prints twice. By default, loggers propagate their records up the hierarchy. The record is handled by the child's handler, then propagates up and is handled again by the root's handler."
+  },
+  "practice_tasks": [
+    {
+      "title": "Route errors differently",
+      "prompt": "Given this working code that logs everything to the console, modify it so that `logging.ERROR` messages (and above) ALSO use `error_handler`, which is configured to format errors with 'ALERT: %(message)s'. Keep the standard console handler for INFO and above.",
+      "starter_code": "import logging\nimport sys\n\nlogger = logging.getLogger('practice')\nlogger.setLevel(logging.INFO)\n\nconsole = logging.StreamHandler(sys.stdout)\nconsole.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))\nlogger.addHandler(console)\n\n# error_handler = logging.StreamHandler(sys.stderr)\n\nlogger.info('Starting up')\nlogger.error('Database down')",
+      "solution": "import logging\nimport sys\n\nlogger = logging.getLogger('practice')\nlogger.setLevel(logging.INFO)\n\nconsole = logging.StreamHandler(sys.stdout)\nconsole.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))\nlogger.addHandler(console)\n\nerror_handler = logging.StreamHandler(sys.stderr)\nerror_handler.setLevel(logging.ERROR)\nerror_handler.setFormatter(logging.Formatter('ALERT: %(message)s'))\nlogger.addHandler(error_handler)\n\nlogger.info('Starting up')\nlogger.error('Database down')"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/howto/logging.html#loggers"
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "slug": "aggregate-functions",
+  "title": "Aggregate Functions",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["group-by"],
+    "unlocks": ["having-vs-where"],
+    "project_usage": ["analytics dashboards", "KPI endpoints", "reporting queries"]
+  },
+  "overview": {
+    "what": "Aggregate functions take a set of rows and return a single scalar value. The five core aggregates are COUNT, SUM, AVG, MIN, and MAX.\n\n- COUNT(*) counts all rows; COUNT(column) counts non-NULL values in that column.\n- SUM and AVG work on numeric columns and ignore NULLs.\n- MIN and MAX work on any orderable type (numbers, strings, dates).\n\nWithout GROUP BY, an aggregate collapses the entire table into one row. With GROUP BY, each group gets its own aggregate result.\n\nAgainst the shared dataset:\n\n  SELECT COUNT(*) AS total_products,\n         AVG(price) AS avg_price,\n         MIN(price) AS cheapest,\n         MAX(price) AS most_expensive\n  FROM products;\n\nReturns: 6 | 85.82333... | 4.99 | 199.99 — one summary row from six product rows.\n\nThink of aggregates as squeezers: they take a bag of values and squeeze out one number.",
+    "why": "Aggregates are the building blocks of every business metric — total revenue, average order size, highest salary, number of active users. Without them you can only list individual rows, never summarize.",
+    "where_used": ["KPI dashboards", "summary API responses", "data quality checks"]
+  },
+  "why_learning_this": [
+    "Computing any business metric — totals, averages, counts — requires aggregate functions",
+    "Understanding the difference between COUNT(*) and COUNT(column) prevents subtle NULL-related bugs"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using COUNT(*) when you mean COUNT(column)",
+      "explanation": "COUNT(*) counts all rows including those where the column of interest is NULL. COUNT(country) on the customers table returns 7 (skipping Emma's NULL country), while COUNT(*) returns 8. Use COUNT(column) when you want to count non-NULL values only."
+    },
+    {
+      "title": "Using SUM when you mean COUNT",
+      "explanation": "SUM adds up the values in a numeric column; COUNT counts how many rows exist. SUM(quantity) from order_items gives the total units sold (19), while COUNT(*) gives the number of line items (11). Mixing these up produces nonsensical metrics."
+    },
+    {
+      "title": "Forgetting that AVG ignores NULLs",
+      "explanation": "AVG skips NULL values entirely — it divides by the count of non-NULL values, not by the total row count. If 3 out of 5 rows have values 10, 20, 30 and 2 are NULL, AVG returns 20 (sum 60 / 3 non-NULLs), not 12 (60 / 5). Use COALESCE to turn NULLs into 0 if you want them included in the denominator."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between COUNT(*) and COUNT(column)?",
+      "answer": "COUNT(*) counts all rows regardless of NULLs. COUNT(column) counts only the rows where that column is not NULL.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when you use an aggregate function without GROUP BY?",
+      "answer": "The entire table is treated as one group, and the query returns a single row with the aggregated result.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does AVG handle NULL values?",
+      "answer": "AVG ignores NULLs — it sums the non-NULL values and divides by the count of non-NULL values, not the total row count.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT COUNT(*) AS star_count,\n       COUNT(country) AS country_count\nFROM customers;",
+      "question": "What does this query return?",
+      "answer": "star_count = 8, country_count = 7",
+      "why": "COUNT(*) counts all 8 customer rows. COUNT(country) skips Emma (id 5) whose country is NULL, returning 7. This is the classic difference between the two COUNT forms."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT category,\n       SUM(price) AS total_price,\n       COUNT(*) AS product_count\nFROM products\nGROUP BY category\nORDER BY category;",
+      "question": "What rows does this return?",
+      "answer": "Electronics | 269.97 | 3\nFurniture | 239.98 | 2\nStationery | 4.99 | 1",
+      "why": "Products are grouped by category. Electronics: Keyboard(49.99) + Mouse(19.99) + Monitor(199.99) = 269.97, 3 products. Furniture: Desk(149.99) + Chair(89.99) = 239.98, 2 products. Stationery: Notebook(4.99), 1 product."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT category,\n       COUNT(*) AS num_products,\n       MIN(price) AS cheapest,\n       MAX(price) AS priciest\nFROM products\nGROUP BY category\nORDER BY category;",
+    "flow_stages": ["from", "group_by", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch 6 product rows collapse into 3 category groups, each summarised by COUNT, MIN, and MAX."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add SUM and AVG to the summary",
+      "prompt": "This query shows COUNT and MIN per category. Add a SUM(price) column aliased as total_price and an AVG(price) column aliased as avg_price. Keep the existing columns and ordering.",
+      "starter_code": "SELECT category,\n       COUNT(*) AS num_products,\n       MIN(price) AS cheapest\nFROM products\nGROUP BY category\nORDER BY category;",
+      "solution": "SELECT category,\n       COUNT(*) AS num_products,\n       MIN(price) AS cheapest,\n       SUM(price) AS total_price,\n       AVG(price) AS avg_price\nFROM products\nGROUP BY category\nORDER BY category;"
+    }
+  ],
+  "challenge": {
+    "title": "Total quantity sold per product",
+    "prompt": "Write a query that shows each product name and the total quantity sold across all order items. Only include products that appear in order_items. Order by total quantity descending, then by name.",
+    "solution": "SELECT p.name, SUM(oi.quantity) AS total_qty\nFROM products p\nJOIN order_items oi ON oi.product_id = p.id\nGROUP BY p.name\nORDER BY total_qty DESC, p.name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/functions-aggregate.html",
+    "https://www.postgresql.org/docs/current/tutorial-agg.html"
+  ]
+}

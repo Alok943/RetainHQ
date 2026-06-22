@@ -69,9 +69,9 @@
   "practice_tasks": [
     {
       "title": "Implement a simple Dictionary Wrapper",
-      "prompt": "Create a class `Config` that wraps a standard dictionary. It should allow reading and setting values using square brackets `[]` and should return the number of configuration keys when `len()` is called.",
-      "starter_code": "class Config:\n  def __init__(self, data):\n    self.data = data\n\n# conf = Config({'host': 'localhost'})\n# print(conf['host'])\n# print(len(conf))",
-      "solution": "class Config:\n  def __init__(self, data):\n    self.data = data\n\n  def __getitem__(self, key):\n    return self.data[key]\n\n  def __setitem__(self, key, value):\n    self.data[key] = value\n\n  def __len__(self):\n    return len(self.data)"
+      "prompt": "The `Config` class uses custom methods to read, set, and get the length of the data. Modify the class to use standard python syntax by replacing these methods with the appropriate `__getitem__`, `__setitem__`, and `__len__` dunder methods.",
+      "starter_code": "class Config:\n    def __init__(self, data):\n        self.data = data\n        \n    def get_value(self, key):\n        return self.data[key]\n        \n    def set_value(self, key, value):\n        self.data[key] = value\n        \n    def get_length(self):\n        return len(self.data)",
+      "solution": "class Config:\n    def __init__(self, data):\n        self.data = data\n\n    def __getitem__(self, key):\n        return self.data[key]\n\n    def __setitem__(self, key, value):\n        self.data[key] = value\n\n    def __len__(self):\n        return len(self.data)"
     }
   ],
   "code_walkthrough": {
@@ -91,5 +91,21 @@
   },
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#emulating-container-types"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will the following code output?",
+      "code": "class SecretBox:\n    def __init__(self):\n        self.contents = [10, 20, 30]\n        \n    def __getitem__(self, index):\n        return self.contents[index] * 2\n\nbox = SecretBox()\nprint(box[1])",
+      "answer": "40",
+      "why": "The square bracket syntax `box[1]` internally calls the `__getitem__` method with `1` as the `index` argument. The method accesses `self.contents[1]` which is `20`, multiplies it by `2`, and returns `40`."
+    },
+    {
+      "type": "find-bug",
+      "question": "The following class is intended to allow getting its length using `len(bag)`. However, it raises a TypeError. What is wrong?",
+      "code": "class Bag:\n    def __init__(self, items):\n        self.items = items\n        \n    def __len__(self):\n        return str(len(self.items))\n\nbag = Bag(['apple', 'banana'])\nprint(len(bag))",
+      "answer": "`__len__` must return an integer, but it is returning a string.",
+      "why": "Python strictly enforces that the `__len__` dunder method returns a non-negative integer. Returning a string causes a TypeError when the built-in `len()` function is called on the object."
+    }
   ]
 }

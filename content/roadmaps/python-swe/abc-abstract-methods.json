@@ -1,0 +1,106 @@
+{
+  "slug": "abc-abstract-methods",
+  "title": "ABC Module and Abstract Methods",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics",
+      "inheritance-super",
+      "method-overriding"
+    ],
+    "unlocks": [
+      "protocols"
+    ],
+    "project_usage": [
+      "Django BaseCommand",
+      "SDK Base Classes"
+    ]
+  },
+  "overview": {
+    "what": "The `abc` module provides the `ABC` class and `@abstractmethod` decorator to define Abstract Base Classes. These classes cannot be instantiated directly and force child classes to implement specific methods before they can be instantiated. Think of it like a strict contract or a blueprint: a 'Vehicle' blueprint says you must build an 'engine', but you can't drive the blueprint itself. In Python, if a child class inherits from `ABC` but forgets to override an `@abstractmethod`, Python raises an error at instantiation time, not when the method is called.",
+    "why": "It prevents developers from accidentally creating incomplete subclasses, enforcing a strict API contract across a codebase and catching bugs early.",
+    "where_used": [
+      "Django BaseCommand",
+      "Collections.abc"
+    ]
+  },
+  "why_learning_this": [
+    "You can enforce strict interfaces across large teams.",
+    "It enables robust plugin architectures where every plugin is guaranteed to have the required methods."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to inherit from ABC",
+      "explanation": "Decorating a method with `@abstractmethod` does nothing if the class doesn't inherit from `ABC` (or use `ABCMeta`). You can still instantiate it."
+    },
+    {
+      "title": "Calling the abstract class",
+      "explanation": "Trying to instantiate the abstract base class itself will raise a TypeError if it has any abstract methods."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you try to instantiate a class that inherits from `ABC` and contains an `@abstractmethod`?",
+      "answer": "Python raises a TypeError immediately at instantiation.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the purpose of the `@abstractmethod` decorator?",
+      "answer": "It marks a method that must be overridden by any concrete child class before the child class can be instantiated.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When does Python check if the abstract methods have been implemented: at class definition, at instantiation, or when the method is called?",
+      "answer": "At instantiation time.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Enforce a Contract",
+      "prompt": "Currently, `PaymentGateway` is just a regular class, and `StripeGateway` inherits from it but doesn't implement `process_payment`. Modify `PaymentGateway` to inherit from `ABC` and decorate `process_payment` with `@abstractmethod`. Then implement `process_payment` in `StripeGateway` so that it returns a string.",
+      "starter_code": "from abc import ABC, abstractmethod\n\nclass PaymentGateway:\n    def process_payment(self, amount):\n        pass\n\nclass StripeGateway(PaymentGateway):\n    pass\n",
+      "solution": "from abc import ABC, abstractmethod\n\nclass PaymentGateway(ABC):\n    @abstractmethod\n    def process_payment(self, amount):\n        pass\n\nclass StripeGateway(PaymentGateway):\n    def process_payment(self, amount):\n        return f'Processed {amount} via Stripe'\n"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from abc import ABC, abstractmethod\nclass Animal:\n    @abstractmethod\n    def speak(self):\n        pass\nclass Dog(Animal):\n    pass\nd = Dog()\nprint('Woof!')",
+      "question": "What happens when this code is executed?",
+      "answer": "It prints 'Woof!'.",
+      "why": "The `Animal` class does not inherit from `ABC`, so the `@abstractmethod` decorator has no enforcing effect. The `Dog` class can be instantiated normally."
+    },
+    {
+      "type": "predict-output",
+      "code": "from abc import ABC, abstractmethod\nclass Animal(ABC):\n    @abstractmethod\n    def speak(self):\n        pass\nclass Dog(Animal):\n    pass\nd = Dog()\nprint('Woof!')",
+      "question": "What happens when this code is executed?",
+      "answer": "A TypeError is raised at `d = Dog()`.",
+      "why": "Because `Animal` inherits from `ABC` and `speak` is decorated with `@abstractmethod`, `Dog` must implement `speak` before it can be instantiated."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from abc import ABC, abstractmethod\n\nclass Worker(ABC):\n    @abstractmethod\n    def work(self):\n        pass\n\nclass LazyWorker(Worker):\n    pass\n\ntry:\n    w = LazyWorker()\nexcept TypeError as e:\n    print(e)",
+    "focus": "w = LazyWorker() # Fails because LazyWorker didn't implement work()"
+  },
+  "aha_moment": {
+    "code": "from abc import abstractmethod\n\nclass FakeAbstract:\n    @abstractmethod\n    def do_something(self):\n        pass\n\nobj = FakeAbstract()\nprint('Created successfully!')",
+    "prediction": "What happens when we instantiate `FakeAbstract`?",
+    "common_guess": "It raises a TypeError because of the abstract method.",
+    "why": "It prints 'Created successfully!'. The `@abstractmethod` decorator only enforces instantiation rules if the class also inherits from `ABC`. Without `ABC`, the decorator does nothing."
+  },
+  "challenge": {
+    "title": "Implement an Exporter Interface",
+    "prompt": "Create an abstract base class `DataExporter` with an abstract method `export(self, data)`. Create a subclass `JSONExporter` that implements `export` by returning the data wrapped in a string like `'JSON: [data]'`. Create another subclass `CSVExporter` that forgets to implement `export`. Attempting to instantiate `CSVExporter` should fail with a TypeError.",
+    "solution": "from abc import ABC, abstractmethod\n\nclass DataExporter(ABC):\n    @abstractmethod\n    def export(self, data):\n        pass\n\nclass JSONExporter(DataExporter):\n    def export(self, data):\n        return f'JSON: {data}'\n\nclass CSVExporter(DataExporter):\n    pass\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/abc.html"
+  ]
+}

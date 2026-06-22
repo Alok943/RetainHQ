@@ -1,0 +1,90 @@
+{
+  "slug": "poetry",
+  "title": "Poetry: dependency management basics",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": ["pyproject-toml"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "CLI Tools", "Production Services"]
+  },
+  "overview": {
+    "what": "Poetry is a dependency management and packaging tool for Python. It strictly manages environments by reading `pyproject.toml`, resolving a mathematically complete dependency graph, and generating a `poetry.lock` file. Think of it like `npm` or `yarn` for Python; it guarantees that everyone on your team (and your production server) installs the exact same versions of all packages and their sub-dependencies.",
+    "why": "Using `pip install` with `requirements.txt` can lead to the 'it works on my machine' problem because it doesn't strictly lock sub-dependencies. Poetry's lockfile ensures deterministic builds, meaning a deployment today will use the exact same code as a deployment six months from now.",
+    "where_used": ["Application dependency management", "Python package publishing", "CI/CD pipelines"]
+  },
+  "why_learning_this": [
+    "Ensure deterministic and reproducible builds in production",
+    "Separate development dependencies (like `pytest`) from production dependencies",
+    "Automatically handle virtual environment creation and management"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to commit the lockfile",
+      "explanation": "If you add a dependency but don't commit `poetry.lock` to Git, other developers won't get the deterministic versions. Always commit both `pyproject.toml` and `poetry.lock`."
+    },
+    {
+      "title": "Using pip alongside Poetry",
+      "explanation": "Running `pip install package` inside a Poetry environment bypasses Poetry's dependency resolver and lockfile. Always use `poetry add package` instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of the `poetry.lock` file?",
+      "answer": "To record the exact versions of all installed packages and their sub-dependencies, ensuring deterministic and reproducible builds across all machines.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Poetry generally preferred over a plain `requirements.txt` file for complex applications?",
+      "answer": "Because `requirements.txt` typically only lists top-level dependencies, while Poetry resolves and locks the entire dependency graph, preventing conflicts and unexpected updates.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A developer runs `poetry add requests`. They notice that not only `requests` but also packages like `urllib3` and `certifi` are added to the lockfile. Why?",
+      "answer": "Poetry resolves and locks the entire dependency tree.",
+      "why": "`requests` depends on other packages like `urllib3`. Poetry calculates all sub-dependencies recursively and locks their exact versions to guarantee reproducible behavior."
+    },
+    {
+      "type": "predict-output",
+      "code": "import tomllib\n\ntoml_content = '''\n[tool.poetry.dependencies]\npython = '^3.9'\nrequests = '^2.28.0'\n\n[tool.poetry.group.dev.dependencies]\npytest = '^7.0.0'\n'''\n\ndata = tomllib.loads(toml_content)\nprint('pytest' in data['tool']['poetry']['dependencies'])",
+      "question": "Based on this TOML structure that Poetry uses, what does this snippet print?",
+      "answer": "False",
+      "why": "`pytest` is defined under `group.dev.dependencies`, not the main `dependencies` group. This separation ensures testing tools aren't shipped to production."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import tomllib\n\ntoml_content = '''\n[tool.poetry.dependencies]\npython = '^3.10'\nfastapi = '0.100.0'\n'''\ndata = tomllib.loads(toml_content)\n\n# Simulating Poetry reading the target version\nversion_req = data['tool']['poetry']['dependencies']['fastapi']\nprint(f'Locking FastAPI to: {version_req}')",
+    "focus": "version_req = data['tool']['poetry']['dependencies']['fastapi']"
+  },
+  "aha_moment": {
+    "code": "import tomllib\n\ntoml_content = '''\n[tool.poetry.dependencies]\npython = '^3.10'\nhttpx = '^0.24.0'\n'''\n\ndata = tomllib.loads(toml_content)\nprint(data['tool']['poetry']['dependencies']['httpx'])",
+    "prediction": "What string is printed representing the dependency requirement?",
+    "common_guess": "'0.24.0'",
+    "why": "It prints `'^0.24.0'`. The caret (`^`) means 'allow minor/patch updates that do not break backward compatibility' (e.g., up to < 0.25.0). The lockfile, however, will contain the exact version."
+  },
+  "practice_tasks": [
+    {
+      "title": "Extract development dependencies",
+      "prompt": "Given a parsed dictionary of a Poetry configuration, modify the code to print the list of development dependency names (the keys in the `dev` group dependencies).",
+      "starter_code": "import tomllib\n\ntoml = '''\n[tool.poetry.group.dev.dependencies]\nblack = '^23.0'\npytest = '^7.2'\n'''\ndata = tomllib.loads(toml)\n\n# Modify this to print ['black', 'pytest']\nprint(data)",
+      "solution": "import tomllib\n\ntoml = '''\n[tool.poetry.group.dev.dependencies]\nblack = '^23.0'\npytest = '^7.2'\n'''\ndata = tomllib.loads(toml)\n\n# Modify this to print ['black', 'pytest']\nprint(list(data['tool']['poetry']['group']['dev']['dependencies'].keys()))"
+    }
+  ],
+  "challenge": {
+    "title": "Check python compatibility",
+    "prompt": "Write a script that parses the provided Poetry TOML configuration and prints `True` if the required Python version string starts with `^3`, otherwise print `False`.",
+    "solution": "import tomllib\n\ntoml = '''\n[tool.poetry.dependencies]\npython = '^3.11'\nfastapi = '*'\n'''\ndata = tomllib.loads(toml)\nreq = data.get('tool', {}).get('poetry', {}).get('dependencies', {}).get('python', '')\nprint(req.startswith('^3'))"
+  },
+  "sources": [
+    "https://python-poetry.org/docs/",
+    "https://python-poetry.org/docs/dependency-specification/"
+  ]
+}

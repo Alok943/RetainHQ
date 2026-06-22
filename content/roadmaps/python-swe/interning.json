@@ -53,10 +53,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Identity vs Equality in Status Codes",
-      "prompt": "Write a short script simulating an HTTP response. Create two variables, `status1` and `status2`, both set to 200. Print whether they evaluate to True using the `is` operator. Then, create two variables, `large_status1` and `large_status2`, both set to 500. Print whether they evaluate to True using the `is` operator.",
-      "starter_code": "status1 = 200\nstatus2 = 200\n# check identity\n\nlarge_status1 = 500\nlarge_status2 = 500\n# check identity\n",
-      "solution": "status1 = 200\nstatus2 = 200\nprint(status1 is status2)\n\nlarge_status1 = 500\nlarge_status2 = 500\nprint(large_status1 is large_status2)\n"
+      "title": "Fix the Buggy Equality Check",
+      "prompt": "This code attempts to check if two generated strings are equal using the is operator, but it will fail because strings from runtime operations are not always interned. Modify the code to correctly check if the values are identical, regardless of memory allocation.",
+      "starter_code": "def check_match(input_val):\n    expected = 'hello world'\n    generated = input_val + ' world'\n    \n    if expected is generated:\n        print('Match!')\n    else:\n        print('No match!')\n\ncheck_match('hello')",
+      "solution": "def check_match(input_val):\n    expected = 'hello world'\n    generated = input_val + ' world'\n    \n    if expected == generated:\n        print('Match!')\n    else:\n        print('No match!')\n\ncheck_match('hello')"
     }
   ],
   "code_walkthrough": {
@@ -77,5 +77,20 @@
   "sources": [
     "https://docs.python.org/3/c-api/long.html",
     "https://docs.python.org/3/library/sys.html#sys.intern"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code print?",
+      "code": "a = 256\nb = 256\nprint(a is b)\n\nx = 257\ny = 257\nprint(x is y)",
+      "answer": "True\nFalse",
+      "why": "Python caches small integers from -5 to 256. Variables assigned to 256 will point to the exact same memory address. For 257, Python creates new separate objects."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer tries to check if a user's input equals a specific string by using if user_input is 'admin':. Why is this a bad idea?",
+      "answer": "The is operator checks for object identity (memory address), not value equality. While Python might intern the literal 'admin', it might not intern dynamically generated strings like user input.",
+      "why": "Strings constructed at runtime are typically allocated at different memory addresses, so the identity check is will fail even if the content is perfectly identical. They should use == instead."
+    }
   ]
 }

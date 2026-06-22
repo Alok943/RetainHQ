@@ -57,10 +57,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Registering Plugins",
-      "prompt": "Write a class decorator named `register_plugin` that takes a class and appends it to a global list called `PLUGINS`, then returns the class unmodified. Apply it to a class `MyPlugin`.",
-      "starter_code": "PLUGINS = []\n\n# Write your decorator here\n\n\n# Apply it to this class\nclass MyPlugin:\n    pass\n",
-      "solution": "PLUGINS = []\n\ndef register_plugin(cls):\n    PLUGINS.append(cls)\n    return cls\n\n@register_plugin\nclass MyPlugin:\n    pass\n"
+      "title": "Modify Plugin Registration",
+      "prompt": "The `register_plugin` decorator currently appends the class name to `PLUGINS`. Modify it so that it appends the actual class object to `PLUGINS` instead, and ensure it returns the class.",
+      "starter_code": "PLUGINS = []\n\ndef register_plugin(cls):\n    PLUGINS.append(cls.__name__)\n    return cls\n\n@register_plugin\nclass MyPlugin:\n    pass",
+      "solution": "PLUGINS = []\n\ndef register_plugin(cls):\n    PLUGINS.append(cls)\n    return cls\n\n@register_plugin\nclass MyPlugin:\n    pass"
     }
   ],
   "code_walkthrough": {
@@ -81,5 +81,20 @@
   "sources": [
     "https://docs.python.org/3/reference/compound_stmts.html#class-definitions",
     "https://docs.python.org/3/glossary.html#term-decorator"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def double_decorator(cls):\n  cls.value = 20\n  return cls\n\n@double_decorator\nclass Config:\n  value = 10\n\nprint(Config.value)",
+      "question": "What does this code print?",
+      "answer": "20",
+      "why": "The class decorator receives the class object, modifies its `value` attribute directly to 20, and returns it."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why would you choose a class decorator over modifying instances directly in the `__init__` method?",
+      "answer": "Class decorators alter the class definition itself once (e.g., adding standard boilerplate or registering the class globally), rather than running logic every time a new instance is created.",
+      "why": "This reinforces the mental model that a class decorator modifies the blueprint, not the individual objects produced from it."
+    }
   ]
 }

@@ -64,8 +64,9 @@
   "practice_tasks": [
     {
       "title": "Memory-efficient sum",
-      "prompt": "Write a generator expression inside the `sum()` function to calculate the sum of the squares of all numbers from 1 to 1000. Do not use square brackets.",
-      "solution": "total = sum(x * x for x in range(1, 1001))\nprint(total)"
+      "prompt": "Change the list comprehension to a generator expression to calculate the sum of squares without allocating memory for the entire list.",
+      "starter_code": "def calculate_sum():\n    # Change this line:\n    total = sum([x * x for x in range(1, 1001)])\n    return total",
+      "solution": "def calculate_sum():\n    total = sum(x * x for x in range(1, 1001))\n    return total"
     }
   ],
   "code_walkthrough": {
@@ -80,11 +81,26 @@
   },
   "challenge": {
     "title": "Any big numbers?",
-    "prompt": "Using a generator expression with the `any()` function, check if there are any numbers greater than 100 in the list `[10, 50, 99, 101, 2]`. Print the boolean result.",
-    "solution": "nums = [10, 50, 99, 101, 2]\nhas_big = any(x > 100 for x in nums)\nprint(has_big)"
+    "prompt": "Using a generator expression with the `any()` function, check if there are any numbers greater than 100 in `nums`. Assign the boolean result to `has_big`.",
+    "solution": "nums = [10, 50, 99, 101, 2]\nhas_big = any(x > 100 for x in nums)"
   },
   "sources": [
     "https://docs.python.org/3/reference/expressions.html#generator-expressions",
     "https://docs.python.org/3/tutorial/classes.html#generator-expressions"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the output of the second print statement?",
+      "code": "gen = (x * 2 for x in [1, 2, 3])\nprint(list(gen))\nprint(list(gen))",
+      "answer": "`[]`",
+      "why": "A generator expression is evaluated lazily and exhausted as it is consumed. The first `list(gen)` consumes all items. The second `list(gen)` finds an empty generator."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A junior developer is confused why `my_gen[0]` raises a TypeError when `my_gen` is a generator expression. How do you explain it?",
+      "answer": "Generator expressions do not support indexing because their items are evaluated lazily one at a time.",
+      "why": "Unlike lists, which hold all their items in memory at once and support random access, generators only know how to produce the next item."
+    }
   ]
 }

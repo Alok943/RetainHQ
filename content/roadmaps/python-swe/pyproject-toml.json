@@ -1,0 +1,90 @@
+{
+  "slug": "pyproject-toml",
+  "title": "pyproject.toml and project metadata",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": ["poetry"],
+    "project_usage": ["Python Packages", "FastAPI Apps", "CLI Tools"]
+  },
+  "overview": {
+    "what": "`pyproject.toml` is the modern standard configuration file for Python projects, introduced in PEP 518. It replaces older files like `setup.py`, `requirements.txt`, and `setup.cfg`. It centralizes project metadata (name, version, authors), dependencies, and tool configurations (like formatting rules for `black` or `pytest`) into a single declarative file. Think of it as Python's equivalent to Node's `package.json`.",
+    "why": "Historically, Python tooling was fragmented, with each tool requiring its own config file and `setup.py` allowing arbitrary code execution during installation. `pyproject.toml` provides a safe, standard, declarative way to configure everything in one place.",
+    "where_used": ["Modern Python libraries", "Application dependency management", "Tool configuration (Black, Ruff, Pytest)"]
+  },
+  "why_learning_this": [
+    "Standardize how your Python project is built and packaged",
+    "Configure code quality tools (linters, formatters) in a single place",
+    "Move away from legacy, insecure `setup.py` scripts"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using setup.py instead of pyproject.toml",
+      "explanation": "Many older tutorials still teach `setup.py`. For new projects, you should almost always use `pyproject.toml` as it is the official modern standard."
+    },
+    {
+      "title": "Syntax errors in TOML",
+      "explanation": "TOML is not JSON or YAML. Quotes around strings are required, and nested tables (like `[tool.pytest.ini_options]`) must be formatted correctly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the purpose of the `pyproject.toml` file?",
+      "answer": "It acts as a centralized configuration file for a Python project, storing project metadata, dependencies, and configurations for various developer tools.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which older Python configuration files does `pyproject.toml` aim to replace?",
+      "answer": "It replaces `setup.py`, `setup.cfg`, and often `requirements.txt`.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A team member asks why they can't just put logic like `import os; version = os.getenv('VERSION')` inside `pyproject.toml` like they used to in `setup.py`. What is the fundamental difference?",
+      "answer": "`pyproject.toml` is purely declarative data, whereas `setup.py` was an executable script.",
+      "why": "This declarative nature makes building and analyzing packages much safer and more reliable, as tools don't have to execute arbitrary Python code just to read metadata."
+    },
+    {
+      "type": "predict-output",
+      "code": "import tomllib\n\ntoml_content = '''\n[project]\nname = 'my-app'\ndependencies = ['requests>=2.0']\n\n[tool.black]\nline-length = 88\n'''\n\ndata = tomllib.loads(toml_content)\nprint(data['tool']['black']['line-length'])",
+      "question": "What does this code print when parsing the TOML configuration?",
+      "answer": "88",
+      "why": "The TOML table `[tool.black]` is parsed into nested dictionaries in Python, so the key `line-length` is accessed inside the `black` dict, which is inside the `tool` dict."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import tomllib\n\npyproject_toml = '''\n[build-system]\nrequires = ['setuptools>=61.0']\nbuild-backend = 'setuptools.build_meta'\n\n[project]\nname = 'example_pkg'\nversion = '0.1.0'\n'''\n\nparsed = tomllib.loads(pyproject_toml)\nprint(parsed['project']['name'])",
+    "focus": "parsed = tomllib.loads(pyproject_toml)"
+  },
+  "aha_moment": {
+    "code": "import tomllib\n\ntoml_str = '''\n[tool.pytest.ini_options]\naddopts = '-ra -q'\n\n[tool.ruff]\nline-length = 120\n'''\n\nconfig = tomllib.loads(toml_str)\nprint(list(config.keys()))",
+    "prediction": "What are the top-level keys in the parsed configuration?",
+    "common_guess": "['tool.pytest.ini_options', 'tool.ruff']",
+    "why": "TOML dot-notation like `[tool.ruff]` automatically creates nested dictionaries. The only top-level key is `'tool'`, which contains `'pytest'` and `'ruff'`."
+  },
+  "practice_tasks": [
+    {
+      "title": "Access a nested TOML configuration",
+      "prompt": "Given this script that parses a `pyproject.toml` string, modify the `print` statement to extract and print the minimum `pytest` requirement from the optional dependencies list.",
+      "starter_code": "import tomllib\n\ntoml = '''\n[project.optional-dependencies]\ntest = ['pytest>=7.0.0', 'pytest-cov']\n'''\n\nconfig = tomllib.loads(toml)\n# Modify the line below\nprint(config)\n",
+      "solution": "import tomllib\n\ntoml = '''\n[project.optional-dependencies]\ntest = ['pytest>=7.0.0', 'pytest-cov']\n'''\n\nconfig = tomllib.loads(toml)\n# Modify the line below\nprint(config['project']['optional-dependencies']['test'][0])\n"
+    }
+  ],
+  "challenge": {
+    "title": "Parse and validate project metadata",
+    "prompt": "Write a script that parses the provided TOML string and prints `True` if the project name is 'my-tool' AND it has exactly 2 dependencies listed, otherwise print `False`.",
+    "solution": "import tomllib\n\ntoml = '''\n[project]\nname = 'my-tool'\ndependencies = ['httpx', 'click']\n'''\n\ndata = tomllib.loads(toml)\nis_valid = data.get('project', {}).get('name') == 'my-tool' and len(data.get('project', {}).get('dependencies', [])) == 2\nprint(is_valid)"
+  },
+  "sources": [
+    "https://packaging.python.org/en/latest/guides/writing-pyproject-toml/",
+    "https://docs.python.org/3/library/tomllib.html"
+  ]
+}

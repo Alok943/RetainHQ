@@ -38,6 +38,11 @@ async function main() {
 
     const files = await readdir(srcDir);
     for (const file of files) {
+      // Non-JSON assets a roadmap needs at runtime (e.g. SQL seed datasets) are copied as-is.
+      if (file.endsWith('.sql')) {
+        await cp(join(srcDir, file), join(destDir, file), { force: true });
+        continue;
+      }
       if (!file.endsWith('.json')) continue;
 
       const srcPath = join(srcDir, file);

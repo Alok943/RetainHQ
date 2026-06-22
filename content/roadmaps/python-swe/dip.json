@@ -1,0 +1,98 @@
+{
+  "slug": "dip",
+  "title": "Dependency Inversion Principle",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "classes",
+      "interfaces",
+      "type-hints"
+    ],
+    "unlocks": [
+      "dependency-injection"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Clean Architecture",
+      "Pytest"
+    ]
+  },
+  "overview": {
+    "what": "The Dependency Inversion Principle (DIP) states that high-level modules should not depend on low-level modules; both should depend on abstractions. Furthermore, abstractions should not depend on details; details should depend on abstractions. In Python, this means your core business logic (high-level) shouldn't import concrete database or API classes (low-level). Instead, both should depend on an interface (like an abstract base class or Protocol). For example, instead of a `PaymentProcessor` instantiating a `StripeAPI` directly, it accepts any object that satisfies a `PaymentGateway` abstraction. Analogy: When you plug a lamp into a wall, the lamp (high-level) depends on a standard outlet interface (abstraction), not the specific wiring in the wall (low-level detail).",
+    "why": "It decouples your system's core logic from volatile implementation details, making it significantly easier to swap out components, mock dependencies for testing, and maintain code without breaking existing functionality.",
+    "where_used": [
+      "FastAPI dependency injection",
+      "Unit testing with mocks",
+      "Hexagonal/Clean Architecture"
+    ]
+  },
+  "why_learning_this": [
+    "Write highly testable code by easily swapping real dependencies with mocks",
+    "Build modular applications where changing a database or API provider doesn't rewrite business logic",
+    "Understand the foundation of modern frameworks like FastAPI and Django"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Depending on concrete classes",
+      "explanation": "Instantiating a low-level detail (like `requests.Session()`) directly inside a high-level class. Fix this by passing the session into the class via its constructor (Dependency Injection) or depending on an abstract HTTP client."
+    },
+    {
+      "title": "Leaking implementation details into abstractions",
+      "explanation": "Designing an interface that includes methods specific to one implementation (e.g., a `save_to_sql` method on a generic `Repository`). Fix this by making abstractions generic (e.g., `save`)."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If high-level modules should not depend on low-level modules, how do they get access to the actual functionality they need?",
+      "answer": "High-level modules depend on abstractions (like an interface or protocol), and the low-level modules implement those abstractions. The specific implementation is then passed to the high-level module, usually via dependency injection.",
+      "why": "This is the essence of Dependency Inversion. The abstraction acts as a contract between the core logic and the details, without tightly coupling them."
+    },
+    {
+      "type": "find-bug",
+      "question": "What violates the Dependency Inversion Principle in the following code?",
+      "code": "from database import MySQLDatabase\n\nclass UserManager:\n    def __init__(self):\n        self.db = MySQLDatabase()\n        \n    def get_user(self, id):\n        return self.db.find(id)",
+      "answer": "The `UserManager` directly instantiates the low-level `MySQLDatabase` concrete class, tightly coupling the core logic to the database implementation.",
+      "why": "By directly calling `MySQLDatabase()`, the high-level module (`UserManager`) depends on the low-level module, rather than an abstraction. To fix this, it should accept the database instance as an argument in `__init__`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the Dependency Inversion Principle state regarding high-level and low-level modules?",
+      "answer": "High-level modules should not depend on low-level modules; both should depend on abstractions."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Invert the Dependency",
+      "prompt": "The `OrderProcessor` class below directly instantiates a `SMSSender`. Modify it to depend on the `MessageSender` abstraction and pass the concrete sender via the constructor.",
+      "starter_code": "from typing import Protocol\n\nclass MessageSender(Protocol):\n    def send(self, msg: str) -> None:\n        ...\n\nclass SMSSender:\n    def send(self, msg: str):\n        print(f'Sending SMS: {msg}')\n\nclass OrderProcessor:\n    def __init__(self):\n        self.sender = SMSSender()\n    \n    def process(self, order_id: int):\n        print(f'Processing {order_id}')\n        self.sender.send('Order done')",
+      "solution": "from typing import Protocol\n\nclass MessageSender(Protocol):\n    def send(self, msg: str) -> None:\n        ...\n\nclass SMSSender:\n    def send(self, msg: str) -> None:\n        print(f'Sending SMS: {msg}')\n\nclass OrderProcessor:\n    def __init__(self, sender: MessageSender):\n        self.sender = sender\n    \n    def process(self, order_id: int):\n        print(f'Processing {order_id}')\n        self.sender.send('Order done')"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import Protocol\n\nclass Logger(Protocol):\n    def log(self, text: str) -> None:\n        ...\n\nclass ConsoleLogger:\n    def log(self, text: str) -> None:\n        print(f'LOG: {text}')\n\nclass App:\n    def __init__(self, logger: Logger):\n        self.logger = logger\n\n    def run(self):\n        self.logger.log('Starting')\n\napp = App(ConsoleLogger())\napp.run()",
+    "focus": "app = App(ConsoleLogger())"
+  },
+  "aha_moment": {
+    "code": "class FakeDB:\n    def save(self, data):\n        print('Fake saved:', data)\n\nclass RealDB:\n    def save(self, data):\n        print('Real saved to disk:', data)\n\nclass UserCreator:\n    def __init__(self, db):\n        self.db = db\n    def create(self):\n        self.db.save('user1')\n\ntest_creator = UserCreator(FakeDB())\ntest_creator.create()",
+    "prediction": "What happens when `test_creator.create()` is called? Which DB is used?",
+    "common_guess": "It saves to the real DB because UserCreator needs a database.",
+    "why": "Because `UserCreator` depends on the *abstraction* of a database (anything with a `save` method) rather than instantiating `RealDB` itself, we can inject `FakeDB` during tests, completely bypassing the disk."
+  },
+  "challenge": {
+    "title": "Implement an Abstract Data Store",
+    "prompt": "Create a `UserRepository` protocol with a `get_user(user_id: int) -> str` method. Then, create a concrete `PostgresUserRepository` that returns `'User from DB'`. Finally, create a `UserService` that accepts a `UserRepository` and has a `get_user_info` method that calls `get_user`. Instantiate the service with the Postgres repository and call it.",
+    "solution": "from typing import Protocol\n\nclass UserRepository(Protocol):\n    def get_user(self, user_id: int) -> str:\n        ...\n\nclass PostgresUserRepository:\n    def get_user(self, user_id: int) -> str:\n        return 'User from DB'\n\nclass UserService:\n    def __init__(self, repo: UserRepository):\n        self.repo = repo\n    \n    def get_user_info(self, user_id: int) -> str:\n        return self.repo.get_user(user_id)\n\nrepo = PostgresUserRepository()\nservice = UserService(repo)\nprint(service.get_user_info(1))"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.Protocol",
+    "https://docs.python.org/3/library/abc.html"
+  ]
+}

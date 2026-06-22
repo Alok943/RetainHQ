@@ -1,0 +1,96 @@
+{
+  "slug": "full-cross-join",
+  "title": "FULL OUTER & CROSS JOIN",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": ["inner-join", "left-right-join"],
+    "unlocks": [],
+    "project_usage": ["data reconciliation reports", "combinatorial product grids", "gap analysis queries"]
+  },
+  "overview": {
+    "what": "FULL OUTER JOIN keeps every row from BOTH tables — matching rows are combined, and unmatched rows from either side get NULL-padded columns on the other side. It is the union of a LEFT JOIN and a RIGHT JOIN.\n\nCROSS JOIN produces the Cartesian product — every row from the left table paired with every row from the right table, with no ON condition. If left has M rows and right has N rows, you get M × N result rows.\n\nAgainst the shared dataset, consider a small example — joining all customers to the first 3 products via CROSS JOIN:\n\n  SELECT c.name, p.name AS product\n  FROM customers c\n  CROSS JOIN products p\n  WHERE p.id <= 3\n  ORDER BY c.name, p.name;\n\nThis returns 8 × 3 = 24 rows — every customer paired with Keyboard, Monitor, and Mouse.\n\nFULL OUTER JOIN example — suppose you want to see which customers have orders and which orders have customers (all of both):\n\n  SELECT c.name, o.id AS order_id\n  FROM customers c\n  FULL OUTER JOIN orders o ON o.customer_id = c.id\n  ORDER BY c.name, o.id;\n\nAll 8 customers appear (Greg and Hana with order_id = NULL), and all 8 orders appear matched to their customers. In this dataset every order has a valid customer_id, so no order row is orphaned — but if one were, it would show with name = NULL.\n\nMental model: FULL OUTER = 'keep everything from both sides, match what you can'. CROSS = 'pair everything with everything'.",
+    "why": "FULL OUTER JOIN is the go-to tool for data reconciliation — comparing two sets to find what is in A but not B, what is in B but not A, and what overlaps. CROSS JOIN is used to generate combinations (e.g., all product–region pairs for a price matrix) or expand a calendar of dates against a list of entities.",
+    "where_used": ["data reconciliation between two systems", "generating all product-size combinations for a catalog", "calendar × entity grids for reporting"]
+  },
+  "why_learning_this": [
+    "FULL OUTER JOIN lets you find orphaned records on both sides of a relationship in a single query — essential for data quality audits",
+    "CROSS JOIN is the foundation of generating combinatorial test data and dense reporting grids"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using CROSS JOIN when you meant INNER JOIN",
+      "explanation": "CROSS JOIN produces every combination without a matching condition. If you accidentally use CROSS JOIN instead of INNER JOIN between customers (8 rows) and orders (8 rows), you get 64 rows instead of 8. Always check whether you need a matching condition."
+    },
+    {
+      "title": "Filtering FULL OUTER JOIN results in WHERE destroys outer rows",
+      "explanation": "Adding WHERE o.status = 'paid' to a FULL OUTER JOIN removes any row where o.status is NULL — which includes the outer-joined customers with no orders. Move the filter into the ON clause to preserve unmatched rows."
+    },
+    {
+      "title": "Expecting FULL OUTER JOIN to deduplicate",
+      "explanation": "FULL OUTER JOIN does not eliminate duplicates. If a customer has 3 orders, that customer appears 3 times — once per matched order — plus unmatched rows from either side get their own NULL-padded row."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does FULL OUTER JOIN differ from LEFT JOIN?",
+      "answer": "LEFT JOIN keeps unmatched rows only from the left table. FULL OUTER JOIN keeps unmatched rows from BOTH tables, NULL-padding the missing side.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does CROSS JOIN use an ON clause?",
+      "answer": "No — CROSS JOIN pairs every left row with every right row unconditionally. There is no ON clause.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If table A has 5 rows and table B has 4 rows, how many rows does CROSS JOIN produce?",
+      "answer": "20 rows (5 × 4).",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT c.name, o.id AS order_id\nFROM customers c\nFULL OUTER JOIN orders o ON o.customer_id = c.id\nWHERE c.name IS NULL OR o.id IS NULL\nORDER BY c.name, o.id;",
+      "question": "What rows does this return?",
+      "answer": "Greg, NULL\nHana, NULL",
+      "why": "The FULL OUTER JOIN keeps all customers and all orders. Greg and Hana have no orders, so their order_id is NULL. Every order in the dataset has a valid customer_id, so no order is orphaned (no row with c.name IS NULL). The WHERE keeps only unmatched rows from either side — here just Greg and Hana."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT c.name, p.name AS product\nFROM customers c\nCROSS JOIN products p\nWHERE c.country = 'US' AND p.category = 'Furniture'\nORDER BY c.name, p.name;",
+      "question": "How many rows does this return, and what are they?",
+      "answer": "6 rows:\nAlice, Chair\nAlice, Desk\nBob, Chair\nBob, Desk\nGreg, Chair\nGreg, Desk",
+      "why": "US customers are Alice, Bob, and Greg (3 rows). Furniture products are Desk and Chair (2 rows). CROSS JOIN pairs every US customer with every Furniture product = 3 × 2 = 6 rows."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.name, o.id AS order_id\nFROM customers c\nFULL OUTER JOIN orders o ON o.customer_id = c.id\nORDER BY c.name, o.id;",
+    "flow_stages": ["from", "join", "select", "order_by"],
+    "visualization": "join-diagram",
+    "focus": "Watch both sides preserved: Greg and Hana appear with order_id = NULL (unmatched left rows). All orders also appear because every order has a valid customer — but if an order had an invalid customer_id, it would show with name = NULL (unmatched right row)."
+  },
+  "practice_tasks": [
+    {
+      "title": "Switch from INNER to FULL OUTER",
+      "prompt": "This query uses INNER JOIN, so customers without orders and any orphaned orders are hidden. Change it to a FULL OUTER JOIN so that both unmatched customers and unmatched orders appear. Keep the ordering.",
+      "starter_code": "SELECT c.name, o.id AS order_id, o.status\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nORDER BY c.name, o.id;",
+      "solution": "SELECT c.name, o.id AS order_id, o.status\nFROM customers c\nFULL OUTER JOIN orders o ON o.customer_id = c.id\nORDER BY c.name, o.id;"
+    }
+  ],
+  "challenge": {
+    "title": "Every customer × every product category",
+    "prompt": "Write a query that returns every distinct combination of customer name and product category using a CROSS JOIN and DISTINCT. Order by customer name, then category.",
+    "solution": "SELECT DISTINCT c.name, p.category\nFROM customers c\nCROSS JOIN products p\nORDER BY c.name, p.category;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN",
+    "https://www.postgresql.org/docs/current/sql-select.html#SQL-FROM"
+  ]
+}

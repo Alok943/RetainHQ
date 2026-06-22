@@ -1,0 +1,85 @@
+{
+  "slug": "typevar-generic-functions",
+  "title": "TypeVar and Generic Functions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": ["generic-types"],
+    "unlocks": [],
+    "project_usage": ["Reusable utilities", "Framework internals"]
+  },
+  "overview": {
+    "what": "A `TypeVar` creates a generic function that adapts its return type based on the input type. If you have `T = TypeVar('T')` and a function `def get_first(items: list[T]) -> T:`, it tells the type checker: 'Whatever type `T` is in the input list, that exact same type `T` will be returned.' If you pass a `list[int]`, `T` becomes `int`. In Python 3.12+, you can skip the `TypeVar` import and write `def get_first[T](items: list[T]) -> T:` directly.",
+    "why": "Without `TypeVar`, you'd have to use `Any` or `Union` for a function that works on many types, but that destroys autocomplete. `TypeVar` preserves the exact type information passing *through* the function.",
+    "where_used": ["Utility functions like 'first_or_default'", "Decorators that preserve the decorated function's signature"]
+  },
+  "why_learning_this": [
+    "Writing utility functions that work for any type without breaking the IDE's autocomplete.",
+    "Understanding modern Python 3.12+ generic syntax.",
+    "Reading framework code that uses `TypeVar` heavily to maintain type safety."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Any instead of TypeVar",
+      "explanation": "If `def get_first(items: list[Any]) -> Any:` is used, the type checker forgets the actual type of the items. Calling `.upper()` on the result won't be checked. `TypeVar` preserves the specific type."
+    },
+    {
+      "title": "Forgetting that T is bound per-call",
+      "explanation": "`T` is not a specific type like `int`; it's a placeholder that resolves to a concrete type *when the function is called*. It can be `int` on line 10 and `str` on line 12."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary advantage of using `TypeVar` over `Any`?",
+      "answer": "`TypeVar` preserves the specific type information passing through the function, maintaining autocomplete and type safety, whereas `Any` turns off type checking entirely for that value.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does the generic type syntax for functions change in Python 3.12+?",
+      "answer": "You no longer need to import `TypeVar`; you can declare the type variable directly in the function definition using square brackets, like `def get_first[T](...)`.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "from typing import TypeVar\n\nT = TypeVar('T')\ndef repeat(item: T) -> list[T]:\n  return [str(item), str(item)]",
+      "question": "Why will a static type checker complain about this function?",
+      "answer": "The return type says it will return a list of `T` (the exact type passed in), but the function body forces the items to be strings.",
+      "why": "The promise of `T` is that the output type matches the input type. If the input is an `int`, it promises a `list[int]`, but actually returns a `list[str]`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "In `def identity[T](value: T) -> T:`, what type is `T` when you call `identity(42)`?",
+      "answer": "`T` resolves to `int`.",
+      "why": "The type checker infers the concrete type of `T` based on the argument provided at the call site."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import TypeVar\n\nT = TypeVar('T')\n\ndef get_last(items: list[T]) -> T:\n  return items[-1]\n\nnumber = get_last([1, 2, 3])\ntext = get_last(['a', 'b', 'c'])\nprint(f'{number}, {text}')",
+    "focus": "def get_last(items: list[T]) -> T:"
+  },
+  "aha_moment": {
+    "code": "from typing import TypeVar\nT = TypeVar('T')\nprint(type(T))",
+    "prediction": "What does this print?",
+    "common_guess": "It prints something like <class 'type'> or it fails because T isn't a real class.",
+    "why": "It prints `<class 'typing.TypeVar'>`. `TypeVar` is just an object created at runtime to hold metadata for static analysis tools; it has no magical behavior when the program executes."
+  },
+  "practice_tasks": [
+    {
+      "title": "Use a TypeVar",
+      "prompt": "Given this working code, replace the `Any` type hints with a `TypeVar` named `T` so the type checker knows the return type matches the input type.",
+      "starter_code": "from typing import Any\n\ndef echo(value: Any) -> Any:\n  return value",
+      "solution": "from typing import TypeVar\n\nT = TypeVar('T')\n\ndef echo(value: T) -> T:\n  return value"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.TypeVar",
+    "https://docs.python.org/3/reference/compound_stmts.html#type-params"
+  ]
+}

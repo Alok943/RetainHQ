@@ -9,14 +9,28 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["loops", "try-except", "everything-is-an-object"],
-    "unlocks": ["generator-expressions"],
-    "project_usage": ["FastAPI streams", "Data processing", "Database cursors"]
+    "prerequisites": [
+      "loops",
+      "try-except",
+      "everything-is-an-object"
+    ],
+    "unlocks": [
+      "generator-expressions"
+    ],
+    "project_usage": [
+      "FastAPI streams",
+      "Data processing",
+      "Database cursors"
+    ]
   },
   "overview": {
     "what": "The Iterator Protocol is Python's standard mechanism for looping over collections. It consists of two steps: getting an iterator (an object that tracks state) from an iterable (like a list), and repeatedly asking the iterator for its next value until it raises a `StopIteration` exception to signal it is empty. Think of an iterable as a book, and an iterator as a bookmark that remembers which page you are on. When a `for` loop runs, it secretly catches `StopIteration` to know when to terminate.",
     "why": "It provides a unified interface for iteration, meaning a `for` loop works identically on lists, files, network streams, or infinite sequences without needing to know their internal structure.",
-    "where_used": ["File reading", "Database cursors", "Generators"]
+    "where_used": [
+      "File reading",
+      "Database cursors",
+      "Generators"
+    ]
   },
   "why_learning_this": [
     "Understanding how `for` loops actually work under the hood.",
@@ -52,10 +66,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Manual Iteration",
-      "prompt": "Given a list of numbers, use the `iter()` and `next()` functions to print the first two elements without using a `for` loop.",
-      "starter_code": "numbers = [10, 20, 30, 40]\n# Your code here",
-      "solution": "numbers = [10, 20, 30, 40]\n\nmy_iter = iter(numbers)\nprint(next(my_iter))\nprint(next(my_iter))\n"
+      "title": "Manual Iteration Modification",
+      "prompt": "The code below manually iterates over a list and prints all elements. Modify the code to ONLY print the first two elements and then stop, removing the `while` loop.",
+      "starter_code": "numbers = [10, 20, 30, 40]\nmy_iter = iter(numbers)\n\nwhile True:\n    try:\n        print(next(my_iter))\n    except StopIteration:\n        break",
+      "solution": "numbers = [10, 20, 30, 40]\nmy_iter = iter(numbers)\n\nprint(next(my_iter))\nprint(next(my_iter))\n"
     }
   ],
   "code_walkthrough": {
@@ -76,5 +90,20 @@
   "sources": [
     "https://docs.python.org/3/tutorial/classes.html#iterators",
     "https://docs.python.org/3/library/exceptions.html#StopIteration"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "my_list = [10, 20]\nmy_iter = iter(my_list)\nprint(next(my_iter))\nnext(my_iter)\ntry:\n    print(next(my_iter))\nexcept StopIteration:\n    print(\"Empty\")",
+      "question": "What is the output of this code?",
+      "answer": "10\nEmpty",
+      "why": "`iter()` creates an iterator. The first `next()` returns 10 and prints it. The second `next()` returns 20 but isn't printed. The third `next()` raises `StopIteration`, which is caught, printing \"Empty\"."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why does calling `next([1, 2, 3])` result in a `TypeError`?",
+      "answer": "Because a list is an iterable, not an iterator.",
+      "why": "`next()` can only be called on iterators. You must first create an iterator from the list by calling `iter([1, 2, 3])`, and then you can pass that iterator to `next()`."
+    }
   ]
 }

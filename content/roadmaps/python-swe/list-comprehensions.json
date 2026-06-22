@@ -9,35 +9,84 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["lists", "loops", "if-elif-else"],
-    "unlocks": ["dict-set-comprehensions", "nested-comprehensions", "generator-expressions"],
-    "project_usage": ["FastAPI", "Django", "Pydantic"]
+    "prerequisites": [
+      "lists",
+      "loops",
+      "if-elif-else"
+    ],
+    "unlocks": [
+      "dict-set-comprehensions",
+      "nested-comprehensions",
+      "generator-expressions"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Pydantic"
+    ]
   },
   "overview": {
-    "what": "A list comprehension is an expression that builds a new list by transforming and optionally filtering items from an iterable, all in a single line. The syntax is:\n\n  [expression for item in iterable]\n  [expression for item in iterable if condition]\n\nPython evaluates it by iterating over the iterable, optionally testing the condition, and collecting the expression result into a new list. It is exactly equivalent to writing a for-loop that appends to an empty list, but more concise and often faster because the append is handled internally by the interpreter.\n\nConcrete examples:\n\n  status_codes = [200, 404, 200, 500, 301]\n  ok_codes = [code for code in status_codes if code == 200]\n  # ok_codes -> [200, 200]\n\n  usernames = ['alice', 'bob', 'carol']\n  upper_names = [name.upper() for name in usernames]\n  # upper_names -> ['ALICE', 'BOB', 'CAROL']\n\n  prices = [9.99, 24.50, 3.75, 49.00]\n  discounted = [round(p * 0.9, 2) for p in prices]\n  # discounted -> [9.0, 22.05, 3.38, 44.1]\n\nYou can call any function in the expression part — str.upper(), round(), or your own helpers. The if clause is optional; without it every item is included.\n\nThink of a list comprehension as a factory conveyor belt: items roll in from the iterable, a filter gate (the if clause) drops items that fail the test, and each surviving item is reshaped by the expression before landing in the output bin. Back in Python, the 'conveyor belt' is the for clause, the 'gate' is the optional if clause, and the 'reshaping step' is the expression.\n\nReadability rule: keep comprehensions to one readable line. If you need nested loops, multiple conditions, or side effects, use a regular for-loop instead.",
-    "why": "List comprehensions replace the repetitive pattern of creating an empty list, looping, and appending — the most common list-building pattern in Python. They make data-transformation code shorter, more declarative, and often faster. Mastering them is essential because they appear everywhere in production Python code.",
-    "where_used": ["Transforming API response lists", "Filtering database query results", "Building FastAPI response payloads", "Data pipeline transformations"]
+    "what": "A list comprehension is an expression that builds a new list by transforming and optionally filtering items from an iterable, all in a single line. The syntax is:\n\n  [expression for item in iterable]\n  [expression for item in iterable if condition]\n\nPython evaluates it by iterating over the iterable, optionally testing the condition, and collecting the expression result into a new list. It is exactly equivalent to writing a for-loop that appends to an empty list, but more concise and often faster because the append is handled internally by the interpreter.\n\nConcrete examples:\n\n  status_codes = [200, 404, 200, 500, 301]\n  ok_codes = [code for code in status_codes if code == 200]\n  # ok_codes -> [200, 200]\n\n  usernames = ['alice', 'bob', 'carol']\n  upper_names = [name.upper() for name in usernames]\n  # upper_names -> ['ALICE', 'BOB', 'CAROL']\n\n  prices = [9.99, 24.50, 3.75, 49.00]\n  discounted = [round(p * 0.9, 2) for p in prices]\n  # discounted -> [9.0, 22.05, 3.38, 44.1]\n\nYou can call any function in the expression part \u2014 str.upper(), round(), or your own helpers. The if clause is optional; without it every item is included.\n\nThink of a list comprehension as a factory conveyor belt: items roll in from the iterable, a filter gate (the if clause) drops items that fail the test, and each surviving item is reshaped by the expression before landing in the output bin. Back in Python, the 'conveyor belt' is the for clause, the 'gate' is the optional if clause, and the 'reshaping step' is the expression.\n\nReadability rule: keep comprehensions to one readable line. If you need nested loops, multiple conditions, or side effects, use a regular for-loop instead.",
+    "why": "List comprehensions replace the repetitive pattern of creating an empty list, looping, and appending \u2014 the most common list-building pattern in Python. They make data-transformation code shorter, more declarative, and often faster. Mastering them is essential because they appear everywhere in production Python code.",
+    "where_used": [
+      "Transforming API response lists",
+      "Filtering database query results",
+      "Building FastAPI response payloads",
+      "Data pipeline transformations"
+    ]
   },
   "why_learning_this": [
     "Write concise data transforms when building FastAPI response payloads from database rows",
-    "Read and maintain real codebases faster — comprehensions are used more often than explicit append loops",
+    "Read and maintain real codebases faster \u2014 comprehensions are used more often than explicit append loops",
     "Unlocks dict/set comprehensions and generator expressions, which follow the same syntax pattern"
   ],
   "common_mistakes": [
-    { "title": "Using a comprehension for side effects", "explanation": "Comprehensions build a new list. Writing `[print(x) for x in items]` works but wastes memory on a list of None values and confuses readers. Use a regular for-loop when you only need side effects." },
-    { "title": "Overlong comprehensions that hurt readability", "explanation": "Cramming nested loops, multiple conditions, or complex expressions into one comprehension makes it unreadable. If the comprehension does not fit on one line comfortably, break it into a regular loop." },
-    { "title": "Forgetting that the result is a new list", "explanation": "A comprehension never mutates the original iterable — it always creates a fresh list. If you discard the return value, the work is wasted." },
-    { "title": "Putting the if clause in the wrong position", "explanation": "A filtering if goes AFTER the for clause: `[x for x in items if x > 0]`. Putting it before the for is a syntax error unless you are writing a ternary expression, which is a different pattern: `[x if x > 0 else 0 for x in items]`." }
+    {
+      "title": "Using a comprehension for side effects",
+      "explanation": "Comprehensions build a new list. Writing `[print(x) for x in items]` works but wastes memory on a list of None values and confuses readers. Use a regular for-loop when you only need side effects."
+    },
+    {
+      "title": "Overlong comprehensions that hurt readability",
+      "explanation": "Cramming nested loops, multiple conditions, or complex expressions into one comprehension makes it unreadable. If the comprehension does not fit on one line comfortably, break it into a regular loop."
+    },
+    {
+      "title": "Forgetting that the result is a new list",
+      "explanation": "A comprehension never mutates the original iterable \u2014 it always creates a fresh list. If you discard the return value, the work is wasted."
+    },
+    {
+      "title": "Putting the if clause in the wrong position",
+      "explanation": "A filtering if goes AFTER the for clause: `[x for x in items if x > 0]`. Putting it before the for is a syntax error unless you are writing a ternary expression, which is a different pattern: `[x if x > 0 else 0 for x in items]`."
+    }
   ],
   "recall_questions": [
-    { "q": "What is the general syntax of a list comprehension, and which part is optional?", "answer": "[expression for item in iterable if condition]. The if condition clause is optional; without it every item is included.", "tier": "tier1" },
-    { "q": "What equivalent pattern does a list comprehension replace?", "answer": "Creating an empty list, looping over an iterable, and appending to the list on each iteration.", "tier": "tier1" },
-    { "q": "Why are list comprehensions often faster than the equivalent for-loop with append?", "answer": "Because the append is handled internally by the interpreter rather than calling the list.append method on each iteration.", "tier": "tier2" },
-    { "q": "When should you use a regular for-loop instead of a comprehension?", "answer": "When the comprehension would need nested loops, multiple conditions, or side effects — if it does not fit on one readable line, use a regular loop.", "tier": "tier2" }
+    {
+      "q": "What is the general syntax of a list comprehension, and which part is optional?",
+      "answer": "[expression for item in iterable if condition]. The if condition clause is optional; without it every item is included.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What equivalent pattern does a list comprehension replace?",
+      "answer": "Creating an empty list, looping over an iterable, and appending to the list on each iteration.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are list comprehensions often faster than the equivalent for-loop with append?",
+      "answer": "Because the append is handled internally by the interpreter rather than calling the list.append method on each iteration.",
+      "tier": "tier2"
+    },
+    {
+      "q": "When should you use a regular for-loop instead of a comprehension?",
+      "answer": "When the comprehension would need nested loops, multiple conditions, or side effects \u2014 if it does not fit on one readable line, use a regular loop.",
+      "tier": "tier2"
+    }
   ],
   "practice_tasks": [
-    { "title": "Filter active users", "prompt": "Given a list of user dicts with 'username' and 'is_active' keys, write a list comprehension that returns a list of usernames (strings) for only the active users.", "solution": "users = [\n    {'username': 'alice', 'is_active': True},\n    {'username': 'bob', 'is_active': False},\n    {'username': 'carol', 'is_active': True},\n]\n\nactive_names = [u['username'] for u in users if u['is_active']]\nprint(active_names)  # ['alice', 'carol']" },
-    { "title": "Normalize API response prices", "prompt": "Given a list of price floats from an API, write a list comprehension that applies a 15% discount and rounds each price to 2 decimal places.", "solution": "prices = [29.99, 14.50, 99.00, 4.75]\n\ndiscounted = [round(p * 0.85, 2) for p in prices]\nprint(discounted)  # [25.49, 12.32, 84.15, 4.04]" }
+    {
+      "title": "Filter and extract usernames",
+      "prompt": "The current code correctly filters for active users, but it only extracts their IDs. Modify the list comprehension so that it extracts the `username` (as a string) instead of the `id`.",
+      "starter_code": "users = [\n    {\"id\": 1, \"username\": \"alice\", \"active\": True},\n    {\"id\": 2, \"username\": \"bob\", \"active\": False},\n    {\"id\": 3, \"username\": \"carol\", \"active\": True}\n]\n\n# Modify the expression part of this comprehension\nresult = [u[\"id\"] for u in users if u[\"active\"]]\nprint(result)",
+      "solution": "users = [\n    {\"id\": 1, \"username\": \"alice\", \"active\": True},\n    {\"id\": 2, \"username\": \"bob\", \"active\": False},\n    {\"id\": 3, \"username\": \"carol\", \"active\": True}\n]\n\nresult = [u[\"username\"] for u in users if u[\"active\"]]\nprint(result)"
+    }
   ],
   "challenge": {
     "title": "Transform database rows into API response dicts",
@@ -46,16 +95,32 @@
   },
   "code_walkthrough": {
     "code": "status_codes = [200, 404, 200, 500, 301]\n\n# Equivalent for-loop\nok_loop = []\nfor code in status_codes:\n    if code == 200:\n        ok_loop.append(code)\n\n# Same result with a comprehension\nok_comp = [code for code in status_codes if code == 200]\n\nprint('loop:', ok_loop)\nprint('comp:', ok_comp)",
-    "focus": "Both produce the same list — the comprehension collapses the loop, condition, and append into one expression."
+    "focus": "Both produce the same list \u2014 the comprehension collapses the loop, condition, and append into one expression."
   },
   "aha_moment": {
     "code": "tags = ['python', 'fastapi', 'sql', 'python', 'docker']\nunique_sorted = sorted([t for t in tags if t != 'sql'])\noriginal = tags\nprint('result:', unique_sorted)\nprint('original:', original)\nprint('same object?', unique_sorted is original)",
     "prediction": "Does the comprehension modify the original `tags` list?",
     "common_guess": "Yes, it removes 'sql' from tags",
-    "why": "A comprehension always builds a brand-new list — it never mutates the source iterable. The original list is untouched, and `is` confirms they are different objects."
+    "why": "A comprehension always builds a brand-new list \u2014 it never mutates the source iterable. The original list is untouched, and `is` confirms they are different objects."
   },
   "sources": [
     "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions",
     "https://docs.python.org/3/reference/expressions.html#displays-for-lists-sets-and-dictionaries"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "names = [\"ALICE\", \"bob\", \"CAROL\"]\nres = [n.lower() for n in names if n.isupper()]\nprint(res)",
+      "question": "What is the output of this list comprehension?",
+      "answer": "['alice', 'carol']",
+      "why": "The `if n.isupper()` clause filters out 'bob'. The remaining strings 'ALICE' and 'CAROL' are passed to `n.lower()`, producing 'alice' and 'carol'."
+    },
+    {
+      "type": "find-bug",
+      "code": "nums = [1, 2, 3]\nres = [x * 2 if x > 1 for x in nums]\nprint(res)",
+      "question": "Why does this comprehension result in a syntax error?",
+      "answer": "The `if` filtering condition is placed in the wrong position.",
+      "why": "A filtering `if` must go *after* the `for` clause (`[x * 2 for x in nums if x > 1]`). Putting it before the `for` is only valid when using an `if-else` ternary expression."
+    }
   ]
 }

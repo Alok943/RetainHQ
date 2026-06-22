@@ -34,8 +34,12 @@
     { "q": "What problem do closures solve that you would otherwise reach for a class to do?", "answer": "Keeping private, persistent state attached to a function without the ceremony of defining a class and instance.", "tier": "tier2" }
   ],
   "practice_tasks": [
-    { "title": "Closure counter", "prompt": "Write a `make_counter()` factory that returns a function which returns 1, 2, 3, ... on successive calls, using a closure (no class, no global).", "solution": "def make_counter():\n    count = 0\n    def counter():\n        nonlocal count\n        count += 1\n        return count\n    return counter\n\nc = make_counter()\nprint(c(), c(), c())  # 1 2 3" },
-    { "title": "Parametrised multiplier", "prompt": "Write `multiplier(n)` that returns a function multiplying its argument by n. Show that `times3 = multiplier(3); times3(10)` returns 30.", "solution": "def multiplier(n):\n    def mul(x):\n        return x * n\n    return mul\n\ntimes3 = multiplier(3)\nprint(times3(10))  # 30" }
+    {
+      "title": "Closure counter",
+      "prompt": "The `make_counter` function currently relies on a global variable. Modify it to use a closure by moving the `count` variable inside `make_counter` and using `nonlocal` inside the inner function.",
+      "starter_code": "_count = 0\n\ndef make_counter():\n    def counter():\n        global _count\n        _count += 1\n        return _count\n    return counter\n",
+      "solution": "def make_counter():\n    count = 0\n    def counter():\n        nonlocal count\n        count += 1\n        return count\n    return counter\n"
+    }
   ],
   "challenge": {
     "title": "Implement a logging decorator",
@@ -50,5 +54,20 @@
     "https://docs.python.org/3/reference/datamodel.html#index-33",
     "https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement",
     "https://docs.python.org/3/library/functools.html#functools.wraps"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will the following code output?",
+      "code": "def make_multiplier(n):\n    def multiplier(x):\n        return x * n\n    return multiplier\n\ntimes3 = make_multiplier(3)\nprint(times3(10))",
+      "answer": "30",
+      "why": "The `multiplier` inner function captures the variable `n` from the enclosing scope. When `times3` is called with 10, it multiplies 10 by the captured value 3."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why do you need the `nonlocal` keyword when modifying a captured variable inside a closure?",
+      "answer": "Without `nonlocal`, assigning a value to a variable inside the inner function creates a new local variable, rather than updating the variable in the enclosing scope.",
+      "why": "Python's scoping rules dictate that any assignment makes a variable local to the current function. `nonlocal` explicitly tells Python to rebind the variable in the nearest enclosing scope."
+    }
   ]
 }

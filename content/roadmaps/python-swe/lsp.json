@@ -1,0 +1,100 @@
+{
+  "slug": "lsp",
+  "title": "Liskov Substitution Principle",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "inheritance-super",
+      "method-overriding"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Pydantic"
+    ]
+  },
+  "overview": {
+    "what": "The Liskov Substitution Principle (LSP) states that objects of a superclass must be replaceable with objects of its subclasses without breaking the application. If `Square` inherits from `Rectangle`, a function expecting a `Rectangle` must work perfectly when passed a `Square`. This means a subclass must honor the expected method signatures, return types, and behavioral contracts of its parent. Think of it as an electrical outlet: if you swap a standard wall outlet (superclass) with a smart outlet (subclass), it must still accept the same standard plugs and deliver the same voltage, or devices will fry.",
+    "why": "It prevents unexpected runtime crashes and confusing bugs when working with inheritance, ensuring that polymorphism actually works safely.",
+    "where_used": [
+      "FastAPI dependency injection",
+      "Pydantic custom validators",
+      "Standard library ABCs"
+    ]
+  },
+  "why_learning_this": [
+    "Write reliable subclass implementations",
+    "Design safe and predictable class hierarchies",
+    "Avoid the fragile base class problem in object-oriented code"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Changing parameter types or counts",
+      "explanation": "A subclass overrides a parent method but requires extra mandatory arguments. Code expecting the parent class will fail because it won't pass those new arguments."
+    },
+    {
+      "title": "Returning a different type",
+      "explanation": "A parent method returns a list, but the overridden subclass method returns a single item or None. The caller will crash when trying to iterate over the result."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core rule of the Liskov Substitution Principle regarding subclasses?",
+      "answer": "Objects of a subclass must be able to replace objects of the superclass without breaking the application.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If a subclass changes the return type of an inherited method, why does this violate LSP?",
+      "answer": "Because a function expecting the superclass will receive an unexpected type, breaking the expected behavioral contract and likely causing a runtime crash.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the Return Type Violation",
+      "prompt": "The `SMSNotification` class violates LSP. The parent `Notification` class specifies that `send` should return a boolean indicating success, but `SMSNotification` returns nothing (`None`). Modify `SMSNotification.send` so it returns `True` after printing the message, repairing the contract.",
+      "starter_code": "class Notification:\n    def send(self, message: str) -> bool:\n        return True\n\nclass SMSNotification(Notification):\n    def send(self, message: str):\n        print(f'SMS: {message}')\n        # Modify this method to return a boolean\n\ndef notify(notifier):\n    if notifier.send('Hello'):\n        print('Success!')\n\nnotify(SMSNotification())",
+      "solution": "class Notification:\n    def send(self, message: str) -> bool:\n        return True\n\nclass SMSNotification(Notification):\n    def send(self, message: str):\n        print(f'SMS: {message}')\n        return True\n\ndef notify(notifier):\n    if notifier.send('Hello'):\n        print('Success!')\n\nnotify(SMSNotification())"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Bird:\n  def fly(self):\n    return 'Flapping wings'\n\nclass Penguin(Bird):\n  def fly(self):\n    raise NotImplementedError('Cannot fly')\n\ndef make_bird_fly(bird):\n  print(bird.fly())\n\npenguin = Penguin()\nmake_bird_fly(penguin)  # Crashes!",
+    "focus": "raise NotImplementedError('Cannot fly')"
+  },
+  "aha_moment": {
+    "code": "class Rectangle:\n  def __init__(self, w, h):\n    self.w = w\n    self.h = h\n  def set_w(self, w): self.w = w\n  def set_h(self, h): self.h = h\n  def area(self): return self.w * self.h\n\nclass Square(Rectangle):\n  def set_w(self, w): self.w = w; self.h = w\n  def set_h(self, h): self.h = h; self.w = h\n\ndef resize(rect):\n  rect.set_w(5)\n  rect.set_h(4)\n  print(rect.area())\n\nsq = Square(2, 2)\nresize(sq)",
+    "prediction": "What area is printed when resize(sq) is called?",
+    "common_guess": "20",
+    "why": "The `resize` function assumes independent width and height, but `Square` links them. By the time `rect.area()` is called, the square's sides are 4x4, printing 16, showing why a Square is a mathematical rectangle but a bad programmatic subclass of Rectangle."
+  },
+  "challenge": {
+    "title": "Safe Export System",
+    "prompt": "Create a base class `DataExporter` with a method `export(data: dict)`. Then implement a subclass `JSONExporter` that prints the dictionary, and a subclass `CSVExporter`. The base class contract requires `export` to accept a dictionary. `CSVExporter` must handle the dictionary properly without adding extra required parameters to `export`. Implement both classes so `process_export(exporter, {'id': 1})` works seamlessly for both.",
+    "solution": "class DataExporter:\n  def export(self, data):\n    pass\n\nclass JSONExporter(DataExporter):\n  def export(self, data):\n    print(f'JSON: {data}')\n\nclass CSVExporter(DataExporter):\n  def export(self, data):\n    keys = ','.join(data.keys())\n    vals = ','.join(str(v) for v in data.values())\n    print(f'CSV: {keys}\\n{vals}')\n\ndef process_export(exporter, data):\n  exporter.export(data)"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#inheritance"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A subclass overrides a parent method `process(data: list)`. The subclass changes the signature to `process(data: list, strict: bool = False)`. Does this violate LSP?",
+      "answer": "No, this does not violate LSP.",
+      "why": "Because `strict` has a default value (`False`), any caller that expects the parent class can still call `process(data)` with a single argument. The subclass honors the original contract."
+    },
+    {
+      "type": "predict-output",
+      "code": "class Parent:\n    def get_status(self):\n        return 'OK'\n\nclass Child(Parent):\n    def get_status(self):\n        pass\n\nval = Child().get_status()\nprint(val.lower())",
+      "question": "What happens when this code is executed?",
+      "answer": "It raises an AttributeError.",
+      "why": "`Child.get_status()` returns `None` (because it has only a `pass` statement), violating the implicit contract of `Parent` which returns a string. Calling `.lower()` on `None` crashes."
+    }
+  ]
+}

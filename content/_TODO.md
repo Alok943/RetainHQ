@@ -112,7 +112,91 @@ topics are *all* about what Python does under the hood. Feed Phase 1 slugs into
 
 ---
 
-## Later phases (add when Phase 2 feels good)
-Phase 3 OOP & Design · Phase 4 Professional Python ·
+## Phase 3 — OOP & Design  (18 topics)
+
+The interview-critical phase. Lean on Phase 1-2 slugs in `{{PREREQS}}` — esp.
+`functions`, `scope`, `everything-is-an-object`, `is-vs-equals`, `init-vs-new`,
+`operator-overloading`, `decorators`. MRO / diamond problem / SOLID are pure
+execution-flow material — ideal for the step-through visualizer + aha-moments.
+
+### Classes & Objects
+- [x] Class creation and instantiation  →  `class-basics`
+- [x] Instance variables vs class variables  →  `instance-vs-class-vars`
+- [x] Instance, class, and static methods  →  `method-types`
+- [x] Property decorator: getter, setter, deleter  →  `property-decorator`
+- [x] __slots__ for memory optimization  →  `slots`
+
+### Inheritance
+- [x] Single inheritance and super()  →  `inheritance-super`
+- [x] Multiple inheritance and the diamond problem  →  `multiple-inheritance`
+- [x] MRO: Method Resolution Order (C3 linearization)  →  `mro`
+
+### Polymorphism
+- [x] Method overriding  →  `method-overriding`
+- [x] Duck typing in Python  →  `duck-typing`
+- [x] Structural subtyping with Protocols  →  `protocols`
+
+### Abstraction
+- [x] ABC module and abstract methods  →  `abc-abstract-methods`
+- [x] Interface patterns in Python  →  `interface-patterns`
+
+### SOLID Principles
+- [x] Single Responsibility Principle  →  `srp`
+- [x] Open/Closed Principle  →  `ocp`
+- [x] Liskov Substitution Principle  →  `lsp`
+- [x] Interface Segregation Principle  →  `isp`
+- [x] Dependency Inversion Principle  →  `dip`
+
+**Phase 3 status: COMPLETE** ✅ — all 18 topics generated and `validate.py` passes.
+
+---
+
+## Phase 4 — Professional Python  (23 topics)
+
+The backend-relevance phase — maps directly onto the FastAPI/Pydantic stack.
+Feed Phase 3 slugs into `{{PREREQS}}` (esp. `class-basics`, `property-decorator`,
+`abc-abstract-methods`, `protocols`, `decorators`, `enter-exit`).
+
+### Type Hints
+- [x] Basic annotations: int, str, list, dict  →  `type-hints-basic`
+- [x] Optional and Union types  →  `optional-union-types`
+- [x] Generic types: List[T], Dict[K, V]  →  `generic-types`
+- [x] TypeVar and generic functions  →  `typevar-generic-functions`
+- [x] Protocols for structural typing  →  `type-hints-protocols`  *(extends Phase 3 `protocols`; angle on typing-module usage)*
+- [x] TYPE_CHECKING for avoiding circular imports  →  `type-checking-imports`
+
+### Dataclasses
+- [x] @dataclass basics  →  `dataclass-basics`
+- [x] field() and default_factory  →  `dataclass-field`
+- [x] Frozen dataclasses  →  `frozen-dataclass`
+- [x] __post_init__ processing  →  `post-init`
+- [x] Dataclasses vs Pydantic: when to use which  →  `dataclass-vs-pydantic`
+
+### Context Managers
+- [x] with statement and resource management  →  `with-statement`
+- [x] __enter__ and __exit__  →  `enter-exit`
+- [x] contextlib.contextmanager decorator  →  `contextmanager-decorator`
+- [x] Async context managers  →  `async-context-managers`
+
+### Logging
+- [x] Logging levels and basicConfig  →  `logging-basics`
+- [x] Loggers, handlers, formatters  →  `loggers-handlers-formatters`
+- [x] Structured logging with JSON output  →  `structured-logging`
+- [x] Log rotation with RotatingFileHandler  →  `log-rotation`
+
+### Configuration & Deps
+- [x] os.environ and environment variables  →  `environment-variables`
+- [x] python-dotenv for .env files  →  `dotenv`
+- [x] pyproject.toml and project metadata  →  `pyproject-toml`
+- [x] Poetry: dependency management basics  →  `poetry`
+
+---
+
+## Later phases (add when Phase 4 feels good)
 Phase 5 Testing & Quality · Phase 6 Engineering Practices.
 Pull the exact titles from `backend/seed_python_swe.py` the same way.
+
+## Future roadmaps (separate base-language journeys, demand-pulled — not yet built)
+Java for SWE · C++ for SWE — each its own `seed_*.py` + `content/roadmaps/<slug>/`,
+mirroring how `python-swe` is the base under the AI-eng / REST-API path. Build only
+when a real user / funnel signal asks for it.

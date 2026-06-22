@@ -1,0 +1,96 @@
+{
+  "slug": "subqueries",
+  "title": "Scalar & IN Subqueries",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["where-operators", "aggregate-functions"],
+    "unlocks": ["correlated-subqueries", "ctes"],
+    "project_usage": ["analytics queries", "filtering with derived values", "reporting"]
+  },
+  "overview": {
+    "what": "A subquery is a SELECT nested inside another SQL statement. It runs first and feeds its result into the outer query.\n\nTwo common shapes:\n\n1. **Scalar subquery** — returns exactly ONE value (one row, one column). You can use it anywhere a single value is expected: in SELECT, WHERE, or even HAVING.\n\n  SELECT name, price\n  FROM products\n  WHERE price > (SELECT AVG(price) FROM products)\n  ORDER BY price;\n\nThe inner SELECT AVG(price) returns 85.82 (the average of all 6 products). The outer query then keeps only products whose price exceeds that single number: Monitor (199.99), Desk (149.99), Chair (89.99).\n\n2. **IN subquery** — returns a list of values (one column, many rows). Used with WHERE col IN (subquery) to filter the outer query against that list.\n\n  SELECT name\n  FROM customers\n  WHERE id IN (SELECT customer_id FROM orders WHERE status = 'paid')\n  ORDER BY name;\n\nThe inner query finds customer_ids with paid orders: {1, 2, 3, 5, 6}. The outer query returns the matching names: Alice, Bob, Carlos, Emma, Farah.\n\nThink of subqueries as 'compute a value or a list first, then plug it in'. The inner query produces a row-set; the outer query consumes it.",
+    "why": "Subqueries let you express multi-step logic in a single statement — 'find products above the average price' or 'find customers who ordered at least once' — without needing temporary tables or multiple round-trips. They are the bridge between simple single-table queries and the powerful compositional SQL that real dashboards and APIs rely on.",
+    "where_used": ["filtering rows against a derived threshold (e.g. above-average price)", "checking membership in a dynamic list (e.g. customers who placed orders)", "embedding computed values in SELECT for inline comparisons"]
+  },
+  "why_learning_this": [
+    "Write single-statement queries that compare rows against aggregates — 'products priced above average' — instead of hard-coding values",
+    "Filter against dynamic lists — 'customers who placed a paid order' — without needing a JOIN"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Scalar subquery returns more than one row",
+      "explanation": "If you write WHERE price > (SELECT price FROM products WHERE category = 'Electronics'), Postgres raises an error because the inner query returns 3 rows, but '>' expects exactly one value. Use IN, ANY, or add LIMIT 1 / an aggregate to guarantee a single row."
+    },
+    {
+      "title": "Using IN when a JOIN would be clearer and faster",
+      "explanation": "WHERE id IN (SELECT customer_id FROM orders) works but on large tables a JOIN can be faster and makes the relationship explicit. Use subqueries when the logic is genuinely 'compute a value/list, then filter', not when you need columns from both tables."
+    },
+    {
+      "title": "Forgetting that IN ignores NULLs in the list",
+      "explanation": "If the inner query returns {1, NULL, 3}, WHERE id IN (...) will match 1 and 3 but not NULL — NULL = NULL is unknown, not true. This can silently drop expected matches if the subquery column is nullable."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between a scalar subquery and an IN subquery?",
+      "answer": "A scalar subquery returns exactly one value (one row, one column) and is used where a single value is expected (e.g. WHERE price > ...). An IN subquery returns a list of values (one column, many rows) and is used with WHERE col IN (...).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a scalar subquery returns more than one row?",
+      "answer": "Postgres raises a runtime error because a scalar context expects exactly one value.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Can you use a subquery in the SELECT clause? Give an example.",
+      "answer": "Yes. A scalar subquery can appear in SELECT, e.g. SELECT name, (SELECT AVG(price) FROM products) AS avg_price FROM products — it embeds a computed single value into every output row.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name, price\nFROM products\nWHERE price > (SELECT AVG(price) FROM products)\nORDER BY price;",
+      "question": "Which products appear and in what order?",
+      "answer": "Chair (89.99), Desk (149.99), Monitor (199.99)",
+      "why": "AVG(price) of all 6 products = (49.99+19.99+199.99+149.99+89.99+4.99)/6 = 85.82. Only Chair, Desk, and Monitor exceed 85.82, ordered by ascending price."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name\nFROM customers\nWHERE id NOT IN (SELECT customer_id FROM orders)\nORDER BY name;",
+      "question": "Which customers does this return?",
+      "answer": "Greg, Hana",
+      "why": "The inner query returns all customer_ids that have orders: {1,2,3,4,5,6}. NOT IN keeps customers whose id is not in that set — Greg (7) and Hana (8). This is the 'anti-semi-join' pattern for finding rows with no related records."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, price\nFROM products\nWHERE price > (SELECT AVG(price) FROM products)\nORDER BY price;",
+    "flow_stages": ["from", "where", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch the scalar subquery resolve to a single number (85.82), then see WHERE filter the products row-set down to only those above that threshold."
+  },
+  "practice_tasks": [
+    {
+      "title": "Switch from scalar to IN subquery",
+      "prompt": "This query finds products priced above the average. Modify it to instead find products whose id appears in any order_item (i.e. products that have been ordered at least once). Use an IN subquery on the order_items table and keep the ORDER BY.",
+      "starter_code": "SELECT name, price\nFROM products\nWHERE price > (SELECT AVG(price) FROM products)\nORDER BY price;",
+      "solution": "SELECT name, price\nFROM products\nWHERE id IN (SELECT product_id FROM order_items)\nORDER BY price;"
+    }
+  ],
+  "challenge": {
+    "title": "Customers who spent above average",
+    "prompt": "Write a query that lists the names of customers whose total spending (SUM of product price × quantity across their orders and order_items) exceeds the average customer total spending. Order by name. Hint: you will need JOINs inside the subqueries and the outer query.",
+    "solution": "SELECT c.name\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nGROUP BY c.id, c.name\nHAVING SUM(p.price * oi.quantity) > (\n  SELECT AVG(total) FROM (\n    SELECT SUM(p2.price * oi2.quantity) AS total\n    FROM orders o2\n    JOIN order_items oi2 ON oi2.order_id = o2.id\n    JOIN products p2 ON p2.id = oi2.product_id\n    GROUP BY o2.customer_id\n  ) sub\n)\nORDER BY c.name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/functions-subquery.html",
+    "https://www.postgresql.org/docs/current/sql-select.html"
+  ]
+}

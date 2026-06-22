@@ -9,14 +9,29 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["scope", "functions", "first-class-functions"],
-    "unlocks": ["closures", "closure-mechanics"],
-    "project_usage": ["Decorators", "Callbacks", "Event Handlers"]
+    "prerequisites": [
+      "scope",
+      "functions",
+      "first-class-functions"
+    ],
+    "unlocks": [
+      "closures",
+      "closure-mechanics"
+    ],
+    "project_usage": [
+      "Decorators",
+      "Callbacks",
+      "Event Handlers"
+    ]
   },
   "overview": {
     "what": "Lexical scope means that a function's access to variables is determined by where the function is defined in the source code, not where it is called. When an inner function references a variable from an outer function, that variable is called a 'free variable'. Even if the outer function finishes executing, the inner function retains access to this free variable. Think of lexical scope like looking through a one-way mirror: the inner function can see out to the environment where it was born, but the outside cannot see in.",
     "why": "Lexical scope is the foundation for closures and decorators. It allows functions to carry state without relying on global variables or classes.",
-    "where_used": ["React-like state management", "FastAPI dependency injection", "Decorators"]
+    "where_used": [
+      "React-like state management",
+      "FastAPI dependency injection",
+      "Decorators"
+    ]
   },
   "why_learning_this": [
     "Understanding closures and decorators",
@@ -43,10 +58,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Identify the Free Variable",
-      "prompt": "Write a function `make_multiplier` that takes an argument `factor` and returns an inner function. The inner function should take a `value` and return `value * factor`. Observe how `factor` acts as a free variable.",
-      "starter_code": "def make_multiplier(factor):\n  # Define and return an inner function\n  pass",
-      "solution": "def make_multiplier(factor):\n  def multiplier(value):\n    return value * factor\n  return multiplier"
+      "title": "Lexical Scope and Free Variables",
+      "prompt": "Currently, `multiply` relies on a global variable `factor`. Modify the code to define a function `make_multiplier(factor)` that returns an inner `multiply` function, so that `factor` is a free variable enclosed by lexical scope.",
+      "starter_code": "factor = 5\n\ndef multiply(value):\n    return value * factor",
+      "solution": "def make_multiplier(factor):\n    def multiply(value):\n        return value * factor\n    return multiply"
     }
   ],
   "code_walkthrough": {
@@ -66,5 +81,20 @@
   },
   "sources": [
     "https://docs.python.org/3/reference/executionmodel.html#naming-and-binding"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code output?",
+      "code": "def make_logger():\n    prefix = \"INFO:\"\n    \n    def log(message):\n        print(f\"{prefix} {message}\")\n        \n    prefix = \"DEBUG:\"\n    return log\n\nlogger = make_logger()\nlogger(\"System started\")",
+      "answer": "DEBUG: System started",
+      "why": "Lexical scope dictates that the inner function accesses the variable itself, not a snapshot of its value at the time the function was defined. When `logger()` is finally called, `prefix` has been updated to 'DEBUG:'."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A junior developer believes that inner functions can freely reassign variables from an outer function just by using an equal sign (e.g., `count = 1`). Why is this incorrect?",
+      "answer": "Without the `nonlocal` keyword, assigning to a variable with the same name inside an inner function creates a new local variable in that scope instead of modifying the outer free variable.",
+      "why": "Python assumes variables assigned inside a function are local to that function unless explicitly declared otherwise. If you want to rebind an outer variable, you must declare it as `nonlocal`."
+    }
   ]
 }

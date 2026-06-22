@@ -57,12 +57,27 @@
       "tier": "tier1"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will the following code output?",
+      "code": "a = [1, 2]\nb = [1, 2]\nprint(a == b)\nprint(a is b)",
+      "answer": "`True` followed by `False`",
+      "why": "`a` and `b` have the same values, so `a == b` is `True`. However, they are two distinct list objects in memory, so `a is b` evaluates to `False`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why is it recommended to use `x is None` instead of `x == None`?",
+      "answer": "Because `is` guarantees an identity check, preventing bugs if an object overrides `==` to behave unexpectedly.",
+      "why": "Using `== None` triggers the `__eq__` method, which some libraries override to return custom objects instead of a simple boolean. `is None` directly compares memory addresses and cannot be overridden."
+    }
+  ],
   "practice_tasks": [
     {
-      "title": "Identity vs Equality Check",
-      "prompt": "Write a function `check_lists(list1, list2)` that takes two lists. It should return a tuple of two booleans: the first boolean is True if the lists have equal values, and the second boolean is True if they are the exact same object in memory.",
-      "starter_code": "def check_lists(list1, list2):\n    # Return (are_values_equal, are_same_object)\n    pass",
-      "solution": "def check_lists(list1, list2):\n    return (list1 == list2, list1 is list2)"
+      "title": "Fix the singleton comparison",
+      "prompt": "The `process_data` function currently uses `==` to check if the result is `None`. This works most of the time but can be unsafe. Modify the function to use the correct operator for checking identity against singletons like `None`.",
+      "starter_code": "def process_data(data):\n    if data == None:\n        return 'Empty'\n    return 'Processed'",
+      "solution": "def process_data(data):\n    if data is None:\n        return 'Empty'\n    return 'Processed'"
     }
   ],
   "code_walkthrough": {

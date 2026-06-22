@@ -21,6 +21,8 @@ KIND = {"concept", "milestone"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
+CHECK_TYPES = {"predict-output", "predict-result", "explain-behavior", "find-bug", "choose-model", "debug-misconception"}
+RUNTIMES = {"python", "sql"}
 
 errors = []
 warnings = []
@@ -109,15 +111,38 @@ def main():
             if not isinstance(rq, dict) or not rq.get("q") or not rq.get("answer"):
                 err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
 
-        cw = d.get("code_walkthrough")
-        if not isinstance(cw, dict) or not cw.get("code"):
-            err(rel, "code_walkthrough is required: an object with a non-empty 'code' string")
-        elif not cw.get("focus"):
-            err(rel, "code_walkthrough.focus is required (the one state change to watch)")
+        # Execution block branches on runtime: python -> code_walkthrough, sql -> query_walkthrough.
+        runtime = d.get("runtime", "python")
+        if runtime not in RUNTIMES:
+            err(rel, f"runtime must be one of {RUNTIMES}")
+        if runtime == "sql":
+            qw = d.get("query_walkthrough")
+            if not isinstance(qw, dict) or not qw.get("query"):
+                err(rel, "query_walkthrough is required for runtime 'sql': an object with a non-empty 'query'")
+            if d.get("code_walkthrough") is not None:
+                err(rel, "code_walkthrough not allowed for runtime 'sql' — use query_walkthrough")
+        else:
+            cw = d.get("code_walkthrough")
+            if not isinstance(cw, dict) or not cw.get("code"):
+                err(rel, "code_walkthrough is required: an object with a non-empty 'code' string")
+            elif not cw.get("focus"):
+                err(rel, "code_walkthrough.focus is required (the one state change to watch)")
 
+        # challenge is OPTIONAL (Tier D) — but if present it must be well-formed.
         ch = d.get("challenge")
-        if not isinstance(ch, dict) or not all(ch.get(k) for k in ("title", "prompt", "solution")):
-            err(rel, "challenge is required: an object with non-empty 'title', 'prompt', and 'solution'")
+        if ch is not None and (not isinstance(ch, dict) or not all(ch.get(k) for k in ("title", "prompt"))):
+            err(rel, "challenge, if present, needs non-empty 'title' and 'prompt'")
+
+        # understanding_checks (Tier A) — REQUIRED: >=2 typed mental-model probes.
+        uc = d.get("understanding_checks")
+        if not isinstance(uc, list) or len(uc) < 2:
+            err(rel, "understanding_checks is required: a list of >=2 mental-model probes")
+        else:
+            for i, c in enumerate(uc):
+                if not isinstance(c, dict) or not all(c.get(k) for k in ("type", "question", "answer", "why")):
+                    err(rel, f"understanding_checks[{i}] needs non-empty 'type', 'question', 'answer', and 'why'")
+                elif c.get("type") not in CHECK_TYPES:
+                    err(rel, f"understanding_checks[{i}].type must be one of {CHECK_TYPES}")
 
         am = d.get("aha_moment")
         if am is not None and (

@@ -1,0 +1,88 @@
+{
+  "slug": "generic-types",
+  "title": "Generic Types",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["type-hints-basic", "optional-union-types"],
+    "unlocks": ["typevar-generic-functions"],
+    "project_usage": ["FastAPI", "SQLAlchemy relationships"]
+  },
+  "overview": {
+    "what": "Generic types allow you to specify the *contents* of a container type. Instead of just saying a variable is a `list`, you say it is a `list[str]`. For dictionaries, you specify both key and value types: `dict[str, int]`. In older Python (<3.9), you had to import `List` and `Dict` from the `typing` module, but modern Python allows using the built-in lowercase types directly.",
+    "why": "A bare `list` or `dict` annotation doesn't tell the IDE or type checker what methods are safe to call on the items inside the container. Generics provide that inner visibility.",
+    "where_used": ["Defining nested JSON payloads in APIs", "ORM query results (e.g. list of models)"]
+  },
+  "why_learning_this": [
+    "Enabling autocomplete for elements inside loops.",
+    "Documenting complex nested data structures like `list[dict[str, int]]`."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using typing.List in modern Python",
+      "explanation": "Importing `List` or `Dict` from `typing` is deprecated for simple annotations in Python 3.9+. Use the built-in `list` and `dict` directly."
+    },
+    {
+      "title": "Assuming lists are homogeneous at runtime",
+      "explanation": "Annotating a list as `list[int]` does not stop you from appending a string to it at runtime. It only flags a warning in static type checkers."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How do you annotate a list containing dictionaries, where the dictionaries have string keys and boolean values?",
+      "answer": "Using nested generic types: `list[dict[str, bool]]`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is `list[str]` preferred over importing `List` from the typing module?",
+      "answer": "Since Python 3.9, the built-in `list` (and `dict`, `set`, etc.) supports generic type hinting directly, making the `typing` module imports unnecessary for these basic collections.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "def get_names() -> list[str]:\n  return ['Alice', 42, 'Bob']",
+      "question": "Why will a static type checker complain about this function?",
+      "answer": "The function claims to return a list of strings (`list[str]`), but the returned list contains an integer (`42`).",
+      "why": "Generic annotations enforce that all elements within the container match the specified inner type when analyzed by a type checker."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you have a variable typed as `data: dict[str, int | str]`, what kinds of values are allowed in the dictionary?",
+      "answer": "The dictionary keys must be strings, and the values can be either integers or strings.",
+      "why": "Generic types can be composed with other type hints like Unions (`|`) to express complex allowed shapes for the container's contents."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def summarize_scores(scores: dict[str, list[int]]) -> dict[str, int]:\n  result = {}\n  for name, num_list in scores.items():\n    result[name] = sum(num_list)\n  return result\n\nprint(summarize_scores({'Alice': [10, 20]}))",
+    "focus": "def summarize_scores(scores: dict[str, list[int]]) -> dict[str, int]:"
+  },
+  "aha_moment": {
+    "code": "my_list: list[int] = [1, 2, 3]\nmy_list.append('hello')\nprint(my_list)",
+    "prediction": "What does this code print?",
+    "common_guess": "It raises a TypeError because we appended a string to a list[int].",
+    "why": "It prints `[1, 2, 3, 'hello']`. At runtime, Python ignores the `[int]` part entirely. `list` is just a standard dynamic list."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add generic type hints",
+      "prompt": "Given this working code, add generic type hints. `users` is a list of strings, and `roles` is a list of strings. The function returns a dictionary mapping a string to a string.",
+      "starter_code": "def map_roles(users, roles):\n  return dict(zip(users, roles))",
+      "solution": "def map_roles(users: list[str], roles: list[str]) -> dict[str, str]:\n  return dict(zip(users, roles))"
+    }
+  ],
+  "challenge": {
+    "title": "Type a nested data structure",
+    "prompt": "Write a function `flatten_groups` that takes a dictionary where keys are strings (group names) and values are lists of strings (member names). It should return a single flat list of all member names (strings). Provide full type hints.",
+    "solution": "def flatten_groups(groups: dict[str, list[str]]) -> list[str]:\n  flat_list: list[str] = []\n  for members in groups.values():\n    flat_list.extend(members)\n  return flat_list"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#generics"
+  ]
+}

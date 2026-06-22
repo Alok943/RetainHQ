@@ -9,14 +9,24 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["closures", "scope"],
+    "prerequisites": [
+      "closures",
+      "scope"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Django"]
+    "project_usage": [
+      "FastAPI",
+      "Django"
+    ]
   },
   "overview": {
     "what": "Closures in Python are implemented using cell objects. When a nested function references a variable from its enclosing scope, Python creates a 'cell' to store that variable. The inner function's `__closure__` attribute is a tuple of these cell objects. Each cell acts as an indirect pointer to the value. This is the mental model: 'variables are labels, objects are boxes, and a closure cell is a special box that holds another label'.",
     "why": "Understanding how closures hold references rather than values explains why late-binding closures inside loops behave unexpectedly, and how the `nonlocal` keyword can mutate state across function calls.",
-    "where_used": ["FastAPI dependency injection", "Django signals", "Decorator state"]
+    "where_used": [
+      "FastAPI dependency injection",
+      "Django signals",
+      "Decorator state"
+    ]
   },
   "why_learning_this": [
     "Debugging unexpected behaviour in loop-generated callbacks",
@@ -42,10 +52,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Inspect a Closure",
-      "prompt": "Write a factory function `make_api_client(base_url)` that returns a nested function `fetch_endpoint(path)`. The inner function should return the combined URL. Then, inspect the returned function's `__closure__` to print the `cell_contents` storing the `base_url`.",
-      "starter_code": "def make_api_client(base_url):\n  def fetch_endpoint(path):\n    return base_url + path\n  return fetch_endpoint\n\n# Get the closure cell contents",
-      "solution": "def make_api_client(base_url):\n  def fetch_endpoint(path):\n    return base_url + path\n  return fetch_endpoint\n\nclient = make_api_client('https://api.example.com')\nval = client.__closure__[0].cell_contents\nprint(val)"
+      "title": "Modify the Late-Binding Fix",
+      "prompt": "The code currently captures the loop variable correctly using a default argument. Modify it so that the handler functions take an optional parameter `prefix`, returning an f-string like `'{prefix}: Handling {e}'`. Update the print statement to pass the prefix `'Route'` to each handler.",
+      "starter_code": "handlers = []\nfor endpoint in ['/users', '/posts', '/comments']:\n  def handler(e=endpoint):\n    return f'Handling {e}'\n  handlers.append(handler)\n\nprint([h() for h in handlers])",
+      "solution": "handlers = []\nfor endpoint in ['/users', '/posts', '/comments']:\n  def handler(prefix='Route', e=endpoint):\n    return f'{prefix}: Handling {e}'\n  handlers.append(handler)\n\nprint([h('Route') for h in handlers])"
     }
   ],
   "code_walkthrough": {
@@ -65,5 +75,20 @@
   },
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy"
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "handlers = []\nfor i in range(3):\n  def handler():\n    return i\n  handlers.append(handler)\n\nprint([h() for h in handlers])",
+      "question": "This code aims to print `[0, 1, 2]` but prints `[2, 2, 2]`. What is the bug?",
+      "answer": "The closures capture a reference (a cell) to the loop variable `i`, not its value at definition time. When the handlers run, the loop has ended and `i` is 2.",
+      "why": "Closures capture variables by reference, known as late-binding. This is a common bug when creating closures inside loops."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "When a nested function captures an outer variable, how does Python store that variable?",
+      "answer": "Python creates a 'cell' object to store the variable. The inner function's `__closure__` attribute contains a tuple of these cells, acting as indirect pointers to the current value.",
+      "why": "This mental model of 'cells as boxes holding labels' explains why closures track the most recent value of a variable rather than a static snapshot."
+    }
   ]
 }

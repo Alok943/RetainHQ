@@ -9,14 +9,27 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["generator-expressions", "iterator-protocol"],
+    "prerequisites": [
+      "generator-expressions",
+      "iterator-protocol"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Data pipelines", "Celery", "SQLAlchemy"]
+    "project_usage": [
+      "FastAPI",
+      "Data pipelines",
+      "Celery",
+      "SQLAlchemy"
+    ]
   },
   "overview": {
     "what": "Lazy evaluation is a strategy where an expression is not computed until its value is strictly needed. Instead of materializing an entire sequence in memory at once (like a list), Python can yield one item at a time upon request. This acts like a streaming pipeline. The mental model: computing a result 'just in time' rather than 'all in advance', reducing both initial startup time and total memory consumption.",
     "why": "It prevents memory exhaustion when processing massive datasets (e.g., parsing a 50GB log file or querying millions of database rows) and allows processing to begin immediately without waiting for the full dataset to load.",
-    "where_used": ["Pandas chunking", "Django QuerySets", "SQLAlchemy cursors", "File reading"]
+    "where_used": [
+      "Pandas chunking",
+      "Django QuerySets",
+      "SQLAlchemy cursors",
+      "File reading"
+    ]
   },
   "why_learning_this": [
     "Processing files larger than available RAM",
@@ -52,9 +65,9 @@
   ],
   "practice_tasks": [
     {
-      "title": "Processing a large stream safely",
-      "prompt": "You have a generator expression `logs = (process(line) for line in file_stream)` representing parsed log entries. Write a loop that lazily processes each log entry and prints it if its 'status' is 'ERROR'. Do not materialize the logs into a list.",
-      "starter_code": "def print_errors(logs):\n    # Write your lazy loop here\n    pass",
+      "title": "Processing a large stream lazily",
+      "prompt": "The `print_errors` function currently converts the `logs` generator into a list, which eagerly processes all entries and can cause a memory crash. Modify the function to process the `logs` lazily.",
+      "starter_code": "def print_errors(logs):\n    all_logs = list(logs)  # Eagerly evaluate\n    for log in all_logs:\n        if log.get('status') == 'ERROR':\n            print(log)",
       "solution": "def print_errors(logs):\n    for log in logs:\n        if log.get('status') == 'ERROR':\n            print(log)"
     }
   ],
@@ -76,5 +89,20 @@
   "sources": [
     "https://docs.python.org/3/tutorial/classes.html#generator-expressions",
     "https://docs.python.org/3/howto/functional.html#generators"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Why would you choose a generator expression over a list comprehension when reading a massive log file line-by-line?",
+      "answer": "To prevent memory exhaustion (Out Of Memory errors).",
+      "why": "A list comprehension materializes all items in memory at once, which could crash your program if the file is larger than available RAM. A generator expression evaluates lazily, yielding one line at a time and maintaining a low memory footprint regardless of the file size."
+    },
+    {
+      "type": "predict-output",
+      "question": "What happens when this code is executed?",
+      "code": "def generate_numbers():\n    yield 1\n    yield 2\n\nnums = generate_numbers()\nprint(list(nums))\nprint(list(nums))",
+      "answer": "[1, 2]\n[]",
+      "why": "Lazy iterators, like the one returned by a generator function, compute items on the fly and do not store them. Once exhausted by the first `list()` call, the iterator is empty, so the second call yields an empty list."
+    }
   ]
 }

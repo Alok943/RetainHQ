@@ -9,17 +9,34 @@
     "estimated_minutes": 25,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["primitive-types", "if-elif-else", "mutable-default-argument"],
-    "unlocks": ["args-kwargs", "scope", "lambda-functions", "first-class-functions"],
-    "project_usage": ["FastAPI route handlers", "Pydantic validators", "any Python module"]
+    "prerequisites": [
+      "primitive-types",
+      "if-elif-else",
+      "mutable-default-argument"
+    ],
+    "unlocks": [
+      "args-kwargs",
+      "scope",
+      "lambda-functions",
+      "first-class-functions"
+    ],
+    "project_usage": [
+      "FastAPI route handlers",
+      "Pydantic validators",
+      "any Python module"
+    ]
   },
   "overview": {
-    "what": "def creates a function object and binds it to a name. Parameters are the placeholder names in the definition; arguments are the actual values passed at call time:\n\n  def validate_port(port, min_port=1024):\n      return port >= min_port\n\nreturn exits the function immediately and sends a value back to the caller. A function with no return statement (or a bare return) returns None — Python does this silently. You can return multiple values by separating them with a comma; Python packs them into a tuple:\n\n  def parse_dsn(dsn):\n      host, port = dsn.rsplit(':', 1)\n      return host, int(port)\n\n  h, p = parse_dsn('localhost:5432')\n\nThink of a function as a named, reusable machine: you feed arguments in, it processes them, and return hands the result back out.",
-    "why": "Functions are the primary unit of reuse in Python. Every FastAPI route, Pydantic validator, and utility helper is a function. Understanding return None vs returning a value is critical — forgetting to return a value is a common source of None-related bugs.",
-    "where_used": ["FastAPI route handlers (every endpoint is a function)", "Pydantic field_validator decorators", "utility helpers in any Python module"]
+    "what": "def creates a function object and binds it to a name. Parameters are the placeholder names in the definition; arguments are the actual values passed at call time:\n\n  def validate_port(port, min_port=1024):\n      return port >= min_port\n\nreturn exits the function immediately and sends a value back to the caller. A function with no return statement (or a bare return) returns None \u2014 Python does this silently. You can return multiple values by separating them with a comma; Python packs them into a tuple:\n\n  def parse_dsn(dsn):\n      host, port = dsn.rsplit(':', 1)\n      return host, int(port)\n\n  h, p = parse_dsn('localhost:5432')\n\nThink of a function as a named, reusable machine: you feed arguments in, it processes them, and return hands the result back out.",
+    "why": "Functions are the primary unit of reuse in Python. Every FastAPI route, Pydantic validator, and utility helper is a function. Understanding return None vs returning a value is critical \u2014 forgetting to return a value is a common source of None-related bugs.",
+    "where_used": [
+      "FastAPI route handlers (every endpoint is a function)",
+      "Pydantic field_validator decorators",
+      "utility helpers in any Python module"
+    ]
   },
   "why_learning_this": [
-    "Every FastAPI endpoint is a function — understanding def, parameters, and return is a baseline requirement",
+    "Every FastAPI endpoint is a function \u2014 understanding def, parameters, and return is a baseline requirement",
     "Returning multiple values (tuple unpacking) is used constantly in real backend code to return both a result and a status"
   ],
   "common_mistakes": [
@@ -39,7 +56,7 @@
   "recall_questions": [
     {
       "q": "What does a function return when it has no return statement?",
-      "answer": "None — Python returns None implicitly.",
+      "answer": "None \u2014 Python returns None implicitly.",
       "tier": "tier1"
     },
     {
@@ -49,30 +66,46 @@
     },
     {
       "q": "How do you return multiple values from a Python function?",
-      "answer": "Separate them with a comma in the return statement — Python packs them into a tuple, which the caller can unpack.",
+      "answer": "Separate them with a comma in the return statement \u2014 Python packs them into a tuple, which the caller can unpack.",
       "tier": "tier1"
     },
     {
       "q": "What happens to code that appears after a return statement in the same branch?",
-      "answer": "It is never executed — return exits the function immediately.",
+      "answer": "It is never executed \u2014 return exits the function immediately.",
       "tier": "tier1"
     }
   ],
   "practice_tasks": [
     {
       "title": "DSN parser",
-      "prompt": "Write parse_dsn(dsn) that takes a connection string like 'localhost:5432' and returns the host as a string and the port as an integer as two separate return values. Print both from the caller.",
-      "starter_code": "def parse_dsn(dsn):\n    pass",
-      "solution": "def parse_dsn(dsn):\n    host, port_str = dsn.rsplit(':', 1)\n    return host, int(port_str)\n\nhost, port = parse_dsn('localhost:5432')\nprint(host)\nprint(port)\nprint(type(port))"
+      "prompt": "Modify the `parse_dsn` function so that it returns both the `host` and the `port` (as an integer) instead of just the host. Currently it only returns the host.",
+      "starter_code": "def parse_dsn(dsn):\n    host, port_str = dsn.rsplit(':', 1)\n    return host\n\n# Modify the call below to unpack both values\nhost = parse_dsn('localhost:5432')\nprint(host)",
+      "solution": "def parse_dsn(dsn):\n    host, port_str = dsn.rsplit(':', 1)\n    return host, int(port_str)\n\nhost, port = parse_dsn('localhost:5432')\nprint(host)\nprint(port)"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def greet(name):\n    message = f'Hello, {name}'\n\nresult = greet('Alice')\nprint(result)",
+      "question": "What will be printed?",
+      "answer": "None",
+      "why": "The greet function creates a string and assigns it to 'message', but it doesn't return anything. By default, Python functions return None."
+    },
+    {
+      "type": "predict-output",
+      "code": "def process_data(value):\n    return value * 2\n    print('Data processed!')\n\nprint(process_data(5))",
+      "question": "What is the output of this code?",
+      "answer": "10",
+      "why": "The function returns 10. The print statement after the return is never executed because return exits the function immediately."
     }
   ],
   "code_walkthrough": {
     "code": "def build_slug(title, separator='-'):\n    return title.lower().replace(' ', separator)\n\nresult = build_slug('Getting Started')\nprint(result)\n\nresult2 = build_slug('API Reference', separator='_')\nprint(result2)",
-    "focus": "return sends the processed value back to the caller; without it, result would be None — the function would silently discard the work."
+    "focus": "return sends the processed value back to the caller; without it, result would be None \u2014 the function would silently discard the work."
   },
   "challenge": {
     "title": "Response envelope builder",
-    "prompt": "Write make_response(data, success=True) that returns two values: a dict {'data': data, 'ok': success} and an integer HTTP status code — 200 when success is True, 400 when False. Unpack both return values at the call site and print them.",
+    "prompt": "Write make_response(data, success=True) that returns two values: a dict {'data': data, 'ok': success} and an integer HTTP status code \u2014 200 when success is True, 400 when False. Unpack both return values at the call site and print them.",
     "solution": "def make_response(data, success=True):\n    envelope = {'data': data, 'ok': success}\n    status = 200 if success else 400\n    return envelope, status\n\nbody, code = make_response({'id': 1, 'name': 'alice'})\nprint(body)\nprint(code)\n\nerr_body, err_code = make_response(None, success=False)\nprint(err_body)\nprint(err_code)"
   },
   "sources": [

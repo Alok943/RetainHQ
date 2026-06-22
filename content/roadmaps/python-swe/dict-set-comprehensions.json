@@ -47,30 +47,33 @@
       "explanation": "Like normal dictionaries, the `key` expression in `{key: value for...}` must evaluate to a hashable type (like a string or int). If it evaluates to a list, Python raises a `TypeError`."
     }
   ],
-  "recall_questions": [
+  "understanding_checks": [
     {
-      "q": "How does Python distinguish between a set comprehension and a dictionary comprehension?",
-      "answer": "By looking at the expression before the `for` keyword. If it contains a colon (`key: value`), it is a dict comprehension. If it's a single expression, it is a set comprehension.",
-      "tier": "tier2"
+      "type": "predict-output",
+      "question": "What is the output of the following dictionary comprehension?",
+      "code": "words = ['apple', 'bat', 'cat']\nlengths = {w: len(w) for w in words}\nprint(lengths['bat'])",
+      "answer": "3",
+      "why": "The dictionary comprehension maps each word to its length. Therefore, `lengths['bat']` evaluates to 3."
     },
     {
-      "q": "What is the main advantage of using a dict comprehension to build a lookup table over a regular `for` loop?",
-      "answer": "It is more concise and readable, allowing you to create and populate the dictionary in a single expression without needing to initialize an empty dict first.",
-      "tier": "tier2"
+      "type": "debug-misconception",
+      "question": "A developer writes `{x for x in range(5) if x % 2 == 0}` and thinks this evaluates to an empty dictionary because they used curly braces. Why are they incorrect?",
+      "answer": "Because the expression doesn't contain key-value pairs separated by a colon, it evaluates to a set comprehension, not an empty dictionary.",
+      "why": "Curly braces denote both dictionaries and sets. If the comprehension has `key: value`, it's a dict. If it just has an expression, it's a set."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What distinguishes a dict comprehension from a set comprehension syntactically?",
+      "answer": "A dict comprehension uses key-value pairs separated by a colon `key: value`, while a set comprehension only has a single expression."
     }
   ],
   "practice_tasks": [
     {
-      "title": "Index users by ID",
-      "prompt": "You have a list of user dictionaries: `[{'id': 101, 'name': 'Alice'}, {'id': 102, 'name': 'Bob'}]`. Write a dict comprehension that creates a mapping from `id` to the entire user dictionary.",
-      "starter_code": "users = [{'id': 101, 'name': 'Alice'}, {'id': 102, 'name': 'Bob'}]",
-      "solution": "users = [{'id': 101, 'name': 'Alice'}, {'id': 102, 'name': 'Bob'}]\nuser_by_id = {u['id']: u for u in users}\nprint(user_by_id)"
-    },
-    {
-      "title": "Extract unique domains",
-      "prompt": "Given a list of email addresses, use a set comprehension to extract a set of just the unique domain names (the part after the '@').",
-      "starter_code": "emails = ['a@gmail.com', 'b@yahoo.com', 'c@gmail.com']",
-      "solution": "emails = ['a@gmail.com', 'b@yahoo.com', 'c@gmail.com']\ndomains = {email.split('@')[1] for email in emails}\nprint(domains)"
+      "title": "Index users and extract unique domains",
+      "prompt": "Modify the `user_lookup` loop into a single dictionary comprehension that maps a user's `id` to the whole dictionary, and the `unique_domains` loop into a single set comprehension.",
+      "starter_code": "users = [{'id': 101, 'name': 'Alice', 'email': 'a@gmail.com'}, {'id': 102, 'name': 'Bob', 'email': 'b@yahoo.com'}]\n\nuser_lookup = {}\nfor u in users:\n    user_lookup[u['id']] = u\n\nunique_domains = set()\nfor u in users:\n    unique_domains.add(u['email'].split('@')[1])",
+      "solution": "users = [{'id': 101, 'name': 'Alice', 'email': 'a@gmail.com'}, {'id': 102, 'name': 'Bob', 'email': 'b@yahoo.com'}]\n\nuser_lookup = {u['id']: u for u in users}\nunique_domains = {u['email'].split('@')[1] for u in users}"
     }
   ],
   "code_walkthrough": {

@@ -75,5 +75,21 @@
   },
   "sources": [
     "https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code print?",
+      "code": "callbacks = []\nfor letter in ['A', 'B', 'C']:\n    callbacks.append(lambda: letter)\n\nprint(callbacks[0]())\nprint(callbacks[1]())",
+      "answer": "C\nC",
+      "why": "The lambda functions do not capture the value of `letter` eagerly. Instead, they capture a reference to the name `letter`. By the time the lambdas are executed, the loop has completed and `letter` is 'C'. Therefore, both callbacks print 'C'."
+    },
+    {
+      "type": "find-bug",
+      "question": "This code is supposed to create a list of functions that each return their respective index (0, 1, 2). However, they all return 2. How do you fix the bug?",
+      "code": "def make_index_getters():\n    getters = []\n    for i in range(3):\n        getters.append(lambda: i)\n    return getters\n\nfuncs = make_index_getters()",
+      "answer": "Change the lambda to capture the value using a default argument: `lambda i=i: i`",
+      "why": "Using `i=i` as a default argument evaluates the current value of `i` at the time the lambda is defined, effectively binding the closure to the value instead of the loop variable's name."
+    }
   ]
 }

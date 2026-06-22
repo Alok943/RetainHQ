@@ -1,0 +1,91 @@
+{
+  "slug": "optional-union-types",
+  "title": "Optional and Union Types",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["type-hints-basic"],
+    "unlocks": ["generic-types"],
+    "project_usage": ["FastAPI", "Pydantic", "Database queries"]
+  },
+  "overview": {
+    "what": "In Python type hinting, a `Union` indicates that a variable can be one of several distinct types (e.g., `Union[int, str]`). Since Python 3.10, this is written more concisely as `int | str`. `Optional[T]` is just a shorthand for `Union[T, None]`, representing a value that might be of type `T` or might be `None` (missing). If a box has a union type, it's like sticking two labels on it: 'Only ints OR strings go here'. `Optional` specifically warns: 'This box might be empty (`None`), so check before you use it'.",
+    "why": "It forces you to explicitly handle cases where data might be missing (`None`) or take multiple valid forms, preventing runtime errors like `AttributeError: 'NoneType' object has no attribute '...'`.",
+    "where_used": ["FastAPI optional query parameters", "Database queries that might return no rows", "Pydantic model fields without defaults"]
+  },
+  "why_learning_this": [
+    "Preventing the infamous `NoneType` errors that crash applications.",
+    "Correctly declaring optional fields in Pydantic or FastAPI parameters.",
+    "Making API contracts explicitly clear about when an argument is truly required."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing optional type with default values",
+      "explanation": "`def fetch(limit: int | None):` means the type can be None, but you still MUST pass an argument. `def fetch(limit: int = None):` means the argument can be omitted entirely. They are different concepts."
+    },
+    {
+      "title": "Failing to narrow the type",
+      "explanation": "If a variable is `int | str`, you cannot safely call `.upper()` on it until you first check `if isinstance(var, str):`. Static type checkers will flag this as an error."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the modern (Python 3.10+) syntax for `Union[int, str]`?",
+      "answer": "The modern syntax is `int | str`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is `Optional[str]` actually a shorthand for?",
+      "answer": "`Optional[str]` is exactly equivalent to `Union[str, None]` (or `str | None`).",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def get_length(text: str | None) -> int:\n  if text is None:\n    return 0\n  return len(text)\n\nprint(get_length(None))",
+      "question": "What does this code print?",
+      "answer": "It prints 0.",
+      "why": "The function correctly handles the case where `text` is `None`, returning 0 instead of crashing when attempting to call `len(None)`."
+    },
+    {
+      "type": "find-bug",
+      "code": "def process_id(user_id: int | str):\n  return user_id.upper()",
+      "question": "What is wrong with this function according to static analysis tools?",
+      "answer": "It calls `.upper()` on `user_id` without checking its type first. If `user_id` is an `int`, `.upper()` will cause an AttributeError.",
+      "why": "When a variable has a Union type, you can only safely perform operations that are valid for ALL types in the union. You must check the type (`isinstance`) to narrow it before using type-specific methods."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def format_status(code: int | str | None) -> str:\n  if code is None:\n    return 'Unknown'\n  if isinstance(code, int):\n    return f'Code {code}'\n  return code.upper()\n\nprint(format_status(404))",
+    "focus": "if isinstance(code, int):"
+  },
+  "aha_moment": {
+    "code": "from typing import Optional, Union\n\nprint(Optional[int] == Union[int, None])",
+    "prediction": "What does this print?",
+    "common_guess": "False, they are different things.",
+    "why": "It prints `True`. `Optional` is not a special type behavior; it is literally just an alias for a `Union` that includes `None`."
+  },
+  "practice_tasks": [
+    {
+      "title": "Handle optional data",
+      "prompt": "Given this working code, modify `get_display_name` so it accepts a string OR `None`. If `name` is `None`, it should return the string 'Guest'. Ensure the return type hint is always a string.",
+      "starter_code": "def get_display_name(name: str) -> str:\n  return name",
+      "solution": "def get_display_name(name: str | None) -> str:\n  if name is None:\n    return 'Guest'\n  return name"
+    }
+  ],
+  "challenge": {
+    "title": "Type a parsing function",
+    "prompt": "Write a function `parse_id` that takes an argument that is either an `int` or a `str`. If it's a string, try to convert it to an integer using `int()`. If the conversion fails (ValueError), return `None`. If it's already an integer, return it as-is. Provide complete type hints.",
+    "solution": "def parse_id(raw_id: int | str) -> int | None:\n  if isinstance(raw_id, int):\n    return raw_id\n  try:\n    return int(raw_id)\n  except ValueError:\n    return None"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.Union",
+    "https://docs.python.org/3/library/typing.html#typing.Optional"
+  ]
+}

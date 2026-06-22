@@ -9,18 +9,32 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["functions", "primitive-types"],
-    "unlocks": ["lambda-functions", "first-class-functions"],
-    "project_usage": ["FastAPI route handlers", "module-level config", "closures"]
+    "prerequisites": [
+      "functions",
+      "primitive-types"
+    ],
+    "unlocks": [
+      "lambda-functions",
+      "first-class-functions"
+    ],
+    "project_usage": [
+      "FastAPI route handlers",
+      "module-level config",
+      "closures"
+    ]
   },
   "overview": {
-    "what": "When Python encounters a name, it searches four scopes in order — this is the LEGB rule:\n\n  L — Local: names defined inside the current function\n  E — Enclosing: names in any surrounding (outer) function\n  G — Global: names defined at the module (file) level\n  B — Built-in: Python's built-in names like len, print, range\n\nPython uses the FIRST match it finds. Example:\n\n  x = 'global'\n\n  def outer():\n      x = 'enclosing'\n      def inner():\n          print(x)   # finds 'enclosing' — stops at E before reaching G\n      inner()\n\n  outer()   # prints 'enclosing'\n  print(x)  # prints 'global' — outer's x never touched the module-level x\n\nTo MODIFY a global variable from inside a function, declare it with global x. To modify a variable in an enclosing function's scope, use nonlocal x. Without these keywords, an assignment inside a function always creates a NEW local variable.",
-    "why": "LEGB explains every NameError and UnboundLocalError you'll encounter. It also explains why global state in a module works across functions without passing arguments — a pattern common in config objects and connection pools.",
-    "where_used": ["Module-level config objects accessed from route handlers", "Counter variables in enclosing scopes (used by closures)", "Built-in shadowing bugs (e.g., naming a variable list or id)"]
+    "what": "When Python encounters a name, it searches four scopes in order \u2014 this is the LEGB rule:\n\n  L \u2014 Local: names defined inside the current function\n  E \u2014 Enclosing: names in any surrounding (outer) function\n  G \u2014 Global: names defined at the module (file) level\n  B \u2014 Built-in: Python's built-in names like len, print, range\n\nPython uses the FIRST match it finds. Example:\n\n  x = 'global'\n\n  def outer():\n      x = 'enclosing'\n      def inner():\n          print(x)   # finds 'enclosing' \u2014 stops at E before reaching G\n      inner()\n\n  outer()   # prints 'enclosing'\n  print(x)  # prints 'global' \u2014 outer's x never touched the module-level x\n\nTo MODIFY a global variable from inside a function, declare it with global x. To modify a variable in an enclosing function's scope, use nonlocal x. Without these keywords, an assignment inside a function always creates a NEW local variable.",
+    "why": "LEGB explains every NameError and UnboundLocalError you'll encounter. It also explains why global state in a module works across functions without passing arguments \u2014 a pattern common in config objects and connection pools.",
+    "where_used": [
+      "Module-level config objects accessed from route handlers",
+      "Counter variables in enclosing scopes (used by closures)",
+      "Built-in shadowing bugs (e.g., naming a variable list or id)"
+    ]
   },
   "why_learning_this": [
-    "Diagnosing UnboundLocalError — the most common scoping bug, caused by assigning to a name that Python then treats as local throughout the whole function",
-    "Understanding how closures retain enclosing-scope values — the foundation for decorators and factory functions"
+    "Diagnosing UnboundLocalError \u2014 the most common scoping bug, caused by assigning to a name that Python then treats as local throughout the whole function",
+    "Understanding how closures retain enclosing-scope values \u2014 the foundation for decorators and factory functions"
   ],
   "common_mistakes": [
     {
@@ -39,12 +53,12 @@
   "recall_questions": [
     {
       "q": "What order does Python search for a name, from innermost to outermost?",
-      "answer": "Local → Enclosing → Global → Built-in (LEGB).",
+      "answer": "Local \u2192 Enclosing \u2192 Global \u2192 Built-in (LEGB).",
       "tier": "tier1"
     },
     {
       "q": "What keyword is required to modify a module-level variable from inside a function?",
-      "answer": "global — without it, the assignment creates a new local variable and leaves the module-level variable unchanged.",
+      "answer": "global \u2014 without it, the assignment creates a new local variable and leaves the module-level variable unchanged.",
       "tier": "tier1"
     },
     {
@@ -60,24 +74,39 @@
   ],
   "practice_tasks": [
     {
-      "title": "Request counter with global",
-      "prompt": "Write a module-level counter _count = 0 and two functions: increment() that adds 1 to _count using global, and get_count() that returns _count. Call increment three times and print get_count() to verify the counter persisted.",
-      "starter_code": "_count = 0\n\ndef increment():\n    pass\n\ndef get_count():\n    pass",
-      "solution": "_count = 0\n\ndef increment():\n    global _count\n    _count += 1\n\ndef get_count():\n    return _count\n\nincrement()\nincrement()\nincrement()\nprint(get_count())"
+      "title": "Fix the request counter",
+      "prompt": "The `increment` function currently throws an error because it tries to modify the module-level `_count` variable without declaring it. Modify the function so that it correctly updates the global `_count`.",
+      "starter_code": "_count = 0\n\ndef increment():\n    _count = _count + 1\n",
+      "solution": "_count = 0\n\ndef increment():\n    global _count\n    _count = _count + 1\n"
     }
   ],
-  "code_walkthrough": {
-    "code": "x = 'global'\n\ndef outer():\n    x = 'enclosing'\n    def inner():\n        print(x)\n    inner()\n\nouter()\nprint(x)",
-    "focus": "inner() finds x at the E (Enclosing) scope and prints 'enclosing'; the module-level x is unchanged, so print(x) outside prints 'global'."
-  },
   "challenge": {
     "title": "Rate limiter counter",
     "prompt": "Write make_counter(limit) that returns two functions: tick() and reset(). tick() increments an internal count and returns 'ok' if count <= limit, or 'limit reached' otherwise. reset() sets count back to 0. Use nonlocal to share the count between the two returned functions. Test with limit=2: call tick() three times, print results, then reset and tick once more.",
     "solution": "def make_counter(limit):\n    count = 0\n    def tick():\n        nonlocal count\n        count += 1\n        return 'ok' if count <= limit else 'limit reached'\n    def reset():\n        nonlocal count\n        count = 0\n    return tick, reset\n\ntick, reset = make_counter(2)\nprint(tick())\nprint(tick())\nprint(tick())\nreset()\nprint(tick())"
   },
+  "code_walkthrough": {
+    "code": "x = 'global'\ndef outer():\n    x = 'enclosing'\n    def inner():\n        print(x)\n    inner()\nouter()",
+    "focus": "Notice how `inner` prints 'enclosing' instead of 'global' because LEGB stops at the enclosing scope first."
+  },
   "sources": [
     "https://docs.python.org/3/reference/executionmodel.html#naming-and-binding",
     "https://docs.python.org/3/reference/simple_stmts.html#global",
     "https://docs.python.org/3/reference/simple_stmts.html#nonlocal"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does this code print?",
+      "code": "x = 'global'\ndef outer():\n    x = 'enclosing'\n    def inner():\n        print(x)\n    inner()\nouter()",
+      "answer": "enclosing",
+      "why": "Python searches scopes in LEGB order. For the `x` inside `inner()`, it doesn't find it in Local, so it moves to Enclosing (the `outer` function) where it finds `x = 'enclosing'`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why does the following code raise an `UnboundLocalError`?\n```python\ncount = 10\ndef increment():\n    print(count)\n    count = 20\nincrement()\n```",
+      "answer": "Because assigning to `count` inside the function makes it a local variable for the entire function.",
+      "why": "Any assignment to a variable inside a function without a `global` or `nonlocal` declaration causes Python to treat it as a local variable everywhere in that function. The `print(count)` tries to read this local variable before the assignment has happened."
+    }
   ]
 }

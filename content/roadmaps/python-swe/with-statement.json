@@ -1,0 +1,94 @@
+{
+  "slug": "with-statement",
+  "title": "The 'with' Statement and Resource Management",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": ["File I/O", "Database connections", "Thread locks"]
+  },
+  "overview": {
+    "what": "The `with` statement is used to wrap the execution of a block of code within a 'context manager'. It guarantees that initialization happens before the block runs, and cleanup (like closing a file or releasing a lock) happens automatically when the block finishes, even if an exception is raised. Mental model: The `with` statement is an automated bouncer; it ensures you do the setup when you enter the club, and perfectly executes the teardown when you leave, no matter how you exit.",
+    "why": "Manual resource management using `try...finally` is verbose and error-prone. The `with` statement prevents resource leaks (e.g., leaving files or database connections open).",
+    "where_used": ["Opening files (`open()`)", "Managing database transactions", "Acquiring and releasing thread/asyncio locks"]
+  },
+  "why_learning_this": [
+    "Your applications will not crash due to 'Too many open files' errors.",
+    "You won't leave database transactions hanging if your code throws an error."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using the resource outside the block",
+      "explanation": "If you try to read from a file object after the `with` block has finished, Python will raise an error because the file has already been closed."
+    },
+    {
+      "title": "Forgetting the 'as' keyword",
+      "explanation": "To interact with the resource (like the file object), you must use `with open(...) as file:`. Forgetting `as` means you have no variable referencing the opened resource."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary guarantee provided by the `with` statement?",
+      "answer": "It guarantees that the resource's cleanup code (like closing a file) will run automatically, even if an exception occurs inside the block.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if an exception is raised inside a `with` block?",
+      "answer": "The context manager's cleanup logic runs first to safely close/release the resource, and then the exception propagates up normally.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Name three common use cases for the `with` statement.",
+      "answer": "Opening files, managing database connections/transactions, and acquiring locks.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import tempfile\n\npath = tempfile.mktemp()\nwith open(path, 'w') as f:\n    f.write('hello')\n    \ntry:\n    f.write('world')\n    print('Success')\nexcept ValueError as e:\n    print('ValueError')",
+      "question": "What is printed when this code is executed?",
+      "answer": "ValueError",
+      "why": "Once the `with` block exits, the file `f` is automatically closed. Attempting to write to a closed file raises a `ValueError: I/O operation on closed file`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If a division by zero error occurs in the middle of a `with open(...) as f:` block, does the file remain open?",
+      "answer": "No, it is closed.",
+      "why": "The `with` statement guarantees that the teardown (closing the file) executes even if the block is exited via an unhandled exception."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import tempfile\npath = tempfile.mktemp()\n\nwith open(path, 'w') as f:\n    f.write('Data')\n\nprint(f.closed)",
+    "focus": "print(f.closed) outputs True because exiting the indentation level automatically closes the file."
+  },
+  "aha_moment": {
+    "code": "import tempfile\npath = tempfile.mktemp()\n\ntry:\n    with open(path, 'w') as f:\n        raise RuntimeError('Crash!')\nexcept RuntimeError:\n    pass\n\nprint(f.closed)",
+    "prediction": "Will the file be closed (True) or left open (False) because of the crash?",
+    "common_guess": "False, because the program crashed before it could reach the end of the block.",
+    "why": "It prints True. The context manager intercepts the exception, immediately closes the file, and then lets the exception continue bubbling up. The cleanup is guaranteed."
+  },
+  "practice_tasks": [
+    {
+      "title": "Convert to Context Manager",
+      "prompt": "Given this manual file writing code, modify it to use a `with` statement so that the file is safely closed automatically.",
+      "starter_code": "import tempfile\npath = tempfile.mktemp()\n\nf = open(path, 'w')\nf.write('Hello World')\nf.close()",
+      "solution": "import tempfile\npath = tempfile.mktemp()\n\nwith open(path, 'w') as f:\n    f.write('Hello World')"
+    }
+  ],
+  "challenge": {
+    "title": "Safely Reading Data",
+    "prompt": "Write code to open an existing file named `data.txt` in read mode using a `with` statement, read its contents into a variable named `content`, and then let the block exit.",
+    "solution": "with open('data.txt', 'r') as f:\n    content = f.read()"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/compound_stmts.html#the-with-statement",
+    "https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files"
+  ]
+}

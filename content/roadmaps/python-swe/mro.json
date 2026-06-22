@@ -1,0 +1,89 @@
+{
+  "slug": "mro",
+  "title": "MRO: Method Resolution Order (C3 linearization)",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["class-basics"],
+    "unlocks": ["method-overriding"],
+    "project_usage": ["Django Mixins", "FastAPI Dependencies"]
+  },
+  "overview": {
+    "what": "Method Resolution Order (MRO) is the sequence in which Python looks for a method or attribute in a hierarchy of classes. Python uses the C3 linearization algorithm to guarantee a consistent order, ensuring that a subclass always precedes its base classes, and base classes are checked in the order they are listed. Think of MRO like a search path for documents: if a document isn't in your desk, you check the department filing cabinet, then the company archive, strictly following a designated path so everyone finds the same document.",
+    "why": "It prevents ambiguity in multiple inheritance (the 'diamond problem') by defining a clear, predictable path for attribute lookup.",
+    "where_used": ["Django", "Pydantic", "FastAPI"]
+  },
+  "why_learning_this": [
+    "Understanding how Python resolves conflicts in multiple inheritance",
+    "Debugging complex class hierarchies in frameworks like Django"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming depth-first search",
+      "explanation": "Beginners often think Python searches the entire depth of the first parent class before checking the second parent. In reality, Python's C3 linearization merges the class hierarchy intelligently to keep shared base classes at the end."
+    },
+    {
+      "title": "Inconsistent MRO errors",
+      "explanation": "Creating a class hierarchy where it's mathematically impossible to satisfy the C3 rules (like inheriting from A and B, but B inherits from A) raises a TypeError."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What algorithm does Python use to determine the Method Resolution Order?",
+      "answer": "Python uses the C3 linearization algorithm to determine the Method Resolution Order.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does MRO resolve ambiguity in multiple inheritance?",
+      "answer": "MRO defines a clear, predictable sequence for checking classes when searching for a method, ensuring subclasses precede base classes and base classes are checked in the listed order.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class A:\n    name = 'A'\nclass B(A):\n    name = 'B'\nclass C(A):\n    name = 'C'\nclass D(B, C):\n    pass\nprint(D.name)",
+      "question": "What is the output of this code?",
+      "answer": "B",
+      "why": "Class D inherits from B and C (in that order). Following the Method Resolution Order (MRO), Python checks D, then B. Since `name` is found in B, it prints 'B' without ever checking C or A."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why does Python's C3 linearization algorithm prevent ambiguity in the 'diamond problem'?",
+      "answer": "It guarantees a consistent lookup order where subclasses are always checked before their base classes, and multiple parent classes are checked in the left-to-right order they are specified.",
+      "why": "This deterministic set of rules ensures that developers always know exactly which inherited method or attribute will be executed, removing any ambiguity from complex multiple inheritance structures."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Check the MRO",
+      "prompt": "Modify the starter code to print the Method Resolution Order (MRO) of the `Combined` class using either the `__mro__` attribute or `.mro()` method.",
+      "starter_code": "class Base:\n    pass\n\nclass Mixin:\n    pass\n\nclass Combined(Mixin, Base):\n    pass\n\n# TODO: Print the MRO of Combined below\n",
+      "solution": "class Base:\n    pass\n\nclass Mixin:\n    pass\n\nclass Combined(Mixin, Base):\n    pass\n\nprint(Combined.__mro__)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class A:\n    def ping(self):\n        print('A')\n\nclass B(A):\n    def ping(self):\n        print('B')\n\nclass C(A):\n    def ping(self):\n        print('C')\n\nclass D(B, C):\n    pass\n\nd = D()\nd.ping()",
+    "focus": "class D(B, C):  # B is listed before C, so D's MRO checks B before C"
+  },
+  "aha_moment": {
+    "code": "class Top:\n    name = 'Top'\n\nclass Left(Top):\n    pass\n\nclass Right(Top):\n    name = 'Right'\n\nclass Bottom(Left, Right):\n    pass\n\nprint(Bottom.name)",
+    "prediction": "What does `Bottom.name` print?",
+    "common_guess": "'Top', because Left is the first parent and it inherits from Top.",
+    "why": "Python's MRO checks Right before Top. Even though Left is the first parent, Top is a shared base class, so Python delays checking Top until all subclasses (like Right) are checked."
+  },
+  "challenge": {
+    "title": "Trigger an MRO Error",
+    "prompt": "Create a class hierarchy that causes a `TypeError: Cannot create a consistent method resolution` when defined. You need at least three classes to create an inconsistent inheritance graph.",
+    "solution": "class X:\n    pass\n\nclass Y(X):\n    pass\n\n# Inheriting from X then Y is inconsistent because Y already inherits from X\n# C3 linearization requires Y to be checked before X\nclass Z(X, Y):\n    pass"
+  },
+  "sources": [
+    "https://docs.python.org/3/glossary.html#term-method-resolution-order",
+    "https://docs.python.org/3/tutorial/classes.html#multiple-inheritance"
+  ]
+}

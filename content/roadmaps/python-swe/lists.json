@@ -9,27 +9,43 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["primitive-types", "mutable-vs-immutable", "loops"],
-    "unlocks": ["list-comprehensions", "shallow-vs-deep-copy", "tuples"],
-    "project_usage": ["FastAPI response payloads", "database query result sets", "pipeline stages"]
+    "prerequisites": [
+      "primitive-types",
+      "mutable-vs-immutable",
+      "loops"
+    ],
+    "unlocks": [
+      "list-comprehensions",
+      "shallow-vs-deep-copy",
+      "tuples"
+    ],
+    "project_usage": [
+      "FastAPI response payloads",
+      "database query result sets",
+      "pipeline stages"
+    ]
   },
   "overview": {
-    "what": "A list is an ordered, mutable sequence of any Python objects. You create one with square brackets and access elements by zero-based index — negative indexes count from the end:\n\n  items = ['a', 'b', 'c', 'd']\n  items[0]   # 'a' — first\n  items[-1]  # 'd' — last\n\nSlicing returns a new list — it does NOT modify the original:\n\n  items[1:3]  # ['b', 'c'] — index 1 up to (not including) 3\n  items[::-1] # ['d', 'c', 'b', 'a'] — reversed copy\n\nKey methods (all mutate in place, return None unless noted):\n  append(x) — add x to the end\n  extend([x, y]) — add all items from an iterable\n  pop(i) — remove and RETURN item at index i (default: last)\n  insert(i, x) — insert x before index i\n  remove(x) — remove the first occurrence of x (ValueError if absent)\n  sort() — sort in place; sorted(lst) returns a new sorted list\n  index(x) — return the first index of x (ValueError if absent)\n\nThink of a list as a numbered row of slots — you can insert, delete, and reorder freely because slots shift to close the gap.",
+    "what": "A list is an ordered, mutable sequence of any Python objects. You create one with square brackets and access elements by zero-based index \u2014 negative indexes count from the end:\n\n  items = ['a', 'b', 'c', 'd']\n  items[0]   # 'a' \u2014 first\n  items[-1]  # 'd' \u2014 last\n\nSlicing returns a new list \u2014 it does NOT modify the original:\n\n  items[1:3]  # ['b', 'c'] \u2014 index 1 up to (not including) 3\n  items[::-1] # ['d', 'c', 'b', 'a'] \u2014 reversed copy\n\nKey methods (all mutate in place, return None unless noted):\n  append(x) \u2014 add x to the end\n  extend([x, y]) \u2014 add all items from an iterable\n  pop(i) \u2014 remove and RETURN item at index i (default: last)\n  insert(i, x) \u2014 insert x before index i\n  remove(x) \u2014 remove the first occurrence of x (ValueError if absent)\n  sort() \u2014 sort in place; sorted(lst) returns a new sorted list\n  index(x) \u2014 return the first index of x (ValueError if absent)\n\nThink of a list as a numbered row of slots \u2014 you can insert, delete, and reorder freely because slots shift to close the gap.",
     "why": "Lists are the default container for ordered data in Python: API response arrays, database result sets, pipeline stages, log entries. Knowing slicing and the right method prevents off-by-one bugs and unexpected None returns.",
-    "where_used": ["FastAPI response arrays of records", "SQLModel query result lists", "Collecting pipeline stage outputs"]
+    "where_used": [
+      "FastAPI response arrays of records",
+      "SQLModel query result lists",
+      "Collecting pipeline stage outputs"
+    ]
   },
   "why_learning_this": [
     "Slicing API result lists (page = results[offset:offset+limit]) for pagination in FastAPI endpoints",
-    "Using pop() and append() correctly — both return None by accident is one of the most common beginner bugs"
+    "Using pop() and append() correctly \u2014 both return None by accident is one of the most common beginner bugs"
   ],
   "common_mistakes": [
     {
       "title": "Assigning the return value of append or sort",
-      "explanation": "result = items.append(x) sets result to None because append mutates in place and returns None. These mutating methods return nothing useful — call them as statements."
+      "explanation": "result = items.append(x) sets result to None because append mutates in place and returns None. These mutating methods return nothing useful \u2014 call them as statements."
     },
     {
       "title": "Slicing thinking it modifies the original",
-      "explanation": "items[1:3] returns a NEW list — the original is unchanged. To replace a slice in place, assign to the slice: items[1:3] = ['x', 'y']."
+      "explanation": "items[1:3] returns a NEW list \u2014 the original is unchanged. To replace a slice in place, assign to the slice: items[1:3] = ['x', 'y']."
     },
     {
       "title": "Using remove() without checking membership first",
@@ -39,12 +55,12 @@
   "recall_questions": [
     {
       "q": "What does a negative index like -1 mean on a list?",
-      "answer": "It counts from the end — -1 is the last element, -2 is second-to-last.",
+      "answer": "It counts from the end \u2014 -1 is the last element, -2 is second-to-last.",
       "tier": "tier1"
     },
     {
       "q": "Does slicing a list modify the original list?",
-      "answer": "No — slicing always returns a new list; the original is unchanged.",
+      "answer": "No \u2014 slicing always returns a new list; the original is unchanged.",
       "tier": "tier1"
     },
     {
@@ -54,21 +70,21 @@
     },
     {
       "q": "What does list.append() return?",
-      "answer": "None — it mutates the list in place and returns nothing useful.",
+      "answer": "None \u2014 it mutates the list in place and returns nothing useful.",
       "tier": "tier1"
     }
   ],
   "practice_tasks": [
     {
-      "title": "Paginate a result list",
-      "prompt": "Write paginate(items, page, page_size) that returns the correct slice of items for the given page (0-based). Print results for page 0 and page 1 of a 10-item list with page_size=3.",
-      "starter_code": "def paginate(items, page, page_size):\n    pass",
-      "solution": "def paginate(items, page, page_size):\n    start = page * page_size\n    return items[start:start + page_size]\n\nrecords = [f'record-{i}' for i in range(10)]\nprint(paginate(records, 0, 3))\nprint(paginate(records, 1, 3))"
+      "title": "Fix the pagination logic",
+      "prompt": "The `paginate` function currently returns all items starting from `page * page_size`, but it doesn't limit the returned list to `page_size` elements. Modify the slice so it correctly returns a list of exactly `page_size` elements for the given page.",
+      "starter_code": "def paginate(items, page, page_size):\n    start = page * page_size\n    # Modify the slice to limit the results\n    return items[start:]\n\nrecords = ['r0', 'r1', 'r2', 'r3', 'r4']\nprint(paginate(records, 1, 2))  # Should print ['r2', 'r3']",
+      "solution": "def paginate(items, page, page_size):\n    start = page * page_size\n    return items[start:start + page_size]\n\nrecords = ['r0', 'r1', 'r2', 'r3', 'r4']\nprint(paginate(records, 1, 2))"
     }
   ],
   "code_walkthrough": {
     "code": "log = ['INFO', 'DEBUG', 'ERROR', 'INFO', 'WARN']\nprint(log[0])\nprint(log[-1])\nprint(log[1:3])\nlog.append('ERROR')\nlog.sort()\nprint(log)",
-    "focus": "log[1:3] returns a new list without changing log; append and sort mutate log in place — the final print shows both effects accumulated."
+    "focus": "log[1:3] returns a new list without changing log; append and sort mutate log in place \u2014 the final print shows both effects accumulated."
   },
   "challenge": {
     "title": "Request queue manager",
@@ -78,5 +94,21 @@
   "sources": [
     "https://docs.python.org/3/library/stdtypes.html#mutable-sequence-types",
     "https://docs.python.org/3/tutorial/datastructures.html#more-on-lists"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "items = ['a', 'b', 'c']\nsubset = items[1:]\nitems.append('d')\nprint(subset)",
+      "question": "What does this code print?",
+      "answer": "['b', 'c']",
+      "why": "Slicing a list (`items[1:]`) creates a *new* list. Modifying the original `items` list by appending 'd' does not affect the `subset` list."
+    },
+    {
+      "type": "find-bug",
+      "code": "words = ['hello', 'world']\nresult = words.sort()\nprint(result)",
+      "question": "Why does this code print `None` instead of `['hello', 'world']`?",
+      "answer": "Because `sort()` mutates the list in place and returns `None`.",
+      "why": "List methods like `sort()` and `append()` change the original list rather than returning a new one. To fix it, call `words.sort()` as a statement, then print `words`."
+    }
   ]
 }

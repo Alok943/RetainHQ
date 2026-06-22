@@ -10,13 +10,24 @@
     "importance": 10,
     "interview_frequency": "low",
     "prerequisites": [],
-    "unlocks": ["dynamic-typing", "mutable-vs-immutable"],
-    "project_usage": ["FastAPI", "Pydantic", "Django"]
+    "unlocks": [
+      "dynamic-typing",
+      "mutable-vs-immutable"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic",
+      "Django"
+    ]
   },
   "overview": {
-    "what": "Primitive types represent the foundational data structures in Python: integers for whole numbers, floats for decimals, booleans for truth values, and strings for text. Think of them as the elemental building blocks—like bricks, steel, and glass—used to construct complex architectural software systems.",
+    "what": "Primitive types represent the foundational data structures in Python: integers for whole numbers, floats for decimals, booleans for truth values, and strings for text. Think of them as the elemental building blocks\u2014like bricks, steel, and glass\u2014used to construct complex architectural software systems.",
     "why": "Understanding these primitives is critical because every complex data structure or conditional logic ultimately evaluates down to these basic forms. Misunderstanding their boundaries, such as float precision or string immutability, introduces subtle, hard-to-trace bugs in production systems.",
-    "where_used": ["FastAPI", "Pydantic", "SQLAlchemy"]
+    "where_used": [
+      "FastAPI",
+      "Pydantic",
+      "SQLAlchemy"
+    ]
   },
   "why_learning_this": [
     "Defining strict type hints for Pydantic models in API request validation",
@@ -51,10 +62,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "API Response Formatter",
-      "prompt": "Write a function `format_user_status` that accepts an age (int), a balance (float), an active status (bool), and a username (str). It should return an f-string for an API log. If the user is active, format as 'Active user {username} (Age: {age}) has ${balance:.2f}'. If inactive, replace 'Active' with 'Inactive'.",
-      "starter_code": "def format_user_status(age: int, balance: float, is_active: bool, username: str) -> str:\n    pass",
-      "solution": "def format_user_status(age: int, balance: float, is_active: bool, username: str) -> str:\n    status = 'Active' if is_active else 'Inactive'\n    return f'{status} user {username} (Age: {age}) has ${balance:.2f}'"
+      "title": "Fix the API Response Formatter",
+      "prompt": "The function below currently returns a basic string, but it crashes if `balance` is appended directly and it ignores the other parameters. Modify it to return an f-string: if active, return \"Active user {username} (Age: {age}) has ${balance:.2f}\". If inactive, replace \"Active\" with \"Inactive\".",
+      "starter_code": "def format_user_status(age: int, balance: float, is_active: bool, username: str) -> str:\n    return \"User \" + username + \" has balance \" + str(balance)",
+      "solution": "def format_user_status(age: int, balance: float, is_active: bool, username: str) -> str:\n    status = \"Active\" if is_active else \"Inactive\"\n    return f\"{status} user {username} (Age: {age}) has ${balance:.2f}\""
     }
   ],
   "challenge": {
@@ -69,5 +80,21 @@
   "sources": [
     "https://docs.python.org/3/library/stdtypes.html",
     "https://docs.python.org/3/tutorial/introduction.html"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What happens when this script is run?",
+      "code": "amount = 100\nmessage = \"The total is: \"\nprint(message + amount)",
+      "answer": "A TypeError is raised.",
+      "why": "Python does not implicitly coerce integers into strings during concatenation. You must explicitly cast the integer using `str(amount)` or use formatted string literals (f-strings) like `f\"The total is: {amount}\"`."
+    },
+    {
+      "type": "find-bug",
+      "question": "A developer wrote this code to calculate exact currency values. Identify the conceptual bug.",
+      "code": "price1 = 0.1\nprice2 = 0.2\ntotal = price1 + price2\nif total == 0.3:\n    print(\"Correct total\")\nelse:\n    print(\"Incorrect total\")",
+      "answer": "Using floating-point numbers for precise monetary calculations.",
+      "why": "Because floats cannot exactly represent all decimal fractions, `0.1 + 0.2` evaluates to `0.30000000000000004`, causing the `== 0.3` check to fail. For financial calculations requiring exact precision, you should use the `decimal` module instead of `float`."
+    }
   ]
 }

@@ -60,10 +60,25 @@
       "tier": "tier2"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does this script print?",
+      "code": "class DBConnection:\n    def __del__(self):\n        print('Closed!')\n\nconn = DBConnection()\nbackup = conn\ndel conn\nprint('Done!')",
+      "answer": "It prints 'Done!' followed by 'Closed!'.",
+      "why": "`del conn` only removes the label `conn` and drops the reference count by 1. Since `backup` still points to the object, its reference count is not zero. The object is finally destroyed and prints 'Closed!' when the script ends and `backup` is cleaned up."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why might memory not be freed immediately when two objects hold references to each other, even if no variables point to them?",
+      "answer": "They form a circular reference, preventing their reference counts from ever reaching zero.",
+      "why": "Reference counting only reclaims an object when its count hits exactly zero. In a circular reference, each object keeps the other's count at 1, so the memory won't be freed until the generational garbage collector runs."
+    }
+  ],
   "practice_tasks": [
     {
       "title": "Observe reference counting with sys.getrefcount",
-      "prompt": "Import the `sys` module. Create a list `[1, 2, 3]` and assign it to a variable `a`. Print the reference count of `a` using `sys.getrefcount(a)`. Then, create a second variable `b` that points to `a`, and print the reference count again. Note: `sys.getrefcount` temporarily increases the count by 1 because the function argument itself creates a reference.",
+      "prompt": "Modify the starter code to create a list `[1, 2, 3]` and assign it to a variable `a`. Print the reference count of `a` using `sys.getrefcount(a)`. Then, create a second variable `b` that points to `a`, and print the reference count again. Note: `sys.getrefcount` temporarily increases the count by 1 because the function argument itself creates a reference.",
       "starter_code": "import sys\n\n# Your code here\n",
       "solution": "import sys\n\na = [1, 2, 3]\nprint(sys.getrefcount(a))\n\nb = a\nprint(sys.getrefcount(a))"
     }

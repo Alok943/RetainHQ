@@ -1,0 +1,105 @@
+{
+  "slug": "property-decorator",
+  "title": "Property Decorator",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "functions",
+      "decorators"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic",
+      "Django",
+      "SQLAlchemy"
+    ]
+  },
+  "overview": {
+    "what": "The `@property` decorator transforms a class method so it can be accessed like a normal attribute, evaluating its logic on-the-fly. If you have an `User` object, you can compute `user.full_name` dynamically rather than storing it. You can also define `.setter` and `.deleter` methods under the same property name to intercept assignment (`user.full_name = 'Alice Smith'`) or deletion. The mental model: variables are usually direct labels to objects, but a property is a 'computed label' that secretly runs a function whenever you read, write, or delete it. Analogy: a property is like an automatic sliding door\u2014it looks like a regular wall (an attribute), but approaching it triggers a hidden motor (a function call).",
+    "why": "It allows you to safely change internal implementation without breaking the external API. You can start with a simple attribute, and later add validation or computation without forcing everyone to rewrite `obj.attr` to `obj.get_attr()`.",
+    "where_used": [
+      "SQLAlchemy models",
+      "Pydantic computed fields",
+      "Django models"
+    ]
+  },
+  "why_learning_this": [
+    "You can add validation to class attributes without changing the public API.",
+    "It makes objects cleaner to use, avoiding Java-style get_foo() and set_foo() sprawl."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Infinite Recursion in Setters",
+      "explanation": "If a setter for `@foo.setter` modifies `self.foo = value`, it triggers the setter again! You must modify a private underlying attribute like `self._foo = value`."
+    },
+    {
+      "title": "Missing the @property on Getters",
+      "explanation": "You cannot define `@foo.setter` unless `foo` is already defined as a `@property` method first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why would you use `@property` instead of a regular method like `get_full_name()`?",
+      "answer": "It allows access like a normal attribute (`user.full_name`), meaning you can add computation or validation later without breaking the existing public API that expects an attribute.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you try to assign a value to a property that only has a getter defined?",
+      "answer": "Python raises an AttributeError, effectively making the property read-only from the outside.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the correct mental model for how a property functions when accessed?",
+      "answer": "A property is a 'computed label' that secretly triggers a function call whenever it is read, written to, or deleted.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What happens when you run this code?",
+      "code": "class Config:\n    def __init__(self):\n        self._env = 'dev'\n\n    @property\n    def env(self):\n        return self._env\n\ncfg = Config()\ncfg.env = 'prod'\nprint(cfg.env)",
+      "answer": "It raises an AttributeError.",
+      "why": "The `env` property only has a getter defined. Attempting to assign to a property without a corresponding `@env.setter` raises an `AttributeError`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why would you choose to use a `@property` instead of leaving `age` as a simple public integer attribute on a `User` class?",
+      "answer": "To allow future validation or computation without breaking the external API.",
+      "why": "Using a property lets external code keep using `user.age`, but allows you to add a hidden function to intercept assignments (e.g., preventing negative values) without forcing everyone to change to `user.set_age(...)`."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement a Read-Only Computed Property",
+      "prompt": "Modify the starter code for the `Rectangle` class to add an `@property` called `area` that computes and returns `self.width * self.height` on-the-fly. Do not provide a setter.",
+      "starter_code": "class Rectangle:\n    def __init__(self, width, height):\n        self.width = width\n        self.height = height\n\n    # Add the area property here",
+      "solution": "class Rectangle:\n    def __init__(self, width, height):\n        self.width = width\n        self.height = height\n\n    @property\n    def area(self):\n        return self.width * self.height\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class User:\n    def __init__(self, age):\n        self._age = age\n\n    @property\n    def age(self):\n        return self._age\n\n    @age.setter\n    def age(self, value):\n        if value < 0:\n            raise ValueError('Age cannot be negative')\n        self._age = value\n\nu = User(20)\nu.age = 25\nprint(u.age)",
+    "focus": "u.age = 25"
+  },
+  "aha_moment": {
+    "code": "class BankAccount:\n    def __init__(self, balance):\n        self._balance = balance\n\n    @property\n    def balance(self):\n        return self._balance\n\n    @balance.setter\n    def balance(self, amount):\n        self._balance = amount\n\nacc = BankAccount(100)\nacc.balance += 50\nprint(acc.balance)",
+    "prediction": "What does this print?",
+    "common_guess": "It raises an error because you can't use += on a property.",
+    "why": "The `+=` operator automatically expands to `acc.balance = acc.balance + 50`, effectively calling both the getter to read the current balance and the setter to write the new balance."
+  },
+  "challenge": {
+    "title": "Validating Password Length",
+    "prompt": "Create a `UserAccount` class that initializes with a `username` and a `password`. Use a property for `password` to ensure it is always stored in `self._password`. The setter should raise a `ValueError` with the message 'Password too short' if the new password is less than 8 characters long. The constructor should also validate the initial password using this setter.",
+    "solution": "class UserAccount:\n    def __init__(self, username, password):\n        self.username = username\n        self.password = password\n\n    @property\n    def password(self):\n        return self._password\n\n    @password.setter\n    def password(self, value):\n        if len(value) < 8:\n            raise ValueError('Password too short')\n        self._password = value\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/functions.html#property"
+  ]
+}

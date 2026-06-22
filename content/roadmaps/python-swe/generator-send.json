@@ -9,14 +9,28 @@
     "estimated_minutes": 45,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["generators", "yield"],
-    "unlocks": ["coroutines", "async-await"],
-    "project_usage": ["asyncio", "FastAPI background tasks", "data pipelines"]
+    "prerequisites": [
+      "generators",
+      "yield"
+    ],
+    "unlocks": [
+      "coroutines",
+      "async-await"
+    ],
+    "project_usage": [
+      "asyncio",
+      "FastAPI background tasks",
+      "data pipelines"
+    ]
   },
   "overview": {
     "what": "The `.send()` method allows passing data back IN to a generator. Instead of just yielding values out, `yield` becomes an expression that evaluates to the value sent in. Think of generators as mini-programs paused at `yield`: `.send()` resumes them and hands them a value. This is the foundation of coroutines and asynchronous programming in Python.",
     "why": "It transforms generators from simple data producers (one-way) into stateful coroutines that can receive data, process it, and respond (two-way).",
-    "where_used": ["asyncio event loops", "custom state machines", "data streaming pipelines"]
+    "where_used": [
+      "asyncio event loops",
+      "custom state machines",
+      "data streaming pipelines"
+    ]
   },
   "why_learning_this": [
     "Understanding how async/await actually works under the hood",
@@ -48,7 +62,8 @@
   "practice_tasks": [
     {
       "title": "Running Average Generator",
-      "prompt": "Create a generator `running_average()` that receives numbers via `.send()` and yields the current average of all numbers received so far. The first yield should just be an initialization (e.g., yielding 0.0 or None).",
+      "prompt": "Complete the `running_average()` generator so that it receives numbers via `.send()` and yields the current average of all numbers received so far. The generator must yield `0.0` upon initialization.",
+      "starter_code": "def running_average():\n    total = 0\n    count = 0\n    # Yield 0.0 to initialize and receive the first number in 'avg'\n    \n    while True:\n        pass # Calculate total and count, then yield new average",
       "solution": "def running_average():\n    total = 0\n    count = 0\n    avg = yield 0.0\n    while True:\n        total += avg\n        count += 1\n        avg = yield total / count"
     }
   ],
@@ -70,5 +85,20 @@
   "sources": [
     "https://docs.python.org/3/reference/expressions.html#generator.send",
     "https://docs.python.org/3/howto/functional.html#generators"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Why does calling `.send(5)` on a newly created generator raise a TypeError?",
+      "answer": "Because the generator hasn't reached a `yield` statement yet to receive the value.",
+      "why": "A generator must be \"primed\" by advancing it to the first `yield` expression (usually by calling `next(gen)` or `gen.send(None)`) before it can receive data via `.send()`."
+    },
+    {
+      "type": "predict-output",
+      "question": "What is the output of `print(g.send('B'))`?",
+      "code": "def echo():\n    val = yield 'A'\n    yield val\n\ng = echo()\nprint(next(g))\nprint(g.send('B'))",
+      "answer": "`B`",
+      "why": "The first `next(g)` runs until the first `yield` and outputs `'A'`. Then `g.send('B')` resumes execution, assigning `'B'` to `val`, and immediately yields `val`."
+    }
   ]
 }

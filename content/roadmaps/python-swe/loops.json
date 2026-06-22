@@ -9,14 +9,30 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["if-elif-else", "primitive-types", "dynamic-typing"],
-    "unlocks": ["break-continue-else", "list-comprehensions", "lists"],
-    "project_usage": ["FastAPI batch processing", "data pipelines", "config parsing"]
+    "prerequisites": [
+      "if-elif-else",
+      "primitive-types",
+      "dynamic-typing"
+    ],
+    "unlocks": [
+      "break-continue-else",
+      "list-comprehensions",
+      "lists"
+    ],
+    "project_usage": [
+      "FastAPI batch processing",
+      "data pipelines",
+      "config parsing"
+    ]
   },
   "overview": {
-    "what": "Python has two loop forms. A for loop iterates over any iterable — a list, string, range, dict, or file — consuming it item by item:\n\n  for record in db_results:\n      process(record)\n\nA while loop runs as long as its condition is truthy:\n\n  retries = 0\n  while retries < 3:\n      retries += 1\n\nThree built-ins that make for loops more powerful in practice: range(n) produces integers 0..n-1 for index-counting; enumerate(items) yields (index, value) pairs so you don't need a separate counter; dict.items() yields (key, value) pairs for iterating over every entry in a dict. Think of for as 'do this once per item in the collection' and while as 'keep going until a condition flips'.",
-    "why": "Loops are the mechanism behind every batch operation in real backends — processing rows, retrying HTTP requests, building response payloads from multiple sources. Knowing enumerate() and dict.items() eliminates the need for error-prone manual index management.",
-    "where_used": ["FastAPI batch endpoint handlers", "ETL pipelines", "config and env-var processing"]
+    "what": "Python has two loop forms. A for loop iterates over any iterable \u2014 a list, string, range, dict, or file \u2014 consuming it item by item:\n\n  for record in db_results:\n      process(record)\n\nA while loop runs as long as its condition is truthy:\n\n  retries = 0\n  while retries < 3:\n      retries += 1\n\nThree built-ins that make for loops more powerful in practice: range(n) produces integers 0..n-1 for index-counting; enumerate(items) yields (index, value) pairs so you don't need a separate counter; dict.items() yields (key, value) pairs for iterating over every entry in a dict. Think of for as 'do this once per item in the collection' and while as 'keep going until a condition flips'.",
+    "why": "Loops are the mechanism behind every batch operation in real backends \u2014 processing rows, retrying HTTP requests, building response payloads from multiple sources. Knowing enumerate() and dict.items() eliminates the need for error-prone manual index management.",
+    "where_used": [
+      "FastAPI batch endpoint handlers",
+      "ETL pipelines",
+      "config and env-var processing"
+    ]
   },
   "why_learning_this": [
     "Processing lists of database records, API responses, or config entries without manual index tracking via enumerate()",
@@ -60,15 +76,15 @@
   ],
   "practice_tasks": [
     {
-      "title": "Summarise API response records",
-      "prompt": "Given a list of dicts, each with 'endpoint' and 'latency_ms' keys, write summarise(records) that prints each endpoint's latency with its 1-based index (using enumerate), then prints the average latency.",
-      "starter_code": "def summarise(records):\n    pass",
-      "solution": "def summarise(records):\n    total = 0\n    for i, rec in enumerate(records, start=1):\n        print(f'{i}. {rec[\"endpoint\"]} - {rec[\"latency_ms\"]}ms')\n        total += rec['latency_ms']\n    print(f'avg: {total / len(records):.1f}ms')\n\nsummarise([\n    {'endpoint': '/health', 'latency_ms': 12},\n    {'endpoint': '/users', 'latency_ms': 45},\n    {'endpoint': '/items', 'latency_ms': 38},\n])"
+      "title": "Fix the dictionary iteration",
+      "prompt": "The `print_config` function attempts to print the key-value pairs of a dictionary. However, it is iterating over the dict incorrectly, resulting in `key` containing only the keys and `val` throwing an error. Modify the loop to correctly unpack the dictionary's items.",
+      "starter_code": "def print_config(config):\n    # Fix the iteration so it unpacks both keys and values\n    for key, val in config:\n        print(f'{key}={val}')\n\nprint_config({'host': 'localhost', 'port': 5432})",
+      "solution": "def print_config(config):\n    for key, val in config.items():\n        print(f'{key}={val}')\n\nprint_config({'host': 'localhost', 'port': 5432})"
     }
   ],
   "code_walkthrough": {
     "code": "config = {'host': 'localhost', 'port': 5432, 'db': 'main'}\nfor key, value in config.items():\n    print(f'{key}={value}')",
-    "focus": "config.items() yields each key-value pair as a tuple; the for loop unpacks it into key and value — no index variable needed."
+    "focus": "config.items() yields each key-value pair as a tuple; the for loop unpacks it into key and value \u2014 no index variable needed."
   },
   "challenge": {
     "title": "Retry loop with backoff counter",
@@ -79,5 +95,20 @@
     "https://docs.python.org/3/reference/compound_stmts.html#the-for-statement",
     "https://docs.python.org/3/library/functions.html#enumerate",
     "https://docs.python.org/3/library/functions.html#func-range"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "for i, val in enumerate(['A', 'B'], start=1):\n    print(f'{i}:{val}')",
+      "question": "What is printed by this code?",
+      "answer": "1:A\n2:B",
+      "why": "The `enumerate` function yields the index and the value. The `start=1` argument changes the index counter to start at 1 instead of the default 0."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer writes `for key in my_dict.items():` and expects `key` to be a string. What will `key` actually be?",
+      "answer": "A tuple containing both the key and the value.",
+      "why": "`dict.items()` yields `(key, value)` tuples. To get just the keys, iterate over the dict directly (`for key in my_dict:`). To get both, unpack them (`for k, v in my_dict.items():`)."
+    }
   ]
 }

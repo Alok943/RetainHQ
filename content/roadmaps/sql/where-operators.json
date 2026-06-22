@@ -1,0 +1,96 @@
+{
+  "slug": "where-operators",
+  "title": "WHERE & Operators",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["select-from"],
+    "unlocks": ["order-by-limit", "distinct", "null-handling", "case-expressions", "update-delete"],
+    "project_usage": ["filtering API list endpoints", "analytics queries", "report filters"]
+  },
+  "overview": {
+    "what": "WHERE filters the row-set that FROM produced, keeping only rows where the condition evaluates to TRUE. Any row where the condition is FALSE or NULL is discarded.\n\nIn the logical query flow: FROM builds the full row-set → WHERE removes rows that fail the test → SELECT picks the output columns.\n\nComparison operators — =, <>, <, >, <=, >= — compare a column to a value:\n\n  SELECT name, price\n  FROM products\n  WHERE price > 50\n  ORDER BY price;\n\nReturns 3 rows: Chair (89.99), Desk (149.99), Monitor (199.99).\n\nLogical operators — AND, OR, NOT — combine conditions:\n\n  SELECT name, price\n  FROM products\n  WHERE category = 'Electronics' AND price < 50\n  ORDER BY name;\n\nReturns 2 rows: Keyboard (49.99), Mouse (19.99).\n\nBETWEEN tests an inclusive range:\n\n  SELECT name, price\n  FROM products\n  WHERE price BETWEEN 20 AND 100\n  ORDER BY price;\n\nReturns 3 rows: Keyboard (49.99), Chair (89.99) — equivalent to price >= 20 AND price <= 100. Mouse (19.99) is excluded because 19.99 < 20.\n\nIN tests membership in a list:\n\n  SELECT name, country\n  FROM customers\n  WHERE country IN ('US', 'UK')\n  ORDER BY name;\n\nReturns 4 rows: Alice, Bob, Diana, Greg.\n\nLIKE matches text patterns (% = any characters, _ = one character):\n\n  SELECT name\n  FROM customers\n  WHERE name LIKE 'A%'\n  ORDER BY name;\n\nReturns 1 row: Alice.\n\nKey mental model: WHERE is a row-by-row TRUE/FALSE gate. It never changes values — it only decides which rows survive to the next stage.",
+    "why": "Almost every real query filters data. Without WHERE, every query returns every row in the table — useless for any application that needs specific records. WHERE is also critical for UPDATE and DELETE safety: forgetting it updates or deletes every row.",
+    "where_used": ["API endpoints with search/filter parameters", "dashboard queries with date ranges", "UPDATE/DELETE safety guards"]
+  },
+  "why_learning_this": [
+    "Every filtered API list endpoint translates user parameters into WHERE conditions",
+    "Understanding WHERE's TRUE/FALSE/NULL gate explains why NULL comparisons silently drop rows — a critical prerequisite for NULL handling"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using = NULL instead of IS NULL",
+      "explanation": "NULL is not a value — it means 'unknown'. The expression country = NULL evaluates to NULL (not TRUE), so the row is silently dropped. Use IS NULL or IS NOT NULL instead."
+    },
+    {
+      "title": "Confusing AND/OR precedence",
+      "explanation": "AND binds tighter than OR. The condition A OR B AND C is read as A OR (B AND C), not (A OR B) AND C. Use parentheses to make intent explicit."
+    },
+    {
+      "title": "Forgetting BETWEEN is inclusive on both ends",
+      "explanation": "BETWEEN 20 AND 100 includes both 20 and 100. If you want to exclude endpoints, use > and < instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "At what stage in the logical query flow does WHERE run — before or after SELECT?",
+      "answer": "WHERE runs after FROM but before SELECT. It filters the row-set that FROM produced, and SELECT then picks columns from the surviving rows.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when a WHERE condition evaluates to NULL for a row?",
+      "answer": "The row is discarded. WHERE keeps only rows where the condition is TRUE — both FALSE and NULL rows are removed.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What do the % and _ wildcards mean in a LIKE pattern?",
+      "answer": "% matches any sequence of zero or more characters. _ matches exactly one character.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name, country\nFROM customers\nWHERE country = 'US' OR country = 'MX'\nORDER BY name;",
+      "question": "Which customers does this return?",
+      "answer": "4 rows: Alice (US), Bob (US), Carlos (MX), Greg (US).",
+      "why": "WHERE tests each row: country = 'US' is TRUE for Alice, Bob, Greg; country = 'MX' is TRUE for Carlos. OR keeps a row if either condition is TRUE. Emma's NULL country fails both tests (NULL = 'US' is NULL, not TRUE)."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name, price\nFROM products\nWHERE category = 'Electronics' AND price > 100\nORDER BY name;",
+      "question": "What rows does this return?",
+      "answer": "1 row: Monitor (199.99).",
+      "why": "AND requires both conditions to be TRUE. Of the 3 Electronics products (Keyboard 49.99, Mouse 19.99, Monitor 199.99), only Monitor has price > 100."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, price\nFROM products\nWHERE category = 'Electronics' AND price < 50\nORDER BY name;",
+    "flow_stages": ["from", "where", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch WHERE discard 4 of the 6 product rows — only rows where BOTH conditions are TRUE survive to SELECT."
+  },
+  "practice_tasks": [
+    {
+      "title": "Widen the filter to include Furniture",
+      "prompt": "This query returns only Electronics products under $50. Modify the WHERE clause so it also includes products in the 'Furniture' category (at any price). Keep the same columns and ordering.",
+      "starter_code": "SELECT name, price\nFROM products\nWHERE category = 'Electronics' AND price < 50\nORDER BY name;",
+      "solution": "SELECT name, price\nFROM products\nWHERE (category = 'Electronics' AND price < 50) OR category = 'Furniture'\nORDER BY name;"
+    }
+  ],
+  "challenge": {
+    "title": "Orders in a date range",
+    "prompt": "Write a query that returns the id and order_date of all orders placed between '2023-03-01' and '2023-06-30' (inclusive) with status 'paid'. Order by order_date.",
+    "solution": "SELECT id, order_date\nFROM orders\nWHERE order_date BETWEEN '2023-03-01' AND '2023-06-30'\n  AND status = 'paid'\nORDER BY order_date;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-select.html#SQL-WHERE",
+    "https://www.postgresql.org/docs/current/functions-comparison.html"
+  ]
+}

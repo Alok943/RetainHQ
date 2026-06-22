@@ -1,0 +1,96 @@
+{
+  "slug": "self-join",
+  "title": "Self Join",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "high",
+    "prerequisites": ["inner-join"],
+    "unlocks": ["recursive-ctes"],
+    "project_usage": ["org chart queries", "hierarchy navigation", "comparing rows within the same table"]
+  },
+  "overview": {
+    "what": "A self join is a join where a table is joined to ITSELF. You write the same table name twice, giving each occurrence a different alias, then join on a relationship between rows in that table — typically a foreign key that points back to the same table's primary key.\n\nThe classic example is the employees table, where manager_id references another row's id in the same table:\n\n  SELECT e.name AS employee, m.name AS manager\n  FROM employees e\n  INNER JOIN employees m ON e.manager_id = m.id\n  ORDER BY e.name;\n\nThis pairs each employee with their manager. Sara (the CEO, manager_id = NULL) is excluded because INNER JOIN drops unmatched rows — she has no manager to match.\n\nSelf joins are not a special syntax — they use the exact same JOIN you already know. The only difference is both sides of the join reference the same table, so aliases are mandatory to distinguish 'the employee row' from 'the manager row'.\n\nMental model: imagine two COPIES of the same table side by side — one copy represents 'the child row', the other represents 'the parent row'. The ON clause links them.",
+    "why": "Hierarchical data lives in a single table (employees → manager, categories → parent category, comments → parent comment). Self joins let you navigate one level of that hierarchy. They also let you compare rows within the same table — e.g., finding employees who earn more than their manager.",
+    "where_used": ["org chart and manager lookups", "threaded comment trees", "category → subcategory navigation", "comparing rows in the same table"]
+  },
+  "why_learning_this": [
+    "Hierarchical relationships (employee→manager, category→parent) are stored in self-referencing tables — self join is the only way to query them",
+    "Self joins unlock row-to-row comparisons within the same table, such as finding pairs of employees in the same department"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting aliases",
+      "explanation": "Both sides of the join reference the same table, so without aliases PostgreSQL cannot tell which 'name' or 'id' you mean. Always alias: FROM employees e JOIN employees m ON e.manager_id = m.id."
+    },
+    {
+      "title": "Losing the root node with INNER JOIN",
+      "explanation": "In the employees table Sara has manager_id = NULL. An INNER JOIN drops her because NULL never matches any id. Use LEFT JOIN if you want to include the root of the hierarchy (Sara appears with manager = NULL)."
+    },
+    {
+      "title": "Joining on the wrong direction",
+      "explanation": "Writing ON e.id = m.manager_id reverses the direction — it pairs each employee with their SUBORDINATES, not their manager. Think carefully about which column is the foreign key and which is the primary key."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What makes a join a 'self join'?",
+      "answer": "Both sides of the JOIN reference the same table, using different aliases.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are aliases mandatory in a self join?",
+      "answer": "Without aliases, column references like 'name' or 'id' are ambiguous — the database cannot tell which copy of the table you mean.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens to Sara (manager_id = NULL) in an INNER self join on manager_id = id?",
+      "answer": "She is excluded because NULL does not match any id. Use LEFT JOIN to keep her with a NULL manager.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT e.name AS employee, m.name AS manager\nFROM employees e\nLEFT JOIN employees m ON e.manager_id = m.id\nORDER BY e.name;",
+      "question": "What rows does this return? Pay attention to Sara.",
+      "answer": "Sara, NULL\nTom, Sara\nUma, Tom\nVictor, Tom\nWendy, Sara\nXavier, Wendy\nYara, Wendy",
+      "why": "LEFT JOIN keeps every employee, including Sara whose manager_id is NULL. Sara's manager column is NULL because she has no match. The other 6 employees are matched to their managers via manager_id = m.id."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT e.name AS employee, e.salary AS emp_salary, m.salary AS mgr_salary\nFROM employees e\nINNER JOIN employees m ON e.manager_id = m.id\nWHERE e.salary > m.salary\nORDER BY e.name;",
+      "question": "Which employees earn more than their manager?",
+      "answer": "No rows are returned (empty result set).",
+      "why": "Checking each employee against their manager: Tom(150000) vs Sara(200000) — no. Uma(120000) vs Tom(150000) — no. Victor(110000) vs Tom(150000) — no. Wendy(130000) vs Sara(200000) — no. Xavier(95000) vs Wendy(130000) — no. Yara(90000) vs Wendy(130000) — no. No employee earns more than their manager."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT e.name AS employee, m.name AS manager\nFROM employees e\nINNER JOIN employees m ON e.manager_id = m.id\nORDER BY e.name;",
+    "flow_stages": ["from", "join", "select", "order_by"],
+    "visualization": "join-diagram",
+    "focus": "Watch the employees table appear TWICE — alias 'e' is the employee copy, alias 'm' is the manager copy. The ON clause links each employee's manager_id to the manager's id. Sara vanishes because her NULL manager_id matches no id."
+  },
+  "practice_tasks": [
+    {
+      "title": "Include the CEO in the results",
+      "prompt": "This query uses INNER JOIN, so Sara (the CEO with no manager) is excluded. Change the join type so that Sara appears in the results with manager = NULL. Keep the ordering.",
+      "starter_code": "SELECT e.name AS employee, m.name AS manager\nFROM employees e\nINNER JOIN employees m ON e.manager_id = m.id\nORDER BY e.name;",
+      "solution": "SELECT e.name AS employee, m.name AS manager\nFROM employees e\nLEFT JOIN employees m ON e.manager_id = m.id\nORDER BY e.name;"
+    }
+  ],
+  "challenge": {
+    "title": "Employees in the same department",
+    "prompt": "Write a query that lists all pairs of employees who work in the same department. Show employee1 and employee2 names, and the department. Avoid duplicate pairs (ensure employee1 name < employee2 name). Order by department, then employee1.",
+    "solution": "SELECT e1.name AS employee1, e2.name AS employee2, e1.department\nFROM employees e1\nINNER JOIN employees e2 ON e1.department = e2.department AND e1.name < e2.name\nORDER BY e1.department, e1.name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN",
+    "https://www.postgresql.org/docs/current/tutorial-join.html"
+  ]
+}

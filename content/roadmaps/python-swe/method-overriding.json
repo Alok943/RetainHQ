@@ -1,0 +1,108 @@
+{
+  "slug": "method-overriding",
+  "title": "Method Overriding",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics",
+      "inheritance-super",
+      "method-types"
+    ],
+    "unlocks": [
+      "duck-typing",
+      "protocols"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Pydantic"
+    ]
+  },
+  "overview": {
+    "what": "Method overriding allows a subclass to provide a specific implementation of a method that is already defined in its superclass. When you call the method on a subclass instance, Python uses the subclass's version instead of the parent's. Think of it like a franchise restaurant: the parent company defines a default menu, but a local branch can override specific items to cater to regional tastes. In Python, this is how we specialize behavior while sharing a common interface.",
+    "why": "It enables polymorphism, allowing different objects to respond to the same method call in their own specific way without needing complex if-statements.",
+    "where_used": [
+      "Django class-based views",
+      "Pydantic validators",
+      "FastAPI dependencies"
+    ]
+  },
+  "why_learning_this": [
+    "Customizing behavior of built-in or framework classes",
+    "Implementing polymorphic designs where multiple classes share an interface but behave differently"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to call super()",
+      "explanation": "Overriding a method replaces the parent method entirely. If you meant to extend rather than replace, you must explicitly call super().method_name() inside the overriding method."
+    },
+    {
+      "title": "Mismatched method signatures",
+      "explanation": "If the subclass method takes different arguments than the parent method, code that expects the parent interface will crash when given a subclass instance (violating the Liskov Substitution Principle)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when a subclass defines a method with the same name as one in its parent class?",
+      "answer": "The subclass's method overrides (replaces) the parent class's method when called on an instance of the subclass.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do we override methods?",
+      "answer": "To provide a specialized implementation for a subclass while keeping the same interface defined by the parent class.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you override a method, does the parent's original method automatically execute?",
+      "answer": "No, the parent method is completely replaced. You must use super() if you want the parent method to run as well.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class Parent:\n    def greet(self):\n        print('Hello Parent')\n\nclass Child(Parent):\n    def greet(self):\n        print('Hello Child')\n        super().greet()\n\nc = Child()\nc.greet()",
+      "question": "What is printed when `c.greet()` is called?",
+      "answer": "Hello Child\\nHello Parent",
+      "why": "The `Child` class overrides the `greet` method. When called, it first prints 'Hello Child', and then explicitly calls the `Parent`'s `greet` method using `super()`, which prints 'Hello Parent'."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why might code that uses a subclass crash if the subclass overrides a method with a different number of arguments?",
+      "answer": "If a method is overridden with a different signature, any code expecting the parent class's original method signature will pass the wrong number of arguments, leading to a TypeError.",
+      "why": "This violates the Liskov Substitution Principle. A subclass should be able to replace its parent without breaking existing code."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Override the Payment Process",
+      "prompt": "Modify the starter code by creating a `CreditCardPayment` subclass that inherits from `Payment`. Override its `process()` method to print 'Processing credit card payment', completely replacing the parent's behavior.",
+      "starter_code": "class Payment:\n    def process(self):\n        print('Processing generic payment')\n\n# TODO: Create CreditCardPayment subclass here\n\n# Uncomment to test:\n# p = CreditCardPayment()\n# p.process()",
+      "solution": "class Payment:\n    def process(self):\n        print('Processing generic payment')\n\nclass CreditCardPayment(Payment):\n    def process(self):\n        print('Processing credit card payment')"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class User:\n    def get_role(self):\n        return 'Guest'\n\nclass Admin(User):\n    def get_role(self):\n        return 'Administrator'\n\nuser = User()\nprint(user.get_role())\nadmin = Admin()\nprint(admin.get_role())",
+    "focus": "def get_role(self): in Admin class intercepts the call"
+  },
+  "aha_moment": {
+    "code": "class BaseConfig:\n    def load(self):\n        print('Loading defaults')\n        self.setup()\n\n    def setup(self):\n        print('Base setup')\n\nclass AppConfig(BaseConfig):\n    def setup(self):\n        print('App setup')\n\nconfig = AppConfig()\nconfig.load()",
+    "prediction": "What is printed when config.load() is called?",
+    "common_guess": "'Loading defaults' followed by 'Base setup', because load() is defined in BaseConfig.",
+    "why": "Even though load() is defined in the parent class, 'self' refers to the AppConfig instance. So self.setup() dynamically resolves to the overridden setup() method in the subclass."
+  },
+  "challenge": {
+    "title": "Extend, Don't Replace",
+    "prompt": "Create an `APIHandler` with a `handle_request()` method that prints 'Authenticating request'. Create a `SecureAPIHandler` subclass that overrides `handle_request()`. It should first call the parent's `handle_request()`, and then print 'Encrypting payload'.",
+    "solution": "class APIHandler:\n    def handle_request(self):\n        print('Authenticating request')\n\nclass SecureAPIHandler(APIHandler):\n    def handle_request(self):\n        super().handle_request()\n        print('Encrypting payload')"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#inheritance"
+  ]
+}

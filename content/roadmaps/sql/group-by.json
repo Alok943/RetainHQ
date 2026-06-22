@@ -1,0 +1,96 @@
+{
+  "slug": "group-by",
+  "title": "GROUP BY",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["select-from", "where-operators"],
+    "unlocks": ["aggregate-functions", "multi-column-grouping", "over-partition-by"],
+    "project_usage": ["analytics dashboards", "reporting queries", "API summary endpoints"]
+  },
+  "overview": {
+    "what": "GROUP BY collapses rows that share the same value(s) in the grouping column(s) into a single summary row. Before GROUP BY you have many individual rows; after it, you have one row per unique group. Any column in SELECT must either appear in the GROUP BY list or be wrapped in an aggregate function (COUNT, SUM, etc.).\n\nAgainst the shared dataset:\n\n  SELECT status, COUNT(*) AS order_count\n  FROM orders\n  GROUP BY status\n  ORDER BY status;\n\nThe 8 order rows collapse into 3 groups: cancelled (1), paid (6), pending (1).\n\nThink of GROUP BY as putting rows into labelled buckets — one bucket per unique grouping-key value — and then squeezing each bucket down to a single summary row.",
+    "why": "Almost every reporting or analytics query needs GROUP BY. Without it, you can only look at individual rows. GROUP BY lets you answer 'how many?', 'what total?', and 'what average?' for each category — the bread and butter of dashboards and business metrics.",
+    "where_used": ["analytics dashboards", "summary statistics APIs", "report generation"]
+  },
+  "why_learning_this": [
+    "Writing any query that summarises data — revenue per country, orders per customer, items per category — requires GROUP BY",
+    "Understanding GROUP BY is prerequisite for HAVING, window functions, and virtually all intermediate SQL"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Selecting a non-grouped, non-aggregated column",
+      "explanation": "SELECT name, country, COUNT(*) FROM customers GROUP BY country fails because 'name' is not in GROUP BY and not aggregated. Postgres raises 'column must appear in the GROUP BY clause or be used in an aggregate function'. Either add name to GROUP BY or wrap it in an aggregate like MAX(name)."
+    },
+    {
+      "title": "Forgetting that GROUP BY happens before SELECT aliases",
+      "explanation": "You cannot use a SELECT alias in GROUP BY in standard SQL (Postgres allows it as an extension, but it's not portable). Best practice: repeat the expression or column name in GROUP BY rather than relying on the alias."
+    },
+    {
+      "title": "Expecting row-level detail after GROUP BY",
+      "explanation": "Once you GROUP BY country, individual customer rows vanish — you only get one row per country. If you need both the summary AND the detail, use a window function (SUM(...) OVER (...)) instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does GROUP BY do to the row set?",
+      "answer": "It collapses rows sharing the same grouping-key value(s) into a single summary row per group.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What rule must every column in SELECT follow when GROUP BY is present?",
+      "answer": "Each column must either appear in the GROUP BY list or be wrapped in an aggregate function.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In the logical query flow, does GROUP BY happen before or after WHERE?",
+      "answer": "After. WHERE filters individual rows first, then GROUP BY collapses the surviving rows into groups.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT country, COUNT(*) AS n\nFROM customers\nWHERE country IS NOT NULL\nGROUP BY country\nORDER BY n DESC, country;",
+      "question": "What rows does this return?",
+      "answer": "US | 3\nAE | 1\nJP | 1\nMX | 1\nUK | 1",
+      "why": "WHERE removes Emma (NULL country) first, leaving 7 rows. GROUP BY collapses those 7 rows into 5 groups by country. US has 3 customers (Alice, Bob, Greg); the other 4 countries have 1 each. ORDER BY n DESC puts US first, then the tie-breaking alphabetical order."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT status, COUNT(*) AS n\nFROM orders\nGROUP BY status\nORDER BY status;",
+      "question": "What rows does this return?",
+      "answer": "cancelled | 1\npaid | 6\npending | 1",
+      "why": "The 8 orders have statuses: paid (orders 1,2,4,6,7,8 = 6), pending (order 3 = 1), cancelled (order 5 = 1). GROUP BY collapses each status into one row, ORDER BY status sorts alphabetically."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT status, COUNT(*) AS order_count\nFROM orders\nGROUP BY status\nORDER BY status;",
+    "flow_stages": ["from", "group_by", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch 8 individual order rows collapse into 3 group rows — one per distinct status value."
+  },
+  "practice_tasks": [
+    {
+      "title": "Group by category instead of status",
+      "prompt": "This query counts orders by status. Modify it to count products by category from the products table instead, keeping an ORDER BY on category.",
+      "starter_code": "SELECT status, COUNT(*) AS n\nFROM orders\nGROUP BY status\nORDER BY status;",
+      "solution": "SELECT category, COUNT(*) AS n\nFROM products\nGROUP BY category\nORDER BY category;"
+    }
+  ],
+  "challenge": {
+    "title": "Orders per customer",
+    "prompt": "Write a query that shows each customer's name and how many orders they placed. Only include customers who have at least one order. Order by name.",
+    "solution": "SELECT c.name, COUNT(*) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nGROUP BY c.name\nORDER BY c.name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP",
+    "https://www.postgresql.org/docs/current/tutorial-agg.html"
+  ]
+}

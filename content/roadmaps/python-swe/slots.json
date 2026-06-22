@@ -1,0 +1,92 @@
+{
+  "slug": "slots",
+  "title": "__slots__ for Memory Optimization",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "everything-is-an-object",
+      "dictionaries"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "SQLAlchemy"
+    ]
+  },
+  "overview": {
+    "what": "By default, Python objects store their instance attributes in a dynamic dictionary (`__dict__`). The `__slots__` attribute allows you to explicitly declare which attributes an instance can have. When you define `__slots__`, Python suppresses the creation of `__dict__` and allocates a fixed amount of space for the specified attributes. Think of `__dict__` as a flexible, expanding cargo container that takes up a lot of space, whereas `__slots__` is like a custom-molded foam insert that perfectly and rigidly fits only the tools you need.",
+    "why": "Using `__slots__` drastically reduces the memory footprint of objects, which is critical when creating millions of instances. It also provides faster attribute access.",
+    "where_used": [
+      "Pydantic",
+      "SQLAlchemy",
+      "Discord.py"
+    ]
+  },
+  "why_learning_this": [
+    "Optimizing memory in applications that process millions of rows or objects",
+    "Preventing accidental creation of new attributes due to typos"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Inheritance without slots",
+      "explanation": "If a subclass does not define `__slots__` but inherits from a class that does, the subclass will still get a `__dict__`. To maintain the memory savings, every subclass must define `__slots__` (even an empty tuple `()`)."
+    },
+    {
+      "title": "Inability to add new attributes",
+      "explanation": "Because `__dict__` is not created, you cannot assign attributes that are not declared in `__slots__`. Trying to set `obj.new_attr = 5` will raise an AttributeError."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does defining `__slots__` save memory compared to normal Python objects?",
+      "answer": "It prevents the creation of the dynamic `__dict__` for each object instance, allocating only a fixed amount of space for the declared attributes.",
+      "tier": "tier3"
+    },
+    {
+      "q": "What happens if you try to assign a new, undeclared attribute to an object that uses `__slots__`?",
+      "answer": "Python raises an AttributeError because the flexible `__dict__` container does not exist to store it.",
+      "tier": "tier3"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Define a slotted class",
+      "prompt": "The `Point` class uses a standard dictionary to store attributes. Modify the class to use `__slots__` for the `x` and `y` attributes to optimize memory.",
+      "starter_code": "class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n",
+      "solution": "class Point:\n    __slots__ = ('x', 'y')\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n"
+    }
+  ],
+  "challenge": {
+    "title": "Fix the slotted inheritance",
+    "prompt": "The `BaseEvent` class defines `__slots__` to save memory. However, `ClickEvent`, which inherits from `BaseEvent` and adds a `button` attribute, is consuming too much memory because instances are still being created with a `__dict__`. Fix `ClickEvent` so that it fully utilizes `__slots__` and saves memory.",
+    "solution": "class BaseEvent:\n    __slots__ = ('timestamp',)\n    def __init__(self, timestamp):\n        self.timestamp = timestamp\n\nclass ClickEvent(BaseEvent):\n    __slots__ = ('button',)\n    def __init__(self, timestamp, button):\n        super().__init__(timestamp)\n        self.button = button\n\ne = ClickEvent(12345, 'left')\nprint(hasattr(e, '__dict__'))"
+  },
+  "code_walkthrough": {
+    "code": "class Point:\n    __slots__ = ('x', 'y')\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\np = Point(1, 2)\nprint(p.x)",
+    "focus": "Notice how explicitly defining `__slots__` prevents the creation of a `__dict__` dictionary, making the `Point` objects more memory-efficient."
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#slots"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Why does a class with `__slots__` raise an `AttributeError` when you try to assign a new attribute not defined in the slots?",
+      "answer": "Because the class no longer has a dynamic `__dict__` to store arbitrary attributes.",
+      "why": "When `__slots__` is defined, Python suppresses the creation of the `__dict__` and only allocates fixed space for the declared attributes, preventing any new attributes from being added dynamically."
+    },
+    {
+      "type": "find-bug",
+      "question": "Identify the bug in this inheritance setup that prevents it from saving memory.",
+      "code": "class Point:\n    __slots__ = ('x', 'y')\n\nclass Point3D(Point):\n    def __init__(self, x, y, z):\n        self.x = x\n        self.y = y\n        self.z = z",
+      "answer": "`Point3D` does not define `__slots__`.",
+      "why": "If a subclass doesn't define `__slots__`, Python will create a `__dict__` for it, defeating the memory optimization. `Point3D` should define `__slots__ = ('z',)`."
+    }
+  ]
+}

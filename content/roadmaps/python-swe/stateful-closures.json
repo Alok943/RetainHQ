@@ -9,14 +9,27 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["closures", "scope"],
-    "unlocks": ["decorators"],
-    "project_usage": ["FastAPI", "React-like state in Python", "Callbacks"]
+    "prerequisites": [
+      "closures",
+      "scope"
+    ],
+    "unlocks": [
+      "decorators"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "React-like state in Python",
+      "Callbacks"
+    ]
   },
   "overview": {
     "what": "A stateful closure is a function that remembers and updates data between calls, without using global variables or a full class. It does this by using the `nonlocal` keyword to modify variables trapped in its enclosing scope. Think of it like a function carrying around a hidden, persistent backpack of data. This allows you to encapsulate state perfectly within a single callable.",
     "why": "It provides a lightweight alternative to writing a class when you only need a single function that remembers some history, like a counter or an accumulator. It keeps state strictly private and avoids polluting the global namespace.",
-    "where_used": ["FastAPI dependencies", "Rate limiters", "Event callbacks"]
+    "where_used": [
+      "FastAPI dependencies",
+      "Rate limiters",
+      "Event callbacks"
+    ]
   },
   "why_learning_this": [
     "Replacing simple single-method classes with clean, functional code",
@@ -70,5 +83,21 @@
   "sources": [
     "https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement",
     "https://docs.python.org/3/faq/programming.html#why-am-i-getting-an-unboundlocalerror-when-the-variable-has-a-value"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is printed by this code?",
+      "code": "def setup():\n  x = 0\n  def update():\n    nonlocal x\n    x += 2\n    return x\n  return update\n\nf1 = setup()\nf2 = setup()\nprint(f1())\nprint(f1())\nprint(f2())",
+      "answer": "2, 4, 2",
+      "why": "Each call to `setup()` creates an independent closure state. `f1` increments its own `x` twice (2, 4), while `f2` uses a fresh `x` (starting at 0, becoming 2)."
+    },
+    {
+      "type": "find-bug",
+      "question": "Why does this closure raise an UnboundLocalError?",
+      "code": "def make_wallet():\n  balance = 0\n  def add(amount):\n    balance += amount\n    return balance\n  return add\n\nw = make_wallet()\nw(5)",
+      "answer": "It is missing the `nonlocal balance` declaration.",
+      "why": "Without `nonlocal`, Python treats the assignment `balance += amount` as creating a new local variable `balance` inside `add`, which hasn't been initialized yet."
+    }
   ]
 }

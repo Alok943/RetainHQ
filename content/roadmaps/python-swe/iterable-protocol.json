@@ -64,9 +64,9 @@
   ],
   "practice_tasks": [
     {
-      "title": "Create a Custom Range Iterable",
-      "prompt": "Implement a `Countdown` iterable class that takes a starting integer and counts down to 1. It must return a new iterator each time so it can be looped over multiple times.",
-      "starter_code": "class Countdown:\n    def __init__(self, start):\n        pass",
+      "title": "Fix the Exhausting Iterable",
+      "prompt": "The `Countdown` class below acts as both an iterable and an iterator, meaning it can only be looped over once. Modify the code by splitting it into two classes: `CountdownIterator` (which holds the state and implements `__next__`) and `Countdown` (which returns a new `CountdownIterator` in its `__iter__` method) so that it can be looped over multiple times.",
+      "starter_code": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value\n\n# Test:\nc = Countdown(2)\nprint(list(c)) # [2, 1]\nprint(list(c)) # Expected: [2, 1], Actual: []",
       "solution": "class CountdownIterator:\n    def __init__(self, start):\n        self.current = start\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value\n\nclass Countdown:\n    def __init__(self, start):\n        self.start = start\n\n    def __iter__(self):\n        return CountdownIterator(self.start)\n"
     }
   ],
@@ -88,5 +88,21 @@
   "sources": [
     "https://docs.python.org/3/library/stdtypes.html#iterator-types",
     "https://docs.python.org/3/glossary.html#term-iterable"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "nums = [1, 2]\nit = iter(nums)\nfor x in it:\n    pass\nfor x in it:\n    print(\"Loop:\", x)",
+      "question": "What will the code print?",
+      "answer": "Nothing.",
+      "why": "The first `for` loop exhausts the iterator. The second `for` loop iterates over the exhausted iterator, which immediately raises `StopIteration`."
+    },
+    {
+      "type": "find-bug",
+      "code": "class MyNumbers:\n    def __init__(self):\n        self.current = 1\n    def __iter__(self):\n        return self\n    def __next__(self):\n        self.current += 1\n        return self.current",
+      "question": "Why doesn't this class act as a proper iterable that can be reused?",
+      "answer": "It returns `self` in `__iter__`, meaning it acts as its own iterator and gets exhausted.",
+      "why": "To allow multiple passes, `__iter__` must return a *new* iterator object each time, instead of returning the same exhausted object (`self`)."
+    }
   ]
 }

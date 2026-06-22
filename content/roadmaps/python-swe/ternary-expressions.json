@@ -9,14 +9,26 @@
     "estimated_minutes": 15,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["if-elif-else"],
-    "unlocks": ["list-comprehensions"],
-    "project_usage": ["FastAPI response serialization", "Pydantic computed fields", "logging"]
+    "prerequisites": [
+      "if-elif-else"
+    ],
+    "unlocks": [
+      "list-comprehensions"
+    ],
+    "project_usage": [
+      "FastAPI response serialization",
+      "Pydantic computed fields",
+      "logging"
+    ]
   },
   "overview": {
     "what": "A ternary expression (also called a conditional expression) evaluates to one of two values based on a condition, all in a single line:\n\n  value_if_true if condition else value_if_false\n\nExamples:\n\n  label = 'admin' if user['role'] == 'superuser' else 'member'\n  display = name if name else 'Anonymous'\n  status_text = 'enabled' if config.get('debug') else 'disabled'\n\nThe expression evaluates the condition first, then returns exactly ONE of the two branches — the other is never evaluated. It is an expression, not a statement, so it can appear anywhere a value is expected: assignment, function argument, f-string, list element. Think of it as a compressed two-branch decision that returns a value — not a replacement for multi-branch logic.",
     "why": "Ternary expressions compress routine two-outcome decisions (present vs missing, enabled vs disabled, role A vs role B) into one readable line. They become unreadable when nested or when the condition or branches are complex — those cases still call for a full if/else block.",
-    "where_used": ["FastAPI response field serialization", "Pydantic computed_field values", "log message formatting"]
+    "where_used": [
+      "FastAPI response field serialization",
+      "Pydantic computed_field values",
+      "log message formatting"
+    ]
   },
   "why_learning_this": [
     "Compressing simple two-branch assignments in FastAPI serializers and Pydantic models to a single readable line",
@@ -56,9 +68,9 @@
   "practice_tasks": [
     {
       "title": "Role label formatter",
-      "prompt": "Write format_role(user) that returns 'Admin (<name>)' when user['role'] == 'admin' and 'User (<name>)' otherwise, using a ternary expression. Test with an admin and a regular user.",
-      "starter_code": "def format_role(user):\n    pass",
-      "solution": "def format_role(user):\n    prefix = 'Admin' if user['role'] == 'admin' else 'User'\n    return f'{prefix} ({user[\"name\"]})'\n\nprint(format_role({'name': 'alice', 'role': 'admin'}))\nprint(format_role({'name': 'bob', 'role': 'member'}))"
+      "prompt": "Modify the format_role function to use a single ternary expression to return 'Admin (<name>)' when user['role'] == 'admin', and 'Guest (<name>)' for all other roles.",
+      "starter_code": "def format_role(user):\n    # TODO: modify this to use a ternary expression, returning 'Guest' instead of 'User'\n    if user['role'] == 'admin':\n        prefix = 'Admin'\n    else:\n        prefix = 'User'\n    return f\"{prefix} ({user['name']})\"\n\nprint(format_role({'name': 'alice', 'role': 'admin'}))\nprint(format_role({'name': 'bob', 'role': 'member'}))",
+      "solution": "def format_role(user):\n    prefix = 'Admin' if user['role'] == 'admin' else 'Guest'\n    return f'{prefix} ({user[\"name\"]})'\n\nprint(format_role({'name': 'alice', 'role': 'admin'}))\nprint(format_role({'name': 'bob', 'role': 'member'}))"
     }
   ],
   "code_walkthrough": {
@@ -72,5 +84,20 @@
   },
   "sources": [
     "https://docs.python.org/3/reference/expressions.html#conditional-expressions"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "x = 5\ny = 10\nresult = \"High\" if x > y else \"Low\"\nprint(result)",
+      "question": "What does this code print?",
+      "answer": "Low",
+      "why": "The condition x > y (5 > 10) is False, so the expression evaluates the branch after the 'else', skipping the True branch entirely."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why shouldn't you nest ternary expressions like `a if x else b if y else c`?",
+      "answer": "Because it makes the code difficult to read.",
+      "why": "Ternary expressions compress simple two-branch decisions into one line. For anything more complex or with multiple outcomes, a full if/elif/else block is much clearer."
+    }
   ]
 }

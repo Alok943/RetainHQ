@@ -1,0 +1,105 @@
+{
+  "slug": "null-handling",
+  "title": "Data Types & NULL Handling",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["where-operators"],
+    "unlocks": ["left-right-join"],
+    "project_usage": ["handling optional fields in APIs", "data cleaning queries", "reporting with fallback values"]
+  },
+  "overview": {
+    "what": "NULL is not a value — it means 'unknown' or 'missing'. It is NOT the same as zero, an empty string, or false. This distinction is the single most important thing to understand about NULL.\n\nSQL uses three-valued logic: every comparison can be TRUE, FALSE, or NULL. Any arithmetic or comparison involving NULL produces NULL:\n\n  5 > NULL    → NULL  (not FALSE)\n  NULL = NULL → NULL  (not TRUE)\n  NULL <> NULL → NULL (not TRUE)\n\nBecause WHERE keeps only TRUE rows, a NULL result means the row is silently dropped — the most common source of 'missing rows' bugs.\n\nTo test for NULL, use IS NULL and IS NOT NULL — never = NULL:\n\n  SELECT name, country\n  FROM customers\n  WHERE country IS NULL\n  ORDER BY name;\n\nReturns 1 row: Emma (country is NULL).\n\nCOALESCE returns the first non-NULL argument — a fallback for missing data:\n\n  SELECT name, COALESCE(country, 'Unknown') AS country\n  FROM customers\n  ORDER BY id;\n\nReturns 8 rows. Emma's row shows 'Unknown' instead of NULL.\n\nNULLIF returns NULL if two arguments are equal — useful for avoiding division by zero:\n\n  SELECT NULLIF(0, 0);\n\nReturns NULL (since both are 0).\n\nPostgreSQL common data types: INTEGER (whole numbers), NUMERIC/DECIMAL (exact decimals like prices), TEXT/VARCHAR (strings), BOOLEAN (true/false), DATE (calendar dates), TIMESTAMP (date + time). Every type can hold NULL — it represents the absence of any value regardless of the column's type.\n\nAggregate functions (COUNT, SUM, AVG) skip NULLs except COUNT(*), which counts rows regardless:\n\n  SELECT COUNT(*) AS total_rows, COUNT(country) AS has_country\n  FROM customers;\n\nReturns total_rows = 8, has_country = 7 (Emma's NULL country is skipped by COUNT(country)).\n\nMental model: NULL is a 'fog' — any operation that touches it produces fog. IS NULL is the only flashlight that can see through it. COALESCE is a default value that replaces the fog with something concrete.",
+    "why": "Mishandling NULLs causes silent data loss in queries. Rows vanish from WHERE filters, JOINs drop unmatched records, and aggregations skip values without warning. Understanding three-valued logic is prerequisite to writing correct LEFT JOINs and safe analytics.",
+    "where_used": ["handling optional fields (nullable columns) in REST APIs", "data cleaning and ETL pipelines", "COALESCE for default display values in reports"]
+  },
+  "why_learning_this": [
+    "LEFT JOINs produce NULL-padded rows — without understanding NULL, you cannot filter or aggregate join results correctly",
+    "API responses with optional fields map directly to nullable columns — COALESCE translates NULLs to user-friendly defaults"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Writing WHERE column = NULL",
+      "explanation": "NULL = NULL evaluates to NULL, not TRUE, so this condition matches zero rows. Always use IS NULL to test for NULL."
+    },
+    {
+      "title": "Expecting NOT IN to work with NULLs in the list",
+      "explanation": "If the IN list contains a NULL, NOT IN returns NULL for every comparison against it, which means no rows pass. Use NOT EXISTS or filter NULLs from the subquery."
+    },
+    {
+      "title": "Confusing COUNT(*) and COUNT(column)",
+      "explanation": "COUNT(*) counts all rows including those with NULLs. COUNT(column) counts only non-NULL values in that column. Using the wrong one gives wrong totals."
+    },
+    {
+      "title": "Treating NULL as an empty string or zero",
+      "explanation": "NULL is not '' or 0 — it is the absence of any value. Concatenating a string with NULL yields NULL, and adding a number to NULL yields NULL."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does NULL = NULL evaluate to, and why?",
+      "answer": "It evaluates to NULL (not TRUE). NULL means 'unknown', so comparing two unknowns cannot produce a definite TRUE or FALSE.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you test whether a column contains NULL?",
+      "answer": "Use IS NULL or IS NOT NULL. Never use = NULL or <> NULL.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does COALESCE(country, 'Unknown') do?",
+      "answer": "It returns country if it is not NULL, otherwise it returns 'Unknown'. It is a fallback for missing data.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between COUNT(*) and COUNT(column)?",
+      "answer": "COUNT(*) counts all rows. COUNT(column) counts only rows where that column is not NULL.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name, country\nFROM customers\nWHERE country <> 'US'\nORDER BY name;",
+      "question": "Does Emma appear in the results? How many rows come back?",
+      "answer": "Emma does NOT appear. 4 rows: Carlos (MX), Diana (UK), Farah (AE), Hana (JP).",
+      "why": "Emma's country is NULL. NULL <> 'US' evaluates to NULL (not TRUE), so WHERE discards Emma's row. This is the classic 'silently lost row' bug — three-valued logic means NULL fails both = and <> tests."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name, COALESCE(country, 'N/A') AS display_country\nFROM customers\nWHERE country IS NULL OR country = 'JP'\nORDER BY name;",
+      "question": "What rows and values does this return?",
+      "answer": "2 rows: Emma (N/A), Hana (JP).",
+      "why": "IS NULL catches Emma (her NULL country becomes 'N/A' via COALESCE). country = 'JP' catches Hana (her country is not NULL, so COALESCE returns 'JP' unchanged)."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, COALESCE(country, 'Unknown') AS country\nFROM customers\nWHERE country IS NULL\nORDER BY name;",
+    "flow_stages": ["from", "where", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch WHERE use IS NULL to find Emma — the only customer with a missing country — then COALESCE replace the NULL with 'Unknown' in the output."
+  },
+  "practice_tasks": [
+    {
+      "title": "Show all customers, replacing NULL country",
+      "prompt": "This query only shows customers with NULL country. Modify it to show ALL customers, but still replace NULL countries with 'Unknown' using COALESCE. Remove the WHERE clause and keep the ordering.",
+      "starter_code": "SELECT name, COALESCE(country, 'Unknown') AS country\nFROM customers\nWHERE country IS NULL\nORDER BY name;",
+      "solution": "SELECT name, COALESCE(country, 'Unknown') AS country\nFROM customers\nORDER BY name;"
+    }
+  ],
+  "challenge": {
+    "title": "Count customers with and without a country",
+    "prompt": "Write a single query that returns two numbers: total_customers (all 8) and has_country (those with a non-NULL country). Use COUNT(*) and COUNT(country) in the same SELECT.",
+    "solution": "SELECT COUNT(*) AS total_customers, COUNT(country) AS has_country\nFROM customers;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/functions-conditional.html#FUNCTIONS-COALESCE-NVL-IFNULL",
+    "https://www.postgresql.org/docs/current/datatype.html"
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "slug": "inheritance-super",
+  "title": "Single inheritance and super()",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics",
+      "method-types"
+    ],
+    "unlocks": [
+      "multiple-inheritance",
+      "mro",
+      "method-overriding"
+    ],
+    "project_usage": [
+      "Django",
+      "FastAPI",
+      "Pydantic"
+    ]
+  },
+  "overview": {
+    "what": "Inheritance allows a new class to inherit attributes and methods from an existing class, establishing an 'is-a' relationship. The `super()` function returns a proxy object that delegates method calls to a parent or sibling class. Think of inheritance like a master template and `super()` as a phone line explicitly calling the master template to avoid repeating setup logic. When overriding `__init__`, calling `super().__init__()` ensures the parent's initialization runs.",
+    "why": "It reduces code duplication by centralizing shared logic in base classes, making it easier to maintain and extend functionality.",
+    "where_used": [
+      "Django models (`models.Model`)",
+      "Pydantic BaseModels",
+      "FastAPI API routers"
+    ]
+  },
+  "why_learning_this": [
+    "Understanding how third-party framework classes (like Django Views) work under the hood",
+    "Extending existing exceptions by subclassing `Exception`",
+    "Avoiding duplicated boilerplate across related data structures"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to call super() in __init__",
+      "explanation": "If a child class overrides `__init__` but forgets `super().__init__()`, the parent's attributes are never initialized, leading to `AttributeError` when those attributes are accessed."
+    },
+    {
+      "title": "Redefining parent behavior instead of extending it",
+      "explanation": "Completely overwriting a parent method without calling `super()` drops the parent's original functionality when you only meant to add to it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of the `super()` function in Python?",
+      "answer": "It delegates method calls to a parent class, allowing a subclass to reuse the parent's logic instead of repeating it.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you override the `__init__` method in a child class but do not call `super().__init__()`?",
+      "answer": "The parent class's initialization logic is skipped, which can cause an `AttributeError` if inherited methods try to access attributes that were supposed to be set up by the parent.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What kind of relationship does inheritance establish between a parent and child class?",
+      "answer": "An 'is-a' relationship.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Extend an API Request class",
+      "prompt": "Modify the `SecureRequest` class so it takes a `url` and a `token`. Call `super().__init__(url)` to handle the URL, then store the `token` as an instance variable.",
+      "starter_code": "class BaseRequest:\n    def __init__(self, url):\n        self.url = url\n\nclass SecureRequest(BaseRequest):\n    def __init__(self, url, token):\n        # TODO: call super and set self.token\n        pass",
+      "solution": "class BaseRequest:\n    def __init__(self, url):\n        self.url = url\n\nclass SecureRequest(BaseRequest):\n    def __init__(self, url, token):\n        super().__init__(url)\n        self.token = token"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Worker:\n    def start(self):\n        print('worker started')\n\nclass CeleryWorker(Worker):\n    def start(self):\n        super().start()\n        print('connected to broker')\n\nw = CeleryWorker()\nw.start()",
+    "focus": "super().start()"
+  },
+  "aha_moment": {
+    "code": "class APIError(Exception):\n    def __init__(self, code):\n        self.code = code\n\nclass NotFoundError(APIError):\n    def __init__(self, code):\n        pass\n\nerr = NotFoundError(404)\nprint(hasattr(err, 'code'))",
+    "prediction": "What does this print: True or False?",
+    "common_guess": "True",
+    "why": "Because `NotFoundError` overrides `__init__` and does NOT call `super().__init__(code)`, the `APIError`'s `__init__` is skipped, so `self.code` is never set."
+  },
+  "challenge": {
+    "title": "Implement a Database Model hierarchy",
+    "prompt": "Create a base class `Model` with a `save` method printing 'saving to db'. Create a `UserModel` inheriting from `Model` whose `save` prints 'validating user' then calls the parent's `save` using `super()`.",
+    "solution": "class Model:\n    def save(self):\n        print('saving to db')\n\nclass UserModel(Model):\n    def save(self):\n        print('validating user')\n        super().save()"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/functions.html#super",
+    "https://docs.python.org/3/tutorial/classes.html#inheritance"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "What happens when a child class overrides `__init__` but forgets to call `super().__init__()`?",
+      "answer": "The parent's initialization logic will be skipped.",
+      "why": "This is dangerous because any attributes that the parent normally sets up in its `__init__` won't be created, leading to an `AttributeError` when other inherited methods try to access them."
+    },
+    {
+      "type": "predict-output",
+      "question": "What does this code print?",
+      "code": "class A:\n    def ping(self):\n        print('A')\n\nclass B(A):\n    def ping(self):\n        super().ping()\n        print('B')\n\nb = B()\nb.ping()",
+      "answer": "It prints `A` followed by `B`.",
+      "why": "The call to `b.ping()` runs the `ping` method in `B`. Inside `B.ping`, `super().ping()` delegates to the parent class `A`, printing 'A'. Then it resumes in `B` and prints 'B'."
+    }
+  ]
+}

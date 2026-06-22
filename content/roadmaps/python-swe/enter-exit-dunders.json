@@ -1,0 +1,94 @@
+{
+  "slug": "enter-exit-dunders",
+  "title": "__enter__ and __exit__",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["class-basics", "try-except"],
+    "unlocks": ["contextmanager-decorator", "async-context-managers"],
+    "project_usage": ["Database connections", "File I/O", "Locks"]
+  },
+  "overview": {
+    "what": "The `__enter__` and `__exit__` dunder methods define the context manager protocol, allowing objects to hook into the `with` statement. When `with Obj() as x:` runs, Python calls `Obj.__enter__()` and assigns its return value to `x`. When the block ends (normally or via exception), Python automatically calls `Obj.__exit__(exc_type, exc_val, traceback)`. If `__exit__` returns `True`, exceptions are suppressed. Think of them as automatic setup and teardown hooks for an object's lifecycle.",
+    "why": "They guarantee cleanup (like closing files or releasing locks) happens reliably, even if the code inside the block crashes, replacing repetitive `try/finally` blocks.",
+    "where_used": ["Custom database sessions", "Temporary file management", "Resource locks"]
+  },
+  "why_learning_this": [
+    "Write custom resources that cleanly manage their own state.",
+    "Understand how built-in context managers (like `open()`) work under the hood."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning self in __enter__ conditionally",
+      "explanation": "If `__enter__` does not return `self` (or another meaningful object), the variable assigned in `as var` will be `None`."
+    },
+    {
+      "title": "Forgetting the exit signature",
+      "explanation": "`__exit__` must accept exactly three arguments (`exc_type`, `exc_val`, `traceback`) after `self`. Defining it as `def __exit__(self):` raises a TypeError when exiting."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What triggers the `__enter__` and `__exit__` methods of an object?",
+      "answer": "Using the object in a `with` statement block.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does `__exit__` signal that an exception should be suppressed?",
+      "answer": "By returning `True`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What values are bound to the `as` variable in a `with` statement?",
+      "answer": "The value returned by the `__enter__` method.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class Dummy:\n  def __enter__(self):\n    print('Enter')\n    return 'Value'\n  def __exit__(self, exc_type, exc_val, tb):\n    print('Exit')\n\nwith Dummy() as d:\n  print(d)",
+      "question": "What is printed to the console?",
+      "answer": "Enter\nValue\nExit",
+      "why": "`__enter__` is called first, printing 'Enter'. Its return value 'Value' is bound to `d`. The block prints `d` ('Value'), and finally `__exit__` runs, printing 'Exit'."
+    },
+    {
+      "type": "predict-output",
+      "code": "class Suppressor:\n  def __enter__(self):\n    return self\n  def __exit__(self, exc_type, exc_val, tb):\n    print(f'Caught: {type(exc_val).__name__}')\n    return True\n\nwith Suppressor():\n  raise ValueError('oops')\nprint('Done')",
+      "question": "What is printed to the console?",
+      "answer": "Caught: ValueError\nDone",
+      "why": "The `ValueError` is caught by `__exit__`, which prints it. Because `__exit__` returns `True`, the exception is suppressed and execution continues to 'Done'."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Timer:\n  def __enter__(self):\n    print('Start')\n    return self\n  def __exit__(self, t, v, tb):\n    print('End')\n\nwith Timer():\n  print('Working')",
+    "focus": "with Timer():"
+  },
+  "aha_moment": {
+    "code": "class FakeFile:\n  def __enter__(self):\n    return 'data'\n  def __exit__(self, *args):\n    pass\n\nwith FakeFile() as f:\n  print(type(f).__name__)",
+    "prediction": "What type is printed?",
+    "common_guess": "FakeFile",
+    "why": "The variable `f` gets whatever `__enter__` returns, not necessarily the context manager instance itself. Since it returns the string 'data', `f` is a string."
+  },
+  "practice_tasks": [
+    {
+      "title": "Modify Exception Handling",
+      "prompt": "Given this context manager, change it so that it suppresses ONLY `KeyError` exceptions, and lets everything else propagate.",
+      "starter_code": "class MyContext:\n  def __enter__(self):\n    return self\n  def __exit__(self, exc_type, exc_val, tb):\n    return True",
+      "solution": "class MyContext:\n  def __enter__(self):\n    return self\n  def __exit__(self, exc_type, exc_val, tb):\n    return exc_type is KeyError"
+    }
+  ],
+  "challenge": {
+    "title": "A Simple Transaction Context",
+    "prompt": "Write a `Transaction` context manager that takes a dictionary. In `__enter__`, it should return a shallow copy of the dictionary. In `__exit__`, if no exception occurred, it should update the original dictionary with the copy's contents.",
+    "solution": "class Transaction:\n  def __init__(self, data):\n    self.data = data\n  def __enter__(self):\n    self.copy = self.data.copy()\n    return self.copy\n  def __exit__(self, exc_type, exc_val, tb):\n    if exc_type is None:\n      self.data.update(self.copy)"
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/datamodel.html#context-managers"
+  ]
+}

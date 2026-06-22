@@ -56,12 +56,27 @@
       "tier": "tier2"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What happens when you run this code?",
+      "code": "def prefix(p):\n    def decorator(func):\n        def wrapper():\n            return f\"{p} {func()}\"\n        return wrapper\n    return decorator\n\n@prefix\ndef say_hello():\n    return \"Alice\"\n\nprint(say_hello())",
+      "answer": "A TypeError is raised, or it behaves completely incorrectly (it actually returns the `decorator` function).",
+      "why": "The syntax `@prefix` means `say_hello = prefix(say_hello)`. `prefix` is a factory expecting the string `p`, but it receives the function `say_hello`. It returns `decorator`, meaning `say_hello` is now the `decorator` function itself. Decorator factories must be called: `@prefix('Hello')`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "When defining a decorator factory, why do we need three levels of nested functions instead of two?",
+      "answer": "Because the factory needs to take the configuration arguments, return a decorator that takes the target function, which in turn returns the wrapper that takes the runtime arguments.",
+      "why": "Standard decorators take the function automatically. A factory function isn't a decorator itself; it's a function that returns a decorator. Thus, Level 1: take config arguments, Level 2: take target function, Level 3: take target function's arguments."
+    }
+  ],
   "practice_tasks": [
     {
-      "title": "Write a retry factory",
-      "prompt": "Write a decorator factory called `timeout_retry` that takes an integer `max_attempts`. The decorator should execute the decorated function the specified number of times, and return the result of the final execution. For this task, we will simulate a network request.",
-      "starter_code": "def timeout_retry(max_attempts):\n  pass\n\n@timeout_retry(max_attempts=3)\ndef fetch_user_profile(user_id):\n  print(f'Fetching {user_id}')\n  return {'id': user_id, 'name': 'Alice'}",
-      "solution": "import functools\n\ndef timeout_retry(max_attempts):\n  def decorator(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n      result = None\n      for _ in range(max_attempts):\n        result = func(*args, **kwargs)\n      return result\n    return wrapper\n  return decorator"
+      "name": "Add Configuration to a Decorator",
+      "description": "We have a basic `@retry` decorator that retries a function 3 times. Modify it into a decorator factory `retry(max_retries)` so we can configure the number of retries per function.",
+      "starter_code": "import functools\n\ndef retry(func): # TODO: Change to a factory taking `max_retries`\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        for _ in range(3): # TODO: Use max_retries\n            result = func(*args, **kwargs)\n        return result\n    return wrapper\n\n# TODO: Update this to @retry(max_retries=2)\n@retry\ndef fetch():\n    return 'data'",
+      "solution_code": "import functools\n\ndef retry(max_retries):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for _ in range(max_retries):\n                result = func(*args, **kwargs)\n            return result\n        return wrapper\n    return decorator\n\n@retry(max_retries=2)\ndef fetch():\n    return 'data'"
     }
   ],
   "code_walkthrough": {
@@ -76,8 +91,7 @@
   },
   "challenge": {
     "title": "Rate Limiting Factory",
-    "prompt": "Create a decorator factory `rate_limit` that accepts an integer `max_requests`. It should decorate a function representing an API endpoint. If the endpoint is called more than `max_requests` times, the wrapper should return the string `'Rate limit exceeded'`. Otherwise, it should increment a counter and return the function's result. You can use an attribute on the wrapper itself to store the call count.",
-    "solution": "import functools\n\ndef rate_limit(max_requests):\n  def decorator(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n      if wrapper.calls >= max_requests:\n        return 'Rate limit exceeded'\n      wrapper.calls += 1\n      return func(*args, **kwargs)\n    wrapper.calls = 0\n    return wrapper\n  return decorator"
+    "prompt": "Create a decorator factory `rate_limit` that accepts an integer `max_requests`. It should decorate a function representing an API endpoint. If the endpoint is called more than `max_requests` times, the wrapper should return the string `'Rate limit exceeded'`. Otherwise, it should increment a counter and return the function's result. You can use an attribute on the wrapper itself to store the call count."
   },
   "sources": [
     "https://docs.python.org/3/reference/compound_stmts.html#function-definitions",

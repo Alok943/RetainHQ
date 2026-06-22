@@ -1,0 +1,95 @@
+{
+  "slug": "join-keys",
+  "title": "ON vs USING & Join Keys",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": ["inner-join"],
+    "unlocks": [],
+    "project_usage": ["cleaner join syntax in analytics", "multi-column key joins", "natural key matching"]
+  },
+  "overview": {
+    "what": "Every join needs a condition that says which rows match. SQL gives you two syntaxes for this:\n\n1. ON — the general-purpose form. Write any boolean expression:\n   FROM orders o JOIN customers c ON c.id = o.customer_id\n\n2. USING — a shorthand when the join column has the SAME name in BOTH tables:\n   FROM order_items oi JOIN orders o USING (id)  -- WRONG: 'id' means different things!\n   USING only works when the column name is identical on both sides AND means the same thing.\n\nIn the shared dataset, no foreign-key column shares its name with the referenced primary key (customer_id ≠ id, order_id ≠ id), so ON is the correct choice for these tables. USING would be appropriate if the orders table had a column called 'customer_id' and the customers table also had a column called 'customer_id'.\n\nJoin keys can be composite — matching on multiple columns:\n   ON a.col1 = b.col1 AND a.col2 = b.col2\nor\n   USING (col1, col2)\n\nMental model: ON is a free-form filter applied during the join. USING is syntactic sugar for ON when the column name is shared.",
+    "why": "Choosing the right join-condition syntax makes queries more readable. USING eliminates redundant column names in SELECT * results (the shared column appears once, not twice). Understanding join keys also helps you identify correct foreign-key relationships and avoid accidental Cartesian products.",
+    "where_used": ["any multi-table query choosing between ON and USING", "composite key joins in normalized schemas", "code reviews debating join style"]
+  },
+  "why_learning_this": [
+    "Knowing when USING applies lets you write cleaner, shorter joins — and knowing when it does NOT apply prevents subtle bugs",
+    "Understanding composite join keys prepares you for real schemas where single-column keys are not enough"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using USING when column names differ",
+      "explanation": "USING (customer_id) only works if BOTH tables have a column named customer_id. In the shared dataset, customers has 'id' and orders has 'customer_id' — different names, so USING fails. Use ON c.id = o.customer_id instead."
+    },
+    {
+      "title": "Qualifying a USING column with a table alias",
+      "explanation": "After USING (product_id), the joined column belongs to neither table exclusively. Writing oi.product_id in SELECT is valid, but in the USING clause itself you must not qualify: USING (product_id), not USING (oi.product_id)."
+    },
+    {
+      "title": "Forgetting that USING deduplicates the column",
+      "explanation": "SELECT * with ON shows the join column twice (once per table). SELECT * with USING shows it once. This can surprise you if you are counting columns or building dynamic queries."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "When can you use USING instead of ON?",
+      "answer": "When the join column has the exact same name in both tables.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference in SELECT * output between ON and USING?",
+      "answer": "With ON, the join column appears twice (once per table). With USING, it appears only once because the database merges the two identical columns.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you join on a composite key with ON?",
+      "answer": "List multiple equality conditions joined by AND: ON a.col1 = b.col1 AND a.col2 = b.col2.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT o.id AS order_id, c.name\nFROM orders o\nINNER JOIN customers c ON c.id = o.customer_id\nWHERE c.country = 'US'\nORDER BY o.id;",
+      "question": "What rows does this return?",
+      "answer": "1, Alice\n2, Alice\n3, Bob\n8, Bob",
+      "why": "US customers are Alice (id=1), Bob (id=2), and Greg (id=7). The INNER JOIN matches orders to their customers. Alice has orders 1 and 2, Bob has orders 3 and 8. Greg has no orders so he does not appear in the joined result."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A developer writes: SELECT * FROM orders o JOIN customers c USING (id); — This runs without error but returns unexpected results. Why?",
+      "answer": "USING (id) matches orders.id to customers.id — it treats the order's primary key as if it equals the customer's primary key. This is wrong: order 1 gets paired with customer 1, order 2 with customer 2, etc. — which happens to look plausible for small IDs but is semantically incorrect. The correct join is ON c.id = o.customer_id, because customer_id is the foreign key.",
+      "why": "USING requires the column name to be the same AND to represent the same concept. Here 'id' exists in both tables but means different things (order ID vs customer ID). This is why ON is necessary when column names differ or are ambiguous."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.name, o.id AS order_id, p.name AS product\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nINNER JOIN order_items oi ON oi.order_id = o.id\nINNER JOIN products p ON p.id = oi.product_id\nWHERE c.name = 'Carlos'\nORDER BY o.id, p.name;",
+    "flow_stages": ["from", "join", "where", "select", "order_by"],
+    "visualization": "join-diagram",
+    "focus": "Each ON clause uses different column names (customer_id→id, order_id→id, product_id→id) — USING would not work here because the foreign key columns are named differently from the primary keys they reference."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add an extra join condition",
+      "prompt": "This query joins orders to customers but includes ALL orders. Modify the ON clause to also filter for only 'paid' orders — add AND o.status = 'paid' to the ON condition (not in a WHERE clause). Keep the ordering.",
+      "starter_code": "SELECT c.name, o.id AS order_id, o.status\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nORDER BY c.name, o.id;",
+      "solution": "SELECT c.name, o.id AS order_id, o.status\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id AND o.status = 'paid'\nORDER BY c.name, o.id;"
+    }
+  ],
+  "challenge": {
+    "title": "Find customers and their Furniture orders",
+    "prompt": "Write a query that lists each customer name, order ID, and product name for order items in the 'Furniture' category only. Use ON for all joins. Order by customer name, then order ID.",
+    "solution": "SELECT c.name, o.id AS order_id, p.name AS product\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nINNER JOIN order_items oi ON oi.order_id = o.id\nINNER JOIN products p ON p.id = oi.product_id\nWHERE p.category = 'Furniture'\nORDER BY c.name, o.id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN",
+    "https://www.postgresql.org/docs/current/sql-select.html#SQL-FROM"
+  ]
+}

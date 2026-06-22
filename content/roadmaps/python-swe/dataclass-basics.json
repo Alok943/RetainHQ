@@ -1,0 +1,89 @@
+{
+  "slug": "dataclass-basics",
+  "title": "@dataclass Basics",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["class-basics", "init-vs-new", "str-vs-repr", "type-hints-basics"],
+    "unlocks": ["dataclass-field"],
+    "project_usage": ["Data models", "API responses", "Configuration objects"]
+  },
+  "overview": {
+    "what": "The `@dataclass` decorator in Python automatically generates boilerplate code for classes that primarily store data. When you add it to a class with type-hinted attributes, it automatically writes the `__init__()`, `__repr__()`, and `__eq__()` methods for you behind the scenes.\n\nThe mental model is a 'code generator': the decorator inspects the class at definition time, looks at the type hints, and injects the standard dunder methods into the class dictionary as if you had typed them yourself.",
+    "why": "It eliminates the repetitive and error-prone work of writing `def __init__(self, x): self.x = x` for every data object.",
+    "where_used": ["Defining ORM models", "Config structures", "Returning structured data from functions"]
+  },
+  "why_learning_this": [
+    "You can define a class with 5 attributes in 6 lines of code instead of 20.",
+    "Your classes automatically get a readable string representation and value-based equality comparison."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting type hints",
+      "explanation": "The `@dataclass` decorator only recognizes fields that have type annotations. A plain assignment like `x = 5` in the class body will be completely ignored by the dataclass generator."
+    },
+    {
+      "title": "Default mutable arguments",
+      "explanation": "If you assign a mutable default like `items: list = []`, all instances will share the same list. Dataclasses protect against this by raising a ValueError, but it catches beginners off guard."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which three dunder methods does `@dataclass` automatically generate by default?",
+      "answer": "It automatically generates `__init__()`, `__repr__()`, and `__eq__()`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the dataclass decorator know which attributes to include in the generated methods?",
+      "answer": "It looks at the class attributes that have type annotations.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y = 0\n\np = Point(5)\nprint(p)",
+      "question": "What does this code print?",
+      "answer": "Point(x=5)",
+      "why": "The attribute 'y' has no type hint, so @dataclass ignores it. It only generates an __init__ and __repr__ for the annotated 'x' field."
+    },
+    {
+      "type": "predict-output",
+      "code": "from dataclasses import dataclass\n\n@dataclass\nclass User:\n    name: str\n\nu1 = User('Alice')\nu2 = User('Alice')\nprint(u1 == u2)",
+      "question": "What does this code print?",
+      "answer": "True",
+      "why": "The @dataclass decorator automatically generates an __eq__ method that compares the instances' attributes. Since both have name='Alice', they evaluate as equal."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from dataclasses import dataclass\n\n@dataclass\nclass Product:\n    name: str\n    price: float\n\nitem = Product('Apple', 1.5)\nprint(item)",
+    "focus": "@dataclass"
+  },
+  "aha_moment": {
+    "code": "class NormalClass:\n    def __init__(self, name: str):\n        self.name = name\n\nn1 = NormalClass('Bob')\nn2 = NormalClass('Bob')\nprint(n1 == n2)",
+    "prediction": "Do two standard classes with identical attributes equal each other?",
+    "common_guess": "True, because they have the same data.",
+    "why": "It prints False. By default, custom classes use identity (memory address) for equality. Dataclasses fix this by automatically generating an __eq__ method for value equality."
+  },
+  "practice_tasks": [
+    {
+      "title": "Convert to dataclass",
+      "prompt": "Convert this standard class into a dataclass to remove the boilerplate `__init__` and `__repr__` methods.",
+      "starter_code": "from dataclasses import dataclass\n\nclass Config:\n    def __init__(self, host: str, port: int):\n        self.host = host\n        self.port = port\n\n    def __repr__(self):\n        return f'Config(host={self.host!r}, port={self.port!r})'",
+      "solution": "from dataclasses import dataclass\n\n@dataclass\nclass Config:\n    host: str\n    port: int"
+    }
+  ],
+  "challenge": {
+    "title": "Dataclass with Defaults",
+    "prompt": "Create a dataclass `Server` with a `host` (str) and a `port` (int). Set the default value of `port` to 80.",
+    "solution": "from dataclasses import dataclass\n\n@dataclass\nclass Server:\n    host: str\n    port: int = 80"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/dataclasses.html"
+  ]
+}

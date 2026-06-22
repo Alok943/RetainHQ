@@ -9,14 +9,24 @@
     "estimated_minutes": 20,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["decorators"],
+    "prerequisites": [
+      "decorators"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Flask", "Django"]
+    "project_usage": [
+      "FastAPI",
+      "Flask",
+      "Django"
+    ]
   },
   "overview": {
     "what": "When you apply multiple decorators to a function (stacking them with `@`), they are applied bottom-to-top (closest to the function first). The original function is passed to the bottom decorator, the result of that is passed to the decorator above it, and so on. Think of it like wrapping a gift: the first box (bottom decorator) wraps the item directly, and the next box (top decorator) wraps the inner box.",
-    "why": "It allows composing small, reusable behaviors—like adding both authentication and logging to a single web route without writing a single monolithic decorator.",
-    "where_used": ["FastAPI routes", "Flask views", "Class method definitions"]
+    "why": "It allows composing small, reusable behaviors\u2014like adding both authentication and logging to a single web route without writing a single monolithic decorator.",
+    "where_used": [
+      "FastAPI routes",
+      "Flask views",
+      "Class method definitions"
+    ]
   },
   "why_learning_this": [
     "You will often need to apply multiple middleware-like functions to a single endpoint in web frameworks.",
@@ -69,5 +79,20 @@
   },
   "sources": [
     "https://docs.python.org/3/reference/compound_stmts.html#function"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the output of this stacked decorator code?",
+      "code": "def bold(f):\n    return lambda: f'<b>{f()}</b>'\n\ndef italic(f):\n    return lambda: f'<i>{f()}</i>'\n\n@bold\n@italic\ndef greet():\n    return 'hi'\n\nprint(greet())",
+      "answer": "<b><i>hi</i></b>",
+      "why": "The decorators are applied bottom-to-top, so `italic` wraps `greet` first resulting in `<i>hi</i>`, and then `bold` wraps that result, putting `<b>` on the outside."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why might a function lose its original name when multiple decorators are stacked?",
+      "answer": "Because the decorators return wrapper functions, masking the original function's metadata.",
+      "why": "Unless every decorator in the stack uses `@functools.wraps`, the final returned function will just be the wrapper from the topmost decorator, losing the original name and docstring."
+    }
   ]
 }

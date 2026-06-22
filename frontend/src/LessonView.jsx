@@ -1,13 +1,24 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import CodeTrace from './CodeTrace';
+import SqlResult from './SqlResult';
 
 const TIER_LABEL = { tier1: 'Tier 1', tier2: 'Tier 2', tier3: 'Tier 3' };
 const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
 const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
+
+// Understanding-check intents → badge label, colour, icon.
+const CHECK_META = {
+  'predict-output': { label: 'Predict the output', color: '#7C3AED', icon: <Sparkles size={11} /> },
+  'predict-result': { label: 'Predict the result', color: '#0891B2', icon: <Table size={11} /> },
+  'find-bug': { label: 'Find the bug', color: '#B91C1C', icon: <Bug size={11} /> },
+  'explain-behavior': { label: 'Explain the behaviour', color: '#0891B2', icon: <HelpCircle size={11} /> },
+  'choose-model': { label: 'Pick the correct model', color: '#B45309', icon: <GitBranch size={11} /> },
+  'debug-misconception': { label: 'Debug the misconception', color: '#0F766E', icon: <Lightbulb size={11} /> },
+};
 
 export default function LessonView() {
   const { id, slug } = useParams();
@@ -31,12 +42,24 @@ export default function LessonView() {
   // Predict-before-reveal gate for the aha_moment block.
   const [ahaRevealed, setAhaRevealed] = useState(false);
 
+  // Per-check predict-before-reveal gates for understanding_checks.
+  const [checksRevealed, setChecksRevealed] = useState(new Set());
+  const toggleCheck = useCallback((i) => {
+    setChecksRevealed((s) => {
+      const ns = new Set(s);
+      ns.has(i) ? ns.delete(i) : ns.add(i);
+      return ns;
+    });
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
       setAhaRevealed(false);
+      setRevealed(new Set());
+      setChecksRevealed(new Set());
       try {
         // Get the content key — prefer router state if passed, else fetch roadmap meta
         let contentKey = location.state?.contentKey;
@@ -195,12 +218,21 @@ export default function LessonView() {
         </Section>
       )}
 
-      {/* --- §3 Watch it run (CodeTrace) --- */}
-      {lesson.code_walkthrough && (
+      {/* --- §3 Watch it run — SQL (query result table) or Python (CodeTrace) --- */}
+      {lesson.runtime === 'sql' && lesson.query_walkthrough ? (
+        <Section icon={<Database size={16} />} title="Run the query" accent="#0891B2">
+          <SqlResult
+            query={lesson.query_walkthrough.query}
+            setupSql={lesson.query_walkthrough.setup_sql}
+            focus={lesson.query_walkthrough.focus}
+            flowStages={lesson.query_walkthrough.flow_stages}
+          />
+        </Section>
+      ) : lesson.code_walkthrough ? (
         <Section icon={<Code2 size={16} />} title="Watch it run">
           <CodeTrace code={lesson.code_walkthrough.code} focus={lesson.code_walkthrough.focus} />
         </Section>
-      )}
+      ) : null}
 
       {/* --- §4 Common mistakes --- */}
       {lesson.common_mistakes?.length > 0 && (
@@ -239,6 +271,59 @@ export default function LessonView() {
                 )}
               </div>
             ))}
+          </div>
+        </Section>
+      )}
+
+      {/* --- §5b Understanding checks (mental-model probes) --- */}
+      {lesson.understanding_checks?.length > 0 && (
+        <Section icon={<Brain size={16} />} title="Check your understanding" accent="#7C3AED">
+          <p className="font-sans text-xs text-[#64748B] mb-3">Predict before you reveal — a correct prediction proves you understand the model.</p>
+          <div className="flex flex-col gap-3">
+            {lesson.understanding_checks.map((c, i) => {
+              const meta = CHECK_META[c.type] || CHECK_META['explain-behavior'];
+              const open = checksRevealed.has(i);
+              const snippet = c.code || c.query;
+              const tracePython = (c.type === 'predict-output' || c.type === 'find-bug') && c.code;
+              const runSqlCheck = c.type === 'predict-result' && c.query;
+              return (
+                <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3.5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-sans text-[10px] font-bold uppercase tracking-wider border"
+                      style={{ color: meta.color, borderColor: meta.color + '40', background: meta.color + '0d' }}
+                    >
+                      {meta.icon} {meta.label}
+                    </span>
+                  </div>
+                  <div className="font-sans text-sm font-semibold text-[#0F172A] mb-2 leading-relaxed">{c.question}</div>
+                  {snippet && (
+                    <pre className="m-0 mb-3 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[12.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0">{snippet}</pre>
+                  )}
+                  <button
+                    onClick={() => toggleCheck(i)}
+                    className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#7C3AED] hover:text-[#0F172A] transition-colors"
+                  >
+                    {open ? <EyeOff size={13} /> : <Eye size={13} />}
+                    {open ? 'Hide answer' : 'Reveal answer'}
+                  </button>
+                  {open && (
+                    <div className="mt-3 flex flex-col gap-3 animate-in fade-in duration-200">
+                      <div className="rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
+                        <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">Answer</div>
+                        <pre className="m-0 font-mono text-[13px] text-[#0F172A] whitespace-pre-wrap leading-relaxed">{c.answer}</pre>
+                      </div>
+                      <div className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/[0.05] p-3">
+                        <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] mb-1">Why</div>
+                        <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{c.why}</p>
+                      </div>
+                      {tracePython && <CodeTrace code={c.code} />}
+                      {runSqlCheck && <SqlResult query={c.query} autoRunLabel="Run to confirm" />}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Section>
       )}

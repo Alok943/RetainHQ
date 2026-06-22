@@ -1,0 +1,101 @@
+{
+  "slug": "instance-vs-class-vars",
+  "title": "Instance variables vs class variables",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "class-basics"
+    ],
+    "unlocks": [
+      "method-types"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic",
+      "Django"
+    ]
+  },
+  "overview": {
+    "what": "Class variables are shared across all instances of a class, whereas instance variables are unique to each specific object. Think of a class variable as a shared whiteboard in a conference room, while instance variables are each employee's personal notebook. When Python looks up an attribute (e.g., `self.name`), it checks the instance's dictionary first; if not found, it falls back to the shared class dictionary.",
+    "why": "It allows you to store state that applies to the entire group (like a connection pool, a constant, or a shared counter) without duplicating it in every object, saving memory and keeping state centralized.",
+    "where_used": [
+      "Django Model fields",
+      "SQLAlchemy declarative base",
+      "Pydantic schema definitions"
+    ]
+  },
+  "why_learning_this": [
+    "Django ORM models use class variables to define database columns",
+    "Pydantic models use class variables with type hints for schema definition",
+    "Avoiding accidental shared state bugs across instances"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Mutating shared class variables",
+      "explanation": "Modifying a mutable class variable (like a list or dict) through an instance changes it for all instances because they all point to the exact same object in memory. Fix: Initialize mutable variables inside `__init__` as instance variables."
+    },
+    {
+      "title": "Shadowing class variables",
+      "explanation": "Assigning to an attribute via `self.var = value` creates an instance variable, hiding the class variable of the same name for that specific instance, rather than updating the shared class variable."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Where does Python look first when you try to read an attribute from an object?",
+      "answer": "It looks in the instance's dictionary first. If not found, it falls back to the shared class dictionary.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference in how instance and class variables are shared?",
+      "answer": "Class variables are shared across all instances of a class, while instance variables belong exclusively to a single instance.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the connection counter",
+      "prompt": "The provided Connection class tracks connections incorrectly by updating an instance variable instead of the class variable. Modify the __init__ method so it properly increments the shared \total_connections class variable.",
+      "starter_code": "class Connection:\n    total_connections = 0\n\n    def __init__(self):\n        self.total_connections += 1\n\nc1 = Connection()\nc2 = Connection()\nprint(Connection.total_connections)",
+      "solution": "class Connection:\n    total_connections = 0\n\n    def __init__(self):\n        Connection.total_connections += 1\n\nc1 = Connection()\nc2 = Connection()\nprint(Connection.total_connections)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Employee:\n  company = 'Acme Corp'\n  \n  def __init__(self, name):\n    self.name = name\n\ne1 = Employee('Alice')\ne2 = Employee('Bob')\nprint(e1.company)\nprint(e2.company)\nEmployee.company = 'GlobalTech'\nprint(e1.company)",
+    "focus": "Employee.company = 'GlobalTech' changes the class variable, affecting the output of e1.company since e1 falls back to the class."
+  },
+  "aha_moment": {
+    "code": "class Server:\n  logs = []\n  def __init__(self, name):\n    self.name = name\n\ns1 = Server('web')\ns2 = Server('db')\ns1.logs.append('started')\nprint(s2.logs)",
+    "prediction": "What does this print?",
+    "common_guess": "[]",
+    "why": "Because `logs` is a class variable, `s1.logs.append()` mutates the single shared list. To give each server its own logs, `logs = []` must be assigned to `self` in `__init__`."
+  },
+  "challenge": {
+    "title": "Fix the Shared Cache Bug",
+    "prompt": "The `Route` class below uses a class variable to store cached responses. Unfortunately, every route is sharing the exact same cache dictionary! Fix it by moving the cache to be an instance variable so each route has its own empty dictionary when created.",
+    "solution": "class Route:\n  def __init__(self, path):\n    self.path = path\n    self.cache = {}\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html#class-and-instance-variables"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code print?",
+      "code": "class Dog:\n    tricks = []\n    def __init__(self, name):\n        self.name = name\n\nd1 = Dog('Fido')\nd2 = Dog('Buddy')\nd1.tricks.append('roll over')\nprint(d2.tricks)",
+      "answer": "['roll over']",
+      "why": "Because \tricks is a class variable and a mutable list, it is shared across all instances. Modifying it via one instance affects the shared list seen by all other instances."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you have a class variable counter = 0 and you execute self.counter = 5 inside an instance method, what happens?",
+      "answer": "It creates a new instance variable named counter for that specific instance, shadowing the class variable. The class variable remains 0.",
+      "why": "Assigning directly to self.attribute always writes to the instance's dictionary. It does not update the shared class dictionary unless you explicitly use the class name, like MyClass.counter = 5."
+    }
+  ]
+}

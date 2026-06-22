@@ -1,0 +1,89 @@
+{
+  "slug": "type-checking-imports",
+  "title": "TYPE_CHECKING for Avoiding Circular Imports",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": ["type-hints-basics"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Django", "SQLAlchemy models"]
+  },
+  "overview": {
+    "what": "In Python, using type hints often requires importing classes from other modules. If two modules import each other just for type hinting, it creates a 'circular import' error at runtime. `typing.TYPE_CHECKING` is a special constant that is `True` when the type checker (like mypy) is running, but `False` at runtime. By placing type-only imports inside an `if TYPE_CHECKING:` block, you hide them from Python at runtime, preventing the circular import.\n\nThe mental model is 'two parallel universes': one universe where the type checker runs (and sees the imports), and another where Python runs the code (and skips the imports).",
+    "why": "It solves the catch-22 of needing to import a module to annotate types, but not being able to import it because it would cause a circular import crash.",
+    "where_used": ["Bidirectional relationships in ORM models", "Complex project structures", "Interdependent service layers"]
+  },
+  "why_learning_this": [
+    "You can type hint complex architectures without restructuring your entire codebase to avoid import cycles.",
+    "It reduces runtime overhead because type-only modules aren't loaded into memory."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using the imported name directly at runtime",
+      "explanation": "If an import is guarded by `if TYPE_CHECKING:`, it doesn't exist at runtime. Using it outside of string-based type hints (or `from __future__ import annotations`) will cause a `NameError`."
+    },
+    {
+      "title": "Forgetting string annotations",
+      "explanation": "Without `from __future__ import annotations`, you must use string literals for types imported under `TYPE_CHECKING`, like `def foo(user: 'User'):`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the value of `typing.TYPE_CHECKING` when a Python script is executed?",
+      "answer": "False",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does `TYPE_CHECKING` prevent circular import errors?",
+      "answer": "It hides type-only imports from the Python runtime interpreter by placing them in an `if TYPE_CHECKING:` block, while the static type checker still sees them.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    x = 10\nelse:\n    x = 20\n\nprint(x)",
+      "question": "What does this code print when executed by Python?",
+      "answer": "20",
+      "why": "At runtime, TYPE_CHECKING is always False, so the code inside the else block executes."
+    },
+    {
+      "type": "find-bug",
+      "code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class User:\n        pass\n\ndef create_user() -> User:\n    return User()",
+      "question": "Where is the runtime bug in this code?",
+      "answer": "return User() raises a NameError.",
+      "why": "The User class is defined inside the TYPE_CHECKING block, so it doesn't exist at runtime. You cannot instantiate it."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from typing import Dict\n\ndef process(data: 'Dict') -> None:\n    print('Processed')\n\nprocess({})",
+    "focus": "if TYPE_CHECKING:"
+  },
+  "aha_moment": {
+    "code": "from typing import TYPE_CHECKING\n\nprint(TYPE_CHECKING)",
+    "prediction": "What is the value of TYPE_CHECKING at runtime?",
+    "common_guess": "True, because type checking type-hints are built into Python.",
+    "why": "It prints False. Python itself does not enforce types at runtime; the static type checker runs entirely separately."
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix the NameError",
+      "prompt": "This code raises a NameError because Database is imported under TYPE_CHECKING but used natively as a type hint. Fix the type hint so it works at runtime by making it a string.",
+      "starter_code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class Database: pass\n\ndef connect(db: Database) -> None:\n    pass",
+      "solution": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class Database: pass\n\ndef connect(db: 'Database') -> None:\n    pass"
+    }
+  ],
+  "challenge": {
+    "title": "Future annotations",
+    "prompt": "Instead of string quotes, use `from __future__ import annotations` at the top of the file so `Database` can be written normally.",
+    "solution": "from __future__ import annotations\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class Database: pass\n\ndef connect(db: Database) -> None:\n    pass"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING"
+  ]
+}

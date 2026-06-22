@@ -59,8 +59,8 @@
   "practice_tasks": [
     {
       "title": "Flatten a list of tuples",
-      "prompt": "You have a list of coordinate tuples: `coords = [(1, 2), (3, 4), (5, 6)]`. Write a single list comprehension that flattens this into `[1, 2, 3, 4, 5, 6]`.",
-      "starter_code": "coords = [(1, 2), (3, 4), (5, 6)]",
+      "prompt": "Modify the provided code to use a nested list comprehension instead of nested `for` loops to flatten the list of tuples.",
+      "starter_code": "coords = [(1, 2), (3, 4), (5, 6)]\nflat = []\nfor pair in coords:\n    for num in pair:\n        flat.append(num)\nprint(flat)",
       "solution": "coords = [(1, 2), (3, 4), (5, 6)]\nflat = [num for pair in coords for num in pair]\nprint(flat)"
     }
   ],
@@ -75,5 +75,21 @@
   },
   "sources": [
     "https://docs.python.org/3/tutorial/datastructures.html#nested-list-comprehensions"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "code": "matrix = [[1, 2], [3, 4]]\nflat = [num for num in row for row in matrix]",
+      "question": "Why does this code raise a `NameError: name 'row' is not defined`?",
+      "answer": "Because the multiple `for` clauses in a comprehension are evaluated from left to right. The code attempts to iterate over `row` (`for num in row`) before `row` has been defined by the outer loop (`for row in matrix`).",
+      "why": "The correct order must match how standard nested loops are written top-to-bottom: the outer loop comes first. It should be `[num for row in matrix for num in row]`."
+    },
+    {
+      "type": "predict-output",
+      "code": "matrix = [[1, 2], [3, 4]]\nsquared_matrix = [[num * num for num in row] for row in matrix]\nprint(squared_matrix)",
+      "question": "What is the output of this code?",
+      "answer": "[[1, 4], [9, 16]]",
+      "why": "This is a list comprehension nested *inside* another list comprehension, not multiple `for` clauses in a single comprehension. The outer comprehension iterates over rows in the matrix, and for each row, the inner comprehension creates a new list with squared numbers, thus retaining the 2D structure."
+    }
   ]
 }

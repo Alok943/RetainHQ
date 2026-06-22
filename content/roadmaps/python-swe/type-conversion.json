@@ -9,14 +9,25 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["primitive-types", "dynamic-typing"],
+    "prerequisites": [
+      "primitive-types",
+      "dynamic-typing"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI query/path params", "parsing env vars", "JSON payload handling"]
+    "project_usage": [
+      "FastAPI query/path params",
+      "parsing env vars",
+      "JSON payload handling"
+    ]
   },
   "overview": {
     "what": "Type conversion turns a value of one type into another. Implicit conversion happens automatically, but ONLY between numeric types — e.g. 5 + 2.0 promotes the int to a float and gives 7.0. Explicit conversion (casting) is when you call a constructor yourself: int('42') -> 42, str(42) -> '42', float('3.5') -> 3.5. Across non-numeric types Python never converts for you — 'id_' + 5 raises a TypeError. Think of implicit conversion as Python quietly widening compatible numbers, and explicit casting as you manually translating — a translation that can fail (int('abc') raises ValueError).",
     "why": "APIs hand you strings (query params, env vars), so you constantly cast '42' to 42 — and that cast can fail, so it must be guarded. Knowing implicit conversion applies only to numbers explains why concatenating a string and an int throws instead of auto-casting.",
-    "where_used": ["FastAPI query/path params", "parsing env vars", "JSON payload handling"]
+    "where_used": [
+      "FastAPI query/path params",
+      "parsing env vars",
+      "JSON payload handling"
+    ]
   },
   "why_learning_this": [
     "Casting string inputs (query params, env vars) to int/float before use, and handling bad input",
@@ -52,8 +63,8 @@
   "practice_tasks": [
     {
       "title": "Safe integer cast",
-      "prompt": "Write to_int(value, fallback) that returns int(value) when it can be parsed, otherwise returns fallback. Test it with '42' and with 'abc'.",
-      "starter_code": "def to_int(value, fallback):\n    pass",
+      "prompt": "The to_int function currently just returns the original value without modifying it. Modify its behavior to explicitly cast 'value' to an integer. If the cast fails with a ValueError, catch it and return the 'fallback' value.",
+      "starter_code": "def to_int(value, fallback):\n    # TODO: Modify this to cast value to int, catching ValueError and returning fallback\n    return value\n\nprint(to_int('42', 0))\nprint(to_int('abc', 0))",
       "solution": "def to_int(value, fallback):\n    try:\n        return int(value)\n    except ValueError:\n        return fallback\n\nprint(to_int('42', 0))\nprint(to_int('abc', 0))"
     }
   ],
@@ -69,5 +80,21 @@
   "sources": [
     "https://docs.python.org/3/library/functions.html#int",
     "https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "result = 5 + 2.0\nprint(type(result))\n",
+      "question": "What is the output of this code?",
+      "answer": "<class 'float'>",
+      "why": "Python implicitly converts between numeric types, so it promotes the integer 5 to a float to match 2.0."
+    },
+    {
+      "type": "find-bug",
+      "code": "age = 25\nmessage = \"I am \" + age + \" years old.\"",
+      "question": "What is the bug in this code?",
+      "answer": "It raises a TypeError because Python doesn't implicitly convert integers to strings.",
+      "why": "You cannot concatenate a string and an integer. You must explicitly cast the integer using `str(age)` or use an f-string."
+    }
   ]
 }

@@ -63,9 +63,9 @@
   "practice_tasks": [
     {
       "title": "Safe dictionary lookup",
-      "prompt": "Write a function `get_user_name(user_dict)` that returns the value of the 'name' key. If the key is missing, catch the `KeyError` and return 'Anonymous'.",
-      "starter_code": "def get_user_name(user_dict):\n    pass",
-      "solution": "def get_user_name(user_dict):\n    try:\n        return user_dict['name']\n    except KeyError:\n        return 'Anonymous'\n\nprint(get_user_name({'id': 1}))"
+      "prompt": "The get_user_name function currently works for valid user dictionaries. Modify it to handle missing 'name' keys by catching a KeyError and returning 'Anonymous' instead of crashing.",
+      "starter_code": "def get_user_name(user_dict):\n    # TODO: Add a try/except block to handle KeyError\n    return user_dict['name']\n\nprint(get_user_name({'id': 1, 'name': 'Alice'}))\n# Uncommenting the line below currently crashes. Fix it!\n# print(get_user_name({'id': 2}))",
+      "solution": "def get_user_name(user_dict):\n    try:\n        return user_dict['name']\n    except KeyError:\n        return 'Anonymous'\n\nprint(get_user_name({'id': 1, 'name': 'Alice'}))\nprint(get_user_name({'id': 2}))"
     }
   ],
   "code_walkthrough": {
@@ -86,5 +86,20 @@
   "sources": [
     "https://docs.python.org/3/tutorial/errors.html#handling-exceptions",
     "https://docs.python.org/3/library/exceptions.html#exception-hierarchy"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "try:\n    int(\"hello\")\nexcept ValueError as e:\n    print(\"Handled\")",
+      "question": "What does this print?",
+      "answer": "Handled",
+      "why": "int(\"hello\") raises a ValueError, so execution jumps to the except ValueError block and prints 'Handled'."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer writes a script that wraps all logic in a single `try:` block with a bare `except:` at the bottom to prevent crashes. Why is this a bad idea?",
+      "answer": "It catches everything, including SystemExit and KeyboardInterrupt (Ctrl+C), making the program un-stoppable and hiding actual bugs.",
+      "why": "A bare except catches BaseException. You should catch specific exception types (like ValueError) to only handle anticipated errors."
+    }
   ]
 }

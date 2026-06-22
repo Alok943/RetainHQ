@@ -1,0 +1,96 @@
+{
+  "slug": "order-by-limit",
+  "title": "ORDER BY, LIMIT & OFFSET",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["select-from", "where-operators"],
+    "unlocks": ["over-partition-by"],
+    "project_usage": ["paginated API endpoints", "top-N reports", "leaderboards"]
+  },
+  "overview": {
+    "what": "Without ORDER BY, SQL returns rows in no guaranteed order — the same query can return rows in a different sequence each time. ORDER BY sorts the output row-set by one or more columns.\n\nASC (ascending, the default) sorts low-to-high; DESC sorts high-to-low:\n\n  SELECT name, price\n  FROM products\n  ORDER BY price DESC;\n\nReturns 6 rows: Monitor (199.99), Desk (149.99), Chair (89.99), Keyboard (49.99), Mouse (19.99), Notebook (4.99).\n\nMulti-column sorting uses the second column as a tiebreaker:\n\n  SELECT name, category, price\n  FROM products\n  ORDER BY category ASC, price DESC;\n\nSorts by category alphabetically first, then within each category sorts by price highest-first. Electronics: Monitor, Keyboard, Mouse. Furniture: Desk, Chair. Stationery: Notebook.\n\nNULL values sort last by default in ASC (first in DESC). You can override this with NULLS FIRST or NULLS LAST.\n\nLIMIT restricts how many rows are returned:\n\n  SELECT name, price\n  FROM products\n  ORDER BY price DESC\n  LIMIT 3;\n\nReturns only the 3 most expensive products: Monitor, Desk, Chair.\n\nOFFSET skips rows before returning, enabling pagination:\n\n  SELECT name, price\n  FROM products\n  ORDER BY price DESC\n  LIMIT 3 OFFSET 3;\n\nSkips the first 3 and returns the next 3: Keyboard, Mouse, Notebook.\n\nIn the logical query flow: FROM → WHERE → SELECT → ORDER BY → LIMIT/OFFSET. ORDER BY and LIMIT run last — they shape the final output after all filtering and column selection is done.",
+    "why": "Every paginated API endpoint uses ORDER BY + LIMIT + OFFSET (or cursor-based equivalents). Without ORDER BY, pagination is meaningless — pages would contain random rows. Top-N queries (top 5 customers, cheapest 10 products) are impossible without ORDER BY + LIMIT.",
+    "where_used": ["paginated REST API endpoints", "top-N dashboards and reports", "leaderboard queries"]
+  },
+  "why_learning_this": [
+    "Every paginated API list endpoint translates page/size parameters into LIMIT and OFFSET",
+    "Top-N analytics queries (best sellers, highest-spending customers) require ORDER BY + LIMIT"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using OFFSET without ORDER BY",
+      "explanation": "Without ORDER BY, the row order is undefined, so OFFSET skips arbitrary rows. Always pair OFFSET with ORDER BY to get deterministic pagination."
+    },
+    {
+      "title": "Forgetting that OFFSET-based pagination gets slower on large tables",
+      "explanation": "OFFSET 10000 LIMIT 10 forces the database to skip 10000 rows. For large datasets, cursor-based pagination (WHERE id > last_seen_id ORDER BY id LIMIT 10) is much faster."
+    },
+    {
+      "title": "Assuming NULL sorts first in ASC",
+      "explanation": "In PostgreSQL, NULLs sort LAST in ASC order (and FIRST in DESC). If you need NULLs at the top, use NULLS FIRST explicitly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the default sort direction if you write ORDER BY price without ASC or DESC?",
+      "answer": "ASC (ascending, low to high) is the default.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Where do NULLS appear by default when sorting ASC in PostgreSQL?",
+      "answer": "NULLs sort last in ascending order.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does LIMIT 3 OFFSET 3 do?",
+      "answer": "It skips the first 3 rows and returns the next 3 — effectively page 2 of a 3-rows-per-page pagination.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name, country\nFROM customers\nORDER BY country ASC, name ASC\nLIMIT 4;",
+      "question": "What 4 rows does this return?",
+      "answer": "Farah (AE), Hana (JP), Carlos (MX), Diana (UK).",
+      "why": "ASC sorts alphabetically by country. AE < JP < MX < UK < US. NULLs sort last in ASC, so Emma (NULL) comes after all non-NULL countries. LIMIT 4 takes the first 4: Farah, Hana, Carlos, Diana."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name, price\nFROM products\nORDER BY price ASC\nLIMIT 2 OFFSET 4;",
+      "question": "Which products does this return?",
+      "answer": "Desk (149.99), Monitor (199.99).",
+      "why": "All 6 products sorted by price ASC: Notebook (4.99), Mouse (19.99), Keyboard (49.99), Chair (89.99), Desk (149.99), Monitor (199.99). OFFSET 4 skips the first 4, LIMIT 2 takes the next 2."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 3;",
+    "flow_stages": ["from", "select", "order_by", "limit"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch ORDER BY sort all 6 rows by price descending, then LIMIT chop the result to only the top 3."
+  },
+  "practice_tasks": [
+    {
+      "title": "Get page 2 of products",
+      "prompt": "This query returns the 3 cheapest products (page 1). Modify it to return page 2 instead — the next 3 cheapest products — by adding an OFFSET clause. Keep the same ordering and limit.",
+      "starter_code": "SELECT name, price\nFROM products\nORDER BY price ASC\nLIMIT 3;",
+      "solution": "SELECT name, price\nFROM products\nORDER BY price ASC\nLIMIT 3 OFFSET 3;"
+    }
+  ],
+  "challenge": {
+    "title": "Most recent 3 paid orders",
+    "prompt": "Write a query that returns the id and order_date of the 3 most recent orders with status 'paid'. Sort by order_date descending.",
+    "solution": "SELECT id, order_date\nFROM orders\nWHERE status = 'paid'\nORDER BY order_date DESC\nLIMIT 3;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-select.html#SQL-ORDERBY",
+    "https://www.postgresql.org/docs/current/sql-select.html#SQL-LIMIT"
+  ]
+}

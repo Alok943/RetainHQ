@@ -9,14 +9,29 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["dynamic-typing", "functions", "first-class-functions"],
-    "unlocks": ["is-vs-equals", "reference-counting"],
-    "project_usage": ["FastAPI dependency registries", "plugin systems", "introspection tooling"]
+    "prerequisites": [
+      "dynamic-typing",
+      "functions",
+      "first-class-functions"
+    ],
+    "unlocks": [
+      "is-vs-equals",
+      "reference-counting"
+    ],
+    "project_usage": [
+      "FastAPI dependency registries",
+      "plugin systems",
+      "introspection tooling"
+    ]
   },
   "overview": {
     "what": "In Python, every value is an object — an entity with a type, a unique identity, and attributes. This includes things other languages treat as 'not values': functions, classes, and modules are all objects too.\n\nThree consequences you can see directly:\n\n1. Everything has a type, and types are themselves objects: type(42) is int, and type(int) is type.\n\n  print(type(42))     # <class 'int'>\n  print(type(int))    # <class 'type'>\n\n2. Functions are objects, so they have attributes and can even carry custom ones:\n\n  def handler(): pass\n  print(handler.__name__)   # 'handler'\n  handler.route = '/health' # attach a custom attribute\n\n3. Anything that is an object can be stored in a variable, put in a list, or passed as an argument — including functions and classes:\n\n  registry = [int, str, handler]\n\nThink of Python as a world where there are no 'primitives' standing outside the object system — even an integer is a full object with methods (42 .bit_length()). The uniform rule 'it's an object' is what makes introspection (type(), getattr, dir) work on everything.",
     "why": "This uniformity is why Python can pass functions as arguments, build registries of classes, and introspect any value at runtime. Frameworks like FastAPI rely on it: a route decorator receives your function as an object and stores it; dependency injection stores classes in a registry. Understanding it explains why function.attribute, type(x), and storing a class in a dict all just work.",
-    "where_used": ["FastAPI route/dependency registries (functions and classes stored as objects)", "Plugin systems that map names to classes", "Runtime introspection with type() and getattr()"]
+    "where_used": [
+      "FastAPI route/dependency registries (functions and classes stored as objects)",
+      "Plugin systems that map names to classes",
+      "Runtime introspection with type() and getattr()"
+    ]
   },
   "why_learning_this": [
     "Explains how FastAPI stores your route functions and dependency classes in registries — they are objects",
@@ -36,34 +51,12 @@
       "explanation": "A class is an object (an instance of type), so it can be stored in a variable, put in a list, or passed to a function — that is how factory and plugin patterns work."
     }
   ],
-  "recall_questions": [
-    {
-      "q": "What three things does every object in Python have?",
-      "answer": "A type, a unique identity, and attributes.",
-      "tier": "tier1"
-    },
-    {
-      "q": "Name two things that are objects in Python even though many languages don't treat them as values.",
-      "answer": "Functions, classes, and modules are all objects (any two of these).",
-      "tier": "tier2"
-    },
-    {
-      "q": "Why can you store a function or a class inside a list or dict?",
-      "answer": "Because they are objects, and any object can be assigned to a variable, stored in a collection, or passed as an argument.",
-      "tier": "tier2"
-    },
-    {
-      "q": "Why does (42).bit_length() work — isn't 42 just a primitive?",
-      "answer": "Python has no primitives; 42 is a full int object with methods, so calling a method on it is valid.",
-      "tier": "tier2"
-    }
-  ],
   "practice_tasks": [
     {
-      "title": "Build a handler registry",
-      "prompt": "Create three small functions (health, users, items) that each return a string. Store the function OBJECTS (not their results) in a dict keyed by route path. Then look up and call the '/users' handler, printing its result.",
-      "starter_code": "def health():\n    return 'ok'\n\n# define users, items, build the registry, call one",
-      "solution": "def health():\n    return 'ok'\n\ndef users():\n    return 'user list'\n\ndef items():\n    return 'item list'\n\nregistry = {'/health': health, '/users': users, '/items': items}\nhandler = registry['/users']\nprint(handler())"
+      "title": "Build a Handler Registry",
+      "prompt": "Modify the registry logic so that the `registry` dictionary correctly stores the function objects for `/health` and `/users` rather than calling them.",
+      "starter_code": "def health(): return 'ok'\ndef users(): return 'user list'\n\n# TODO: Fix the registry to store function objects, not their return values\nregistry = {\n    '/health': health(),\n    '/users': users()\n}\n\n# Test logic\n# handler = registry['/users']\n# print(handler())",
+      "solution": "def health(): return 'ok'\ndef users(): return 'user list'\n\nregistry = {\n    '/health': health,\n    '/users': users\n}\n\nhandler = registry['/users']\nprint(handler())"
     }
   ],
   "code_walkthrough": {
@@ -84,5 +77,30 @@
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#objects-values-and-types",
     "https://docs.python.org/3/library/functions.html#type"
+  ],
+  "recall_questions": [
+    {
+      "q": "Are functions and classes considered objects in Python?",
+      "answer": "Yes, everything in Python is an object, including functions and classes."
+    },
+    {
+      "q": "Can you attach custom attributes to a function in Python?",
+      "answer": "Yes, because functions are objects, they have an attribute namespace."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will the following code output?",
+      "code": "def my_func():\n    pass\n\nmy_func.custom_tag = 'api_route'\nprint(my_func.custom_tag)",
+      "answer": "api_route",
+      "why": "Because functions are objects in Python, they have an attribute namespace where you can dynamically attach custom attributes."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why is it possible to put a class, like `int`, into a dictionary as a key or value?",
+      "answer": "Because classes themselves are objects in Python.",
+      "why": "In Python, everything is an object, including classes. They have their own type (`type`), identity, and can be passed around just like instances."
+    }
   ]
 }

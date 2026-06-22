@@ -1,0 +1,105 @@
+{
+  "slug": "srp",
+  "title": "Single Responsibility Principle",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "class-basics",
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "The Single Responsibility Principle (SRP) states that a class or module should have one, and only one, reason to change. For example, an `OrderValidator` class should check if data is correct, but should not save the order to a database or send an email. Think of it like a restaurant kitchen: the chef cooks, the waiter serves, and the dishwasher cleans. If the chef has to wash dishes, cooking stops when the sink breaks. In Python, violating SRP often leads to 'God objects'\u2014massive, brittle classes that handle API requests, database queries, and business logic all at once.",
+    "why": "It isolates changes. When a requirement shifts (e.g., switching from a local database to a cloud API), you only update one focused class without risking bugs in unrelated logic (like data validation).",
+    "where_used": [
+      "FastAPI routers",
+      "Django views",
+      "Pydantic validators"
+    ]
+  },
+  "why_learning_this": [
+    "Makes code easier to test (focused classes require fewer mocks)",
+    "Prevents merge conflicts in large teams by keeping files small and specific",
+    "Reduces cognitive load because each class does exactly one thing"
+  ],
+  "common_mistakes": [
+    {
+      "title": "The God Object",
+      "explanation": "Creating a single `Manager` or `Handler` class that manages database connections, processes business logic, and formats API responses. Fix: split into smaller classes like `DBGateway`, `OrderProcessor`, and `ResponseFormatter`."
+    },
+    {
+      "title": "Mixing I/O with Logic",
+      "explanation": "Putting network requests or file I/O inside a core calculation function. Fix: pass the fetched data into a pure calculation function, separating data retrieval from data processing."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core definition of the Single Responsibility Principle?",
+      "answer": "A class or module should have one, and only one, reason to change.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does mixing database logic with validation logic violate SRP?",
+      "answer": "Because the class would need to change for two reasons: if the validation rules change, or if the database schema changes.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does SRP help when testing code?",
+      "answer": "It makes code easier to test because isolated classes with single responsibilities require fewer mocks and setup steps.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Refactor the User Manager",
+      "prompt": "The `UserManager` class currently handles both storing user data and saving it to a database. Refactor it into two classes: `User` to hold the data and `UserRepository` to handle the database simulation.",
+      "starter_code": "class UserManager:\n    def __init__(self, email):\n        self.email = email\n\n    def save(self):\n        print(f'Saving {self.email} to database...')\n\nuser = UserManager('alice@example.com')\nuser.save()",
+      "solution": "class User:\n    def __init__(self, email):\n        self.email = email\n\nclass UserRepository:\n    def save(self, user):\n        print(f'Saving {user.email} to database...')\n\nuser = User('alice@example.com')\nrepo = UserRepository()\nrepo.save(user)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Order:\n    def __init__(self, amount):\n        self.amount = amount\n\nclass EmailService:\n    def send_receipt(self, order):\n        print(f'Sending receipt for ${order.amount}')\n\norder = Order(150)\nmailer = EmailService()\nmailer.send_receipt(order)",
+    "focus": "mailer.send_receipt(order)"
+  },
+  "aha_moment": {
+    "code": "class ReportParser:\n    def __init__(self, raw_data):\n        self.raw_data = raw_data\n        self.parsed = None\n\n    def parse(self):\n        self.parsed = {'status': self.raw_data.strip()}\n        print(f'Parsed: {self.parsed}')\n\n    def save_to_disk(self):\n        print('Writing to local disk...')\n\nreport = ReportParser('  SUCCESS  ')\nreport.parse()\nreport.save_to_disk()",
+    "prediction": "If the business decides to save reports to an S3 bucket instead of local disk, which class must change?",
+    "common_guess": "The `ReportParser` class, we just change `save_to_disk` to `save_to_s3`.",
+    "why": "Modifying `ReportParser` for storage changes violates SRP. `ReportParser` should only parse data. A separate `StorageService` should handle the saving mechanism."
+  },
+  "challenge": {
+    "title": "Separate Logging from Execution",
+    "prompt": "You have a `PaymentProcessor` that processes a payment and logs the result directly to the console. Refactor this to separate the logging responsibility into a `ConsoleLogger` class, and pass the logger to the processor's `__init__` method. The processor should use the logger to output the message.",
+    "solution": "class ConsoleLogger:\n    def log(self, message):\n        print(f'LOG: {message}')\n\nclass PaymentProcessor:\n    def __init__(self, logger):\n        self.logger = logger\n\n    def process(self, amount):\n        self.logger.log(f'Processing payment of ${amount}')\n        return True\n\nlogger = ConsoleLogger()\nprocessor = PaymentProcessor(logger)\nprocessor.process(50)"
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Why does a 'God object' violate the Single Responsibility Principle?",
+      "answer": "A God object takes on too many responsibilities (like network, database, and logic) so it has multiple reasons to change.",
+      "why": "SRP requires a class to have only one reason to change, isolating the changes and preventing unrelated bugs."
+    },
+    {
+      "type": "predict-output",
+      "question": "Does this code violate SRP?",
+      "code": "class UserAuth:\n    def login(self, user):\n        db_query = f\"SELECT * FROM users WHERE id={user}\"\n        return True",
+      "answer": "Yes, because it mixes core authentication logic with database querying.",
+      "why": "Mixing database access with core business logic means the class has multiple reasons to change."
+    }
+  ]
+}

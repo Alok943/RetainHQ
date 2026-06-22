@@ -1,0 +1,96 @@
+{
+  "slug": "ctes",
+  "title": "CTEs (WITH)",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["subqueries"],
+    "unlocks": ["recursive-ctes"],
+    "project_usage": ["analytics queries", "reporting pipelines", "readable multi-step queries"]
+  },
+  "overview": {
+    "what": "A Common Table Expression (CTE) is a named, temporary result set defined with the WITH keyword. It exists only for the duration of the query that follows it. Think of it as giving a name to a subquery so you can reference it like a table.\n\n  WITH paid_orders AS (\n    SELECT customer_id, COUNT(*) AS order_count\n    FROM orders\n    WHERE status = 'paid'\n    GROUP BY customer_id\n  )\n  SELECT c.name, po.order_count\n  FROM customers c\n  JOIN paid_orders po ON po.customer_id = c.id\n  ORDER BY c.name;\n\nThe CTE 'paid_orders' computes a summary (customer_id + count of paid orders), then the main query joins it to customers. Result: Alice (2), Bob (1), Carlos (1), Emma (1), Farah (1).\n\nYou can chain multiple CTEs separated by commas, and later CTEs can reference earlier ones:\n\n  WITH step1 AS (...),\n       step2 AS (SELECT ... FROM step1 ...)\n  SELECT ... FROM step2 ...;\n\nMental model: CTEs are named building blocks. Each one transforms a row-set, and you snap them together top-to-bottom, with the final SELECT assembling the answer.",
+    "why": "CTEs make complex queries readable by breaking them into named, sequential steps instead of deeply nested subqueries. They are easier to debug (you can run each CTE independently), easier to maintain, and a natural fit for analytics pipelines where each step builds on the last.",
+    "where_used": ["multi-step analytics reports", "breaking complex dashboard queries into readable stages", "reusing the same derived table multiple times in one query"]
+  },
+  "why_learning_this": [
+    "Replace deeply nested subqueries with named, sequential steps that are easy to read, test, and modify",
+    "Build multi-step analytics pipelines in a single SQL statement — a pattern used in every reporting tool and BI dashboard"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Treating CTEs as materialized tables",
+      "explanation": "In Postgres 12+, non-recursive CTEs are inlined by the optimizer by default (like subqueries). They are NOT guaranteed to execute only once or be materialized. If you need materialization, add MATERIALIZED after the CTE name. Don't assume a CTE improves performance — it's primarily a readability tool."
+    },
+    {
+      "title": "Referencing a CTE that is defined later",
+      "explanation": "CTEs are processed top-to-bottom. A CTE can only reference CTEs defined BEFORE it in the WITH list, not after. Reorder your CTE definitions so dependencies come first."
+    },
+    {
+      "title": "Forgetting that CTEs are scoped to one statement",
+      "explanation": "A CTE only lives for the single SELECT/INSERT/UPDATE/DELETE that follows the WITH block. You cannot reference it in a later, separate statement. If you need persistence, use a temporary table or view."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is a CTE and how do you define one?",
+      "answer": "A CTE (Common Table Expression) is a named temporary result set defined with WITH cte_name AS (SELECT ...). It exists only for the duration of the statement that follows.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Can a CTE reference another CTE defined in the same WITH block?",
+      "answer": "Yes, but only CTEs defined BEFORE it. CTEs are processed top-to-bottom, so a later CTE can reference an earlier one but not vice versa.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a CTE differ from a subquery in terms of readability?",
+      "answer": "A CTE gives a meaningful name to a result set and separates it visually at the top of the query, avoiding deep nesting. A subquery is embedded inline, which can become hard to read when nested multiple levels.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "WITH order_counts AS (\n  SELECT customer_id, COUNT(*) AS cnt\n  FROM orders\n  GROUP BY customer_id\n)\nSELECT c.name, oc.cnt\nFROM customers c\nJOIN order_counts oc ON oc.customer_id = c.id\nWHERE oc.cnt >= 2\nORDER BY c.name;",
+      "question": "Which customers appear and what are their counts?",
+      "answer": "Alice (2), Bob (2)",
+      "why": "The CTE counts orders per customer: Alice has 2 (orders 1,2), Bob has 2 (orders 3,8), Carlos 1, Diana 1, Emma 1, Farah 1. The WHERE oc.cnt >= 2 keeps only Alice and Bob."
+    },
+    {
+      "type": "predict-result",
+      "query": "WITH paid AS (\n  SELECT customer_id\n  FROM orders\n  WHERE status = 'paid'\n),\ncustomer_names AS (\n  SELECT DISTINCT c.name\n  FROM customers c\n  JOIN paid p ON p.customer_id = c.id\n)\nSELECT name\nFROM customer_names\nORDER BY name;",
+      "question": "What names does this return?",
+      "answer": "Alice, Bob, Carlos, Emma, Farah",
+      "why": "The first CTE filters orders to paid ones (orders 1,2,4,6,7,8 — customer_ids 1,1,3,5,6,2). The second CTE joins to customers and deduplicates with DISTINCT. The final SELECT returns the 5 names alphabetically."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "WITH paid_orders AS (\n  SELECT customer_id, COUNT(*) AS order_count\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n)\nSELECT c.name, po.order_count\nFROM customers c\nJOIN paid_orders po ON po.customer_id = c.id\nORDER BY c.name;",
+    "flow_stages": ["from", "where", "group_by", "select", "join", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch the CTE build a summary table (customer_id + count of paid orders), then see the main query join it to customers — two clean, named steps instead of a nested subquery."
+  },
+  "practice_tasks": [
+    {
+      "title": "Refactor a nested subquery into a CTE",
+      "prompt": "This query uses an inline subquery. Refactor it to use a CTE named 'expensive_products' for the subquery, keeping the same result and ORDER BY.",
+      "starter_code": "SELECT c.name\nFROM customers c\nWHERE c.id IN (\n  SELECT o.customer_id\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE p.price > 100\n)\nORDER BY c.name;",
+      "solution": "WITH expensive_products AS (\n  SELECT o.customer_id\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE p.price > 100\n)\nSELECT c.name\nFROM customers c\nWHERE c.id IN (SELECT customer_id FROM expensive_products)\nORDER BY c.name;"
+    }
+  ],
+  "challenge": {
+    "title": "Two-step CTE: category revenue",
+    "prompt": "Using two chained CTEs, compute the total revenue per product category (price × quantity from order_items joined to products), then in the final SELECT return only categories with total revenue above 100. Order by total revenue descending. Name the CTEs 'item_revenue' and 'category_totals'.",
+    "solution": "WITH item_revenue AS (\n  SELECT p.category, p.price * oi.quantity AS line_total\n  FROM order_items oi\n  JOIN products p ON p.id = oi.product_id\n),\ncategory_totals AS (\n  SELECT category, SUM(line_total) AS total_revenue\n  FROM item_revenue\n  GROUP BY category\n)\nSELECT category, total_revenue\nFROM category_totals\nWHERE total_revenue > 100\nORDER BY total_revenue DESC;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-with.html",
+    "https://www.postgresql.org/docs/current/sql-select.html"
+  ]
+}

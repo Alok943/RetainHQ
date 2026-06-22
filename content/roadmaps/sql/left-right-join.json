@@ -1,0 +1,96 @@
+{
+  "slug": "left-right-join",
+  "title": "LEFT / RIGHT JOIN",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["select-from", "where-operators", "inner-join"],
+    "unlocks": ["full-cross-join", "self-join"],
+    "project_usage": ["analytics dashboards", "API list endpoints", "reporting queries"]
+  },
+  "overview": {
+    "what": "A LEFT JOIN keeps EVERY row from the left table, and attaches matching rows from the right table — filling the right-hand columns with NULL when there is no match. An INNER JOIN would silently drop those unmatched left rows; LEFT JOIN preserves them.\n\nAgainst the shared dataset, customers Greg and Hana placed no orders:\n\n  SELECT c.name, o.id AS order_id\n  FROM customers c\n  LEFT JOIN orders o ON o.customer_id = c.id\n  ORDER BY c.id, o.id;\n\nEvery customer appears; Greg and Hana come back with order_id = NULL. With INNER JOIN they would vanish entirely.\n\nA RIGHT JOIN is the mirror image — it keeps every row from the RIGHT table instead. RIGHT JOIN is rare in practice: you can always rewrite it as a LEFT JOIN by swapping the table order, which reads more naturally.\n\nThink of LEFT JOIN as 'keep all of the left, decorate with the right where it exists' — the left table is the spine, the right table is optional trim.",
+    "why": "LEFT JOIN answers 'show me ALL X, with their Y if any' — all customers and their orders (including customers with none), all products and their sales (including unsold ones). That 'including the ones with nothing' is exactly what an INNER JOIN throws away, so choosing the wrong join silently hides rows.",
+    "where_used": ["customer lists that must include zero-order customers", "inventory reports including unsold products", "left-outer lookups in API endpoints"]
+  },
+  "why_learning_this": [
+    "Building list endpoints that must include rows with no related records (e.g. users with zero orders)",
+    "Spotting why a query 'lost' rows — an INNER JOIN dropping unmatched rows is one of the most common SQL bugs"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Filtering the right table in WHERE turns LEFT into INNER",
+      "explanation": "Adding WHERE o.status = 'paid' to a LEFT JOIN drops the NULL rows (NULL = 'paid' is not true), silently making it an inner join. Put the condition in the ON clause (ON o.customer_id = c.id AND o.status = 'paid') to keep the unmatched left rows."
+    },
+    {
+      "title": "Using RIGHT JOIN where a LEFT JOIN reads better",
+      "explanation": "RIGHT JOIN keeps the right table's rows, but most people read top-to-bottom. Swap the tables and use LEFT JOIN — same result, clearer intent."
+    },
+    {
+      "title": "Counting the wrong column to get zero",
+      "explanation": "count(*) counts NULL-padded rows too, so customers with no orders show 1 instead of 0. Count a right-table column — count(o.id) — which skips NULLs and correctly yields 0."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does a LEFT JOIN keep that an INNER JOIN does not?",
+      "answer": "Every row from the left table, including those with no match on the right (their right-hand columns become NULL).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What value fills the right-hand columns when a left row has no match?",
+      "answer": "NULL.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you rewrite a RIGHT JOIN as a LEFT JOIN?",
+      "answer": "Swap the order of the two tables — a RIGHT JOIN of A and B is the same as a LEFT JOIN of B and A.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT c.name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.id IS NULL\nORDER BY c.name;",
+      "question": "Which customers does this return, and why?",
+      "answer": "Greg, Hana",
+      "why": "The LEFT JOIN gives Greg and Hana a NULL order row because they placed no orders. WHERE o.id IS NULL then keeps only those unmatched left rows — the standard 'anti-join' pattern for finding rows with no related record."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT count(*) AS n\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id;",
+      "question": "What single number does this return?",
+      "answer": "10",
+      "why": "There are 8 order rows that match a customer, plus 2 customers (Greg, Hana) kept as NULL-padded rows = 10. An INNER JOIN would return only the 8 matched rows."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.name, o.id AS order_id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nORDER BY c.id, o.id;",
+    "flow_stages": ["from", "join", "select", "order_by"],
+    "visualization": "join-diagram",
+    "focus": "Watch Greg and Hana survive the join with order_id = NULL — the rows an INNER JOIN would delete."
+  },
+  "practice_tasks": [
+    {
+      "title": "Don't lose the customers without orders",
+      "prompt": "This query uses INNER JOIN, so customers who never ordered disappear. Change it to a LEFT JOIN so EVERY customer is listed, with order_id NULL when they have no orders. Keep the ordering.",
+      "starter_code": "SELECT c.name, o.id AS order_id\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nORDER BY c.id, o.id;",
+      "solution": "SELECT c.name, o.id AS order_id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nORDER BY c.id, o.id;"
+    }
+  ],
+  "challenge": {
+    "title": "All US customers and their order dates",
+    "prompt": "List every US customer with each of their order dates, INCLUDING US customers who have no orders (NULL date). Use a LEFT JOIN, filter on the customer's country (not the orders), and order by name then date.",
+    "solution": "SELECT c.name, o.order_date\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE c.country = 'US'\nORDER BY c.name, o.order_date;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN",
+    "https://www.postgresql.org/docs/current/tutorial-join.html"
+  ]
+}

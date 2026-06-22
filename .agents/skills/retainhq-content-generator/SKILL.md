@@ -24,7 +24,8 @@ When asked to generate content for a roadmap (e.g., `python-swe`), follow these 
 ### 3. Generate Content
 - Generate the lesson content for the topic.
 - You must create ONE JSON file per topic.
-- Ensure all required fields from the schema are present, particularly the `challenge` block which must have `title`, `prompt`, and `solution`.
+- Ensure all required fields from the schema are present. **Understanding-first content is the priority** (see PROMPT.md "VALUE HIERARCHY"): invest the most effort in `overview`, `aha_moment`, `recall_questions`, and the REQUIRED `understanding_checks` block (>=2 typed mental-model probes: `predict-output` | `explain-behavior` | `find-bug` | `choose-model` | `debug-misconception`, each with `type`, `question`, `answer`, `why`, and runnable `code` for predict/bug probes).
+- `practice_tasks` is now a single MODIFY-the-code variation task (not build-from-scratch); `challenge` is OPTIONAL.
 - Use `write_to_file` to save the file to `content/roadmaps/{roadmap}/{slug}.json`. 
 
 ### 4. Validation

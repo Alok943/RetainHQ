@@ -64,11 +64,26 @@
       "tier": "tier1"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "question": "What is wrong with this exception raising pattern?",
+      "code": "def divide(a, b):\n    if b == 0:\n        raise ValueError\n    return a / b",
+      "answer": "The exception is raised as a class without an error message.",
+      "why": "While technically valid Python, it's bad practice because `raise ValueError` provides no context. It should be instantiated with a helpful message: `raise ValueError('Cannot divide by zero')`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "What does a bare `raise` statement (with no arguments) do when used inside an `except` block?",
+      "answer": "It re-raises the exact exception that was just caught.",
+      "why": "A bare `raise` maintains the original exception and its traceback, allowing you to log or inspect the error locally before letting it propagate up the call stack."
+    }
+  ],
   "practice_tasks": [
     {
       "title": "Input validation",
-      "prompt": "Write a function `set_age(age)` that takes an integer. If `age` is less than 0, raise a `ValueError` with the message 'Age cannot be negative'. Otherwise, return the age.",
-      "starter_code": "def set_age(age):\n    pass",
+      "prompt": "Modify the `set_age` function so that if `age` is less than 0, it raises a `ValueError` with the message 'Age cannot be negative'. Otherwise, it should return the age.",
+      "starter_code": "def set_age(age):\n    pass\n\nprint(set_age(25))",
       "solution": "def set_age(age):\n    if age < 0:\n        raise ValueError('Age cannot be negative')\n    return age\n\nprint(set_age(25))"
     }
   ],

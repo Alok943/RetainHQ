@@ -1,0 +1,78 @@
+{
+  "slug": "log-rotation",
+  "title": "Log Rotation with RotatingFileHandler",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": ["loggers-handlers-formatters"],
+    "unlocks": [],
+    "project_usage": ["Long-running scripts", "Flask", "Django"]
+  },
+  "overview": {
+    "what": "Log rotation is the practice of automatically creating a new log file when the current one gets too large or too old, renaming the old files (e.g., `app.log.1`, `app.log.2`), and deleting the oldest ones. In Python, this is done using `RotatingFileHandler` (by size) or `TimedRotatingFileHandler` (by time). Think of it like a security camera system that only keeps the last 7 days of footage, overwriting the oldest tapes so the hard drive never fills up.",
+    "why": "If a long-running application writes to a single file forever, that file will eventually consume all available disk space and crash the server.",
+    "where_used": ["Linux Servers", "Docker Volumes", "Background Workers"]
+  },
+  "why_learning_this": [
+    "Prevent servers from crashing due to `Disk Out Of Space` errors",
+    "Keep log files small enough to quickly open in a text editor",
+    "Comply with data retention policies by automatically deleting old logs"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using standard FileHandler in production",
+      "explanation": "`logging.FileHandler` never deletes old data. Always use a rotating handler for services that run continuously."
+    },
+    {
+      "title": "Multiple processes rotating the same file",
+      "explanation": "If running multiple worker processes (like Gunicorn), standard rotating handlers will clash and corrupt the file. You must use a specialized concurrent handler or let the OS (like logrotate or Docker) handle it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if a long-running script uses a standard `FileHandler` instead of a rotating handler?",
+      "answer": "The log file will grow continuously over time until it consumes all available disk space, likely crashing the server.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary difference between `RotatingFileHandler` and `TimedRotatingFileHandler`?",
+      "answer": "RotatingFileHandler rolls over based on file size (e.g., max 5MB), whereas TimedRotatingFileHandler rolls over based on time intervals (e.g., every midnight).",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import logging\nfrom logging.handlers import RotatingFileHandler\nimport os\n\nlog_file = 'test.log'\nopen(log_file, 'w').close()\nhandler = RotatingFileHandler(log_file, maxBytes=20, backupCount=1)\nlogger = logging.getLogger('rotator')\nlogger.setLevel(logging.INFO)\nlogger.addHandler(handler)\n\nlogger.info('A'*15)\nlogger.info('B'*15)\nprint(os.path.exists('test.log.1'))",
+      "question": "What does this print, and why?",
+      "answer": "True",
+      "why": "The maxBytes is 20. The first message writes ~15 bytes. The second message makes the file exceed 20 bytes, triggering a rollover, which moves the current `test.log` to `test.log.1`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you configure `backupCount=3`, how many log files will eventually exist on disk?",
+      "answer": "4 log files.",
+      "why": "It keeps the current active file (`app.log`) plus exactly 3 backups (`app.log.1`, `app.log.2`, `app.log.3`)."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import logging\nfrom logging.handlers import RotatingFileHandler\nimport os\n\nlogger = logging.getLogger('demo')\nlogger.setLevel(logging.INFO)\n\nhandler = RotatingFileHandler('app.log', maxBytes=50, backupCount=2)\nlogger.addHandler(handler)\n\nfor i in range(10):\n    logger.info(f'Message {i}')\n    \nprint([f for f in sorted(os.listdir('.')) if 'app.log' in f])",
+    "focus": "handler = RotatingFileHandler('app.log', maxBytes=50, backupCount=2)"
+  },
+  "practice_tasks": [
+    {
+      "title": "Configure time-based rotation",
+      "prompt": "Given a script that logs to a standard file, modify it to use `TimedRotatingFileHandler` from `logging.handlers`. Configure it to rotate every 1 'midnight' (`when='midnight'`) and keep only the last 7 days (`backupCount=7`).",
+      "starter_code": "import logging\n# from logging.handlers import TimedRotatingFileHandler\n\nlogger = logging.getLogger('server')\nlogger.setLevel(logging.INFO)\n\nhandler = logging.FileHandler('server.log')\nlogger.addHandler(handler)\n\nlogger.info('Server started')",
+      "solution": "import logging\nfrom logging.handlers import TimedRotatingFileHandler\n\nlogger = logging.getLogger('server')\nlogger.setLevel(logging.INFO)\n\nhandler = TimedRotatingFileHandler('server.log', when='midnight', backupCount=7)\nlogger.addHandler(handler)\n\nlogger.info('Server started')"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/logging.handlers.html#rotatingfilehandler"
+  ]
+}

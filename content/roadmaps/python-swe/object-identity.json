@@ -9,14 +9,27 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["primitive-types", "mutable-vs-immutable"],
-    "unlocks": ["shallow-vs-deep-copy"],
-    "project_usage": ["None checks", "Pydantic validators", "caching"]
+    "prerequisites": [
+      "primitive-types",
+      "mutable-vs-immutable"
+    ],
+    "unlocks": [
+      "shallow-vs-deep-copy"
+    ],
+    "project_usage": [
+      "None checks",
+      "Pydantic validators",
+      "caching"
+    ]
   },
   "overview": {
-    "what": "Every Python object has a unique identity — its location in memory — which you read with id(). The `is` operator compares identity (are these the same object?), while `==` compares value (do they have equal contents?). Two separate lists with the same items are == but not `is`, because they are distinct objects; only a name assigned from another (c = a) shares identity. Think of id() as a house's street address and == as two houses having identical furniture: the same address is literally the same house, identical furniture is not.",
+    "what": "Every Python object has a unique identity \u2014 its location in memory \u2014 which you read with id(). The `is` operator compares identity (are these the same object?), while `==` compares value (do they have equal contents?). Two separate lists with the same items are == but not `is`, because they are distinct objects; only a name assigned from another (c = a) shares identity. Think of id() as a house's street address and == as two houses having identical furniture: the same address is literally the same house, identical furniture is not.",
     "why": "Confusing `is` with `==` causes real bugs. The safe rule: use `is` only for None, True, and False, and use `==` for comparing values. Checking values with `is` (e.g. x is 1000) can pass or fail unpredictably because only some objects are cached.",
-    "where_used": ["None checks in API handlers", "Pydantic validators", "debugging shared references"]
+    "where_used": [
+      "None checks in API handlers",
+      "Pydantic validators",
+      "debugging shared references"
+    ]
   },
   "why_learning_this": [
     "Writing correct None checks (if x is None) in FastAPI handlers and Pydantic validators",
@@ -51,10 +64,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Same object or just equal?",
-      "prompt": "Write same_object(x, y) that returns True only when x and y are the SAME object (not merely equal). Test it with two equal-but-separate lists and with an alias of one of them, printing both results.",
-      "starter_code": "def same_object(x, y):\n    pass",
-      "solution": "def same_object(x, y):\n    return x is y\n\np = [1, 2]\nq = [1, 2]\nr = p\nprint(same_object(p, q))\nprint(same_object(p, r))"
+      "title": "Fixing the Identity Check",
+      "prompt": "The function below incorrectly uses `is` to check if a users input matches a specific integer, and uses `==` to check if a result is `None`. Modify the code to use the correct operators for value comparison and identity checking.",
+      "starter_code": "def validate(user_id, result):\n    if user_id is 9999:\n        print('Admin')\n    if result == None:\n        print('No result')\n\nvalidate(9999, None)",
+      "solution": "def validate(user_id, result):\n    if user_id == 9999:\n        print('Admin')\n    if result is None:\n        print('No result')\n\nvalidate(9999, None)"
     }
   ],
   "code_walkthrough": {
@@ -69,11 +82,27 @@
   },
   "challenge": {
     "title": "A correct None check",
-    "prompt": "Write get_or_default(value, default) that returns default ONLY when value is None — not when value is 0, '', or an empty list. Use the correct operator, then print three calls to prove 0 and '' are kept.",
+    "prompt": "Write get_or_default(value, default) that returns default ONLY when value is None \u2014 not when value is 0, '', or an empty list. Use the correct operator, then print three calls to prove 0 and '' are kept.",
     "solution": "def get_or_default(value, default):\n    return default if value is None else value\n\nprint(get_or_default(None, 'fallback'))\nprint(get_or_default(0, 'fallback'))\nprint(get_or_default('', 'fallback'))"
   },
   "sources": [
     "https://docs.python.org/3/library/functions.html#id",
     "https://docs.python.org/3/reference/expressions.html#is"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will be printed when this script is run?",
+      "code": "a = [1, 2, 3]\nb = [1, 2, 3]\nc = a\nprint(a == b)\nprint(a is b)\nprint(a is c)",
+      "answer": "True, False, True",
+      "why": "`a == b` is True because their contents match. `a is b` is False because `b` is a freshly created list with a different memory address. `a is c` is True because `c` is assigned directly from `a`, so they reference the exact same object in memory."
+    },
+    {
+      "type": "find-bug",
+      "question": "A developer is writing a validator that ensures a users balance matches exactly 1000. Identify the bug.",
+      "code": "def check_balance(balance):\n    if balance is 1000:\n        return True\n    return False\n\nprint(check_balance(1000))",
+      "answer": "The function uses `is` to check for equality of the value 1000.",
+      "why": "Because CPython only caches small integers, using `is` to compare values like 1000 can fail unpredictably depending on how the object was created in memory. To compare values, you must use `==`. `is` should only be used for `None`, `True`, and `False`."
+    }
   ]
 }

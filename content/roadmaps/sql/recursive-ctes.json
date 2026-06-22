@@ -1,0 +1,96 @@
+{
+  "slug": "recursive-ctes",
+  "title": "Recursive CTEs",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": ["ctes", "self-join"],
+    "unlocks": [],
+    "project_usage": ["org chart traversals", "category/tree hierarchies", "bill-of-materials queries"]
+  },
+  "overview": {
+    "what": "A recursive CTE uses WITH RECURSIVE to repeatedly reference itself, building a result set iteration by iteration until no new rows are produced. It has two parts joined by UNION ALL:\n\n1. **Anchor member** — the base case, a non-recursive SELECT that produces the starting rows.\n2. **Recursive member** — a SELECT that references the CTE itself, joining new rows to the previous iteration's output.\n\nThe employees table has a manager_id column forming a tree: Sara (CEO, no manager) → Tom, Wendy → Tom manages Uma, Victor; Wendy manages Xavier, Yara.\n\n  WITH RECURSIVE chain AS (\n    -- Anchor: start with Sara (the CEO, manager_id IS NULL)\n    SELECT id, name, manager_id, 1 AS depth\n    FROM employees\n    WHERE manager_id IS NULL\n\n    UNION ALL\n\n    -- Recursive: find employees whose manager is in the previous level\n    SELECT e.id, e.name, e.manager_id, c.depth + 1\n    FROM employees e\n    JOIN chain c ON e.manager_id = c.id\n  )\n  SELECT name, depth\n  FROM chain\n  ORDER BY depth, name;\n\nIteration 1 (anchor): Sara at depth 1.\nIteration 2: Tom, Wendy (manager_id = 1 = Sara) at depth 2.\nIteration 3: Uma, Victor (manager = Tom), Xavier, Yara (manager = Wendy) at depth 3.\nIteration 4: no more employees found → recursion stops.\n\nResult: Sara(1), Tom(2), Wendy(2), Uma(3), Victor(3), Xavier(3), Yara(3).\n\nMental model: the anchor plants a seed row-set, and each recursive step grows it by one layer, like breadth-first search. When a step produces zero new rows, the loop ends.",
+    "why": "Hierarchical data — org charts, category trees, folder structures, threaded comments — cannot be traversed to arbitrary depth with a fixed number of JOINs. Recursive CTEs walk the tree to any depth in a single query, without knowing the depth in advance.",
+    "where_used": ["org chart / reporting hierarchy queries", "nested category or folder trees", "bill-of-materials and dependency graphs"]
+  },
+  "why_learning_this": [
+    "Traverse tree-structured data (org charts, category hierarchies) to any depth in a single SQL statement",
+    "Replace application-level loops that fire one query per level with a single recursive query — eliminating the N+1 problem for hierarchies"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Infinite recursion from missing termination condition",
+      "explanation": "If the data has cycles (e.g. A manages B, B manages A), the recursion never stops. Add a depth counter and a WHERE depth < N guard in the recursive member, or use CYCLE detection (Postgres 14+) to prevent runaway queries."
+    },
+    {
+      "title": "Using UNION instead of UNION ALL",
+      "explanation": "UNION deduplicates rows each iteration, which is correct for graph traversal with cycles but slower. For trees (no cycles), always use UNION ALL — it is faster and the standard pattern. Use UNION only if you explicitly need cycle elimination."
+    },
+    {
+      "title": "Forgetting WITH RECURSIVE keyword",
+      "explanation": "A plain WITH (non-recursive CTE) cannot reference itself. You must write WITH RECURSIVE to enable the self-reference. Without it, Postgres raises an error about an undefined CTE name."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the two parts of a recursive CTE?",
+      "answer": "The anchor member (base case, non-recursive SELECT) and the recursive member (a SELECT that references the CTE itself), joined by UNION ALL.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When does a recursive CTE stop iterating?",
+      "answer": "When the recursive member produces zero new rows — there is nothing left to add, so the loop terminates.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is UNION ALL preferred over UNION in recursive CTEs for tree data?",
+      "answer": "UNION ALL is faster because it skips deduplication. In tree-structured data there are no cycles, so duplicate rows cannot appear. UNION adds unnecessary overhead.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "WITH RECURSIVE chain AS (\n  SELECT id, name, 1 AS depth\n  FROM employees\n  WHERE name = 'Tom'\n\n  UNION ALL\n\n  SELECT e.id, e.name, c.depth + 1\n  FROM employees e\n  JOIN chain c ON e.manager_id = c.id\n)\nSELECT name, depth\nFROM chain\nORDER BY depth, name;",
+      "question": "Which employees appear and at what depth?",
+      "answer": "Tom (1), Uma (2), Victor (2)",
+      "why": "The anchor starts at Tom (depth 1). The recursive step finds employees whose manager_id = Tom's id (2): Uma and Victor at depth 2. No one reports to Uma or Victor, so recursion stops after the next empty iteration."
+    },
+    {
+      "type": "predict-result",
+      "query": "WITH RECURSIVE chain AS (\n  SELECT id, name, manager_id, ARRAY[name] AS path\n  FROM employees\n  WHERE manager_id IS NULL\n\n  UNION ALL\n\n  SELECT e.id, e.name, e.manager_id, c.path || e.name\n  FROM employees e\n  JOIN chain c ON e.manager_id = c.id\n)\nSELECT name, path\nFROM chain\nWHERE name = 'Xavier'\nORDER BY name;",
+      "question": "What is the path array for Xavier?",
+      "answer": "{Sara,Wendy,Xavier}",
+      "why": "The anchor starts with Sara (path = {Sara}). Iteration 2 adds Wendy with path {Sara,Wendy}. Iteration 3 adds Xavier with path {Sara,Wendy,Xavier}. The || operator appends Xavier's name to his manager's accumulated path."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "WITH RECURSIVE chain AS (\n  SELECT id, name, manager_id, 1 AS depth\n  FROM employees\n  WHERE manager_id IS NULL\n\n  UNION ALL\n\n  SELECT e.id, e.name, e.manager_id, c.depth + 1\n  FROM employees e\n  JOIN chain c ON e.manager_id = c.id\n)\nSELECT name, depth\nFROM chain\nORDER BY depth, name;",
+    "flow_stages": ["from", "where", "select", "order_by"],
+    "visualization": "logical-query-flow",
+    "focus": "Watch the anchor plant Sara at depth 1, then each recursive iteration grow the tree by one level — Tom & Wendy at 2, then Uma, Victor, Xavier & Yara at 3 — until no new rows appear."
+  },
+  "practice_tasks": [
+    {
+      "title": "Change the starting point of the traversal",
+      "prompt": "This recursive CTE starts from the CEO (manager_id IS NULL) and walks the full org tree. Modify the anchor to start from Wendy instead, so the result shows only Wendy and her reports. Keep the depth counter starting at 1 and the ORDER BY.",
+      "starter_code": "WITH RECURSIVE chain AS (\n  SELECT id, name, manager_id, 1 AS depth\n  FROM employees\n  WHERE manager_id IS NULL\n\n  UNION ALL\n\n  SELECT e.id, e.name, e.manager_id, c.depth + 1\n  FROM employees e\n  JOIN chain c ON e.manager_id = c.id\n)\nSELECT name, depth\nFROM chain\nORDER BY depth, name;",
+      "solution": "WITH RECURSIVE chain AS (\n  SELECT id, name, manager_id, 1 AS depth\n  FROM employees\n  WHERE name = 'Wendy'\n\n  UNION ALL\n\n  SELECT e.id, e.name, e.manager_id, c.depth + 1\n  FROM employees e\n  JOIN chain c ON e.manager_id = c.id\n)\nSELECT name, depth\nFROM chain\nORDER BY depth, name;"
+    }
+  ],
+  "challenge": {
+    "title": "Build the management path for every employee",
+    "prompt": "Write a recursive CTE that, for each employee, builds an array showing the management chain from the CEO down to that employee. Output columns: name, path (an array of names). Start from the root (manager_id IS NULL). Order by name.",
+    "solution": "WITH RECURSIVE chain AS (\n  SELECT id, name, manager_id, ARRAY[name] AS path\n  FROM employees\n  WHERE manager_id IS NULL\n\n  UNION ALL\n\n  SELECT e.id, e.name, e.manager_id, c.path || e.name\n  FROM employees e\n  JOIN chain c ON e.manager_id = c.id\n)\nSELECT name, path\nFROM chain\nORDER BY name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE",
+    "https://www.postgresql.org/docs/current/sql-select.html"
+  ]
+}

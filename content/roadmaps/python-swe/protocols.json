@@ -1,0 +1,89 @@
+{
+  "slug": "protocols",
+  "title": "Structural Subtyping with Protocols",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["type-hints", "classes"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Pydantic", "mypy"]
+  },
+  "overview": {
+    "what": "Python's `typing.Protocol` allows you to define structural interfaces. Instead of checking if an object inherits from a specific class (nominal typing), Protocols check if an object *has the right methods and attributes* (structural typing). Think of a Protocol like a bouncer at a club who only checks if you have a valid ID card, not what family you belong to. For example, if you define a `Logger` Protocol with a `.log(message)` method, any class that implements `.log(message)` implicitly matches the Protocol, without needing to explicitly inherit from it. This gives you the safety of static typing with the flexibility of Python's natural duck typing.",
+    "why": "It decouples your code. You can specify what a function needs an object to *do* rather than what the object *is*, making it much easier to swap implementations or mock objects for testing without creating complex inheritance hierarchies.",
+    "where_used": ["Dependency injection", "Mocking in tests", "Plugin architectures"]
+  },
+  "why_learning_this": [
+    "Writing functions that accept any object matching a shape, improving reusability",
+    "Mocking dependencies cleanly in unit tests without subclassing",
+    "Appeasing mypy when using Python's natural duck-typing patterns"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Inheriting from the Protocol unnecessarily",
+      "explanation": "You don't need to inherit from the Protocol class (e.g., `class MyLogger(LoggerProtocol):`). The whole point is that structural subtyping checks the shape implicitly. Just implement the methods."
+    },
+    {
+      "title": "Forgetting @runtime_checkable",
+      "explanation": "By default, Protocols are only for static type checkers like mypy. If you try to use `isinstance(obj, MyProtocol)` at runtime, it will crash unless you decorate the Protocol with `@typing.runtime_checkable`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between nominal typing (like regular inheritance) and structural typing (like Protocols)?",
+      "answer": "Nominal typing checks the name of the class (what it inherits from), while structural typing checks the shape of the object (what methods and attributes it has).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you use a Protocol instead of a standard base class?",
+      "answer": "To decouple the implementation from the interface. It allows objects to satisfy type hints without explicitly inheriting from a common base class, which is especially useful for third-party classes or mocking.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "Will this code pass structural type checking?",
+      "code": "from typing import Protocol\n\nclass Saver(Protocol):\n    def save(self) -> None:\n        ...\n\nclass DiskSaver:\n    def save(self) -> None:\n        print('Saved')\n\ndef run_saver(s: Saver) -> None:\n    s.save()\n\nrun_saver(DiskSaver())",
+      "answer": "Yes, it will pass.",
+      "why": "Because `DiskSaver` has a `save` method matching the signature required by the `Saver` protocol, it structurally matches even though it doesn't explicitly inherit from `Saver`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "What happens if you use `isinstance(obj, MyProtocol)` without decorating `MyProtocol` with `@runtime_checkable`?",
+      "answer": "It will raise a TypeError at runtime.",
+      "why": "By default, Protocols are strictly for static type checking. Python cannot use them in `isinstance` checks at runtime unless explicitly marked with `@typing.runtime_checkable`."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Define a Notifier Protocol",
+      "prompt": "Modify the starter code to define a `Notifier` Protocol with a `send(message: str) -> None` method. Then implement the `notify_all` function to iterate through the notifiers and call `send` on each one.",
+      "starter_code": "from typing import Protocol\n\n# Define Notifier Protocol here\n\n\ndef notify_all(notifiers: list[Notifier], message: str) -> None:\n    pass\n",
+      "solution": "from typing import Protocol\n\nclass Notifier(Protocol):\n    def send(self, message: str) -> None:\n        ...\n\ndef notify_all(notifiers: list[Notifier], message: str) -> None:\n    for notifier in notifiers:\n        notifier.send(message)\n"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import Protocol\n\nclass Drawable(Protocol):\n    def draw(self) -> str:\n        ...\n\nclass Circle:\n    def draw(self) -> str:\n        return 'O'\n\nclass Square:\n    def draw(self) -> str:\n        return '[]'\n\ndef render(shape: Drawable) -> None:\n    print(shape.draw())\n\nrender(Circle())\nrender(Square())\n",
+    "focus": "render(Circle())"
+  },
+  "aha_moment": {
+    "code": "from typing import Protocol, runtime_checkable\n\n@runtime_checkable\nclass Quacker(Protocol):\n    def quack(self) -> None:\n        ...\n\nclass Duck:\n    def quack(self) -> None:\n        print('Quack!')\n\ndonal = Duck()\nprint(isinstance(donal, Quacker))\n",
+    "prediction": "What does isinstance return, given that Duck does not inherit from Quacker?",
+    "common_guess": "False, because Duck does not subclass Quacker.",
+    "why": "It prints True. Because Quacker is a runtime_checkable Protocol, isinstance() checks if donal has a quack() method, not its class hierarchy."
+  },
+  "challenge": {
+    "title": "A Generic Storage Protocol",
+    "prompt": "You are building an app that can save data to multiple places (e.g. S3, local disk, database). Define a `Storage` protocol that requires a `save(filename: str, data: str) -> bool` method. Then, write a concrete class `LocalDiskStorage` that implements this shape (it can just print 'Saving {data} to {filename}' and return True). Finally, write a function `backup_data(storage: Storage)` that uses the protocol.",
+    "solution": "from typing import Protocol\n\nclass Storage(Protocol):\n    def save(self, filename: str, data: str) -> bool:\n        ...\n\nclass LocalDiskStorage:\n    def save(self, filename: str, data: str) -> bool:\n        print(f'Saving {data} to {filename}')\n        return True\n\ndef backup_data(storage: Storage) -> None:\n    storage.save('backup.txt', 'important data')\n"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.Protocol"
+  ]
+}

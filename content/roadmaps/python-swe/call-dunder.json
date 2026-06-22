@@ -9,14 +9,26 @@
     "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["classes-and-objects"],
-    "unlocks": ["decorators-with-state"],
-    "project_usage": ["FastAPI", "PyTorch", "Django"]
+    "prerequisites": [
+      "classes-and-objects"
+    ],
+    "unlocks": [
+      "decorators-with-state"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "PyTorch",
+      "Django"
+    ]
   },
   "overview": {
     "what": "The `__call__` dunder method allows an instance of a class to be executed exactly like a function. Variables are labels, objects are boxes; when you add `()` to a label, Python looks for `__call__` on the box. This means an object can maintain internal state (like a database connection or a counter) while exposing a simple, function-like interface. For example, PyTorch models use `__call__` to run the forward pass, and FastAPI uses it for dependency injection classes.",
     "why": "It lets you combine the statefulness of a class with the clean syntax of a function call. It is the foundation for stateful decorators and many framework APIs.",
-    "where_used": ["FastAPI", "PyTorch", "Django"]
+    "where_used": [
+      "FastAPI",
+      "PyTorch",
+      "Django"
+    ]
   },
   "why_learning_this": [
     "Building stateful decorators",
@@ -47,10 +59,26 @@
   ],
   "practice_tasks": [
     {
-      "title": "Stateful Counter API",
-      "prompt": "Create a `RateLimiter` class. It should take a `max_requests` integer in its `__init__`. Its `__call__` method should take no arguments, increment an internal counter, and return `True` if the counter is within the limit, or `False` if the limit is exceeded.",
-      "starter_code": "class RateLimiter:\n  def __init__(self, max_requests):\n    pass\n\nlimiter = RateLimiter(2)",
-      "solution": "class RateLimiter:\n  def __init__(self, max_requests):\n    self.max_requests = max_requests\n    self.requests = 0\n\n  def __call__(self):\n    self.requests += 1\n    return self.requests <= self.max_requests\n\nlimiter = RateLimiter(2)\nprint(limiter())\nprint(limiter())\nprint(limiter())"
+      "title": "Stateful Rate Limiter API",
+      "prompt": "Currently, `RateLimiter` has a `check` method that must be called explicitly like `limiter.check()`. Rename and refactor the `check` method to use the `__call__` dunder method instead, so that instances of `RateLimiter` can be called directly like `limiter()`.",
+      "starter_code": "class RateLimiter:\n    def __init__(self, max_requests):\n        self.max_requests = max_requests\n        self.requests = 0\n\n    def check(self):\n        self.requests += 1\n        return self.requests <= self.max_requests\n\nlimiter = RateLimiter(2)\nprint(limiter.check())\n",
+      "solution": "class RateLimiter:\n    def __init__(self, max_requests):\n        self.max_requests = max_requests\n        self.requests = 0\n\n    def __call__(self):\n        self.requests += 1\n        return self.requests <= self.max_requests\n\nlimiter = RateLimiter(2)\nprint(limiter())\n"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class Adder:\n    def __init__(self, val):\n        self.val = val\n    def __call__(self, x):\n        return self.val + x\n\nadd_five = Adder(5)\nprint(add_five(10))",
+      "question": "What is the output of this code?",
+      "answer": "15",
+      "why": "The instance `add_five` is created with `val = 5`. Calling it with `10` invokes the `__call__` method, which adds 5 and 10."
+    },
+    {
+      "type": "predict-output",
+      "code": "class Counter:\n    def __init__(self):\n        self.count = 0\n    def __call__(self):\n        self.count += 1\n        return self.count\n\nCounter()()\nprint(Counter()())",
+      "question": "What is the output of this code?",
+      "answer": "1",
+      "why": "The code creates two *separate* instances of `Counter`. The first `Counter()()` creates an instance and immediately calls it, then discards it. The `print(Counter()())` creates a completely new instance with a fresh `count = 0` and calls it, so it returns 1."
     }
   ],
   "code_walkthrough": {

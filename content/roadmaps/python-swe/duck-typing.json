@@ -1,0 +1,92 @@
+{
+  "slug": "duck-typing",
+  "title": "Duck Typing",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI dependency injection",
+      "Pydantic validators",
+      "Pytest mocks"
+    ]
+  },
+  "overview": {
+    "what": "Duck typing is a programming concept where the type or the class of an object is less important than the methods it defines. When you use duck typing, you do not check types at all. Instead, you check for the presence of a given method or attribute. If it walks like a duck and quacks like a duck, it must be a duck.\n\nFor example, if a function expects a file-like object, it doesn't need an actual `file` object; it just needs any object that has a `.read()` method. The mental model is: Python doesn't care *what* an object is, only *what it can do*.",
+    "why": "It allows for highly flexible and reusable code. You can pass completely different objects into the same function, as long as they implement the expected interface.",
+    "where_used": [
+      "FastAPI",
+      "Pydantic",
+      "Django",
+      "Pytest"
+    ]
+  },
+  "why_learning_this": [
+    "Write functions that accept a wider variety of inputs",
+    "Easily mock objects in tests without complicated inheritance",
+    "Understand why Python doesn't enforce strict types at runtime"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Unintended type errors",
+      "explanation": "Assuming an object has a method just because it's named similarly, causing an `AttributeError` at runtime."
+    },
+    {
+      "title": "Over-checking types",
+      "explanation": "Using `isinstance()` everywhere instead of relying on duck typing, which makes the code rigid and defeats the purpose of Python's dynamic nature. The fix is to use `hasattr()` or `try/except` (EAFP)."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you use duck typing, how do you handle cases where an object passed to a function does not have the required method?",
+      "answer": "You rely on standard Python exceptions (like `AttributeError`) or handle them using a `try/except` block (EAFP paradigm).",
+      "why": "With duck typing, Python doesn't check the type upfront, so if a method is missing, the code fails dynamically at runtime."
+    },
+    {
+      "type": "find-bug",
+      "question": "What is wrong with the following attempt at using duck typing?",
+      "code": "def parse_data(parser, text):\n    if type(parser) == JSONParser:\n        return parser.parse(text)\n    elif type(parser) == XMLParser:\n        return parser.parse(text)",
+      "answer": "It explicitly checks the type of the `parser` argument instead of just invoking `.parse()`, which defeats the purpose of duck typing.",
+      "why": "Duck typing means relying on the presence of a method or attribute, rather than checking the class type. The code should simply be `return parser.parse(text)`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core idea of duck typing in Python?",
+      "answer": "The type or class of an object is less important than the methods it defines. Python checks for the presence of a method rather than enforcing strict type checks."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement a flexible logger",
+      "prompt": "Modify the `log_data` function to remove the type checking logic. It should rely on duck typing instead, simply calling the `log()` method on the provided object. Then modify `FileLogger` to have the correct method name so it works.",
+      "starter_code": "def log_data(logger, data):\n    if isinstance(logger, ConsoleLogger):\n        logger.log(data)\n    elif isinstance(logger, FileLogger):\n        logger.write_log(data)\n    else:\n        raise TypeError('Unsupported logger')\n\nclass ConsoleLogger:\n    def log(self, data):\n        print('Console:', data)\n\nclass FileLogger:\n    def write_log(self, data):\n        print('File:', data)",
+      "solution": "def log_data(logger, data):\n    logger.log(data)\n\nclass ConsoleLogger:\n    def log(self, data):\n        print('Console:', data)\n\nclass FileLogger:\n    def log(self, data):\n        print('File:', data)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Duck:\n    def quack(self):\n        print('Quack')\n\nclass Person:\n    def quack(self):\n        print('I am quacking like a duck!')\n\ndef make_it_quack(thing):\n    thing.quack()\n\nduck = Duck()\nperson = Person()\nmake_it_quack(duck)\nmake_it_quack(person)",
+    "focus": "thing.quack()"
+  },
+  "aha_moment": {
+    "code": "def get_length(item):\n    return len(item)\n\nprint(get_length('hello'))\nprint(get_length([1, 2, 3]))\nprint(get_length({'a': 1, 'b': 2}))",
+    "prediction": "What happens when we pass different types (string, list, dict) to `get_length`?",
+    "common_guess": "It will throw a TypeError because `item` doesn't have a specific type.",
+    "why": "Python uses duck typing for the `len()` function. As long as the object implements the `__len__` method, it works perfectly, regardless of the object's actual type."
+  },
+  "challenge": {
+    "title": "Flexible Data Exporter",
+    "prompt": "Create an `export_data(exporter, data)` function. The `exporter` must have an `export(data)` method. Create a `CSVExporter` that prints the data as comma-separated values, and a `JSONExporter` that prints it as a JSON string. Prove they both work when passed to `export_data`.",
+    "solution": "import json\n\ndef export_data(exporter, data):\n    exporter.export(data)\n\nclass CSVExporter:\n    def export(self, data):\n        print(','.join(str(x) for x in data))\n\nclass JSONExporter:\n    def export(self, data):\n        print(json.dumps(data))\n\ndata = [1, 2, 3]\nexport_data(CSVExporter(), data)\nexport_data(JSONExporter(), data)"
+  },
+  "sources": [
+    "https://docs.python.org/3/glossary.html#term-duck-typing"
+  ]
+}

@@ -43,23 +43,12 @@
       "explanation": "If you put a `return` statement in a `finally` block, it overrides any `return` or raised exceptions from the `try` or `except` blocks. This leads to extremely confusing bugs where exceptions silently vanish. Never return from `finally`."
     }
   ],
-  "recall_questions": [
-    {
-      "q": "Under what exact conditions does the `else` block execute in a `try/except/else` statement?",
-      "answer": "The `else` block executes only if the `try` block completes successfully without raising any exceptions.",
-      "tier": "tier2"
-    },
-    {
-      "q": "If a `try` block encounters an exception, and the `except` block handles it and then hits a `return` statement, will the `finally` block still run?",
-      "answer": "Yes, the `finally` block is guaranteed to run, even if a `return` statement is executed in the `try` or `except` blocks.",
-      "tier": "tier2"
-    }
-  ],
   "practice_tasks": [
     {
-      "title": "Guaranteed cleanup",
-      "prompt": "Write a function `process_data(data)` that tries to execute `result = 100 / data`. If it succeeds, print 'Success'. If it raises a `ZeroDivisionError`, print 'Failed'. Regardless of the outcome, it must ALWAYS print 'Cleanup done'. Do this using the full `try/except/else/finally` structure.",
-      "solution": "def process_data(data):\n    try:\n        result = 100 / data\n    except ZeroDivisionError:\n        print('Failed')\n    else:\n        print('Success')\n    finally:\n        print('Cleanup done')\n\nprocess_data(0)\nprocess_data(10)"
+      "title": "Guaranteed Cleanup",
+      "prompt": "Modify `process_data(data)` so that it catches `ZeroDivisionError` if `100 / data` fails (printing 'Failed'), prints 'Success' ONLY if it succeeds, and ALWAYS prints 'Cleanup done'.",
+      "starter_code": "def process_data(data):\n    # TODO: Wrap this logic in try/except/else/finally\n    result = 100 / data\n    print('Success')\n    print('Cleanup done')",
+      "solution": "def process_data(data):\n    try:\n        result = 100 / data\n    except ZeroDivisionError:\n        print('Failed')\n    else:\n        print('Success')\n    finally:\n        print('Cleanup done')"
     }
   ],
   "code_walkthrough": {
@@ -80,5 +69,30 @@
   "sources": [
     "https://docs.python.org/3/tutorial/errors.html#defining-clean-up-actions",
     "https://docs.python.org/3/reference/compound_stmts.html#the-try-statement"
+  ],
+  "recall_questions": [
+    {
+      "q": "In a try/except statement, when does the `else` block execute?",
+      "answer": "Only if the `try` block completes successfully without raising any exceptions."
+    },
+    {
+      "q": "Will the `finally` block execute even if the `try` block contains a `return` statement?",
+      "answer": "Yes, the `finally` block is guaranteed to run."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the output of this function when called with `divide_and_clean(10, 2)`?",
+      "code": "def divide_and_clean(a, b):\n    try:\n        res = a / b\n    except ZeroDivisionError:\n        print('Error')\n    else:\n        print(res)\n    finally:\n        print('Done')\n\ndivide_and_clean(10, 2)",
+      "answer": "5.0\nDone",
+      "why": "The try block succeeds, so the `except` block is skipped and the `else` block executes, printing the result. Then, the `finally` block ALWAYS executes, printing 'Done'."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If a `return` statement is executed inside a `try` block, does the `finally` block still run?",
+      "answer": "Yes, Python ensures the `finally` block is executed before the actual return takes place.",
+      "why": "The `finally` block guarantees cleanup. Python intercepts the return, runs the `finally` block, and then hands the return value back to the caller."
+    }
   ]
 }

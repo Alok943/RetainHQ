@@ -49,26 +49,45 @@ Return ONE JSON object matching this exact shape. No markdown, no commentary, JS
   "recall_questions": [
     { "q": "Open-ended question", "answer": "Model answer, answerable from `overview` alone.", "tier": "tier1" }
   ],
-  "practice_tasks": [
-    { "title": "Task name", "prompt": "What to build, one paragraph.", "starter_code": "optional", "solution": "working code" }
+  "understanding_checks": [                  // REQUIRED, >=2 — Tier A. Mental-model probes, NOT coding exercises.
+    {
+      "type": "predict-output",             // predict-output | explain-behavior | find-bug | choose-model | debug-misconception
+      "code": "<=12 lines, runnable, deterministic (omit for explain/choose-model probes that need no snippet)",
+      "question": "What prints, and why? / Which mental model is correct? / Where is the bug?",
+      "answer": "The correct, specific answer (e.g. 'A').",
+      "why": "1-2 sentences that name the exact rule/model that makes the answer correct and the common guess wrong."
+    }
   ],
   "code_walkthrough": {
     "code": "<=15 lines, self-contained, runnable, deterministic, prints output — the snippet the step-through visualizer animates",
     "focus": "one line: the state change to watch as it runs (what reveals the concept)"
   },
-  "aha_moment": {                           // OPTIONAL but high-value: the predict-before-reveal moment
+  "aha_moment": {                           // OPTIONAL but high-value: THE single most surprising predict-before-reveal moment
     "code": "<=12 lines, runnable, prints output, with a SURPRISING result; the visualizer runs it — do NOT store the output",
     "prediction": "What does this print? (learner answers BEFORE revealing)",
     "common_guess": "the wrong answer most beginners give",
     "why": "1-2 sentences that rebuild the correct mental model once the real output surprises them"
   },
-  "challenge": {
+  "practice_tasks": [                        // REQUIRED, exactly 1 — Tier C. A VARIATION task: modify given behaviour, not build-from-scratch.
+    { "title": "Task name", "prompt": "Given this working code, change it so that <X>. (Modify, don't build from a blank page.)", "starter_code": "the code to modify", "solution": "working code" }
+  ],
+  "challenge": {                            // OPTIONAL — Tier D. A SMALL write-from-scratch, one notch up. Omit if a good check covers application.
     "title": "Applied task (this topic + prereqs only)",
-    "prompt": "A slightly harder, realistic application of THIS topic. May lean on the listed prerequisites, but NOTHING beyond them. Not a brain-teaser — a learner who just read the overview should be able to solve it.",
+    "prompt": "A small, realistic application of THIS topic, solvable from the overview. NOT a project, NOT a brain-teaser.",
     "solution": "working code"
   },
   "sources": ["https://docs.python.org/3/..."]  // 1-3 OFFICIAL doc URLs. Required. No invented links.
 }
+
+VALUE HIERARCHY (invest your effort proportionally — understanding-first, not exercise-first):
+  Tier A (most learning value): overview · aha_moment · recall_questions · understanding_checks
+  Tier B: code_walkthrough
+  Tier C: practice_tasks (a single VARIATION/modify task)
+  Tier D: challenge (OPTIONAL, a small write-from-scratch)
+A learner who correctly PREDICTS behaviour and EXPLAINS why has understood the concept; one who
+completes a big coding task may just be pattern-matching. Spend your quality budget on Tier A.
+The learning arc is: Predict -> Observe -> Explain -> Vary -> Apply — understanding_checks own the
+first three rungs, practice_tasks the fourth, challenge the fifth.
 
 HARD RULES:
 1. DOCS-AS-TRUTH: `sources` must contain real official documentation URLs (docs.python.org,
@@ -101,20 +120,33 @@ HARD RULES:
 11. RECALL QUALITY: every recall question must be answerable directly from overview.what,
     overview.why, or overview.where_used. Do not introduce facts not taught. Test conceptual
     understanding, not memorisation of the analogy.
-12. OVERVIEW COVERAGE: any fact referenced in recall_questions, practice_tasks, or challenge
-    must first appear in overview. Never test a concept that was not introduced.
-13. PRACTICE TASK QUALITY: reinforce the primary concept, not niche edge cases. A tier1 learner
-    should be able to solve it using only the overview and prerequisites.
-14. CHALLENGE SCOPE & DIFFICULTY: the challenge is one notch above the practice task — NOT a hard
-    puzzle. It must be solvable using ONLY this topic + the listed prerequisites; never require a
-    concept, library, or API that has not been taught yet in this roadmap (no forward references,
-    no clever tricks, no edge-case trivia). If using copy(), slicing, or similar, state explicitly
-    whether the behaviour is shallow or deep — never teach an incorrect mental model.
+12. OVERVIEW COVERAGE: any fact referenced in recall_questions, understanding_checks, practice_tasks,
+    or challenge must first appear in overview. Never test a concept that was not introduced.
+13. PRACTICE TASK = VARIATION, NOT BUILD-FROM-SCRATCH: provide exactly ONE practice task. It must
+    hand the learner working code and ask them to MODIFY its behaviour (the Vary rung), e.g. "change
+    this so it returns X instead of Y." starter_code is the code to modify, not an empty stub.
+    Solvable using only the overview + prerequisites; reinforce the primary concept, not edge cases.
+14. CHALLENGE (OPTIONAL, Tier D): include it only when application adds value beyond the checks. If
+    present it is a SMALL write-from-scratch one notch above the practice task — NOT a project, NOT a
+    brain-teaser. Solvable using ONLY this topic + listed prerequisites; never require a concept,
+    library, or API not yet taught in this roadmap (no forward references, no clever tricks, no
+    edge-case trivia). If using copy()/slicing/etc., state explicitly whether the behaviour is
+    shallow or deep — never teach an incorrect mental model.
+14b. UNDERSTANDING CHECKS (REQUIRED, Tier A): provide >=2 probes that VALIDATE THE MENTAL MODEL, not
+    coding ability. Each has a `type` (predict-output | explain-behavior | find-bug | choose-model |
+    debug-misconception), a `question`, a precise `answer`, and a `why` that names the exact rule.
+    For predict-output/find-bug, include runnable, deterministic `code` (<=12 lines) — the visualizer
+    can run it, so runtime is truth. Target the REAL misconception a learner holds (the wrong answer
+    they would give), exactly like the match-case "first matching case wins / mapping patterns allow
+    extra keys -> prints A, not B" probe. Do NOT duplicate the aha_moment: aha_moment is the single
+    most surprising moment; understanding_checks are the rest. Every check must be answerable from the
+    overview (no untaught trivia).
 15. FINAL SELF-CHECK before returning — verify ALL of these, and silently repair the JSON if
     any fail: JSON parses; all code runs; sources are official-doc URLs (no markdown links);
     recall answerable from overview; no toy examples; no invented APIs; code_walkthrough <=15
-    lines and prints output; prerequisites/unlocks are kebab-case slugs; challenge solution
-    runs; practice solution runs.
+    lines and prints output; prerequisites/unlocks are kebab-case slugs; >=2 understanding_checks
+    present, each with a valid type and any code running deterministically to the stated answer;
+    practice_tasks is a single modify-the-code variation; challenge (if present) solution runs.
 16. OVERVIEW COMPLETENESS: overview.what must explicitly teach the core definition, 2-3 concrete
     examples, and the single most important mental model — not the analogy alone. Any example or
     fact referenced by a recall question, practice task, or challenge must already appear in overview.

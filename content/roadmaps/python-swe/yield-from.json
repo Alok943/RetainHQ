@@ -9,14 +9,26 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["iterator-protocol", "iterable-protocol"],
-    "unlocks": ["generator-send"],
-    "project_usage": ["asyncio", "FastAPI"]
+    "prerequisites": [
+      "iterator-protocol",
+      "iterable-protocol"
+    ],
+    "unlocks": [
+      "generator-send"
+    ],
+    "project_usage": [
+      "asyncio",
+      "FastAPI"
+    ]
   },
   "overview": {
     "what": "The `yield from` expression delegates part of a generator's operations to another iterable (called the subgenerator). It acts as a transparent two-way pipe: instead of iterating with a `for` loop and yielding items one by one, `yield from` automatically yields all values from the sub-iterable. Think of it like connecting a hose to an existing tap instead of carrying water by buckets.",
     "why": "It removes boilerplate when one generator needs to yield all elements from another, making recursive generators clean and enabling advanced coroutine patterns.",
-    "where_used": ["Recursive data structure traversal", "Coroutines (asyncio foundation)", "Chunked data processing"]
+    "where_used": [
+      "Recursive data structure traversal",
+      "Coroutines (asyncio foundation)",
+      "Chunked data processing"
+    ]
   },
   "why_learning_this": [
     "Refactoring large generators into smaller reusable subgenerators",
@@ -26,6 +38,21 @@
     {
       "title": "Confusing yield with yield from",
       "explanation": "Using `yield list_obj` yields the entire list as a single item, whereas `yield from list_obj` yields each element of the list individually."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the output of this code?",
+      "code": "def sub():\n    yield 'a'\n    yield 'b'\n\ndef main():\n    yield 1\n    yield from sub()\n    yield 2\n\nprint(list(main()))",
+      "answer": "[1, 'a', 'b', 2]",
+      "why": "The `main` generator yields 1, then pauses its own yielding to fully exhaust `sub()` yielding 'a' and 'b', and then resumes to yield 2."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why use `yield from` instead of manually looping over a sub-iterable and yielding each item?",
+      "answer": "It eliminates boilerplate code and establishes a transparent two-way channel between the caller and the subgenerator.",
+      "why": "For simple generators, it saves lines of code. For advanced use cases, it allows values and exceptions to be sent directly to the subgenerator."
     }
   ],
   "recall_questions": [
@@ -43,8 +70,8 @@
   "practice_tasks": [
     {
       "title": "Flatten a Nested List",
-      "prompt": "Write a generator function `flatten` that takes a list of lists and uses `yield from` to yield each individual item from the inner lists without using a nested for-loop.",
-      "starter_code": "def flatten(list_of_lists):\n    # Your code here\n    pass",
+      "prompt": "Refactor the `flatten` generator to use `yield from` instead of the inner `for` loop to yield items from each sublist.",
+      "starter_code": "def flatten(list_of_lists):\n    for sublist in list_of_lists:\n        for item in sublist:\n            yield item",
       "solution": "def flatten(list_of_lists):\n    for sublist in list_of_lists:\n        yield from sublist"
     }
   ],

@@ -63,10 +63,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Implement Equality for a Model",
-      "prompt": "Create a `User` class that initializes with a `user_id` and a `username`. Implement the appropriate dunder method so that two `User` instances are considered equal (`==`) if they have the exact same `user_id`, regardless of their `username`. If the other object is not a `User`, return `NotImplemented`.",
-      "starter_code": "class User:\n  def __init__(self, user_id, username):\n    self.user_id = user_id\n    self.username = username\n\n  # Implement equality here",
-      "solution": "class User:\n  def __init__(self, user_id, username):\n    self.user_id = user_id\n    self.username = username\n\n  def __eq__(self, other):\n    if not isinstance(other, User):\n      return NotImplemented\n    return self.user_id == other.user_id"
+      "title": "Refactor User Equality",
+      "prompt": "The `User` class currently uses the default equality behavior (comparing memory identity). Modify the `__eq__` method so that two `User` instances are considered equal (`==`) if they have the same `user_id`. Also ensure that comparing a `User` with a non-User object returns `NotImplemented` instead of raising an error or returning False.",
+      "starter_code": "class User:\n    def __init__(self, user_id, username):\n        self.user_id = user_id\n        self.username = username\n\n    def __eq__(self, other):\n        return self is other",
+      "solution": "class User:\n    def __init__(self, user_id, username):\n        self.user_id = user_id\n        self.username = username\n\n    def __eq__(self, other):\n        if not isinstance(other, User):\n            return NotImplemented\n        return self.user_id == other.user_id"
     }
   ],
   "code_walkthrough": {
@@ -87,5 +87,20 @@
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types",
     "https://docs.python.org/3/reference/datamodel.html#object.__eq__"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the output of this script?",
+      "code": "class Point:\n    def __init__(self, x):\n        self.x = x\n    def __add__(self, other):\n        self.x += other.x\n        return self\np1 = Point(5)\np2 = Point(10)\np3 = p1 + p2\nprint(p1.x, p3.x)",
+      "answer": "15, 15",
+      "why": "The `__add__` method mutates `self` instead of creating and returning a completely new instance. Thus, both `p1` and `p3` refer to the same object, and `p1` has been permanently modified by the addition."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "When defining the `__eq__` method, what is the correct way to handle comparison with an unsupported type?",
+      "answer": "Return the singleton `NotImplemented`.",
+      "why": "Returning `NotImplemented` tells Python that this method does not know how to handle the other operand's type. Python will then attempt to call the reverse operation (e.g., `__req__` or the other object's `__eq__`) before finally falling back to default behavior."
+    }
   ]
 }

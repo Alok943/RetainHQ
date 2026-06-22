@@ -9,14 +9,24 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["object-identity", "mutable-vs-immutable"],
+    "prerequisites": [
+      "object-identity",
+      "mutable-vs-immutable"
+    ],
     "unlocks": [],
-    "project_usage": ["Long-running background tasks", "Memory profiling"]
+    "project_usage": [
+      "Long-running background tasks",
+      "Memory profiling"
+    ]
   },
   "overview": {
     "what": "Python manages memory automatically using reference counting: every object keeps a count of how many labels point to it. When the count drops to zero, the object is immediately destroyed. A 'cyclic reference' occurs when objects point to each other (e.g., node A points to B, and B points to A). Reference counting cannot clean these up because their counts never reach zero. To solve this, a background process called the 'garbage collector' periodically scans for unreachable cycles and destroys them. Think of reference counting as returning a library book as soon as you finish reading it, and the garbage collector as the librarian sweeping the building at night for abandoned books.",
     "why": "It prevents memory leaks in long-running applications without requiring developers to manually allocate and free memory.",
-    "where_used": ["FastAPI background tasks", "Celery workers", "Data processing scripts"]
+    "where_used": [
+      "FastAPI background tasks",
+      "Celery workers",
+      "Data processing scripts"
+    ]
   },
   "why_learning_this": [
     "You can avoid creating memory leaks in long-running servers.",
@@ -47,7 +57,7 @@
   "practice_tasks": [
     {
       "title": "Break a cycle",
-      "prompt": "The provided code creates a cyclic reference between a parent and child node. Write the line of code that breaks the cycle manually before the end of the program, so that reference counting alone can clean them up.",
+      "prompt": "The provided code creates a cyclic reference between a parent and child node. Modify the code to manually break the cycle before the end of the script so that reference counting alone can clean them up.",
       "starter_code": "class Node:\n    def __init__(self, name):\n        self.name = name\n        self.child = None\n        self.parent = None\n\nparent = Node('parent')\nchild = Node('child')\n\nparent.child = child\nchild.parent = parent\n\n# Break the cycle here\n",
       "solution": "class Node:\n    def __init__(self, name):\n        self.name = name\n        self.child = None\n        self.parent = None\n\nparent = Node('parent')\nchild = Node('child')\n\nparent.child = child\nchild.parent = parent\n\n# Break the cycle here\nparent.child = None"
     }
@@ -56,12 +66,21 @@
     "code": "import sys\n\nx = []\nprint(sys.getrefcount(x))\ny = x\nprint(sys.getrefcount(x))\n\ndel y\nprint(sys.getrefcount(x))",
     "focus": "del y"
   },
-  "aha_moment": {
-    "code": "import gc\n\nclass Data:\n    pass\n\na = Data()\nb = Data()\na.friend = b\nb.friend = a\n\ndel a\ndel b\n\nprint(gc.collect())",
-    "prediction": "What does this print? (Number of unreachable objects collected)",
-    "common_guess": "0",
-    "why": "When a and b are deleted, their reference counts drop to 1 (because they still point to each other). gc.collect() finds this unreachable cycle and cleans up the 2 objects, returning 2 (or more, depending on internals, but it collects them)."
-  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import gc\nclass Data: pass\na, b = Data(), Data()\na.friend, b.friend = b, a\ndel a, b\nprint(gc.collect() > 0)",
+      "question": "What is the output of this code?",
+      "answer": "True",
+      "why": "When a and b are deleted, their reference counts drop to 1 (because they point to each other). `gc.collect()` finds this unreachable cycle, cleans it up, and returns the number of collected objects, which is greater than 0."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you delete a variable using `del x`, does it immediately free the memory?",
+      "answer": "Not necessarily. It only decrements the reference count.",
+      "why": "`del x` removes the label 'x' and decrements the object's reference count by 1. The object is only destroyed and its memory freed if that count reaches 0."
+    }
+  ],
   "challenge": {
     "title": "Analyze Reference Counts",
     "prompt": "Create a list a and append it to itself. Then delete the label a. This creates a cyclic reference. Use the gc module to force a collection and print the number of collected objects.",

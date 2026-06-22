@@ -49,12 +49,28 @@
       "tier": "tier2"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will happen when you run this code?",
+      "code": "class Simple:\n    def __iter__(self):\n        return self\n    def __next__(self):\n        return 1\n\nfor num in Simple():\n    print(num)",
+      "answer": "It will print `1` infinitely.",
+      "why": "The `__next__` method never raises `StopIteration`, so the `for` loop has no signal to stop and will continue indefinitely."
+    },
+    {
+      "type": "find-bug",
+      "question": "This iterator is supposed to immediately stop when looped over, but it crashes with a `TypeError` when used in a `for` loop. What is the bug?",
+      "code": "class OneTime:\n    def __next__(self):\n        raise StopIteration\n\nfor x in OneTime():\n    print(x)",
+      "answer": "The class is missing the `__iter__` method.",
+      "why": "A `for` loop always calls `iter()` on the object first, which expects an `__iter__` method to return an iterator. Since `OneTime` only defines `__next__`, it cannot be iterated over."
+    }
+  ],
   "practice_tasks": [
     {
-      "title": "Create a countdown iterator",
-      "prompt": "Write a `Countdown` class that takes a starting integer in `__init__`. Implement `__iter__` and `__next__` so that iterating over the object counts down to 1. Raise `StopIteration` when reaching 0.",
-      "starter_code": "class Countdown:\n  def __init__(self, start):\n    self.current = start",
-      "solution": "class Countdown:\n  def __init__(self, start):\n    self.current = start\n\n  def __iter__(self):\n    return self\n\n  def __next__(self):\n    if self.current <= 0:\n      raise StopIteration\n    value = self.current\n    self.current -= 1\n    return value"
+      "title": "Fix the Infinite Loop",
+      "prompt": "The given `Countdown` iterator correctly implements `__iter__` and `__next__`, but it counts down forever into negative numbers. Modify the `__next__` method to raise `StopIteration` when `self.current` reaches 0.",
+      "starter_code": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n    def __iter__(self):\n        return self\n    def __next__(self):\n        value = self.current\n        self.current -= 1\n        return value",
+      "solution": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n    def __iter__(self):\n        return self\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value"
     }
   ],
   "code_walkthrough": {

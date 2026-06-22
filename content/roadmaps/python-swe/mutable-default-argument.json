@@ -9,18 +9,32 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["mutable-vs-immutable", "primitive-types"],
-    "unlocks": ["functions", "shallow-vs-deep-copy"],
-    "project_usage": ["FastAPI dependency factories", "Pydantic validators", "data pipelines"]
+    "prerequisites": [
+      "mutable-vs-immutable",
+      "primitive-types"
+    ],
+    "unlocks": [
+      "functions",
+      "shallow-vs-deep-copy"
+    ],
+    "project_usage": [
+      "FastAPI dependency factories",
+      "Pydantic validators",
+      "data pipelines"
+    ]
   },
   "overview": {
-    "what": "Python evaluates default argument values once when the function is defined — not each time the function is called. If that default is a mutable object (list, dict, or set), all calls that omit the argument share the SAME object in memory.\n\nExample of the bug:\n\n  def append_tag(tag, result=[]):\n      result.append(tag)\n      return result\n\nCalling append_tag('a') then append_tag('b') returns ['a', 'b'] on the second call — the list was mutated between calls and was never reset.\n\nThe idiomatic fix is to use None as the default sentinel and create the mutable object inside the body:\n\n  def append_tag(tag, result=None):\n      if result is None:\n          result = []\n      result.append(tag)\n      return result\n\nThink of the default as a sticky note stapled to the function when Python first reads its definition — every call reads the same note, not a fresh copy printed for each call.",
-    "why": "This bug is invisible at a glance: the signature looks correct and the very first call always works. The symptom is mysterious state persistence across calls — data from one request leaking into the next in API handlers, or factory functions producing objects that share hidden state.",
-    "where_used": ["FastAPI dependency factories", "Pydantic model_validator helpers", "argument accumulator patterns in CLI tools"]
+    "what": "Python evaluates default argument values once when the function is defined \u2014 not each time the function is called. If that default is a mutable object (list, dict, or set), all calls that omit the argument share the SAME object in memory.\n\nExample of the bug:\n\n  def append_tag(tag, result=[]):\n      result.append(tag)\n      return result\n\nCalling append_tag('a') then append_tag('b') returns ['a', 'b'] on the second call \u2014 the list was mutated between calls and was never reset.\n\nThe idiomatic fix is to use None as the default sentinel and create the mutable object inside the body:\n\n  def append_tag(tag, result=None):\n      if result is None:\n          result = []\n      result.append(tag)\n      return result\n\nThink of the default as a sticky note stapled to the function when Python first reads its definition \u2014 every call reads the same note, not a fresh copy printed for each call.",
+    "why": "This bug is invisible at a glance: the signature looks correct and the very first call always works. The symptom is mysterious state persistence across calls \u2014 data from one request leaking into the next in API handlers, or factory functions producing objects that share hidden state.",
+    "where_used": [
+      "FastAPI dependency factories",
+      "Pydantic model_validator helpers",
+      "argument accumulator patterns in CLI tools"
+    ]
   },
   "why_learning_this": [
     "Prevents a persistent cross-call mutation bug in any function that uses a list or dict as a default parameter",
-    "A canonical Python interview question — examiners probe this explicitly with 'why does this function remember values between calls?'"
+    "A canonical Python interview question \u2014 examiners probe this explicitly with 'why does this function remember values between calls?'"
   ],
   "common_mistakes": [
     {
@@ -29,7 +43,7 @@
     },
     {
       "title": "Thinking the bug only affects lists",
-      "explanation": "Any mutable default — dict, set, custom object — has the same problem. Even datetime.now() as a default captures the startup time, not the call time."
+      "explanation": "Any mutable default \u2014 dict, set, custom object \u2014 has the same problem. Even datetime.now() as a default captures the startup time, not the call time."
     },
     {
       "title": "Guarding with `or` instead of `is None`",
@@ -39,7 +53,7 @@
   "recall_questions": [
     {
       "q": "When are default argument values evaluated in Python?",
-      "answer": "Once, when the function is defined — not each time the function is called.",
+      "answer": "Once, when the function is defined \u2014 not each time the function is called.",
       "tier": "tier1"
     },
     {
@@ -61,22 +75,38 @@
   "practice_tasks": [
     {
       "title": "Fix a leaking tag accumulator",
-      "prompt": "The function below accumulates tags across calls because of a mutable default. Fix it so each call without a tags argument starts fresh. Print three separate calls to prove the lists are independent.",
-      "starter_code": "def build_tags(name, tags=[]):\n    tags.append(name)\n    return tags",
+      "prompt": "The function below accumulates tags across calls because of a mutable default argument. Modify the function to fix this bug so that each call without a `tags` argument starts fresh. Output should be `['admin']`, `['user']`, `['guest']`.",
+      "starter_code": "def build_tags(name, tags=[]):\n    tags.append(name)\n    return tags\n\nprint(build_tags('admin'))\nprint(build_tags('user'))\nprint(build_tags('guest'))",
       "solution": "def build_tags(name, tags=None):\n    if tags is None:\n        tags = []\n    tags.append(name)\n    return tags\n\nprint(build_tags('admin'))\nprint(build_tags('user'))\nprint(build_tags('guest'))"
     }
   ],
   "code_walkthrough": {
     "code": "def add_field(key, store={}):\n    store[key] = True\n    return store\n\nprint(add_field('name'))\nprint(add_field('email'))\nprint(add_field('age'))",
-    "focus": "store is created once at function definition; each call without an explicit argument mutates the same dict, so the printed output grows with every call — the bug in action."
+    "focus": "store is created once at function definition; each call without an explicit argument mutates the same dict, so the printed output grows with every call \u2014 the bug in action."
   },
   "challenge": {
     "title": "Request header builder",
-    "prompt": "Write add_header(key, value, headers=None) that adds key:value to a headers dict and returns it. Demonstrate that two independent call chains each produce their own dict — no shared state between them. Print both dicts at the end.",
+    "prompt": "Write add_header(key, value, headers=None) that adds key:value to a headers dict and returns it. Demonstrate that two independent call chains each produce their own dict \u2014 no shared state between them. Print both dicts at the end.",
     "solution": "def add_header(key, value, headers=None):\n    if headers is None:\n        headers = {}\n    headers[key] = value\n    return headers\n\nh1 = add_header('Content-Type', 'application/json')\nh1 = add_header('Authorization', 'Bearer abc', h1)\n\nh2 = add_header('Accept', 'text/html')\n\nprint(h1)\nprint(h2)"
   },
   "sources": [
     "https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects",
     "https://docs.python.org/3/reference/compound_stmts.html#function-definitions"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "code": "import time\ndef log_time(msg, t=time.time()):\n    print(f\"{msg}: {t}\")",
+      "question": "A developer expects this function to print the current time each time it's called. What actually happens?",
+      "answer": "The time is recorded once when the function is defined. Every call that omits `t` will print the exact same timestamp.",
+      "why": "In Python, default arguments are evaluated exactly once at function definition time, not each time the function is called. Thus, `time.time()` executes only once."
+    },
+    {
+      "type": "predict-output",
+      "code": "def multiply(x, factors=[]):\n    factors.append(x)\n    result = 1\n    for f in factors:\n        result *= f\n    return result\n\nprint(multiply(2))\nprint(multiply(3, []))\nprint(multiply(4))",
+      "question": "What is the output of this code?",
+      "answer": "2\n3\n8",
+      "why": "The first call `multiply(2)` appends 2 to the default list and returns 2. The second call `multiply(3, [])` passes a new list, so it returns 3 without affecting the default list. The third call `multiply(4)` uses the default list again, which still holds `[2]`. It appends 4, so the list becomes `[2, 4]`, and it returns `2 * 4 = 8`."
+    }
   ]
 }

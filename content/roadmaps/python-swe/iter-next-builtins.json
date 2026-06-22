@@ -49,11 +49,27 @@
       "tier": "tier1"
     }
   ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What happens when you run this code?",
+      "code": "nums = [1, 2]\nprint(next(nums))",
+      "answer": "A `TypeError` is raised.",
+      "why": "You cannot call `next()` directly on a list (which is an iterable, not an iterator). You must first get an iterator by calling `iter(nums)`."
+    },
+    {
+      "type": "predict-output",
+      "question": "What will the following code output?",
+      "code": "it = iter([10, 20])\nnext(it)\nprint(next(it, 99))\nprint(next(it, 99))",
+      "answer": "`20` followed by `99`",
+      "why": "The first `next(it)` advances past 10. The first `print` consumes 20. The second `print` tries to get the next item, but the iterator is exhausted, so it returns the default value `99` instead of raising `StopIteration`."
+    }
+  ],
   "practice_tasks": [
     {
       "title": "Manual List Traversal",
-      "prompt": "Write a function `first_and_third(items)` that takes a list, manually obtains an iterator using `iter()`, and returns a tuple of the first and third items. Ignore the second item by advancing the iterator without storing it.",
-      "starter_code": "def first_and_third(items):\n    pass",
+      "prompt": "The given code creates an iterator but extracts the first two items instead of the first and third. Modify the code to return a tuple of the first and third items, manually ignoring the second item using the iterator.",
+      "starter_code": "def first_and_third(items):\n    it = iter(items)\n    first = next(it)\n    second = next(it)\n    return (first, second)",
       "solution": "def first_and_third(items):\n    it = iter(items)\n    first = next(it)\n    next(it)\n    third = next(it)\n    return (first, third)"
     }
   ],

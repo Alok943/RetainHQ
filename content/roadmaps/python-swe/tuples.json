@@ -9,14 +9,28 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["primitive-types", "mutable-vs-immutable", "lists"],
-    "unlocks": ["collection-complexity"],
-    "project_usage": ["FastAPI status tuples", "database row results", "composite dict keys"]
+    "prerequisites": [
+      "primitive-types",
+      "mutable-vs-immutable",
+      "lists"
+    ],
+    "unlocks": [
+      "collection-complexity"
+    ],
+    "project_usage": [
+      "FastAPI status tuples",
+      "database row results",
+      "composite dict keys"
+    ]
   },
   "overview": {
     "what": "A tuple is an ordered, immutable sequence. You create one with parentheses or just commas — the commas are what actually make the tuple, not the parentheses:\n\n  coords = (40.7128, -74.0060)\n  same = 40.7128, -74.0060\n\nA single-element tuple REQUIRES a trailing comma — without it Python sees plain parentheses:\n\n  one = (42,)    # tuple with one int\n  not_a_tuple = (42)  # just the int 42\n\nBecause tuples are immutable, you cannot append, remove, or reassign an element after creation. But immutability makes tuples hashable (as long as every element inside is also hashable), so they can serve as dict keys or set members:\n\n  cache = {}\n  cache[('users', 'page', 2)] = [{'id': 7}, {'id': 8}]\n\nTuple unpacking lets you extract elements into named variables in one step:\n\n  status, body = (200, {'ok': True})\n\nThis is why functions that return multiple values actually return a tuple — `return status, body` packs them, and the caller unpacks.\n\nThink of a tuple as a sealed envelope: once you put items inside and close it, you can read the contents but cannot swap, add, or remove anything. That seal is what makes it safe to use as a dict key.",
     "why": "Tuples give you a lightweight, read-only container for fixed-size data: coordinates, status-and-body pairs, composite cache keys. Their immutability guarantees the data will not change by accident, and their hashability lets you use multi-part keys in dicts and sets — something a list cannot do.",
-    "where_used": ["FastAPI returning (status, body) pairs", "Database row results from cursor.fetchall()", "Composite dict keys for caching and lookups"]
+    "where_used": [
+      "FastAPI returning (status, body) pairs",
+      "Database row results from cursor.fetchall()",
+      "Composite dict keys for caching and lookups"
+    ]
   },
   "why_learning_this": [
     "Enables composite dict keys for caches and lookup tables — a pattern used in every non-trivial backend",
@@ -62,14 +76,9 @@
   "practice_tasks": [
     {
       "title": "Composite cache key",
-      "prompt": "Write a function get_cached(cache, tenant, resource, page) that uses a tuple (tenant, resource, page) as the dict key. If the key exists, return its value; otherwise store the string 'fetched-{tenant}-{resource}-{page}' and return it. Print results for two different keys and one repeated key to show the cache hit.",
-      "starter_code": "def get_cached(cache, tenant, resource, page):\n    pass",
-      "solution": "def get_cached(cache, tenant, resource, page):\n    key = (tenant, resource, page)\n    if key not in cache:\n        cache[key] = f'fetched-{tenant}-{resource}-{page}'\n    return cache[key]\n\ncache = {}\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(get_cached(cache, 'acme', 'users', 2))\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(len(cache))"
-    },
-    {
-      "title": "Unpack function results",
-      "prompt": "Write parse_status_line(line) that splits a string like '200 OK' into an integer status code and a text reason, returning them as a tuple. The caller should unpack them into two variables and print each.",
-      "solution": "def parse_status_line(line):\n    parts = line.split(' ', 1)\n    return int(parts[0]), parts[1]\n\ncode, reason = parse_status_line('200 OK')\nprint(code)\nprint(reason)\n\ncode2, reason2 = parse_status_line('404 Not Found')\nprint(code2)\nprint(reason2)"
+      "prompt": "The get_cached function currently uses a string key for caching. Modify its behavior to use a tuple of (tenant, resource, page) as the dictionary key instead, which is safer and faster.",
+      "starter_code": "def get_cached(cache, tenant, resource, page):\n    # TODO: Modify this function to use a tuple key (tenant, resource, page) instead of a string\n    key = f\"{tenant}-{resource}-{page}\"\n    if key not in cache:\n        cache[key] = f'fetched-{tenant}-{resource}-{page}'\n    return cache[key]\n\ncache = {}\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(get_cached(cache, 'acme', 'users', 1))",
+      "solution": "def get_cached(cache, tenant, resource, page):\n    key = (tenant, resource, page)\n    if key not in cache:\n        cache[key] = f'fetched-{tenant}-{resource}-{page}'\n    return cache[key]\n\ncache = {}\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(get_cached(cache, 'acme', 'users', 1))\nprint(len(cache))"
     }
   ],
   "code_walkthrough": {
@@ -91,5 +100,20 @@
     "https://docs.python.org/3/library/stdtypes.html#tuples",
     "https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences",
     "https://docs.python.org/3/reference/expressions.html#expression-lists"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "data = (42)\nprint(type(data))",
+      "question": "What will this code print?",
+      "answer": "<class 'int'>",
+      "why": "Without a trailing comma, `(42)` is just the integer 42 wrapped in parentheses. You need `(42,)` to create a tuple."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why can a tuple be used as a dictionary key, but a list cannot?",
+      "answer": "Because tuples are immutable and hashable (as long as all their contents are hashable), whereas lists are mutable.",
+      "why": "Dictionary keys must be hashable, which requires them to remain unmodified throughout their lifetime."
+    }
   ]
 }

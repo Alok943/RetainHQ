@@ -1,0 +1,89 @@
+{
+  "slug": "type-hints-protocols",
+  "title": "Protocols for Structural Typing",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["duck-typing", "type-hints-basics"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Dependency Injection", "Domain-Driven Design"]
+  },
+  "overview": {
+    "what": "In Python type hints, a Protocol defines a set of methods or attributes that an object must have, without requiring the object to inherit from a base class. It formalizes 'duck typing'. For example, if you define a `Speaker` protocol with a `speak()` method, any class that implements `speak()` is considered a valid `Speaker` by the type checker, even if it doesn't subclass `Speaker`.\n\nThe mental model is 'shape-matching': the type checker verifies if an object's 'shape' (its methods and attributes) matches the Protocol's required shape. It's an analogy to checking if a plug fits a socket—the brand of the plug doesn't matter, only the pin layout.",
+    "why": "Protocols allow you to write strongly typed code without coupling classes together through inheritance, leading to cleaner and more flexible designs.",
+    "where_used": ["Dependency Injection", "Abstracting external libraries", "Mocking in tests"]
+  },
+  "why_learning_this": [
+    "You can define what a function needs from an argument without forcing the caller to inherit from a specific base class.",
+    "It makes testing easier because you can mock dependencies that match the Protocol instead of mocking complex base classes."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Inheriting from Protocol in the implementation",
+      "explanation": "You don't need to inherit from the Protocol in your concrete classes. The type checker matches them structurally. Inheriting defeats the purpose of structural subtyping."
+    },
+    {
+      "title": "Forgetting @runtime_checkable",
+      "explanation": "By default, Protocols are only for static type checking. If you want to use isinstance() with a Protocol at runtime, you must decorate the Protocol with @runtime_checkable."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary advantage of using a Protocol over an Abstract Base Class?",
+      "answer": "Protocols allow type checking based on the shape of an object (its methods and attributes) without requiring the object to explicitly inherit from a base class.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the type checker verify if an object satisfies a Protocol?",
+      "answer": "It performs structural subtyping (shape-matching), checking if the object implements all the methods and attributes required by the Protocol.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from typing import Protocol, runtime_checkable\n\n@runtime_checkable\nclass Quacker(Protocol):\n    def quack(self) -> str: ...\n\nclass Duck:\n    def quack(self) -> str:\n        return 'Quack'\n\nprint(isinstance(Duck(), Quacker))",
+      "question": "What does this code print, and why?",
+      "answer": "True",
+      "why": "The Duck class implements the quack() method, matching the Quacker Protocol. Because Quacker is decorated with @runtime_checkable, isinstance() structurally checks Duck at runtime."
+    },
+    {
+      "type": "explain-behavior",
+      "code": "from typing import Protocol\n\nclass Saver(Protocol):\n    def save(self) -> None: ...\n\nclass User:\n    def save(self) -> None:\n        pass\n\ndef save_entity(entity: Saver) -> None:\n    entity.save()\n\nsave_entity(User())",
+      "question": "Does a type checker raise an error for passing User() to save_entity()?",
+      "answer": "No",
+      "why": "User implements the save() method required by the Saver Protocol. Even though User doesn't inherit from Saver, the type checker recognizes it as a valid Saver."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from typing import Protocol\n\nclass Logger(Protocol):\n    def log(self, msg: str) -> None: ...\n\nclass ConsoleLogger:\n    def log(self, msg: str) -> None:\n        print(f'Log: {msg}')\n\ndef process(logger: Logger) -> None:\n    logger.log('Started')\n\nprocess(ConsoleLogger())",
+    "focus": "def process(logger: Logger) -> None:"
+  },
+  "aha_moment": {
+    "code": "from typing import Protocol, runtime_checkable\n\n@runtime_checkable\nclass Swimmer(Protocol):\n    def swim(self) -> None: ...\n\nclass Fish:\n    def swim(self) -> None: pass\n\nprint(issubclass(Fish, Swimmer))",
+    "prediction": "What does issubclass() return?",
+    "common_guess": "False, because Fish does not inherit from Swimmer.",
+    "why": "It prints True. When a Protocol is decorated with @runtime_checkable, issubclass() structurally checks if Fish has the required methods, bypassing normal inheritance checks."
+  },
+  "practice_tasks": [
+    {
+      "title": "Define a Protocol for rendering",
+      "prompt": "Given this function that expects an object with a render() -> str method, define a Renderer Protocol and use it as the type hint for the obj parameter.",
+      "starter_code": "from typing import Any\n\n# Define Renderer Protocol here\n\ndef render_item(obj: Any) -> str:\n    return obj.render()",
+      "solution": "from typing import Protocol\n\nclass Renderer(Protocol):\n    def render(self) -> str: ...\n\ndef render_item(obj: Renderer) -> str:\n    return obj.render()"
+    }
+  ],
+  "challenge": {
+    "title": "Mocking with Protocols",
+    "prompt": "Create a Notifier Protocol with a notify(msg: str) method. Create an EmailNotifier class that implements it. Create a send_alert function taking a Notifier and calling notify('Alert!').",
+    "solution": "from typing import Protocol\n\nclass Notifier(Protocol):\n    def notify(self, msg: str) -> None: ...\n\nclass EmailNotifier:\n    def notify(self, msg: str) -> None:\n        print(f'Email: {msg}')\n\ndef send_alert(notifier: Notifier) -> None:\n    notifier.notify('Alert!')"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/typing.html#typing.Protocol"
+  ]
+}

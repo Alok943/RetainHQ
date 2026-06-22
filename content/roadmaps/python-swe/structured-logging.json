@@ -1,0 +1,79 @@
+{
+  "slug": "structured-logging",
+  "title": "Structured Logging with JSON",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["loggers-handlers-formatters", "dictionaries"],
+    "unlocks": [],
+    "project_usage": ["FastAPI", "Datadog", "ELK Stack"]
+  },
+  "overview": {
+    "what": "Structured logging means emitting logs as machine-readable data structures (like JSON) rather than plain text strings. Instead of logging `'User 123 failed login from 192.168.1.1'`, you log `{\"event\": \"login_failed\", \"user_id\": 123, \"ip\": \"192.168.1.1\", \"level\": \"error\"}`. Think of it like filling out a spreadsheet with specific columns instead of writing a free-form diary entry; machines can easily filter and aggregate the spreadsheet.",
+    "why": "Plain text logs require brittle regular expressions (regex) to parse in log aggregation tools (like Datadog or Splunk). JSON logs are instantly parsed into queryable fields, making production debugging exponentially faster.",
+    "where_used": ["FastAPI", "CloudWatch", "Microservices"]
+  },
+  "why_learning_this": [
+    "Prepare your app for professional log aggregators (ELK, Datadog)",
+    "Stop writing brittle regex parsing rules for plain text logs",
+    "Attach request IDs or user IDs to every log line cleanly"
+  ],
+  "common_mistakes": [
+    {
+      "title": "String interpolation in the logger",
+      "explanation": "If you do `logger.info(f'User {user_id} logged in')`, the structured logger receives a single string. To pass structured data, you must pass it as an `extra` dictionary: `logger.info('User logged in', extra={'user_id': user_id})`."
+    },
+    {
+      "title": "Non-serializable objects",
+      "explanation": "Passing Python objects like Datetime or custom class instances in the `extra` dict without converting them will crash the JSON encoder."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary advantage of structured logging over plain text logging?",
+      "answer": "Structured logs are emitted as machine-readable objects (like JSON), which allows logging systems to easily parse, filter, and query specific fields without using regular expressions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you pass structured data fields when calling a standard Python logger?",
+      "answer": "You pass them in a dictionary to the `extra` keyword argument, like `logger.info('message', extra={'user_id': 123})`.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import logging\nimport json\n\nclass JSONFormatter(logging.Formatter):\n    def format(self, record):\n        log_obj = {'level': record.levelname, 'msg': record.getMessage()}\n        if hasattr(record, 'user_id'):\n            log_obj['user'] = record.user_id\n        return json.dumps(log_obj)\n\nlogger = logging.getLogger('auth')\nlogger.setLevel(logging.INFO)\nh = logging.StreamHandler()\nh.setFormatter(JSONFormatter())\nlogger.addHandler(h)\n\nlogger.info('Login', extra={'user_id': 42})",
+      "question": "What is printed to the console?",
+      "answer": "{\"level\": \"INFO\", \"msg\": \"Login\", \"user\": 42}",
+      "why": "The `JSONFormatter` extracts `levelname` and `msg` from the LogRecord, as well as any custom attributes passed via `extra` (which Python attaches to the record), and returns a JSON string."
+    },
+    {
+      "type": "find-bug",
+      "code": "import logging\nimport json\nclass BadJSONFormatter(logging.Formatter):\n    def format(self, record):\n        return json.dumps({'msg': record.msg})\n\nlogger = logging.getLogger('bug')\nlogger.setLevel(logging.INFO)\nh = logging.StreamHandler()\nh.setFormatter(BadJSONFormatter())\nlogger.addHandler(h)\n\nlogger.info('Hello %s', 'World')",
+      "question": "Why does this log `{\"msg\": \"Hello %s\"}` instead of `{\"msg\": \"Hello World\"}`?",
+      "answer": "It accesses `record.msg` (the raw string with '%s') instead of calling `record.getMessage()`, which performs the string interpolation.",
+      "why": "The LogRecord stores the raw message template and arguments separately. You must call `getMessage()` to safely merge them before JSON encoding."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import logging\nimport json\nimport sys\n\nclass CustomJSONFormatter(logging.Formatter):\n    def format(self, record):\n        return json.dumps({\n            'lvl': record.levelname,\n            'msg': record.getMessage()\n        })\n\nlogger = logging.getLogger('app')\nlogger.setLevel(logging.WARNING)\nh = logging.StreamHandler(sys.stdout)\nh.setFormatter(CustomJSONFormatter())\nlogger.addHandler(h)\n\nlogger.warning('Disk low')",
+    "focus": "return json.dumps({"
+  },
+  "practice_tasks": [
+    {
+      "title": "Add request ID to JSON logs",
+      "prompt": "Given a working JSON formatter, modify the `format` method so that it also includes a `request_id` field in the JSON output, but ONLY if `req_id` was passed in the logger's `extra` dictionary. (Hint: use `hasattr(record, 'req_id')`).",
+      "starter_code": "import logging\nimport json\nimport sys\n\nclass JSONFormatter(logging.Formatter):\n    def format(self, record):\n        payload = {'msg': record.getMessage()}\n        # Add logic here\n        return json.dumps(payload)\n\nlogger = logging.getLogger('api')\nhandler = logging.StreamHandler(sys.stdout)\nhandler.setFormatter(JSONFormatter())\nlogger.addHandler(handler)\n\nlogger.warning('Slow query', extra={'req_id': 'abc-123'})",
+      "solution": "import logging\nimport json\nimport sys\n\nclass JSONFormatter(logging.Formatter):\n    def format(self, record):\n        payload = {'msg': record.getMessage()}\n        if hasattr(record, 'req_id'):\n            payload['request_id'] = record.req_id\n        return json.dumps(payload)\n\nlogger = logging.getLogger('api')\nhandler = logging.StreamHandler(sys.stdout)\nhandler.setFormatter(JSONFormatter())\nlogger.addHandler(handler)\n\nlogger.warning('Slow query', extra={'req_id': 'abc-123'})"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/logging.html#logrecord-attributes"
+  ]
+}

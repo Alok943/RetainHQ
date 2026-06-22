@@ -1,0 +1,94 @@
+{
+  "slug": "contextmanager-decorator",
+  "title": "contextlib.contextmanager decorator",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["enter-exit-dunders", "decorators", "yield-generators"],
+    "unlocks": [],
+    "project_usage": ["FastAPI Dependencies", "Testing setups", "Temporary configurations"]
+  },
+  "overview": {
+    "what": "The `@contextmanager` decorator from `contextlib` lets you build a context manager using a generator function instead of a class with `__enter__` and `__exit__`. The code before the `yield` statement acts as `__enter__` (setup), the value yielded is bound to the `as` variable, and the code after the `yield` acts as `__exit__` (teardown).",
+    "why": "It drastically reduces boilerplate. Instead of writing a full class with dunder methods, you write a single generator function, keeping setup and teardown logic localized in one place.",
+    "where_used": ["FastAPI database sessions", "Patching in unit tests", "Timing execution blocks"]
+  },
+  "why_learning_this": [
+    "Write cleaner, more readable context managers without class overhead.",
+    "Understand the primary way FastAPI manages dependencies like database sessions."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the try/finally block",
+      "explanation": "If an exception happens inside the `with` block, it is re-raised at the `yield` statement. If you don't wrap the `yield` in a `try/finally`, your teardown code will never run."
+    },
+    {
+      "title": "Yielding multiple values",
+      "explanation": "The generator must `yield` exactly once. Yielding multiple times will raise a RuntimeError."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which part of the generator function acts as the `__exit__` method?",
+      "answer": "The code written after the `yield` statement.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if an exception occurs inside the `with` block?",
+      "answer": "The exception is raised at the `yield` statement inside the generator.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you ensure teardown code runs even if an exception occurs?",
+      "answer": "By placing the `yield` inside a `try` block and the teardown code inside a `finally` block.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from contextlib import contextmanager\n\n@contextmanager\ndef tag(name):\n  print(f'<{name}>')\n  yield\n  print(f'</{name}>')\n\nwith tag('p'):\n  print('text')",
+      "question": "What is printed to the console?",
+      "answer": "<p>\ntext\n</p>",
+      "why": "The code before `yield` prints `<p>`, then the `with` block runs printing `text`, and finally the code after `yield` prints `</p>`."
+    },
+    {
+      "type": "predict-output",
+      "code": "from contextlib import contextmanager\n\n@contextmanager\ndef state():\n  print('Start')\n  yield 'Value'\n  print('End')\n\nwith state() as s:\n  print(s)",
+      "question": "What is printed to the console?",
+      "answer": "Start\nValue\nEnd",
+      "why": "The generator yields the string 'Value', which gets bound to `s`. It prints 'Start', then 'Value', then 'End'."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from contextlib import contextmanager\n\n@contextmanager\ndef log_error():\n  try:\n    yield\n  except Exception as e:\n    print(f'Logged: {e}')\n\nwith log_error():\n  raise ValueError('oops')",
+    "focus": "try:\\n    yield"
+  },
+  "aha_moment": {
+    "code": "from contextlib import contextmanager\n\n@contextmanager\ndef bad_cleanup():\n  yield\n  print('Cleaning')\n\ntry:\n  with bad_cleanup():\n    raise ValueError('Fail')\nexcept ValueError:\n  print('Caught')",
+    "prediction": "Is 'Cleaning' printed before 'Caught'?",
+    "common_guess": "Yes",
+    "why": "Because the `yield` is not wrapped in `try/finally`, the ValueError raised inside the block crashes the generator at the `yield` line. 'Cleaning' is never reached."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add Safe Teardown",
+      "prompt": "Given this context manager, modify it to guarantee that 'Disconnecting' is printed even if the `with` block raises an exception.",
+      "starter_code": "from contextlib import contextmanager\n\n@contextmanager\ndef connect():\n  print('Connecting')\n  yield\n  print('Disconnecting')",
+      "solution": "from contextlib import contextmanager\n\n@contextmanager\ndef connect():\n  print('Connecting')\n  try:\n    yield\n  finally:\n    print('Disconnecting')"
+    }
+  ],
+  "challenge": {
+    "title": "A Directory Switcher",
+    "prompt": "Write a context manager using `@contextmanager` called `temp_dir` that takes a dictionary and a key. It should temporarily set the key to 'temp_value', `yield` the new dictionary, and then restore the original value of the key afterwards.",
+    "solution": "from contextlib import contextmanager\n\n@contextmanager\ndef temp_dir(d, key):\n  original = d.get(key)\n  d[key] = 'temp_value'\n  try:\n    yield d\n  finally:\n    if original is None:\n      del d[key]\n    else:\n      d[key] = original"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager"
+  ]
+}

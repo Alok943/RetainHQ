@@ -45,28 +45,12 @@
       "explanation": "You must chain from the exception instance, not the class. `raise MyError from ValueError` is invalid. You must catch the instance: `except ValueError as e: raise MyError from e`."
     }
   ],
-  "recall_questions": [
-    {
-      "q": "What is the syntax for explicitly chaining a new exception to an original one you just caught?",
-      "answer": "You use the `from` keyword: `raise NewError() from original_error`.",
-      "tier": "tier3"
-    },
-    {
-      "q": "How do you completely suppress the original exception's traceback when raising a new exception?",
-      "answer": "You use `raise NewError() from None`.",
-      "tier": "tier3"
-    },
-    {
-      "q": "Why is exception chaining preferred over simply catching an error and raising a new one?",
-      "answer": "Because it preserves the original traceback for debugging purposes, while still allowing the caller to catch a clean, high-level domain error.",
-      "tier": "tier3"
-    }
-  ],
   "practice_tasks": [
     {
-      "title": "Translate a database error",
-      "prompt": "Write a function `create_user(username)` that calls a hypothetical `db_insert(username)` function (which you must also define to always raise a `KeyError`). Inside `create_user`, catch the `KeyError` and raise a `ValueError` with the message 'User exists', chained explicitly from the original `KeyError`.",
-      "solution": "def db_insert(username):\n    raise KeyError('Duplicate key')\n\ndef create_user(username):\n    try:\n        db_insert(username)\n    except KeyError as e:\n        raise ValueError('User exists') from e\n\ntry:\n    create_user('admin')\nexcept ValueError as e:\n    print(f'Caught: {e}')\n    print(f'Caused by: {e.__cause__}')"
+      "title": "Translate a Database Error",
+      "prompt": "Modify `create_user` to catch the `KeyError` thrown by `db_insert`. When caught, raise a `ValueError('User exists')` explicitly chained from the caught `KeyError`.",
+      "starter_code": "def db_insert(username):\n    raise KeyError('Duplicate key')\n\ndef create_user(username):\n    # TODO: Catch KeyError and raise ValueError('User exists') from it\n    db_insert(username)",
+      "solution": "def db_insert(username):\n    raise KeyError('Duplicate key')\n\ndef create_user(username):\n    try:\n        db_insert(username)\n    except KeyError as e:\n        raise ValueError('User exists') from e"
     }
   ],
   "code_walkthrough": {
@@ -81,5 +65,30 @@
   "sources": [
     "https://docs.python.org/3/tutorial/errors.html#exception-chaining",
     "https://docs.python.org/3/reference/simple_stmts.html#the-raise-statement"
+  ],
+  "recall_questions": [
+    {
+      "q": "What syntax is used to explicitly chain a new exception to an original exception?",
+      "answer": "`raise NewError() from original_error`"
+    },
+    {
+      "q": "How do you suppress the original exception's traceback completely when raising a new exception?",
+      "answer": "`raise NewError() from None`"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What special attribute is populated when using `raise NewError() from original_error`?",
+      "code": "try:\n    raise ValueError('bad value')\nexcept ValueError as e:\n    try:\n        raise RuntimeError('wrap') from e\n    except RuntimeError as new_e:\n        print(type(new_e.__cause__).__name__)",
+      "answer": "ValueError",
+      "why": "The `from e` syntax explicitly links the original exception as the direct cause, storing it in the `__cause__` attribute of the new exception."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "How do you completely hide the original exception's traceback when raising a new exception, preventing it from being printed?",
+      "answer": "By using the syntax `raise NewError() from None`.",
+      "why": "Using `from None` explicitly suppresses exception chaining, hiding the original error completely from the logs."
+    }
   ]
 }

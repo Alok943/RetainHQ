@@ -1,0 +1,94 @@
+{
+  "slug": "environment-variables",
+  "title": "os.environ and Environment Variables",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 10,
+    "interview_frequency": "medium",
+    "prerequisites": ["dictionaries"],
+    "unlocks": ["dotenv"],
+    "project_usage": ["FastAPI", "Docker", "CI/CD Pipelines"]
+  },
+  "overview": {
+    "what": "Environment variables are key-value pairs managed by the operating system, passed into a program when it starts. In Python, you access them using `os.environ`, which behaves exactly like a dictionary. Think of them as a set of sticky notes given to your program on launch; the program can read the notes (e.g., 'DATABASE_URL=postgres://...') to know how to behave in different environments.",
+    "why": "They allow you to configure an application without changing its code. This is essential for securely passing secrets (passwords, API keys) and configuring the app for different servers (local, testing, production) without hardcoding them in version control.",
+    "where_used": ["Docker Containers", "GitHub Actions", "Web Servers"]
+  },
+  "why_learning_this": [
+    "Keep API keys and passwords out of your source code",
+    "Follow the Twelve-Factor App methodology for configuration",
+    "Make your app easy to deploy via Docker and cloud platforms"
+  ],
+  "common_mistakes": [
+    {
+      "title": "Hardcoding secrets",
+      "explanation": "Writing `API_KEY = 'secret123'` in your code commits it to Git forever. If the repository is public, bots will steal the key in seconds."
+    },
+    {
+      "title": "Crashing on missing variables",
+      "explanation": "Using `os.environ['API_KEY']` will raise a KeyError if the variable isn't set. Prefer `os.environ.get('API_KEY', 'default_value')` for optional configs."
+    },
+    {
+      "title": "Forgetting that all values are strings",
+      "explanation": "Even if you set `DEBUG=1`, `os.environ['DEBUG']` is the string `'1'`, not an integer. You must cast types explicitly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it dangerous to hardcode configuration like API keys in Python files?",
+      "answer": "Because the code is usually stored in version control (like Git). Anyone who can view the repository can steal the credentials.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does `os.environ.get()` differ from accessing `os.environ['KEY']` directly?",
+      "answer": "`os.environ.get()` returns `None` (or a specified default) if the key is missing, while `os.environ['KEY']` raises a KeyError.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What data type are the values inside `os.environ`?",
+      "answer": "They are always strings. The operating system does not know about integers or booleans.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import os\n\nos.environ['PORT'] = '8080'\nport = os.environ.get('PORT', 3000)\nprint(type(port).__name__)",
+      "question": "What is printed to the console?",
+      "answer": "str",
+      "why": "Even though our fallback is the integer `3000`, the variable was successfully found in `os.environ`, and all environment variables are strings (`'8080'`)."
+    },
+    {
+      "type": "find-bug",
+      "code": "import os\n\nos.environ['ENABLE_FEATURE'] = 'False'\n\nif os.environ.get('ENABLE_FEATURE'):\n    print('Feature is ON')\nelse:\n    print('Feature is OFF')",
+      "question": "Why does this print 'Feature is ON'?",
+      "answer": "The value in the environment is the string `'False'`, which is a truthy value in Python. Only empty strings are falsy.",
+      "why": "All environment variables are strings. You must explicitly check `== 'True'` or cast the string to a boolean correctly."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import os\n\nos.environ['DB_HOST'] = 'localhost'\n\nhost = os.environ.get('DB_HOST', 'default.db')\nport = os.environ.get('DB_PORT', '5432')\n\nprint(f\"Connecting to {host}:{port}\")",
+    "focus": "port = os.environ.get('DB_PORT', '5432')"
+  },
+  "aha_moment": {
+    "code": "import os\n\nos.environ['RETRIES'] = '5'\ntries = os.environ.get('RETRIES', 3)\n\ntry:\n    result = tries + 2\nexcept TypeError as e:\n    print('TypeError')",
+    "prediction": "What will print?",
+    "common_guess": "7",
+    "why": "It prints 'TypeError'. Environment variables are ALWAYS strings, so `'5' + 2` fails."
+  },
+  "practice_tasks": [
+    {
+      "title": "Safely read environment configs",
+      "prompt": "Given this code that aggressively crashes if `API_KEY` is missing, modify it so that `API_KEY` is required (keep the bracket notation so it fails fast), but `MAX_RETRIES` is optional and defaults to the integer `3` if not provided. Don't forget to convert `MAX_RETRIES` to an integer!",
+      "starter_code": "import os\n\n# Assume os.environ['API_KEY'] = 'xyz'\nos.environ['API_KEY'] = 'xyz'\n\napi_key = os.environ['API_KEY']\nmax_retries = int(os.environ['MAX_RETRIES'])",
+      "solution": "import os\n\n# Assume os.environ['API_KEY'] = 'xyz'\nos.environ['API_KEY'] = 'xyz'\n\napi_key = os.environ['API_KEY']\nmax_retries = int(os.environ.get('MAX_RETRIES', 3))"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/os.html#os.environ"
+  ]
+}

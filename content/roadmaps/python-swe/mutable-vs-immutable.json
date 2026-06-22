@@ -9,14 +9,27 @@
     "estimated_minutes": 30,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["primitive-types"],
-    "unlocks": ["shallow-vs-deep-copy", "mutable-default-argument"],
-    "project_usage": ["Pydantic models", "config dictionaries", "FastAPI request bodies"]
+    "prerequisites": [
+      "primitive-types"
+    ],
+    "unlocks": [
+      "shallow-vs-deep-copy",
+      "mutable-default-argument"
+    ],
+    "project_usage": [
+      "Pydantic models",
+      "config dictionaries",
+      "FastAPI request bodies"
+    ]
   },
   "overview": {
-    "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page — to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple can safely be a dict key while a list cannot.",
+    "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page \u2014 to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple can safely be a dict key while a list cannot.",
     "why": "Mutability decides whether an operation edits an object in place or returns a new one. Getting this wrong causes two classic bugs: assuming a string method changed the string (it didn't), and two names sharing one mutable object so an edit through one is unexpectedly seen through the other.",
-    "where_used": ["Pydantic models", "config dictionaries", "API request bodies"]
+    "where_used": [
+      "Pydantic models",
+      "config dictionaries",
+      "API request bodies"
+    ]
   },
   "why_learning_this": [
     "Avoiding shared-state bugs when the same list or dict is referenced from two places in an API handler",
@@ -51,10 +64,10 @@
   ],
   "practice_tasks": [
     {
-      "title": "Edit a dict's list in place",
-      "prompt": "Write add_role(user, role) where user is a dict whose 'roles' value is a list. Append role to that list IN PLACE (do not rebuild the dict) and return user. Then print user['roles'] to show it changed.",
-      "starter_code": "def add_role(user, role):\n    pass",
-      "solution": "def add_role(user, role):\n    user['roles'].append(role)\n    return user\n\nu = {'name': 'sam', 'roles': ['viewer']}\nadd_role(u, 'editor')\nprint(u['roles'])"
+      "title": "Reassign string to see uppercase",
+      "prompt": "The function below attempts to return an uppercase version of the input string, but it prints the original lowercase text instead. Modify the code to correctly return the uppercase version.",
+      "starter_code": "def make_upper(text):\n    text.upper()\n    return text\n\nprint(make_upper('hello'))",
+      "solution": "def make_upper(text):\n    text = text.upper()\n    return text\n\nprint(make_upper('hello'))"
     }
   ],
   "code_walkthrough": {
@@ -65,7 +78,7 @@
     "code": "cart = ['laptop']\nbackup = cart\nbackup.append('mouse')\nprint(cart)",
     "prediction": "backup looks like a safe copy of cart. After appending 'mouse' to backup, what does print(cart) show?",
     "common_guess": "['laptop']",
-    "why": "backup = cart binds a SECOND label to the same list object — it does not copy. So backup.append('mouse') mutates the one list both names point to, and cart sees it too. For an independent copy use cart.copy()."
+    "why": "backup = cart binds a SECOND label to the same list object \u2014 it does not copy. So backup.append('mouse') mutates the one list both names point to, and cart sees it too. For an independent copy use cart.copy()."
   },
   "challenge": {
     "title": "Merge config without mutating",
@@ -75,5 +88,21 @@
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html#objects-values-and-types",
     "https://docs.python.org/3/library/stdtypes.html#mutable-sequence-types"
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "code": "x = [1, 2, 3]\ny = x\nx += [4]\nprint(y)",
+      "question": "Why does `print(y)` output `[1, 2, 3, 4]` instead of `[1, 2, 3]`?",
+      "answer": "Because `y = x` binds the variable `y` to the same underlying list object as `x`. The `+=` operator on a list mutates the object in-place, so `y` reflects the change.",
+      "why": "Lists are mutable objects. When multiple variables reference the same mutable object, any in-place mutation to that object through one variable will be visible through all other variables referencing it."
+    },
+    {
+      "type": "predict-output",
+      "code": "a = 'hello'\nb = a\na += ' world'\nprint(b)",
+      "question": "What is the output of this code?",
+      "answer": "hello",
+      "why": "Strings are immutable. `a += ' world'` does not modify the original string 'hello'. Instead, it creates a new string object 'hello world' and reassigns the variable `a` to point to it. The variable `b` still references the original 'hello' string."
+    }
   ]
 }
