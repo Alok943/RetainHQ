@@ -5,6 +5,7 @@ import { apiFetch } from './lib/api';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import CodeTrace from './CodeTrace';
 import SqlResult from './SqlResult';
+import SqlFlow from './SqlFlow';
 
 const TIER_LABEL = { tier1: 'Tier 1', tier2: 'Tier 2', tier3: 'Tier 3' };
 const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
@@ -221,7 +222,7 @@ export default function LessonView() {
       {/* --- §3 Watch it run — SQL (query result table) or Python (CodeTrace) --- */}
       {lesson.runtime === 'sql' && lesson.query_walkthrough ? (
         <Section icon={<Database size={16} />} title="Run the query" accent="#0891B2">
-          <SqlResult
+          <SqlFlow
             query={lesson.query_walkthrough.query}
             setupSql={lesson.query_walkthrough.setup_sql}
             focus={lesson.query_walkthrough.focus}
