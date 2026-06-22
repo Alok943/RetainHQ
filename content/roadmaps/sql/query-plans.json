@@ -1,0 +1,92 @@
+{
+  "slug": "query-plans",
+  "title": "Reading EXPLAIN ANALYZE",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "index-usage"
+    ],
+    "unlocks": [
+      "query-pitfalls"
+    ],
+    "project_usage": [
+      "debugging slow queries",
+      "database performance tuning"
+    ]
+  },
+  "overview": {
+    "what": "EXPLAIN ANALYZE executes your query and returns a detailed execution plan showing exactly how the database retrieved the rows. It reveals whether it used an 'Index Scan', 'Seq Scan', or a specific JOIN algorithm.",
+    "why": "It is the primary diagnostic tool for SQL. Without it, tuning a query is just guesswork.",
+    "where_used": [
+      "troubleshooting production database latency",
+      "verifying index usage"
+    ]
+  },
+  "why_learning_this": [
+    "Stop guessing why a query is slow and see the exact bottleneck.",
+    "Prove that a new index is actually being used by the database optimizer."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the ANALYZE keyword",
+      "explanation": "Using just EXPLAIN shows the database's *estimated* plan. Adding ANALYZE actually runs the query and shows *actual* execution times and row counts."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does a 'Seq Scan' node in an EXPLAIN plan indicate?",
+      "answer": "It indicates the database read the table sequentially from start to finish, rather than using an index.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT count(*) FROM orders WHERE status = 'cancelled';",
+      "question": "What rows does this return?",
+      "answer": "1",
+      "why": "There is only one cancelled order (id 5, Diana). EXPLAIN ANALYZE on this query would show how many rows were scanned to find it."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT customer_id FROM orders WHERE order_date = '2023-04-02' ORDER BY id;",
+      "question": "What rows does this return?",
+      "answer": "2",
+      "why": "Order 3 is by Bob (id 2) on that date. The execution plan would reveal if it scanned all 8 orders or used an index on order_date."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "EXPLAIN ANALYZE SELECT name FROM customers WHERE country = 'US' ORDER BY id;",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "result-table",
+    "focus": "The EXPLAIN output is returned as a set of text rows describing the execution plan, showing the Seq Scan or Index Scan."
+  },
+  "practice_tasks": [
+    {
+      "title": "Check the Execution Plan",
+      "prompt": "Given this query, change it so that it returns the execution plan with actual runtimes instead of the query results.",
+      "starter_code": "SELECT * FROM products WHERE price < 50 ORDER BY id;",
+      "solution": "EXPLAIN ANALYZE SELECT * FROM products WHERE price < 50 ORDER BY id;"
+    }
+  ],
+  "challenge": {
+    "title": "Explain a Join",
+    "prompt": "Write a query that returns the execution plan and actual run times for joining customers and orders where the customer_id is 1. (Select customer name and order status).",
+    "solution": "EXPLAIN ANALYZE SELECT c.name, o.status FROM customers c JOIN orders o ON c.id = o.customer_id WHERE c.id = 1 ORDER BY o.id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/using-explain.html"
+  ]
+}

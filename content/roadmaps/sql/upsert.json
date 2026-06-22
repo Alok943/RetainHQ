@@ -1,0 +1,92 @@
+{
+  "slug": "upsert",
+  "title": "UPSERT (ON CONFLICT)",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "insert",
+      "constraints"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "syncing external API data",
+      "updating analytics counters",
+      "user profile saves"
+    ]
+  },
+  "overview": {
+    "what": "UPSERT is a combination of 'update' and 'insert'. In Postgres, it's written as INSERT ... ON CONFLICT. If a row with the same unique key already exists, instead of throwing an error, the database can either DO NOTHING or DO UPDATE to modify the existing row.",
+    "why": "It safely handles race conditions where multiple requests might try to create the same record simultaneously, and it simplifies application logic by merging check-and-create into a single database operation.",
+    "where_used": [
+      "incrementing page views",
+      "saving drafts",
+      "idempotent background jobs"
+    ]
+  },
+  "why_learning_this": [
+    "You can write idempotent inserts that never fail on duplicate key errors.",
+    "You avoid the inefficient 'SELECT to check, then INSERT or UPDATE' pattern which is vulnerable to race conditions."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Missing unique constraint",
+      "explanation": "ON CONFLICT requires a unique constraint or index on the column(s) specified. Without it, the database doesn't know what constitutes a 'conflict'."
+    },
+    {
+      "title": "Referencing the old row instead of EXCLUDED",
+      "explanation": "When doing an ON CONFLICT DO UPDATE, you must use the special EXCLUDED table to refer to the values that were proposed for insertion."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What keyword is used in the DO UPDATE clause to refer to the new values that failed to insert?",
+      "answer": "EXCLUDED",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "INSERT INTO customers (id, name, country) VALUES (1, 'Alice V2', 'US') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name RETURNING id, name;",
+      "question": "What rows does this query return (assuming 'id' is a primary key)?",
+      "answer": "id: 1, name: 'Alice V2'",
+      "why": "Customer id 1 already exists, causing a conflict. The DO UPDATE clause triggers, updating the name to 'Alice V2'."
+    },
+    {
+      "type": "predict-result",
+      "query": "INSERT INTO products (id, name, category, price) VALUES (1, 'Keyboard', 'Electronics', 49.99) ON CONFLICT (id) DO NOTHING RETURNING id;",
+      "question": "What rows does this query return?",
+      "answer": "(No rows)",
+      "why": "Product id 1 exists. DO NOTHING silently ignores the insert, and since no row was inserted or updated, RETURNING yields nothing."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "INSERT INTO products (id, name, category, price) VALUES (2, 'Mouse V2', 'Electronics', 24.99) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, price = EXCLUDED.price RETURNING id, name, price;",
+    "flow_stages": [],
+    "visualization": "result-table",
+    "focus": "The conflict on id=2 triggers an update, merging the EXCLUDED.name and EXCLUDED.price into the existing row."
+  },
+  "practice_tasks": [
+    {
+      "title": "Upsert an employee salary",
+      "prompt": "Given this starter code, modify it to update the employee's salary to the new value if the employee id already exists.",
+      "starter_code": "INSERT INTO employees (id, name, department, salary)\nVALUES (6, 'Xavier', 'Sales', 100000)\nON CONFLICT (id) DO ...",
+      "solution": "INSERT INTO employees (id, name, department, salary)\nVALUES (6, 'Xavier', 'Sales', 100000)\nON CONFLICT (id) DO UPDATE SET salary = EXCLUDED.salary;"
+    }
+  ],
+  "challenge": {
+    "title": "Upsert an order",
+    "prompt": "Write an upsert query that tries to insert order id 8 for customer 2 on '2023-08-01' with status 'shipped'. If order id 8 already exists, update its status to 'shipped'. Return the id and status.",
+    "solution": "INSERT INTO orders (id, customer_id, order_date, status) VALUES (8, 2, '2023-08-01', 'shipped') ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status RETURNING id, status;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT"
+  ]
+}

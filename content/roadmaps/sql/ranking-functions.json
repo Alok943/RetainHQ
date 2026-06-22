@@ -1,0 +1,91 @@
+{
+  "slug": "ranking-functions",
+  "title": "ROW_NUMBER / RANK / DENSE_RANK",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "over-partition-by"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "top-N queries",
+      "deduplication",
+      "leaderboards"
+    ]
+  },
+  "overview": {
+    "what": "Ranking functions assign a sequential integer to rows within a partition. ROW_NUMBER assigns a unique integer (1, 2, 3). RANK assigns the same number for ties but skips subsequent numbers (1, 1, 3). DENSE_RANK assigns the same number for ties and does not skip numbers (1, 1, 2).",
+    "why": "These functions are essential for returning 'top N' results per group, finding the latest record per customer, or building leaderboards.",
+    "where_used": [
+      "leaderboards",
+      "getting the latest order per customer"
+    ]
+  },
+  "why_learning_this": [
+    "You can easily deduplicate rows by keeping only the row where ROW_NUMBER() = 1.",
+    "You can build leaderboards that handle ties gracefully."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using RANK when you want unique numbers",
+      "explanation": "If two rows have the same value in the ORDER BY clause, RANK() gives them the same rank. Use ROW_NUMBER() if you strictly need unique sequence numbers."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if there is a tie when using DENSE_RANK()?",
+      "answer": "Tied rows receive the same rank, and the next rank is the immediate consecutive integer (no numbers are skipped).",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT id, price, ROW_NUMBER() OVER (ORDER BY price DESC) as rn FROM products WHERE category = 'Furniture' ORDER BY price DESC;",
+      "question": "What rows does this query return?",
+      "answer": "4 | 149.99 | 1\n5 | 89.99 | 2",
+      "why": "There are two furniture items. Desk (id=4) is 149.99, Chair (id=5) is 89.99. ROW_NUMBER assigns 1 and 2 sequentially based on descending price."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT id, order_date, ROW_NUMBER() OVER (ORDER BY order_date) as rn FROM orders WHERE status = 'paid' ORDER BY order_date LIMIT 3;",
+      "question": "What rows does this query return?",
+      "answer": "1 | 2023-02-01 | 1\n2 | 2023-03-15 | 2\n4 | 2023-04-20 | 3",
+      "why": "It filters for paid orders, sorts by order_date, and assigns a sequential number. Then limits to the first 3 rows."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT product_id, quantity, RANK() OVER (ORDER BY quantity DESC) as rnk, DENSE_RANK() OVER (ORDER BY quantity DESC) as drnk FROM order_items WHERE order_id IN (1, 4) ORDER BY quantity DESC, product_id;",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "result-table",
+    "focus": "Observe how RANK skips the value 2 after a tie, while DENSE_RANK assigns 2 immediately after."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a row number to employees",
+      "prompt": "Given this query, add a ROW_NUMBER() column named `salary_rank` that assigns 1 to the highest paid employee, 2 to the next, etc.",
+      "starter_code": "SELECT name, salary\nFROM employees\nORDER BY salary DESC;",
+      "solution": "SELECT name, salary, ROW_NUMBER() OVER (ORDER BY salary DESC) AS salary_rank\nFROM employees\nORDER BY salary DESC;"
+    }
+  ],
+  "challenge": {
+    "title": "Find the highest paid employee in each department",
+    "prompt": "Write a query returning name, department, salary, and their RANK based on salary descending within their department. Order by department, then rank.",
+    "solution": "SELECT name, department, salary, RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank\nFROM employees\nORDER BY department, dept_rank;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/functions-window.html"
+  ]
+}

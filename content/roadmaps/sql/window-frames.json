@@ -1,0 +1,91 @@
+{
+  "slug": "window-frames",
+  "title": "Running totals & moving averages",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "over-partition-by",
+      "lead-lag"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "financial analysis",
+      "cumulative metrics"
+    ]
+  },
+  "overview": {
+    "what": "Window frames let you narrow down the window of rows for each calculation. By adding a clause like ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW, you can compute running totals (cumulative sums) or moving averages over an ordered set.",
+    "why": "They allow for calculating metrics that accumulate over time (e.g., total sales up to the current day) or smooth out fluctuations (e.g., a 7-day moving average).",
+    "where_used": [
+      "revenue growth tracking",
+      "stock price moving averages"
+    ]
+  },
+  "why_learning_this": [
+    "Generate cumulative metrics like 'Total Sales YTD' dynamically.",
+    "Smooth out noisy data using moving averages."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Default frame with ORDER BY",
+      "explanation": "If you use an ORDER BY in your OVER clause but don't specify a frame, the default is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. This can cause unexpected behavior with tied values."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What frame definition is used to calculate a cumulative sum from the first row to the current row?",
+      "answer": "ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT id, order_date, SUM(id) OVER (ORDER BY order_date ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) as rolling_sum FROM orders WHERE customer_id = 1 ORDER BY order_date;",
+      "question": "What rows does this query return?",
+      "answer": "1 | 2023-02-01 | 1\n2 | 2023-03-15 | 3",
+      "why": "For the first row (id=1), there is no preceding row, so the sum is 1. For the second row (id=2), it adds the current id (2) and the preceding id (1) to get 3."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name, salary, MAX(salary) OVER (ORDER BY salary ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) as max_prev FROM employees WHERE department = 'Sales' ORDER BY salary;",
+      "question": "What rows does this query return?",
+      "answer": "Yara | 90000 | NULL\nXavier | 95000 | 90000\nWendy | 130000 | 95000",
+      "why": "The frame looks at all rows before the current one, but excludes the current row. Yara has no preceding rows, Xavier sees Yara, Wendy sees Yara and Xavier."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT id, order_date, COUNT(id) OVER (ORDER BY order_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as running_count FROM orders WHERE customer_id IN (1, 2) ORDER BY order_date;",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "result-table",
+    "focus": "Watch how the running_count increases with each row as the window expands to include the current row."
+  },
+  "practice_tasks": [
+    {
+      "title": "Calculate a cumulative sum of salary",
+      "prompt": "Given this query, add a running total of the salary column, ordered by salary ascending.",
+      "starter_code": "SELECT name, salary\nFROM employees\nORDER BY salary;",
+      "solution": "SELECT name, salary, SUM(salary) OVER (ORDER BY salary ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative_salary\nFROM employees\nORDER BY salary;"
+    }
+  ],
+  "challenge": {
+    "title": "Calculate a 2-row moving average of salary",
+    "prompt": "Write a query returning name, salary, and a moving average of salary that includes the current row and the 1 preceding row. Order by salary ascending. Filter for the Engineering department.",
+    "solution": "SELECT name, salary, AVG(salary) OVER (ORDER BY salary ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS moving_avg\nFROM employees\nWHERE department = 'Engineering'\nORDER BY salary;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/tutorial-window.html"
+  ]
+}

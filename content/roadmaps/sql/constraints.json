@@ -1,0 +1,89 @@
+{
+  "slug": "constraints",
+  "title": "Constraints & defaults",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "keys"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "table creation",
+      "data validation"
+    ]
+  },
+  "overview": {
+    "what": "Constraints enforce rules on data at the database level. `NOT NULL` prevents missing values, `CHECK` validates conditions (e.g. `price > 0`), and `DEFAULT` provides a fallback value if none is inserted.",
+    "why": "Application code can have bugs and allow invalid data. Database constraints act as the final, unbreakable line of defense for data integrity.",
+    "where_used": [
+      "schema definitions",
+      "data ingestion validation"
+    ]
+  },
+  "why_learning_this": [
+    "You can guarantee data reliability regardless of which application connects to the database.",
+    "You reduce the need for defensive programming in your backend code."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Adding constraints after bad data exists",
+      "explanation": "If you try to add a `NOT NULL` constraint to a column that already has NULL values, the database will throw an error. You must clean the data first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between a CHECK constraint and a DEFAULT value?",
+      "answer": "A CHECK constraint rejects invalid inserts (e.g. negative prices), while a DEFAULT value automatically fills in a missing value during an insert.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT id, name FROM customers WHERE country IS NULL;",
+      "question": "What rows does this return?",
+      "answer": "id: 5, name: Emma",
+      "why": "The `country` column does not have a NOT NULL constraint, allowing Emma's country to be missing."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT id, price FROM products WHERE price <= 0;",
+      "question": "What rows does this return?",
+      "answer": "No rows",
+      "why": "While we can't see the DDL here, realistic schemas use a CHECK(price > 0) constraint to prevent negative or zero prices, and our dataset follows this."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT * FROM orders WHERE status = 'pending';",
+    "flow_stages": [
+      "from",
+      "where",
+      "select"
+    ],
+    "visualization": "result-table",
+    "focus": "The status column often has a DEFAULT 'pending' and a CHECK constraint limiting it to 'pending', 'paid', or 'cancelled'."
+  },
+  "practice_tasks": [
+    {
+      "title": "Filter Valid Data",
+      "prompt": "Given this query, change it to only select employees who have a manager (filtering out those where manager_id is NULL, enforcing a relationship constraint at query time).",
+      "starter_code": "SELECT name FROM employees WHERE id = 1;",
+      "solution": "SELECT name FROM employees WHERE manager_id IS NOT NULL ORDER BY name;"
+    }
+  ],
+  "challenge": {
+    "title": "Find Orders by Status",
+    "prompt": "Write a query that finds the `id` and `customer_id` of all orders that have the status 'cancelled'.",
+    "solution": "SELECT id, customer_id FROM orders WHERE status = 'cancelled' ORDER BY id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/ddl-constraints.html"
+  ]
+}

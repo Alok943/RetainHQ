@@ -1,0 +1,94 @@
+{
+  "slug": "keys",
+  "title": "Primary, foreign & unique keys",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "normalization",
+      "constraints",
+      "indexes"
+    ],
+    "project_usage": [
+      "database design",
+      "data modeling",
+      "query writing"
+    ]
+  },
+  "overview": {
+    "what": "Keys establish identity and relationships. Primary keys uniquely identify rows (e.g. `customers.id`). Foreign keys link rows between tables (e.g. `orders.customer_id` refers to `customers.id`). Unique keys prevent duplicate values in columns that aren't the primary key.",
+    "why": "Without keys, databases would just be disconnected lists. Keys ensure data integrity and allow us to safely join tables together.",
+    "where_used": [
+      "table creation",
+      "JOIN operations",
+      "data integrity checks"
+    ]
+  },
+  "why_learning_this": [
+    "You can confidently join tables without creating accidental duplicate rows.",
+    "You understand how relational databases enforce relationships."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Joining on wrong columns",
+      "explanation": "Joining columns that have matching names but aren't related by a foreign key constraint. Always join a foreign key to its corresponding primary key."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between a primary key and a foreign key?",
+      "answer": "A primary key uniquely identifies a row in its own table, while a foreign key stores a primary key from another table to create a link.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT o.id AS order_id, c.name FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = 4;",
+      "question": "What rows does this return?",
+      "answer": "order_id: 4, name: Carlos",
+      "why": "The foreign key `customer_id` in orders links to `id` in customers. Order 4 belongs to customer 3 (Carlos)."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT count(*) AS total FROM orders WHERE customer_id = 1;",
+      "question": "What rows does this return?",
+      "answer": "total: 2",
+      "why": "We are counting how many times the foreign key value 1 appears in the orders table, representing orders for Alice."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT o.id, c.name FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.status = 'cancelled';",
+    "flow_stages": [
+      "from",
+      "join",
+      "where",
+      "select"
+    ],
+    "visualization": "join-diagram",
+    "focus": "The foreign key relationship allows us to retrieve the customer name for a specific order status."
+  },
+  "practice_tasks": [
+    {
+      "title": "Join Order Items",
+      "prompt": "Given this query, change it to join the `products` table using the foreign key in `order_items`, and select the order item `id` and product `name`.",
+      "starter_code": "SELECT oi.id, p.name FROM order_items oi -- add join here WHERE oi.id = 1;",
+      "solution": "SELECT oi.id, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.id = 1;"
+    }
+  ],
+  "challenge": {
+    "title": "Find Employees by Manager",
+    "prompt": "Write a query that uses the self-referencing foreign key in the `employees` table to find the names of employees managed by 'Sara' (manager_id = 1). Order by name.",
+    "solution": "SELECT name FROM employees WHERE manager_id = 1 ORDER BY name;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/ddl-constraints.html"
+  ]
+}

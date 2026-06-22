@@ -1,0 +1,90 @@
+{
+  "slug": "query-pitfalls",
+  "title": "Common Query Pitfalls & Anti-patterns",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "query-plans"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "code reviews",
+      "refactoring databases"
+    ]
+  },
+  "overview": {
+    "what": "Query pitfalls are common mistakes that return incorrect row-sets or cause severe performance issues. Examples include accidental cross-joins, using SELECT * unnecessarily, or applying functions on indexed columns which forces full table scans.",
+    "why": "Writing SQL that 'works' on small datasets often masks underlying anti-patterns. Knowing these pitfalls prevents production outages when data scales.",
+    "where_used": [
+      "database optimization",
+      "peer code review"
+    ]
+  },
+  "why_learning_this": [
+    "Avoid performance cliffs caused by hidden table scans.",
+    "Ensure your aggregations and joins return accurate row counts."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Missing JOIN conditions",
+      "explanation": "Forgetting an ON clause or WHERE condition in a join creates a Cartesian product (cross join), returning every combination of rows. Fix: Always explicitly define how tables relate."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it an anti-pattern to use `SELECT *` in application code?",
+      "answer": "It fetches unnecessary data, wasting network and memory, and can break applications if the underlying table schema changes.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT COUNT(id) FROM customers;",
+      "question": "What rows does this return?",
+      "answer": "8",
+      "why": "Counts all 8 customers. A common pitfall is counting a column that has NULLs when you mean to count all rows (like COUNT(*))."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT COUNT(country) FROM customers;",
+      "question": "What rows does this return?",
+      "answer": "7",
+      "why": "Customer 5 (Emma) has a NULL country. COUNT(column) ignores NULL values, which is a frequent source of accidental bugs."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name FROM customers WHERE id IN (SELECT customer_id FROM orders) ORDER BY id;",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "logical-query-flow",
+    "focus": "Using IN with a subquery is valid, but can sometimes perform poorly compared to EXISTS or a JOIN on larger datasets. Here it filters to the 6 customers who have orders."
+  },
+  "practice_tasks": [
+    {
+      "title": "Fixing the COUNT pitfall",
+      "prompt": "Given this query that accidentally ignores NULL countries, change it to safely count all customer rows regardless of NULLs.",
+      "starter_code": "SELECT COUNT(country) FROM customers;",
+      "solution": "SELECT COUNT(*) FROM customers;"
+    }
+  ],
+  "challenge": {
+    "title": "Avoid SELECT *",
+    "prompt": "Write a query that joins products and order_items for order_id 1, but instead of using SELECT *, explicitly select the product name and the quantity ordered.",
+    "solution": "SELECT p.name, oi.quantity FROM products p JOIN order_items oi ON p.id = oi.product_id WHERE oi.order_id = 1 ORDER BY p.id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/performance-tips.html"
+  ]
+}

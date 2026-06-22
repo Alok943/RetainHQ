@@ -1,0 +1,96 @@
+{
+  "slug": "over-partition-by",
+  "title": "OVER & PARTITION BY",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "group-by",
+      "order-by-limit"
+    ],
+    "unlocks": [
+      "ranking-functions",
+      "lead-lag",
+      "window-frames"
+    ],
+    "project_usage": [
+      "analytics queries",
+      "reporting"
+    ]
+  },
+  "overview": {
+    "what": "Window functions let you perform aggregate-like calculations (like SUM or AVG) without grouping rows into a single output row. The OVER clause defines a 'window' of rows for each row to compute over, and PARTITION BY splits that window into subgroups, similar to GROUP BY, but retaining the original row-level details.",
+    "why": "You often need to compare a single row against an aggregate of its peers (e.g., an employee's salary vs their department's average).",
+    "where_used": [
+      "analytics dashboards",
+      "comparing individual vs group metrics"
+    ]
+  },
+  "why_learning_this": [
+    "Compute running totals and moving averages without complex self-joins.",
+    "Easily compare an individual row to a group aggregate (like percent of total)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the OVER clause",
+      "explanation": "If you use an aggregate function like SUM() without an OVER clause, SQL expects a GROUP BY and will fail if you also select unaggregated columns."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the main difference between GROUP BY and PARTITION BY?",
+      "answer": "GROUP BY collapses rows into a single output row per group. PARTITION BY computes aggregates for a group but retains all original rows in the output.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name, salary, MAX(salary) OVER () AS max_salary FROM employees WHERE department = 'Sales' ORDER BY name;",
+      "question": "What rows does this query return?",
+      "answer": "Wendy | 130000 | 130000\nXavier | 95000 | 130000\nYara | 90000 | 130000",
+      "why": "The empty OVER () clause treats the entire result set (Sales employees) as a single window, assigning the maximum salary (130000) to every row."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name, department, COUNT(*) OVER (PARTITION BY department) AS dept_size FROM employees WHERE salary > 100000 ORDER BY name;",
+      "question": "What rows does this query return?",
+      "answer": "Sara | Executive | 1\nTom | Engineering | 3\nUma | Engineering | 3\nVictor | Engineering | 3\nWendy | Sales | 1",
+      "why": "First, the WHERE clause filters out salaries <= 100000. Then, PARTITION BY department counts the remaining employees per department and assigns that count to each row."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, department, salary, AVG(salary) OVER (PARTITION BY department) AS dept_avg FROM employees WHERE department IN ('Engineering', 'Sales') ORDER BY department, name;",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "result-table",
+    "focus": "Watch how the AVG(salary) is calculated per department without collapsing the individual employee rows."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a partition to count orders per customer",
+      "prompt": "Given this query, add a window function to count the total number of orders for each customer alongside the order details.",
+      "starter_code": "SELECT id, customer_id, order_date\nFROM orders\nORDER BY customer_id, order_date;",
+      "solution": "SELECT id, customer_id, order_date, COUNT(*) OVER (PARTITION BY customer_id) AS total_orders\nFROM orders\nORDER BY customer_id, order_date;"
+    }
+  ],
+  "challenge": {
+    "title": "Compare product price to category maximum",
+    "prompt": "Write a query returning all products, their category, price, and the maximum price in that category using a window function. Order by category and then by price descending.",
+    "solution": "SELECT name, category, price, MAX(price) OVER (PARTITION BY category) AS max_price\nFROM products\nORDER BY category, price DESC;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/tutorial-window.html",
+    "https://www.postgresql.org/docs/current/sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS"
+  ]
+}

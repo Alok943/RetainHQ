@@ -1,0 +1,92 @@
+{
+  "slug": "normalization",
+  "title": "Normalization (1NF–3NF)",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "keys"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "database design",
+      "schema migrations"
+    ]
+  },
+  "overview": {
+    "what": "Normalization is the process of organizing data to minimize redundancy and prevent inconsistencies. 1NF ensures atomic values (no lists in a column). 2NF removes partial dependencies (attributes must depend on the whole primary key). 3NF removes transitive dependencies (attributes must depend strictly on the primary key, not other attributes).",
+    "why": "If data isn't normalized, updating a customer's address might require changing 50 order records. Normalization ensures you update it in exactly one place.",
+    "where_used": [
+      "schema design",
+      "reducing database size",
+      "preventing update anomalies"
+    ]
+  },
+  "why_learning_this": [
+    "You will design scalable database schemas that don't suffer from data anomalies.",
+    "You understand why data is split into multiple tables (like `orders` and `order_items`)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Over-normalization",
+      "explanation": "Normalizing beyond 3NF when performance requires reading data together quickly. Sometimes denormalization is acceptable for analytics."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core principle of First Normal Form (1NF)?",
+      "answer": "Every column must hold atomic (indivisible) values, and there are no repeating groups or arrays in a single column.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT o.id, c.country FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = 1;",
+      "question": "What rows does this return?",
+      "answer": "id: 1, country: US",
+      "why": "Because of normalization, the `country` is stored once in `customers`, not duplicated in every `orders` row. We retrieve it via JOIN."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT sum(p.price * oi.quantity) AS total FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = 8;",
+      "question": "What rows does this return?",
+      "answer": "total: 89.99",
+      "why": "Price is stored in `products` (3NF), not in `order_items`. We calculate the total dynamically."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT c.name, p.name AS product FROM orders o JOIN customers c ON o.customer_id = c.id JOIN order_items oi ON o.id = oi.order_id JOIN products p ON oi.product_id = p.id WHERE o.id = 4 ORDER BY p.name;",
+    "flow_stages": [
+      "from",
+      "join",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "join-diagram",
+    "focus": "Retrieving denormalized data required for display by joining normalized tables."
+  },
+  "practice_tasks": [
+    {
+      "title": "Normalize Employee Names",
+      "prompt": "Given this query, change it to retrieve the employee's name and their manager's name by joining the `employees` table to itself, demonstrating how hierarchical data is normalized.",
+      "starter_code": "SELECT e.name AS employee, -- add manager name FROM employees e -- add join WHERE e.id = 2;",
+      "solution": "SELECT e.name AS employee, m.name AS manager FROM employees e JOIN employees m ON e.manager_id = m.id WHERE e.id = 2;"
+    }
+  ],
+  "challenge": {
+    "title": "Count Products per Category",
+    "prompt": "Write a query that counts the number of products in each category. This relies on the normalized `products` table where category is an attribute.",
+    "solution": "SELECT category, count(*) FROM products GROUP BY category ORDER BY category;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/ddl-basics.html"
+  ]
+}

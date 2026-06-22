@@ -1,0 +1,93 @@
+{
+  "slug": "insert",
+  "title": "INSERT & Returning",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "constraints"
+    ],
+    "unlocks": [
+      "upsert"
+    ],
+    "project_usage": [
+      "creating users",
+      "adding orders",
+      "seeding data"
+    ]
+  },
+  "overview": {
+    "what": "INSERT adds new rows to a table. By using the RETURNING clause, you can immediately get back the data that was inserted, which is incredibly useful for retrieving auto-generated IDs or default values without needing a second SELECT query. This acts as a single-step row addition and retrieval.",
+    "why": "Every application needs to create data. Using RETURNING prevents race conditions and saves a database round-trip when you need the newly created record's details.",
+    "where_used": [
+      "user registration",
+      "checkout systems",
+      "data ingestion pipelines"
+    ]
+  },
+  "why_learning_this": [
+    "You can insert single or multiple rows in one command.",
+    "You can retrieve newly generated primary keys instantly to use them as foreign keys in other tables."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Column order mismatch",
+      "explanation": "Providing VALUES in a different order than the column list. Always explicitly list columns to ensure values match."
+    },
+    {
+      "title": "Missing required fields",
+      "explanation": "Failing to provide a value for a column that does not have a default and cannot be NULL (like primary keys or required names)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the benefit of adding the RETURNING clause to an INSERT statement?",
+      "answer": "It returns the inserted row(s) immediately, avoiding a separate SELECT query to fetch auto-generated IDs or default values.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "INSERT INTO customers (id, name, country, signup_date) VALUES (9, 'Ian', 'CA', '2023-09-01') RETURNING id, name;",
+      "question": "What rows does this query return?",
+      "answer": "id: 9, name: 'Ian'",
+      "why": "The INSERT statement adds the new row, and RETURNING id, name projects only those two columns for the newly inserted row."
+    },
+    {
+      "type": "predict-result",
+      "query": "INSERT INTO products (id, name, category, price) VALUES (7, 'Tablet', 'Electronics', 299.99), (8, 'Lamp', 'Furniture', 45.00) RETURNING id, name;",
+      "question": "What rows does this query return?",
+      "answer": "id: 7, name: 'Tablet'\nid: 8, name: 'Lamp'",
+      "why": "Multiple rows are inserted, and RETURNING gives back the id and name for both newly created rows."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "INSERT INTO products (id, name, category, price) VALUES (9, 'Pen', 'Stationery', 2.99) RETURNING id, name, price;",
+    "flow_stages": [],
+    "visualization": "result-table",
+    "focus": "The immediate projection of the inserted row via the RETURNING clause."
+  },
+  "practice_tasks": [
+    {
+      "title": "Insert a new order",
+      "prompt": "Given this incomplete INSERT statement, modify it to add order ID 9 for customer 1 on '2023-09-10' with status 'pending', and return all columns of the new order.",
+      "starter_code": "INSERT INTO orders\nVALUES ...",
+      "solution": "INSERT INTO orders (id, customer_id, order_date, status)\nVALUES (9, 1, '2023-09-10', 'pending')\nRETURNING *;"
+    }
+  ],
+  "challenge": {
+    "title": "Insert and Return",
+    "prompt": "Write a query to insert a new product: id 10, name 'Headphones', category 'Electronics', price 99.99. Return the name and category of the inserted product.",
+    "solution": "INSERT INTO products (id, name, category, price) VALUES (10, 'Headphones', 'Electronics', 99.99) RETURNING name, category;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-insert.html"
+  ]
+}

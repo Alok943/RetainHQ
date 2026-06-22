@@ -1,0 +1,96 @@
+{
+  "slug": "update-delete",
+  "title": "UPDATE, DELETE & Returning",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "where-operators"
+    ],
+    "unlocks": [
+      "transactions"
+    ],
+    "project_usage": [
+      "modifying user profiles",
+      "removing old data",
+      "cancelling orders"
+    ]
+  },
+  "overview": {
+    "what": "UPDATE modifies existing rows in a table, and DELETE removes them entirely. Both use the WHERE clause to target specific rows. Similar to INSERT, both commands support a RETURNING clause to immediately fetch the modified or removed data, providing instant confirmation of the operation's effect.",
+    "why": "Data changes over time. You need UPDATE to correct or evolve data and DELETE to remove obsolete records safely. RETURNING helps verify what was actually affected.",
+    "where_used": [
+      "soft or hard deleting accounts",
+      "updating order statuses",
+      "adjusting prices"
+    ]
+  },
+  "why_learning_this": [
+    "You will know how to modify or remove precisely the data you intend.",
+    "You can chain RETURNING with application logic to log what changed without extra queries."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the WHERE clause",
+      "explanation": "Running UPDATE or DELETE without WHERE affects EVERY row in the table, which can destroy production data. Always double-check your WHERE conditions."
+    },
+    {
+      "title": "Incorrect WHERE condition",
+      "explanation": "Using a condition that is too broad, inadvertently updating or deleting more rows than intended."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you omit the WHERE clause in an UPDATE statement?",
+      "answer": "The database will apply the update to every single row in the table.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "UPDATE products SET price = 9.99 WHERE id = 6 RETURNING id, price;",
+      "question": "What rows does this query return?",
+      "answer": "id: 6, price: 9.99",
+      "why": "It updates the Notebook (id 6) price from 4.99 to 9.99 and returns the new state."
+    },
+    {
+      "type": "predict-result",
+      "query": "DELETE FROM customers WHERE id = 8 RETURNING name;",
+      "question": "What rows does this query return?",
+      "answer": "name: 'Hana'",
+      "why": "It deletes the row for Hana (id 8) and returns the name of the removed row."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "UPDATE orders SET status = 'cancelled' WHERE id = 3 RETURNING id, status;",
+    "flow_stages": [
+      "where"
+    ],
+    "visualization": "result-table",
+    "focus": "Filtering down to order id 3, applying the status modification, and returning the updated state."
+  },
+  "practice_tasks": [
+    {
+      "title": "Update product price",
+      "prompt": "Given this UPDATE statement, modify it to increase the price of the 'Keyboard' (id 1) to 59.99, and return the new price.",
+      "starter_code": "UPDATE products\nSET price = ...",
+      "solution": "UPDATE products\nSET price = 59.99\nWHERE id = 1\nRETURNING price;"
+    }
+  ],
+  "challenge": {
+    "title": "Delete and Return",
+    "prompt": "Write a query to delete all orders that are currently 'pending' (you can find the status in the orders table) and return their IDs.",
+    "solution": "DELETE FROM orders WHERE status = 'pending' RETURNING id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/sql-update.html",
+    "https://www.postgresql.org/docs/current/sql-delete.html"
+  ]
+}

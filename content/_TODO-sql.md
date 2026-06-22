@@ -44,27 +44,27 @@ result set, and the FROM→WHERE→GROUP BY→HAVING→SELECT→ORDER BY **logic
 - [x] Recursive CTEs  →  `recursive-ctes`
 
 ## Sub-track 5 — Window Functions  (4)
-- [ ] OVER & PARTITION BY  →  `over-partition-by`
-- [ ] ROW_NUMBER / RANK / DENSE_RANK  →  `ranking-functions`
-- [ ] LEAD / LAG  →  `lead-lag`
-- [ ] Running totals & moving averages  →  `window-frames`
+- [x] OVER & PARTITION BY  →  `over-partition-by`
+- [x] ROW_NUMBER / RANK / DENSE_RANK  →  `ranking-functions`
+- [x] LEAD / LAG  →  `lead-lag`
+- [x] Running totals & moving averages  →  `window-frames`
 
 ## Sub-track 6 — Modeling & Constraints  (4)
-- [ ] Primary, foreign & unique keys  →  `keys`
-- [ ] Normalization (1NF–3NF)  →  `normalization`
-- [ ] Constraints & defaults  →  `constraints`
-- [ ] Indexes — what & when  →  `indexes`
+- [x] Primary, foreign & unique keys  →  `keys`
+- [x] Normalization (1NF–3NF)  →  `normalization`
+- [x] Constraints & defaults  →  `constraints`
+- [x] Indexes — what & when  →  `indexes`
 
 ## Sub-track 7 — Modifying Data  (4)
-- [ ] INSERT  →  `insert`
-- [ ] UPDATE & DELETE (mind the WHERE!)  →  `update-delete`
-- [ ] UPSERT (ON CONFLICT)  →  `upsert`
-- [ ] Transactions (COMMIT / ROLLBACK)  →  `transactions`
+- [x] INSERT  →  `insert`
+- [x] UPDATE & DELETE (mind the WHERE!)  →  `update-delete`
+- [x] UPSERT (ON CONFLICT)  →  `upsert`
+- [x] Transactions (COMMIT / ROLLBACK)  →  `transactions`
 
 ## Sub-track 8 — Performance  (3)
-- [ ] When indexes help (and don't)  →  `index-usage`  *(applied angle; `indexes` above is the what/when)*
-- [ ] EXPLAIN / query plans  →  `query-plans`
-- [ ] Full scans & N+1  →  `query-pitfalls`
+- [x] When indexes help (and don't)  →  `index-usage`  *(applied angle; `indexes` above is the what/when)*
+- [x] EXPLAIN / query plans  →  `query-plans`
+- [x] Full scans & N+1  →  `query-pitfalls`
 
 ---
 

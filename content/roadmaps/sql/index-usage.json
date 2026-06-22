@@ -1,0 +1,93 @@
+{
+  "slug": "index-usage",
+  "title": "How Databases Use Indexes",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "indexes"
+    ],
+    "unlocks": [
+      "query-plans"
+    ],
+    "project_usage": [
+      "optimizing slow API endpoints",
+      "scaling databases"
+    ]
+  },
+  "overview": {
+    "what": "When a query filters or sorts rows, the database can use an index (like a book's index) to find matching rows instantly instead of scanning every row in the table. For example, finding all 'Electronics' in products using an index avoids checking the furniture rows.",
+    "why": "Without indexes, databases perform 'Sequential Scans' which become painfully slow as tables grow to millions of rows. Understanding how the database uses indexes helps you write queries that scale.",
+    "where_used": [
+      "optimizing WHERE clauses",
+      "speeding up JOINs"
+    ]
+  },
+  "why_learning_this": [
+    "Identify why a specific query is slow.",
+    "Write WHERE clauses that actually use the indexes you've built."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Function calls on indexed columns",
+      "explanation": "Applying a function like LOWER(category) = 'electronics' prevents the database from using an index on `category`. Fix: Create an expression index, or match exactly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why might a database choose to scan a whole table even if an index exists?",
+      "answer": "If the query requests a large percentage of the table's rows, a full table scan can be faster than jumping back and forth using an index.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name FROM products WHERE category = 'Electronics' ORDER BY id;",
+      "question": "What rows does this return?",
+      "answer": "Keyboard\nMouse\nMonitor",
+      "why": "It filters the products table down to the 3 electronics items. An index on `category` would make finding these 3 items fast."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT name FROM products WHERE price > 100 ORDER BY id;",
+      "question": "What rows does this return?",
+      "answer": "Monitor\nDesk",
+      "why": "Filters for items over 100. An index on `price` could help locate Monitor (199.99) and Desk (149.99)."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT name, price FROM products WHERE category = 'Furniture' ORDER BY price DESC;",
+    "setup_sql": "CREATE INDEX idx_products_category ON products(category);",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "logical-query-flow",
+    "focus": "The WHERE clause utilizes the index on category to quickly locate Desk and Chair, rather than scanning the stationery and electronics items."
+  },
+  "practice_tasks": [
+    {
+      "title": "Filter with Exact Match",
+      "prompt": "Given this query, change it to filter for the 'US' country. Assume there is an index on country that you want to use.",
+      "starter_code": "SELECT name FROM customers ORDER BY id;",
+      "solution": "SELECT name FROM customers WHERE country = 'US' ORDER BY id;"
+    }
+  ],
+  "challenge": {
+    "title": "Indexed Join Field",
+    "prompt": "Write a query that finds the status of orders placed by customer 1. Filtering on customer_id is typically fast because foreign keys often have indexes.",
+    "solution": "SELECT status FROM orders WHERE customer_id = 1 ORDER BY id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/indexes-intro.html"
+  ]
+}

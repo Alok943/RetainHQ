@@ -1,0 +1,96 @@
+{
+  "slug": "transactions",
+  "title": "Transactions (BEGIN, COMMIT, ROLLBACK)",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "update-delete"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "financial transfers",
+      "multi-table inserts",
+      "ensuring data consistency"
+    ]
+  },
+  "overview": {
+    "what": "A transaction groups multiple SQL statements into a single, all-or-nothing logical unit of work. You start with BEGIN. If all commands succeed, you COMMIT to save them permanently. If something fails, you ROLLBACK to undo all changes made since BEGIN, leaving the database exactly as it was.",
+    "why": "Without transactions, a failure halfway through a complex operation (like deducting money from one account but failing to add it to another) leaves the database in an inconsistent, corrupt state.",
+    "where_used": [
+      "checkout processes",
+      "inventory management",
+      "bulk data imports"
+    ]
+  },
+  "why_learning_this": [
+    "You can guarantee data integrity even when hardware or network failures occur.",
+    "You can safely test potentially destructive queries by wrapping them in a transaction and rolling back."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to COMMIT",
+      "explanation": "If you issue a BEGIN but never COMMIT, your changes remain invisible to other users and will eventually be discarded when your session ends."
+    },
+    {
+      "title": "Catching errors but not rolling back",
+      "explanation": "In Postgres, if a query inside a transaction causes an error, the entire transaction becomes aborted. You MUST issue a ROLLBACK before you can run new queries in that session."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What command makes the changes in a transaction permanent?",
+      "answer": "COMMIT",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a transaction is rolled back?",
+      "answer": "All changes made within that transaction are discarded, returning the data to its state before the transaction began.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "BEGIN;\nUPDATE products SET price = 0 WHERE id = 1;\nROLLBACK;\nSELECT price FROM products WHERE id = 1;",
+      "question": "What rows does the final SELECT query return?",
+      "answer": "price: 49.99",
+      "why": "The update was wrapped in a transaction that was rolled back, so the price reverted to its original value of 49.99."
+    },
+    {
+      "type": "predict-result",
+      "query": "BEGIN;\nDELETE FROM order_items WHERE order_id = 5;\nDELETE FROM orders WHERE id = 5;\nCOMMIT;\nSELECT id FROM orders WHERE id = 5;",
+      "question": "What rows does the final SELECT query return?",
+      "answer": "(No rows)",
+      "why": "The transaction was committed successfully, making both deletions permanent."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "BEGIN;\nUPDATE employees SET salary = salary + 5000 WHERE id = 7;\nUPDATE employees SET salary = salary - 5000 WHERE id = 6;\nCOMMIT;",
+    "flow_stages": [],
+    "visualization": "logical-query-flow",
+    "focus": "Both updates act as a single unit. Either both employees have their salaries adjusted, or neither do."
+  },
+  "practice_tasks": [
+    {
+      "title": "Rollback a mistake",
+      "prompt": "You accidentally deleted all customers! Add the command needed to undo the deletion before it becomes permanent.",
+      "starter_code": "BEGIN;\nDELETE FROM customers;\n-- Oops, undo this!",
+      "solution": "BEGIN;\nDELETE FROM customers;\nROLLBACK;"
+    }
+  ],
+  "challenge": {
+    "title": "Complete the transfer",
+    "prompt": "Write a transaction that starts a block, updates the status of order id 3 to 'cancelled', then commits the changes.",
+    "solution": "BEGIN;\nUPDATE orders SET status = 'cancelled' WHERE id = 3;\nCOMMIT;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/tutorial-transactions.html"
+  ]
+}

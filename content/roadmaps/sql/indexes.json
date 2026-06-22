@@ -1,0 +1,94 @@
+{
+  "slug": "indexes",
+  "title": "Indexes \u2014 what & when",
+  "roadmap": "sql",
+  "runtime": "sql",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "keys"
+    ],
+    "unlocks": [
+      "index-usage"
+    ],
+    "project_usage": [
+      "query optimization",
+      "database tuning"
+    ]
+  },
+  "overview": {
+    "what": "An index is a hidden data structure (usually a B-tree) that allows the database to find rows quickly without scanning the entire table. They are automatically created for Primary and Unique keys.",
+    "why": "As tables grow to millions of rows, scanning the entire table for a single row becomes painfully slow. Indexes turn a full-table scan into a rapid lookup.",
+    "where_used": [
+      "foreign keys",
+      "frequently filtered columns (WHERE)",
+      "columns used for sorting (ORDER BY)"
+    ]
+  },
+  "why_learning_this": [
+    "You can fix slow queries by identifying and adding missing indexes.",
+    "You understand the trade-off between read performance (faster) and write performance (slower)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Indexing every column",
+      "explanation": "Indexes speed up SELECTs but slow down INSERTs, UPDATEs, and DELETEs because the index must be updated too. They also consume disk space. Only index what is necessary."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why shouldn't you add an index to every column in a table?",
+      "answer": "Every index takes up disk space and adds overhead to write operations (INSERT, UPDATE, DELETE), which can degrade overall database performance.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "query": "SELECT name FROM customers WHERE id = 6;",
+      "question": "What rows does this return?",
+      "answer": "name: Farah",
+      "why": "This query uses the primary key index on `id` to instantly find Farah's record without scanning the other 7 rows."
+    },
+    {
+      "type": "predict-result",
+      "query": "SELECT order_date FROM orders WHERE customer_id = 4 ORDER BY order_date;",
+      "question": "What rows does this return?",
+      "answer": "order_date: 2023-05-10",
+      "why": "If `customer_id` is indexed, the database finds customer 4's orders quickly. The result is just one order date for Diana."
+    }
+  ],
+  "query_walkthrough": {
+    "query": "SELECT o.id, o.order_date FROM orders o WHERE o.customer_id = 1 ORDER BY o.order_date DESC;",
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
+    "visualization": "logical-query-flow",
+    "focus": "An index on customer_id dramatically speeds up the WHERE clause, and an index could also help the ORDER BY clause."
+  },
+  "practice_tasks": [
+    {
+      "title": "Filter on Likely Indexed Column",
+      "prompt": "Given this query, change it to filter for the employee with the exact `id` of 5, which utilizes the primary key index.",
+      "starter_code": "SELECT name, salary FROM employees WHERE salary > 100000;",
+      "solution": "SELECT name, salary FROM employees WHERE id = 5;"
+    }
+  ],
+  "challenge": {
+    "title": "Query by Foreign Key",
+    "prompt": "Write a query that finds the `id` and `quantity` of all order items for `order_id = 6`. This is a classic query that benefits from an index on the foreign key.",
+    "solution": "SELECT id, quantity FROM order_items WHERE order_id = 6 ORDER BY id;"
+  },
+  "sources": [
+    "https://www.postgresql.org/docs/current/indexes-intro.html",
+    "https://www.postgresql.org/docs/current/indexes-btree.html"
+  ]
+}
