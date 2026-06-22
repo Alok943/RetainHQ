@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck, LogIn, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { supabase } from './lib/supabase';
@@ -6,18 +6,24 @@ import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 import { apiFetch } from './lib/api';
 
-import Home from './Home';
-import Review from './Review';
-import LogActivity from './LogActivity';
-import Roadmaps from './Roadmaps';
-import Analytics from './Analytics';
-import RoadmapDetail from './RoadmapDetail';
-import LessonView from './LessonView';
+// Login is the public landing/LCP page — keep it eager so it paints without a
+// chunk round-trip. Logo is tiny chrome used everywhere. Everything else is an
+// authed route lazy-loaded on demand, which keeps the heavy libs (React Flow +
+// dagre on roadmaps, jsPDF + html2canvas on roadmap detail) out of the initial
+// bundle the landing page has to download.
 import Login from './Login';
-import Profile from './Profile';
-import KnowledgeVault from './KnowledgeVault';
-import Admin from './Admin';
 import Logo from './Logo';
+
+const Home = lazy(() => import('./Home'));
+const Review = lazy(() => import('./Review'));
+const LogActivity = lazy(() => import('./LogActivity'));
+const Roadmaps = lazy(() => import('./Roadmaps'));
+const Analytics = lazy(() => import('./Analytics'));
+const RoadmapDetail = lazy(() => import('./RoadmapDetail'));
+const LessonView = lazy(() => import('./LessonView'));
+const Profile = lazy(() => import('./Profile'));
+const KnowledgeVault = lazy(() => import('./KnowledgeVault'));
+const Admin = lazy(() => import('./Admin'));
 
 const ADMIN_EMAIL = 'aloksingh98541@gmail.com';
 
@@ -182,6 +188,7 @@ function AppLayout() {
 
         {/* Content Scrollable Area */}
         <main className="flex-1 overflow-y-auto w-full relative">
+          <Suspense fallback={<div className="w-full py-24 flex items-center justify-center font-sans text-sm text-[#64748B]">Loading…</div>}>
           <Routes>
             <Route path="dashboard" element={<Home onStartReviews={() => navigate('/reviews')} />} />
             <Route path="reviews" element={<Review onBack={() => navigate('/dashboard')} />} />
@@ -197,6 +204,7 @@ function AppLayout() {
                 this splat route appends recursively (/dashboard/dashboard/...) into a loop. */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          </Suspense>
         </main>
 
         {/* Mobile Bottom Navigation (Hidden on md+). `fixed` (not absolute) so it

@@ -70,7 +70,22 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static crawlable fallback: shown to non-JS crawlers and before the
+           React bundle mounts; React replaces #root contents on render, so users
+           never see it. Keeps real keyword-rich content in the served HTML. -->
+      <noscript>
+        <h1>RetainHQ — Remember what you learn</h1>
+        <p>
+          RetainHQ measures what you still remember, not just what you completed.
+          Built on spaced repetition and active recall, it schedules each review
+          right before you'd forget — so knowledge sticks. Log what you learn,
+          capture the one key memory that matters, and let RetainHQ time your
+          reviews with an SM-2 schedule across roadmaps for DSA, system design,
+          web development, and more.
+        </p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
