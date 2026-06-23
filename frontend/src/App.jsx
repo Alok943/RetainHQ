@@ -13,6 +13,7 @@ import { apiFetch } from './lib/api';
 // bundle the landing page has to download.
 import Login from './Login';
 import Logo from './Logo';
+import WelcomeModal from './WelcomeModal';
 
 const Home = lazy(() => import('./Home'));
 const Review = lazy(() => import('./Review'));
@@ -89,6 +90,12 @@ function AppLayout() {
 
   return (
     <div className="flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
+      {/* First-visit explainer for guests landing straight in the app (e.g. via a
+          deep link or the landing-page CTA). Logged-in first-runs use FirstCapture
+          instead, so this is gated to guests to avoid double onboarding. Shown once
+          per browser via a shared localStorage flag. */}
+      {!session && <WelcomeModal />}
+
       {/* LEFT SIDEBAR (Desktop / Tablet) */}
       <aside className={`hidden md:flex flex-col border-r glass-nav shrink-0 justify-between transition-all duration-300 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6'}`}>
         <div className="w-full">

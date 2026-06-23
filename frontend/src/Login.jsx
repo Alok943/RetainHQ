@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
+import WelcomeModal from './WelcomeModal';
 import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles } from 'lucide-react';
 
 function Login() {
@@ -43,6 +44,10 @@ function Login() {
 
   return (
     <div style={{ backgroundColor: '#0B1120' }} className="min-h-screen w-full overflow-y-auto">
+      {/* First-visit explainer — answers "what is this site for" before the user
+          has to read the page. Shown once per browser (shared localStorage flag). */}
+      <WelcomeModal onDone={() => navigate('/dashboard')} ctaLabel="Start exploring →" />
+
       {/* ambient glow */}
       <div className="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-[#0891B2]/10 blur-[140px]" />
 
@@ -163,7 +168,7 @@ function Login() {
         <section id="features" className="scroll-mt-8 pb-6">
           <div id="how" className="scroll-mt-8 text-center mb-10">
             <h2 className="font-sans text-3xl font-bold text-white tracking-tight mb-3">The learning loop, automated</h2>
-            <p className="font-sans text-[#9aa3b8] max-w-lg mx-auto">Four steps that turn a one-time study session into durable, long-term knowledge.</p>
+            <p className="font-sans text-[#9aa3b8] max-w-lg mx-auto">Four steps that turn a one-time study session — DSA, system design, a new language — into durable, long-term knowledge.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

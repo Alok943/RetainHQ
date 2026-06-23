@@ -460,6 +460,22 @@ html.dark .aurora {
   to   { opacity: 0; transform: translateX(12px); }
 }
 
+/* Welcome modal entrance */
+.welcome-fade {
+  animation: welcomeFade 0.2s ease forwards;
+}
+.welcome-pop {
+  animation: welcomePop 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes welcomeFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes welcomePop {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* Responsive: stack icon above text on small screens */
 @media (max-width: 480px) {
   .onboarding-body {
