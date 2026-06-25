@@ -1,0 +1,90 @@
+{
+  "slug": "puzzles",
+  "title": "Puzzles (floors / boxes / scheduling)",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "seating-arrangements"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Service-co OA",
+      "Product-co OA",
+      "TCS NQT"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Puzzles are just constraint satisfaction problems solved by process of elimination.",
+    "description": "Establish a fixed base variable (like days of the week or floor numbers), map the rigid constraints first, and then branch into parallel cases for the flexible rules until only one logical arrangement survives."
+  },
+  "method": [
+    "Identify the core continuous variable to base your grid on (e.g., Floors 1 to N, Days Monday to Sunday).",
+    "Scan the problem to categorize all constraints as direct (fixed position), relative (positioned against someone else), or negative (cannot be in a certain position).",
+    "Place all absolute, direct constraints into your base grid immediately.",
+    "Create parallel grids/cases for relative constraints that have a limited number of possibilities.",
+    "Apply negative constraints across all active cases to eliminate contradictions until exactly one valid arrangement remains."
+  ],
+  "worked_example": {
+    "problem": "Five people (P, Q, R, S, T) live on floors 1 to 5 (1 is bottom). P lives on floor 3. R lives immediately above T. Q does not live on an even-numbered floor. S lives below P. Who lives on floor 2?",
+    "steps": [
+      "Identify core variable: Floors 5 down to 1.",
+      "Categorize constraints: P=3 (direct). R is directly above T (relative). Q is not on even (negative). S is below P (relative).",
+      "Place direct constraint: Put P on floor 3. The empty floors are 5, 4, 2, 1.",
+      "Evaluate relative constraint R above T: Requires two consecutive empty floors. The options are (5,4) and (2,1). Create Case 1: R=5, T=4. Case 2: R=2, T=1.",
+      "Apply remaining constraints to cases: In Case 1 (R=5, T=4), remaining floors for Q and S are 1 and 2. Since Q is odd, Q=1. Thus S=2. S=2 is below P=3 (valid).",
+      "Check Case 2 (R=2, T=1) to be sure: Remaining floors are 4 and 5. Q is odd so Q=5. Thus S=4. But S must be below P(3). Case 2 is invalid.",
+      "Final valid arrangement is R=5, T=4, P=3, S=2, Q=1."
+    ],
+    "answer": "S lives on floor 2."
+  },
+  "common_mistakes": [
+    {
+      "title": "Starting with floating constraints",
+      "explanation": "Trying to place 'A is two floors above B' without a fixed grid wastes time. Always plot your fixed variables first."
+    },
+    {
+      "title": "Assuming instead of drawing cases",
+      "explanation": "When there are two possibilities, mentally holding them often leads to errors. Quickly draw a second column next to your base grid to track the alternate case."
+    }
+  ],
+  "recall_questions": [
+    {
+      "answer": "Identify the core continuous variable and build a base grid for it.",
+      "tier": "tier1",
+      "q": "What is the first step you should take when solving a floor or scheduling puzzle?"
+    },
+    {
+      "answer": "Look for consecutive empty spaces in your grid and create parallel cases if there are multiple options.",
+      "tier": "tier1",
+      "q": "If you encounter a relative constraint like 'A is immediately above B', what should you do?"
+    },
+    {
+      "answer": "Use them as filters against your generated parallel cases to eliminate invalid scenarios.",
+      "tier": "tier1",
+      "q": "How do you use negative constraints (e.g., 'C does not live on floor 1') in your method?"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Five boxes are stacked. Box A is exactly in the middle. Box B is immediately above Box C. Box D is at the very top. Where is Box E?",
+      "company": "AMCAT-style",
+      "answer": "At the 4th position from the bottom (just below top).",
+      "approach": "Grid 5 to 1. D is 5. A is 3. B above C means they need consecutive spots (2,1). So E takes the remaining spot at 4."
+    },
+    {
+      "question": "Seven lectures are scheduled from Monday to Sunday. Math is on Thursday. Physics is immediately before Chemistry. Biology is on Tuesday. Only one day is empty between Math and English. On which day is English if it's held after Math?",
+      "company": "TCS NQT",
+      "answer": "Saturday",
+      "approach": "Grid Mon-Sun. Bio=Tue, Math=Thu. English is after Math with 1 day gap, so Math=Thu, gap=Fri, English=Sat."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/questions-and-answers/"
+  ]
+}

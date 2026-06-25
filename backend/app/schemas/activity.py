@@ -3,7 +3,7 @@ from typing import Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field
 import uuid
 
-VALID_SOURCES = Literal["problem", "lecture", "video", "book", "article", "course", "project", "other"]
+VALID_SOURCES = Literal["problem", "lecture", "video", "book", "article", "course", "project", "lesson", "other"]
 
 class ActivityCreate(BaseModel):
     topic: str = Field(max_length=300)
@@ -17,6 +17,7 @@ class ActivityCreate(BaseModel):
     mistake: Optional[str] = Field(default=None, max_length=2000)
     source_type: Optional[VALID_SOURCES] = None
     roadmap_id: Optional[uuid.UUID] = None  # optional link to the roadmap it belongs to
+    node_id: Optional[uuid.UUID] = None  # lesson-level link (roadmap_nodes.id) for "Add to reviews"
 
 
 class KeyPointsRequest(BaseModel):

@@ -170,7 +170,9 @@ function RoadmapDetail() {
       try {
         const data = await apiFetch(`/api/roadmaps/${id}`, { optionalAuth: true });
         setMeta({ title: data.title, description: data.description });
-        const ck = CONTENT_KEY_BY_TITLE[data.title] || null;
+        // The roadmap slug IS the content folder key; fall back to the title map for
+        // any roadmap that predates the slug backfill.
+        const ck = data.slug || CONTENT_KEY_BY_TITLE[data.title] || null;
         setContentKey(ck);
         setRawNodes(data.nodes);
         const sm = {};
@@ -881,7 +883,7 @@ function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, road
 
         {learnSlug && (
           <button
-            onClick={(e) => { e.stopPropagation(); navigate(`/roadmaps/${roadmapId}/learn/${learnSlug}`, { state: { contentKey } }); }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/roadmaps/${roadmapId}/learn/${learnSlug}`, { state: { contentKey, nodeId: node.id } }); }}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-[#0891B2] bg-[#0891B2]/10 hover:bg-[#0891B2]/20 transition-colors shrink-0"
           >
             <BookOpen size={12} /> Learn

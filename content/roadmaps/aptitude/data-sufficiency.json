@@ -1,0 +1,85 @@
+{
+  "slug": "data-sufficiency",
+  "title": "Data sufficiency",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 50,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "Product-co OA",
+      "Service-co OA"
+    ]
+  },
+  "mental_model": {
+    "intuition": "You are auditing the clues, not solving the crime.",
+    "description": "Your goal isn't to find the final numerical answer, but to determine exactly which pieces of information guarantee a single, unique solution. Evaluate each clue in strict isolation before combining them."
+  },
+  "method": [
+    "Read the question stem carefully to determine exactly what constitutes 'sufficient' (e.g., a single unique number, or a definitive 'Yes/No').",
+    "Evaluate Statement 1 completely on its own, forcefully ignoring Statement 2. Does it guarantee a single answer?",
+    "Evaluate Statement 2 completely on its own, forcefully ignoring Statement 1. Does it guarantee a single answer?",
+    "If neither statement alone is sufficient, combine both statements to see if the overlapping data provides a unique answer.",
+    "Select the final option (1 alone, 2 alone, either alone, both required, neither sufficient) based on these independent checks."
+  ],
+  "worked_example": {
+    "problem": "What is the value of x? \nStatement 1: x^2 = 25. \nStatement 2: x > 0.",
+    "steps": [
+      "Define sufficiency: The question asks for 'the value of x', meaning we need a single, unique number.",
+      "Evaluate Statement 1 alone: x^2 = 25 yields x = 5 or x = -5. Because there are two possible values, it is NOT sufficient.",
+      "Evaluate Statement 2 alone: x > 0. This gives an infinite number of possible values (1, 2, 3.5, etc.), so it is NOT sufficient.",
+      "Combine statements: We know x^2 = 25 AND x > 0. The only value that satisfies both constraints simultaneously is x = 5.",
+      "Conclusion: A unique answer is found only when both pieces of data are used together."
+    ],
+    "answer": "Both statements 1 and 2 together are sufficient."
+  },
+  "common_mistakes": [
+    {
+      "title": "Carrying over information",
+      "explanation": "Reading Statement 1, holding that information in your head, and unconsciously using it while evaluating Statement 2 alone."
+    },
+    {
+      "title": "Actually calculating the final answer",
+      "explanation": "Wasting time doing complex math to find the exact final value when you already know that the data provides a unique path to solve it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "answer": "Determine exactly what type of answer is required for the data to be considered 'sufficient' (e.g., a single unique value or a definitive Yes/No).",
+      "tier": "tier1",
+      "q": "What is the very first step in solving a Data Sufficiency problem?"
+    },
+    {
+      "answer": "Evaluate it completely on its own, strictly ignoring any information provided in Statement 1.",
+      "tier": "tier1",
+      "q": "How should you treat Statement 2 initially?"
+    },
+    {
+      "answer": "Only if both statements are proven to be individually insufficient.",
+      "tier": "tier1",
+      "q": "When should you combine the information from Statement 1 and Statement 2?"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Is integer y even? Statement 1: y + 3 is odd. Statement 2: 2y is an even integer.",
+      "company": "Product-co OA",
+      "answer": "Statement 1 alone is sufficient.",
+      "approach": "Goal: definitive Yes or No. Stmt 1: y+3 = odd -> y must be even. Sufficient (gives definite 'Yes'). Stmt 2: 2y is even. True for any integer y (even or odd). Not sufficient."
+    },
+    {
+      "question": "What is the speed of the train? Statement 1: It crosses a pole in 10 seconds. Statement 2: It is 200 meters long.",
+      "company": "Service-co OA",
+      "answer": "Both statements together are sufficient.",
+      "approach": "Speed = Distance / Time. Stmt 1 gives Time but not Distance. Stmt 2 gives Distance but not Time. Combined, you have both."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/questions-and-answers/"
+  ]
+}

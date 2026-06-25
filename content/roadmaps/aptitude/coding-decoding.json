@@ -1,0 +1,87 @@
+{
+  "slug": "coding-decoding",
+  "title": "Coding-Decoding",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "AMCAT",
+      "CoCubes",
+      "Accenture",
+      "Cognizant"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Every letter is a number in disguise.",
+    "description": "Alphabet characters operate on a fixed mathematical ring (1 to 26). Visualizing them as numbers reveals the mathematical operations (+1, -2, reverse) hiding behind random letters."
+  },
+  "method": [
+    "Write the alphabet and assign numerical positional values (A=1...Z=26). Keep reverse mappings (A=26...Z=1) handy.",
+    "Write the original word and its coded version stacked directly underneath each other. This visualizes vertical alignment.",
+    "Check for direct letter shifting. Calculate the numerical difference between the stacked letters (+1, -2, +3, etc.).",
+    "If vertical shifts don't make a pattern, check for cross-patterns (first letter codes to last letter) or halves-reversal (split word in half and reverse each).",
+    "Once the exact mathematical or positional rule is confirmed on the example, apply it strictly to the target word."
+  ],
+  "worked_example": {
+    "problem": "In a certain code language, 'WATER' is coded as 'YCVGT'. How will 'FIRE' be coded?",
+    "steps": [
+      "Stack the words vertically: W -> Y, A -> C, T -> V, E -> G, R -> T.",
+      "Convert to numbers: W(23)->Y(25) is +2. A(1)->C(3) is +2. T(20)->V(22) is +2. E(5)->G(7) is +2. R(18)->T(20) is +2.",
+      "Identify the pattern: The rule is simply +2 to every letter.",
+      "Apply the rule to 'FIRE': F(6) + 2 = H(8). I(9) + 2 = K(11). R(18) + 2 = T(20). E(5) + 2 = G(7).",
+      "Combine the resulting letters: H, K, T, G."
+    ],
+    "answer": "HKTG"
+  },
+  "common_mistakes": [
+    {
+      "title": "Ignoring wrap-around",
+      "explanation": "Forgetting that adding to Z wraps around to A (e.g., Z + 2 = B) leads to calculation errors."
+    },
+    {
+      "title": "Stopping after the first letter",
+      "explanation": "Assuming the shift rule is constant (e.g., +1 everywhere) just because the first letter is +1. The pattern might be +1, -1, +1, -1."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the first physical step you should take when solving a coding problem?",
+      "answer": "Stack the original word and the coded word directly on top of each other to visualize the alignment.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If vertical letter shifts don't reveal a pattern, what is the next structural pattern to check?",
+      "answer": "Check for cross-patterns, such as the first letter coding to the last letter, or the word being split in half and reversed.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you handle a shift operation that goes past 'Z'?",
+      "answer": "Wrap around to the beginning of the alphabet. Treat Z as 26, so Z + 1 is 27, which wraps to 1 (A).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "company": "AMCAT-style",
+      "question": "If 'BEAT' is coded as 'CDBS', how is 'JUMP' coded?",
+      "answer": "KTNO",
+      "approach": "Stack BEAT and CDBS. Pattern: B(+1)=C, E(-1)=D, A(+1)=B, T(-1)=S. The rule is alternate +1, -1. Apply to JUMP: J(+1)=K, U(-1)=T, M(+1)=N, P(-1)=O."
+    },
+    {
+      "company": "Product-co OA",
+      "question": "If 'CAT' is coded as '24', what is 'DOG' coded as?",
+      "answer": "26",
+      "approach": "Substitute letters with their alphabetical positions: C(3) + A(1) + T(20) = 24. For DOG: D(4) + O(15) + G(7) = 26."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/coding-and-decoding/"
+  ]
+}

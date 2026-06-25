@@ -1,0 +1,94 @@
+{
+  "slug": "blood-relations",
+  "title": "Blood Relations",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 12,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "Infosys",
+      "Service-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Every TCS/Infosys reasoning section throws a 'Pointing to a photo, X said...' puzzle.",
+    "question": "Do you solve it in your head and second-guess, or in 15 seconds on paper?"
+  },
+  "mental_model": {
+    "intuition": "Don't track relationships in words - draw the family TREE.",
+    "description": "Generations stack top-to-bottom; a married couple sits side by side. Once it's a diagram, the answer is just reading the path between two boxes - no working memory required."
+  },
+  "method": [
+    "Spot the two people and the link word (son, sister, maternal uncle, father-in-law).",
+    "Anchor the speaker / reference person as a box; draw generations top (elder) to bottom (younger).",
+    "Mark gender (+ for male, - for female) and couples (=), parent-child with a vertical line.",
+    "Read the path between the two target boxes to name the relation."
+  ],
+  "worked_example": {
+    "problem": "Pointing at a man, Riya says: 'He is the son of my grandfather's only son.' How is the man related to Riya?",
+    "steps": [
+      "'Grandfather's only son' = Riya's father (he is the single son of the grandfather).",
+      "The man is the son of Riya's father.",
+      "Son of Riya's father = Riya's brother."
+    ],
+    "answer": "He is Riya's brother."
+  },
+  "shortcuts": [
+    {
+      "title": "Collapse 'only' phrases",
+      "trick": "'Only son / only daughter of X' usually collapses to one known person - replace it immediately.",
+      "example": "'My mother's only son' = me (if male) or my brother."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming gender from the name or context",
+      "explanation": "'The child of X' may have unstated gender. Only use the gender the puzzle explicitly gives - guessing flips the answer."
+    },
+    {
+      "title": "Reading the chain in words instead of drawing it",
+      "explanation": "Multi-hop relations like 'father-in-law of the brother of...' exceed working memory. Draw the tree and the error rate drops to near zero."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the first move on any blood-relations puzzle?",
+      "answer": "Draw the family tree - anchor the reference person and stack generations top to bottom.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you simplify 'my grandfather's only son'?",
+      "answer": "'Only son' of the grandfather collapses to the speaker's father - replace the phrase with one box.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is solving these in your head so error-prone?",
+      "answer": "Multi-hop relations exceed working memory; the diagram externalizes them so you just read a path between two boxes.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A is B's sister. C is B's mother. D is C's father. How is A related to D?",
+      "company": "Service-co OA",
+      "answer": "Granddaughter.",
+      "approach": "Tree: D -> C -> (A, B). A is female (sister of B) and sits two generations below D, so A is D's granddaughter."
+    },
+    {
+      "question": "Pointing to a woman, Karan said, 'She is the daughter of the only daughter of my mother.' How is the woman related to Karan?",
+      "company": "TCS NQT",
+      "answer": "Niece.",
+      "approach": "'Only daughter of my mother' = Karan's sister. The woman is that sister's daughter = Karan's niece."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/blood-relation-test/"
+  ]
+}

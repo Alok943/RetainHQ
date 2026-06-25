@@ -72,6 +72,10 @@ class Activity(SQLModel, table=True):
     # Optional link to the roadmap this capture belongs to (roadmap-level, not node).
     # Powers the Log form's roadmap picker + future "captures by roadmap" views.
     roadmap_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmaps.id")
+    # Optional lesson-level link: set when a card is created from a lesson via
+    # "Add to reviews" (source_type='lesson'). Lets the review surface the lesson's
+    # recall items and dedupes one card per (user, node). Migration a4b2e9f1c8d3.
+    node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
     topic: str
     notes: Optional[str] = None
     difficulty: int = Field(ge=1, le=5)

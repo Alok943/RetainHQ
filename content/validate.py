@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent / "roadmaps"
 SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-KIND = {"concept", "milestone", "aptitude"}
+KIND = {"concept", "milestone", "aptitude", "reasoning", "theory"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
@@ -148,6 +148,119 @@ def main():
                     keys = list(d.keys())
                     if "formula" in keys and keys.index("pattern_discovery") > keys.index("formula"):
                         warn(rel, "THE LAW: pattern_discovery should come BEFORE formula (discovery first)")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
+            else:
+                for i, s in enumerate(srcs):
+                    if not isinstance(s, str) or not s.startswith("http"):
+                        err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
+        # Theory (Core CS: OS/DBMS/Networks, System Design) is a no-runtime concept
+        # lesson (kind: "theory"): intuition + an EXPLANATION + recall. No code/formula/method.
+        # See content/PROMPT-coreCS.md.
+        if d.get("kind") == "theory":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition')")
+            if not isinstance(d.get("explanation"), str) or not d.get("explanation").strip():
+                err(rel, "explanation is required: a non-empty string (the concept, plainly explained)")
+            kp = d.get("key_points")
+            if kp is not None:
+                if not isinstance(kp, list) or not all(isinstance(p, dict) and p.get("title") and p.get("detail") for p in kp):
+                    err(rel, "key_points, if present, must be a list of {title, detail} objects")
+            # animation (optional, PROCESS concepts only): actors + directed steps so a
+            # generic SVG renderer can animate the process. `term` per step is optional.
+            an = d.get("animation")
+            if an is not None:
+                if not isinstance(an, dict) or an.get("type") not in {"sequence", "cycle", "timeline"}:
+                    err(rel, "animation.type must be one of sequence|cycle|timeline")
+                else:
+                    actors = an.get("actors")
+                    ids = {a.get("id") for a in actors} if isinstance(actors, list) else set()
+                    if not isinstance(actors, list) or len(actors) < 2 or not all(isinstance(a, dict) and a.get("id") and a.get("label") for a in actors):
+                        err(rel, "animation.actors must be a list of >=2 {id, label}")
+                    steps = an.get("steps")
+                    if not isinstance(steps, list) or not steps or not all(
+                        isinstance(s, dict) and s.get("from") in ids and s.get("to") in ids and s.get("label") for s in steps
+                    ):
+                        err(rel, "animation.steps must be a non-empty list of {from, to, label} referencing actor ids")
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            else:
+                for i, c in enumerate(cm):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("explanation"):
+                        err(rel, f"common_mistakes[{i}] needs non-empty 'title' and 'explanation'")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            else:
+                for i, q in enumerate(rq):
+                    if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
+                        err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            oq = d.get("oa_questions")
+            if not isinstance(oq, list) or len(oq) < 2:
+                err(rel, "oa_questions is required: >=2 interview-style items")
+            else:
+                for i, q in enumerate(oq):
+                    if not isinstance(q, dict) or not q.get("question") or not q.get("answer"):
+                        err(rel, f"oa_questions[{i}] needs both 'question' and 'answer'")
+            hk = d.get("hook")
+            if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
+                err(rel, "hook, if present, needs a non-empty 'scenario'")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
+            else:
+                for i, s in enumerate(srcs):
+                    if not isinstance(s, str) or not s.startswith("http"):
+                        err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
+        # Reasoning (Logical Reasoning + Verbal) is a method-based lesson (kind: "reasoning"):
+        # intuition + an ordered METHOD + one WORKED EXAMPLE. No formula, no discovery.
+        # See content/PROMPT-reasoning.md.
+        if d.get("kind") == "reasoning":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition')")
+            method = d.get("method")
+            if not isinstance(method, list) or len(method) < 2 or not all(isinstance(s, str) and s for s in method):
+                err(rel, "method is required: an ordered list of >=2 non-empty step strings")
+            we = d.get("worked_example")
+            if (not isinstance(we, dict) or not we.get("problem") or not we.get("answer")
+                    or not isinstance(we.get("steps"), list) or not we.get("steps")):
+                err(rel, "worked_example is required: object with 'problem', non-empty 'steps' list, and 'answer'")
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            else:
+                for i, c in enumerate(cm):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("explanation"):
+                        err(rel, f"common_mistakes[{i}] needs non-empty 'title' and 'explanation'")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            else:
+                for i, q in enumerate(rq):
+                    if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
+                        err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            oq = d.get("oa_questions")
+            if not isinstance(oq, list) or len(oq) < 2:
+                err(rel, "oa_questions is required: >=2 OA-style items")
+            else:
+                for i, q in enumerate(oq):
+                    if not isinstance(q, dict) or not q.get("question") or not q.get("answer"):
+                        err(rel, f"oa_questions[{i}] needs both 'question' and 'answer'")
+            hk = d.get("hook")
+            if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
+                err(rel, "hook, if present, needs a non-empty 'scenario'")
             srcs = d.get("sources")
             if not isinstance(srcs, list) or not srcs:
                 err(rel, "'sources' must be a non-empty list")

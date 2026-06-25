@@ -123,7 +123,7 @@ function CollapsibleGroup({ label, items, navigate }) {
       {open && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((rm, i) => (
-            <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
+            <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
           ))}
         </div>
       )}
@@ -273,7 +273,7 @@ function Roadmaps() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {sorted.map((rm, i) => (
-              <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.id}`)} />
+              <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
             ))}
           </div>
         )}

@@ -1,0 +1,87 @@
+{
+  "slug": "series-reasoning",
+  "title": "Number & letter series",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "AMCAT-style",
+      "TCS NQT",
+      "Service-co OA",
+      "Product-co OA"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Every series is driven by a hidden rate of change.",
+    "description": "Slowly growing series are additive, rapidly growing series are multiplicative/exponential, and erratic series are actually two interwoven series."
+  },
+  "method": [
+    "Examine the overall rate of growth between terms to identify the likely mathematical driver (addition for slow growth, multiplication/squares for rapid growth).",
+    "Write down the first-level differences (the gap between consecutive terms) to expose hidden additive patterns.",
+    "If the first-level differences don't reveal a clear pattern, calculate the second-level differences (the gap between the gaps).",
+    "For letter series, immediately convert all letters to their alphabetical numerical equivalents (A=1, B=2 ... Z=26) and treat it as a standard number series.",
+    "Apply the validated mathematical operation or difference pattern to the last known term to compute the missing term."
+  ],
+  "worked_example": {
+    "problem": "Find the next number in the series: 2, 5, 11, 23, 47, ?",
+    "steps": [
+      "Check rate of growth: The numbers roughly double each step, suggesting a multiplicative rule or rapidly growing additive rule.",
+      "Find first-level differences: 5-2=3, 11-5=6, 23-11=12, 47-23=24.",
+      "Analyze differences: The sequence of gaps is 3, 6, 12, 24. These differences are doubling at each step.",
+      "Predict next difference: The next gap should be 24 * 2 = 48.",
+      "Apply to last known term: Add the next gap to the last term: 47 + 48 = 95."
+    ],
+    "answer": "95"
+  },
+  "common_mistakes": [
+    {
+      "title": "Not calculating the second-level differences",
+      "explanation": "Staring at the first level of differences without realizing that the pattern only becomes obvious when you subtract the differences from each other."
+    },
+    {
+      "title": "Trying to solve letter series without numbers",
+      "explanation": "Counting letters on your fingers is slow and prone to errors. Always convert letters to numeric values immediately."
+    }
+  ],
+  "recall_questions": [
+    {
+      "answer": "Examine the rate of growth to determine if it's additive (slow) or multiplicative (fast).",
+      "tier": "tier1",
+      "q": "What is the first step you should take when analyzing a new number series?"
+    },
+    {
+      "answer": "Calculate the second-level differences (the differences between the differences).",
+      "tier": "tier1",
+      "q": "What should you do if the first-level differences between terms do not show an obvious pattern?"
+    },
+    {
+      "answer": "Convert each letter to its corresponding alphabetical numerical value (A=1, Z=26).",
+      "tier": "tier1",
+      "q": "What is the most efficient way to approach a letter series problem?"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the missing term: B, E, H, K, ?",
+      "company": "TCS NQT",
+      "answer": "N",
+      "approach": "Convert to numbers: 2, 5, 8, 11. Difference is +3. Next is 14, which maps to N."
+    },
+    {
+      "question": "Find the next number: 1, 4, 9, 16, 25, ?",
+      "company": "AMCAT-style",
+      "answer": "36",
+      "approach": "Recognize the direct pattern of perfect squares: 1^2, 2^2, 3^2, 4^2, 5^2. Next is 6^2 = 36."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/questions-and-answers/"
+  ]
+}

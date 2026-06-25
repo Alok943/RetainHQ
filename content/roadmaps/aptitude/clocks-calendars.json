@@ -1,0 +1,87 @@
+{
+  "slug": "clocks-calendars",
+  "title": "Clocks & calendars",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "AMCAT-style",
+      "Service-co OA"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Clocks are circular speed tracks; calendars are infinite lines sliced into repeating blocks of 7 days.",
+    "description": "For clocks, map both hands to angular displacement to find their relative distance. For calendars, compress massive timeframes by taking the remainder of days divided by 7 (Odd Days)."
+  },
+  "method": [
+    "First, classify the problem: does it ask for a Clock angle/time or a Calendar day of the week?",
+    "For Clocks: Treat the clock face as 360 degrees. Convert the time to Hours (H) and Minutes (M).",
+    "Apply the relative speed formula: Angle = |30H - 5.5M|. If the result is greater than 180, subtract it from 360 to get the inner angle.",
+    "For Calendars: Use the 'Odd Days' modulo method. Remember an ordinary year has 1 odd day, and a leap year has 2 odd days.",
+    "Calculate total odd days from the reference date to the target date by summing the odd days for all completed years and months, then find the remainder when divided by 7 to determine the weekday."
+  ],
+  "worked_example": {
+    "problem": "What is the angle between the hour and minute hand of a clock exactly at 3:15?",
+    "steps": [
+      "Classify problem: This is a Clock angle problem.",
+      "Identify the variables from the time given: H = 3, M = 15.",
+      "Apply the relative angle formula: Angle = |30H - 5.5M|.",
+      "Substitute the values: |30(3) - 5.5(15)|.",
+      "Calculate the components: 90 - 82.5.",
+      "Find the absolute difference: |7.5| = 7.5 degrees."
+    ],
+    "answer": "7.5 degrees"
+  },
+  "common_mistakes": [
+    {
+      "title": "Assuming hands overlap at exact multiples",
+      "explanation": "Assuming the hands overlap exactly at 3:15 or 6:30. The hour hand moves continuously, so at 3:15 it has moved past the 3."
+    },
+    {
+      "title": "Mishandling century leap years",
+      "explanation": "Forgetting that century years (like 1900) are only leap years if they are divisible by 400. 1900 is not a leap year, 2000 is."
+    }
+  ],
+  "recall_questions": [
+    {
+      "answer": "Angle = |30H - 5.5M|",
+      "tier": "tier1",
+      "q": "What is the formula used to find the angle between clock hands at a given time?"
+    },
+    {
+      "answer": "Odd days are the remainder of days left over after dividing a total number of days by 7.",
+      "tier": "tier1",
+      "q": "What does the concept of 'odd days' mean when solving a calendar problem?"
+    },
+    {
+      "answer": "2 odd days.",
+      "tier": "tier1",
+      "q": "How many odd days are there in a standard leap year?"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Today is Monday. After 61 days, it will be:",
+      "company": "TCS NQT",
+      "answer": "Saturday",
+      "approach": "Find odd days: 61 divided by 7 leaves a remainder of 5. Add 5 days to Monday -> Saturday."
+    },
+    {
+      "question": "At what angle are the hands of a clock inclined at 15 minutes past 5?",
+      "company": "Service-co OA",
+      "answer": "67.5 degrees",
+      "approach": "H=5, M=15. Angle = |30(5) - 5.5(15)| = |150 - 82.5| = 67.5 degrees."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/questions-and-answers/"
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "slug": "direction-sense",
+  "title": "Direction Sense",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "Infosys",
+      "IBM"
+    ]
+  },
+  "mental_model": {
+    "intuition": "You are drawing a map from a fixed origin.",
+    "description": "Direction problems test your ability to maintain a constant frame of reference. By plotting lines proportionally from a starting origin point and rotating your perspective for turns, complex paths reduce to simple geometry."
+  },
+  "method": [
+    "Draw a standard compass cross on your scratchpad (North up, South down, East right, West left).",
+    "Start every problem by marking a clear central origin point (the starting point).",
+    "Trace the path step-by-step. Draw lines that are roughly proportional to the given distances (e.g., a 10m line should look twice as long as a 5m line).",
+    "For left/right turns, imagine yourself standing on the paper facing the current direction. A 'Right' turn is always 90 degrees clockwise; a 'Left' turn is 90 degrees counter-clockwise.",
+    "To find the final distance from the start, draw a straight line connecting the end point to the origin. If it's diagonal, drop a perpendicular line to form a right triangle and use Pythagoras' theorem (a^2 + b^2 = c^2)."
+  ],
+  "worked_example": {
+    "problem": "A person walks 4 km East, then turns Left and walks 3 km. How far and in which direction is they from the starting point?",
+    "steps": [
+      "Mark the origin point. Draw a line extending to the right (East) and label it '4'.",
+      "Facing East, a 'Left' turn means turning counter-clockwise, which is North (up).",
+      "Draw a line pointing up from the end of the 4km line, and label it '3'.",
+      "Connect the final point back to the origin. This forms a right-angled triangle with base 4 and height 3.",
+      "Use Pythagoras: Distance^2 = 4^2 + 3^2 = 16 + 9 = 25. Distance = 5.",
+      "Determine direction: The end point is above and to the right of the origin, which is North-East."
+    ],
+    "answer": "5 km North-East"
+  },
+  "common_mistakes": [
+    {
+      "title": "Drawing disproportionate lines",
+      "explanation": "If your 10m line is drawn shorter than your 5m line, you will misjudge the final position relative to the starting point and guess the wrong direction."
+    },
+    {
+      "title": "Confusing left/right when facing South",
+      "explanation": "When facing South (down), a 'Right' turn goes West (left on the paper). Not reversing your perspective causes mirrored mistakes."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What rule of thumb prevents direction errors on left/right turns?",
+      "answer": "A Right turn is always 90 degrees clockwise; a Left turn is always 90 degrees counter-clockwise.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it important to draw line segments proportionally?",
+      "answer": "Because intersecting lines and final positions relative to the start depend on the actual lengths; bad proportions lead to wrong direction guesses.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you calculate the shortest distance if the endpoint is diagonal from the start?",
+      "answer": "Form a right-angled triangle using vertical and horizontal offsets and use Pythagoras' theorem.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "company": "TCS NQT",
+      "question": "A man walks 5 km South, turns right and walks 3 km, then turns right again and walks 5 km. In which direction is he from the starting point?",
+      "answer": "West",
+      "approach": "He goes South (down) 5. Turning right (clockwise) means going West (left) 3. Turning right again (clockwise) means going North (up) 5. He is now exactly 3 km West of his starting point."
+    },
+    {
+      "company": "Product-co OA",
+      "question": "Starting from point X, a girl walks 15m West, turns left and walks 20m, then turns left again and walks 15m. How far is she from X?",
+      "answer": "20m",
+      "approach": "West 15, left (South) 20, left (East) 15. The final East path cancels out the initial West path. She is exactly 20m South of point X."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/direction-sense-test/"
+  ]
+}

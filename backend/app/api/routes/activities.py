@@ -59,6 +59,27 @@ async def log_activity(
 ):
     user_id = uuid.UUID(current_user.id)
 
+    # Lesson-cards are idempotent: one card per (user, node). If this lesson is
+    # already in the user's reviews, return that card rather than duplicating it
+    # (the "Add to reviews" button can be tapped more than once).
+    if activity_in.source_type == "lesson" and activity_in.node_id is not None:
+        existing = (
+            await db.execute(
+                select(Activity).where(
+                    Activity.user_id == user_id,
+                    Activity.node_id == activity_in.node_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if existing:
+            return ActivityResponse(
+                id=existing.id, user_id=existing.user_id, track_id=existing.track_id,
+                roadmap_id=existing.roadmap_id, topic=existing.topic, notes=existing.notes,
+                difficulty=existing.difficulty, needed_hint=existing.needed_hint,
+                key_memory=existing.key_memory, mistake=existing.mistake,
+                created_at=existing.created_at, reviews_scheduled=0, review_due_now=False,
+            )
+
     # Is this the user's first-ever activity? If so it gets a one-time demo review
     # due now (instant proof of the recall loop); every later activity's first
     # review waits until tomorrow. Count before inserting so we don't count this one.
@@ -80,6 +101,7 @@ async def log_activity(
         mistake=activity_in.mistake,
         source_type=activity_in.source_type,
         roadmap_id=activity_in.roadmap_id,
+        node_id=activity_in.node_id,
     )
     db.add(activity)
     

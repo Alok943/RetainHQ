@@ -1,0 +1,92 @@
+{
+  "slug": "seating-arrangements",
+  "title": "Linear & Circular Seating",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 60,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "puzzles"
+    ],
+    "appears_in": [
+      "TCS NQT",
+      "Product-co OA",
+      "Infosys"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Anchor the certainty, isolate the ambiguity.",
+    "description": "Seating puzzles overwhelm you with overlapping constraints. The key is to never build on an assumption. Start strictly with definite anchors, branch into multiple visual cases when forced, and use negative constraints as rapid filters to collapse the wrong branches."
+  },
+  "method": [
+    "Draw the base skeleton: a circle with dashed marks for chairs (note if they face center or outward), or a line with directional arrows (North/South).",
+    "Scan all the given clues. Do not start with the first clue automatically. Find the most 'definite' clue (e.g., 'A sits at the extreme right end' or 'B sits exactly 2nd to the right of C').",
+    "Place the definite clues into your base diagram. For circular arrangements, you can put the first definite person anywhere (usually the bottom seat is easiest to visualize left/right).",
+    "If a clue forces a split (e.g., 'A is adjacent to B' means A could be left or right of B), immediately draw two small, separate mini-diagrams. Do not try to juggle possibilities in your head.",
+    "Write down negative clues on the side (e.g., 'D != edge', 'E != C'). Use these to instantly cross out mini-diagram branches that violate them."
+  ],
+  "worked_example": {
+    "problem": "Five people (A,B,C,D,E) sit in a circle facing the center. A sits 2nd to the right of B. C sits exactly between A and B. D does not sit next to A. Where does E sit?",
+    "steps": [
+      "Draw a circle with 5 dashed marks facing inward.",
+      "Scan for a definite anchor: 'A sits 2nd to the right of B'. Place B at the bottom. Since B faces center, right is counter-clockwise. Skip one seat, place A.",
+      "Use the next clue: 'C sits exactly between A and B'. There is only one seat between A and B, so put C there.",
+      "Evaluate 'D does not sit next to A'. There are two empty seats left. One is next to A, the other is next to B. D must take the seat next to B.",
+      "Only one person is left: E. Only one seat is left: next to A. Therefore, E sits next to A."
+    ],
+    "answer": "E sits next to A."
+  },
+  "shortcuts": [
+    "In circular seating, 'faces the center' means Right = Counter-Clockwise and Left = Clockwise.",
+    "In circular seating, 'faces outward' means Right = Clockwise and Left = Counter-Clockwise."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Starting with weak clues",
+      "explanation": "Beginning the diagram with an ambiguous clue like 'A sits next to B' forces you into multiple guessing paths immediately. Always hunt for a definite anchor first."
+    },
+    {
+      "title": "Juggling possibilities mentally",
+      "explanation": "Trying to remember 'C could be here or here' leads to working memory overload. Just draw a second quick circle."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the very first thing you should do after drawing the empty seating diagram?",
+      "answer": "Scan all the clues to find the single most definite anchor point, rather than reading sequentially.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If people in a circle are facing the center, which physical direction corresponds to a 'Right' turn?",
+      "answer": "Counter-clockwise.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the best way to handle a clue that creates two different possibilities?",
+      "answer": "Immediately draw two separate mini-diagrams (cases) to visualize both paths, rather than trying to hold them in your memory.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "company": "Service-co OA",
+      "question": "A, B, C, D, E sit in a row facing North. A sits at the left end. C is adjacent to A and B. D is at the right end. Who sits in the middle?",
+      "answer": "B",
+      "approach": "A is at seat 1. C is adjacent to A and B, so it must be A, C, B. D is at seat 5 (right end). Sequence so far: A, C, B, _, D. E must be at seat 4. The middle (seat 3) is B."
+    },
+    {
+      "company": "Product-co OA",
+      "question": "6 people sit around a circular table facing center. X is opposite to Y. Z is immediately left of Y. W is opposite to Z. What is W's position relative to X?",
+      "answer": "Immediately right of X",
+      "approach": "Place Y at bottom. X is at top (opposite). Z is immediately left of Y (clockwise, so bottom-right). W is opposite Z (top-left). Looking from X (at top, facing center), W is immediately to X's right (counter-clockwise)."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/seating-arrangement/"
+  ]
+}

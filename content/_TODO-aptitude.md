@@ -96,11 +96,13 @@ the lesson. The one Claude-side gate for *authoring*: the `validate.py`/`schema.
 
 ---
 
-## Phase 2 — Logical Reasoning + Verbal  (BLOCKED — do NOT generate yet)
-The other 21 nodes (Logical Reasoning ×11, Verbal Ability ×8) don't fit the quant template — they
-need their own `kind` (guided-deduction / worked-example, no formula step) + renderer. Claude task,
-not Antigravity's. Skip until that contract lands. (Letter-series lives here; the quant half is
-`series-progressions`, already de-duped.)
+## Phase 2 — Logical Reasoning + Verbal  (UNBLOCKED → `content/_TODO-reasoning.md`)
+The 19 nodes (Logical Reasoning ×11, Verbal Ability ×8) use their own `kind: "reasoning"`
+(method + worked-example, no formula/discovery) — contract = **`PROMPT-reasoning.md`**, queue =
+**`_TODO-reasoning.md`**, exemplar = `roadmaps/aptitude/blood-relations.json` (validated). Same
+`aptitude` folder, different `kind`. Generate Logical first (evidenced), Verbal second, Vocab last.
+(Letter-series: quant = `series-progressions`, logical = `series-reasoning` — de-duped.)
+Renderer (`kind: "reasoning"`) is a Claude-side task, like the aptitude renderer.
 
 ---
 

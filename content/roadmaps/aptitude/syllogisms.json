@@ -1,0 +1,86 @@
+{
+  "slug": "syllogisms",
+  "title": "Syllogisms",
+  "roadmap": "aptitude",
+  "kind": "reasoning",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "Infosys",
+      "Wipro",
+      "Accenture"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Translate ambiguous English into strict boundary circles.",
+    "description": "Words like 'all', 'some', and 'none' define strict boundary conditions between sets. Venn diagrams visualize these boundaries without ambiguity, revealing what must be true versus what is merely possible."
+  },
+  "method": [
+    "Draw a Venn diagram for each premise. Use overlapping circles for 'Some', a circle inside another for 'All', and disjoint circles with a cross line for 'No'.",
+    "Combine the diagrams into a single minimal overlap diagram. Only overlap circles if the premises explicitly force you to do so.",
+    "Check each conclusion against the combined diagram. For a definite conclusion to be true, it must be true in EVERY possible valid diagram. If you can draw even one valid diagram where the conclusion is false, it is considered false.",
+    "Check for 'Either/Or' complementary pairs. If two conclusions contain the same elements, one is positive and the other is negative, and both are individually false, they might form an Either/Or pair."
+  ],
+  "worked_example": {
+    "problem": "Premises:\n1. All cats are dogs.\n2. Some dogs are birds.\nConclusions:\nI. Some cats are birds.\nII. Some birds are dogs.",
+    "steps": [
+      "Draw the first premise: a smaller circle 'Cats' completely inside a larger circle 'Dogs'.",
+      "Draw the second premise: a circle 'Birds' that overlaps with the 'Dogs' circle.",
+      "Draw the minimal overlap: make the 'Birds' circle overlap with 'Dogs' but NOT with 'Cats', because the premises don't force 'Birds' and 'Cats' to touch.",
+      "Check Conclusion I (Some cats are birds): In our minimal diagram, 'Cats' and 'Birds' don't overlap. Therefore, it is false.",
+      "Check Conclusion II (Some birds are dogs): The premises state 'Some dogs are birds', which inherently means they overlap. Therefore, 'Some birds are dogs' is definitely true."
+    ],
+    "answer": "Only Conclusion II follows."
+  },
+  "common_mistakes": [
+    {
+      "title": "Assuming possibility means certainty",
+      "explanation": "Just because two circles CAN overlap doesn't mean they MUST. Only accept conclusions that are forced to be true by the premises."
+    },
+    {
+      "title": "Misinterpreting 'Only'",
+      "explanation": "The statement 'Only A is B' actually means 'All B is A' (and usually implies B cannot be anything else). Drawing it forwards leads to the opposite logic."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the rule for drawing minimal overlaps?",
+      "answer": "Only overlap circles if the premises explicitly force you to do so; never add extra assumptions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When evaluating a definite conclusion, what makes it false?",
+      "answer": "If you can draw even one valid diagram that satisfies all premises but where the conclusion is false.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What conditions must be met for an 'Either/Or' conclusion?",
+      "answer": "The two conclusions must have the same subjects, one must be positive and one negative, and both must be individually false.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "company": "TCS NQT",
+      "question": "Premises: Some trees are forests. No forest is a wood. Conclusions: I. Some trees are not woods. II. All trees are woods.",
+      "answer": "Only Conclusion I follows.",
+      "approach": "Since no forest is a wood, the part of 'trees' that overlaps with 'forest' can never be a wood. Therefore, some trees are definitely not woods."
+    },
+    {
+      "company": "Service-co OA",
+      "question": "Premises: All A are B. All B are C. Conclusions: I. Some C are A. II. All A are C.",
+      "answer": "Both I and II follow.",
+      "approach": "A is inside B, B is inside C. Therefore, A is completely inside C (All A are C). Since A is inside C, there is an overlap, so Some C are A is also true."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/logical-reasoning/syllogism/"
+  ]
+}
