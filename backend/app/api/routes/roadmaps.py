@@ -27,6 +27,16 @@ def _pct(done: int, total: int) -> int:
     return round((done / total) * 100) if total else 0
 
 
+async def _resolve_roadmap(db: AsyncSession, ref: str) -> Roadmap | None:
+    """Resolve a roadmap by UUID (if `ref` parses as one) or else by slug.
+    Lets routes accept clean /roadmaps/<slug> URLs while old UUID links keep working."""
+    try:
+        rid = uuid.UUID(ref)
+        return (await db.execute(select(Roadmap).where(Roadmap.id == rid))).scalar_one_or_none()
+    except (ValueError, AttributeError):
+        return (await db.execute(select(Roadmap).where(Roadmap.slug == ref))).scalar_one_or_none()
+
+
 @router.get("/", response_model=List[RoadmapListItem])
 async def list_roadmaps(
     db: AsyncSession = Depends(get_db),
@@ -39,6 +49,7 @@ async def list_roadmaps(
     stmt = (
         select(
             Roadmap.id,
+            Roadmap.slug,
             Roadmap.title,
             Roadmap.description,
             func.count(func.distinct(RoadmapNode.id)).label("total_nodes"),
@@ -51,7 +62,7 @@ async def list_roadmaps(
             & (UserProgress.user_id == user_id)
             if user_id else false(),
         )
-        .group_by(Roadmap.id, Roadmap.title, Roadmap.description)
+        .group_by(Roadmap.id, Roadmap.slug, Roadmap.title, Roadmap.description)
         .order_by(Roadmap.created_at)
     )
 
@@ -62,6 +73,7 @@ async def list_roadmaps(
         items.append(
             RoadmapListItem(
                 id=row.id,
+                slug=row.slug,
                 title=row.title,
                 description=row.description,
                 total_nodes=total,
@@ -74,18 +86,18 @@ async def list_roadmaps(
 
 @router.get("/{roadmap_id}", response_model=RoadmapDetailOut)
 async def get_roadmap(
-    roadmap_id: uuid.UUID,
+    roadmap_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: SupabaseUser | None = Depends(get_optional_user),
 ):
-    """Return a roadmap with all its nodes and the current user's progress per node."""
+    """Return a roadmap with all its nodes and the current user's progress per node.
+    `roadmap_id` accepts the roadmap slug or its UUID."""
     user_id = uuid.UUID(current_user.id) if current_user else None
 
-    roadmap = (
-        await db.execute(select(Roadmap).where(Roadmap.id == roadmap_id))
-    ).scalar_one_or_none()
+    roadmap = await _resolve_roadmap(db, roadmap_id)
     if not roadmap:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+    roadmap_id = roadmap.id
 
     # Nodes ordered as authored
     nodes = (
@@ -150,6 +162,7 @@ async def get_roadmap(
 
     return RoadmapDetailOut(
         id=roadmap.id,
+        slug=roadmap.slug,
         title=roadmap.title,
         description=roadmap.description,
         total_nodes=total,
@@ -161,7 +174,7 @@ async def get_roadmap(
 
 @router.get("/{roadmap_id}/blockers", response_model=BlockersOut)
 async def get_roadmap_blockers(
-    roadmap_id: uuid.UUID,
+    roadmap_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: SupabaseUser | None = Depends(get_optional_user),
 ):
@@ -175,11 +188,10 @@ async def get_roadmap_blockers(
     """
     user_id = uuid.UUID(current_user.id) if current_user else None
 
-    exists = (
-        await db.execute(select(Roadmap.id).where(Roadmap.id == roadmap_id))
-    ).scalar_one_or_none()
-    if not exists:
+    roadmap = await _resolve_roadmap(db, roadmap_id)
+    if not roadmap:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+    roadmap_id = roadmap.id
 
     node_rows = (
         await db.execute(

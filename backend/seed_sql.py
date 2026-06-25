@@ -16,6 +16,7 @@ from app.core.database import engine
 
 ROADMAP_ID = uuid.UUID("99999999-9999-9999-9999-999999999999")
 TITLE = "SQL — Querying & Modeling"
+SLUG = "sql"  # URL identifier; matches the content/ folder key
 DESCRIPTION = "From SELECT to window functions and query plans. The one skill every backend, data and analytics role assumes you have."
 
 NODES = [
@@ -76,8 +77,8 @@ async def main():
         await conn.execute(text("DELETE FROM roadmap_nodes WHERE roadmap_id = :rid"), {"rid": str(ROADMAP_ID)})
         await conn.execute(text("DELETE FROM roadmaps WHERE id = :rid"), {"rid": str(ROADMAP_ID)})
         await conn.execute(
-            text("INSERT INTO roadmaps (id, title, description, created_at) VALUES (:id, :title, :desc, now())"),
-            {"id": str(ROADMAP_ID), "title": TITLE, "desc": DESCRIPTION},
+            text("INSERT INTO roadmaps (id, slug, title, description, created_at) VALUES (:id, :slug, :title, :desc, now())"),
+            {"id": str(ROADMAP_ID), "slug": SLUG, "title": TITLE, "desc": DESCRIPTION},
         )
         for i, (phase, section, title, tier, desc) in enumerate(NODES):
             await conn.execute(

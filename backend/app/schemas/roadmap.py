@@ -8,6 +8,7 @@ class RoadmapListItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    slug: Optional[str] = None
     title: str
     description: Optional[str] = None
     total_nodes: int = 0
@@ -33,6 +34,7 @@ class RoadmapNodeOut(BaseModel):
 
 class RoadmapDetailOut(BaseModel):
     id: uuid.UUID
+    slug: Optional[str] = None
     title: str
     description: Optional[str] = None
     total_nodes: int = 0

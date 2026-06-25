@@ -7,6 +7,10 @@ from sqlalchemy import UniqueConstraint
 class Roadmap(SQLModel, table=True):
     __tablename__ = "roadmaps"
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    # Human-readable URL identifier (e.g. "aptitude", "python-swe"). Matches the
+    # content folder key so a lesson URL reads /roadmaps/<slug>/learn/<lesson-slug>.
+    # Nullable + unique: routes resolve by slug OR id, so old UUID links still work.
+    slug: Optional[str] = Field(default=None, unique=True, index=True)
     title: str
     description: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
