@@ -24,7 +24,9 @@ NODES = [
     # ================= Quantitative Aptitude =================
     ("Quantitative Aptitude", "Numbers", "Number system & divisibility", "easy", "Factors, multiples, divisibility rules, remainders."),
     ("Quantitative Aptitude", "Numbers", "HCF & LCM", "easy", "Product of two numbers = HCF × LCM."),
-    ("Quantitative Aptitude", "Numbers", "Number & letter series", "medium", "Spot the pattern: AP/GP, squares, primes."),
+    ("Quantitative Aptitude", "Numbers", "Simplification & approximation", "easy", "BODMAS order; round to estimate fast."),
+    ("Quantitative Aptitude", "Numbers", "Surds, indices & logarithms", "medium", "Power rules; log_b(xy)=log x+log y."),
+    ("Quantitative Aptitude", "Numbers", "Number series & progressions", "medium", "AP/GP nth term & sum; squares, primes."),
     ("Quantitative Aptitude", "Arithmetic", "Percentages", "easy", "Fraction↔percent; successive % change."),
     ("Quantitative Aptitude", "Arithmetic", "Profit, loss & discount", "easy", "CP, SP, MP; profit% on CP."),
     ("Quantitative Aptitude", "Arithmetic", "Ratio & proportion", "easy", "Compound ratio; direct/inverse proportion."),
@@ -32,6 +34,7 @@ NODES = [
     ("Quantitative Aptitude", "Arithmetic", "Problems on ages", "medium", "Set up linear equations from age relations."),
     ("Quantitative Aptitude", "Arithmetic", "Mixtures & alligation", "medium", "Alligation rule for ratio of quantities."),
     ("Quantitative Aptitude", "Arithmetic", "Simple & compound interest", "medium", "SI = PRT/100; CI compounds the principal."),
+    ("Quantitative Aptitude", "Arithmetic", "Partnership", "easy", "Profit split in ratio of capital × time."),
     ("Quantitative Aptitude", "Time & Distance", "Time & work", "medium", "Work rate = 1/time; LCM-of-days method."),
     ("Quantitative Aptitude", "Time & Distance", "Pipes & cisterns", "medium", "Same as time & work; outlets are negative."),
     ("Quantitative Aptitude", "Time & Distance", "Time, speed & distance", "medium", "Speed = distance/time; unit conversions."),
@@ -39,6 +42,14 @@ NODES = [
     ("Quantitative Aptitude", "Advanced", "Permutations & combinations", "hard", "nPr arranges, nCr selects."),
     ("Quantitative Aptitude", "Advanced", "Probability", "hard", "Favourable / total; addition & multiplication rules."),
     ("Quantitative Aptitude", "Advanced", "Mensuration", "medium", "Area, perimeter, surface area & volume formulas."),
+
+    # ----- Algebra & Geometry -----
+    ("Quantitative Aptitude", "Algebra & Geometry", "Linear & quadratic equations", "medium", "Solve for unknowns; roots, sum/product of roots."),
+    ("Quantitative Aptitude", "Algebra & Geometry", "Geometry & coordinate geometry", "medium", "Triangles, circles, lines; distance & slope."),
+
+    # ----- Data & Statistics -----
+    ("Quantitative Aptitude", "Data & Statistics", "Mean, median, mode & dispersion", "medium", "Central tendency; standard deviation & variance."),
+    ("Quantitative Aptitude", "Data & Statistics", "Data interpretation (tables & charts)", "hard", "Read tables, bar/line/pie; compute & compare."),
 
     # ================= Logical Reasoning =================
     ("Logical Reasoning", "Verbal Reasoning", "Syllogisms", "medium", "Venn diagrams; all / some / no statements."),

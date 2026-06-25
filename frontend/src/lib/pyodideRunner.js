@@ -87,6 +87,22 @@ function getPyodide() {
 }
 
 /**
+ * Kick off the Pyodide download + init in the BACKGROUND, idempotently.
+ * Call this when a Python lesson opens so the ~10MB WASM runtime is already warm
+ * by the time the learner hits "Visualize execution" — turning a multi-second
+ * first-run wait into an instant one. Fire-and-forget: shares the same singleton
+ * as tracePython(), never blocks, and swallows errors (a failed prewarm just
+ * means the real call retries lazily). No-op if already loading/loaded.
+ */
+export function prewarmPython() {
+  try {
+    getPyodide().catch(() => {});
+  } catch {
+    /* ignore — real use will surface any error */
+  }
+}
+
+/**
  * Trace a Python snippet's execution.
  * @returns {Promise<{steps: Array<{line:number|null, locals:Object, stdout:string, error?:string}>, error:?string, truncated:boolean}>}
  */

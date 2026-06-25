@@ -1,0 +1,90 @@
+{
+  "slug": "statistics-basics",
+  "title": "Mean, Median, Mode & Dispersion",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "averages"
+    ],
+    "unlocks": [
+      "data-interpretation"
+    ],
+    "appears_in": [
+      "Service-co OA",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Your startup's app shows an 'average' salary of 20 LPA, but 9 out of 10 devs make 5 LPA while the founder takes 1.5 Cr. This is why standard 'averages' lie, and why you need median and dispersion to see the real picture."
+  },
+  "mental_model": {
+    "intuition": "Mean is the balancing point, median is the middle guy, mode is the popular choice, and dispersion is how wildly the crowd is scattered.",
+    "description": "Statistics summarize large datasets into single numbers. Central tendency tells you where the middle is, and dispersion (variance/standard deviation) tells you how reliable that middle is."
+  },
+  "formula": {
+    "statement": "Mean = Sum/N. Median = Middle value. Mode = Most frequent. Variance = Average of squared deviations. SD = \u221aVariance.",
+    "explain": "Standard Deviation (SD) measures volatility. A high SD means data points are spread far from the mean."
+  },
+  "shortcuts": [
+    {
+      "title": "Shift and Scale",
+      "trick": "Add 'k' to all numbers -> mean/median/mode shift by 'k', but Standard Deviation stays exactly the same. Multiply by 'k' -> EVERYTHING gets multiplied by 'k'.",
+      "example": "Original SD = 5. Add 10 to all values -> New SD is still 5."
+    },
+    {
+      "title": "The Empirical Formula",
+      "trick": "Mode \u2248 3 \u00d7 Median - 2 \u00d7 Mean (for moderately skewed distributions).",
+      "example": "Mean = 10, Median = 12. Mode \u2248 3(12) - 2(10) = 16."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to Sort for Median",
+      "explanation": "You cannot pick the middle element of an unsorted array. Always sort in ascending order first."
+    },
+    {
+      "title": "Variance vs. Standard Deviation",
+      "explanation": "Variance is in squared units. If you are asked for standard deviation, don't forget to take the square root at the end!"
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If the standard deviation of a dataset is 4, what is the variance?",
+      "answer": "16 (since Variance = SD\u00b2).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Data: 2, 4, 4, 6, 8. What is the mode?",
+      "answer": "4 (it appears most frequently).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you add 5 to every number in a dataset, what happens to its standard deviation?",
+      "answer": "It remains unchanged.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "The mean of 5 observations is 10. If a new observation 22 is added, what is the new mean?",
+      "company": "TCS NQT",
+      "answer": "12",
+      "approach": "Total was 50. New total is 72. New mean = 72 / 6 = 12."
+    },
+    {
+      "question": "The standard deviation of 10 values is 3. If each value is multiplied by 4, what is the new variance?",
+      "company": "AMCAT-style",
+      "answer": "144",
+      "approach": "New SD = 3 * 4 = 12. New Variance = 12\u00b2 = 144."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/mean-median-mode/"
+  ]
+}

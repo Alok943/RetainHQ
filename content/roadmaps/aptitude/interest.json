@@ -1,0 +1,92 @@
+{
+  "slug": "interest",
+  "title": "Simple & Compound Interest",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "percentages"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "AMCAT-style"
+    ]
+  },
+  "hook": {
+    "scenario": "You put \u20b910,000 in a new neo-bank app offering 12% returns. Do they calculate it simply at year-end, or compounded daily? The difference is whether you can buy a new phone or just a cover."
+  },
+  "mental_model": {
+    "intuition": "Simple Interest is linear growth. Compound Interest is exponential growth (interest earning its own interest).",
+    "description": "SI adds the exact same amount every cycle. CI multiplies by a constant scaling factor every cycle, making it just successive percentage increases."
+  },
+  "pattern_discovery": {
+    "cases": [
+      "Year 1 @ 10%: SI=100, CI=100",
+      "Year 2 @ 10%: SI=200, CI=210",
+      "Year 3 @ 10%: SI=300, CI=331"
+    ],
+    "rule": "CI for any year is the previous year's CI scaled by (1 + R/100)."
+  },
+  "formula": {
+    "statement": "SI = P * R * T / 100. CI Amount = P * (1 + R/100)^T",
+    "explain": "P is Principal, R is Rate (%), T is Time. CI uses a compound multiplier formula. CI = Amount - P."
+  },
+  "shortcuts": [
+    {
+      "title": "2-Year CI-SI Difference",
+      "trick": "Diff = P * (R/100)^2",
+      "example": "Diff on \u20b91000 at 10% for 2 years = 1000 * (10/100)^2 = \u20b910"
+    },
+    {
+      "title": "Rule of 72",
+      "trick": "Years to double your money = 72 / R",
+      "example": "At 12% CI, your money doubles in roughly 72/12 = 6 years."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Monthly vs Annual Rate",
+      "explanation": "If interest is compounded half-yearly, halve the rate and double the time periods. Don't use the annual rate blindly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the 2-year difference between CI and SI on \u20b95000 at 5%?",
+      "answer": "5000 * (5/100)^2 = 5000 * 0.0025 = \u20b912.5",
+      "tier": "tier1"
+    },
+    {
+      "q": "If money doubles in 4 years at SI, what is the rate?",
+      "answer": "Interest = Principal -> P = P*R*4/100 -> R = 25%",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does SI ever exceed CI for the same rate and positive time?",
+      "answer": "No, for time > 1 year, CI > SI. For time < 1 year, if compounded annually, CI = SI.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A sum of money doubles itself in 5 years at simple interest. In how many years will it become 4 times itself?",
+      "company": "TCS NQT",
+      "answer": "15 years",
+      "approach": "SI = P takes 5 years. To become 4P, SI = 3P. Since SI is linear, earning 3P will take 3 * 5 = 15 years."
+    },
+    {
+      "question": "The difference between CI and SI on a sum for 2 years at 8% is \u20b932. What is the sum?",
+      "company": "AMCAT-style",
+      "answer": "\u20b95000",
+      "approach": "Diff = P * (R/100)^2 -> 32 = P * (8/100)^2 -> P = 32 * 10000 / 64 = 5000."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/simple-interest/"
+  ]
+}

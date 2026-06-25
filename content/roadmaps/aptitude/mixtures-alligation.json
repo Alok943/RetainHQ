@@ -1,0 +1,88 @@
+{
+  "slug": "mixtures-alligation",
+  "title": "Mixtures & Alligation",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "percentages",
+      "ratio-proportion"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Service-co OA",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Swiggy Instamart blends two varieties of coffee beans (\u20b9400/kg and \u20b9600/kg) to create a 'house blend' that costs exactly \u20b9450/kg. What's the exact proportion?"
+  },
+  "mental_model": {
+    "intuition": "Alligation is just a visual seesaw finding the center of gravity between two different prices or concentrations.",
+    "description": "Instead of solving simultaneous equations to find proportions, we use the differences from the target average to instantly get the mixing ratio."
+  },
+  "pattern_discovery": {
+    "cases": [
+      "Mix \u20b910/kg & \u20b920/kg 1:1 -> Avg \u20b915/kg",
+      "Mix \u20b910/kg & \u20b920/kg 1:3 -> Avg \u20b917.5/kg",
+      "Mix \u20b910/kg & \u20b920/kg 3:1 -> Avg \u20b912.5/kg"
+    ],
+    "rule": "The ratio of quantities is inversely proportional to how far the target price is from their individual prices."
+  },
+  "formula": {
+    "statement": "Ratio of Cheaper to Dearer = (Dearer Price - Mean Price) : (Mean Price - Cheaper Price)",
+    "explain": "Set up a cross-diagram: Cheaper on left, Dearer on right, Mean in middle. Subtract along the diagonals."
+  },
+  "shortcuts": [
+    {
+      "title": "Repeated Dilution",
+      "trick": "Final Quantity = Initial * (1 - Replenish/Total)^n",
+      "example": "A 100L cask of wine has 10L drawn and replaced with water, done 3 times. Final wine = 100 * (1 - 10/100)^3 = 72.9L"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing Cost and Selling Price",
+      "explanation": "Always apply alligation on the Cost Price. If given Selling Price and profit %, calculate CP first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In what ratio must \u20b960/kg rice be mixed with \u20b980/kg rice to get \u20b975/kg rice?",
+      "answer": "(80-75):(75-60) = 5:15 = 1:3",
+      "tier": "tier1"
+    },
+    {
+      "q": "If 10L is removed from 50L milk and replaced with water twice, how much milk remains?",
+      "answer": "50*(1-10/50)^2 = 50*(4/5)^2 = 50*16/25 = 32L",
+      "tier": "tier2"
+    },
+    {
+      "q": "Can you alligate volumes directly?",
+      "answer": "No, alligation works on rates, prices, percentages, or speeds (per unit quantities).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A merchant mixes two types of tea costing \u20b940/kg and \u20b960/kg. He sells the mixture at \u20b954/kg, making a 20% profit. What is the ratio of the mix?",
+      "company": "TCS NQT",
+      "answer": "3:1",
+      "approach": "CP of mixture = 54 / 1.20 = 45. Alligation ratio = (60 - 45) : (45 - 40) = 15 : 5 = 3:1."
+    },
+    {
+      "question": "Two vessels contain milk and water in the ratio 3:2 and 4:1. In what ratio must they be mixed to get a mixture with milk and water in the ratio 11:4?",
+      "company": "Service-co OA",
+      "answer": "1:2",
+      "approach": "Milk fractions: 3/5 (V1) and 4/5 (V2). Target: 11/15. Alligation: (4/5 - 11/15) : (11/15 - 3/5) = 1/15 : 2/15 = 1:2."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/alligation-or-mixture/"
+  ]
+}

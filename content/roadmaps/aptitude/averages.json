@@ -1,0 +1,102 @@
+{
+  "slug": "averages",
+  "title": "Averages",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "ratio-proportion"
+    ],
+    "unlocks": [
+      "statistics-basics"
+    ],
+    "appears_in": [
+      "TCS NQT",
+      "AMCAT-style",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "When you look at 'average package' stats for an engineering college, a few 40 LPA outliers drag up the 3.5 LPA mass.",
+    "question": "If averages hide the real distribution, how do we manipulate the total sum to figure out the true numbers?"
+  },
+  "mental_model": {
+    "intuition": "Average is the 'equal distribution' point. If everyone threw their money in a pot and split it evenly, that's the average.",
+    "description": "The sum of all observations divided by the number of observations. It acts as the center of gravity for the dataset."
+  },
+  "pattern_discovery": {
+    "setup": "Observe what happens to the average when every single item in the dataset changes uniformly.",
+    "cases": [
+      "Items: 10, 20, 30. Avg = 20",
+      "Items: 12, 22, 32. Avg = 22 (+2 shift)",
+      "Items: 20, 40, 60. Avg = 40 (x2 shift)"
+    ],
+    "prompt": "If you perform a basic arithmetic operation on every element, what happens to the average?",
+    "rule": "The exact same operation applies directly to the average. The entire 'center of gravity' shifts."
+  },
+  "formula": {
+    "statement": "Average = Sum of all values / Total number of values.",
+    "explain": "Sum = Average \u00d7 Number of values. Most tricky average problems are solved by thinking in terms of the Total Sum."
+  },
+  "shortcuts": [
+    {
+      "title": "Assumed Mean (Deviation) Method",
+      "trick": "Guess an average. Find how much each number deviates from your guess. Average the deviations and add back to your guess.",
+      "example": "Average of 102, 105, 98. Guess 100. Deviations: +2, +5, -2. Sum of dev = +5. Avg dev = +5/3. True avg = 101.66."
+    },
+    {
+      "title": "Inclusion / Exclusion",
+      "trick": "If a new item joins and increases the average by x, its value is: (Old Average) + (New Total Size \u00d7 x).",
+      "example": "10 items avg 20. New item makes avg 21. New item = 20 + (11 \u00d7 1) = 31."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Average Speed Trap",
+      "explanation": "Average speed is NOT the arithmetic mean of speeds (e.g., 40kmph and 60kmph != 50kmph avg). It is Total Distance / Total Time."
+    },
+    {
+      "title": "Ignoring Sample Size",
+      "explanation": "You cannot average two averages directly unless they represent the exact same number of items. Use the weighted average."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the average of the first 5 prime numbers?",
+      "answer": "5.6 (Sum 28 / 5)",
+      "tier": "tier1"
+    },
+    {
+      "q": "If the average of 5 numbers is 10, what is their sum?",
+      "answer": "50",
+      "tier": "tier1"
+    },
+    {
+      "q": "Average of 4, 8, 12, 16 is 10. If we add 5 to each, what is the new average?",
+      "answer": "15",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "The average age of a class of 30 students is 15 years. If the teacher's age is included, the average increases by 1. What is the teacher's age?",
+      "company": "Service-co OA",
+      "answer": "46 years",
+      "approach": "Teacher brings enough to match the old average (15) PLUS enough to give everyone including herself +1 year (31 people \u00d7 1 = 31). Age = 15 + 31 = 46."
+    },
+    {
+      "question": "The average of 50 numbers is 38. If two numbers, namely 45 and 55, are discarded, what is the average of the remaining numbers?",
+      "company": "TCS NQT",
+      "answer": "37.5",
+      "approach": "Total Sum = 50 \u00d7 38 = 1900. Discard sum = 100. New sum = 1800. New count = 48. New avg = 1800 / 48 = 37.5."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/average/"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "slug": "pipes-cisterns",
+  "title": "Pipes & Cisterns",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "time-and-work"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Service-co OA",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Think of an AWS server scaling up (inlet) while memory leaks crash instances (outlet). Pipes & Cisterns is just Time & Work with negative efficiency."
+  },
+  "mental_model": {
+    "intuition": "Inlets add work (+), outlets destroy work (-).",
+    "description": "The core logic is identical to Time & Work. The only difference is that a leakage or emptying pipe has a negative rate of work."
+  },
+  "pattern_discovery": {
+    "cases": [
+      "Fill pipe A takes 10 mins -> +1/10 per min",
+      "Empty pipe B takes 15 mins -> -1/15 per min",
+      "Net work -> 1/10 - 1/15 = 1/30 per min",
+      "Time to fill -> 30 mins"
+    ],
+    "rule": "Add the rates of filling pipes and subtract the rates of emptying pipes."
+  },
+  "formula": {
+    "statement": "Net rate = sum(inlet rates) - sum(outlet rates)",
+    "explain": "If net rate is positive, the tank fills. If net rate is negative, the tank empties."
+  },
+  "shortcuts": [
+    {
+      "title": "LCM Method with Negatives",
+      "trick": "Assume tank capacity = LCM of all times. Treat emptying pipes as negative efficiency.",
+      "example": "Inlet=10m, Outlet=15m. Capacity=30L. Inlet=+3L/m, Outlet=-2L/m. Net=+1L/m. Time = 30/1 = 30m."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Ignoring the sign of outlets",
+      "explanation": "Treating emptying pipes as positive work leads to impossibly fast fill times."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Pipe A fills in 4h, Pipe B empties in 6h. What is the net filling rate?",
+      "answer": "1/4 - 1/6 = 1/12 (fills in 12h).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If the net rate is -1/5 per hour, what does it mean?",
+      "answer": "The full tank will be completely emptied in 5 hours.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Can a tank ever fill if the outlet is faster than the inlet?",
+      "answer": "No, the net rate would be negative, meaning it will always be losing water.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Two pipes can fill a tank in 15 and 20 hours. A third pipe can empty it in 30 hours. If all three are opened, how long to fill the tank?",
+      "company": "TCS NQT",
+      "answer": "12 hours",
+      "approach": "LCM(15, 20, 30) = 60 units. Pipe1 = +4, Pipe2 = +3, Pipe3 = -2. Net = 4 + 3 - 2 = 5 units/hr. Time = 60/5 = 12 hours."
+    },
+    {
+      "question": "A leak in the bottom of a tank can empty it in 8 hours. An inlet pipe fills water at 6 liters a minute. When both are open, the tank empties in 12 hours. Find the capacity of the tank.",
+      "company": "Service-co OA",
+      "answer": "8640 liters",
+      "approach": "Leak takes 8h (-1/8). Let inlet take x hrs (+1/x). Net = 1/x - 1/8 = -1/12. 1/x = 1/8 - 1/12 = 1/24. Inlet takes 24 hours. Capacity = 24 hrs * 60 mins/hr * 6 L/min = 8640 L."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/pipes-and-cistern/"
+  ]
+}

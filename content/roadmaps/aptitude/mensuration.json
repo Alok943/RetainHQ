@@ -1,0 +1,87 @@
+{
+  "slug": "mensuration",
+  "title": "Mensuration",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "Wipro",
+      "Cognizant"
+    ]
+  },
+  "hook": {
+    "scenario": "Estimating how many liters of water fit inside a society's overhead cylindrical tank."
+  },
+  "mental_model": {
+    "intuition": "Perimeter = Walking the boundary. Area = Painting the surface. Volume = Filling with water.",
+    "description": "Mensuration is about turning shapes into pure numbers. 2D deals with flat surfaces (floors, walls). 3D adds depth (boxes, cones, spheres)."
+  },
+  "formula": {
+    "statement": "Rectangle Area = L*B, Circle Area = \u03c0*r^2 \\n Cylinder Vol = \u03c0*r^2*h, Sphere Vol = (4/3)*\u03c0*r^3",
+    "explain": "Notice how 3D volumes often build on 2D areas. Cylinder volume is just a circle's area (\u03c0r^2) stacked up to height 'h'."
+  },
+  "shortcuts": [
+    {
+      "title": "The 11 Divisibility Check",
+      "trick": "Almost all formulas with circles (\u03c0) use 22/7. Hence, the final answer for area or volume is usually a multiple of 11. Check options for divisibility by 11 to skip calculations.",
+      "example": "Find area of circle: Options A) 314 B) 308 C) 320 D) 310. Only 308 is divisible by 11 (3 - 0 + 8 = 11). Answer is B."
+    },
+    {
+      "title": "Cone is 1/3 of Cylinder",
+      "trick": "A cone's volume is exactly one-third of a cylinder with the same base radius and height.",
+      "example": "If a cylinder's volume is 300 cc, a cone with the same base and height is 100 cc."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing Total Surface Area (TSA) and Curved Surface Area (CSA)",
+      "explanation": "CSA only covers the curved sides. TSA includes the top and bottom flat lids. Don't use CSA if you are painting a completely closed box."
+    },
+    {
+      "title": "Unit Mismatches",
+      "explanation": "Radius might be in cm but height in meters. Always convert everything to a single unit before applying the formula."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the perimeter of a rectangle?",
+      "answer": "2 * (Length + Breadth)",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the volume of a cylinder?",
+      "answer": "\u03c0 * r^2 * h",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is a cone's volume greater or smaller than a cylinder of same dimensions?",
+      "answer": "Smaller (it is exactly 1/3)",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A cylindrical tank has a base radius of 7m and a height of 10m. What is its capacity in cubic meters?",
+      "company": "TCS NQT",
+      "answer": "1540",
+      "approach": "Volume = \u03c0 * r^2 * h = (22/7) * 7 * 7 * 10 = 22 * 7 * 10 = 1540 cubic meters."
+    },
+    {
+      "question": "The diagonal of a square is 10\u221a2 cm. What is its area?",
+      "company": "Service-co OA",
+      "answer": "100",
+      "approach": "Diagonal = a\u221a2 = 10\u221a2, so side 'a' = 10. Area = a^2 = 100 sq cm."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/mensuration"
+  ]
+}

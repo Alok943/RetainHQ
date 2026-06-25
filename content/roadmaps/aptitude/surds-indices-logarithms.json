@@ -1,0 +1,86 @@
+{
+  "slug": "surds-indices-logarithms",
+  "title": "Surds, Indices & Logarithms",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "simplification"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Product-co OA",
+      "Cognizant",
+      "AMCAT-style"
+    ]
+  },
+  "mental_model": {
+    "intuition": "Indices are fast forward, logs are rewind.",
+    "description": "Indices represent repeated multiplication. Surds are just indices in disguise (fractional powers). Logarithms are the inverse: asking 'what power do I need to raise the base to get this number?'"
+  },
+  "formula": {
+    "statement": "a^m * a^n = a^(m+n); log_a(b) = log_c(b) / log_c(a); sqrt(a) * sqrt(b) = sqrt(a*b)",
+    "explain": "For indices, multiplying bases adds exponents. For logs, base change allows calculating unusual logs using standard base 10 or e. Surds merge under multiplication but NOT under addition."
+  },
+  "shortcuts": [
+    {
+      "title": "Infinite Nested Roots",
+      "trick": "For sqrt(a + sqrt(a + ...)), if 'a' is a product of two consecutive integers (n * (n+1)), the answer is the larger integer (n+1).",
+      "example": "sqrt(12 + sqrt(12 + ...)). 12 = 3 * 4. The answer is 4."
+    },
+    {
+      "title": "Logarithmic Base Swap",
+      "trick": "log_a(b) * log_b(a) = 1. You can freely flip the base and the argument by taking the reciprocal.",
+      "example": "If log_2(3) = x, then log_3(2) = 1/x."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Distributing roots over addition",
+      "explanation": "sqrt(a^2 + b^2) does NOT equal a + b. Roots can only be distributed over multiplication and division."
+    },
+    {
+      "title": "Log of a sum",
+      "explanation": "log(a + b) does NOT equal log(a) + log(b). The rule is log(a * b) = log(a) + log(b)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is x^0, given x != 0?",
+      "answer": "1",
+      "tier": "tier1"
+    },
+    {
+      "q": "Simplify log_a(a).",
+      "answer": "1, because a^1 = a.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is log(1) defined?",
+      "answer": "Yes, log(1) = 0 for any base.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the value of x if log_3(x) + log_9(x) = 3.",
+      "company": "Product-co OA",
+      "answer": "9",
+      "approach": "Change base: log_9(x) = log_3(x) / log_3(9) = log_3(x) / 2. So, log_3(x) + 0.5*log_3(x) = 3. 1.5*log_3(x) = 3. log_3(x) = 2. x = 3^2 = 9."
+    },
+    {
+      "question": "Simplify sqrt(72) - sqrt(18)",
+      "company": "AMCAT-style",
+      "answer": "3 * sqrt(2)",
+      "approach": "sqrt(72) = 6*sqrt(2). sqrt(18) = 3*sqrt(2). 6*sqrt(2) - 3*sqrt(2) = 3*sqrt(2)."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Logarithm"
+  ]
+}

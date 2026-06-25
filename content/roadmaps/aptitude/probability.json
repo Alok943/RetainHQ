@@ -1,0 +1,89 @@
+{
+  "slug": "probability",
+  "title": "Probability",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "permutations-combinations"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "Product-co OA",
+      "AMCAT-style"
+    ]
+  },
+  "hook": {
+    "scenario": "Calculating the chances of getting exactly 2 surge-pricing rides out of 5 Uber bookings this week."
+  },
+  "mental_model": {
+    "intuition": "Probability = What you want / Everything that could happen.",
+    "description": "It's just a fraction representing the frequency of a desired outcome over all possible outcomes. It always stays between 0 (impossible) and 1 (certain)."
+  },
+  "formula": {
+    "statement": "P(E) = (Number of favorable outcomes) / (Total number of possible outcomes) \\n P(A or B) = P(A) + P(B) - P(A and B)",
+    "explain": "The core formula requires counting. That's why P&C is a prerequisite. You count the successes using combinations, count the total using combinations, and divide."
+  },
+  "shortcuts": [
+    {
+      "title": "The 'At Least One' Trick",
+      "trick": "P(At least 1) = 1 - P(None).",
+      "example": "Probability of getting at least one Head in 4 coin tosses = 1 - P(All Tails) = 1 - (1/16) = 15/16. Way faster than calculating 1, 2, 3, and 4 heads separately."
+    },
+    {
+      "title": "Dice Sum Combinations",
+      "trick": "For 2 dice, the most common sum is 7 (6 ways). Sums move symmetrically: 2 and 12 have 1 way, 3 and 11 have 2 ways... up to 7 having 6 ways.",
+      "example": "What's the probability of rolling a sum of 5? It's symmetrically 4 ways. 4/36 = 1/9."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Adding independent probabilities instead of multiplying",
+      "explanation": "If rolling a 6 AND flipping a Heads, it's (1/6) * (1/2), not addition. 'AND' means multiply, 'OR' means add."
+    },
+    {
+      "title": "Forgetting without replacement changes the denominator",
+      "explanation": "Drawing two cards one after another without replacing: First card probability is out of 52, second is out of 51."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the maximum value of a probability?",
+      "answer": "1",
+      "tier": "tier1"
+    },
+    {
+      "q": "If P(E) = 0.3, what is P(not E)?",
+      "answer": "0.7",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the probability of a sure event?",
+      "answer": "1",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A bag contains 4 red and 6 black balls. 2 balls are drawn at random. What is the probability that both are red?",
+      "company": "AMCAT-style",
+      "answer": "2/15",
+      "approach": "Total ways = 10C_2 = 45. Favorable ways (both red) = 4C_2 = 6. Probability = 6/45 = 2/15."
+    },
+    {
+      "question": "Two dice are thrown together. What is the probability that the sum of numbers on the two faces is divisible by 4?",
+      "company": "Product-co OA",
+      "answer": "1/4",
+      "approach": "Divisible by 4 means sums of 4, 8, 12. Sum 4 has 3 ways, Sum 8 has 5 ways, Sum 12 has 1 way. Total = 9 ways. 9/36 = 1/4."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/probability"
+  ]
+}

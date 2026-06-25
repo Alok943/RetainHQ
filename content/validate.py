@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent / "roadmaps"
 SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-KIND = {"concept", "milestone"}
+KIND = {"concept", "milestone", "aptitude"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
@@ -94,6 +94,70 @@ def main():
             for edge in ("prerequisites", "unlocks"):
                 if not isinstance(m.get(edge), list):
                     err(rel, f"metadata.{edge} must be a list of slugs")
+
+        # Aptitude is its OWN thin lesson shape (kind: "aptitude"): intuition + rule + trick + recall.
+        # None of the python/sql fields (overview, *_walkthrough, understanding_checks, practice_tasks)
+        # apply — branch entirely and skip them. See content/PROMPT-aptitude.md.
+        if d.get("kind") == "aptitude":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition' one-liner)")
+            fm = d.get("formula")
+            if not isinstance(fm, dict) or not fm.get("statement"):
+                err(rel, "formula is required (object with a non-empty 'statement')")
+            sc = d.get("shortcuts")
+            if not isinstance(sc, list) or not sc:
+                err(rel, "shortcuts is required: a non-empty list of trick cards")
+            else:
+                for i, s in enumerate(sc):
+                    if not isinstance(s, dict) or not s.get("title") or not s.get("trick"):
+                        err(rel, f"shortcuts[{i}] needs non-empty 'title' and 'trick'")
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            else:
+                for i, c in enumerate(cm):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("explanation"):
+                        err(rel, f"common_mistakes[{i}] needs non-empty 'title' and 'explanation'")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            else:
+                for i, q in enumerate(rq):
+                    if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
+                        err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            oq = d.get("oa_questions")
+            if not isinstance(oq, list) or len(oq) < 2:
+                err(rel, "oa_questions is required: >=2 OA-style items")
+            else:
+                for i, q in enumerate(oq):
+                    if not isinstance(q, dict) or not q.get("question") or not q.get("answer"):
+                        err(rel, f"oa_questions[{i}] needs both 'question' and 'answer'")
+            # hook + pattern_discovery are OPTIONAL; validate shape if present, enforce THE LAW.
+            hk = d.get("hook")
+            if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
+                err(rel, "hook, if present, needs a non-empty 'scenario'")
+            pd = d.get("pattern_discovery")
+            if pd is not None:
+                cases = pd.get("cases") if isinstance(pd, dict) else None
+                if not isinstance(pd, dict) or not isinstance(cases, list) or not cases or not pd.get("rule"):
+                    err(rel, "pattern_discovery, if present, needs a non-empty 'cases' list and a 'rule'")
+                elif not all(isinstance(c, str) and c.strip() for c in cases):
+                    err(rel, "pattern_discovery.cases must be a list of non-empty observation STRINGS (not objects)")
+                else:
+                    keys = list(d.keys())
+                    if "formula" in keys and keys.index("pattern_discovery") > keys.index("formula"):
+                        warn(rel, "THE LAW: pattern_discovery should come BEFORE formula (discovery first)")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
+            else:
+                for i, s in enumerate(srcs):
+                    if not isinstance(s, str) or not s.startswith("http"):
+                        err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
 
         ov = d.get("overview")
         if not isinstance(ov, dict) or not all(ov.get(k) for k in ("what", "why")):

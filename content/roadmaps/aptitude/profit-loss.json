@@ -1,0 +1,100 @@
+{
+  "slug": "profit-loss",
+  "title": "Profit, Loss & Discount",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "percentages"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "AMCAT-style",
+      "Service-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Blinkit shows you a '20% off' tag, but they marked up the base price by 25% first.",
+    "question": "Are you really getting a discount, or just paying the original price?"
+  },
+  "mental_model": {
+    "intuition": "Cost Price (CP) is the anchor. Everything scales relative to what the seller paid.",
+    "description": "Profit and loss are percentage increases and decreases calculated on the Cost Price. Discount is a percentage decrease calculated on the Marked Price."
+  },
+  "pattern_discovery": {
+    "setup": "Compare the profit or loss against the original cost.",
+    "cases": [
+      "CP=100, SP=120 -> Profit=20, Profit%=20%",
+      "CP=200, SP=240 -> Profit=40, Profit%=20%",
+      "CP=100, SP=80 -> Loss=20, Loss%=20%"
+    ],
+    "prompt": "What is the constant denominator used for calculating profit or loss percentage?",
+    "rule": "Cost Price (CP) is the anchor. Always calculate P/L percentage relative to what was paid originally."
+  },
+  "formula": {
+    "statement": "Profit% = (Profit / CP) \u00d7 100. Discount% = (Discount / MP) \u00d7 100.",
+    "explain": "Never calculate Profit or Loss on Selling Price unless explicitly asked. Always calculate Discount on Marked Price (MP)."
+  },
+  "shortcuts": [
+    {
+      "title": "Multiplier Method",
+      "trick": "For 20% profit, SP = 1.2 \u00d7 CP. For 15% loss, SP = 0.85 \u00d7 CP. This skips the intermediate add/subtract step.",
+      "example": "If CP is 400 and profit is 25%, SP = 400 \u00d7 1.25 = 500."
+    },
+    {
+      "title": "Successive Discount",
+      "trick": "Two successive discounts of a% and b% equal a single discount of (a + b - ab/100)%.",
+      "example": "Successive discounts of 20% and 10% = 20 + 10 - (20\u00d710/100) = 28% total discount, not 30%."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Base Confusion",
+      "explanation": "Calculating profit percentage on Selling Price instead of Cost Price. 20 profit on 120 SP is a 16.66% profit, not 20%."
+    },
+    {
+      "title": "Fake Net Zero",
+      "explanation": "Thinking a 20% markup followed by a 20% discount brings you back to the original price. (1.2 \u00d7 0.8 = 0.96, which is a 4% loss)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If an item is bought for \u20b9500 and sold for \u20b9600, what is the profit percentage?",
+      "answer": "20%",
+      "tier": "tier1"
+    },
+    {
+      "q": "A shirt marked at \u20b91000 is sold after a 15% discount. What is the selling price?",
+      "answer": "\u20b9850",
+      "tier": "tier1"
+    },
+    {
+      "q": "If SP is \u20b9900 after a 10% loss, what was the CP?",
+      "answer": "\u20b91000",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A shopkeeper marks his goods 25% above CP and allows a discount of 10%. Find his overall profit percentage.",
+      "company": "TCS NQT",
+      "answer": "12.5%",
+      "approach": "Let CP = 100. MP = 125. Discount = 10% of 125 = 12.5. SP = 125 - 12.5 = 112.5. Profit = 112.5 - 100 = 12.5%."
+    },
+    {
+      "question": "By selling 33 meters of cloth, a person gains the selling price of 11 meters. Find his gain percentage.",
+      "company": "Service-co OA",
+      "answer": "50%",
+      "approach": "Let SP of 1m = 1. SP of 33m = 33. Gain = 11. CP = SP - Gain = 33 - 11 = 22. Gain% = (11/22) \u00d7 100 = 50%."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/profit-and-loss/"
+  ]
+}

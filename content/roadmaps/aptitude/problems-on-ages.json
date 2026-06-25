@@ -1,0 +1,97 @@
+{
+  "slug": "problems-on-ages",
+  "title": "Problems on Ages",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "Service-co OA",
+      "AMCAT-style"
+    ]
+  },
+  "hook": {
+    "scenario": "Every coding round has that puzzle: 'A father is twice as old as his son...'",
+    "question": "How do you translate a family tree spanning past, present, and future into a simple linear equation?"
+  },
+  "mental_model": {
+    "intuition": "The age difference between two people never changes. Only the ratio of their ages changes over time.",
+    "description": "Age problems translate past, present, and future timelines into linear equations using a single variable for the present age."
+  },
+  "pattern_discovery": {
+    "setup": "Track the ages of two people as they travel through time together.",
+    "cases": [
+      "Ages 10 & 15 -> Diff = 5",
+      "Ages 20 & 25 (after 10y) -> Diff = 5",
+      "Ages 50 & 55 (after 40y) -> Diff = 5"
+    ],
+    "prompt": "While ratios of ages constantly change over time, what metric remains absolutely constant?",
+    "rule": "The age difference between two people never changes. This constant difference is the key to solving ratio-based age problems."
+  },
+  "formula": {
+    "statement": "Let present age be x. Age 'n' years ago = x - n. Age 'n' years from now = x + n.",
+    "explain": "Always anchor your primary variable 'x' to the Present Age to keep equations stable and prevent sign errors."
+  },
+  "shortcuts": [
+    {
+      "title": "The Constant Difference Trick",
+      "trick": "Since age difference never changes, if you have two ratios for two different times, multiply the ratios by factors to make their horizontal difference equal.",
+      "example": "Past ratio 1:2 (diff 1), Future ratio 3:4 (diff 1). The difference is already equal. If the time gap is 10 years, then 2 units of ratio = 10 years, so 1 unit = 5 years."
+    },
+    {
+      "title": "Checking Multiples",
+      "trick": "If a person's present age ratio part is 5, their actual age is highly likely a multiple of 5. You can eliminate MCQs rapidly this way.",
+      "example": "If A:B is 5:3, A's age could be 15, 20, 25. If options are 18, 21, 25, 28, pick 25."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Adding Years to Ratios directly",
+      "explanation": "If the present ratio is 2:3, the age 5 years from now is NOT 7:8. The ages are 2x+5 and 3x+5."
+    },
+    {
+      "title": "Wrong Baseline Variable",
+      "explanation": "Setting 'x' as the past age, solving for 'x', and selecting 'x' as the final answer when the question asked for the *present* age."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If A is 10 years older than B today, how much older will A be than B in 15 years?",
+      "answer": "10 years",
+      "tier": "tier1"
+    },
+    {
+      "q": "Present ages of A and B are in ratio 4:5. If A is 20, what is B's age?",
+      "answer": "25",
+      "tier": "tier1"
+    },
+    {
+      "q": "Ten years ago, P was 20. What will be his age 5 years from now?",
+      "answer": "35",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A father said to his son, 'I was as old as you are at present at the time of your birth.' If the father's age is 38 years now, the son's age five years back was:",
+      "company": "AMCAT-style",
+      "answer": "14 years",
+      "approach": "Let son's present age be x. Father's age at son's birth was (38 - x). Given: 38 - x = x -> 2x = 38 -> x = 19. Son's age 5 years back = 19 - 5 = 14."
+    },
+    {
+      "question": "The sum of ages of 5 children born at the intervals of 3 years each is 50 years. What is the age of the youngest child?",
+      "company": "Service-co OA",
+      "answer": "4 years",
+      "approach": "Let youngest be x. Ages: x, x+3, x+6, x+9, x+12. Sum = 5x + 30 = 50. 5x = 20 -> x = 4."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/problems-on-ages/"
+  ]
+}

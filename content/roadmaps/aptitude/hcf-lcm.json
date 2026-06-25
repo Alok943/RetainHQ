@@ -1,0 +1,98 @@
+{
+  "slug": "hcf-lcm",
+  "title": "HCF & LCM",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "number-system"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "AMCAT-style",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "When Swiggy batch-assigns orders to a delivery partner taking exactly 15 mins per drop, and another taking 20 mins, they sync up again precisely at the LCM of those times."
+  },
+  "mental_model": {
+    "intuition": "HCF chops things into equal maximum pieces; LCM syncs repeating cycles.",
+    "description": "Highest Common Factor finds the largest measuring stick that perfectly divides multiple quantities. Lowest Common Multiple finds the earliest future moment when independent periodic events align."
+  },
+  "pattern_discovery": {
+    "cases": [
+      "HCF(12, 18) = 6. LCM(12, 18) = 36.",
+      "12 * 18 = 216",
+      "6 * 36 = 216"
+    ],
+    "rule": "The product of two numbers is always exactly equal to the product of their HCF and LCM. This is because HCF represents the common prime factors, and LCM completes the missing ones."
+  },
+  "formula": {
+    "statement": "HCF(a,b) * LCM(a,b) = a * b (Only valid for two numbers)",
+    "explain": "For fractions: HCF = HCF(Numerators)/LCM(Denominators). LCM = LCM(Numerators)/HCF(Denominators)."
+  },
+  "shortcuts": [
+    {
+      "title": "Prime Factorization Speed Run",
+      "trick": "For HCF, take the LOWEST power of common prime factors. For LCM, take the HIGHEST power of ALL prime factors.",
+      "example": "a = 2^3 * 3^2, b = 2^2 * 3^3. HCF = 2^2 * 3^2. LCM = 2^3 * 3^3."
+    },
+    {
+      "title": "Difference Trick for HCF",
+      "trick": "The HCF of two numbers can never be larger than their difference. It must be a factor of the difference.",
+      "example": "HCF of 81 and 108. Difference is 27. Factors of 27: 27, 9, 3, 1. Since 81 and 108 are divisible by 27, HCF is 27."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying Product Rule to 3 Numbers",
+      "explanation": "HCF * LCM = Product ONLY works for exactly two numbers. For three numbers a, b, c, HCF(a,b,c) * LCM(a,b,c) != a*b*c."
+    },
+    {
+      "title": "Confusing 'Greatest' with HCF in word problems",
+      "explanation": "If a question asks for the 'greatest number of digits' that is a multiple, you need LCM, not HCF. Look at whether you are splitting (HCF) or multiplying/syncing (LCM)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the HCF of two co-prime numbers?",
+      "answer": "1, because they have no common prime factors.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you find the LCM of fractions?",
+      "answer": "LCM of fractions = LCM of Numerators / HCF of Denominators.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If HCF(a,b) is 5 and a*b is 150, what is LCM(a,b)?",
+      "answer": "150 / 5 = 30.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Three bells toll at intervals of 12, 15, and 18 minutes. If they start tolling together at 9:00 AM, when will they toll together again?",
+      "company": "AMCAT-style",
+      "answer": "12:00 PM",
+      "approach": "Find LCM of 12, 15, 18. LCM = 180 minutes = 3 hours. 9:00 AM + 3 hours = 12:00 PM."
+    },
+    {
+      "question": "Find the greatest number which on dividing 1657 and 2037 leaves remainders 6 and 5 respectively.",
+      "company": "Service-co OA",
+      "answer": "127",
+      "approach": "Subtract remainders: 1657-6=1651, 2037-5=2032. Find HCF(1651, 2032). Difference is 381. 381 = 3 * 127. 127 divides both."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Greatest_common_divisor",
+    "https://en.wikipedia.org/wiki/Least_common_multiple"
+  ]
+}

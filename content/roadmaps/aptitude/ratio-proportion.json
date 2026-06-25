@@ -1,0 +1,102 @@
+{
+  "slug": "ratio-proportion",
+  "title": "Ratio & Proportion",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "mixtures-alligation",
+      "partnership",
+      "averages"
+    ],
+    "appears_in": [
+      "AMCAT-style",
+      "TCS NQT",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "You are splitting a \u20b91200 Swiggy bill among 3 roommates who ate different amounts.",
+    "question": "How do you divide a single total into uneven, relative slices without losing track of the sum?"
+  },
+  "mental_model": {
+    "intuition": "Ratios are relative slices of a pie. Proportion means two pies are sliced exactly the same way.",
+    "description": "A ratio compares two or more quantities of the same kind. A proportion equates two ratios."
+  },
+  "pattern_discovery": {
+    "setup": "Divide different totals according to the exact same 2:3 ratio.",
+    "cases": [
+      "Ratio 2:3, Total 50 -> Parts: 20, 30",
+      "Ratio 2:3, Total 100 -> Parts: 40, 60",
+      "Ratio 2:3, Total 500 -> Parts: 200, 300"
+    ],
+    "prompt": "To find the value of one 'part', what do you divide the total quantity by?",
+    "rule": "You divide the total by the sum of the ratio parts. A ratio of 2:3 means the pie is cut into 5 equal slices."
+  },
+  "formula": {
+    "statement": "If a:b :: c:d (a:b is proportional to c:d), then a/b = c/d, meaning ad = bc.",
+    "explain": "The product of the extremes (a, d) equals the product of the means (b, c)."
+  },
+  "shortcuts": [
+    {
+      "title": "Merging Ratios",
+      "trick": "If A:B = x:y and B:C = m:n, write them stacked. A:B:C = (x\u00d7m) : (y\u00d7m) : (y\u00d7n).",
+      "example": "A:B = 2:3, B:C = 4:5. Multiply A:B by 4 and B:C by 3 to equate B. A:B:C = 8:12:15."
+    },
+    {
+      "title": "Unitary Method",
+      "trick": "Divide the total value by the total number of ratio parts to find the value of 1 unit, then scale up.",
+      "example": "Divide \u20b9600 in 1:2:3. Total parts = 6. 1 part = 600/6 = 100. Shares: 100, 200, 300."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Adding Constants to Ratios",
+      "explanation": "If a ratio is 2:3, you cannot assume the values are 2 and 3. They are 2x and 3x. Don't add actual values to ratio numbers."
+    },
+    {
+      "title": "Area and Volume Scaling",
+      "explanation": "If sides are in ratio 1:2, areas are in ratio 1:4 (squares), and volumes are 1:8 (cubes). Don't use 1:2 for everything."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If A:B = 3:4 and B:C = 8:9, what is A:C?",
+      "answer": "2:3",
+      "tier": "tier1"
+    },
+    {
+      "q": "Divide 70 in the ratio 3:4. What is the larger part?",
+      "answer": "40",
+      "tier": "tier1"
+    },
+    {
+      "q": "Find the fourth proportional to 4, 9, 12.",
+      "answer": "27",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Two numbers are in the ratio 3:5. If 9 is subtracted from each, the new numbers are in the ratio 12:23. Find the smaller number.",
+      "company": "Service-co OA",
+      "answer": "33",
+      "approach": "(3x - 9)/(5x - 9) = 12/23. Cross-multiply: 69x - 207 = 60x - 108. 9x = 99 -> x = 11. Smaller number = 3x = 33."
+    },
+    {
+      "question": "A bag contains 50p, 25p and 10p coins in the ratio 5:9:4, amounting to \u20b9206. Find the number of coins of 50p.",
+      "company": "TCS NQT",
+      "answer": "200",
+      "approach": "Values in Rupee terms = 5x/2 + 9x/4 + 4x/10 = 206. LCM is 20: (50x + 45x + 8x)/20 = 206 -> 103x = 4120 -> x = 40. 50p coins = 5x = 200."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/ratio-and-proportion/"
+  ]
+}

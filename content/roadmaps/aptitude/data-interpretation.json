@@ -1,0 +1,94 @@
+{
+  "slug": "data-interpretation",
+  "title": "Data Interpretation (Tables & Charts)",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "statistics-basics"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "TCS NQT",
+      "Service-co OA",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Reading DI questions is exactly like reading a Zepto operational dashboard during peak IPL hours. You have a massive table of riders, zones, and delivery times:\n\n| Zone | Active Riders | Avg Delivery Time |\n|------|---------------|-------------------|\n| Kormangala | 450 | 14m |\n| Indiranagar| 320 | 18m |\n\nYour job isn't to calculate every single cell\u2014it's to spot the bottleneck instantly using rough ratios and percentage jumps."
+  },
+  "mental_model": {
+    "intuition": "DI is just basic percentages, ratios, and averages hidden inside visual noise.",
+    "description": "Data Interpretation tests your ability to extract relevant data from tables, bar graphs, pie charts, and line graphs, and perform quick approximations rather than precise calculations."
+  },
+  "formula": {
+    "statement": "Visual Data -> Extract Numbers -> Apply Basic Arithmetic (Percentage Change, Ratio, Average). Focus heavily on visual approximation.",
+    "explain": "In a pie chart, 1% = 3.6 degrees. For line graphs, the slope indicates the rate of growth. Don't compute exact values unless options are dangerously close."
+  },
+  "shortcuts": [
+    {
+      "title": "The Approximation Rule",
+      "trick": "If options are spaced out (e.g., 10%, 15%, 20%), round numbers heavily. 412/1987 becomes 400/2000 = 1/5 = 20%.",
+      "example": "Finding 18.2% of 498? Just find 20% of 500 (100) and subtract a little."
+    },
+    {
+      "title": "Pie Chart Degree to Percentage",
+      "trick": "To convert degrees to percentage, divide by 3.6. To convert percentage to degrees, multiply by 3.6.",
+      "example": "72 degrees on a pie chart = 72 / 3.6 = 20%."
+    },
+    {
+      "title": "Ratio Stacking",
+      "trick": "When comparing two huge fractions A/B and C/D, compare the percentage growth of numerators vs denominators, or cross-multiply.",
+      "example": "Compare 145/290 vs 160/310. First is exactly 50%. Second is > 50% (since 155 is 50%). So 160/310 is larger."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calculating Everything",
+      "explanation": "Don't calculate values for all years/categories. Only calculate what the specific question needs."
+    },
+    {
+      "title": "Confusing 'Percentage More' with 'Percentage Of'",
+      "explanation": "If A is 150 and B is 100. A is 150% OF B, but A is 50% MORE than B."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "A pie chart sector is 108 degrees. What percentage of the total does it represent?",
+      "answer": "30% (since 108 / 3.6 = 30).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If Company A's revenue grew from 400 to 500, what is the percentage growth?",
+      "answer": "25% (100/400 * 100).",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you quickly approximate 349 / 6980?",
+      "answer": "Round to 350 / 7000, which is exactly 5%.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A table shows revenue: 2021 (420M), 2022 (480M), 2023 (550M). What is the approximate average annual percentage growth rate?",
+      "company": "TCS NQT",
+      "answer": "14.5%",
+      "approach": "2021->2022 is ~14.3% (60/420). 2022->2023 is ~14.6% (70/480). Average is around 14.5%."
+    },
+    {
+      "question": "In a pie chart of expenses (Total = 50,000), 'Marketing' is represented by 54 degrees. What is the expenditure on Marketing?",
+      "company": "Service-co OA",
+      "answer": "7,500",
+      "approach": "54 degrees = 54/3.6 = 15%. 15% of 50,000 = 7,500."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/data-interpretation/"
+  ]
+}

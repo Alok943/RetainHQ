@@ -4,8 +4,10 @@ import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, 
 import { apiFetch } from './lib/api';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import CodeTrace from './CodeTrace';
+import { prewarmPython } from './lib/pyodideRunner';
 import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
+import SqlJoinViz from './SqlJoinViz';
 
 const TIER_LABEL = { tier1: 'Tier 1', tier2: 'Tier 2', tier3: 'Tier 3' };
 const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
@@ -73,7 +75,15 @@ export default function LessonView() {
         const res = await fetch(`/content/roadmaps/${contentKey}/${slug}.json`);
         if (!res.ok) throw new Error('not-found');
         const data = await res.json();
-        if (!cancelled) setLesson(data);
+        if (!cancelled) {
+          setLesson(data);
+          // Warm the Python runtime in the background for lessons that use the
+          // CodeTrace step-scrubber (code_walkthrough / aha_moment), so the first
+          // "Visualize execution" is instant. SQL (PGlite) and aptitude (no runtime)
+          // lessons skip this — nothing to prewarm.
+          const usesPython = data.runtime !== 'sql' && (data.code_walkthrough || data.aha_moment);
+          if (usesPython) prewarmPython();
+        }
       } catch (err) {
         if (!cancelled) setError(err.message === 'not-found' || err.message === 'no-content-key' ? 'not-found' : 'error');
       } finally {
@@ -222,12 +232,16 @@ export default function LessonView() {
       {/* --- §3 Watch it run — SQL (query result table) or Python (CodeTrace) --- */}
       {lesson.runtime === 'sql' && lesson.query_walkthrough ? (
         <Section icon={<Database size={16} />} title="Run the query" accent="#0891B2">
-          <SqlFlow
-            query={lesson.query_walkthrough.query}
-            setupSql={lesson.query_walkthrough.setup_sql}
-            focus={lesson.query_walkthrough.focus}
-            flowStages={lesson.query_walkthrough.flow_stages}
-          />
+          {lesson.query_walkthrough.visualization === 'join-diagram' && lesson.query_walkthrough.join ? (
+            <SqlJoinViz spec={lesson.query_walkthrough.join} focus={lesson.query_walkthrough.focus} />
+          ) : (
+            <SqlFlow
+              query={lesson.query_walkthrough.query}
+              setupSql={lesson.query_walkthrough.setup_sql}
+              focus={lesson.query_walkthrough.focus}
+              flowStages={lesson.query_walkthrough.flow_stages}
+            />
+          )}
         </Section>
       ) : lesson.code_walkthrough ? (
         <Section icon={<Code2 size={16} />} title="Watch it run">

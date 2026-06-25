@@ -1,0 +1,99 @@
+{
+  "slug": "simplification",
+  "title": "Simplification & Approximation",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "number-system"
+    ],
+    "unlocks": [
+      "surds-indices-logarithms"
+    ],
+    "appears_in": [
+      "TCS NQT",
+      "Wipro",
+      "AMCAT-style"
+    ]
+  },
+  "hook": {
+    "scenario": "When load balancers estimate server capacity during an IPL match, they don't calculate to 5 decimal places. They use quick approximation to scale up instantly."
+  },
+  "mental_model": {
+    "intuition": "Math has a strict order of operations; break it, and the system crashes.",
+    "description": "Simplification is about mechanically executing BODMAS/VBODMAS rules. Approximation is about rounding to manageable numbers while preserving the scale of the answer."
+  },
+  "pattern_discovery": {
+    "cases": [
+      "8 / 2 * (2 + 2)",
+      "Without BODMAS: 8 / 2 * 4 = 4 * 4 = 16",
+      "If you multiply before dividing: 8 / 8 = 1"
+    ],
+    "rule": "Division and Multiplication have the SAME precedence. You must evaluate them left-to-right. The correct answer is 16."
+  },
+  "formula": {
+    "statement": "VBODMAS: Vinculum, Bracket, Of, Division, Multiplication, Addition, Subtraction.",
+    "explain": "Vinculum (bar over numbers) is solved first. 'Of' implies multiplication but has higher precedence than Division."
+  },
+  "shortcuts": [
+    {
+      "title": "Digital Sum (Digit Root)",
+      "trick": "The sum of digits of the LHS expression equals the sum of digits of the RHS answer. Ignore 9s.",
+      "example": "23 * 15 = 345. Digit sum of 23 is 5, 15 is 6. 5 * 6 = 30 -> 3. Digit sum of 345 is 3+4+5=12 -> 3. Matches!"
+    },
+    {
+      "title": "Approximation with Percentages",
+      "trick": "Round numbers to the nearest zero or five. If you round one number up in multiplication, round the other down to balance the error.",
+      "example": "49.87% of 301.2 -> Approximate as 50% of 300 = 150."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Treating 'Of' same as 'Multiply'",
+      "explanation": "'Of' and 'Multiply' both mean multiplication, but 'Of' is resolved BEFORE division. e.g., 10 / 2 of 5 = 10 / 10 = 1. But 10 / 2 * 5 = 5 * 5 = 25."
+    },
+    {
+      "title": "Ignoring left-to-right rule for Division",
+      "explanation": "If you see a / b / c, you must evaluate (a / b) / c. It is NOT a / (b / c)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the 'V' in VBODMAS stand for?",
+      "answer": "Vinculum, a horizontal bar indicating that the operation under it should be performed first.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does Division have higher precedence than Multiplication?",
+      "answer": "No, they have the same precedence. You evaluate them left-to-right.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is 18 / 6 of 3?",
+      "answer": "1. 'Of' is resolved first (6*3=18), then division (18/18).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the approximate value of 14.98% of 399.99 + 25.01% of 800.05",
+      "company": "TCS NQT",
+      "answer": "260",
+      "approach": "Approximate: 15% of 400 + 25% of 800. 15% of 400 = 60. 25% of 800 = 200. 60 + 200 = 260."
+    },
+    {
+      "question": "Evaluate: 4 + 4 * 4 / 4 of 4",
+      "company": "Service-co OA",
+      "answer": "5",
+      "approach": "Resolve 'of': 4 * 4 = 16. Expression becomes 4 + 4 * 4 / 16. Division: 4 / 16 = 1/4. Multiplication: 4 * (1/4) = 1. Addition: 4 + 1 = 5."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Order_of_operations"
+  ]
+}

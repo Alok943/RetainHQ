@@ -3,4 +3,5 @@
 export const CONTENT_KEY_BY_TITLE = {
   'Python for SWE': 'python-swe',
   'SQL — Querying & Modeling': 'sql',
+  'Aptitude — Quant, Reasoning & Verbal': 'aptitude',
 };

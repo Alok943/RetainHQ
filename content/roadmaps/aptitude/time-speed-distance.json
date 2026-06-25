@@ -1,0 +1,89 @@
+{
+  "slug": "time-speed-distance",
+  "title": "Time, Speed & Distance",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "trains-boats-streams"
+    ],
+    "appears_in": [
+      "TCS NQT",
+      "AMCAT-style",
+      "Service-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Swiggy promises 10-minute delivery. The rider covers 3 km. Half the route is traffic (10 km/hr), half is open road. Can they make it? TSD is about breaking down these real-world constraints."
+  },
+  "mental_model": {
+    "intuition": "Distance is the output. Speed is the rate. Time is the duration. (D = S * T)",
+    "description": "They are perfectly locked together. If distance is constant, speed and time are inversely proportional (double the speed, half the time)."
+  },
+  "formula": {
+    "statement": "Distance = Speed * Time",
+    "explain": "And its derivatives: Speed = Distance / Time, Time = Distance / Speed. Ensure all units match (km/hr with hours, m/s with seconds) before multiplying!"
+  },
+  "shortcuts": [
+    {
+      "title": "km/hr to m/s Conversion",
+      "trick": "Multiply by 5/18 to go km/hr -> m/s. Multiply by 18/5 to go m/s -> km/hr.",
+      "example": "72 km/hr = 72 * (5/18) = 20 m/s."
+    },
+    {
+      "title": "Average Speed for Equal Distances",
+      "trick": "If going at speed A and returning at speed B over the same distance, Avg Speed = 2AB / (A + B).",
+      "example": "Go at 40 km/hr, return at 60 km/hr. Avg = (2 * 40 * 60) / 100 = 48 km/hr. (NOT 50!)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Simple Average of Speeds",
+      "explanation": "Averaging speeds (A+B)/2 only works if they traveled for equal TIME, not equal DISTANCE."
+    },
+    {
+      "title": "Unit Mismatch",
+      "explanation": "Multiplying km/hr by minutes without converting minutes to hours first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Convert 90 km/hr to m/s.",
+      "answer": "90 * (5/18) = 25 m/s.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If speed is doubled for a fixed distance, what happens to the time taken?",
+      "answer": "It is halved.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the average speed formula for equal distances traveled at speeds x and y?",
+      "answer": "2xy / (x + y)",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A person walks from his house at 4 km/hr and reaches office 5 minutes late. If his speed is 5 km/hr, he reaches 10 minutes early. What is the distance to the office?",
+      "company": "TCS NQT",
+      "answer": "5 km",
+      "approach": "Difference in time = 15 mins = 1/4 hr. Let distance be D. D/4 - D/5 = 1/4. D/20 = 1/4 => D = 5 km."
+    },
+    {
+      "question": "A man covers half his journey at 6 km/hr and the remaining half at 3 km/hr. What is his average speed?",
+      "company": "AMCAT-style",
+      "answer": "4 km/hr",
+      "approach": "Equal distances. Average speed = 2xy/(x+y) = (2 * 6 * 3) / (6 + 3) = 36 / 9 = 4 km/hr."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/time-and-distance/"
+  ]
+}

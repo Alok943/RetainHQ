@@ -1,0 +1,102 @@
+{
+  "slug": "percentages",
+  "title": "Percentages",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 12,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "profit-loss",
+      "interest"
+    ],
+    "appears_in": [
+      "TCS NQT",
+      "Swiggy DA OA",
+      "Deloitte OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Flipkart shows '20% off, then an extra 10% off'. Your friend says 'nice, 30% off'.",
+    "question": "Is it actually 30% off? And does it matter which discount comes first?"
+  },
+  "mental_model": {
+    "intuition": "A percentage is a multiplier, not an amount.",
+    "description": "+20% means x1.2, -20% means x0.8. Once every % is a multiplier, a chain of changes (discounts, interest, growth, depreciation) collapses to one multiplication - and you stop adding them."
+  },
+  "pattern_discovery": {
+    "setup": "Apply two discounts back to back and watch the final price.",
+    "cases": [
+      "Rs100, 20% off then 10% off -> Rs72 (not Rs70)",
+      "Rs100, 10% off then 20% off -> Rs72 (same)",
+      "Rs100, 50% off then 50% off -> Rs25 (not Rs0)"
+    ],
+    "prompt": "Why is it never the simple sum? What is the second discount taken OF?",
+    "rule": "Each discount applies to what's LEFT, not the original - so changes MULTIPLY: 0.8 x 0.9 = 0.72, i.e. 28% off, never 30%. Order doesn't matter because multiplication commutes."
+  },
+  "formula": {
+    "statement": "Final = Original x product of (1 +/- r_i). Successive a% then b% gives net = a + b + ab/100.",
+    "explain": "The single idea behind discounts, simple/compound interest, growth and depreciation: a % change is a multiplier; chain them by multiplying, not adding."
+  },
+  "shortcuts": [
+    {
+      "title": "10% is your base unit",
+      "trick": "Find 10% (just move the decimal), then build any percentage from it.",
+      "example": "35% of 260 -> 26 + 26 + 26 + 13 = 91."
+    },
+    {
+      "title": "Successive % in one step",
+      "trick": "a% then b% gives net = a + b + ab/100 (signs included).",
+      "example": "-20% then -10% -> -20 -10 + (200/100) = -28% -> x0.72."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Adding successive percentages",
+      "explanation": "20% then 10% is NOT 30% off - the second % is taken of the already-reduced amount, so it's 28%."
+    },
+    {
+      "title": "Percentage of the wrong base",
+      "explanation": "Profit% is on COST price, discount% is on MARKED price. Same number, different whole - mixing the base is the #1 error."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Is a 20% then 10% discount the same as 30% off?",
+      "answer": "No - it's 28% off (x0.8 x 0.9 = 0.72). Successive percentages multiply, they don't add.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does the order of two successive discounts change the final price?",
+      "answer": "No - multiplication commutes (0.8 x 0.9 = 0.9 x 0.8).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Fast mental math: 35% of 260 using the 10% base unit.",
+      "answer": "10% = 26, so 30% = 78, plus 5% (13) = 91.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A shopkeeper marks up his goods 20% above cost, then offers a 20% discount. Profit or loss %?",
+      "company": "TCS NQT",
+      "answer": "4% loss.",
+      "approach": "x1.2 x 0.8 = 0.96, i.e. 4% below cost. The markup base (cost) and the discount base (marked price) differ, so the two 20%s never cancel."
+    },
+    {
+      "question": "A salary rises 10% one year and falls 10% the next. Net change over two years?",
+      "company": "Cognizant",
+      "answer": "1% lower than the start.",
+      "approach": "x1.1 x 0.9 = 0.99 -> down 1%. A rise then equal fall always loses a little (the fall is on a bigger base)."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/percentages/",
+    "https://www.indiabix.com/aptitude/percentage/"
+  ]
+}

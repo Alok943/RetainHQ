@@ -1,0 +1,86 @@
+{
+  "slug": "partnership",
+  "title": "Partnership",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 6,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "percentages",
+      "ratio-proportion"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Service-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Two college friends build a SaaS side-hustle. One invests \u20b950,000 for 12 months, the other joins later with \u20b91,00,000 for 6 months. Who deserves a bigger cut of the ARR?"
+  },
+  "mental_model": {
+    "intuition": "Profit share is strictly the area under the investment-time curve.",
+    "description": "Your reward is proportional to how much money you put in, multiplied by how long it was actively working for the business."
+  },
+  "pattern_discovery": {
+    "cases": [
+      "A: 10k for 12m, B: 20k for 6m -> Profit is 1:1",
+      "A: 10k for 6m, B: 10k for 12m -> Profit is 1:2"
+    ],
+    "rule": "Profit ratio is exactly the ratio of the products of (Capital * Time)."
+  },
+  "formula": {
+    "statement": "Profit(A) : Profit(B) = (Capital(A) * Time(A)) : (Capital(B) * Time(B))",
+    "explain": "Calculate Capital * Time for each partner, then reduce it to the simplest ratio to divide the total profit."
+  },
+  "shortcuts": [
+    {
+      "title": "Working Partner Allowance",
+      "trick": "Subtract the working partner's fixed salary/percentage from total profit BEFORE splitting by capital ratio.",
+      "example": "Profit = 100. A gets 10% for managing. Split remaining 90 by capital ratio."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Ignoring the time factor",
+      "explanation": "Don't divide profits just by the capital invested. A late investor's capital must be multiplied by fewer months."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "A invests 20k for 12 months, B invests 40k for 6 months. What is their profit ratio?",
+      "answer": "(20*12) : (40*6) = 240:240 = 1:1",
+      "tier": "tier1"
+    },
+    {
+      "q": "If profit ratio is 2:3 and time ratio is 1:2, what is the capital ratio?",
+      "answer": "Capital = Profit/Time. Ratio = (2/1) : (3/2) = 4:3",
+      "tier": "tier2"
+    },
+    {
+      "q": "A, B, C rent a pasture. A puts 10 cows for 7 months, B puts 12 cows for 5 months, C puts 15 cows for 3 months. Ratio of rent?",
+      "answer": "70 : 60 : 45 = 14 : 12 : 9",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A starts a business with \u20b940,000. After 3 months, B joins with \u20b960,000. If the total profit at year-end is \u20b934,000, what is A's share?",
+      "company": "TCS NQT",
+      "answer": "\u20b916,000",
+      "approach": "A: 40k * 12 = 480. B: 60k * 9 = 540. Ratio = 480:540 = 8:9. Total = 17 parts = 34k. 1 part = 2k. A's share = 8 * 2k = 16,000."
+    },
+    {
+      "question": "A, B, and C invest in a business. A invests 1/3 of total capital, B invests 1/4, and C the rest. If profit is \u20b924,000, what is C's share?",
+      "company": "Service-co OA",
+      "answer": "\u20b910,000",
+      "approach": "C's capital = 1 - (1/3 + 1/4) = 1 - 7/12 = 5/12. Since time is same, profit ratio is 1/3 : 1/4 : 5/12 = 4 : 3 : 5. Total 12 parts = 24k. C's share = 5 * 2k = 10,000."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/partnership/"
+  ]
+}

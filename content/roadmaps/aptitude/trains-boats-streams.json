@@ -1,0 +1,83 @@
+{
+  "slug": "trains-boats-streams",
+  "title": "Trains, Boats & Streams",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "time-speed-distance"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Service-co OA",
+      "Product-co OA"
+    ]
+  },
+  "hook": {
+    "scenario": "Whether it's two Vande Bharat trains crossing each other or a Swiggy Instamart rider biking against heavy wind, relative speed dictates how fast they close the gap."
+  },
+  "mental_model": {
+    "intuition": "Relative speed: Opposite directions ADD up, same directions SUBTRACT. Boats: Downstream ADDS, upstream SUBTRACTS.",
+    "description": "For trains, always add their lengths as the total distance to cross. For boats, the water's speed physically pushes or pulls the boat."
+  },
+  "formula": {
+    "statement": "Trains: Time = (L1 + L2) / Relative Speed. Boats: Downstream = B + W, Upstream = B - W.",
+    "explain": "L1 and L2 are object lengths. For a stationary pole, L2 is 0. B = Boat speed in still water, W = Water stream speed."
+  },
+  "shortcuts": [
+    {
+      "title": "Finding Boat and Stream Speed",
+      "trick": "If downstream speed is D and upstream is U: Boat speed = (D + U)/2. Stream speed = (D - U)/2.",
+      "example": "Downstream 10 km/hr, Upstream 6 km/hr. Boat = (10+6)/2 = 8 km/hr. Stream = (10-6)/2 = 2 km/hr."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Subtracting Train Lengths",
+      "explanation": "Thinking that because trains move in the same direction, you subtract their lengths. Always ADD lengths (they must completely pass each other)."
+    },
+    {
+      "title": "Confusing Relative Speed (Trains vs Boats)",
+      "explanation": "Trains same direction = subtract speeds. Boats downstream (moving with stream) = add speeds."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Two trains of length 100m and 150m cross each other. What is the total distance covered?",
+      "answer": "100 + 150 = 250m.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A boat goes 15 km/hr downstream and 5 km/hr upstream. What is the speed of the stream?",
+      "answer": "(15 - 5) / 2 = 5 km/hr.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If two trains move in opposite directions at 40 km/hr and 60 km/hr, what is their relative speed?",
+      "answer": "40 + 60 = 100 km/hr.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A 150m long train crosses a pole in 15 seconds. What is the speed of the train in km/hr?",
+      "company": "TCS NQT",
+      "answer": "36 km/hr",
+      "approach": "Speed = Distance / Time = 150m / 15s = 10 m/s. Convert to km/hr: 10 * (18/5) = 36 km/hr."
+    },
+    {
+      "question": "A man can row 8 km/hr in still water. If the river runs at 2 km/hr and it takes him 4 hours to row to a place and back, how far is the place?",
+      "company": "AMCAT-style",
+      "answer": "15 km",
+      "approach": "Downstream = 8+2=10. Upstream = 8-2=6. Let distance be D. D/10 + D/6 = 4. 8D/30 = 4 => D = 120/8 = 15 km."
+    }
+  ],
+  "sources": [
+    "https://www.indiabix.com/aptitude/trains/"
+  ]
+}

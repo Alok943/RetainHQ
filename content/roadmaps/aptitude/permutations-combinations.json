@@ -1,0 +1,89 @@
+{
+  "slug": "permutations-combinations",
+  "title": "Permutations & Combinations",
+  "roadmap": "aptitude",
+  "kind": "aptitude",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "probability"
+    ],
+    "appears_in": [
+      "TCS NQT",
+      "Infosys",
+      "AMCAT"
+    ]
+  },
+  "hook": {
+    "scenario": "Picking a 4-digit UPI PIN (where order matters) vs picking 3 friends for a Goa trip (where order doesn't matter)."
+  },
+  "mental_model": {
+    "intuition": "Permutation = Position matters. Combination = Choosing matters.",
+    "description": "If swapping two items creates a new valid outcome (like changing a password from 123 to 321), it's a Permutation. If swapping changes nothing (like a team of Alice and Bob vs Bob and Alice), it's a Combination."
+  },
+  "formula": {
+    "statement": "nP_r = n! / (n-r)! \\n nC_r = n! / (r! * (n-r)!)",
+    "explain": "nPr is 'arrange r items out of n'. nCr is 'select r items out of n'. Notice nCr divides by r! to remove duplicate arrangements."
+  },
+  "shortcuts": [
+    {
+      "title": "nC_r Complement Rule",
+      "trick": "nC_r = nC_(n-r). If r is more than half of n, subtract it from n to make calculation easier.",
+      "example": "100C_98 is a nightmare. But 100C_98 = 100C_2 = (100 * 99) / 2 = 4950. Done in 3 seconds."
+    },
+    {
+      "title": "Circular Arrangements",
+      "trick": "n items in a circle = (n-1)!. If the circle can be flipped (like a necklace of beads), it's (n-1)! / 2.",
+      "example": "Arranging 5 people around a conference table = (5-1)! = 4! = 24 ways."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Permutation instead of Combination",
+      "explanation": "Selecting a committee of 3 from 10 people requires 10C_3. Many mistakenly use 10P_3, which assumes the roles of the 3 people are different."
+    },
+    {
+      "title": "Forgetting 'AND' vs 'OR'",
+      "explanation": "In counting, 'AND' means multiply. 'OR' means add. If you need a shirt AND pants, multiply the options. If you need a shirt OR a t-shirt, add them."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the formula for nC_r?",
+      "answer": "n! / (r! * (n-r)!)",
+      "tier": "tier1"
+    },
+    {
+      "q": "How many ways can 4 people sit at a round table?",
+      "answer": "3! = 6 ways",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you are choosing 2 pizza toppings out of 5, is it a permutation or combination?",
+      "answer": "Combination (order of toppings doesn't matter)",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How many words can be formed using the letters of the word 'AMAZON'?",
+      "company": "Service-co OA",
+      "answer": "360",
+      "approach": "Total letters = 6. 'A' repeats 2 times. Total arrangements = 6! / 2! = 720 / 2 = 360."
+    },
+    {
+      "question": "A team of 4 is to be formed from 5 men and 4 women such that there is exactly 1 woman. How many ways?",
+      "company": "TCS NQT",
+      "answer": "40",
+      "approach": "We need 1 woman (out of 4) AND 3 men (out of 5). (4C_1) * (5C_3) = 4 * 10 = 40 ways."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/permutations-combinations"
+  ]
+}
