@@ -1,0 +1,113 @@
+{
+  "slug": "temperature-and-top-p",
+  "title": "Temperature & Top-p",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 12,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["tokens-and-tokenization"],
+    "unlocks": [],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "You set temperature=0 for a customer support bot to get consistent answers. A colleague says 'great, it's fully deterministic now.' Then two identical queries return slightly different phrasing.",
+    "question": "Is temperature 0 really deterministic — and if not, what actually controls how 'random' the model is?"
+  },
+  "mental_model": {
+    "intuition": "Temperature is the dial between 'always pick the most likely word' and 'pick any word at all'. Top-p is the filter that limits which words are even in the lottery.",
+    "description": "At every token step, the model produces a probability distribution over its entire vocabulary — 'what should come next?' Temperature reshapes that distribution: low temperature makes the highest-probability word overwhelmingly dominant; high temperature flattens the distribution so less-likely words get real chances. Top-p (nucleus sampling) cuts the vocabulary before sampling — keeping only enough top words to cover probability mass p, discarding the long tail of unlikely tokens."
+  },
+  "sections": [
+    {
+      "body": "Picture the model at each step choosing the next token from a sorted bar chart — probabilities on the y-axis, candidate tokens on the x-axis. With no intervention, it would always pick the tallest bar (argmax). That would be repetitive and robotic. Temperature changes the bar heights before the pick.",
+      "image": {
+        "asset": "ai-engineering/temperature-and-top-p/temperature.png",
+        "alt": "Two distributions: low temperature is peaky on one token; high temperature is flat across all."
+      },
+      "recap": "Temperature reshapes the probability distribution — low = peaked, high = flat."
+    },
+    {
+      "body": "Mathematically, each logit (raw model score) is divided by the temperature before the softmax. Temperature=1 leaves the distribution unchanged. Temperature < 1 (e.g. 0.2) sharpens it: the top token gains probability mass, others lose it. Temperature > 1 flattens it: even low-probability tokens become competitive. You don't need the math — just hold the picture: colder = more predictable, hotter = more creative.",
+      "recap": "Lower T → model concentrates on the most-likely token. Higher T → spreads probability, more variety."
+    },
+    {
+      "body": "Top-p (nucleus sampling) is the companion filter. Before sampling, sort tokens by probability highest-to-lowest and keep adding until the cumulative mass reaches p. Discard everything outside that nucleus. top_p=0.9 means 'sample only from the smallest set of tokens that together account for 90% of the probability.' Low-probability tokens in the long tail are never picked, even if temperature is high.",
+      "image": {
+        "asset": "ai-engineering/temperature-and-top-p/top-p.png",
+        "alt": "A sorted probability bar chart with a top-p cutoff keeping the top bars summing to 0.9."
+      },
+      "recap": "Top-p cuts the vocabulary to the 'nucleus' — the smallest set summing to probability p."
+    },
+    {
+      "body": "In practice: use temperature for tuning creativity vs precision, and leave top_p at 1 (off). Or use top_p as the primary control and leave temperature at 1. OpenAI recommends not adjusting both at once — they interact in confusing ways. For factual tasks (extraction, classification): temp 0–0.2. For creative writing or ideation: temp 0.7–1.0.",
+      "recap": "Tune one: temperature for precision/creativity; top_p for vocabulary ceiling. Not both at once."
+    },
+    {
+      "body": "The gotcha: temperature=0 is NOT fully deterministic on the OpenAI API. At this setting the model uses greedy decoding (picks the argmax token) but floating-point arithmetic on distributed GPUs can produce tiny rounding differences that occasionally flip two equally-likely tokens. True reproducibility also requires setting the seed parameter. Even then, OpenAI does not guarantee identical outputs across model versions.",
+      "recap": "Temperature=0 ≈ deterministic, not truly deterministic. Use seed + same model version for best repeatability."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Set temperature for a factual extraction task",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'Extract the invoice total. Reply with just the number.'},\n        {'role': 'user',   'content': 'Invoice #4821: subtotal $120, tax $10.80, total $130.80.'},\n    ],\n    temperature=0.0,   # factual — want the most likely token, not creativity\n    seed=42,           # improves (but does not guarantee) reproducibility\n)\nprint(response.choices[0].message.content)  # '130.80'",
+      "explanation": "For extraction and classification tasks, use temperature=0 to maximize consistency. Add seed to improve reproducibility — but test on your model version; a model update may still change outputs."
+    },
+    {
+      "title": "Higher temperature for creative brainstorming",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'You are a creative product-naming assistant.'},\n        {'role': 'user',   'content': 'Suggest 5 names for a meal-planning app targeting gym-goers.'},\n    ],\n    temperature=0.9,   # more variety — different names each run\n    top_p=1.0,         # top_p off (=1 means 'keep everything')\n)\nprint(response.choices[0].message.content)",
+      "explanation": "For ideation tasks, a higher temperature generates more diverse options across runs. Leaving top_p=1 keeps it out of the picture so you're only tweaking one dial."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Believing temperature=0 is fully deterministic",
+      "explanation": "Floating-point non-determinism on GPU clusters and model updates mean temperature=0 only maximises consistency — it does not guarantee identical outputs. If repeatability matters critically, also set seed and pin the model version."
+    },
+    {
+      "title": "Adjusting both temperature and top_p simultaneously",
+      "explanation": "They interact: a high temperature widens the distribution, then top_p cuts it; a low temperature narrows it so top_p cuts almost nothing. Tweak one, leave the other at its neutral value (temperature=1 or top_p=1), so you know what you changed."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does temperature actually change, mechanically?",
+      "answer": "It divides each logit by the temperature value before softmax, reshaping the probability distribution. Low values sharpen it (one token dominates); high values flatten it (more tokens are competitive).",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does top_p=0.9 mean in plain terms?",
+      "answer": "Keep only the smallest set of top candidate tokens whose probabilities sum to 90%, and sample exclusively from that set. Tokens in the long tail are discarded.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is temperature=0 fully deterministic on the OpenAI API?",
+      "answer": "No — floating-point non-determinism across distributed GPUs can still produce slight variation. Use temperature=0 plus the seed parameter for best reproducibility, and accept that model updates may still change outputs.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You're deploying a medical info bot. A colleague sets temperature=1.5 to 'make it friendlier'. What problems does this introduce?",
+      "company": "GenAI Engineer interview",
+      "answer": "High temperature flattens the probability distribution so less-likely (and potentially inaccurate or confabulated) tokens become competitive. In a medical context this dramatically increases the risk of hallucination — the model may confidently output incorrect dosages or conditions. For factual, high-stakes tasks, keep temperature at 0–0.2.",
+      "approach": "Explain the distribution-flattening effect and tie it directly to hallucination risk. 'Friendlier tone' is a system-prompt problem, not a temperature problem."
+    },
+    {
+      "question": "A developer runs the same prompt 100 times at temperature=0 and gets the exact same output 98 times, but 2 different outputs on 2 runs. They conclude the API is broken. What is the real explanation?",
+      "company": "LLM Engineer OA",
+      "answer": "Temperature=0 uses greedy decoding but floating-point arithmetic on distributed GPU clusters introduces tiny rounding differences that can occasionally flip two nearly-equal logits. This is expected behavior, not a bug. To maximise consistency, also set the seed parameter — though even then, OpenAI does not guarantee identical outputs across all conditions.",
+      "approach": "Name floating-point non-determinism on distributed hardware as the root cause. Distinguish greedy decoding (what temp=0 does) from true determinism (not what the API guarantees)."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/api-reference/chat/create#chat-create-temperature",
+    "https://platform.openai.com/docs/guides/text-generation"
+  ]
+}

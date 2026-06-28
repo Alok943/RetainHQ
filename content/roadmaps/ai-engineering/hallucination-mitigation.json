@@ -1,0 +1,117 @@
+{
+  "slug": "hallucination-mitigation",
+  "title": "Hallucination Mitigation",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["grounding-with-retrieval"],
+    "unlocks": [],
+    "appears_in": ["GenAI / LLM Engineer interview", "RAG system design"]
+  },
+  "hook": {
+    "scenario": "Your customer service bot confidently tells a user: 'Yes, we offer a lifetime warranty on all products!' The user buys the product. You do not, in fact, offer a lifetime warranty.",
+    "question": "How do you stop a model from making up facts when it doesn't know the answer?"
+  },
+  "mental_model": {
+    "intuition": "Hallucinations aren't lies; they are the model's autocomplete guessing what sounds plausible. You mitigate them by shrinking the space of allowed guesses.",
+    "description": "LLMs don't have a database of facts; they have a statistical map of language. When they don't know an answer, they don't naturally say 'I don't know' — they predict the next most likely word that fits the pattern. To stop this, you have to strictly constrain their environment: force them to read from provided context (RAG), explicitly instruct them to refuse ungrounded questions, and lower their temperature to remove creative randomness."
+  },
+  "sections": [
+    {
+      "body": "Models don't 'know' when they are wrong. They are designed to be helpful, so if you ask 'What is the capital of Mars?', an unconstrained model will invent a plausible-sounding city name. This is a hallucination. It's not a bug in the model; it's a feature of next-word prediction gone unchecked.",
+      "recap": "Models default to plausible-sounding answers over admitting ignorance."
+    },
+    {
+      "body": "The strongest defense is Grounding (RAG). Instead of relying on the model's pre-trained memory, you inject the exact facts into the prompt. But just providing context isn't enough; you must explicitly instruct the model to ONLY use that context.",
+      "recap": "Provide the facts, and instruct the model to use nothing else."
+    },
+    {
+      "body": "Even with context, a model might guess if the context doesn't contain the answer. You must provide an explicit 'out'. Tell it exactly what to say when the information is missing. 'If the answer is not in the context, output EXACTLY: I don't know.' This shrinks the space of allowed guesses down to a safe default.",
+      "recap": "Give the model permission to fail gracefully."
+    },
+    {
+      "body": "Next, control the randomness. The `temperature` parameter dictates how creative the model is allowed to be. A high temperature (0.8) encourages diverse, creative text — perfect for poetry, terrible for facts. A temperature of 0 forces the model to always pick the highest-probability next word, making it much more deterministic and grounded.",
+      "recap": "Set temperature to 0 for factual, analytical tasks."
+    },
+    {
+      "body": "For high-stakes pipelines, you can add a post-processing verification step. Before showing the answer to the user, have the model (or a second, smaller model) verify that every claim in the generated answer exists in the source text. If verification fails, block the response.",
+      "recap": "Pipeline: Grounding → Strict Prompting → Temp=0 → (Optional) Verification."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Anti-Hallucination System Prompt",
+      "language": "python",
+      "code": "system_prompt = \"\"\"\nYou are a strict, factual support assistant. \nAnswer the user's question using ONLY the provided context.\n\nContext:\n{retrieved_docs}\n\nCRITICAL INSTRUCTIONS:\n1. If the answer is not fully contained in the Context, you must reply EXACTLY: \"I don't know.\"\n2. Do not use outside knowledge.\n3. Do not guess or infer.\n\"\"\"\n",
+      "explanation": "We don't just say 'be accurate'. We provide a strict boundary ('ONLY the provided context') and an explicit failure mode ('reply EXACTLY: I don't know')."
+    },
+    {
+      "title": "Setting Temperature to 0",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nresp = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[\n        {\"role\": \"system\", \"content\": system_prompt},\n        {\"role\": \"user\", \"content\": \"What is your refund policy?\"}\n    ],\n    temperature=0.0  # <--- The crucial setting for factual tasks\n)\nprint(resp.choices[0].message.content)",
+      "explanation": "Temperature 0 doesn't guarantee zero hallucinations, but it stops the model from taking 'creative risks' when predicting the next word, drastically reducing made-up facts."
+    },
+    {
+      "title": "Prompting for Citations (Chain of Thought)",
+      "language": "python",
+      "code": "citation_prompt = \"\"\"\nAnswer the user's question using the provided context.\nBefore you answer, extract the exact quotes from the context that support your answer.\n\nFormat your response as:\nQUOTES:\n- [quote 1]\n- [quote 2]\nANSWER:\n[Your final answer]\n\"\"\"\n",
+      "explanation": "By forcing the model to write out the exact quotes first, it focuses its attention on the real facts before it generates the final answer. This 'Chain of Thought' heavily grounds the output."
+    }
+  ],
+  "key_points": [
+    { "title": "Grounding", "detail": "Provide the exact facts in the prompt so the model doesn't rely on its pre-trained weights." },
+    { "title": "The 'Out'", "detail": "Explicitly tell the model what to say if it doesn't know (e.g., 'I don't know')." },
+    { "title": "Temperature 0", "detail": "Turn off creativity. Force the model to take the most statistically probable path." },
+    { "title": "Citations", "detail": "Force the model to quote its sources before answering." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming Temperature 0 eliminates hallucinations completely",
+      "explanation": "Temperature 0 just makes the model deterministic. If the most mathematically probable next word is a hallucination (because the prompt was confusing or the context was contradictory), it will deterministically hallucinate."
+    },
+    {
+      "title": "Telling it 'don't hallucinate'",
+      "explanation": "LLMs don't understand the concept of 'truth' vs 'hallucination'. Telling it 'don't lie' is less effective than saying 'use only this text, and say I don't know if the text doesn't contain the answer'."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why do LLMs hallucinate by default?",
+      "answer": "Because they are next-word prediction engines optimized to be helpful and sound plausible, not databases of verified facts. They don't have an internal mechanism for 'knowing what they don't know'.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the purpose of setting temperature to 0 in a factual task?",
+      "answer": "It removes randomness and creativity from the model's word choices, forcing it to pick the most mathematically probable next word. This makes the output more deterministic and grounded.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does asking the model to provide quotes BEFORE answering reduce hallucinations?",
+      "answer": "It acts as a Chain of Thought. By outputting the exact quotes first, the model attends to the factual source material, which heavily biases its subsequent generation to stay anchored to those facts.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your RAG system is retrieving the correct context, but the model is still adding extra, unverified details to the answer. How do you fix this?",
+      "company": "GenAI / LLM Engineer interview",
+      "answer": "1) Check the temperature and ensure it is set to 0. 2) Update the system prompt to explicitly forbid using outside knowledge and mandate an 'I don't know' fallback if the context is insufficient. 3) Ask the model to quote the context before answering.",
+      "approach": "Address both the API parameters (temperature) and the prompt constraints. Interviewers want to see that you know how to lock down the model's behavior."
+    },
+    {
+      "question": "Is it possible for a model running at temperature 0 to hallucinate? Why or why not?",
+      "company": "RAG system design",
+      "answer": "Yes. Temperature 0 makes the model deterministic, but if the prompt is confusing, the context is contradictory, or the model's pre-trained bias is overwhelmingly strong, the 'most probable' next word it selects can still be factually incorrect.",
+      "approach": "Dispel the myth that temp=0 equals perfect accuracy. It just means the model will make the exact same mistake every time."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/prompt-engineering",
+    "https://docs.anthropic.com/en/docs/mitigate-hallucinations"
+  ]
+}

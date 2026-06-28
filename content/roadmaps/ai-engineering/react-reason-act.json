@@ -1,0 +1,155 @@
+{
+  "slug": "react-reason-act",
+  "title": "ReAct (Reason + Act)",
+  "kind": "engineering",
+  "prerequisites": [
+    "tool-use-and-the-call-loop"
+  ],
+  "mental_model": {
+    "intuition": "ReAct makes the agent 'think out loud' on a scratchpad before picking up a tool.",
+    "description": "If you force an LLM to immediately choose a tool, it often guesses poorly. ReAct (Reasoning and Acting) is a prompt pattern that forces the model to write out its thought process step-by-step before it outputs the JSON tool call. These 'thinking' tokens give the model space to plan, leading to drastically better tool choices."
+  },
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "model",
+        "label": "LLM"
+      },
+      {
+        "id": "app",
+        "label": "App"
+      }
+    ],
+    "steps": [
+      {
+        "from": "model",
+        "to": "model",
+        "label": "writes reasoning",
+        "term": "Thought"
+      },
+      {
+        "from": "model",
+        "to": "app",
+        "label": "requests tool",
+        "term": "Action"
+      },
+      {
+        "from": "app",
+        "to": "model",
+        "label": "returns result",
+        "term": "Observation"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "body": "Language models don't have internal hidden thoughts; their 'thinking' happens only when they generate output tokens. If a model must immediately output a tool call to answer a complex question, it has to decide everything in zero steps. It often fails or calls the wrong tool.",
+      "recap": "So far: Forcing immediate action leads to poor decisions."
+    },
+    {
+      "body": "The ReAct pattern solves this by injecting a mandatory 'Thought' step before every 'Action'. By prompting the model to explicitly write down 'Thought: I need to find X first...', the model generates tokens that serve as a working memory or scratchpad.",
+      "recap": "So far: Forcing the model to output a 'Thought' first gives it space to plan."
+    },
+    {
+      "body": "Once the model writes its thought, it outputs the 'Action' (the tool call). Your application runs the tool and returns the 'Observation'. The model reads this, generates a new 'Thought', and the cycle continues. This interleaved reasoning and acting allows the model to self-correct if a tool fails.",
+      "recap": "ReAct is a specific loop pattern: Thought \u2192 Action \u2192 Observation, repeating until the final answer."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The ReAct Prompt Pattern",
+      "language": "text",
+      "code": "Answer the following questions as best you can. You have access to tools.\n\nUse the following format strictly:\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the tool name to run\nAction Input: the JSON input to the tool\nObservation: the result of the action\n... (this Thought/Action/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question",
+      "explanation": "This is the classic ReAct system prompt. It explicitly teaches the model the state machine it must follow, forcing the 'Thought' step before it is allowed to output an 'Action'."
+    },
+    {
+      "title": "Modern implementation via native tool calling",
+      "language": "python",
+      "code": "# Modern models have native tool-calling, so we don't need raw text parsing.\n# We just add 'thought' as a required field in the tool's JSON schema!\n\ntools = [{\n    'type': 'function',\n    'function': {\n        'name': 'search_database',\n        'parameters': {\n            'type': 'object',\n            'properties': {\n                'thought': {\n                    'type': 'string',\n                    'description': 'Your step-by-step reasoning for WHY you are doing this search.'\n                },\n                'query': {\n                    'type': 'string'\n                }\n            },\n            'required': ['thought', 'query']\n        }\n    }\n}]",
+      "explanation": "Instead of parsing messy text blocks, modern AI engineering enforces ReAct by simply making 'thought' a required argument in every tool schema. The model must generate the reasoning string before it generates the actual query."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake": "Thinking modern models don't need ReAct.",
+      "correction": "While native tool-calling replaced the need to parse raw text 'Action' strings, models still benefit massively from generating reasoning tokens before they act. Adding a 'thought' field to JSON schemas is the modern ReAct.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    },
+    {
+      "mistake": "Hiding the thought process from the context window.",
+      "correction": "If you don't append the model's 'Thought' to the message history, it forgets its own reasoning on the next loop iteration. The scratchpad must persist.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    }
+  ],
+  "recall_questions": [
+    {
+      "question": "Why does the ReAct pattern improve an LLM's ability to use tools?",
+      "options": [
+        "It generates intermediate tokens that allow the model to plan before committing to an action.",
+        "It updates the model's internal weights via backpropagation during the loop.",
+        "It allows the model to run Python code directly in its context window.",
+        "It increases the context window size automatically."
+      ],
+      "correct_answer": "It generates intermediate tokens that allow the model to plan before committing to an action.",
+      "q": "Why does the ReAct pattern improve an LLM's ability to use tools?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "What are the three core steps in a single ReAct loop iteration?",
+      "options": [
+        "Thought, Action, Observation",
+        "Prompt, Generate, Parse",
+        "System, User, Assistant",
+        "Plan, Compile, Execute"
+      ],
+      "correct_answer": "Thought, Action, Observation",
+      "q": "What are the three core steps in a single ReAct loop iteration?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "How is ReAct most reliably implemented with modern (2024+) function-calling models?",
+      "options": [
+        "By adding a required 'thought' or 'reasoning' property to the tool's JSON schema.",
+        "By parsing raw text using complex Regular Expressions.",
+        "By fine-tuning a custom model to only output thoughts.",
+        "By forcing the user to type their thoughts first."
+      ],
+      "correct_answer": "By adding a required 'thought' or 'reasoning' property to the tool's JSON schema.",
+      "q": "How is ReAct most reliably implemented with modern (2024+) function-calling models?",
+      "answer": "Placeholder answer"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Explain the ReAct framework and why it is superior to a simple Action-Only agent.",
+      "company": "AI Agent Design Interview",
+      "answer": "ReAct interleaves reasoning (thinking out loud) and acting (tool use). An action-only agent must decide the perfect tool and arguments immediately based on the prompt. ReAct forces the model to generate 'thought' tokens first, giving it a scratchpad to plan, deduce missing information, and handle errors from previous observations.",
+      "approach": "Mention 'tokens as computation'. By forcing the model to write out its logic, it uses the auto-regressive generation process to 'think', leading to much higher success rates on complex tasks."
+    },
+    {
+      "question": "Your agent keeps passing incorrect, hallucinated IDs to the database lookup tool instead of finding the ID first. How do you fix this without changing the model?",
+      "company": "GenAI Engineer interview",
+      "answer": "Implement the ReAct pattern, usually by requiring a 'thought' field in the tool schema. Force the model to explain *where* it is getting the ID from before it populates the ID field. This breaks the hallucination by forcing the model to realize it doesn't have the ID yet.",
+      "approach": "Diagnose the issue as skipping a step. Propose reasoning tokens (ReAct) to force the model to plan its dependencies before executing the tool call."
+    }
+  ],
+  "roadmap": "ai-engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "GenAI Engineer interview"
+    ]
+  },
+  "sources": [
+    "https://example.com/agents"
+  ]
+}

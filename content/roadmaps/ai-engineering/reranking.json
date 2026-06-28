@@ -1,0 +1,109 @@
+{
+  "slug": "reranking",
+  "title": "Reranking",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["embed-and-retrieve-top-k"],
+    "unlocks": ["evaluation-and-test-sets"],
+    "appears_in": ["RAG system design", "GenAI Engineer interview"]
+  },
+  "hook": {
+    "scenario": "You search your docs for 'how to cancel subscription'. The vector database returns 20 chunks. The actual instructions for cancellation are at position #14. But because you only feed the top-5 chunks to the LLM (to save tokens), the model never sees the answer.",
+    "question": "Why did the vector database rank the right answer so poorly, and how do we fix it?"
+  },
+  "mental_model": {
+    "intuition": "Vector search is like scanning a massive library using a metal detector—it's fast but imprecise. Reranking is having an expert sit down with the 20 items the metal detector found and carefully order them by true relevance.",
+    "description": "Standard embeddings compress a whole paragraph into a single point in space. This compression loses nuance. So 'fast' vector search (bi-encoders) often misses the subtle differences between a good match and a great match. To fix this, we do a two-stage retrieval: first, we use fast vector search to fetch the top 50 'okay' results. Then, we pass those 50 results to a specialized Reranker model (a cross-encoder) that painstakingly scores how well each chunk answers the specific query, pushing the truly relevant chunks to the very top."
+  },
+  "sections": [
+    {
+      "body": "Vector similarity is incredibly fast because it's pre-computed. We embed the chunks once, then just calculate distance at query time. But this speed comes with a massive penalty: standard embeddings are 'bi-encoders'. They embed the query and the chunk in total isolation. They don't know they are meant for each other.",
+      "recap": "Fast vector search embeds query and chunk separately, which often misses nuanced relevance."
+    },
+    {
+      "body": "Because of this isolation, vector search frequently ranks a highly relevant chunk at position #15 instead of #1. If your RAG prompt only takes the top 5 chunks to stay under the token limit, the LLM will miss the answer entirely. We need a way to reorder these results.",
+      "image": {
+        "asset": "ai-engineering/reranking/reorder-by-relevance.png",
+        "alt": "Two lists: similarity order mixes relevant and not; after reranking the relevant chunks are on top."
+      },
+      "recap": "If the real answer is ranked #15, a top-5 RAG pipeline fails."
+    },
+    {
+      "body": "Enter the Reranker (usually a 'cross-encoder'). Unlike a standard embedding model, a cross-encoder takes BOTH the query and the chunk at the exact same time. It reads them together, allowing it to understand deep semantic interactions. It outputs a highly accurate relevance score from 0 to 1.",
+      "recap": "Cross-encoders read the query and chunk together to produce a highly accurate relevance score."
+    },
+    {
+      "body": "If cross-encoders are so accurate, why not use them for the whole database? Because they are excruciatingly slow. Running a cross-encoder against 1 million chunks would take minutes per query. Vector search takes milliseconds. So we combine them: speed first, accuracy second.",
+      "recap": "Cross-encoders are too slow for millions of documents, so we only use them on the final shortlist."
+    },
+    {
+      "body": "The two-stage pipeline: Step 1: Use fast vector search to retrieve a wide net of 50 chunks. Step 2: Pass those 50 chunks to the reranker. Step 3: Sort by the reranker's score. Step 4: Feed the new top-5 into the LLM. This gives you the speed of vector search with the precision of a cross-encoder.",
+      "recap": "Pipeline: Query → Fast Vector Search (top 50) → Rerank (top 5) → LLM Prompt."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Cohere Rerank API (Two-Stage Retrieval)",
+      "language": "python",
+      "code": "import cohere\n\nco = cohere.Client(\"YOUR_API_KEY\")\nquery = \"How to cancel subscription\"\n\n# Stage 1: Fast vector search returns 20 okay-ish chunks\n# (Assume `vector_db.search` returns a list of text strings)\ninitial_results = vector_db.search(query, k=20)\n\n# Stage 2: Rerank those 20 chunks for deep relevance\nrerank_response = co.rerank(\n    model=\"rerank-english-v3.0\",\n    query=query,\n    documents=initial_results,\n    top_n=3  # Only keep the absolute best 3 for the LLM prompt\n)\n\n# The final list is now perfectly ordered for the LLM\nfinal_chunks = [initial_results[result.index] for result in rerank_response.results]",
+      "explanation": "We don't rerank the entire database. We fetch a medium-sized list (20) using fast vector search, then use the specialized reranker to bubble the top 3 to the surface."
+    }
+  ],
+  "key_points": [
+    { "title": "Nearest ≠ Relevant", "detail": "A vector database returns the geometrically closest points, which are not always the logically most relevant answers to a question." },
+    { "title": "Bi-encoder vs Cross-encoder", "detail": "Vector search uses bi-encoders (fast, isolated). Reranking uses cross-encoders (slow, simultaneous, accurate)." },
+    { "title": "Two-Stage Retrieval", "detail": "Always use both. Vector search filters millions down to 50. Reranking filters 50 down to the 5 you actually send to the LLM." },
+    { "title": "Cost and Latency", "detail": "Reranking adds a network hop and latency (often ~100-200ms). The accuracy boost is usually worth it." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Trying to rerank the whole database",
+      "explanation": "You cannot run a cross-encoder against 100,000 documents at query time. It must only be used on a small shortlist (top 50-100) returned by a fast vector search."
+    },
+    {
+      "title": "Using reranking when initial retrieval fails entirely",
+      "explanation": "Reranking only reorders the items it is given. If the vector search missed the relevant document completely (e.g. it was ranked #500 and you only fetched top-20), the reranker cannot magically find it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is vector search (bi-encoder) less accurate than a reranker (cross-encoder)?",
+      "answer": "Vector search embeds the query and chunk in isolation. A cross-encoder reads both at the same time, allowing it to understand the subtle relationship between the specific question and the text.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If rerankers are more accurate, why don't we use them instead of vector databases?",
+      "answer": "They are computationally expensive and slow. Running a cross-encoder against millions of documents would take minutes, whereas vector math takes milliseconds.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the 'two-stage retrieval' pattern?",
+      "answer": "First, use fast vector search to retrieve a broad set of results (e.g. top 50). Second, pass that shortlist through a reranker to reorder them, keeping only the top 5 for the LLM.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your RAG pipeline fetches 5 chunks from the vector database. The LLM's answer is wrong, but you manually verify that the correct chunk exists in the database at position #15. You cannot increase the LLM context window. How do you fix this?",
+      "company": "GenAI Engineer interview",
+      "answer": "Implement two-stage retrieval. Expand the initial vector search to fetch 20-50 chunks, then pass those chunks to a reranker model. The reranker will score them for deep relevance and bubble the correct chunk from #15 into the top 5, allowing it to fit in the context window.",
+      "approach": "Identify that the vector search is returning the document, just ranked too low. Reranking is the canonical solution for the 'right doc, wrong position' problem."
+    },
+    {
+      "question": "You are designing a low-latency Q&A system. A colleague suggests using a cross-encoder to directly search the 500,000 document corpus to maximize accuracy. Why is this a bad idea?",
+      "company": "RAG system design",
+      "answer": "A cross-encoder must evaluate the query against every single document individually at query time. Running 500,000 deep neural network passes sequentially will take minutes or hours. It violates the low-latency requirement.",
+      "approach": "Highlight the catastrophic performance impact of running a cross-encoder at scale. Emphasize that cross-encoders must be gated behind a fast first-stage retrieval."
+    }
+  ],
+  "sources": [
+    "https://docs.cohere.com/docs/rerank-guide",
+    "https://www.sbert.net/examples/applications/retrieve_rerank/README.html"
+  ]
+}

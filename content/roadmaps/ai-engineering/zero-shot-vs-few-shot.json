@@ -1,0 +1,105 @@
+{
+  "slug": "zero-shot-vs-few-shot",
+  "title": "Zero-shot vs Few-shot",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["chat-completions-api"],
+    "unlocks": ["chain-of-thought", "output-formatting-and-delimiters"],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "You ask a model to classify support tickets as 'billing', 'technical', or 'other'. Zero-shot (no examples) works 70% of the time. A colleague adds three example classifications to the prompt and accuracy jumps to 92% — no fine-tuning, no retraining.",
+    "question": "Why do a handful of examples in the prompt outperform a carefully worded instruction alone?"
+  },
+  "mental_model": {
+    "intuition": "Zero-shot is 'figure it out from the instructions alone'. Few-shot is 'here are three worked examples — now do the same thing'.",
+    "description": "LLMs learn from patterns. A zero-shot prompt tells the model what to do in words. A few-shot prompt shows the model the input→output pattern directly — examples activate the model's in-context learning ability, calibrating its output format, tone, label vocabulary, and edge-case handling without any gradient updates. The model doesn't 'train' on the examples; it pattern-matches them within the context window."
+  },
+  "illustration": {
+    "asset": "ai-engineering/zero-shot-vs-few-shot/with-without-examples.png",
+    "alt": "Two prompts: zero-shot has only the task; few-shot adds two labeled examples above the same task."
+  },
+  "sections": [
+    {
+      "body": "Zero-shot: you describe the task in the system or user message, give the input, and ask for the output. No examples. The model relies entirely on its pre-training knowledge and your instructions. Works surprisingly well for common tasks (summarization, translation, sentiment analysis) where the model has seen millions of similar examples during training. Fails on tasks with unusual output formats, domain-specific labels, or nuanced edge cases.",
+      "recap": "Zero-shot: instruction only. Works for common tasks; struggles with unusual formats or label sets."
+    },
+    {
+      "body": "Few-shot: you add 2–5 worked examples — (input, expected output) pairs — before the real query. The examples don't explain the rule; they demonstrate it. The model infers the pattern and applies it. This is especially powerful for: custom output formats (structured JSON with your exact field names), non-obvious classification labels ('CSAT_DETRACTOR' vs 'billing'), tone matching, and tasks that are hard to describe in words but easy to show.",
+      "recap": "Few-shot: show don't tell. Examples calibrate format, labels, and edge cases better than instructions can."
+    },
+    {
+      "body": "Example quality matters more than quantity. 2 diverse, well-chosen examples outperform 10 repetitive ones that all look the same. Key rules: examples should cover the range of input variation, the output should exactly match the format you want, and each example should be a realistic case (not a toy). Avoid examples where the answer is 'obvious' — they waste context without teaching the model anything.",
+      "recap": "Quality > quantity. 2–5 diverse, realistic examples beat 10 repetitive ones."
+    },
+    {
+      "body": "The tradeoffs: few-shot adds tokens (cost and context), so for high-volume, simple tasks zero-shot may be the right economic choice. For complex or format-sensitive tasks, few-shot reduces retries, validation failures, and downstream errors — the token cost pays for itself in reliability. Start zero-shot, measure failure modes, add targeted examples only where zero-shot fails.",
+      "recap": "Start zero-shot, measure failure modes, add examples only where needed. Each example costs tokens every call."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Zero-shot classification",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nresponse = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[\n        {\n            'role': 'system',\n            'content': 'Classify the support ticket into exactly one category: '\n                       'billing, technical, or other. '\n                       'Reply with only the category label, nothing else.',\n        },\n        {\n            'role': 'user',\n            'content': 'My invoice shows a charge I did not authorise.',\n        },\n    ],\n    max_tokens=10,\n    temperature=0,\n)\nprint(response.choices[0].message.content)  # 'billing'",
+      "explanation": "Zero-shot with a tight instruction. max_tokens=10 enforces a short label — the model can't ramble. temperature=0 maximises consistency. Works well here because 'billing' is an obvious category. Failure cases appear on ambiguous tickets."
+    },
+    {
+      "title": "Few-shot classification with examples in the messages list",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# Examples are added as user/assistant pairs before the real query\nresponse = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[\n        {\n            'role': 'system',\n            'content': 'Classify each support ticket as: billing, technical, or other.',\n        },\n        # Example 1\n        {'role': 'user',      'content': 'I was charged twice for last month.'},\n        {'role': 'assistant', 'content': 'billing'},\n        # Example 2\n        {'role': 'user',      'content': 'The API keeps returning 500 errors.'},\n        {'role': 'assistant', 'content': 'technical'},\n        # Example 3\n        {'role': 'user',      'content': 'Just wanted to say your team is great!'},\n        {'role': 'assistant', 'content': 'other'},\n        # The real query\n        {\n            'role': 'user',\n            'content': 'My payment method was rejected even though my card is valid.',\n        },\n    ],\n    max_tokens=10,\n    temperature=0,\n)\nprint(response.choices[0].message.content)  # 'billing'",
+      "explanation": "Examples are injected as alternating user/assistant messages before the real query — the model continues the pattern. Three examples cover all three categories, teaching the exact label format. Notice the real query is ambiguous (could be billing or technical) — examples help the model learn your intended boundary."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using examples that all look the same",
+      "explanation": "Five examples that are all straightforward 'billing' tickets teach the model nothing about edge cases. Include diverse examples that span the ambiguous cases — those are the ones zero-shot gets wrong."
+    },
+    {
+      "title": "Adding more and more examples hoping for perfection",
+      "explanation": "Few-shot has diminishing returns past 5–8 examples and each one costs tokens every call. If you need 20+ examples to get acceptable accuracy, the task needs fine-tuning, not a longer prompt."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the structural difference between a zero-shot and a few-shot prompt?",
+      "answer": "Zero-shot has only the task instruction and the input. Few-shot adds 2–5 (input, expected output) example pairs before the real query.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are few-shot examples placed as user/assistant message pairs rather than in the system prompt?",
+      "answer": "The chat model is trained on conversation structure — (user, assistant) pairs are the natural way to show input→output demonstrations. This lets the model continue the pattern on the next user turn.",
+      "tier": "tier2"
+    },
+    {
+      "q": "At what point should you consider fine-tuning instead of adding more few-shot examples?",
+      "answer": "When you need more than ~8–10 examples to achieve acceptable accuracy, or when the examples would consume too many tokens per call. Fine-tuning bakes the pattern into the weights so examples don't need to be in-context.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your sentiment classifier uses zero-shot and achieves 88% accuracy in testing. In production, edge cases around sarcasm and mixed-sentiment reviews reduce it to 74%. What is the most cost-effective next step before fine-tuning?",
+      "company": "GenAI Engineer interview",
+      "answer": "Add few-shot examples specifically targeting the failure mode: 2–3 examples of sarcastic reviews with the correct label, and 2–3 of mixed-sentiment reviews. Targeted examples activate in-context learning for the exact edge cases that zero-shot misses. This is cheaper and faster than fine-tuning if the fix improves accuracy sufficiently.",
+      "approach": "Key word: 'targeted'. Random examples don't help. Collect the actual misclassified examples, pick the most representative, and add them as demonstrations."
+    },
+    {
+      "question": "A teammate proposes adding 20 few-shot examples to improve a support-ticket classifier. What concerns would you raise?",
+      "company": "LLM Engineer OA",
+      "answer": "1) Token cost: 20 examples adds ~500–1000 tokens per call, permanently. At high volume this compounds. 2) Diminishing returns: accuracy gains flatten past ~8 examples. 3) Context bloat: at 20 examples plus the system prompt plus the real ticket, you may be burning 30–40% of the context window on examples, leaving less room for long tickets. Recommendation: audit which failure cases exist, add 3–5 targeted examples, measure. If you still need 20+, benchmark fine-tuning.",
+      "approach": "Three dimensions: cost per call (tokens × price), context window consumption, and diminishing accuracy returns. The answer isn't 'don't do few-shot' — it's 'be surgical about it'."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/prompt-engineering",
+    "https://www.promptingguide.ai/techniques/fewshot"
+  ]
+}

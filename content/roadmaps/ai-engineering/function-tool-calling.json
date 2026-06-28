@@ -1,0 +1,133 @@
+{
+  "slug": "function-tool-calling",
+  "title": "Function / Tool Calling",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 18,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["structured-output-json-mode"],
+    "unlocks": ["tool-use-and-the-call-loop"],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA", "RAG system design"]
+  },
+  "hook": {
+    "scenario": "A user asks your chatbot: 'What's the weather in Delhi right now?' The model's training data is from 2024 — it has no idea. You want it to call your weather API. But you can't give a language model a URL to call.",
+    "question": "How do you let an LLM trigger real-world actions without giving it direct access to execute code or make HTTP calls?"
+  },
+  "mental_model": {
+    "intuition": "The model doesn't run your tool — it writes a job ticket, and your code executes the work.",
+    "description": "Tool calling is a structured round-trip: you tell the model which tools exist (name + schema), the model reads the user's message and decides whether to call a tool by returning a structured JSON 'job ticket' instead of a text answer, your application code reads the ticket, runs the actual function, and sends the result back as a new message. The model then reads the result and generates its final text answer. The model is the planner; your code is the executor."
+  },
+  "sections": [
+    {
+      "body": "You register tools by passing a tools[] list with each tool's name, description, and parameter schema (JSON Schema format). The model reads this list and the user's message. If it decides a tool is needed, instead of returning text in message.content, it returns a tool_calls list with the function name and arguments encoded as JSON. finish_reason is 'tool_calls', not 'stop'.",
+      "recap": "Model signals a tool call via finish_reason='tool_calls' and a structured JSON ticket — not by running anything."
+    },
+    {
+      "body": "YOUR code does the actual work. You read the tool name and arguments from the response, run the matching Python function, and get a result. You then append two new messages to the history: the assistant's tool_calls message (from the model), and a tool-role message with the result. The model sees the result on the NEXT call and generates the final answer.",
+      "animation": {
+        "type": "cycle",
+        "actors": [
+          { "id": "app", "label": "Your App" },
+          { "id": "model", "label": "LLM Model" },
+          { "id": "tool", "label": "Your Function" }
+        ],
+        "steps": [
+          { "from": "app", "to": "model", "label": "messages + tools[] definition", "term": "1. send request" },
+          { "from": "model", "to": "app", "label": "tool_calls JSON ticket", "term": "2. model asks to call tool" },
+          { "from": "app", "to": "tool", "label": "run get_weather('Delhi')", "term": "3. your code executes" },
+          { "from": "tool", "to": "app", "label": "{'temp': 38, 'condition': 'sunny'}", "term": "4. real result" },
+          { "from": "app", "to": "model", "label": "tool result message", "term": "5. send result back" },
+          { "from": "model", "to": "app", "label": "'It is 38°C and sunny in Delhi.'", "term": "6. final answer" }
+        ]
+      },
+      "recap": "Six-step round-trip: model asks → your code runs → result sent back → model answers."
+    },
+    {
+      "body": "The tool schema is a JSON Schema object. The description field is critical — the model uses it to decide WHEN to call the tool. A vague description ('gets data') leads to wrong trigger decisions. A precise description ('Returns current temperature and conditions for a given city name. Call when the user asks about current weather.') lets the model call it exactly when needed.",
+      "recap": "Tool description quality = call trigger accuracy. Write it for the model, not for a human reader."
+    },
+    {
+      "body": "The model can request multiple tools in one response (parallel tool calling) — a tools_calls list with several entries. You run all of them, then send all results back in one follow-up messages list. This is used in agents to parallelize independent lookups (e.g. get weather + get calendar + search docs simultaneously), cutting round-trips.",
+      "recap": "Parallel tool calls: model issues N tickets; run all N; send all results back at once."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Define a tool and send the first request",
+      "language": "python",
+      "code": "from openai import OpenAI\nimport json\nclient = OpenAI()\n\n# The actual function that does real work\ndef get_weather(city: str) -> dict:\n    # In reality: call a weather API\n    return {'city': city, 'temp_c': 38, 'condition': 'sunny'}\n\n# Tool definition — the model reads this to decide when/how to call it\ntools = [\n    {\n        'type': 'function',\n        'function': {\n            'name': 'get_weather',\n            'description': 'Returns current temperature and weather conditions for a city. '\n                           'Call when the user asks about current weather.',\n            'parameters': {\n                'type': 'object',\n                'properties': {\n                    'city': {'type': 'string', 'description': 'City name, e.g. Delhi'},\n                },\n                'required': ['city'],\n            },\n        },\n    }\n]\n\nmessages = [{'role': 'user', 'content': \"What's the weather in Delhi right now?\"}]\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=messages,\n    tools=tools,\n)\nprint(response.choices[0].finish_reason)  # 'tool_calls'",
+      "explanation": "The model doesn't know about weather — but it knows you have a get_weather tool and it matches the user's intent. It returns finish_reason='tool_calls' with a JSON ticket specifying get_weather(city='Delhi'). Your code hasn't run anything yet."
+    },
+    {
+      "title": "Execute the tool and send the result back",
+      "language": "python",
+      "code": "# Continuing from the first call above...\nassistant_msg = response.choices[0].message\ntool_call = assistant_msg.tool_calls[0]\n\n# Your code runs the actual function\nargs = json.loads(tool_call.function.arguments)   # {'city': 'Delhi'}\nresult = get_weather(**args)                       # {'city': 'Delhi', 'temp_c': 38, ...}\n\n# Build the follow-up messages: original history + tool response\nmessages.append(assistant_msg)    # the model's tool_calls message\nmessages.append({\n    'role': 'tool',\n    'tool_call_id': tool_call.id,\n    'content': json.dumps(result),   # result as a JSON string\n})\n\n# Second call — model reads the result and generates the answer\nfinal = client.chat.completions.create(\n    model='gpt-4o',\n    messages=messages,\n    tools=tools,\n)\nprint(final.choices[0].message.content)\n# 'It is currently 38°C and sunny in Delhi.'",
+      "explanation": "The 'tool' role message is how you feed the result back. The tool_call_id links the result to the specific request. On the second call, finish_reason='stop' — the model has what it needs and answers in natural language. This two-call round-trip is the core of tool use."
+    },
+    {
+      "title": "Handle parallel tool calls",
+      "language": "python",
+      "code": "# When the model requests multiple tools in one response\nif response.choices[0].finish_reason == 'tool_calls':\n    tool_messages = [response.choices[0].message]  # assistant message first\n\n    for tc in response.choices[0].message.tool_calls:\n        fn_name = tc.function.name\n        args = json.loads(tc.function.arguments)\n\n        # Dispatch to the right function\n        if fn_name == 'get_weather':\n            result = get_weather(**args)\n        elif fn_name == 'get_calendar':\n            result = get_calendar(**args)\n        else:\n            result = {'error': f'Unknown tool: {fn_name}'}\n\n        tool_messages.append({\n            'role': 'tool',\n            'tool_call_id': tc.id,\n            'content': json.dumps(result),\n        })\n\n    messages.extend(tool_messages)\n    # One more API call with all results",
+      "explanation": "When the model issues N tool calls in one response, run all N and send all results back in a single follow-up request. Each result must include its tool_call_id so the model knows which result matches which request."
+    }
+  ],
+  "key_points": [
+    { "title": "Model = planner, your code = executor", "detail": "The model NEVER runs your function. It produces a structured JSON ticket; your code executes it and returns the result." },
+    { "title": "finish_reason='tool_calls'", "detail": "The signal that the model wants to call a tool — message.content will be None or empty; read message.tool_calls instead." },
+    { "title": "Tool description = trigger policy", "detail": "The model decides WHEN to call a tool from its description. Imprecise descriptions lead to missed or incorrect calls." },
+    { "title": "Two-call minimum", "detail": "Tool use requires at least two API calls: one for the model to issue the ticket, one to get the final answer after you return the result." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming the model runs your function",
+      "explanation": "The model only outputs a JSON string representing the call it wants made. If your application doesn't read tool_calls and execute the function, nothing happens. The round-trip is always: model → JSON ticket → your code runs → result → model again."
+    },
+    {
+      "title": "Not appending the assistant's tool_calls message before the tool result",
+      "explanation": "The follow-up messages list must include the assistant's message (with tool_calls) before the tool-role result message. Skipping the assistant message causes an API error or context confusion — the model won't see what it asked for."
+    },
+    {
+      "title": "Writing vague tool descriptions",
+      "explanation": "The model uses the description field to decide when to invoke the tool. 'Gets data' will produce unpredictable trigger decisions. Write the description as a policy: 'Call when the user asks X to get Y'. Treat it as the model's instruction manual."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the model actually return when it wants to call a tool?",
+      "answer": "A structured JSON object in message.tool_calls with the function name and arguments. message.content is None. finish_reason is 'tool_calls', not 'stop'.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What role does the tool result message use, and what field links it to the correct tool call?",
+      "answer": "role='tool', with tool_call_id matching the id from the original tool_calls entry.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does tool use always require at least two API calls?",
+      "answer": "First call: model reads tools and issues a JSON ticket. Your code runs the function. Second call: model reads the result and generates the final natural-language answer.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your tool-calling agent occasionally gives answers like 'I called get_weather but I don't have the result yet.' What is the bug?",
+      "company": "GenAI Engineer interview",
+      "answer": "The tool result message is not being sent back to the model in the follow-up call. The model sees its own tool_calls message but no tool-role response, so it 'knows' it asked for a result but hasn't received one. Fix: after running the function, append both the assistant's tool_calls message and the tool-role result message before making the second API call.",
+      "approach": "The message history is the key. Trace the exact messages[] list: user → assistant(tool_calls) → tool(result) → assistant(final). A missing tool message is the most common tool-calling bug."
+    },
+    {
+      "question": "You have a tool called search_docs that the model invokes even for simple greetings like 'Hi there'. How do you fix this without removing the tool?",
+      "company": "LLM Engineer OA",
+      "answer": "Improve the tool description. A vague description ('Searches documents') causes the model to call it speculatively. Change it to: 'Call ONLY when the user asks a specific question that requires looking up information in the company knowledge base. Do NOT call for greetings, small talk, or questions you can answer from general knowledge.' The description is the model's trigger policy.",
+      "approach": "Blame the description, not the model. The fix is a precise, policy-like description that tells the model exactly when to call vs when not to."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/function-calling",
+    "https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools"
+  ]
+}

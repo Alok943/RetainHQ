@@ -1,0 +1,109 @@
+{
+  "slug": "pgvector-pinecone-chroma",
+  "title": "pgvector, Pinecone, & Chroma",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "similarity-metrics"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "RAG system design",
+      "GenAI Engineer interview"
+    ]
+  },
+  "hook": {
+    "scenario": "You have your chunks and your embedding model. But standard SQL `WHERE text = 'password'` can't search by meaning.",
+    "question": "Where do you actually store arrays of 1,536 floats so you can run millisecond similarity searches over millions of rows?"
+  },
+  "mental_model": {
+    "intuition": "A vector database is just a storage engine optimized for one specific math operation: finding the closest arrays of numbers fast.",
+    "description": "To run semantic search, you need databases that support ANN indexes and vector distance operators. You can use specialized SaaS platforms (Pinecone), local/in-memory stores (Chroma), or add vector features directly to your existing relational database (pgvector in Postgres)."
+  },
+  "sections": [
+    {
+      "body": "Vector databases exist to solve one specific problem: storing large arrays of floats and running high-speed Approximate Nearest Neighbor (ANN) searches over them. You need one to power the Embed \u2192 Retrieve step of any RAG pipeline.",
+      "recap": "Vector DBs are infrastructure optimized for fast geometry."
+    },
+    {
+      "body": "**pgvector (Postgres)**: If you already use Postgres, you just install the pgvector extension. You keep your vectors in the exact same row as your relational data. This means you can do standard SQL joins, filter by user IDs, and use ACID transactions alongside semantic search. It's the pragmatic default for most teams.",
+      "recap": "pgvector puts semantic search right next to your source-of-truth relational data."
+    },
+    {
+      "body": "**Pinecone / Weaviate / Qdrant**: These are specialized, often managed (SaaS) vector databases. They handle massive scale (billions of vectors) without you managing infrastructure. You talk to them via REST APIs. They are great for decoupled microservices or massive unstructured corpora.",
+      "recap": "Specialized SaaS vector DBs scale massively but require syncing data out of your primary DB."
+    },
+    {
+      "body": "**Chroma / FAISS**: Lightweight stores often run locally or in-memory as Python libraries. They are perfect for prototyping, running local Jupyter notebooks, agent short-term memory, or small RAG apps where spinning up a full database server is unnecessary overhead.",
+      "recap": "Chroma and FAISS are great for local dev and lightweight agent memory."
+    },
+    {
+      "body": "Crucially: the choice of vector database rarely affects the *quality* of your retrieval. Quality is dictated entirely by your chunking strategy and your embedding model. The database choice only affects operations, latency at scale, and architecture.",
+      "recap": "Vector DBs do not 'understand' text. Changing DBs won't make the AI smarter."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "pgvector: vectors living next to relational data",
+      "language": "sql",
+      "code": "CREATE TABLE documents (\n    id SERIAL PRIMARY KEY,\n    user_id INT,\n    content TEXT,\n    embedding vector(1536)\n);\n\n-- Hybrid query: Exact metadata match AND semantic search\nSELECT content \nFROM documents \nWHERE user_id = 42 \nORDER BY embedding <=> :query_vec \nLIMIT 5;",
+      "explanation": "With pgvector, semantic search is just another clause in your SQL query. You get robust relational filtering (`WHERE user_id = 42`) for free without keeping two separate databases in sync."
+    },
+    {
+      "title": "Pinecone: specialized SaaS API",
+      "language": "python",
+      "code": "from pinecone import Pinecone\npc = Pinecone(api_key=\"...\")\nindex = pc.Index(\"docs-index\")\n\n# Querying via REST API (abstracted by the SDK)\nresponse = index.query(\n    vector=query_vec, \n    top_k=5, \n    include_metadata=True,\n    filter={\"user_id\": {\"$eq\": 42}}\n)",
+      "explanation": "Specialized vector databases use NoSQL-like JSON filters. They scale to billions of vectors effortlessly but require you to securely replicate your metadata (like `user_id`) into their systems."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Over-architecting early",
+      "explanation": "Many teams adopt a brand new specialized vector database when they only have 100,000 documents. If they already use Postgres, `pgvector` would have saved them weeks of data-syncing headaches."
+    },
+    {
+      "title": "Believing the database improves AI quality",
+      "explanation": "Thinking that switching from Chroma to Pinecone will make the RAG answers more accurate. It won't. The database just does math; the 'intelligence' lives upstream in the embedding model."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary architectural advantage of using pgvector over a specialized vector database like Pinecone?",
+      "tier": "tier1",
+      "answer": "pgvector lives inside Postgres, meaning your vectors sit in the same rows as your relational data. You can perform standard SQL joins, ACID transactions, and exact filtering without syncing data to a separate system."
+    },
+    {
+      "q": "What dictates the quality (relevance) of the retrieved results\u2014the vector database you choose, or the embedding model?",
+      "tier": "tier1",
+      "answer": "The embedding model (and your chunking strategy). The vector database just performs fast geometry; it does not understand meaning."
+    },
+    {
+      "q": "When would you choose a lightweight library like Chroma or FAISS?",
+      "tier": "tier2",
+      "answer": "For local prototyping, Jupyter notebooks, or short-term agent memory where standing up a full database server is unnecessary overhead."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your team is building a RAG feature for a multi-tenant SaaS application that already uses Postgres. A developer proposes adding a Pinecone cluster to handle the vector search. What architectural tradeoffs should you raise?",
+      "company": "RAG system design",
+      "answer": "Adding Pinecone introduces a distributed data problem. You must now keep document metadata, permissions, and tenant boundaries synchronized between Postgres and Pinecone. Using pgvector inside the existing Postgres database avoids this sync issue and allows applying strict `tenant_id` WHERE clauses directly in SQL.",
+      "approach": "Highlight data synchronization and architecture complexity. Vector databases aren't magic\u2014they are infrastructure."
+    },
+    {
+      "question": "A user complains that the RAG bot is returning irrelevant answers. Your CTO suggests migrating from pgvector to Qdrant to 'improve the AI's understanding.' Is this a valid solution?",
+      "company": "GenAI Engineer interview",
+      "answer": "No. Vector databases do not understand text; they only execute fast mathematical distance calculations on numbers. Migrating databases will not improve relevance. To improve relevance, you must improve the embedding model, the chunking strategy, or add reranking.",
+      "approach": "Disambiguate infrastructure from AI capability. The vector store is just a geometry engine."
+    }
+  ],
+  "sources": [
+    "https://example.com/vector-dbs"
+  ]
+}

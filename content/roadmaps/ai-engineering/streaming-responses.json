@@ -1,0 +1,113 @@
+{
+  "slug": "streaming-responses",
+  "title": "Streaming Responses",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 12,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["chat-completions-api"],
+    "unlocks": [],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "Your LLM pipeline takes 8 seconds to generate a 400-token answer. Users see a blank screen for 8 seconds, then the full answer appears at once. They assume the app is broken and hit refresh.",
+    "question": "How does ChatGPT show tokens appearing one by one, cutting the perceived wait from 8 seconds to near-zero?"
+  },
+  "mental_model": {
+    "intuition": "Streaming is the API sending you tokens as they are generated, instead of waiting to wrap everything up first.",
+    "description": "A language model generates text token by token — it doesn't 'write the whole answer then send it'. Without streaming, the API buffers all tokens and sends one big response when generation completes. With streaming=True, the API opens a long-lived HTTP connection and sends each token (or small chunk) the moment it's ready. Your app can render it to the user immediately — same total generation time, radically better perceived responsiveness."
+  },
+  "sections": [
+    {
+      "body": "Without streaming: the model generates 400 tokens over 8 seconds; the API buffers everything; you wait 8 seconds; the full text arrives at once. With streaming: the API sends a Server-Sent Events (SSE) stream; you receive tokens as they arrive — the first token might reach you in 200ms. Total generation time is identical, but users start reading immediately.",
+      "animation": {
+        "type": "sequence",
+        "actors": [
+          { "id": "model", "label": "Model (GPU)" },
+          { "id": "api", "label": "API Server" },
+          { "id": "app", "label": "Your App" },
+          { "id": "ui", "label": "User UI" }
+        ],
+        "steps": [
+          { "from": "model", "to": "api", "label": "token 1 generated", "term": "chunk" },
+          { "from": "api", "to": "app", "label": "SSE chunk arrives", "term": "stream" },
+          { "from": "app", "to": "ui", "label": "render token immediately", "term": "progressive render" },
+          { "from": "model", "to": "api", "label": "...400 more tokens...", "term": "chunk" },
+          { "from": "api", "to": "app", "label": "finish_reason='stop'", "term": "stream end" }
+        ]
+      },
+      "recap": "Streaming = same compute time, tokens arrive progressively — first token in ~200ms instead of 8s."
+    },
+    {
+      "body": "Each SSE chunk is a delta — not the full text so far, but just the new piece. You accumulate them into a growing string. The stream ends when a chunk's finish_reason is 'stop' (or 'length', 'tool_calls'). Until then, finish_reason is None. Critically: the usage object (total tokens billed) is only available on the LAST chunk — you cannot count tokens mid-stream without tiktoken.",
+      "recap": "Chunks are deltas. Accumulate them. finish_reason on last chunk only."
+    },
+    {
+      "body": "When NOT to stream: if your pipeline needs the complete answer to decide what to do next (e.g. parse JSON, route based on classification result), streaming adds complexity with no benefit. Stream for user-facing text output; don't stream for programmatic processing where you'll parse the full response anyway.",
+      "recap": "Stream for user-facing output. Skip streaming for pipeline steps that parse the full response."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Basic streaming — print tokens as they arrive",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nstream = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role': 'user', 'content': 'Explain gradient descent in simple terms.'}],\n    max_tokens=300,\n    stream=True,    # <-- the only change from a normal call\n)\n\nfor chunk in stream:\n    delta = chunk.choices[0].delta.content\n    if delta:                     # last chunk has delta=None\n        print(delta, end='', flush=True)\n\nprint()  # newline after stream ends",
+      "explanation": "stream=True turns the return value from a response object into an iterator. delta.content is the new text piece — it can be None on the last chunk (which carries the finish_reason). The flush=True makes tokens appear immediately instead of buffering in the terminal."
+    },
+    {
+      "title": "Accumulate the full text and get token usage",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nstream = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role': 'user', 'content': 'List 5 Python best practices.'}],\n    max_tokens=400,\n    stream=True,\n    stream_options={'include_usage': True},  # request usage in final chunk\n)\n\nfull_text = []\nfor chunk in stream:\n    delta = chunk.choices[0].delta.content\n    if delta:\n        full_text.append(delta)\n        print(delta, end='', flush=True)  # stream to user\n    if chunk.usage:                        # last chunk only\n        print(f'\\nTotal tokens: {chunk.usage.total_tokens}')\n\ncomplete = ''.join(full_text)  # now parse / store the complete answer",
+      "explanation": "stream_options={'include_usage': True} appends a final chunk with token counts — otherwise usage is None for all chunks. This is the production pattern: stream to the user AND log costs by accumulating the final usage object."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Trying to parse JSON from a streaming response mid-stream",
+      "explanation": "A streaming chunk is a fragment — '{'role': 'a' may arrive across three chunks. JSON is only valid once the full string is assembled. If you need JSON output, either disable streaming or accumulate the full text first, then parse."
+    },
+    {
+      "title": "Not handling delta.content = None on the final chunk",
+      "explanation": "The last SSE chunk carries finish_reason but has delta.content = None. Concatenating None into your string will raise a TypeError or produce 'None' in the output. Always guard with: if delta: before appending."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Does streaming reduce the total time the model takes to generate a response?",
+      "answer": "No — total generation time is identical. Streaming reduces perceived latency by delivering the first tokens to the user in ~200ms instead of waiting for the full response.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When is it better NOT to use streaming?",
+      "answer": "When the full response needs to be parsed programmatically (JSON, routing logic, classification) — streaming adds complexity with no UX benefit for non-user-facing pipeline steps.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you get token usage counts when streaming?",
+      "answer": "Pass stream_options={'include_usage': True}. The usage object is appended to the final chunk — it is None on all preceding chunks.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You enable streaming for your RAG pipeline's answer-generation step. After the change, your downstream citation-extraction code starts failing intermittently. Why?",
+      "company": "GenAI Engineer interview",
+      "answer": "Citation extraction reads the full text to find patterns like [1], [2]. With streaming enabled, if the code tries to parse the response before the full text has accumulated (e.g. after the first few chunks), the text is incomplete and the parser fails or finds partial citations. Fix: accumulate the full streamed text first, then pass it to the citation extractor — or disable streaming for this pipeline step.",
+      "approach": "Identify the streaming-vs-parsing mismatch. Streaming is for user-facing output; programmatic parsing needs the full string."
+    },
+    {
+      "question": "A user sees the streaming output suddenly stop mid-sentence with no error shown. What are two likely causes?",
+      "company": "LLM Engineer OA",
+      "answer": "1) max_tokens hit: finish_reason='length' — the model was truncated. 2) A network timeout dropped the SSE connection mid-stream. Fix for (1): increase max_tokens or summarize the prompt. Fix for (2): implement reconnect logic or catch the stream interruption and retry from scratch.",
+      "approach": "Two root causes: model-side truncation (finish_reason='length') vs network-side connection drop. Check finish_reason on the final chunk to distinguish them."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/api-reference/streaming",
+    "https://platform.openai.com/docs/guides/streaming"
+  ]
+}

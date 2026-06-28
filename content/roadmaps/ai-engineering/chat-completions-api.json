@@ -1,0 +1,111 @@
+{
+  "slug": "chat-completions-api",
+  "title": "Chat Completions API",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 12,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["completion-vs-chat-models"],
+    "unlocks": ["streaming-responses", "structured-output-json-mode", "rate-limits-and-retries", "zero-shot-vs-few-shot"],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "You copy an LLM code example from a blog post. The API call shape looks slightly different from what you see in the docs. Now there are three different ways 'on the internet' to call GPT — which one is actually current?",
+    "question": "What is the canonical shape of a chat completions call, and which response fields matter?"
+  },
+  "mental_model": {
+    "intuition": "One function call with a messages list in, one message object out. Everything else — streaming, tools, structured output — is a parameter on top of this single shape.",
+    "description": "The chat completions API is the single interface for almost all LLM work: text generation, extraction, classification, agents, RAG answer generation. It takes a list of role-tagged messages, sends them to a model, and returns the model's reply as another message object. Mastering this shape means every other feature (streaming, tools, JSON mode) is just one more parameter."
+  },
+  "sections": [
+    {
+      "body": "The request has three required things: a model name, a messages list, and your API key (passed via the client). The messages list is ordered: system first (optional but standard), then alternating user/assistant turns. Every call is stateless — you re-send the full history each time. The model sees only what's in this list.",
+      "recap": "Request: model + messages[]. Stateless — full history re-sent every call."
+    },
+    {
+      "body": "The response object has a predictable shape. choices[0].message.content is the text you want. choices[0].finish_reason tells you why generation stopped: 'stop' means the model finished naturally; 'length' means you hit max_tokens; 'tool_calls' means the model wants to call a tool. usage.total_tokens is what you were billed. Ignore everything else for 90% of use cases.",
+      "recap": "Response: choices[0].message.content = text. finish_reason + usage.total_tokens are the two other useful fields."
+    },
+    {
+      "body": "The key optional parameters: max_tokens caps the output length (set this — uncapped outputs can be very long and expensive). temperature controls randomness (0 for factual, 0.7 for creative). n=2 gets you two independent completions for the same prompt (doubles the cost). response_format={type: 'json_object'} asks for JSON — but doesn't validate schema (more on that in the structured-output node).",
+      "recap": "Always set max_tokens. Temperature and response_format are the two other everyday levers."
+    },
+    {
+      "body": "Error handling is non-negotiable in production. The API returns HTTP errors: 400 (bad request — your messages[] list is malformed or over the context limit), 401 (bad API key), 429 (rate limit — back off and retry), 500/503 (server error — retry with backoff). The openai SDK raises typed exceptions; catch them specifically rather than swallowing all errors.",
+      "recap": "Catch 400 (your bug), 429 (rate limit — retry), 500 (server — retry). Never swallow all errors."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The minimal canonical call — learn this shape cold",
+      "language": "python",
+      "code": "from openai import OpenAI\n\nclient = OpenAI()  # reads OPENAI_API_KEY from env\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'You are a concise assistant.'},\n        {'role': 'user',   'content': 'What is idempotency in REST APIs?'},\n    ],\n    max_tokens=200,    # always cap output length\n    temperature=0.2,   # factual task — lean deterministic\n)\n\ntext = response.choices[0].message.content\nprint(text)",
+      "explanation": "This is the shape every other feature builds on. Note: OPENAI_API_KEY is read from the environment — never hardcode keys. max_tokens prevents runaway expensive completions. The response's .content is a plain string."
+    },
+    {
+      "title": "Inspect what you were billed and why the model stopped",
+      "language": "python",
+      "code": "response = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role': 'user', 'content': 'List 50 countries in Europe.'}],\n    max_tokens=100,   # intentionally short to demo truncation\n)\n\nprint(response.choices[0].finish_reason)   # 'length' — hit max_tokens, not done\nprint(response.usage.prompt_tokens)        # tokens in the input\nprint(response.usage.completion_tokens)    # tokens in the output\nprint(response.usage.total_tokens)         # what you're billed",
+      "explanation": "finish_reason='length' means the model was cut off mid-answer — increase max_tokens or redesign the prompt. finish_reason='stop' means it finished naturally. Always log usage.total_tokens in production to detect runaway costs."
+    },
+    {
+      "title": "Production wrapper: error handling + basic retry",
+      "language": "python",
+      "code": "import time\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef call_with_retry(messages: list[dict], retries=3) -> str:\n    for attempt in range(retries):\n        try:\n            resp = client.chat.completions.create(\n                model='gpt-4o',\n                messages=messages,\n                max_tokens=500,\n            )\n            return resp.choices[0].message.content\n        except RateLimitError:\n            wait = 2 ** attempt          # 1s, 2s, 4s\n            print(f'Rate limited — waiting {wait}s')\n            time.sleep(wait)\n        except APIStatusError as e:\n            if e.status_code >= 500:     # server error — retry\n                time.sleep(2 ** attempt)\n            else:\n                raise                    # 400/401 — our bug, don't retry\n    raise RuntimeError('Max retries exceeded')",
+      "explanation": "Exponential backoff on 429 and 5xx is standard practice. Never retry 4xx (except 429) — those are client errors that won't fix themselves. The openai SDK exposes typed exception classes so you can target specific errors without catching everything."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Not setting max_tokens",
+      "explanation": "Without max_tokens the model can generate a very long response, which is slow and expensive. For tasks where you know the output size (classification = 1 word, summary = 3 sentences), cap it aggressively."
+    },
+    {
+      "title": "Checking response.choices[0].text instead of .message.content",
+      "explanation": "The .text field is from the old /v1/completions endpoint. The chat completions response has response.choices[0].message.content. Using the wrong field returns None or AttributeError."
+    },
+    {
+      "title": "Retrying on 400 errors",
+      "explanation": "A 400 (context_length_exceeded, invalid messages) is your code's fault — retrying won't fix it and wastes quota. Only retry 429 (rate limit) and 5xx (server errors)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the three required elements of a chat completions API call?",
+      "answer": "model name, messages[] list, and API key (via client). Everything else — max_tokens, temperature, tools — is optional.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does finish_reason='length' mean and how do you fix it?",
+      "answer": "The model hit the max_tokens cap and was cut off mid-answer. Fix: increase max_tokens or redesign the prompt to elicit a shorter answer.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which HTTP status codes should trigger a retry, and which should not?",
+      "answer": "Retry: 429 (rate limit) and 5xx (server errors) with exponential backoff. Do NOT retry 400 (bad request — your bug) or 401 (bad key).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A production LLM pipeline occasionally returns None for the response text. Logs show no exceptions were raised. What are two likely causes?",
+      "company": "GenAI Engineer interview",
+      "answer": "1) Code is reading response.choices[0].text (old completions field) instead of response.choices[0].message.content — returns None silently. 2) The model returned a tool_call response instead of a text response (finish_reason='tool_calls') — message.content is None when the model wants to call a tool. Fix: check finish_reason before reading content.",
+      "approach": "Two classic None sources: wrong field name (text vs message.content) and tool_calls finish_reason. Check finish_reason defensively."
+    },
+    {
+      "question": "Your pipeline's average response time doubles overnight. Token usage looks the same. What API parameter might explain this?",
+      "company": "LLM Engineer OA",
+      "answer": "max_tokens was likely removed or increased dramatically. Without a cap, the model can generate very long responses on some inputs — even if the average token count looks normal, a few long-tail responses inflate latency. Check max_tokens is set and appropriate for the task.",
+      "approach": "Latency for LLMs scales with output tokens, not just input. Missing max_tokens is the most common cause of sudden latency spikes on text generation tasks."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/api-reference/chat/create",
+    "https://platform.openai.com/docs/guides/error-codes"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "slug": "metadata-filtering",
+  "title": "Metadata Filtering",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 12,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "embed-and-retrieve-top-k"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "RAG system design",
+      "GenAI Engineer interview"
+    ]
+  },
+  "hook": {
+    "scenario": "A user asks 'What's the status of the Acme project?'. A pure semantic search returns chunks about the *Alpha* project, simply because both projects use similar words like 'Q3 milestones' and 'budget'.",
+    "question": "How do you enforce hard rules ('only Acme docs') inside a fuzzy semantic search?"
+  },
+  "mental_model": {
+    "intuition": "Filter by exact rules first, then search by meaning second.",
+    "description": "Vector search only understands semantic closeness, not hard boundaries. If you need strict rules like 'only documents from 2024' or 'tenant_id = 5', semantic fuzziness becomes a bug. Metadata filtering combines a strict database WHERE clause with vector similarity, guaranteeing the semantic search only runs over permitted documents."
+  },
+  "sections": [
+    {
+      "body": "Vector search is fundamentally fuzzy. If you search for 'red shirt', it might retrieve a 'pink shirt' because the meanings are close in vector space. But if a user clicks a UI checkbox for `category = red`, returning pink is a logic bug. You need hard boundaries.",
+      "recap": "Semantic search cannot natively enforce strict boolean rules."
+    },
+    {
+      "body": "To fix this, you attach **metadata**\u2014structured tags like `author`, `date`, `category`, or `tenant_id`\u2014to each text chunk when you ingest it into the vector database.",
+      "recap": "Store structured tags alongside every embedded chunk."
+    },
+    {
+      "body": "At query time, you apply a **metadata filter**. The database applies a strict boolean filter to the tags, and *only* calculates vector similarity on the chunks that pass that filter. It completely ignores chunks that violate the rule.",
+      "recap": "Query time: apply a strict filter, then perform vector search on the remainder."
+    },
+    {
+      "body": "Where this happens matters. **Pre-filtering** applies the rule *before* the vector search, guaranteeing you still get your full `k` results. **Post-filtering** does vector search first (grabs top 5), then drops invalid results in application code. Post-filtering is dangerous because if all 5 fail the filter, you are left with zero results.",
+      "recap": "Always prefer pre-filtering so you don't accidentally filter away your entire context."
+    },
+    {
+      "body": "In multi-tenant RAG (like a B2B SaaS app), metadata filtering on `tenant_id` is an absolute security requirement. Without it, semantic search will bleed one customer's private data into another customer's answers just because the vectors were close.",
+      "recap": "Metadata filtering is the foundation of data security in RAG."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "pgvector: strict relational filtering + semantic search",
+      "language": "sql",
+      "code": "SELECT chunk_text \nFROM documents \nWHERE tenant_id = 42           -- 1. The hard metadata filter\n  AND created_at > '2024-01-01'\nORDER BY embedding <=> :qvec   -- 2. The semantic search\nLIMIT 5;",
+      "explanation": "pgvector handles filtering elegantly. The standard SQL WHERE clause enforces the hard boundaries (pre-filtering), and the ORDER BY handles the semantic vector search. The Postgres query planner optimizes the execution."
+    },
+    {
+      "title": "Pinecone: metadata filtering via JSON payload",
+      "language": "python",
+      "code": "response = index.query(\n    vector=query_vec,\n    top_k=5,\n    filter={                     # The hard metadata filter\n        \"tenant_id\": {\"$eq\": 42},\n        \"year\": {\"$gte\": 2024}\n    }\n)",
+      "explanation": "Dedicated vector databases use NoSQL-like filter objects. The database engine applies this filter during the ANN index traversal, ensuring you always get exactly 5 permitted results."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Relying on the LLM for access control",
+      "explanation": "Passing unauthorized documents in the context window and adding a prompt like 'Only answer using Acme docs'. The LLM will eventually ignore the instruction and leak the data. Access control must happen via hard metadata filters at the database level."
+    },
+    {
+      "title": "Post-filtering in Python",
+      "explanation": "Querying the vector DB for the top 10 results, then writing a Python loop to drop the ones from the wrong year. If none of those 10 happen to be from the right year, you pass zero context to the LLM. Push the filter down to the database."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the purpose of metadata filtering in a vector database?",
+      "tier": "tier1",
+      "answer": "To enforce strict boolean rules (like dates, categories, or tenant boundaries) alongside fuzzy semantic search, ensuring the search only runs over permitted documents."
+    },
+    {
+      "q": "What is the difference between pre-filtering and post-filtering, and which is better?",
+      "tier": "tier2",
+      "answer": "Pre-filtering applies the rule inside the database before/during the vector search, guaranteeing you get `k` valid results. Post-filtering fetches `k` results and filters them in app code, which risks leaving you with 0 results. Pre-filtering is almost always better."
+    },
+    {
+      "q": "Why is metadata filtering critical for security in multi-tenant RAG applications?",
+      "tier": "tier2",
+      "answer": "Because vector similarity completely ignores data ownership. Without a hard filter on `tenant_id`, a user's query could retrieve and leak highly relevant private data belonging to a different customer."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A user in your SaaS application asks a question and the RAG bot replies with confidential data belonging to a completely different customer. How did this happen, and how do you fix it?",
+      "company": "RAG system design",
+      "answer": "The system performed a global vector search without enforcing tenant boundaries. The vectors from the other customer were mathematically closest to the query. To fix it, you must add a hard metadata filter (e.g., `WHERE tenant_id = ?`) to the database query so the semantic search only evaluates the current user's documents.",
+      "approach": "Recognize that vector similarity has no concept of permissions. Identify metadata filtering as the standard architectural fix for multi-tenant data isolation."
+    },
+    {
+      "question": "You retrieve the top 5 semantic results from your vector database. In your Python code, you filter out any documents older than 2024. Users are complaining that the bot frequently replies 'I don't have enough context to answer that'. What is the bug?",
+      "company": "GenAI Engineer interview",
+      "answer": "You are post-filtering. If the top 5 closest semantic matches all happen to be from 2023, your Python code filters all of them out, leaving 0 chunks to send to the LLM. You must push the date filter down into the vector database query (pre-filtering) so the database continues searching until it finds 5 valid matches.",
+      "approach": "Identify the critical flaw of post-filtering (result starvation) and advocate for pushing filters into the query tier."
+    }
+  ],
+  "sources": [
+    "https://example.com/vector-dbs"
+  ]
+}

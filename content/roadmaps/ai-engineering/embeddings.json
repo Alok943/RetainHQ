@@ -1,0 +1,140 @@
+{
+  "slug": "embeddings",
+  "title": "Embeddings",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 16,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["tokens-and-tokenization"],
+    "unlocks": ["grounding-with-retrieval", "similarity-metrics", "embed-and-retrieve-top-k"],
+    "appears_in": ["GenAI Engineer interview", "RAG system design", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "A user asks your support bot 'how do I recover my account?' Your docs contain a paragraph titled 'Password Reset Steps'. No word matches — 'recover', 'account' vs 'password', 'reset'. A keyword search returns nothing. The question goes unanswered.",
+    "question": "How do you make a computer find semantically similar text without a single shared keyword?"
+  },
+  "mental_model": {
+    "intuition": "An embedding is a GPS coordinate for meaning — every piece of text is a point in space, and texts that mean similar things sit close together.",
+    "description": "An embedding model takes text as input and outputs a list of ~1,500 floats (a vector). The model was trained so that text with similar meaning produces vectors pointing in nearly the same direction. 'reset my password' and 'recover my account' end up very close in this space even though they share no words. 'today's invoice total' lands far away because it means something different. The vector is the meaning, encoded as geometry."
+  },
+  "illustration": {
+    "asset": "ai-engineering/embeddings/meaning-as-coordinates.png",
+    "alt": "Three sentences embedded as points; the two similar ones sit close, the unrelated one far."
+  },
+  "sections": [
+    {
+      "body": "Picture a vast multi-dimensional space — not 2D or 3D, but 1,536 dimensions (for text-embedding-3-small). Each dimension encodes some abstract feature of meaning that no human ever explicitly defined. The embedding model learned these dimensions from billions of text examples: it discovered that texts with similar semantics should land near each other, and dissimilar ones far apart.",
+      "recap": "Embedding space: each dimension = one learned axis of meaning; similar text = nearby points."
+    },
+    {
+      "body": "Why not just search for keywords? Keywords break on synonyms ('buy' vs 'purchase'), abbreviations, typos, and paraphrases — all the normal ways humans express the same idea differently. Semantic search via embeddings doesn't care about the specific words; it encodes meaning directly. Two sentences with zero word overlap can be neighbors in embedding space if they mean the same thing.",
+      "animation": {
+        "type": "vector-space",
+        "clusters": [
+          { "label": "Password / Account", "color": "teal" },
+          { "label": "Billing / Invoice", "color": "amber" },
+          { "label": "API / Developer", "color": "cyan" }
+        ],
+        "query": { "label": "recover my account", "near": "Password / Account" },
+        "k": 3
+      },
+      "recap": "Embeddings capture meaning, not words — semantic neighbors without keyword overlap."
+    },
+    {
+      "body": "Calling the embedding API is simple: pass a string, receive a vector. What matters: 1) the model is a 'black box' — you don't control what each dimension means, only that similar text lands close. 2) The vector has no inherent meaning alone — it only has meaning in comparison to other vectors from the SAME model. 3) Vectors from different embedding models are INCOMPATIBLE — like GPS coordinates in different projection systems.",
+      "recap": "Vectors are meaningful only in comparison to other vectors from the SAME model."
+    },
+    {
+      "body": "Two embeddings models are widely used today. text-embedding-3-small: 1,536 dimensions, cheaper, fast — the default for most RAG applications. text-embedding-3-large: 3,072 dimensions, better quality for complex semantic tasks, ~2× the cost. Both use the same API call shape. You choose at ingest time and must use the same model at query time — FOREVER, until you re-embed your entire corpus.",
+      "recap": "Pick your embedding model at ingest time and commit — mixing models silently breaks retrieval."
+    },
+    {
+      "body": "The deepest surprise: the embedding model does not understand English. It is a pure number machine — it maps a token sequence to a float vector. ALL the 'understanding' lives in the pattern of numbers, learned from training. The vector store that holds billions of these vectors understands even less. It's just comparing lists of numbers with fast math. Yet from this — pure arithmetic on learned patterns — emerges something that looks startlingly like semantic understanding.",
+      "recap": "Embeddings sit at the heart of RAG, similarity search, clustering, and semantic deduplication — any task where 'close in meaning' matters."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Get an embedding vector for a piece of text",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\ndef embed(text: str, model='text-embedding-3-small') -> list[float]:\n    resp = client.embeddings.create(model=model, input=text)\n    return resp.data[0].embedding  # list of 1,536 floats\n\nvec = embed('How do I recover my account?')\nprint(len(vec))   # 1536\nprint(vec[:4])    # [-0.021, 0.043, -0.011, 0.067, ...]  — opaque numbers",
+      "explanation": "The output is just a Python list of floats. You cannot read meaning from the numbers directly — they're only meaningful when compared to other vectors from the same model. The dimensions encode semantic features the model learned from training data."
+    },
+    {
+      "title": "Measure semantic similarity with cosine similarity",
+      "language": "python",
+      "code": "import numpy as np\n\ndef cosine_similarity(a: list[float], b: list[float]) -> float:\n    a, b = np.array(a), np.array(b)\n    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))\n\n# Same meaning → close to 1.0\nv1 = embed('How do I reset my password?')\nv2 = embed('Steps to recover your account')\nv3 = embed('What is the capital of France?')\n\nprint(cosine_similarity(v1, v2))  # ~0.92  — semantically close\nprint(cosine_similarity(v1, v3))  # ~0.73  — semantically distant",
+      "explanation": "Cosine similarity measures the angle between two vectors — 1.0 means identical direction (same meaning), 0 means perpendicular (unrelated). For normalised OpenAI embeddings, cosine similarity and dot product give the same result. This is the operation the vector store does millions of times per second."
+    },
+    {
+      "title": "Embed a batch of texts efficiently (the ingest pattern)",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nchunks = [\n    'Password reset steps for your account.',\n    'How to view your invoice history.',\n    'Getting started with the REST API.',\n    # ... up to 2048 strings per call\n]\n\nresp = client.embeddings.create(\n    model='text-embedding-3-small',\n    input=chunks,  # pass a list — one API call for all chunks\n)\n\n# Pair each chunk with its vector\npairs = [(chunk, r.embedding) for chunk, r in zip(chunks, resp.data)]\nprint(f'Embedded {len(pairs)} chunks in one API call')",
+      "explanation": "The API accepts a list of up to 2,048 inputs per call. Always batch your ingest — calling the API once per chunk is 100× slower and more expensive than batching. The response preserves input order, so zipping chunks with resp.data is safe."
+    }
+  ],
+  "key_points": [
+    { "title": "Same model both sides", "detail": "Embedding model must be identical for all chunks AND for every query — mixing models makes vectors incomparable." },
+    { "title": "1,536 or 3,072 dimensions", "detail": "text-embedding-3-small = 1,536 dims (default, cheapest). text-embedding-3-large = 3,072 dims (higher quality, 2× cost)." },
+    { "title": "Cosine = direction, not distance", "detail": "Similarity is the angle between vectors; 1 = same direction / same meaning, 0 = perpendicular / unrelated." },
+    { "title": "Batch at ingest time", "detail": "Pass a list of up to 2,048 chunks per API call — not one chunk per call." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using different embedding models for chunks vs queries",
+      "explanation": "Vectors from different models are in different coordinate spaces. Cosine similarity between them produces plausible-looking numbers that mean nothing — retrieval silently returns garbage, with no error thrown."
+    },
+    {
+      "title": "Embedding one chunk per API call",
+      "explanation": "The embeddings API accepts up to 2,048 inputs per call. Calling it in a loop — once per chunk — is 100× slower and wastes your rate-limit quota. Always batch."
+    },
+    {
+      "title": "Treating a high cosine score as a guarantee of correctness",
+      "explanation": "A similarity score of 0.93 means the vectors point in a similar direction — not that the chunk actually answers the question. Embeddings encode surface semantic patterns; they don't reason. Nearest ≠ correct."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does an embedding vector actually represent?",
+      "answer": "A list of floats where the direction encodes the text's semantic meaning — texts with similar meaning have vectors pointing in nearly the same direction, regardless of exact wording.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must you use the same embedding model for both chunks and queries?",
+      "answer": "Embedding vectors are only comparable within the same model's space. Vectors from different models live in different coordinate systems — cosine similarity between them is meaningless.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between text-embedding-3-small and text-embedding-3-large?",
+      "answer": "3-small: 1,536 dimensions, cheaper, fast — fine for most RAG use cases. 3-large: 3,072 dimensions, higher quality for complex tasks, ~2× cost.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does a cosine similarity of 0.92 between two embedding vectors mean?",
+      "answer": "The vectors point in nearly the same direction — the two texts are semantically very similar. It does NOT guarantee the text actually answers the question correctly.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You built a RAG system last year using text-embedding-3-small. Now you want to upgrade to text-embedding-3-large for better quality. What must you do beyond changing the query call?",
+      "company": "RAG system design",
+      "answer": "Re-embed the ENTIRE document corpus with text-embedding-3-large and rebuild the vector index. Vectors from 3-small and 3-large are in different spaces — querying with a 3-large vector against a 3-small index silently returns garbage. There is no shortcut: mixing models breaks the 'same model both sides' invariant.",
+      "approach": "Emphasise the same-model invariant. The migration cost (re-embedding the whole corpus) is the correct answer — not 'just change the query model'."
+    },
+    {
+      "question": "A user complains the support bot can't find answers that clearly exist in the docs. You check the vector similarity scores — the best match for the user's query is 0.71. What are two likely root causes?",
+      "company": "GenAI Engineer interview",
+      "answer": "1) Chunking mismatch: chunks are too large (averaging over diverse content, diluting the signal for any specific topic) or too small (missing context). 2) Embedding model quality: text-embedding-3-small may underperform on domain-specific vocabulary not well-represented in its training data. Secondary causes: wrong embedding model used (model mismatch), or the docs simply don't contain the answer.",
+      "approach": "Low similarity scores point upstream — to chunking or the embedding model — not to the vector search itself. Name the two knobs (chunk size, model choice) and the model-mismatch bug."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/embeddings",
+    "https://platform.openai.com/docs/models/text-embedding-3-small"
+  ]
+}

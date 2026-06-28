@@ -1,0 +1,121 @@
+{
+  "slug": "evaluation-and-test-sets",
+  "title": "Evaluation & Test Sets",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["rag-evaluation"],
+    "unlocks": [],
+    "appears_in": ["GenAI / LLM Engineer interview", "AI systems design"]
+  },
+  "hook": {
+    "scenario": "You tweak the system prompt to make the bot more concise. It works beautifully on your three test queries. You deploy it, and suddenly the bot refuses to answer complex questions at all, saying 'I must be concise'.",
+    "question": "How do you know if a prompt change actually improved the system, or just broke things you forgot to check?"
+  },
+  "mental_model": {
+    "intuition": "Evaluation is unit testing for vibes. It turns 'looks good to me' into a hard number.",
+    "description": "Standard code either works or crashes. LLM outputs exist on a spectrum of 'good enough'. Evaluation is the process of building a golden dataset of (input, expected_output) pairs, and running every prompt change against it to score the results. Since you can't assert exact string matches on LLM text, you often use a stronger LLM as a 'judge' to score the new outputs."
+  },
+  "sections": [
+    {
+      "body": "When you build an AI app, your first instinct is to 'vibe check' — run a few prompts manually and eyeball the results. This doesn't scale. A change that fixes one edge case almost always regresses another. You need an automated way to know if your system got better or worse.",
+      "recap": "Manual testing doesn't scale; prompt changes cause silent regressions."
+    },
+    {
+      "body": "The foundation of evaluation is the 'Golden Dataset'. This is a static list of 50–200 diverse inputs and the ideal behavior or exact facts you expect back. It should cover easy questions, hard multi-step reasoning, and adversarial inputs ('ignore instructions'). Without this dataset, you have nothing to measure against.",
+      "recap": "A golden dataset of inputs and expected facts is your ground truth."
+    },
+    {
+      "body": "But how do you assert the test passed? If expected is 'Paris' and the model outputs 'The capital is Paris', `output == expected` fails. Standard unit tests break on natural language. Instead, we use 'LLM-as-a-judge': we write a meta-prompt asking a smarter model (like GPT-4o) to grade if the output contains the expected facts.",
+      "recap": "Use a strong LLM to grade if the output logically matches the expected answer."
+    },
+    {
+      "body": "An eval run loops over your dataset, generates the output with your current system, and passes both the output and the golden answer to the Judge LLM. The Judge returns a score (e.g., 0 or 1). You average these scores to get a final metric, like '85% factual accuracy'.",
+      "recap": "Eval run = generate outputs → grade with Judge → aggregate score."
+    },
+    {
+      "body": "You don't just measure accuracy. You can write judges for tone ('is this polite?'), hallucination ('is every claim backed by this chunk?'), or safety ('did it leak the prompt?'). Every time you change a prompt, model, or chunking strategy, you run the evals. If the score drops, you revert.",
+      "recap": "Evaluation turns qualitative vibes into quantitative metrics you can track in CI/CD."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Golden Dataset",
+      "language": "python",
+      "code": "test_set = [\n    {\n        \"input\": \"What is the refund policy?\",\n        \"expected_fact\": \"Refunds are allowed within 30 days of purchase.\"\n    },\n    {\n        \"input\": \"Can I buy a car?\",\n        \"expected_fact\": \"The system must refuse, as we only sell software.\"\n    }\n]",
+      "explanation": "A simple list of dicts. Notice the expected output isn't a rigid string the model must match perfectly; it's the core fact or behavior the judge will look for."
+    },
+    {
+      "title": "LLM-as-a-judge",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\ndef grade_output(question: str, expected: str, actual: str) -> int:\n    prompt = f\"\"\"You are an impartial judge. \n    Question: {question}\n    Expected Fact: {expected}\n    Actual Model Answer: {actual}\n    \n    Does the Actual Answer contain the Expected Fact? \n    Respond with exactly 1 for Yes, or 0 for No.\"\"\"\n    \n    resp = client.chat.completions.create(\n        model=\"gpt-4o\", # The judge should be your smartest model\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n        temperature=0.0\n    )\n    return int(resp.choices[0].message.content.strip())",
+      "explanation": "The judge evaluates the semantic meaning, not the exact characters. We use temperature=0 for deterministic grading. Always use the most capable model available for the judge."
+    },
+    {
+      "title": "The Eval Loop",
+      "language": "python",
+      "code": "def run_evals(test_set, my_agent_func):\n    total_score = 0\n    \n    for item in test_set:\n        # 1. Run your system\n        actual_answer = my_agent_func(item[\"input\"])\n        \n        # 2. Grade the result\n        score = grade_output(\n            item[\"input\"], \n            item[\"expected_fact\"], \n            actual_answer\n        )\n        total_score += score\n        \n    accuracy = total_score / len(test_set)\n    print(f\"Eval completed: {accuracy * 100}% accuracy\")\n    return accuracy",
+      "explanation": "This loop is the heartbeat of AI Engineering. You run this script before deploying any prompt change. If accuracy drops from 95% to 80%, you don't ship."
+    }
+  ],
+  "key_points": [
+    { "title": "Vibes don't scale", "detail": "Manual testing misses regressions. You need automated, repeatable measurements." },
+    { "title": "Golden Dataset", "detail": "A curated, static list of inputs and expected outcomes. It's your anchor." },
+    { "title": "LLM-as-a-judge", "detail": "Using a strong model to grade outputs because exact string matching fails on natural language." },
+    { "title": "Continuous Evaluation", "detail": "Run the dataset on every prompt or pipeline change, treating it like standard CI/CD unit tests." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using string matching for evaluation",
+      "explanation": "Asserting `output == \"Yes\"` is brittle. The model might say \"Yes, I can help\" or \"Absolutely\". String matches will fail perfectly valid answers."
+    },
+    {
+      "title": "Evaluating with a weak model",
+      "explanation": "If your agent runs on GPT-4o-mini, and your judge is ALSO GPT-4o-mini, the judge isn't smart enough to reliably grade complex reasoning. The judge must always be a frontier model."
+    },
+    {
+      "title": "Changing the test set and the prompt at the same time",
+      "explanation": "If you update your golden dataset and your system prompt in the same commit, you can't tell if the score changed because the system got better or the test got easier."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why can't we use standard unit tests (like exact string matching) to evaluate LLM outputs?",
+      "answer": "Because natural language is varied. The model can output a perfectly correct answer using different words, punctuation, or phrasing, which standard string matching would falsely mark as a failure.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is an 'LLM-as-a-judge'?",
+      "answer": "Using a highly capable LLM (like GPT-4o) via a meta-prompt to evaluate and score the output of another model against a predefined expected fact or criteria.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why should the judge model be set to temperature 0?",
+      "answer": "To make the grading as deterministic and reproducible as possible. You want the judge to give the same score every time for the same input.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your team's LLM evaluation pipeline is producing flaky results: the same model output gets a 'pass' on one run and a 'fail' on the next. What are two likely causes and how would you fix them?",
+      "company": "GenAI / LLM Engineer interview",
+      "answer": "1) The judge LLM's temperature is > 0, causing it to grade randomly. Fix: set temperature=0. 2) The judge prompt is ambiguous, confusing the judge. Fix: simplify the judge prompt to output strict binary tokens (e.g., '1' or '0') and provide clear grading rubrics.",
+      "approach": "Identify that flakiness in LLM evals stems from non-determinism in the judge. Point out temperature and prompt clarity as the primary levers."
+    },
+    {
+      "question": "You are building an eval to check if your RAG bot is hallucinating. How would you structure the LLM-as-a-judge prompt?",
+      "company": "AI systems design",
+      "answer": "Pass the retrieved context chunks and the final model answer to the judge. Ask: 'Is every claim in the Actual Answer fully supported by the Provided Context? Answer 1 for Yes, 0 for No.'",
+      "approach": "Show that hallucination evaluation doesn't require a 'Golden Answer', but rather a comparison between the retrieved context and the generated output."
+    }
+  ],
+  "sources": [
+    "https://docs.anthropic.com/en/docs/test-and-evaluate",
+    "https://platform.openai.com/docs/guides/evals"
+  ]
+}

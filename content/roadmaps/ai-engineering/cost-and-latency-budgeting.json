@@ -1,0 +1,101 @@
+{
+  "slug": "cost-and-latency-budgeting",
+  "title": "Cost & Latency Budgeting",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 12,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["tokens-and-tokenization"],
+    "unlocks": ["caching-and-cost-control", "observability-traces-logging"],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "Your RAG chatbot prototype works great. You show it to the team. A product manager asks: 'How much will this cost at 10,000 requests per day?' You realize you've never calculated it.",
+    "question": "How do you estimate and control the token cost and latency of an LLM call before it hits production?"
+  },
+  "mental_model": {
+    "intuition": "Every LLM call is a taxi ride: you pay per token (the meter), and the bigger the car (model tier), the higher the rate. Latency tracks output tokens per second — not model size alone.",
+    "description": "Cost = (prompt_tokens × input_price + completion_tokens × output_price) per million tokens. The two levers: model choice (gpt-4o-mini is ~15× cheaper per token than gpt-4o) and prompt size (smaller prompt + smaller output = linear cost reduction). Latency for LLMs is dominated by output tokens — generating more tokens takes more time regardless of prompt size. Time-to-first-token (TTFT) is a separate metric driven by server load and prompt prefill."
+  },
+  "sections": [
+    {
+      "body": "The pricing formula is simple: cost = input_tokens × input_$/MTok + output_tokens × output_$/MTok. For gpt-4o (mid-2025 pricing): $2.50 per million input tokens, $10.00 per million output tokens. For gpt-4o-mini: $0.15 input / $0.60 output. A 2k-token prompt + 500-token reply on gpt-4o costs about $0.010. The same call on gpt-4o-mini costs about $0.0006. At 10k requests/day that's $100/day vs $6/day.",
+      "recap": "Cost = input tokens × rate + output tokens × rate. Output is priced 4× higher than input on most models."
+    },
+    {
+      "body": "The single most impactful cost decision is model choice. The right model is the SMALLEST one that meets quality requirements for your task. Use gpt-4o-mini for classification, routing, extraction of well-defined fields, and short summarization. Reserve gpt-4o for complex reasoning, long-context tasks, and multimodal. A two-tier setup (mini for 80% of traffic, 4o for the hard 20%) typically cuts costs by 60–80%.",
+      "recap": "Model tier is the biggest lever. Mini for simple tasks; 4o for complex. Never default to 4o for everything."
+    },
+    {
+      "body": "Latency has two components. Time-to-first-token (TTFT): the wait before any output arrives — driven by server load and prompt length (longer prompts take longer to prefill). Tokens-per-second (TPS): the speed of generation — roughly constant per model at a given server load, ~40–80 TPS for gpt-4o. Total latency ≈ TTFT + (output_tokens / TPS). Cutting max_tokens is the most direct latency lever you control.",
+      "recap": "Total latency = TTFT + output_tokens / speed. Limit output tokens to cut tail latency."
+    },
+    {
+      "body": "Prompt compression is the overlooked lever. The most expensive token in a RAG prompt is the system prompt repeated on every call. If your system prompt is 1,000 tokens and you make 10k calls/day, that's 10M tokens of system-prompt cost alone. Techniques: compress the system prompt (fewer words, same intent), use prompt caching (OpenAI's cached input pricing is 50% off for repeated prefixes), and trim retrieved context aggressively.",
+      "recap": "Repeated system prompts are a hidden cost multiplier. Cache or compress them."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Estimate cost before sending a request",
+      "language": "python",
+      "code": "import tiktoken\n\n# Pricing (per million tokens, mid-2025)\nPRICING = {\n    'gpt-4o':       {'input': 2.50,  'output': 10.00},\n    'gpt-4o-mini':  {'input': 0.15,  'output': 0.60},\n}\n\ndef estimate_cost(messages: list[dict], expected_output_tokens: int, model='gpt-4o') -> float:\n    enc = tiktoken.encoding_for_model(model)\n    input_tokens = sum(4 + len(enc.encode(m.get('content', ''))) for m in messages) + 2\n    p = PRICING[model]\n    cost = (input_tokens * p['input'] + expected_output_tokens * p['output']) / 1_000_000\n    return cost\n\nmessages = [\n    {'role': 'system', 'content': 'You are a helpful assistant.'},\n    {'role': 'user',   'content': 'Summarise the following in 3 bullet points: ' + 'x ' * 500},\n]\nprint(f'Estimated cost: ${estimate_cost(messages, 150, \"gpt-4o\"):.5f}')       # ~$0.0040\nprint(f'Estimated cost: ${estimate_cost(messages, 150, \"gpt-4o-mini\"):.5f}')  # ~$0.0002",
+      "explanation": "Run this estimate before choosing a model. For a 1k-token prompt + 150-token reply, gpt-4o costs 20× more than gpt-4o-mini. If mini's quality is acceptable, use it. Build this into your observability pipeline to track actual vs estimated costs per request type."
+    },
+    {
+      "title": "Log actual cost per call from usage object",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nPRICING = {\n    'gpt-4o':       {'input': 2.50, 'output': 10.00},\n    'gpt-4o-mini':  {'input': 0.15, 'output': 0.60},\n}\n\ndef call_and_log(messages: list[dict], model='gpt-4o-mini') -> str:\n    resp = client.chat.completions.create(\n        model=model, messages=messages, max_tokens=300,\n    )\n    usage = resp.usage\n    p = PRICING[model]\n    cost = (usage.prompt_tokens * p['input'] +\n            usage.completion_tokens * p['output']) / 1_000_000\n    print(f'[cost] ${cost:.6f} | in={usage.prompt_tokens} out={usage.completion_tokens} | model={model}')\n    return resp.choices[0].message.content",
+      "explanation": "Log token counts and cost on every production call. This is how you catch runaway prompts: a spike in prompt_tokens means your RAG context is too large; a spike in completion_tokens means max_tokens isn't set. The usage object is the ground truth — always cheaper than Datadog metrics."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using gpt-4o for every task by default",
+      "explanation": "gpt-4o is 15–20× more expensive per token than gpt-4o-mini. For classification, extraction, and short summarization tasks, gpt-4o-mini achieves equivalent quality at a fraction of the cost. Benchmark both before defaulting to the expensive model."
+    },
+    {
+      "title": "Not accounting for output token cost",
+      "explanation": "Output tokens are typically priced 4× higher than input tokens per million. A prompt that asks for a 2,000-word essay pays far more in output cost than in input cost. Setting max_tokens is both a latency and a cost control measure."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the two components of LLM API cost, and which is typically priced higher?",
+      "answer": "Input tokens (prompt) and output tokens (reply). Output tokens are typically priced 4× higher than input tokens per million.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary latency lever you control as an application developer?",
+      "answer": "max_tokens — limiting output length is the most direct way to reduce total generation latency, since latency scales linearly with output tokens generated.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is a repeated system prompt a hidden cost multiplier in high-volume applications?",
+      "answer": "Every API call includes the full system prompt in the input tokens billed. At 10k calls/day, a 1,000-token system prompt alone costs 10M input tokens daily. Caching the prompt prefix (at 50% off) or compressing it reduces this directly.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your team's LLM API bill doubles in a week with no change in user traffic. What are three things you check first?",
+      "company": "GenAI Engineer interview",
+      "answer": "1) prompt_tokens per call — did retrieved context size or system prompt size grow? 2) completion_tokens per call — was max_tokens removed or increased, causing longer outputs? 3) Model tier — did someone switch from gpt-4o-mini to gpt-4o for a high-volume endpoint? Log usage on every call to answer these instantly.",
+      "approach": "Three levers: prompt size, output size, model tier. Frame it as a logging/observability gap — you can't debug cost spikes without per-call usage logging."
+    },
+    {
+      "question": "Design a cost-optimized pipeline for a support chatbot that handles 100k requests/day, where 75% are simple FAQs and 25% are complex multi-step questions.",
+      "company": "LLM Engineer OA",
+      "answer": "Two-tier routing: a cheap classifier (gpt-4o-mini, <50 tokens I/O) labels each request as 'simple' or 'complex'. Simple requests go to gpt-4o-mini with a short answer prompt (max_tokens=200). Complex requests go to gpt-4o with full RAG context. This routes 75k/day to mini (~$0.15/MTok) and 25k/day to gpt-4o (~$2.50/MTok), reducing overall cost by ~70% vs using gpt-4o for everything.",
+      "approach": "The key insight is routing classification — using the cheapest model to triage which calls need the expensive model. Show the math: cost savings scale linearly with the fraction of calls routed to mini."
+    }
+  ],
+  "sources": [
+    "https://openai.com/api/pricing",
+    "https://platform.openai.com/docs/guides/prompt-caching"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "slug": "ann-indexes-hnsw-ivf",
+  "title": "ANN Indexes (HNSW & IVF)",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "similarity-metrics"
+    ],
+    "unlocks": [
+      "pgvector-pinecone-chroma"
+    ],
+    "appears_in": [
+      "RAG system design",
+      "LLM Engineer OA"
+    ]
+  },
+  "hook": {
+    "scenario": "You have 10 million document chunks. To answer one user question, do you calculate the cosine similarity between the query and all 10 million stored vectors? That would take seconds per query.",
+    "question": "How do vector databases find the nearest neighbors in milliseconds without checking every single dot?"
+  },
+  "mental_model": {
+    "intuition": "ANN trades a tiny bit of accuracy for a massive speed boost by building a map that lets you skip checking 99% of the vectors.",
+    "description": "A brute-force scan calculates the exact distance to every vector (Exact kNN). That's too slow at scale. Approximate Nearest Neighbor (ANN) indexes build a map\u2014like a multi-layer highway system (HNSW) or clustered neighborhoods (IVF)\u2014so the search can jump straight to the right area. You might miss the absolute #1 match, but you'll get 99% of the best matches in a fraction of the time."
+  },
+  "sections": [
+    {
+      "body": "A brute-force search (exact kNN) compares your query vector to *every single* stored vector. It guarantees the absolute best match, but scales terribly. If you have 10 million vectors, it does 10 million cosine calculations per query. That's too slow for production.",
+      "recap": "Exact kNN scans everything. Perfect accuracy, terrible speed."
+    },
+    {
+      "body": "To fix this, vector databases use **ANN (Approximate Nearest Neighbor)** indexes. They pre-organize the vectors into structures so you don't have to scan them all. The tradeoff? You might occasionally miss the mathematically closest vector, but you'll find matches that are 'good enough' in milliseconds instead of seconds.",
+      "recap": "ANN skips the vast majority of distance calculations, trading perfect accuracy for massive speed."
+    },
+    {
+      "body": "**HNSW (Hierarchical Navigable Small World)** is the gold-standard ANN algorithm. It builds a multi-layered graph. It starts at a zoomed-out top layer with long 'highway' connections, drops down to denser layers, and navigates node-by-node to the closest match. It's the default in pgvector and Pinecone.",
+      "recap": "HNSW navigates a multi-layer graph to zoom in on the nearest neighbors quickly."
+    },
+    {
+      "body": "**IVF (Inverted File Index)** is another approach. It groups vectors into clusters around a center point (a 'centroid'). When you query, the database only calculates distance against the centroids, picks the closest cluster, and only searches inside that cluster\u2014ignoring the rest of the database entirely.",
+      "recap": "IVF clusters vectors and only searches the closest neighborhood."
+    },
+    {
+      "body": "Because these algorithms are approximate, you control the dials. You can tell the database to search a bit wider (more accurate, slightly slower) or narrower (less accurate, much faster). For RAG, 'approximate' retrieval is perfectly acceptable.",
+      "recap": "Pipeline recap: The ANN index is the engine inside your Vector Database making the Embed \u2192 Retrieve step millisecond-fast at scale."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Building an HNSW index in pgvector",
+      "language": "sql",
+      "code": "CREATE INDEX ON documents \nUSING hnsw (embedding vector_cosine_ops)\nWITH (m = 16, ef_construction = 64);",
+      "explanation": "You must explicitly build the index. `m` and `ef_construction` control how dense and accurate the graph is when built. Without this index, pgvector falls back to a slow exact scan."
+    },
+    {
+      "title": "Tuning query-time accuracy vs speed",
+      "language": "sql",
+      "code": "-- Increase ef_search to search a wider area (more accurate, slower)\nSET hnsw.ef_search = 100;\n\nSELECT chunk_text \nFROM documents \nORDER BY embedding <=> :query_vec \nLIMIT 5;",
+      "explanation": "At query time, `ef_search` acts as the dial. A higher number evaluates more nodes, catching edge cases at the cost of milliseconds of latency."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to build the index",
+      "explanation": "If you just insert vectors into pgvector without running `CREATE INDEX`, every query will silently perform a brute-force sequential scan. It will work perfectly in development (small data) but crash your database CPU in production."
+    },
+    {
+      "title": "Assuming ANN guarantees the absolute best matches",
+      "explanation": "ANN is *approximate*. It uses heuristics to skip parts of the vector space. Very rarely, the mathematically closest vector might be skipped. Don't write unit tests asserting that the exact same array of documents is returned every time."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core tradeoff made by an Approximate Nearest Neighbor (ANN) index?",
+      "tier": "tier1",
+      "answer": "It trades a small amount of accuracy (you might miss the absolute mathematically closest vector) for a massive increase in query speed by skipping distance calculations for most of the database."
+    },
+    {
+      "q": "At a high level, how does HNSW (Hierarchical Navigable Small World) navigate a vector space so quickly?",
+      "tier": "tier2",
+      "answer": "It builds a multi-layered graph. It uses top, sparse layers for long 'highway' jumps across the vector space, then drops to denser lower layers to fine-tune the search near the destination."
+    },
+    {
+      "q": "If you query an unindexed pgvector table with 1 million rows, what happens?",
+      "tier": "tier2",
+      "answer": "It performs an exact kNN brute-force scan, calculating the distance between the query and all 1 million vectors. It will return the perfect answer, but it will be extremely slow."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your RAG application works perfectly with 1,000 documents, taking 50ms per query. After uploading 5 million documents, queries now take 3 seconds and max out the database CPU. The code hasn't changed. What's the problem and how do you fix it?",
+      "company": "RAG system design",
+      "answer": "The database is performing a sequential exact kNN scan because no vector index was created. With 1,000 documents, brute force is fast; with 5 million, it's crippling. The fix is to build an ANN index (like HNSW or IVF) on the vector column so the database can skip most of the distance calculations.",
+      "approach": "Recognize the performance cliff at scale. Sequential scan vs Index is the classic database issue, applied here to vector math."
+    },
+    {
+      "question": "You are tuning an HNSW index in production. You need faster query times, and you are willing to accept slightly less accurate retrieval. Which query-time parameter do you adjust?",
+      "company": "LLM Engineer OA",
+      "answer": "You decrease `ef_search` (the size of the dynamic candidate list during query). A smaller search list means fewer nodes are evaluated, speeding up the query but increasing the chance of missing the true nearest neighbor.",
+      "approach": "Know the core HNSW tradeoff levers. `ef_search` controls query-time accuracy vs speed."
+    }
+  ],
+  "sources": [
+    "https://example.com/vector-dbs"
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "slug": "memory-short-and-long-term",
+  "title": "Agent Memory: Short vs. Long Term",
+  "kind": "engineering",
+  "prerequisites": [
+    "tool-use-and-the-call-loop"
+  ],
+  "mental_model": {
+    "intuition": "Short-term memory is RAM (the context window); long-term memory is a hard drive (a database).",
+    "description": "An LLM is inherently stateless. 'Memory' is just data you choose to inject into its prompt. Short-term memory is the literal array of recent chat messages sent in the current request. Long-term memory involves saving important facts to a database (often a vector DB) and actively retrieving them in future sessions."
+  },
+  "sections": [
+    {
+      "body": "Because LLMs have no internal memory across API calls, to have a 'conversation', you must send the entire history of messages back to the model every single time. This running list of messages is the agent's short-term memory.",
+      "recap": "So far: Short-term memory is just appending messages to an array and resending them."
+    },
+    {
+      "body": "Eventually, short-term memory hits the model's token limit, or becomes too expensive and slow to process. You must trim it. A common strategy is a 'sliding window'\u2014keeping only the last 10 messages and discarding the rest. But this gives the agent amnesia for older details.",
+      "recap": "So far: The context window is finite, so old messages must be dropped."
+    },
+    {
+      "body": "To remember things across weeks or dropped sessions, you need long-term memory. Instead of keeping everything in the prompt, you write important facts (like 'user prefers Python') to a database. When a new session starts, you query the database and inject only the relevant facts into the system prompt.",
+      "recap": "Long-term memory is just a database retrieval pipeline (RAG) applied to user facts."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Short-term memory (Sliding Window)",
+      "language": "python",
+      "code": "MAX_MESSAGES = 10\n\ndef chat_with_memory(new_user_text, message_history):\n    # Append new message\n    message_history.append({'role': 'user', 'content': new_user_text})\n    \n    # Sliding window: keep only the system prompt + last N messages\n    system_prompt = message_history[0]\n    recent_history = message_history[-MAX_MESSAGES:]\n    truncated_history = [system_prompt] + recent_history\n    \n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=truncated_history\n    )\n    \n    message_history.append(response.choices[0].message)\n    return response",
+      "explanation": "This keeps the token count stable. We slice the array to drop old messages, but always preserve the system prompt at index 0 so the agent doesn't forget its core instructions."
+    },
+    {
+      "title": "Extracting facts for Long-term memory",
+      "language": "python",
+      "code": "# We give the agent a specific tool to save facts to the database\ntools = [{\n    'type': 'function',\n    'function': {\n        'name': 'save_user_fact',\n        'description': 'Save a fact about the user for long-term retention across sessions.',\n        'parameters': {\n            'type': 'object',\n            'properties': {\n                'fact': {'type': 'string'},\n                'category': {'type': 'string', 'enum': ['preference', 'background', 'project']}\n            }\n        }\n    }\n}]\n\n# Later, on a new session:\n# facts = db.query(\"SELECT fact FROM long_term_memory WHERE user_id = ?\")\n# system_prompt += f\"\\nRemember this about the user: {facts}\"",
+      "explanation": "Long-term memory isn't magic; it's just a tool call. The agent decides to save a fact, your app writes it to Postgres, and on the next login, your app reads it and stuffs it into the system prompt."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake": "Thinking the model 'remembers' previous API calls.",
+      "correction": "Models are perfectly stateless. If you don't explicitly pass a fact in the `messages` array of the current HTTP request, the model literally cannot know it.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    },
+    {
+      "mistake": "Letting the short-term memory array grow infinitely.",
+      "correction": "Appending messages forever will eventually crash with a context length exceeded error, and will cost a fortune in input tokens along the way. You must truncate or summarize.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    }
+  ],
+  "recall_questions": [
+    {
+      "question": "What is the primary limitation of short-term memory in LLM applications?",
+      "options": [
+        "It is constrained by the model's maximum context window and token costs.",
+        "It gets erased every time the model generates a tool call.",
+        "It can only store system prompts, not user messages.",
+        "It is strictly limited to 5 messages by the API."
+      ],
+      "correct_answer": "It is constrained by the model's maximum context window and token costs.",
+      "q": "What is the primary limitation of short-term memory in LLM applications?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "How do AI agents typically implement long-term memory?",
+      "options": [
+        "By saving data to an external database and injecting relevant facts into future prompts.",
+        "By modifying the weights of the LLM in real-time.",
+        "By keeping a persistent WebSocket connection open indefinitely.",
+        "By relying on the LLM provider to store state across sessions."
+      ],
+      "correct_answer": "By saving data to an external database and injecting relevant facts into future prompts.",
+      "q": "How do AI agents typically implement long-term memory?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "When implementing a sliding window for short-term memory, which message must you be careful NEVER to discard?",
+      "options": [
+        "The system prompt containing the core instructions.",
+        "The very first user greeting.",
+        "The most recent tool observation.",
+        "The assistant's first response."
+      ],
+      "correct_answer": "The system prompt containing the core instructions.",
+      "q": "When implementing a sliding window for short-term memory, which message must you be careful NEVER to discard?",
+      "answer": "Placeholder answer"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your chatbot works great for 10 minutes, but then API requests start failing with a 400 error about 'context length'. How do you fix this?",
+      "company": "GenAI Engineer interview",
+      "answer": "The `messages` array is growing infinitely and hitting the token limit. Implement a memory management strategy: either a sliding window (drop messages older than N), or summarize the conversation history (use the LLM to compress older messages into a short summary paragraph) and prepend that summary to the recent messages.",
+      "approach": "Identify the stateless nature of LLMs and the hard limit of the context window. Propose truncation or summarization as the standard fixes."
+    },
+    {
+      "question": "Design a long-term memory system for a personal assistant agent that needs to remember user preferences across sessions.",
+      "company": "RAG system design",
+      "answer": "1. Equip the agent with a `save_fact(fact_string)` tool. 2. When the user states a preference, the agent calls the tool. 3. The app embeds the fact and stores it in a Vector DB tied to the user's ID. 4. On future queries, run a semantic search on the Vector DB using the new user message, and inject the retrieved facts into the system prompt.",
+      "approach": "Combine tool-calling (for writing memory) with RAG (for retrieving memory). Emphasize that long-term memory is just a specialized database integration."
+    }
+  ],
+  "roadmap": "ai-engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "GenAI Engineer interview"
+    ]
+  },
+  "sources": [
+    "https://example.com/agents"
+  ]
+}

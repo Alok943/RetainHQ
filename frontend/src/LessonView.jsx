@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table, Check, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table, Check, Plus, Image as ImageIcon } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import { lessonImageUrl } from './lib/assets';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import { useSeo } from './lib/useSeo';
 import CodeTrace from './CodeTrace';
@@ -202,7 +203,7 @@ export default function LessonView() {
   // Aptitude (quant) + Reasoning (logical/verbal) are thin, method/intuition-first
   // lessons — a completely different shape from python/sql. Render them here and
   // return early, before the overview/walkthrough code that assumes those fields.
-  if (lesson.kind === 'aptitude' || lesson.kind === 'reasoning' || lesson.kind === 'theory') {
+  if (lesson.kind === 'aptitude' || lesson.kind === 'reasoning' || lesson.kind === 'theory' || lesson.kind === 'engineering') {
     return (
       <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
         {header}
@@ -521,6 +522,105 @@ function AddToReviews({ lesson, nodeId }) {
   );
 }
 
+/** Vector-space animation (engineering: embeddings / RAG). Renders document chunks as
+ *  points clustered by meaning, then the query landing nearest one cluster and the
+ *  top-k chunks lighting up. Pure SVG, data-driven by {clusters, query, k}. This is the
+ *  "how retrieval works" geometry that the box-flow sequence can't show. */
+function VectorSpaceAnimation({ animation }) {
+  const { clusters = [], query = {}, k = 3 } = animation || {};
+  const STEPS = 4;
+  const [step, setStep] = useState(0);
+  const [playing, setPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!playing || step >= STEPS - 1) return;
+    const t = setTimeout(() => setStep((s) => s + 1), 1900);
+    return () => clearTimeout(t);
+  }, [playing, step]);
+
+  if (clusters.length < 2) return null;
+
+  const COLORS = { cyan: '#0891B2', teal: '#0F766E', violet: '#7C3AED', amber: '#B45309', red: '#B91C1C', slate: '#475569', green: '#0F766E' };
+  const ACCENTS = ['#0891B2', '#0F766E', '#7C3AED', '#B45309'];
+  const colorOf = (c, i) => COLORS[c?.color] || ACCENTS[i % ACCENTS.length];
+
+  const cx = 270, cy = 162, R = 96, n = clusters.length;
+  const centers = clusters.map((_, i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    return { x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) };
+  });
+  // deterministic dot scatter (5 per cluster) — no randomness, so layout is stable.
+  const OFF = [[0, -1], [0.95, 0.31], [0.59, 0.81], [-0.59, 0.81], [-0.95, 0.31]];
+  const RADS = [24, 30, 22, 28, 26];
+  const dots = [];
+  centers.forEach((ctr, ci) => OFF.forEach((o, di) => dots.push({ ci, x: ctr.x + o[0] * RADS[di], y: ctr.y + o[1] * RADS[di] })));
+
+  const nearIdx = Math.max(0, clusters.findIndex((c) => c.label === query.near));
+  const land = { x: centers[nearIdx].x + 8, y: centers[nearIdx].y + 6 };
+  const nearest = dots
+    .map((d, i) => ({ i, dist: Math.hypot(d.x - land.x, d.y - land.y) }))
+    .sort((a, b) => a.dist - b.dist).slice(0, k).map((o) => o.i);
+  const nearestSet = new Set(nearest);
+
+  const qShown = step >= 1;
+  const qPos = step >= 2 ? land : { x: cx, y: 24 };
+  const showLinks = step >= 3;
+  const nearLabel = clusters[nearIdx]?.label || '';
+  const caps = [
+    'Every document chunk is a point in embedding space — similar meanings sit together.',
+    'Your question is embedded into the same space as a new point.',
+    `It lands nearest the "${nearLabel}" cluster — by direction, not keywords.`,
+    `The ${k} nearest chunks are retrieved as context.`,
+  ];
+  const done = step >= STEPS - 1;
+
+  return (
+    <div className="rounded-lg border border-[rgba(15,23,42,0.12)] bg-white overflow-hidden">
+      <svg viewBox="0 0 540 320" className="w-full" style={{ maxHeight: 330 }}>
+        {centers.map((ctr, ci) => {
+          const col = colorOf(clusters[ci], ci);
+          const isNear = ci === nearIdx && step >= 2;
+          return (
+            <g key={ci}>
+              <circle cx={ctr.x} cy={ctr.y} r="42" fill={col} opacity={isNear ? 0.13 : 0.06}
+                stroke={isNear ? col : 'none'} strokeWidth={isNear ? 1.5 : 0} strokeDasharray="3 3" />
+              <text x={ctr.x} y={ctr.y - 50} textAnchor="middle" fontSize="11.5" fontWeight="700"
+                fontFamily="ui-sans-serif, system-ui" fill={col}>{clusters[ci].label}</text>
+            </g>
+          );
+        })}
+        {showLinks && nearest.map((di) => (
+          <line key={`l${di}`} x1={land.x} y1={land.y} x2={dots[di].x} y2={dots[di].y}
+            stroke="#7C3AED" strokeWidth="1.6" strokeDasharray="4 3" opacity="0.85" />
+        ))}
+        {dots.map((d, i) => {
+          const col = colorOf(clusters[d.ci], d.ci);
+          const hit = showLinks && nearestSet.has(i);
+          return (
+            <circle key={i} cx={d.x} cy={d.y} r={hit ? 6.5 : 4.5} fill={col}
+              stroke={hit ? '#7C3AED' : 'none'} strokeWidth={hit ? 2 : 0}
+              opacity={showLinks && !hit ? 0.32 : 0.9} />
+          );
+        })}
+        {qShown && (
+          <g style={{ transition: 'transform 0.85s ease' }} transform={`translate(${qPos.x},${qPos.y})`}>
+            <circle r="8.5" fill="#0F172A" />
+            <text x="0" y="-13" textAnchor="middle" fontSize="10.5" fontWeight="700"
+              fontFamily="ui-sans-serif, system-ui" fill="#0F172A">{query.label || 'query'}</text>
+          </g>
+        )}
+      </svg>
+      <div className="flex items-center gap-2 px-3 py-2.5 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6]">
+        <span className="font-mono text-[11px] text-[#64748B] shrink-0">{step + 1}/{STEPS}</span>
+        <span className="font-sans text-[13px] text-[#0F172A] flex-1 leading-snug">{caps[step]}</span>
+        {done
+          ? <button onClick={() => { setStep(0); setPlaying(true); }} className="shrink-0 text-[12px] font-semibold text-[#0891B2] hover:underline">↻ Replay</button>
+          : <button onClick={() => setPlaying((p) => !p)} className="shrink-0 text-[12px] font-semibold text-[#0891B2] hover:underline">{playing ? 'Pause' : 'Play'}</button>}
+      </div>
+    </div>
+  );
+}
+
 /** Process animation (theory, optional). Renders {actors, steps} as a row of boxes
  *  with a flowing arrow stepping from→to, auto-advancing. Pure SVG — no dependency.
  *  The per-step `term` chip IS the "map the animation to CS terminology" layer. */
@@ -615,6 +715,57 @@ function ProcessAnimation({ animation }) {
   );
 }
 
+/** A lesson image. `asset` is a Supabase-bucket key (resolved via lessonImageUrl);
+ *  absolute URLs / root-relative paths pass through. If the file isn't uploaded yet
+ *  the <img> errors and we render nothing — so lessons can reference assets before
+ *  they exist, and they appear the moment the image lands in the bucket. */
+function LessonImage({ image }) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const url = lessonImageUrl(image?.asset);
+  if (!url || failed) return null;
+  // Stay hidden until the image actually LOADS — a not-yet-uploaded asset (404 or a slow/
+  // hanging request) then shows nothing at all, and pops in once the file lands in the bucket.
+  // The <img> still fetches while the figure is display:none, so onLoad/onError fire normally.
+  return (
+    <figure className="m-0" style={{ display: loaded ? 'block' : 'none' }}>
+      <img src={url} alt={image.alt || ''} loading="lazy"
+        onLoad={() => setLoaded(true)} onError={() => setFailed(true)}
+        className="w-full rounded-lg border border-[rgba(15,23,42,0.1)] bg-white" />
+      {image.alt && <figcaption className="mt-1.5 font-sans text-xs text-[#64748B] text-center leading-snug">{image.alt}</figcaption>}
+    </figure>
+  );
+}
+
+/** Born-visual interleaved layout (engineering/theory, optional). Each block is a short
+ *  idea (body) followed by an optional image/animation and an optional one-line recap —
+ *  the "small idea → visual → checkpoint" rhythm that replaces a monolithic explanation. */
+function LessonSections({ sections }) {
+  return (
+    <div className="mb-4 flex flex-col gap-4">
+      {sections.map((s, i) => (
+        <div key={i} className="glass-card p-5">
+          {s.body && <RichText text={s.body} />}
+          {s.image?.asset && <div className="mt-3"><LessonImage image={s.image} /></div>}
+          {s.animation && (
+            <div className="mt-3">
+              {s.animation.type === 'vector-space'
+                ? <VectorSpaceAnimation animation={s.animation} />
+                : <ProcessAnimation animation={s.animation} />}
+            </div>
+          )}
+          {s.recap && (
+            <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#0F766E]/[0.06] border-l-2 border-[#0F766E] px-3 py-2">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] shrink-0 mt-0.5">So far</span>
+              <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{s.recap}</span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Renders a content string as structured blocks: paragraphs separated by blank
  *  lines, with indented blocks rendered as real code. Overviews embed code examples
  *  this way, and a plain <p> would collapse the newlines into one run-on blob. */
@@ -666,18 +817,34 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" /></div>}
       </Section>
 
-      {/* Process animation (theory, optional) — watch the process before reading it */}
-      {lesson.animation && (
-        <Section icon={<Sparkles size={16} />} title="Watch it work" accent="#0891B2">
-          <ProcessAnimation animation={lesson.animation} />
+      {/* Hero illustration (optional) — a single picture right after the mental model */}
+      {lesson.illustration?.asset && (
+        <Section icon={<ImageIcon size={16} />} title="Picture it" accent="#7C3AED">
+          <LessonImage image={lesson.illustration} />
         </Section>
       )}
 
-      {/* Explanation (theory, required) — the concept, plainly */}
-      {lesson.explanation && (
-        <Section icon={<BookOpen size={16} />} title="The concept" accent="#0891B2">
-          <RichText text={lesson.explanation} />
-        </Section>
+      {/* Born-visual interleaved sections REPLACE the monolithic animation + explanation
+          when present (small idea → visual → checkpoint). Else: the classic two blocks. */}
+      {Array.isArray(lesson.sections) && lesson.sections.length > 0 ? (
+        <LessonSections sections={lesson.sections} />
+      ) : (
+        <>
+          {/* Animation (optional). vector-space = embeddings/RAG geometry; sequence/cycle = box-flow. */}
+          {lesson.animation && (
+            <Section icon={<Sparkles size={16} />} title="Watch it work" accent="#0891B2">
+              {lesson.animation.type === 'vector-space'
+                ? <VectorSpaceAnimation animation={lesson.animation} />
+                : <ProcessAnimation animation={lesson.animation} />}
+            </Section>
+          )}
+          {/* Explanation — the concept, plainly */}
+          {lesson.explanation && (
+            <Section icon={<BookOpen size={16} />} title="The concept" accent="#0891B2">
+              <RichText text={lesson.explanation} />
+            </Section>
+          )}
+        </>
       )}
 
       {/* Key points (theory, optional) — the component breakdown */}
@@ -688,6 +855,24 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
               <div key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                 <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {p.detail}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Code snippets (engineering, required) — illustrative, NOT runnable in-browser */}
+      {Array.isArray(lesson.code_snippets) && lesson.code_snippets.length > 0 && (
+        <Section icon={<Code2 size={16} />} title="In code" accent="#7C3AED">
+          <div className="flex flex-col gap-4">
+            {lesson.code_snippets.map((c, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="font-sans text-sm font-semibold text-[#0F172A]">{c.title}</span>
+                  {c.language && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#7C3AED]/10 font-mono text-[10px] font-semibold text-[#7C3AED] lowercase">{c.language}</span>}
+                </div>
+                <pre className="overflow-x-auto rounded-lg bg-[#0F172A] text-[#E2E8F0] p-3.5 font-mono text-[12.5px] leading-relaxed"><code>{c.code}</code></pre>
+                {c.explanation && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2">{c.explanation}</p>}
               </div>
             ))}
           </div>

@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent / "roadmaps"
 SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-KIND = {"concept", "milestone", "aptitude", "reasoning", "theory"}
+KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
@@ -44,6 +44,31 @@ def req(d, key, f, typ=None):
         err(f, f"'{key}' should be {typ.__name__}, got {type(d[key]).__name__}")
         return False
     return True
+
+
+def validate_sections(d, rel):
+    """Optional 'illustration' (a hero image) + 'sections' (the born-visual interleaved
+    layout: each block = a short body + optional image/animation + optional recap). Both
+    are additive — theory/engineering lessons may use a monolithic 'explanation' instead."""
+    ill = d.get("illustration")
+    if ill is not None and (not isinstance(ill, dict) or not ill.get("asset") or not ill.get("alt")):
+        err(rel, "illustration, if present, needs non-empty 'asset' and 'alt'")
+    secs = d.get("sections")
+    if secs is None:
+        return
+    if not isinstance(secs, list) or not secs:
+        err(rel, "sections, if present, must be a non-empty list of {body, image?, animation?, recap?}")
+        return
+    for i, s in enumerate(secs):
+        if not isinstance(s, dict) or not s.get("body"):
+            err(rel, f"sections[{i}] needs a non-empty 'body'")
+            continue
+        img = s.get("image")
+        if img is not None and (not isinstance(img, dict) or not img.get("asset") or not img.get("alt")):
+            err(rel, f"sections[{i}].image needs non-empty 'asset' and 'alt'")
+        an = s.get("animation")
+        if an is not None and (not isinstance(an, dict) or an.get("type") not in {"sequence", "cycle", "vector-space"}):
+            err(rel, f"sections[{i}].animation.type must be one of sequence|cycle|vector-space")
 
 
 def main():
@@ -175,18 +200,121 @@ def main():
             mm = d.get("mental_model")
             if not isinstance(mm, dict) or not mm.get("intuition"):
                 err(rel, "mental_model is required (object with a non-empty 'intuition')")
-            if not isinstance(d.get("explanation"), str) or not d.get("explanation").strip():
-                err(rel, "explanation is required: a non-empty string (the concept, plainly explained)")
+            if not d.get("sections") and (not isinstance(d.get("explanation"), str) or not d.get("explanation").strip()):
+                err(rel, "explanation OR sections is required (a non-empty explanation string, or a born-visual sections list)")
+            validate_sections(d, rel)
             kp = d.get("key_points")
             if kp is not None:
                 if not isinstance(kp, list) or not all(isinstance(p, dict) and p.get("title") and p.get("detail") for p in kp):
                     err(rel, "key_points, if present, must be a list of {title, detail} objects")
             # animation (optional, PROCESS concepts only): actors + directed steps so a
             # generic SVG renderer can animate the process. `term` per step is optional.
+            # animation supports the box-flow types (sequence|cycle) OR vector-space
+            # (the embeddings/RAG geometry — clusters + a query landing near one + top-k).
             an = d.get("animation")
             if an is not None:
-                if not isinstance(an, dict) or an.get("type") not in {"sequence", "cycle", "timeline"}:
-                    err(rel, "animation.type must be one of sequence|cycle|timeline")
+                atype = an.get("type") if isinstance(an, dict) else None
+                if atype not in {"sequence", "cycle", "vector-space"}:
+                    err(rel, "animation.type must be one of sequence|cycle|vector-space")
+                elif atype == "vector-space":
+                    clusters = an.get("clusters")
+                    labels = {c.get("label") for c in clusters} if isinstance(clusters, list) else set()
+                    if not isinstance(clusters, list) or len(clusters) < 2 or not all(isinstance(c, dict) and c.get("label") for c in clusters):
+                        err(rel, "vector-space animation needs 'clusters': a list of >=2 {label, color?}")
+                    q = an.get("query")
+                    if not isinstance(q, dict) or not q.get("label") or q.get("near") not in labels:
+                        err(rel, "vector-space animation needs 'query': {label, near} where 'near' is a cluster label")
+                    if not isinstance(an.get("k"), int) or an.get("k") < 1:
+                        err(rel, "vector-space animation needs integer 'k' >= 1")
+                else:
+                    actors = an.get("actors")
+                    ids = {a.get("id") for a in actors} if isinstance(actors, list) else set()
+                    if not isinstance(actors, list) or len(actors) < 2 or not all(isinstance(a, dict) and a.get("id") and a.get("label") for a in actors):
+                        err(rel, "animation.actors must be a list of >=2 {id, label}")
+                    steps = an.get("steps")
+                    if not isinstance(steps, list) or not steps or not all(
+                        isinstance(s, dict) and s.get("from") in ids and s.get("to") in ids and s.get("label") for s in steps
+                    ):
+                        err(rel, "animation.steps must be a non-empty list of {from, to, label} referencing actor ids")
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            else:
+                for i, c in enumerate(cm):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("explanation"):
+                        err(rel, f"common_mistakes[{i}] needs non-empty 'title' and 'explanation'")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            else:
+                for i, q in enumerate(rq):
+                    if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
+                        err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            oq = d.get("oa_questions")
+            if not isinstance(oq, list) or len(oq) < 2:
+                err(rel, "oa_questions is required: >=2 interview-style items")
+            else:
+                for i, q in enumerate(oq):
+                    if not isinstance(q, dict) or not q.get("question") or not q.get("answer"):
+                        err(rel, f"oa_questions[{i}] needs both 'question' and 'answer'")
+            hk = d.get("hook")
+            if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
+                err(rel, "hook, if present, needs a non-empty 'scenario'")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
+            else:
+                for i, s in enumerate(srcs):
+                    if not isinstance(s, str) or not s.startswith("http"):
+                        err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
+        # Engineering (AI Engineering: LLMs/RAG/Agents, applied backend) is theory + REAL CODE
+        # (kind: "engineering"): same teach-from-scratch depth as theory, PLUS required
+        # code_snippets (illustrative, not Pyodide-runnable — these call an LLM/network) and an
+        # optional process animation (the RAG pipeline / agent loop is a `sequence`).
+        # See content/PROMPT-engineering.md.
+        if d.get("kind") == "engineering":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition')")
+            if not d.get("sections") and (not isinstance(d.get("explanation"), str) or not d.get("explanation").strip()):
+                err(rel, "explanation OR sections is required (a non-empty explanation string, or a born-visual sections list)")
+            validate_sections(d, rel)
+            # code_snippets REQUIRED: this is what separates engineering from theory. Real,
+            # readable code a learner can map to the explanation. Not executed in-browser.
+            cs = d.get("code_snippets")
+            if not isinstance(cs, list) or not cs:
+                err(rel, "code_snippets is required: a non-empty list of {title, language, code, explanation}")
+            else:
+                for i, c in enumerate(cs):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("code") or not c.get("explanation"):
+                        err(rel, f"code_snippets[{i}] needs non-empty 'title', 'code', and 'explanation'")
+                    elif not isinstance(c.get("language"), str) or not c.get("language"):
+                        err(rel, f"code_snippets[{i}] needs a 'language' string (e.g. python, bash, json)")
+            kp = d.get("key_points")
+            if kp is not None:
+                if not isinstance(kp, list) or not all(isinstance(p, dict) and p.get("title") and p.get("detail") for p in kp):
+                    err(rel, "key_points, if present, must be a list of {title, detail} objects")
+            # animation supports the box-flow types (sequence|cycle) OR vector-space
+            # (the embeddings/RAG geometry — clusters + a query landing near one + top-k).
+            an = d.get("animation")
+            if an is not None:
+                atype = an.get("type") if isinstance(an, dict) else None
+                if atype not in {"sequence", "cycle", "vector-space"}:
+                    err(rel, "animation.type must be one of sequence|cycle|vector-space")
+                elif atype == "vector-space":
+                    clusters = an.get("clusters")
+                    labels = {c.get("label") for c in clusters} if isinstance(clusters, list) else set()
+                    if not isinstance(clusters, list) or len(clusters) < 2 or not all(isinstance(c, dict) and c.get("label") for c in clusters):
+                        err(rel, "vector-space animation needs 'clusters': a list of >=2 {label, color?}")
+                    q = an.get("query")
+                    if not isinstance(q, dict) or not q.get("label") or q.get("near") not in labels:
+                        err(rel, "vector-space animation needs 'query': {label, near} where 'near' is a cluster label")
+                    if not isinstance(an.get("k"), int) or an.get("k") < 1:
+                        err(rel, "vector-space animation needs integer 'k' >= 1")
                 else:
                     actors = an.get("actors")
                     ids = {a.get("id") for a in actors} if isinstance(actors, list) else set()

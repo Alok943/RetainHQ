@@ -1,0 +1,107 @@
+{
+  "slug": "rate-limits-and-retries",
+  "title": "Rate Limits & Retries",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["chat-completions-api"],
+    "unlocks": [],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "You launch your RAG pipeline for a batch job processing 5,000 documents. Within 30 seconds you start getting 429 errors. Your naive retry loop hammers the API faster, getting more 429s, and the job grinds to a halt.",
+    "question": "How do you handle rate limits without making them worse — and how do you write retry logic that actually works?"
+  },
+  "mental_model": {
+    "intuition": "A rate limit is a traffic light. Hammering the accelerator while the light is red doesn't make it green faster — you just waste fuel and block the intersection.",
+    "description": "LLM APIs enforce two kinds of limits: Requests Per Minute (RPM) and Tokens Per Minute (TPM). Hit either one and you get a 429 response. The correct response is exponential backoff — wait longer after each failure, add jitter (randomness) so your retries don't all fire at the same moment. The OpenAI SDK has built-in retry logic; in most cases you configure it rather than write it from scratch."
+  },
+  "sections": [
+    {
+      "body": "Two limits apply simultaneously: RPM (max requests per minute) and TPM (max tokens per minute, counting prompt + completion). Your tier on the OpenAI platform determines both. A 429 error tells you which limit you hit in the error body. Tokens-per-minute is the more common hit in RAG systems with large contexts — not raw request count.",
+      "recap": "Two limits: RPM and TPM. RAG systems usually hit TPM first due to large prompt contexts."
+    },
+    {
+      "body": "Exponential backoff with jitter is the correct retry strategy. After a 429: wait 1s, retry. If it fails again: wait 2s, retry. Then 4s, 8s — doubling each time, up to a max of ~60s. The jitter (random ±10–30% on the wait time) staggers parallel workers so they don't all retry at the same millisecond, which would just recreate the spike.",
+      "recap": "Backoff: double the wait each retry, cap at ~60s. Add jitter to prevent thundering herd."
+    },
+    {
+      "body": "The openai Python SDK includes built-in retry with exponential backoff via the max_retries parameter. Setting max_retries=3 at client initialization means the SDK automatically retries on 429 and 5xx, with its own backoff logic — no manual code needed for simple cases. For fine-grained control (custom backoff, circuit breakers, per-request overrides) use the tenacity library.",
+      "recap": "Use OpenAI SDK's built-in max_retries for simple cases. Use tenacity for production-grade control."
+    },
+    {
+      "body": "For bulk jobs (batch processing thousands of documents), the better solution is the Batch API. It accepts up to 50,000 requests in a JSONL file, processes them asynchronously over 24 hours, and costs 50% less per token. No rate limit errors — it queues work internally. Use the synchronous API only for real-time, user-facing requests where latency matters.",
+      "recap": "Batch API for offline bulk work: 50% cheaper, no rate limits, async. Sync API only for real-time."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Built-in SDK retry — the simplest fix",
+      "language": "python",
+      "code": "from openai import OpenAI\n\n# max_retries applies to 429 and 5xx — SDK handles backoff automatically\nclient = OpenAI(max_retries=3)\n\n# Now every call through this client automatically retries up to 3 times\nresponse = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content': 'Summarise this doc.'}],\n    max_tokens=200,\n)\nprint(response.choices[0].message.content)",
+      "explanation": "Setting max_retries=3 on the client is the zero-boilerplate fix for transient 429s and server errors. The SDK uses exponential backoff internally. This handles 90% of rate-limit situations in real-time pipelines."
+    },
+    {
+      "title": "Manual exponential backoff with jitter (for fine-grained control)",
+      "language": "python",
+      "code": "import time\nimport random\nfrom openai import OpenAI, RateLimitError\n\nclient = OpenAI(max_retries=0)  # disable SDK retry — we handle it ourselves\n\ndef call_with_backoff(messages: list[dict], max_retries=5) -> str:\n    wait = 1.0\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model='gpt-4o-mini',\n                messages=messages,\n                max_tokens=300,\n            )\n            return resp.choices[0].message.content\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            jitter = random.uniform(0.8, 1.2)   # ±20% jitter\n            sleep_time = min(wait * jitter, 60)  # cap at 60s\n            print(f'Rate limited. Waiting {sleep_time:.1f}s (attempt {attempt + 1})')\n            time.sleep(sleep_time)\n            wait *= 2                             # exponential backoff\n    raise RuntimeError('Max retries exceeded')",
+      "explanation": "Jitter (random multiplier) staggers retries from parallel workers — without it, 50 workers hitting a rate limit will all retry simultaneously, creating a thundering herd that triggers another wave of 429s. The cap at 60s prevents infinitely long waits."
+    },
+    {
+      "title": "Batch API for bulk offline processing (50% cheaper, no rate limits)",
+      "language": "python",
+      "code": "import json\nfrom openai import OpenAI\nclient = OpenAI()\n\n# Step 1: Create a JSONL file of requests\nrequests = [\n    {'custom_id': f'doc-{i}', 'method': 'POST',\n     'url': '/v1/chat/completions',\n     'body': {'model': 'gpt-4o-mini',\n              'messages': [{'role': 'user', 'content': f'Summarise document {i}'}],\n              'max_tokens': 200}}\n    for i in range(1000)\n]\n\nwith open('batch_input.jsonl', 'w') as f:\n    for req in requests:\n        f.write(json.dumps(req) + '\\n')\n\n# Step 2: Upload and submit the batch\nbatch_file = client.files.create(file=open('batch_input.jsonl', 'rb'), purpose='batch')\nbatch = client.batches.create(\n    input_file_id=batch_file.id,\n    endpoint='/v1/chat/completions',\n    completion_window='24h',\n)\nprint(f'Batch submitted: {batch.id} — poll status, results ready within 24h')",
+      "explanation": "The Batch API processes requests asynchronously at 50% of the synchronous price. No 429 errors — it manages its own queue. Ideal for nightly pipelines, bulk embeddings, and offline evaluation runs. Poll batch.status until it is 'completed', then download results by output_file_id."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Retrying immediately without backoff",
+      "explanation": "A tight retry loop (while True: try: call()) after a 429 will send even more requests per second, making the rate limit worse. Always wait before retrying — even a flat 1-second delay is better than a tight loop."
+    },
+    {
+      "title": "Using the synchronous API for bulk batch jobs",
+      "explanation": "Processing 10,000 documents synchronously hits rate limits, ties up threads, and costs 2× what the Batch API would. Any job that doesn't need results in real time should use the Batch API."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the two types of rate limits enforced by the OpenAI API?",
+      "answer": "Requests Per Minute (RPM) and Tokens Per Minute (TPM). Both count prompt + completion tokens. Hitting either triggers a 429.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is exponential backoff with jitter and why is the jitter part important?",
+      "answer": "Doubling the wait time after each failed retry (1s, 2s, 4s...), with random variation (jitter). Jitter staggers retries across parallel workers to prevent a 'thundering herd' — all workers retrying simultaneously and triggering another wave of 429s.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the main advantage of the OpenAI Batch API over the synchronous API for bulk jobs?",
+      "answer": "50% cheaper per token, no rate limit errors (it queues internally), and asynchronous — submit 50k requests at once and retrieve results within 24 hours.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your bulk document-processing job fails after processing 200 of 5,000 documents with repeated 429 errors. Your retry logic retries immediately on each failure. What is wrong and how do you fix it?",
+      "company": "LLM Engineer OA",
+      "answer": "Immediate retries amplify the rate limit problem — each retry is another request against the same depleted quota. Fix: 1) implement exponential backoff with jitter so retries are spaced out. 2) Better: switch to the Batch API — submit all 5,000 as a batch, get results asynchronously at 50% cost with no rate limit errors.",
+      "approach": "Two fixes at different levels: tactical (backoff for synchronous API) and strategic (Batch API for bulk offline work). The Batch API is the correct tool for this use case."
+    },
+    {
+      "question": "Two identical services both use gpt-4o-mini with max_retries=3. Service A uses a shared client singleton across all threads. Service B creates a new client per request. Under load (100 req/s), Service A gets far more 429s than Service B. Why?",
+      "company": "GenAI Engineer interview",
+      "answer": "Service A uses a shared client, so all 100 requests per second count against the same RPM/TPM bucket. Service B creates a new client per request — but this doesn't help with server-side rate limits since they're keyed on the API key, not the client instance. Actually Service A and B would have the same 429 rate. This is a trick question: 429s are server-side per API key, not per client instance. The fix is request throttling or Batch API, not client isolation.",
+      "approach": "Identify the trick: rate limits are server-side per API key, not per client object. Client isolation doesn't reduce 429s. Server-side throttling (token bucket, Batch API) is the real fix."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/rate-limits",
+    "https://platform.openai.com/docs/guides/batch"
+  ]
+}

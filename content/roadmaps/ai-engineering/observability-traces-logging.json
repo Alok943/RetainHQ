@@ -1,0 +1,111 @@
+{
+  "slug": "observability-traces-logging",
+  "title": "Observability & Tracing",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "medium",
+    "prerequisites": ["cost-and-latency-budgeting"],
+    "unlocks": [],
+    "appears_in": ["AI systems design", "GenAI / LLM Engineer interview"]
+  },
+  "hook": {
+    "scenario": "A user complains that your RAG bot told them to 'reboot the router' for a software password reset. You look at the logs. You see the user's question, and you see the bot's bad answer. But you have no idea WHY it said that.",
+    "question": "If you can't see what chunks the bot read, or what exact prompt it received, how do you debug the hallucination?"
+  },
+  "mental_model": {
+    "intuition": "Observability is the flight data recorder for your AI. It doesn't just record where the plane landed; it records every dial, switch, and decision along the way.",
+    "description": "Standard software logging (`INFO: User logged in`) is insufficient for AI. An agent might do 10 things before replying: embed the query, search the DB, call a calculator tool, and summarize. If the final answer is wrong, you need a 'Trace' — a tree-like record of the entire request, broken down into 'Spans' (individual steps), capturing the exact prompts, retrieved chunks, tool outputs, latency, and token counts at every step."
+  },
+  "sections": [
+    {
+      "body": "In a basic LLM script, you just `print(response)`. In production, a single user request triggers a cascade of hidden operations: chunk retrieval, prompt assembly, tool calling, and multiple LLM generations. If you only log the final output, you are flying blind when things go wrong.",
+      "recap": "AI apps are non-deterministic pipelines. Final-output logging isn't enough."
+    },
+    {
+      "body": "The solution is Tracing. A 'Trace' represents the entire lifecycle of a user request. A Trace is made of 'Spans'. Each Span represents a single unit of work: 'Embed Query' is a span. 'Query Vector DB' is a span. 'Call LLM' is a span. Spans have start times, end times, and metadata.",
+      "recap": "Trace = the whole request. Span = one step in the request."
+    },
+    {
+      "body": "What must you capture inside an LLM span? Four things: The EXACT fully-hydrated prompt (including injected context), the exact model output, the token usage (prompt + completion tokens), and the latency. Without the exact prompt, you cannot reproduce the bug.",
+      "recap": "Always log the fully assembled prompt, not just the user's input."
+    },
+    {
+      "body": "For RAG, you must also trace the Retrieval span. Log the exact search query used (which the agent might have rewritten), the IDs of the chunks returned, and their similarity scores. If the model hallucinated, the first question is always: 'Did the vector DB return the right chunks?'",
+      "recap": "Trace the retrieved context so you can blame the DB or blame the Model."
+    },
+    {
+      "body": "You don't build this from scratch. You use LLM observability platforms (LangSmith, Helicone, Phoenix, Datadog). You wrap your functions in their decorators, and they automatically capture the inputs, outputs, and build the visual trace tree.",
+      "recap": "Use observability tools to automatically build the trace tree."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The manual way (what you are trying to avoid)",
+      "language": "python",
+      "code": "def rag_pipeline(user_query):\n    # BAD: standard logging loses the structure and the context\n    logger.info(f\"Query: {user_query}\")\n    \n    docs = retrieve(user_query)\n    logger.info(f\"Retrieved {len(docs)} docs\") # Which docs? What scores?\n    \n    prompt = build_prompt(user_query, docs)\n    response = call_llm(prompt)\n    logger.info(f\"Response: {response}\") # How many tokens? How long did it take?",
+      "explanation": "Flat text logs are useless for debugging complex AI pipelines. You can't reconstruct the state of the system at the exact moment the LLM made its decision."
+    },
+    {
+      "title": "Tracing with Spans (Conceptual)",
+      "language": "python",
+      "code": "from tracer import trace, span\n\n@trace(name=\"RAG_Request\")\ndef handle_request(user_query):\n    \n    @span(name=\"Retrieve_Context\")\n    def get_docs(q):\n        docs = db.search(q)\n        # Log the exact chunk text so we know what the model saw\n        span.log_metadata({\"retrieved_text\": [d.text for d in docs]})\n        return docs\n\n    @span(name=\"LLM_Generation\")\n    def generate(q, docs):\n        prompt = f\"Context: {docs}\\nQuestion: {q}\"\n        # The decorator automatically captures the prompt, output, and tokens\n        return call_llm(prompt)\n        \n    docs = get_docs(user_query)\n    return generate(user_query, docs)",
+      "explanation": "By wrapping functions in spans, the observability platform builds a tree. When a failure happens, you click the 'RAG_Request' trace, open the 'LLM_Generation' span, and read the exact prompt the model received."
+    }
+  ],
+  "key_points": [
+    { "title": "Traces vs Spans", "detail": "A Trace is the full request. A Span is a single step (retrieval, tool call, LLM call) within that trace." },
+    { "title": "Log the fully hydrated prompt", "detail": "The prompt template isn't enough. You need the exact text sent to the API, including the injected RAG context." },
+    { "title": "Track Tokens & Latency", "detail": "Every LLM span must log `prompt_tokens` and `completion_tokens` so you can debug cost spikes." },
+    { "title": "Blame Assignment", "detail": "Tracing separates 'The model hallucinated' from 'The vector DB returned garbage'." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Logging only the user input",
+      "explanation": "If a user types 'summarize this', and you only log 'summarize this', you can't reproduce the bug because you didn't log the 5-page PDF document that was injected into the prompt alongside it."
+    },
+    {
+      "title": "Ignoring Tool inputs and outputs",
+      "explanation": "If your agent uses a calculator tool, you must log exactly what equation the agent sent to the tool, and exactly what number the tool returned. Otherwise, you don't know if the LLM did bad math, or if the Python tool failed."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between a Trace and a Span?",
+      "answer": "A Trace represents the entire lifecycle of a single user request. A Span represents an individual unit of work within that trace, such as querying a database or calling the LLM.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it critical to log the fully hydrated prompt rather than just the user's input?",
+      "answer": "Because the fully hydrated prompt contains the system instructions and the injected RAG context. Without it, you cannot see exactly what information the model had when it made its decision, making reproduction impossible.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Besides the prompt and response, what two quantitative metrics must be logged for every LLM span?",
+      "answer": "Latency (time taken) and Token Usage (prompt tokens + completion tokens).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A user reports your RAG system gave an entirely wrong answer to a simple question. You have full tracing enabled. Walk through the exact steps you take to debug this trace.",
+      "company": "AI systems design",
+      "answer": "1) Open the trace for that specific request. 2) Look at the Retrieval span: Did the vector DB return the correct context chunks? If NO, the bug is in the embedding/search layer. 3) If YES, look at the LLM Generation span: Did the fully assembled prompt properly include those chunks? 4) If YES, the LLM failed to reason over the context, meaning I need to adjust the prompt or upgrade the model.",
+      "approach": "Demonstrate how tracing allows for 'blame assignment'. Isolate the retrieval step from the generation step to find the root cause."
+    },
+    {
+      "question": "You notice a massive spike in your OpenAI bill, but user traffic hasn't increased. How would you use your observability tools to find the cause?",
+      "company": "GenAI / LLM Engineer interview",
+      "answer": "I would group my traces by token usage and sort descending. I'd look for spans with unusually high `completion_tokens` (indicating a model stuck in a generation loop) or `prompt_tokens` (indicating a bug injecting too much context into the prompt).",
+      "approach": "Show that observability isn't just for correctness; it's the primary tool for debugging cost and token economics."
+    }
+  ],
+  "sources": [
+    "https://docs.smith.langchain.com/concepts/tracing",
+    "https://opentelemetry.io/docs/concepts/signals/traces/"
+  ]
+}

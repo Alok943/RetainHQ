@@ -1,0 +1,149 @@
+{
+  "slug": "tool-use-and-the-call-loop",
+  "title": "Tool Use & The Call Loop",
+  "kind": "engineering",
+  "prerequisites": [
+    "function-tool-calling"
+  ],
+  "mental_model": {
+    "intuition": "An agent is a worker with a toolbox who keeps asking 'am I done yet?'",
+    "description": "Giving an LLM tools doesn't automatically make it do things. The model just generates a JSON request to use a tool. Your code must intercept that request, run the actual tool, and feed the result back into the model in a continuous loop until the model decides the job is finished."
+  },
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "model",
+        "label": "Model"
+      },
+      {
+        "id": "app",
+        "label": "Your App"
+      }
+    ],
+    "steps": [
+      {
+        "from": "model",
+        "to": "app",
+        "label": "emits JSON tool request",
+        "term": "call"
+      },
+      {
+        "from": "app",
+        "to": "app",
+        "label": "runs actual function",
+        "term": "execute"
+      },
+      {
+        "from": "app",
+        "to": "model",
+        "label": "appends result & prompts again",
+        "term": "observation"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "body": "When you give a model tools, it doesn't execute them itself. It acts like a manager delegating tasks. The model outputs a structured request saying 'run the weather tool for Tokyo'. Your application code must catch this request, halt the model, and actually run the Python or API call.",
+      "recap": "So far: The model requests a tool; your app executes it."
+    },
+    {
+      "body": "Once your app runs the tool and gets the weather data, the model is waiting blindly. You must append the tool's result (the 'observation') to the conversation history and call the model again. This hands the baton back to the manager to decide what to do next.",
+      "recap": "So far: Feed the real-world result back to the model as a new message."
+    },
+    {
+      "body": "This creates a while-loop. The model asks for a tool, you run it, you give back the result, the model asks for another tool, you run it... The loop only breaks when the model decides it has enough information and finally outputs a plain text message to the user.",
+      "recap": "Tool use is a while-loop bridging the model's brain and your app's hands."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The manual tool-call loop",
+      "language": "python",
+      "code": "messages = [{'role': 'user', 'content': 'What is the weather in Tokyo?'}]\n\nwhile True:\n    # 1. Ask the model\n    response = client.chat.completions.create(model='gpt-4o', messages=messages, tools=my_tools)\n    msg = response.choices[0].message\n    messages.append(msg)\n    \n    # 2. Break if model is done (no tool calls)\n    if not msg.tool_calls:\n        print(msg.content)\n        break\n        \n    # 3. Otherwise, execute each requested tool\n    for call in msg.tool_calls:\n        if call.function.name == 'get_weather':\n            args = json.loads(call.function.arguments)\n            result = get_weather(**args)  # Your actual Python function\n            \n            # 4. Append the result (observation) and loop again\n            messages.append({\n                'role': 'tool',\n                'tool_call_id': call.id,\n                'content': str(result)\n            })",
+      "explanation": "Notice the `while True`. The model only does one step at a time; your code drives the loop, maps the requested name to your real function, and provides the `tool` role message so the model can read the output on the next iteration."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake": "Thinking the model executes the code.",
+      "correction": "The model lives on an isolated server and only outputs text (JSON). Your application is what actually connects to databases, runs scripts, or hits APIs.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    },
+    {
+      "mistake": "Forgetting to append the tool response to the history.",
+      "correction": "If you don't feed the tool's output back into `messages` and call the model again, the model will just hang or repeat its tool request. It needs the observation to continue.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    }
+  ],
+  "recall_questions": [
+    {
+      "question": "What happens immediately after the LLM decides to use a tool?",
+      "options": [
+        "The model's generation pauses and returns a tool request to your application.",
+        "The model automatically executes the associated Python function.",
+        "The model waits for a human user to approve the JSON.",
+        "The model writes the tool output into its own context window."
+      ],
+      "correct_answer": "The model's generation pauses and returns a tool request to your application.",
+      "q": "What happens immediately after the LLM decides to use a tool?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "How does the model know the result of a tool execution?",
+      "options": [
+        "Your app appends a new message with the 'tool' role containing the result and calls the model again.",
+        "The model has a built-in webhook that listens for HTTP responses.",
+        "The function executes securely within the model's sandbox environment.",
+        "The model guesses the result based on the tool's description."
+      ],
+      "correct_answer": "Your app appends a new message with the 'tool' role containing the result and calls the model again.",
+      "q": "How does the model know the result of a tool execution?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "What condition breaks the tool-call while loop?",
+      "options": [
+        "The model returns a standard text response without any tool requests.",
+        "The model hits the maximum token limit.",
+        "The app executes exactly one tool.",
+        "The user interrupts the process."
+      ],
+      "correct_answer": "The model returns a standard text response without any tool requests.",
+      "q": "What condition breaks the tool-call while loop?",
+      "answer": "Placeholder answer"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A junior engineer complains that their agent 'keeps asking to run the weather tool over and over without ever answering the user'. What is the most likely bug in their code?",
+      "company": "GenAI Engineer interview",
+      "answer": "They are likely failing to append the tool's result (or the assistant's tool-call message itself) to the conversation history before calling the model again. Without the tool's output in the context window, the model has amnesia, sees the same original user prompt, and requests the same tool again.",
+      "approach": "Explain the agent loop: the model needs the 'observation' (the tool role message) to know the action succeeded and move on to the final answer."
+    },
+    {
+      "question": "Write a basic agent loop in Python that handles an LLM's tool calls and returns the final text response.",
+      "company": "LLM Engineer OA",
+      "answer": "A while-loop that calls the LLM, checks for `tool_calls`, executes them, appends both the assistant's request and the tool's response to the message array, and loops until `tool_calls` is empty.",
+      "approach": "Look for the core `while` loop, the correct appending of the `assistant` tool-call message, and the `tool` role message mapping the `tool_call_id`. Correct role management is the primary failure point."
+    }
+  ],
+  "roadmap": "ai-engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "GenAI Engineer interview"
+    ]
+  },
+  "sources": [
+    "https://example.com/agents"
+  ]
+}

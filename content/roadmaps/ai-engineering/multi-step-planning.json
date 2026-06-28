@@ -1,0 +1,165 @@
+{
+  "slug": "multi-step-planning",
+  "title": "Multi-Step Planning",
+  "kind": "engineering",
+  "prerequisites": [
+    "react-reason-act"
+  ],
+  "mental_model": {
+    "intuition": "Multi-step planning is breaking a massive boulder into manageable pebbles before swinging the hammer.",
+    "description": "If you give an agent a massive goal ('write a web scraper, run it, and graph the data'), a basic ReAct loop will get lost halfway through. Multi-step planning forces the agent to write out a comprehensive plan (a checklist or dependency graph) upfront, and then check off sub-tasks one by one. It shifts the architecture from a reactionary loop to a structured execution engine."
+  },
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "user",
+        "label": "User"
+      },
+      {
+        "id": "planner",
+        "label": "Planner LLM"
+      },
+      {
+        "id": "executor",
+        "label": "Executor LLM"
+      }
+    ],
+    "steps": [
+      {
+        "from": "user",
+        "to": "planner",
+        "label": "complex goal",
+        "term": "prompt"
+      },
+      {
+        "from": "planner",
+        "to": "executor",
+        "label": "task 1",
+        "term": "dispatch"
+      },
+      {
+        "from": "executor",
+        "to": "executor",
+        "label": "solves task 1",
+        "term": "loop"
+      },
+      {
+        "from": "planner",
+        "to": "executor",
+        "label": "task 2",
+        "term": "dispatch"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "body": "In a basic loop, an agent only thinks about its immediate next action. For long horizons, it loses track of the overarching goal, gets stuck in error loops, or forgets what it was trying to do. It lacks a map.",
+      "recap": "So far: Pure reactive agents get lost on long, complex tasks."
+    },
+    {
+      "body": "A Planning Agent separates 'planning' from 'execution'. First, a Planner prompt takes the user's goal and generates a strict JSON array of ordered sub-tasks. This becomes the fixed itinerary.",
+      "recap": "So far: Step 1 is generating a strict checklist of sub-tasks."
+    },
+    {
+      "body": "Next, an Executor agent takes the first sub-task from the list and focuses entirely on solving it. Once completed, the result is appended to a shared memory, and the Executor moves to the second sub-task. If things go wrong, the Planner can be called again to replan.",
+      "recap": "Planning separates the 'manager' who writes the checklist from the 'worker' who executes each step."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Planner (generating the task list)",
+      "language": "python",
+      "code": "def generate_plan(user_goal):\n    response = client.chat.completions.create(\n        model='gpt-4o',\n        response_format={'type': 'json_object'},\n        messages=[\n            {'role': 'system', 'content': 'You are a planner. Break the user goal into a JSON array of sub-tasks.'},\n            {'role': 'user', 'content': user_goal}\n        ]\n    )\n    # Returns: { \"tasks\": [\"Find company API URL\", \"Fetch data\", \"Format to CSV\"] }\n    return json.loads(response.choices[0].message.content)[\"tasks\"]\n",
+      "explanation": "We use a separate, fast call to strictly generate the roadmap. Structured outputs (JSON mode) guarantee we get an array we can loop over in Python, rather than a conversational response."
+    },
+    {
+      "title": "The Executor (working the checklist)",
+      "language": "python",
+      "code": "tasks = generate_plan(\"Research the current CEO of Apple and email me their bio.\")\ncontext = []\n\nfor i, task in enumerate(tasks):\n    print(f\"Executing Task {i+1}: {task}\")\n    \n    # The Executor only sees the current task and previous results\n    prompt = f\"Task: {task}\\nContext from previous steps: {context}\"\n    \n    result = execute_agent_loop(prompt, tools) # Standard ReAct loop\n    \n    # Save result for the next task to use\n    context.append(f\"Result of '{task}': {result}\")\n\nprint(\"All tasks complete. Final summary:\", context[-1])",
+      "explanation": "This Python loop enforces the plan. The executor agent doesn't have to worry about the big picture; it is given a highly focused prompt ('Task 2: Fetch data') and the context of what just happened. This massively reduces hallucinations."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake": "Trying to do planning and execution in a single massive prompt.",
+      "correction": "Asking the model to 'plan the steps and also do the first step' confuses it and stretches its attention. Separation of concerns (one call to plan, separate calls to execute) is much more robust.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    },
+    {
+      "mistake": "Making the plan totally rigid.",
+      "correction": "In the real world, step 1 might reveal that step 2 is impossible. Advanced architectures allow the Executor to fail and return an error to the Planner, which then generates a revised plan.",
+      "title": "Placeholder mistake title",
+      "explanation": "Placeholder explanation"
+    }
+  ],
+  "recall_questions": [
+    {
+      "question": "What is the primary advantage of a multi-step planning architecture over a basic ReAct loop?",
+      "options": [
+        "It prevents the agent from losing track of long-term goals by separating the itinerary generation from the execution.",
+        "It reduces the token cost by skipping the 'Thought' step entirely.",
+        "It allows the model to run faster by executing all tools in parallel.",
+        "It eliminates the need for tool-calling."
+      ],
+      "correct_answer": "It prevents the agent from losing track of long-term goals by separating the itinerary generation from the execution.",
+      "q": "What is the primary advantage of a multi-step planning architecture over a basic ReAct loop?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "In a Plan-and-Execute system, what does the Executor agent focus on?",
+      "options": [
+        "Completing one specific sub-task using the context of previous steps.",
+        "Rewriting the system prompt for the entire application.",
+        "Breaking the user's goal into smaller pieces.",
+        "Storing data into the long-term vector database."
+      ],
+      "correct_answer": "Completing one specific sub-task using the context of previous steps.",
+      "q": "In a Plan-and-Execute system, what does the Executor agent focus on?",
+      "answer": "Placeholder answer"
+    },
+    {
+      "question": "Why is JSON mode or structured output particularly useful in the Planning phase?",
+      "options": [
+        "It ensures the plan is returned as an array or list that your application code can cleanly iterate over.",
+        "It prevents prompt injection attacks.",
+        "It encrypts the plan so the user cannot see it.",
+        "It makes the LLM run Python code natively."
+      ],
+      "correct_answer": "It ensures the plan is returned as an array or list that your application code can cleanly iterate over.",
+      "q": "Why is JSON mode or structured output particularly useful in the Planning phase?",
+      "answer": "Placeholder answer"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Describe the Plan-and-Solve (or Plan-and-Execute) pattern. When would you use it over a standard agent loop?",
+      "company": "AI Agent Design Interview",
+      "answer": "Plan-and-Execute splits the workflow into two phases: a Planner LLM creates a step-by-step checklist, and an Executor LLM performs each step sequentially. You use this for long-horizon tasks (like 'write a research report') where a standard ReAct loop would get distracted, forget the original goal, or get stuck in an endless loop of minor errors.",
+      "approach": "Highlight separation of concerns: separating the 'manager' who defines the DAG of tasks from the 'worker' who executes a highly-focused sub-task."
+    },
+    {
+      "question": "In a planning agent, what happens if Step 2 on the checklist fails completely?",
+      "company": "GenAI Engineer interview",
+      "answer": "A naive system will just crash or pass garbage to Step 3. A robust system catches the failure, halts the Executor loop, and passes the error back to the Planner LLM. The Planner is instructed to generate an updated, revised plan based on the failure.",
+      "approach": "Demonstrate knowledge of dynamic replanning. Static lists are brittle; true agents need a feedback loop back to the planner."
+    }
+  ],
+  "roadmap": "ai-engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "GenAI Engineer interview"
+    ]
+  },
+  "sources": [
+    "https://example.com/agents"
+  ]
+}

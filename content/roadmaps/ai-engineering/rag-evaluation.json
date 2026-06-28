@@ -1,0 +1,109 @@
+{
+  "slug": "rag-evaluation",
+  "title": "RAG Evaluation",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["context-injection-and-prompt-assembly"],
+    "unlocks": ["evaluation-and-test-sets"],
+    "appears_in": ["RAG system design", "GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "Your team just swapped the embedding model from 'text-embedding-ada-002' to 'text-embedding-3-small'. The developer says 'it feels better'. A week later, user complaints spike because the bot is hallucinating. 'Vibes' are not a testing strategy.",
+    "question": "How do you mathematically prove that a change to your RAG pipeline actually made it better?"
+  },
+  "mental_model": {
+    "intuition": "RAG evaluation is grading a student's open-book exam. You have to grade two separate things: did they find the right pages (Retrieval), and did they copy the answer correctly without making things up (Generation)?",
+    "description": "Because RAG has two distinct phases, it fails in two distinct ways. If retrieval fails, the LLM is starved of facts. If generation fails, the LLM ignores the facts and hallucinates. You cannot evaluate RAG with a single 'is the answer good?' metric. We use the 'RAG Triad': Context Relevance (did we fetch good docs?), Faithfulness (did the LLM stick to those docs?), and Answer Relevance (does the answer actually address the user's question?). We use an 'LLM-as-a-judge' to score these metrics at scale."
+  },
+  "sections": [
+    {
+      "body": "Traditional software is deterministic; you write unit tests. LLMs are probabilistic; you write evaluations ('evals'). Because a RAG pipeline is complex, a single 'thumbs up / thumbs down' from a user doesn't tell you what broke. If the answer is wrong, was it because the vector search failed, or because the LLM hallucinated?",
+      "recap": "You must evaluate the Retrieval step and the Generation step completely separately."
+    },
+    {
+      "body": "Metric 1: Context Relevance. This grades the Retriever. Given the user's question, are the retrieved chunks actually relevant? If the user asks about 'billing' and you retrieve paragraphs about 'password resets', this score is 0. If this score is low, you need to fix your chunking, embeddings, or reranking.",
+      "recap": "Context Relevance: Did the database return the right documents?"
+    },
+    {
+      "body": "Metric 2: Faithfulness (or Groundedness). This grades the LLM. Given the retrieved chunks, did the LLM make anything up? If the chunks say 'SLA is 99%', and the LLM says 'SLA is 99.9%', it committed a hallucination. It wasn't faithful to the context. If this score is low, you need to fix your prompt assembly or use a smarter LLM.",
+      "recap": "Faithfulness: Did the LLM stick strictly to the provided facts without hallucinating?"
+    },
+    {
+      "body": "Metric 3: Answer Relevance. This grades the final product. Did the final answer actually address the user's question? Sometimes the LLM is perfectly faithful to the context, but the context itself was useless, resulting in an answer like 'I don't know'. That's faithful, but not a relevant answer to the user.",
+      "recap": "Answer Relevance: Did the final output actually satisfy the user's query?"
+    },
+    {
+      "body": "How do you score thousands of queries? Humans are too slow. So we use 'LLM-as-a-Judge'. We write a strict prompt asking a powerful model (like GPT-4) to grade the Triad on a scale of 1-5, providing the Question, the Context, and the Answer. It acts as an automated, scalable grading rubric.",
+      "recap": "We use a strong LLM to automatically score the RAG Triad across hundreds of test cases."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "LLM-as-a-Judge: Evaluating Faithfulness",
+      "language": "python",
+      "code": "def evaluate_faithfulness(question: str, context: str, generated_answer: str) -> str:\n    # We ask a strong model to act as an impartial judge\n    judge_prompt = f\"\"\"\n    You are an impartial judge. Your task is to determine if the GENERATED_ANSWER \n    is entirely faithful to the provided CONTEXT. \n    It must not contain any facts outside the CONTEXT.\n    \n    CONTEXT: {context}\n    GENERATED_ANSWER: {generated_answer}\n    \n    Reply with exactly '1' if it is faithful, or '0' if it contains hallucinations.\n    \"\"\"\n    \n    response = client.chat.completions.create(\n        model=\"gpt-4o\",  # Always use a highly capable model for grading\n        messages=[{\"role\": \"user\", \"content\": judge_prompt}],\n        temperature=0.0\n    )\n    return response.choices[0].message.content",
+      "explanation": "This is the core mechanic of automated evals. We aren't asking the LLM to answer the question; we are asking it to analyze the relationship between the context and the answer. Running this over 500 test questions gives you a mathematical 'Faithfulness Score'."
+    }
+  ],
+  "key_points": [
+    { "title": "The RAG Triad", "detail": "The three pillars of RAG evaluation: Context Relevance (Retriever), Faithfulness (Generator), Answer Relevance (End-to-End)." },
+    { "title": "Isolate the Failure", "detail": "If Context Relevance is low, tune the vector DB. If Faithfulness is low, tune the prompt. Never tune the prompt to fix a retrieval problem." },
+    { "title": "LLM-as-a-Judge", "detail": "Using GPT-4 to grade GPT-3.5's outputs is industry standard. It correlates highly with human graders but costs pennies and takes seconds." },
+    { "title": "Golden Datasets", "detail": "To run evals, you need a 'golden dataset' of 100+ diverse, representative questions. You run your pipeline on these questions every time you change a line of code." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Relying entirely on user feedback (thumbs up/down)",
+      "explanation": "Users rarely click thumbs down, and when they do, they don't tell you if the retrieval failed or the LLM hallucinated. User feedback is a lagging indicator; evals are a leading indicator."
+    },
+    {
+      "title": "Using a weak model as a judge",
+      "explanation": "You cannot use a small, cheap model (like GPT-3.5 or Llama-8B) to grade a complex RAG pipeline. The judge must be significantly more capable than the generator to accurately spot subtle hallucinations."
+    },
+    {
+      "title": "Evaluating end-to-end without isolating retrieval",
+      "explanation": "If a question fails, and you blindly tweak the system prompt without checking if the right documents were even retrieved, you will degrade the system."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the 'Faithfulness' metric in RAG evaluation measuring?",
+      "answer": "It measures whether the LLM's generated answer is strictly grounded in the retrieved context, penalizing any hallucinations or external facts not present in the chunks.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a RAG system answers a user's question with 'I don't know', how might it score on Faithfulness and Answer Relevance?",
+      "answer": "It scores High on Faithfulness (because it didn't hallucinate outside the empty/irrelevant context), but Low on Answer Relevance (because it didn't actually answer the user's question).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why do we use 'LLM-as-a-judge' instead of human graders for RAG pipelines?",
+      "answer": "Human grading is too slow and expensive to do on every code commit. An LLM-as-a-judge (like GPT-4) can grade hundreds of test cases in seconds, providing immediate, automated regression testing.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your team changed the chunk overlap from 50 tokens to 200 tokens. The overall user satisfaction dropped. How would you use the RAG Triad to diagnose exactly what went wrong?",
+      "company": "RAG system design",
+      "answer": "I would run our golden dataset through the automated evals and look at the triad metrics. Changing chunk overlap primarily affects the Retriever. If 'Context Relevance' dropped, it means the larger chunks added too much noise, confusing the vector search. If Context Relevance stayed the same but 'Faithfulness' dropped, it means the retrieved chunks are so large that they are overwhelming the LLM's attention mechanism, causing it to hallucinate.",
+      "approach": "Demonstrate that you know how to isolate variables. Tie the specific code change (chunking) to the specific metric it impacts (Retrieval / Context Relevance)."
+    },
+    {
+      "question": "You are building an automated eval suite using LLM-as-a-judge. What are two critical requirements for the 'judge' model to ensure the evaluation is trustworthy?",
+      "company": "LLM Engineer OA",
+      "answer": "First, the judge model must be highly capable—ideally a frontier model like GPT-4, stronger than the model generating the answers. Second, the judge prompt must be highly specific, often asking for a binary (1/0) or discrete scale with explicit criteria, rather than an open-ended 'is this good?'.",
+      "approach": "Highlight the need for a 'smarter' judge and a constrained, deterministic grading rubric to prevent the judge itself from hallucinating the scores."
+    }
+  ],
+  "sources": [
+    "https://docs.smith.langchain.com/evaluation",
+    "https://www.truera.com/ai-quality-education/generative-ai-evaluations/rag-triad"
+  ]
+}

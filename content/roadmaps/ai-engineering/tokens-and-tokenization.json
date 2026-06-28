@@ -1,0 +1,109 @@
+{
+  "slug": "tokens-and-tokenization",
+  "title": "Tokens & Tokenization",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["context-window", "temperature-and-top-p", "embeddings", "cost-and-latency-budgeting"],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "You paste a 1,000-word essay into GPT-4o and hit the context limit — but your essay is only 1,000 words. The limit is 128,000 tokens. What went wrong?",
+    "question": "Why is 'token' not the same as 'word', and why does this distinction control your API bill?"
+  },
+  "mental_model": {
+    "intuition": "A token is a chunk of text — roughly a word, a syllable, or a punctuation mark — that the model reads as one atom.",
+    "description": "LLMs never read characters or words: they read tokens. A tokenizer splits text into tokens before feeding it to the model. English common words are usually one token. Rarer words, code, and non-English text split into multiple tokens. On average ~4 characters = 1 token in English. Every price on the OpenAI pricing page, every context-window limit, and every rate limit is expressed in tokens, not words."
+  },
+  "illustration": {
+    "asset": "ai-engineering/tokens-and-tokenization/text-to-tokens.png",
+    "alt": "The phrase 'unbelievable pricing' split into four sub-word token tiles, counted as 4 tokens."
+  },
+  "sections": [
+    {
+      "body": "A tokenizer is the first thing that runs when you call an API. It converts raw text into a sequence of integer IDs, each mapping to one sub-word piece. The model never sees letters — it sees the ID sequence. On the other side, when the model outputs, a de-tokenizer converts IDs back to text.",
+      "recap": "Text → token IDs → model → token IDs → text. Characters never touch the model."
+    },
+    {
+      "body": "Why sub-words, not whole words? Whole-word vocabularies need millions of entries for all words, plurals, conjugations, and proper nouns. Sub-word tokenisers (OpenAI uses tiktoken with BPE) use a fixed ~100k-entry vocabulary and split unknowns into known pieces. 'unbelievable' → ['un', 'believ', 'able']. This handles all languages and arbitrary code without an infinite dictionary.",
+      "recap": "Sub-word BPE: fixed vocabulary, unknown words split into known pieces."
+    },
+    {
+      "body": "Token count drives three things: cost (you pay per token in and out), latency (more tokens = more time), and context limits (the model has a hard cap on total tokens it can process in one call — input + output combined). The 128k context window on gpt-4o means 128,000 tokens, not words. In English prose, 1k tokens ≈ 750 words. In Python code, tokens are denser — a function can cost 2–3× more tokens than you expect.",
+      "recap": "Tokens = the billing and limits unit. 1k English tokens ≈ 750 words."
+    },
+    {
+      "body": "You can inspect tokenization before making an API call. The tiktoken library mirrors OpenAI's tokenizer exactly — call it locally, pay nothing, see the split and the count. This is the standard way to guard against accidental overshooting the context limit before you send the request.",
+      "recap": "Use tiktoken locally to count tokens before calling the API — free, instant."
+    },
+    {
+      "body": "The surprising insight: non-English text and code often use far more tokens per 'word' than English prose. A Chinese character may be 1–2 tokens; a rare technical term in English can be 3–4. This means the same content costs differently depending on language and domain — a fact that trips up teams who budget based on word count.",
+      "recap": "Tokens, not words, control cost, context limits, and rate limits — and they vary dramatically by language and domain."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Count tokens before making an API call",
+      "language": "python",
+      "code": "import tiktoken\n\nenc = tiktoken.encoding_for_model('gpt-4o')\ntext = 'unbelievable pricing for the new plan'\ntokens = enc.encode(text)\n\nprint(len(tokens))           # 7\nprint(enc.decode(tokens))    # round-trips back to the original text",
+      "explanation": "tiktoken mirrors OpenAI's tokenizer exactly with no network call. Use this to count tokens before you send — it prevents silent context-overflow bugs and lets you budget before you pay."
+    },
+    {
+      "title": "Count tokens in a messages[] list (the real billing unit)",
+      "language": "python",
+      "code": "import tiktoken\n\ndef count_messages_tokens(messages: list[dict], model='gpt-4o') -> int:\n    enc = tiktoken.encoding_for_model(model)\n    total = 0\n    for msg in messages:\n        # 4 tokens overhead per message (role + delimiters)\n        total += 4 + len(enc.encode(msg.get('content', '')))\n    total += 2  # reply priming tokens\n    return total\n\nmsgs = [\n    {'role': 'system', 'content': 'You are a helpful assistant.'},\n    {'role': 'user',   'content': 'Explain RAG in one sentence.'},\n]\nprint(count_messages_tokens(msgs))  # ~27",
+      "explanation": "The API bills the full messages[] array, not just the user message. Each message carries ~4 overhead tokens for its role tags. Accumulate this across a long conversation and the cost grows faster than you expect."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Equating tokens with words in cost estimates",
+      "explanation": "Budgeting 'it's only 500 words' without counting tokens. In English ~1.3 tokens/word; in code or other languages it can be 2–4×. Always run tiktoken on your actual content."
+    },
+    {
+      "title": "Forgetting the context limit is tokens in + tokens out",
+      "explanation": "A 128k context window counts both the input you send AND the output the model generates. If your prompt is 120k tokens, you have only 8k left for the response — the model will truncate or error."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is a token, and roughly how many tokens is 1,000 English words?",
+      "answer": "A token is a sub-word piece (roughly a word or syllable). 1,000 English words is roughly 1,300 tokens.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do LLMs use sub-word tokenization instead of character-level or whole-word?",
+      "answer": "Sub-word BPE gives a fixed, manageable vocabulary that handles rare words, new terms, and multiple languages without an infinite dictionary.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Which library lets you count tokens locally before calling the OpenAI API?",
+      "answer": "tiktoken — it mirrors OpenAI's exact tokenizer and runs locally with no API cost.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A team estimates their RAG prompt will be '3,000 words' and is surprised when the API throws a context-length error. What are two likely causes?",
+      "company": "LLM Engineer OA",
+      "answer": "1) Word count ≠ token count — 3,000 words is ~4,000 tokens, not 3,000. 2) The context limit counts input + output tokens combined; if the output budget is also being consumed, the effective input limit is smaller. Fix: count with tiktoken, not words.",
+      "approach": "Convert words→tokens (~1.3×) and flag the input+output combined limit. These two explain nearly every 'why did I hit the limit?' surprise."
+    },
+    {
+      "question": "You're building a multilingual support bot that handles English and Thai. Your English content costs $0.50 per 1M tokens at your expected volume. A colleague expects Thai to cost the same. Why might it cost significantly more?",
+      "company": "GenAI Engineer interview",
+      "answer": "Non-Latin scripts often tokenize less efficiently — a Thai character may be 2–3 tokens where an English word is 1–1.3 tokens. The same information in Thai can cost 2–3× more in tokens. Always benchmark actual token counts per language on your real content.",
+      "approach": "Anchor on the sub-word vocabulary point: BPE was trained primarily on English text, so non-English scripts get split into more, smaller pieces."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/concepts/tokens",
+    "https://github.com/openai/tiktoken"
+  ]
+}

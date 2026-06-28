@@ -14,6 +14,7 @@ from sqlalchemy import text
 from app.core.database import engine
 
 ROADMAP_ID = uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+SLUG = "ai-engineering"  # content folder key + URL id; matches content/roadmaps/ai-engineering/
 TITLE = "AI Engineering — LLMs, RAG & Agents"
 DESCRIPTION = "Building real LLM applications: APIs, prompting, retrieval-augmented generation, vector search and agents — plus what it takes to run them in production."
 
@@ -75,8 +76,8 @@ async def main():
         await conn.execute(text("DELETE FROM roadmap_nodes WHERE roadmap_id = :rid"), {"rid": str(ROADMAP_ID)})
         await conn.execute(text("DELETE FROM roadmaps WHERE id = :rid"), {"rid": str(ROADMAP_ID)})
         await conn.execute(
-            text("INSERT INTO roadmaps (id, title, description, created_at) VALUES (:id, :title, :desc, now())"),
-            {"id": str(ROADMAP_ID), "title": TITLE, "desc": DESCRIPTION},
+            text("INSERT INTO roadmaps (id, slug, title, description, created_at) VALUES (:id, :slug, :title, :desc, now())"),
+            {"id": str(ROADMAP_ID), "slug": SLUG, "title": TITLE, "desc": DESCRIPTION},
         )
         for i, (phase, section, title, tier, desc) in enumerate(NODES):
             await conn.execute(

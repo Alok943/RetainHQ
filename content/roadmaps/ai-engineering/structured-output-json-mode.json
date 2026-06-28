@@ -1,0 +1,111 @@
+{
+  "slug": "structured-output-json-mode",
+  "title": "Structured Output (JSON Mode)",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 14,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["chat-completions-api"],
+    "unlocks": ["function-tool-calling"],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "Your pipeline asks GPT-4o to extract structured data — name, date, amount — from invoices. It works in testing. In production, 3% of responses have prose sentences mixed with the JSON, or the JSON key is 'Date' instead of 'date', and your downstream code crashes.",
+    "question": "How do you guarantee the model always returns parseable, schema-valid JSON — not just JSON-shaped text?"
+  },
+  "mental_model": {
+    "intuition": "JSON mode guarantees the output is parseable JSON. Structured outputs (with a schema) guarantee the output matches your exact schema. They are different features.",
+    "description": "LLMs are text generators — without constraints, they produce whatever text is most probable, which sometimes includes a preamble, a trailing comment, or a misspelled key. JSON mode constrains the output to valid JSON syntax (no trailing prose) but doesn't enforce field names or types. Structured outputs (OpenAI's newer feature) use constrained decoding to guarantee the response matches a JSON Schema exactly — right fields, right types, every time."
+  },
+  "sections": [
+    {
+      "body": "Basic JSON mode: pass response_format={type: 'json_object'} and instruct the model in the system prompt to return JSON. The API guarantees the output will be parseable with json.loads() — no trailing text, no markdown fences. What it does NOT guarantee: that your specific keys exist, that values have the right types, or that required fields are present. A valid JSON object {} satisfies JSON mode.",
+      "recap": "JSON mode = parseable JSON guaranteed. Schema correctness is NOT guaranteed."
+    },
+    {
+      "body": "Structured outputs (gpt-4o and later): pass your JSON Schema in response_format={type: 'json_schema', json_schema: {...}}. The model uses constrained decoding — at each token step, it can only generate tokens that keep the output valid against your schema. This makes schema violations structurally impossible, not just unlikely. Required fields will always appear. Types will always match.",
+      "recap": "Structured outputs = schema compliance guaranteed via constrained decoding."
+    },
+    {
+      "body": "In Python, the cleanest way is to define a Pydantic model and let the SDK generate and validate the schema for you. client.beta.chat.completions.parse() accepts a response_format=YourPydanticModel and returns response.choices[0].message.parsed — already a validated Python object, not a string. If the model somehow violates the schema, parsed is None and the raw refusal is in message.refusal.",
+      "recap": "Use Pydantic + .parse() for the full pipeline: prompt → guaranteed schema → typed Python object."
+    },
+    {
+      "body": "When to use what: JSON mode for simple cases where any valid JSON is fine (and you validate downstream). Structured outputs for production pipelines where schema correctness is required. Plain text prompting for JSON ('return JSON with keys x, y, z') for quick prototyping only — it fails in production at the worst time. Pydantic + structured outputs is the production standard.",
+      "recap": "Prototype: prompt for JSON. Production: Pydantic + structured outputs. JSON mode is the middle ground."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "JSON mode — guarantees valid JSON, not your schema",
+      "language": "python",
+      "code": "import json\nfrom openai import OpenAI\nclient = OpenAI()\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'Extract invoice data. Return JSON with keys: vendor, date, total_usd.'},\n        {'role': 'user',   'content': 'Invoice from Acme Corp dated 2024-03-15, total $1,240.00'},\n    ],\n    response_format={'type': 'json_object'},  # guaranteed parseable JSON\n    max_tokens=200,\n)\n\ndata = json.loads(response.choices[0].message.content)\nprint(data)   # {'vendor': 'Acme Corp', 'date': '2024-03-15', 'total_usd': 1240.0}\n# WARNING: keys and types not guaranteed — validate before using",
+      "explanation": "JSON mode guarantees json.loads() won't raise. It does NOT guarantee 'vendor' exists or that 'total_usd' is a float. You still need validation downstream. Always include the schema in the system prompt as guidance."
+    },
+    {
+      "title": "Structured outputs with Pydantic — the production pattern",
+      "language": "python",
+      "code": "from pydantic import BaseModel\nfrom openai import OpenAI\nclient = OpenAI()\n\nclass Invoice(BaseModel):\n    vendor: str\n    date: str           # ISO 8601 format\n    total_usd: float\n    line_items: list[str]\n\nresponse = client.beta.chat.completions.parse(\n    model='gpt-4o-2024-08-06',    # structured outputs requires this version or later\n    messages=[\n        {'role': 'system', 'content': 'Extract invoice data.'},\n        {'role': 'user',   'content': 'Invoice from Acme Corp, 2024-03-15, total $1,240. Items: consulting (800), hosting (440).'},\n    ],\n    response_format=Invoice,       # SDK derives the JSON Schema from the Pydantic model\n)\n\ninvoice: Invoice = response.choices[0].message.parsed\nprint(invoice.vendor)      # 'Acme Corp'  — typed Python object, not a dict\nprint(invoice.total_usd)   # 1240.0",
+      "explanation": "The SDK converts the Pydantic class to a JSON Schema automatically. constrained decoding ensures every field exists with the right type. .parsed returns a typed Python object — no json.loads(), no KeyError, no type coercion bugs. This is the pattern to use in production."
+    },
+    {
+      "title": "Handle the refusal case",
+      "language": "python",
+      "code": "response = client.beta.chat.completions.parse(\n    model='gpt-4o-2024-08-06',\n    messages=[\n        {'role': 'system', 'content': 'Extract invoice data.'},\n        {'role': 'user',   'content': 'No invoice here, just a thank you note.'},\n    ],\n    response_format=Invoice,\n)\n\nmsg = response.choices[0].message\nif msg.refusal:               # model refused to produce the schema\n    print('Refusal:', msg.refusal)\nelif msg.parsed:\n    invoice = msg.parsed\n    print('Got invoice:', invoice)",
+      "explanation": "When the input doesn't match what the schema expects (e.g. no invoice to extract), the model may refuse rather than hallucinate values. message.refusal is a string explaining why; message.parsed is None. Always handle both branches in production."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming JSON mode guarantees your schema",
+      "explanation": "'json_object' mode only guarantees valid JSON syntax — not your specific keys, types, or required fields. A response of {} is valid JSON mode output. For schema correctness you need structured outputs with a JSON Schema."
+    },
+    {
+      "title": "Using structured outputs without checking message.refusal",
+      "explanation": "When structured outputs can't produce a schema-valid response (e.g. the input makes no sense), the model refuses and message.parsed is None. Accessing .parsed without checking .refusal first raises an AttributeError."
+    },
+    {
+      "title": "Forgetting to specify the model version for structured outputs",
+      "explanation": "Structured outputs (constrained decoding) requires gpt-4o-2024-08-06 or later. Sending a structured outputs request to gpt-4o-mini or older versions falls back to JSON mode behavior without erroring — a silent regression."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between JSON mode and structured outputs?",
+      "answer": "JSON mode (response_format: json_object) guarantees parseable JSON but not your specific schema. Structured outputs (response_format: json_schema) use constrained decoding to guarantee both parseable JSON AND schema compliance — exact fields, exact types.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does client.beta.chat.completions.parse() return, and how is it different from .create()?",
+      "answer": ".parse() accepts a Pydantic model as response_format and returns message.parsed — a typed Python object, not a JSON string. .create() returns raw text you must parse yourself.",
+      "tier": "tier2"
+    },
+    {
+      "q": "When will message.parsed be None in a structured outputs response?",
+      "answer": "When the model refuses to produce schema-valid output — e.g. the input doesn't contain data matching the schema. Check message.refusal first before accessing .parsed.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your extraction pipeline uses JSON mode and fails in production on 2% of requests with a KeyError. In testing with 50 examples it never failed. What is the root cause and fix?",
+      "company": "GenAI Engineer interview",
+      "answer": "JSON mode guarantees parseable JSON syntax, not schema compliance. For rare inputs the model may omit a key or use a different name. In testing with 50 hand-picked examples you never hit an edge case. Fix: switch to structured outputs (Pydantic + .parse()) which uses constrained decoding to structurally prevent missing keys.",
+      "approach": "Name the root cause precisely: JSON mode ≠ schema valid. The low failure rate (2%) is the red flag for 'works in testing, fails in production on edge cases'. Constrained decoding is the correct fix."
+    },
+    {
+      "question": "A colleague proposes: 'Instead of structured outputs, we'll just ask GPT to return JSON in the system prompt and wrap json.loads() in a try/except.' Why is this fragile in production?",
+      "company": "LLM Engineer OA",
+      "answer": "Prompting for JSON works most of the time but fails in these ways: the model adds a preamble or trailing explanation making json.loads() fail; it uses slightly wrong key names ('Date' vs 'date'); it omits required fields on ambiguous inputs; it changes types (string instead of number). These failures are rare in testing but compound at production scale. Structured outputs prevent all of them at the generation level, not the parsing level.",
+      "approach": "List the concrete failure modes of prompt-for-JSON: preamble, key names, missing fields, type mismatch. All are caught by constrained decoding but not by a try/except."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/structured-outputs",
+    "https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format"
+  ]
+}

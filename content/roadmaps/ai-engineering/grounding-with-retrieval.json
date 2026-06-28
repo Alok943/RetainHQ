@@ -1,0 +1,137 @@
+{
+  "slug": "grounding-with-retrieval",
+  "title": "Grounding with Retrieval",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["embeddings"],
+    "unlocks": ["chunking-strategies", "hallucination-mitigation"],
+    "appears_in": ["GenAI Engineer interview", "RAG system design"]
+  },
+  "hook": {
+    "scenario": "You ask your company's internal bot, 'What is the standard SLA for enterprise customers?' and it confidently replies '99.9%'. You check the docs, and it's actually 99.99%. The bot just guessed based on its training data.",
+    "question": "How do you stop an LLM from hallucinating answers to questions it doesn't know?"
+  },
+  "mental_model": {
+    "intuition": "Retrieval-Augmented Generation (RAG) turns a closed-book exam into an open-book exam.",
+    "description": "Standard LLMs answer from memory (weights learned during training). When they don't know, they guess (hallucinate). Grounding gives the LLM the exact document pages it needs to answer the question, right in the prompt. Instead of 'What is our SLA?', you ask, 'Based on this text: [Enterprise SLA is 99.99%], what is our SLA?' It reads the answer directly, eliminating the need to guess."
+  },
+  "illustration": {
+    "asset": "ai-engineering/grounding-with-retrieval/open-book-exam.png",
+    "alt": "An LLM reading relevant pages from an open book to answer, versus a crossed-out closed-book guess."
+  },
+  "sections": [
+    {
+      "body": "Large Language Models are incredible at reasoning, summarizing, and synthesizing. But they are terrible databases. Their training data cuts off at a specific date, and they have zero knowledge of your private company documents. If you ask them a niche or private question, they will convincingly hallucinate an answer.",
+      "recap": "Models reason well but store facts poorly; they hallucinate what they don't know."
+    },
+    {
+      "body": "The fix is to stop relying on the model's memory. Instead, we use a search system to find the relevant information, and then we paste that text directly into the prompt. The model's job shifts from 'remembering the answer' to 'reading the answer out of the provided text'.",
+      "recap": "Provide the facts in the prompt so the model reads instead of guessing."
+    },
+    {
+      "body": "This workflow is called Retrieval-Augmented Generation (RAG). It has two distinct steps: first, retrieve the right facts from a database (the hard part), and second, generate an answer using only those facts (the easy part). The pipeline looks like this:",
+      "animation": {
+        "type": "sequence",
+        "actors": [
+          { "id": "user", "label": "User" },
+          { "id": "retriever", "label": "Vector DB" },
+          { "id": "llm", "label": "Model" }
+        ],
+        "steps": [
+          { "from": "user", "to": "retriever", "label": "search query", "term": "Retrieve" },
+          { "from": "retriever", "to": "llm", "label": "return relevant chunks", "term": "Augment" },
+          { "from": "llm", "to": "user", "label": "answer based on chunks", "term": "Generate" }
+        ]
+      },
+      "recap": "RAG pipeline: Retrieve relevant facts, augment the prompt, generate the answer."
+    },
+    {
+      "body": "The prompt is usually structured with strict instructions to anchor the model. We explicitly command it: 'Answer ONLY using the provided context. If the answer is not in the context, say I don't know.' This instruction, combined with the context itself, is what we call 'grounding' the model.",
+      "recap": "Grounding anchors the model to facts and gives it permission to say 'I don't know'."
+    },
+    {
+      "body": "RAG shifts the burden of accuracy from the LLM to your search system. If your retriever finds the wrong paragraphs, the LLM will give the wrong answer (or correctly refuse). If it finds the right paragraphs, the LLM will almost always succeed. This is why AI engineers spend 90% of their time tuning the retrieval, not the generation.",
+      "recap": "RAG quality depends entirely on retrieval quality. If you don't retrieve it, the model can't use it."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The hallucination risk (closed-book)",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# The model guesses based on its training data\nresponse = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[\n        {\"role\": \"user\", \"content\": \"What is the SLA for RetainHQ Enterprise?\"}\n    ]\n)\nprint(response.choices[0].message.content)  # Likely hallucinates",
+      "explanation": "Without context, the model relies on its pre-trained weights. If the answer isn't deeply memorized (like private company data), it will guess."
+    },
+    {
+      "title": "Grounding with context (open-book)",
+      "language": "python",
+      "code": "# 1. Retrieve the relevant fact (mocked here)\nretrieved_docs = \"RetainHQ Enterprise accounts guarantee a 99.99% uptime SLA.\"\n\n# 2. Augment the prompt with the docs and strict instructions\ngrounded_prompt = f\"\"\"\nAnswer the question using ONLY the provided context.\nIf the context does not contain the answer, say 'I don't know.'\n\nContext:\n{retrieved_docs}\n\nQuestion: What is the SLA for RetainHQ Enterprise?\n\"\"\"\n\n# 3. Generate the grounded answer\nresponse = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[{\"role\": \"user\", \"content\": grounded_prompt}]\n)\nprint(response.choices[0].message.content)  # Outputs: 99.99%",
+      "explanation": "This is RAG in a nutshell. We retrieve the exact fact, inject it into the prompt, and command the model to stick to the script."
+    }
+  ],
+  "key_points": [
+    { "title": "Memory vs Reading", "detail": "LLMs are bad databases but excellent readers. Give them the text to read." },
+    { "title": "The RAG Pipeline", "detail": "Retrieve the facts, Augment the prompt with those facts, Generate the answer." },
+    { "title": "Strict Instructions", "detail": "Grounding requires explicitly telling the model to ignore outside knowledge and refuse to answer if the context is empty." },
+    { "title": "Retrieval Bottleneck", "detail": "The LLM can only answer what you retrieve. If your search fails, your bot fails." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the 'I don't know' instruction",
+      "explanation": "If you just paste the context without telling the model to restrict itself, it may still combine the context with its own hallucinatory knowledge."
+    },
+    {
+      "title": "Assuming a better LLM fixes bad retrieval",
+      "explanation": "Switching from a small model to GPT-4o won't fix RAG accuracy if your search system isn't fetching the right documents in the first place."
+    },
+    {
+      "title": "Stuffing too much context",
+      "explanation": "Just dumping a 100-page document into the prompt is expensive, slow, and degrades the model's ability to find the specific answer. You must retrieve only the most relevant chunks."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of grounding an LLM with retrieval?",
+      "answer": "To prevent hallucinations by forcing the model to answer based on provided facts rather than its internal training memory.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the three steps of the RAG pipeline?",
+      "answer": "Retrieve (search for facts), Augment (add facts to the prompt), Generate (model reads prompt and answers).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it important to include an 'I don't know' escape hatch in a RAG prompt?",
+      "answer": "If the retrieval system fails to find relevant context, the model needs permission to refuse the question. Otherwise, it will try to be helpful and guess.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If your RAG system is giving wrong answers, should you upgrade the LLM first?",
+      "answer": "No. The issue is usually the retrieval step. If the right facts aren't in the prompt, no LLM can give the right answer.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A team built a RAG chatbot. Users complain it still hallucinates when asked about features that don't exist. How would you debug and fix this?",
+      "company": "GenAI Engineer interview",
+      "answer": "The prompt likely lacks strict grounding instructions. First, ensure the prompt explicitly says 'Answer ONLY using the provided context. If the answer is not present, say \"I don't know.\"' Second, verify that the retrieval system is returning low-relevance chunks for the non-existent feature, rather than random unrelated text.",
+      "approach": "Identify that the model is falling back to its internal knowledge because it hasn't been strictly commanded to stop. The fix is prompt instructions, not more docs."
+    },
+    {
+      "question": "You have a large corpus of documents and want to build a Q&A bot. Should you fine-tune the model on the documents or use RAG?",
+      "company": "LLM Engineer OA",
+      "answer": "Use RAG. Fine-tuning is for teaching a model a new format, style, or task, but it is very poor at memorizing new facts. RAG is cheaper, allows you to easily update or delete documents without retraining, and provides citations to the source text.",
+      "approach": "Contrast fact retrieval (RAG) vs behavior modification (fine-tuning). Emphasize that RAG prevents hallucination via grounding and is easier to maintain."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/prompt-engineering",
+    "https://python.langchain.com/docs/concepts/rag/"
+  ]
+}

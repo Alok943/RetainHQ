@@ -1,0 +1,109 @@
+{
+  "slug": "context-window",
+  "title": "Context Window",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["tokens-and-tokenization"],
+    "unlocks": [],
+    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+  },
+  "hook": {
+    "scenario": "You feed a chatbot 20 turns of conversation history. By turn 25, it has completely forgotten what the user said at the start and contradicts itself.",
+    "question": "The model isn't broken — it literally cannot see what it said 25 turns ago. Why?"
+  },
+  "mental_model": {
+    "intuition": "A context window is the model's working memory — it can only 'see' the text that fits inside it, and nothing outside that window exists.",
+    "description": "Every time you call an LLM API, it processes all the tokens you send from scratch. There is no persistent state between calls — no memory of previous conversations unless you explicitly re-include them in the prompt. The context window is the total number of tokens (input + output) the model can process in one shot. Text outside the window is simply invisible to the model, as if it never existed."
+  },
+  "illustration": {
+    "asset": "ai-engineering/context-window/window-over-text.png",
+    "alt": "A context-window frame covering the top of a long document; the rest is greyed out as truncated."
+  },
+  "sections": [
+    {
+      "body": "Modern context windows range from 8k tokens (older GPT-3.5) to 128k (gpt-4o) and even 1M (Gemini 1.5). But a larger window is not free. Cost scales linearly with input tokens. Latency (time-to-first-token) also grows. A 128k prompt costs roughly 16× more than an 8k one at the same price/token — so 'just send everything' is not a real strategy.",
+      "recap": "Larger window = more costly and slower. There is no free 'just send everything'."
+    },
+    {
+      "body": "The context window holds everything: your system prompt, the conversation history, the retrieved chunks, the user's question, and the space for the model's reply. All of these compete for the same fixed budget. If your system prompt is 2k tokens and the reply needs 1k, your usable space for history + retrieval is window_size − 3k.",
+      "recap": "Budget: window = system + history + retrieved context + user message + output headroom."
+    },
+    {
+      "body": "When you overflow, behavior depends on the API. Most modern APIs hard-error with a 400 (context_length_exceeded). Some older setups silently truncate from the left — cutting the oldest messages first — which is how chatbots 'forget'. The safe pattern: count tokens before sending (with tiktoken), and evict the oldest messages when you approach the limit.",
+      "recap": "Overflow either errors or silently truncates. Always count tokens before sending."
+    },
+    {
+      "body": "The 'lost in the middle' problem is subtler than overflow: research shows models attend best to content at the START and END of the context. Material in the middle is answered less reliably. This means stuffing 50 retrieved chunks into the middle of a 128k context is worse than sending 5 carefully chosen chunks. Position matters, not just token count.",
+      "recap": "Model attention is U-shaped: start and end get better recall than the middle."
+    },
+    {
+      "body": "Context window ≠ memory. Even with a 1M-token window, the model starts fresh on every API call. 'Memory' in chatbots is an application-layer pattern: you manage a list of past messages and re-include however many fit each turn. Long-term memory — persisting facts across sessions — requires a separate store (database, vector store, or a summary) that you inject.",
+      "recap": "Context window is one call's working memory. Cross-call memory is your app's job, not the model's."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Guard against context overflow before sending",
+      "language": "python",
+      "code": "import tiktoken\nfrom openai import OpenAI\n\nMODEL = 'gpt-4o'\nMAX_TOKENS = 128_000\nOUTPUT_HEADROOM = 2_000   # reserve for the reply\n\nenc = tiktoken.encoding_for_model(MODEL)\n\ndef trim_history(messages: list[dict]) -> list[dict]:\n    'Evict oldest non-system messages until we fit within budget.'\n    while True:\n        total = sum(4 + len(enc.encode(m.get('content', ''))) for m in messages) + 2\n        if total <= MAX_TOKENS - OUTPUT_HEADROOM:\n            return messages\n        # drop the first non-system message\n        for i, m in enumerate(messages):\n            if m['role'] != 'system':\n                messages.pop(i)\n                break\n        else:\n            return messages   # only system message left",
+      "explanation": "This is the standard sliding-window pattern for long conversations. Keep a system message pinned and evict the oldest user/assistant turns when you approach the limit. Counting with tiktoken before each call prevents silent truncation or a 400 error mid-conversation."
+    },
+    {
+      "title": "Check how many tokens a prompt will use before calling",
+      "language": "python",
+      "code": "import tiktoken\n\nenc = tiktoken.encoding_for_model('gpt-4o')\n\nmessages = [\n    {'role': 'system', 'content': 'You are a concise assistant.'},\n    {'role': 'user',   'content': 'Summarise the French Revolution in 3 bullet points.'},\n]\n\ntotal = sum(4 + len(enc.encode(m['content'])) for m in messages) + 2\nprint(f'Prompt will use {total} tokens (of 128,000 available)')",
+      "explanation": "Run this before every production call. The 4+2 overhead counts the role delimiters tiktoken adds to each message. Catching the overflow here is free; catching it from a 400 API error wastes a round-trip and a retry."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Treating the context window as cross-call memory",
+      "explanation": "The model starts from zero on every API call. If you want it to 'remember' the previous turn, you must resend that text. Forgetting this is why chatbots built without proper history management 'forget' the user's name two messages later."
+    },
+    {
+      "title": "Assuming more context always helps",
+      "explanation": "The 'lost in the middle' effect means stuffing a large context with marginally relevant text can hurt answer quality. Send fewer, highly-relevant chunks rather than everything you can fit."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the context window actually contain, and what is NOT included in it?",
+      "answer": "It contains the system prompt, conversation history, retrieved context, and the user message — all tokens sent in a single API call. It does NOT include anything from past API calls (those are gone unless you re-include them).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the 'lost in the middle' effect?",
+      "answer": "LLMs attend better to the start and end of a long context than to the middle. Content buried in the middle of a 128k context is recalled less reliably than the same content placed near the edges.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you prevent a context-overflow error without calling the API?",
+      "answer": "Use tiktoken to count tokens in your messages[] list locally before sending — it mirrors the API's tokenizer exactly and runs for free.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A chatbot works perfectly for the first 10 turns but starts giving inconsistent answers by turn 20. You haven't changed the system prompt or the model. What is the most likely cause and how do you fix it?",
+      "company": "GenAI Engineer interview",
+      "answer": "Context overflow: the conversation history is exceeding the window, causing silent truncation of earlier messages. The model 'forgot' what was established early. Fix: implement a sliding-window or summarization strategy — evict the oldest messages when approaching the token limit, or compress old turns into a running summary.",
+      "approach": "Name context overflow as the root cause. Distinguish silent truncation (model seems dumb) from a 400 error (call fails). Propose sliding window + token counting as the fix."
+    },
+    {
+      "question": "You have 50 relevant chunks from a vector store that all fit in a 128k context window. A colleague says 'just send all 50'. Why might that produce worse answers than sending only the top 5?",
+      "company": "LLM Engineer OA",
+      "answer": "The 'lost in the middle' effect: with 50 chunks, the model's attention is spread thin and the truly relevant chunk — likely buried in the middle — may be recalled poorly. Sending 5 high-quality, well-ranked chunks puts the answer content near the edges where model attention is highest. Cost and latency also increase 10× for little gain.",
+      "approach": "Lead with the attention distribution point, then add cost/latency as secondary motivation. This is the 'nearest ≠ correct' lesson applied to context size."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/concepts/context-window",
+    "https://github.com/openai/tiktoken"
+  ]
+}

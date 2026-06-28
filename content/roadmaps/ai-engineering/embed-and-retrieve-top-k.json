@@ -1,0 +1,141 @@
+{
+  "slug": "embed-and-retrieve-top-k",
+  "title": "Embed & Retrieve Top-k",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 16,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["embeddings", "chunking-strategies"],
+    "unlocks": ["reranking", "context-injection-and-prompt-assembly"],
+    "appears_in": ["GenAI / LLM Engineer interview", "RAG system design"]
+  },
+  "hook": {
+    "scenario": "Your support bot is asked: 'How do I reset my password?' Your docs have 4,000 paragraphs. You can't paste all of them into the prompt — that's a million tokens. You need to find the 3 or 4 paragraphs that actually answer the question, and only send those.",
+    "question": "How does the system know WHICH paragraphs are relevant, without you writing a single keyword rule?"
+  },
+  "mental_model": {
+    "intuition": "Retrieval is 'find the nearest neighbours' — turn the question into a point in space, and grab the chunks that sit closest to it.",
+    "description": "Every chunk of your docs was already turned into a vector (a list of ~1,500 numbers) at ingest time. At query time you turn the user's question into a vector the SAME way, then ask: which stored vectors point in nearly the same direction? The closest k of them are your answer. No keyword matching — meaning is encoded in the direction of the vector, so 'reset my password' lands near 'recover your account' even though they share no words."
+  },
+  "sections": [
+    {
+      "body": "Picture every paragraph in your docs as a dot floating in space, where dots that MEAN similar things sit close together — all your password paragraphs in one corner, billing in another, API docs in a third. Retrieval is just this: drop the user's question in as a new dot, and grab the handful of dots nearest to it.",
+      "recap": "Retrieval = find the chunks nearest your question in embedding space."
+    },
+    {
+      "body": "Why not just match keywords? Language hides meaning behind different words. 'How do I reset my password?' and 'Steps to recover your account' share almost no words, so keyword search misses the second. But they mean nearly the same thing — so their dots land right next to each other. Semantic closeness, not word overlap, is what we search on.",
+      "recap": "Embeddings capture meaning, so retrieval finds matches keyword search can't."
+    },
+    {
+      "body": "The dots come from an embedding model: feed it text, get back a vector positioned so similar meanings sit close. Two phases: at INGEST you chunk the docs, embed each chunk, and store every (vector, text) pair. At QUERY time you embed the question — with the EXACT SAME model — to get one query vector. Mix models and nothing errors; retrieval just silently returns junk.",
+      "recap": "Same embedding model on both sides, or the vectors aren't comparable."
+    },
+    {
+      "body": "Now: one query vector, thousands of chunk vectors — which are closest? Not by straight-line distance but by DIRECTION. Two vectors pointing the same way mean the same thing; cosine similarity measures exactly that (1 = identical, 0 = unrelated). You don't need the formula — just hold the picture. Watch the query land nearest its cluster and the top-k light up:",
+      "animation": {
+        "type": "vector-space",
+        "clusters": [
+          { "label": "Password", "color": "teal" },
+          { "label": "Billing", "color": "amber" },
+          { "label": "API docs", "color": "cyan" }
+        ],
+        "query": { "label": "reset my password", "near": "Password" },
+        "k": 3
+      },
+      "recap": "Closeness = direction (cosine); the nearest k chunks become the context."
+    },
+    {
+      "body": "That k is usually 4 to 6 — a real tradeoff. Too small and one slightly-off chunk leaves the model nothing, so it hallucinates. Too large and the real answer gets buried among marginal chunks (the 'lost in the middle' effect) while you pay for extra tokens. Scanning every vector is fine for hundreds of chunks; at millions it's too slow — which is why vector databases keep an ANN index that finds the nearest k in milliseconds.",
+      "recap": "Tune k to 4–6; a vector DB's ANN index makes nearest-k fast at scale."
+    },
+    {
+      "body": "The catch: the vector store never understands English — it only compares numbers. ALL the meaning lives in the embedding model; the store is just fast geometry. And it ALWAYS returns k results, even when nothing is relevant — the least-bad matches, not the correct ones. Nearest ≠ good, which is why reranking and thresholds come next.",
+      "recap": "Pipeline: Docs → Chunk → Embed → Store, then Query → Embed → Retrieve → Prompt → LLM. This is the Embed → Retrieve hinge."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Embed the query with the same model used for chunks",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\ndef embed(text: str) -> list[float]:\n    resp = client.embeddings.create(\n        model=\"text-embedding-3-small\",   # MUST match the model used at ingest\n        input=text,\n    )\n    return resp.data[0].embedding   # e.g. 1536 floats\n\nquery_vec = embed(\"How do I reset my password?\")",
+      "explanation": "The question goes through the identical embedding model the chunks used. Mixing models (chunks on model A, query on model B) produces vectors in different spaces — the similarity numbers become meaningless."
+    },
+    {
+      "title": "Score every chunk by cosine similarity, keep the top k",
+      "language": "python",
+      "code": "import numpy as np\n\ndef cosine(a, b):\n    a, b = np.array(a), np.array(b)\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\n# top-k by brute force over stored (vector, text) pairs\ndef retrieve(query_vec, store, k=4):\n    scored = [(cosine(query_vec, vec), text) for vec, text in store]\n    scored.sort(reverse=True)          # highest similarity first\n    return [text for _, text in scored[:k]]",
+      "explanation": "This brute-force scan is exactly what a vector DB does for you — just optimised with an ANN index so it doesn't compare against all N vectors. Conceptually it is this loop: score every chunk, sort, take the top k."
+    },
+    {
+      "title": "In production: let the vector store do the search",
+      "language": "python",
+      "code": "# pgvector / Postgres — the <=> operator is cosine distance\nrows = db.execute(\n    \"\"\"\n    SELECT chunk_text\n    FROM documents\n    ORDER BY embedding <=> :qvec   -- nearest first\n    LIMIT :k\n    \"\"\",\n    {\"qvec\": query_vec, \"k\": 4},\n).fetchall()\ntop_chunks = [r.chunk_text for r in rows]",
+      "explanation": "You almost never hand-roll the scan. The vector store (pgvector here) keeps an index and returns the nearest k in milliseconds even over millions of chunks. `<=>` is distance, so ORDER BY ascending = most similar first."
+    }
+  ],
+  "key_points": [
+    { "title": "Same model both sides", "detail": "Embed the query with the identical model used for the chunks, or the vectors aren't comparable." },
+    { "title": "Cosine = direction, not distance", "detail": "Similarity is the angle between vectors; for normalised embeddings it's just the dot product." },
+    { "title": "k is a tradeoff", "detail": "Too small → fragile, hallucinates; too large → noisy, costly, buries the answer. Start at 4." },
+    { "title": "Nearest ≠ correct", "detail": "The store always returns k results, even from irrelevant docs. Reranking and thresholds fix the gap." },
+    { "title": "Quality is upstream", "detail": "Retrieval quality depends far more on chunking, the embedding model, and document quality than on which vector database you pick." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a different embedding model for query vs chunks",
+      "explanation": "Vectors from different models live in different spaces. The cosine numbers come out plausible-looking but mean nothing, so retrieval silently returns garbage."
+    },
+    {
+      "title": "Cranking k up to 'be safe'",
+      "explanation": "More chunks is not more accuracy. Past ~6–8 you add tokens and latency and the real answer can get lost in the middle of the context, lowering quality."
+    },
+    {
+      "title": "Assuming retrieval guarantees relevance",
+      "explanation": "Similarity search returns the closest vectors even when nothing in your corpus answers the question. Without a threshold you'll feed the model the 'least-bad' chunks and it will confidently answer from them."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why must the query be embedded with the same model as the chunks?",
+      "answer": "Vectors are only comparable within the same embedding space. Different models produce incompatible spaces, so similarity scores between them are meaningless.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does cosine similarity actually measure, and what does a value of 1 vs 0 mean?",
+      "answer": "The cosine of the angle between two vectors — i.e. how aligned their directions are. 1 = same direction (near-identical meaning), 0 = perpendicular (unrelated).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Give one failure mode of a too-large k.",
+      "answer": "Extra tokens/cost and latency, plus the 'lost in the middle' effect where the genuinely relevant chunk gets buried among marginal ones and answer quality drops.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Retrieval returned 4 chunks. Does that mean the answer is in them?",
+      "answer": "No. The store always returns the k nearest vectors, even if nothing is relevant. Nearest ≠ correct — you need reranking or a similarity threshold to catch the 'no good match' case.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In a RAG pipeline, a user reports the bot gives confident but wrong answers when asked about topics NOT covered in the docs. What is happening at the retrieval layer and how do you fix it?",
+      "company": "GenAI Engineer interview",
+      "answer": "Similarity search always returns the k nearest chunks, so even off-topic questions get 'least-bad' chunks injected, which the LLM then answers from. Fix: apply a minimum similarity threshold — if even the top match is below it, retrieve nothing and let the model refuse — and/or add reranking to filter weak matches.",
+      "approach": "Name the root cause: 'nearest ≠ relevant.' The store can't return empty by default. The fix is a threshold/guardrail on the retrieval score, not a bigger k."
+    },
+    {
+      "question": "Your retrieval quality is poor: relevant chunks exist but aren't being returned. The chunks were embedded with text-embedding-3-large; the query is embedded with text-embedding-3-small. What's the bug?",
+      "company": "RAG system design",
+      "answer": "Model mismatch. Chunks and query are in different embedding spaces, so cosine similarity between them is meaningless and the true matches don't surface. Re-embed the query (or the chunks) so both sides use the same model.",
+      "approach": "Spot the two different model names. Same-model-both-sides is the first invariant to check when retrieval 'silently' fails."
+    }
+  ],
+  "sources": [
+    "https://platform.openai.com/docs/guides/embeddings",
+    "https://github.com/pgvector/pgvector"
+  ]
+}
