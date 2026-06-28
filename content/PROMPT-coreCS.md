@@ -16,8 +16,9 @@ in `content/_TODO-coreCS.md`. Validate with `python content/validate.py` (theory
 |---|---|---|---|
 | 1 | `hook` | optional | A concrete scene where this concept bites (a server thrashing, an app deadlocking). Skip if forced. |
 | 2 | `mental_model` | **REQUIRED** | The **analogy** that makes it click. *"A deadlock is 4 cars at a 4-way stop, each waiting for the one to its right." "A semaphore is a bowl of restaurant buzzers." "An index is a book's index — jump, don't scan."* `intuition` = the one-liner; `description` = expand the analogy. |
-| 3 | `explanation` | **REQUIRED** | The concept, explained plainly — what it is, how it works, why it exists. A few short paragraphs (blank-line separated). This is the meat. Precise but not a textbook dump. |
-| 4 | `key_points` | optional | The component breakdown as `[{title, detail}]` — e.g. ACID → 4 points; TCP handshake → SYN / SYN-ACK / ACK; deadlock → the 4 necessary conditions. Use when the concept HAS discrete parts. |
+| 3 | `explanation` | **REQUIRED** | This is the **primary learning resource — it must TEACH, not summarize.** Assume the reader has never seen the concept. **Walk through HOW it works/forms with a concrete worked example**, tie it back to the analogy/animation, explain each moving part and *why* it's there, then the practical takeaway. **4–6 substantial paragraphs**, blank-line separated. NOT a glossary entry, NOT a review card — if a beginner couldn't learn the topic from this alone, it's too thin. (Theory ≠ the thin aptitude lessons: here depth is the point.) |
+| 4 | `animation` | **optional — PROCESS concepts only** | A short animated process diagram, shown right after the analogy. Structured data (NOT a video). Author it ONLY for concepts that are a *process/flow* — TCP handshake, paging, page-fault, ARP, routing, deadlock, CSMA/CD, demand paging. SKIP for static concepts ("what an OS is", "DBMS vs file system"). Schema below. |
+| 5 | `key_points` | optional | The component breakdown as `[{title, detail}]` — e.g. ACID → 4 points; TCP handshake → SYN / SYN-ACK / ACK; deadlock → the 4 necessary conditions. Use when the concept HAS discrete parts. |
 | — | `common_mistakes` | **REQUIRED, ≥1** | The classic **misconception** (e.g. "mutex == semaphore"; "paging == segmentation"; "TCP is faster than UDP"). |
 | 5 | `recall_questions` | **REQUIRED, ≥3** | The kind an interviewer asks. tier1 = state it, tier2 = apply/compare. Feeds the review engine. |
 | 6 | `oa_questions` | **REQUIRED, ≥2** | Real interview/OA questions ("What happens when you type a URL?", "Difference between process and thread?") with `company` + an `approach`/`answer` outline. |
@@ -74,6 +75,36 @@ A diagram-in-words belongs inside `explanation` or `mental_model.description`.
   "sources": ["https://www.geeksforgeeks.org/introduction-of-deadlock-in-operating-system/"]
 }
 ```
+
+## `animation` — for PROCESS concepts (optional)
+A 5–10s animated diagram that runs right after the `mental_model`. It is **structured data**, not a
+video — `actors` (the boxes) + `steps` (a directed `from`→`to` flow). The frontend renders boxes with
+a flowing arrow stepping through each transition. The per-step `term` is the **map-to-terminology**
+layer (animation step → CS term), so put the precise term there.
+```json
+"animation": {
+  "type": "sequence",
+  "actors": [
+    { "id": "client", "label": "Client" },
+    { "id": "server", "label": "Server" }
+  ],
+  "steps": [
+    { "from": "client", "to": "server", "label": "Can you hear me?", "term": "SYN" },
+    { "from": "server", "to": "client", "label": "Yes - can you hear me?", "term": "SYN-ACK" },
+    { "from": "client", "to": "server", "label": "Yes.", "term": "ACK" }
+  ]
+}
+```
+`type` options (both rendered):
+- **`"sequence"`** — a linear flow (handshake, page lookup, routing hop). Boxes in a row; one arrow at a time.
+- **`"cycle"`** — a CLOSED LOOP (deadlock circular-wait, token ring). Actors are placed on a ring and
+  the arrows **accumulate until the loop closes** — use this whenever the concept IS a cycle, so the
+  visual matches the idea. The final step should be the one that closes the loop.
+
+Rules: 2–6 `actors`; every step's `from`/`to` must be an actor `id`; `label` = the plain-language
+action (the analogy's words), `term` = the exact CS term; 3–5 steps. **Author it only for true
+processes** — a handshake, a page lookup, a routing hop, a lock cycle. (`timeline`/Gantt for
+scheduling is NOT rendered yet — don't use it.) Reference: `content/roadmaps/core-cs/deadlock-conditions.json`.
 
 ## Topic notes
 - **DBMS — SKIP the SQL-overlap nodes** (joins, GROUP BY/HAVING, subqueries, normalization drills,

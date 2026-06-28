@@ -1,0 +1,89 @@
+{
+  "slug": "prevention-vs-avoidance",
+  "title": "Deadlock: Prevention vs Avoidance",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "deadlock-conditions"
+    ],
+    "unlocks": [
+      "banker-s-algorithm",
+      "detection-and-recovery"
+    ],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "You are designing a traffic control system for a busy downtown grid. You can either pass laws to make gridlock physically impossible (like turning all streets into one-way roads), or you can dynamically track every car and stop them from entering an intersection if it might lead to a jam."
+  },
+  "mental_model": {
+    "intuition": "Prevention is removing the possibility of deadlock beforehand; avoidance is dodging it in real-time.",
+    "description": "Deadlock prevention restricts how processes can request resources, effectively breaking at least one of the four necessary deadlock conditions. It's a structural guarantee. Deadlock avoidance allows all requests but uses an algorithm at runtime to simulate the future. If granting a resource might lead to a deadlock, the OS makes the process wait."
+  },
+  "explanation": "When an Operating System manages resources like memory, printers, or database locks, it must ensure that processes don't get stuck in a permanent deadlock. There are two primary proactive strategies to handle this: Deadlock Prevention and Deadlock Avoidance. Both aim to stop deadlocks before they happen, but they attack the problem from completely different angles.\n\nDeadlock Prevention works by ensuring that at least one of the four necessary conditions for deadlock (Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait) can never occur. For example, to break 'Hold and Wait', the OS might require a process to request all its resources at once before it starts executing. To break 'Circular Wait', the OS can assign a strict numerical order to all resource types and force processes to request them in increasing order.\n\nWhile prevention provides a solid structural guarantee, it often leads to severe inefficiencies. If a process must request a printer at the beginning of its life just to satisfy a 'Hold and Wait' prevention rule, that printer sits idle for hours while the process does other computations. The rules are rigid, meaning resource utilization plummets and system throughput suffers.\n\nDeadlock Avoidance takes a more flexible, dynamic approach. Instead of imposing strict rules, it requires processes to declare their maximum potential resource needs upfront. The OS then acts like a highly cautious traffic cop. Every time a process requests a resource, the OS momentarily pauses, simulates what would happen if it granted the request, and checks if the system would remain in a 'safe state'.\n\nIf the simulation shows that all processes can still eventually finish, the OS grants the request. If the simulation reveals a potential path to deadlock, the OS forces the requesting process to wait, even if the resource is currently available. This allows for much better resource utilization than prevention, but it requires continuous computational overhead and relies on knowing maximum resource demands in advance, which isn't always realistic.",
+  "key_points": [
+    {
+      "title": "Prevention Approach",
+      "detail": "Structurally invalidates one of the four Coffman conditions (e.g., forcing ordered resource requests to stop circular wait)."
+    },
+    {
+      "title": "Avoidance Approach",
+      "detail": "Dynamically evaluates every resource request at runtime to ensure the system never enters an unsafe state."
+    },
+    {
+      "title": "Trade-offs",
+      "detail": "Prevention lowers resource utilization but requires no runtime simulation. Avoidance improves utilization but adds high CPU overhead and requires knowing max resource needs beforehand."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using the terms interchangeably",
+      "explanation": "Many people use 'prevention' and 'avoidance' to mean the same thing. In OS theory, they are distinct: prevention is a strict design rule, while avoidance is a dynamic algorithmic check."
+    },
+    {
+      "title": "Assuming avoidance eliminates the deadlock conditions",
+      "explanation": "Avoidance allows the four conditions to exist; it simply steers the system clear of the specific scenarios where all four align to cause a deadlock."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which strategy breaks one of the four necessary deadlock conditions?",
+      "answer": "Deadlock prevention.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does deadlock avoidance require advance knowledge of a process's needs?",
+      "answer": "Because it must simulate future states to ensure a request won't trap the system in an unsafe state.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Which strategy typically leads to lower resource utilization?",
+      "answer": "Deadlock prevention, due to its rigid constraints like requesting all resources at once.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An OS mandates that all processes must request resources in strict numerical order. Is this an example of deadlock prevention or avoidance, and which condition does it target?",
+      "company": "Core CS OA",
+      "answer": "Deadlock prevention, specifically targeting the Circular Wait condition.",
+      "approach": "Identify the strategy: changing how resources are requested to break a condition is prevention. Ordered requests prevent a cycle from forming."
+    },
+    {
+      "question": "A system uses an algorithm to check if allocating a disk drive will leave the system in a safe state. What deadlock handling method is this?",
+      "company": "SDE interview",
+      "answer": "Deadlock avoidance.",
+      "approach": "Recognize that dynamic, runtime checking of states before allocation is the hallmark of deadlock avoidance."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

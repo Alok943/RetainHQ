@@ -1,0 +1,91 @@
+{
+  "slug": "congestion-control",
+  "title": "Congestion Control",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "tcp-vs-udp"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Systems Design Interview",
+      "Backend Engineering"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine hundreds of cars trying to merge onto a single-lane highway at the same time. If they all accelerate, traffic grinds to a complete halt. To keep traffic flowing, on-ramp stoplights force cars to enter slowly, only speeding up when the road is clear."
+  },
+  "mental_model": {
+    "intuition": "A probing mechanism where a sender cautiously tests the network's speed limit, backing off immediately if it detects a traffic jam.",
+    "description": "While Flow Control protects the receiver, Congestion Control protects the internet infrastructure. Senders start transmitting slowly, exponentially increase their speed until packets get dropped, and then slash their speed to allow routers to recover."
+  },
+  "explanation": "In a complex network like the internet, data packets must hop through multiple routers and switches. If thousands of computers simultaneously push maximum data through a single router, that router's queues will overflow, and it will be forced to drop packets. If senders respond to missing packets by simply retransmitting them aggressively, the network enters a state of 'congestion collapse', where nothing gets through. TCP Congestion Control exists to prevent this catastrophe.\n\nUnlike the Receive Window (which the receiver explicitly advertises), the network itself does not tell the sender how much capacity it has. The sender has to guess. It maintains a hidden variable called the Congestion Window (cwnd). The actual amount of data a sender is allowed to transmit is the minimum of the Receive Window (Flow Control) and the Congestion Window (Congestion Control).\n\nTCP begins with a phase called Slow Start. A newly established connection starts with a very small Congestion Window (historically 1 to 10 packets). For every acknowledgment the sender receives, it doubles the window size. The transmission rate grows exponentially, quickly ramping up to probe the network's true capacity.\n\nEventually, the network hits its limit. A router's queue fills up, and a packet is dropped. The sender realizes the packet was lost (either via a timeout or duplicate acknowledgments). TCP treats packet loss as undeniable proof of network congestion. In response, it immediately slashes the Congestion Window\u2014often cutting it in half (Congestion Avoidance phase)\u2014and slowly begins ramping up again linearly. This creates TCP's characteristic 'sawtooth' throughput graph: accelerating until a drop occurs, braking sharply, and accelerating again.",
+  "key_points": [
+    {
+      "title": "Congestion Window (cwnd)",
+      "detail": "A sender-side limit on unacknowledged packets, dynamically calculated by observing network packet loss."
+    },
+    {
+      "title": "Slow Start",
+      "detail": "The initial phase where the transmission rate grows exponentially to quickly find the network's upper bandwidth limit."
+    },
+    {
+      "title": "Congestion Avoidance (AIMD)",
+      "detail": "Additive Increase, Multiplicative Decrease. Once congestion is found, TCP increases speed slowly (linearly) but decreases it sharply (halving it) when drops occur."
+    },
+    {
+      "title": "Network Protection vs Receiver Protection",
+      "detail": "Congestion control prevents intermediate routers from overflowing. Flow control prevents the end receiver from overflowing."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Equating Slow Start with actual slowness",
+      "explanation": "'Slow Start' is a misnomer. Because the window doubles every round trip, the transmission rate grows exponentially and becomes extremely fast very quickly."
+    },
+    {
+      "title": "Assuming routers send 'Slow down!' messages",
+      "explanation": "In standard TCP, routers do not explicitly signal congestion. Senders infer congestion implicitly because packets time out or fail to arrive."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary difference between Flow Control and Congestion Control?",
+      "answer": "Flow control protects the receiving computer's memory; congestion control protects the intermediate network routers.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a TCP sender detect that the network is congested?",
+      "answer": "By observing packet loss, typically identified by unacknowledged packets timing out or receiving duplicate ACKs.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does TCP use Multiplicative Decrease (cutting the window in half) during congestion?",
+      "answer": "To rapidly clear network router queues and prevent severe congestion collapse across the entire network.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A server has a gigabit connection and the client has a gigabit connection. However, when the client downloads a large file, the speed starts at a few kilobytes per second and takes several seconds to reach maximum throughput. Why?",
+      "company": "Systems Design Interview",
+      "answer": "TCP Slow Start.",
+      "approach": "Regardless of the physical link speed, TCP always begins with a small Congestion Window to avoid overwhelming unknown network paths. The speed ramps up exponentially over multiple round trips."
+    },
+    {
+      "question": "If the TCP Receive Window is 500 KB, but the Congestion Window is only 50 KB, how much data can the sender transmit?",
+      "company": "Core CS OA",
+      "answer": "50 KB",
+      "approach": "The effective transmission limit is always the minimum of the Receive Window (receiver capacity) and Congestion Window (network capacity). Here, the network is the bottleneck."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc5681"
+  ]
+}

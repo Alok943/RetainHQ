@@ -1,0 +1,129 @@
+{
+  "slug": "mutex-vs-semaphore",
+  "title": "Mutex vs Semaphore",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "race-condition-and-critical-section"
+    ],
+    "unlocks": [
+      "producer-consumer-problem",
+      "reader-writer-and-dining-philosophers"
+    ]
+  },
+  "hook": {
+    "scenario": "A mutex is a bathroom key: only one person gets it, and they must return it. A semaphore is a parking lot with 5 spaces: the attendant lets 5 cars in, and anyone can leave to free up a spot."
+  },
+  "mental_model": {
+    "intuition": "A mutex is about exclusive ownership (locking), while a semaphore is about counting available resources (signaling).",
+    "description": "Mutexes protect a single resource by ensuring only one thread accesses it at a time. Semaphores track a pool of identical resources, allowing multiple threads up to a strict limit."
+  },
+  "explanation": "When dealing with concurrency, we need practical tools to prevent race conditions. The two most fundamental synchronization primitives provided by operating systems are the mutex and the semaphore. While they are often confused, they serve completely distinct architectural purposes: a mutex is used for locking, and a semaphore is used for signaling and counting.\n\nA Mutex (short for Mutual Exclusion) is a binary lock. When a thread wants to enter a critical section, it acquires the mutex. If another thread already holds it, the new thread is blocked and goes to sleep until the mutex is released. The most critical defining feature of a mutex is ownership: the thread that locks a mutex is the exact same thread that must unlock it. You cannot have Thread A lock a mutex and Thread B unlock it. This strict ownership makes mutexes the perfect tool for protecting shared data like linked lists or banking balances from concurrent modifications.\n\nA Semaphore, invented by Edsger Dijkstra, is essentially an integer counter with two atomic operations: 'wait' (decrements) and 'signal' (increments). If the counter is greater than zero, a thread can decrement it and proceed. If the counter is zero, the thread blocks. Unlike a mutex, a semaphore has absolutely no concept of ownership. Any thread can signal (increment) a semaphore. This makes semaphores incredibly powerful for signaling between threads (e.g., Thread A finishes a task and signals Thread B to wake up) and managing pools of resources, like a connection pool that allows exactly 10 concurrent database connections.\n\nA common point of confusion is the 'Binary Semaphore'\u2014a semaphore initialized to 1. Functionally, a binary semaphore acts like a mutex because it restricts access to one thread at a time. However, even a binary semaphore lacks the ownership requirement of a true mutex. Because operating systems know who owns a mutex, they can provide advanced protections like Priority Inheritance (temporarily boosting the priority of a thread holding a lock to prevent priority inversion), which cannot be done with semaphores.\n\nIn system design, use a mutex when you need to protect shared state from corruption. Use a semaphore when you need to track how many items are available or when you need one thread to notify another thread that an event has occurred.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "t1",
+        "label": "Thread 1"
+      },
+      {
+        "id": "mtx",
+        "label": "Mutex"
+      },
+      {
+        "id": "t2",
+        "label": "Thread 2"
+      }
+    ],
+    "steps": [
+      {
+        "from": "t1",
+        "to": "mtx",
+        "label": "Acquire Lock",
+        "term": "Locking"
+      },
+      {
+        "from": "t2",
+        "to": "mtx",
+        "label": "Try Acquire (Blocks)",
+        "term": "Waiting"
+      },
+      {
+        "from": "t1",
+        "to": "mtx",
+        "label": "Release Lock",
+        "term": "Unlocking"
+      },
+      {
+        "from": "mtx",
+        "to": "t2",
+        "label": "Wakes up & Acquires",
+        "term": "Locking"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Ownership",
+      "detail": "A mutex must be unlocked by the thread that locked it. Semaphores can be signaled by any thread."
+    },
+    {
+      "title": "Purpose",
+      "detail": "Mutexes are for mutual exclusion (protecting data). Semaphores are for counting resources or signaling between threads."
+    },
+    {
+      "title": "Priority Inversion",
+      "detail": "Mutexes can implement priority inheritance to solve priority inversion; semaphores generally cannot."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a binary semaphore as a direct substitute for a mutex",
+      "explanation": "While they behave similarly, binary semaphores lack ownership tracking, making them harder to debug and incapable of preventing priority inversion."
+    },
+    {
+      "title": "Thinking semaphores protect data",
+      "explanation": "Semaphores track quantities. If a counting semaphore allows 3 threads in, those 3 threads can still corrupt shared data unless a mutex is also used inside the critical section."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary difference in ownership between a mutex and a semaphore?",
+      "answer": "A mutex can only be unlocked by the thread that locked it, whereas any thread can signal (increment) a semaphore.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the two fundamental operations on a semaphore?",
+      "answer": "Wait (decrement) and Signal (increment).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is a mutex better suited to solve priority inversion than a binary semaphore?",
+      "answer": "Because the OS knows exactly which thread owns a mutex, it can temporarily boost that thread's priority (Priority Inheritance) to let it finish and release the lock.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which synchronization primitive is best suited for managing a pool of 10 identical database connections?",
+      "company": "SDE interview",
+      "answer": "A counting semaphore.",
+      "approach": "Initialize the semaphore to 10. Threads 'wait' to take a connection and 'signal' when returning it, naturally limiting concurrency to 10."
+    },
+    {
+      "question": "Can Thread B unlock a mutex that was locked by Thread A?",
+      "company": "Core CS OA",
+      "answer": "No.",
+      "approach": "Mutexes have strict thread ownership. Attempting to unlock another thread's mutex leads to undefined behavior or OS-level errors."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

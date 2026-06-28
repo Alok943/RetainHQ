@@ -1,0 +1,95 @@
+{
+  "slug": "multithreading-models",
+  "title": "Multithreading Models",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "thread-vs-process-and-benefits"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "os"
+    ]
+  },
+  "hook": {
+    "scenario": "When you write multithreaded code in Java or Python, you're creating 'user threads.' But the physical CPU only knows about 'kernel threads.' How do your code's threads actually get mapped to the hardware?"
+  },
+  "mental_model": {
+    "intuition": "Multithreading models determine how civilian contractors (user threads) report to military generals (kernel threads) to get physical access to resources.",
+    "description": "You might have Many contractors reporting to One general (Many-to-One), One contractor per general (One-to-One), or a pool of contractors dynamically sharing a pool of generals (Many-to-Many)."
+  },
+  "explanation": "To understand multithreading models, you first need to understand the two domains of threads. **User-level threads** are created and managed purely by a user-space library (like early Java threads or POSIX threads). The operating system kernel knows nothing about them; it just sees a single standard process. **Kernel-level threads**, conversely, are native threads managed directly by the OS kernel, which schedules them directly onto physical CPU cores.\n\nBecause the CPU hardware only executes kernel threads, there must be a relationship between the user threads created in your application and the kernel threads provided by the OS. This mapping dictates how your application behaves under heavy load or when blocking operations occur.\n\nThe **Many-to-One** model maps multiple user-level threads to a single kernel thread. This is incredibly fast for thread creation and switching because everything is handled by a local library in user space without ever making a system call. However, it has a fatal flaw: if one user thread makes a blocking system call (like reading a file), the OS halts the single underlying kernel thread. This freezes every other user thread in the entire process, destroying true concurrency.\n\nThe **One-to-One** model fixes this by mapping every single user thread to exactly one dedicated kernel thread. If one thread blocks on I/O, the OS simply schedules a different kernel thread, allowing true parallel execution on multicore processors. The downside is that creating a user thread requires creating a heavy kernel thread, which introduces overhead and limits the maximum number of threads you can spawn.\n\nFinally, the **Many-to-Many** model multiplexes many user threads onto a smaller or equal number of kernel threads. The user-space library decides which user thread runs on which available kernel thread. It offers the best of both worlds\u2014preventing complete blockage if one thread halts, while avoiding the overhead of a strict one-to-one ratio\u2014but it is notoriously complex to implement.",
+  "key_points": [
+    {
+      "title": "User Threads",
+      "detail": "Managed entirely by a user-space library. The OS is completely blind to their existence. Extremely fast to create and switch."
+    },
+    {
+      "title": "Kernel Threads",
+      "detail": "Managed directly by the OS. The OS scheduler places them on CPU cores. Slower to create due to system call overhead."
+    },
+    {
+      "title": "Many-to-One",
+      "detail": "Many user threads map to 1 kernel thread. Fast, but one blocking thread blocks the whole process. No true parallelism."
+    },
+    {
+      "title": "One-to-One",
+      "detail": "Each user thread gets its own kernel thread. Allows true parallelism and prevents blocking the process, but has higher overhead (used by modern Windows/Linux)."
+    },
+    {
+      "title": "Many-to-Many",
+      "detail": "M user threads map to N kernel threads. Highly flexible and efficient, but very difficult for OS developers to implement."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming User Threads run on the CPU directly",
+      "explanation": "No thread can run on a physical CPU core without a Kernel Thread. User threads are essentially just data structures managed by a library that take turns 'riding' on top of a Kernel Thread."
+    },
+    {
+      "title": "Thinking Many-to-One allows multicore parallelism",
+      "explanation": "Because the OS only sees one kernel thread, it will only ever assign that process to a single CPU core, regardless of how many user threads the process spawns."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which multithreading model suffers from the entire process blocking if a single thread makes a blocking system call?",
+      "answer": "The Many-to-One model.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which multithreading model is most commonly used in modern operating systems like Windows and Linux?",
+      "answer": "The One-to-One model.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the One-to-One model more resource-intensive than Many-to-One?",
+      "answer": "Because creating a user thread forces the OS to create a corresponding kernel thread, which requires allocating kernel resources and making expensive system calls.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In a system using the Many-to-One model, a process creates 10 threads. How many CPU cores can this process utilize simultaneously?",
+      "company": "Core CS OA",
+      "answer": "Exactly one.",
+      "approach": "Remember that the OS is unaware of the 10 user threads. It only sees the 1 kernel thread, which can only be scheduled on a single core at any given time."
+    },
+    {
+      "question": "What is the primary advantage of user-level threads over kernel-level threads?",
+      "company": "SDE interview",
+      "answer": "Context switching between user-level threads does not require OS intervention or system calls, making it vastly faster than switching kernel threads.",
+      "approach": "Focus on the separation of user space and kernel space. Avoiding kernel mode transitions is always a performance win."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Thread_(computing)#Models",
+    "https://www.geeksforgeeks.org/multithreading-models-in-operating-system/"
+  ]
+}

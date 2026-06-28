@@ -1,0 +1,103 @@
+{
+  "slug": "ip-addressing-and-classes",
+  "title": "IP Addressing & Classes",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": [
+      "subnetting-and-cidr",
+      "ipv4-vs-ipv6"
+    ],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "IP addressing is the system that assigns unique numeric identifiers to devices on a network.",
+    "why": "It is essential for devices to locate and communicate with each other across the global internet.",
+    "where_used": ["Networking", "System Administration", "Web Development"]
+  },
+  "why_learning_this": [
+    "Understanding IP addressing is fundamental for any backend developer or systems engineer.",
+    "It forms the basis for more advanced networking topics like subnetting and routing."
+  ],
+  "hook": {
+    "scenario": "You want to mail a letter, but instead of '123 Main St, New York', you only have 'House 123'. Without the city and street, the post office has no idea where to send it. IP addresses solve this same problem for the internet."
+  },
+  "mental_model": {
+    "intuition": "An IP address is a postal address for a computer, with classes acting as different sized zip codes.",
+    "description": "Every device on a network needs a unique identifier to send and receive data. An IP address provides this identity, split into a 'network' portion (the city/zip code) and a 'host' portion (the specific house). Historically, 'Classes' determined exactly where the line between network and house was drawn, allocating big chunks of addresses to massive corporations and smaller chunks to local networks."
+  },
+  "explanation": "An IP (Internet Protocol) address is a numerical label assigned to every device connected to a computer network. In IPv4, this address is 32 bits long, typically written as four decimal numbers separated by dots (like 192.168.1.5). This simple set of numbers is the fundamental building block of internet communication, allowing data packets to find their way from a server across the world straight to your specific smartphone.\n\nTo make routing efficient, an IP address is logically divided into two parts: a Network ID and a Host ID. The Network ID identifies the specific network (like a neighborhood), and the Host ID identifies the exact device on that network (like a house). When a router receives a packet, it first looks only at the Network ID to forward the packet to the correct general area. Only when the packet reaches the destination network does the final router use the Host ID to deliver it to the specific computer.\n\nIn the early days of the internet, this division was rigidly structured into 'Classes'. The creators realized that some organizations (like massive universities or corporations) would need millions of host addresses, while others (like a small office) would only need a few hundred. To accommodate this, they defined Class A, B, C, D, and E based on the first few bits of the IP address.\n\nClass A networks used the first 8 bits for the network and 24 bits for the hosts, allowing for over 16 million devices per network—perfect for tech giants but highly wasteful. Class B split it evenly, 16 bits for network and 16 for hosts. Class C used 24 bits for the network and only 8 bits for hosts, allowing just 254 devices. This rigid system, known as Classful Addressing, eventually proved too inflexible and wasteful because an organization needing 300 addresses had to be given a Class B network (wasting 65,000 addresses).\n\nWhile Classful Addressing has largely been replaced by more flexible systems like CIDR today, understanding it is critical. It forms the historical foundation of how routers were originally designed to read addresses, and the concepts of 'network' versus 'host' portions remain universally true. Private IP ranges (like your home's 192.168.x.x) are still directly derived from this class-based history.",
+  "key_points": [
+    {
+      "title": "Class A (0.0.0.0 to 127.255.255.255)",
+      "detail": "Reserved for massive networks. First octet is the network ID. Supports 16.7 million hosts per network."
+    },
+    {
+      "title": "Class B (128.0.0.0 to 191.255.255.255)",
+      "detail": "For medium-to-large networks. First two octets are the network ID. Supports 65,534 hosts per network."
+    },
+    {
+      "title": "Class C (192.0.0.0 to 223.255.255.255)",
+      "detail": "For small networks. First three octets are the network ID. Supports 254 hosts per network."
+    },
+    {
+      "title": "Class D & E (224.0.0.0 and above)",
+      "detail": "Class D is reserved for multicasting (sending data to multiple receivers at once). Class E is reserved for experimental purposes."
+    },
+    {
+      "title": "Private IP Addresses",
+      "detail": "Specific ranges in Class A (10.x.x.x), Class B (172.16-31.x.x), and Class C (192.168.x.x) are reserved for local networks and cannot be routed on the public internet."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing MAC addresses with IP addresses",
+      "explanation": "A MAC address is a permanent physical identifier baked into hardware (like a car's VIN), whereas an IP address is a logical identifier that changes based on the network you connect to (like a license plate or postal address)."
+    },
+    {
+      "title": "Assuming all 256 addresses in a Class C network are usable",
+      "explanation": "The first address (Host ID all 0s) is reserved as the Network Address, and the last address (Host ID all 1s) is reserved as the Broadcast Address. A /24 network has 256 IPs but only 254 usable hosts."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between the Network ID and the Host ID in an IP address?",
+      "answer": "The Network ID identifies the overarching network or subnet a device belongs to (used by routers to direct traffic), while the Host ID identifies the specific device within that network.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which IP class is designed to support the largest number of hosts per network?",
+      "answer": "Class A, because it allocates 24 bits for the Host ID, allowing for over 16 million host addresses per network.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are the first and last IP addresses in a network range generally unusable for devices?",
+      "answer": "The first address identifies the network itself, and the last address is the broadcast address used to send a message to all devices on that network.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given the IP address 192.168.1.50, what class does this belong to, and is it a public or private address?",
+      "company": "Core CS OA",
+      "answer": "It belongs to Class C and is a private IP address.",
+      "approach": "The first octet '192' falls in the Class C range (192-223). The specific block 192.168.x.x is designated as a private IP space, meaning it is non-routable on the public internet."
+    },
+    {
+      "question": "An organization needs a network that can support 1,000 devices. Under strict classful addressing, which class of network must they be assigned, and how many addresses are wasted?",
+      "company": "Network Engineering Interview",
+      "answer": "They must be assigned a Class B network. About 64,534 addresses are wasted.",
+      "approach": "Class C only supports 254 devices, which is too small. Class B supports 65,534 devices. Assigning a Class B network for 1,000 devices wastes exactly 65,534 - 1,000 = 64,534 addresses, highlighting the inefficiency of classful routing."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Classful_network",
+    "https://datatracker.ietf.org/doc/html/rfc791"
+  ]
+}

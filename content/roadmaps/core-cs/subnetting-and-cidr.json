@@ -1,0 +1,98 @@
+{
+  "slug": "subnetting-and-cidr",
+  "title": "Subnetting & CIDR",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "ip-addressing-and-classes"
+    ],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "Subnetting is the logical division of an IP network. CIDR allows this division to be arbitrary rather than restricted to class boundaries.",
+    "why": "It dramatically reduces IP address waste and improves network performance by containing broadcast traffic.",
+    "where_used": ["Network Architecture", "Cloud Infrastructure", "Security"]
+  },
+  "why_learning_this": [
+    "CIDR notation is heavily used in AWS/GCP to define VPCs.",
+    "It is a core concept for understanding how large networks scale efficiently."
+  ],
+  "hook": {
+    "scenario": "Imagine an office building with 500 employees but only one giant mailroom. Every letter is shouted across the entire room, creating chaos. Subnetting is like building individual mailrooms for each department, keeping the noise contained."
+  },
+  "mental_model": {
+    "intuition": "Subnetting takes one large network and slices it into smaller, manageable mini-networks. CIDR is the slicing tool that lets you cut exactly the size you need.",
+    "description": "If Classful IP addressing is like buying land only in chunks of 1 acre, 100 acres, or 10,000 acres, CIDR (Classless Inter-Domain Routing) lets you buy exactly the amount of land you need. It achieves this using a Subnet Mask, which acts as a sliding slider that dictates exactly where the 'network' part of an IP address ends and the 'host' part begins."
+  },
+  "explanation": "Subnetting is the practice of logically dividing a single, large physical network into multiple smaller sub-networks (subnets). Without subnets, every device on a network receives every broadcast message (like ARP requests). In a network with thousands of devices, this broadcast traffic creates massive congestion and security risks. By breaking the network into smaller subnets, routers can contain broadcast traffic within each specific subnet, vastly improving performance and security.\n\nHistorically, IP addresses were divided into rigid Classes (A, B, C). If you needed 400 addresses, a Class C (254 addresses) was too small, so you had to be given a Class B (65,534 addresses). This wasted over 65,000 addresses. As the internet grew rapidly in the 1990s, we were running out of IPv4 addresses fast due to this massive waste. The solution was CIDR (Classless Inter-Domain Routing).\n\nCIDR abandons the rigid classes. Instead, it uses a 'Subnet Mask' to define exactly how many bits of the 32-bit IP address are used for the Network ID. A subnet mask is a 32-bit number made of contiguous 1s followed by contiguous 0s. The 1s represent the network portion; the 0s represent the host portion. For example, a mask of 255.255.255.0 has 24 ones and 8 zeros.\n\nTo make this easier to write, CIDR introduced 'slash notation' (e.g., /24). The number after the slash simply tells you how many 1s are in the subnet mask. An IP of 192.168.1.0/24 means the first 24 bits are the network, leaving 8 bits (2^8 = 256 addresses) for the hosts. If you only need 14 addresses, you can use a /28 mask. A /28 mask means 28 bits for the network and 4 bits for hosts (2^4 = 16 addresses). This flexibility completely eliminated the waste of the old class system.\n\nWhen a router receives a packet, it performs a bitwise AND operation between the destination IP address and the subnet mask. This calculation instantly strips away the host bits, revealing the precise Network ID. The router then checks its routing table to see where that specific subnet lives and forwards the packet accordingly. Subnetting and CIDR are the exact mechanisms that keep the global internet scalable and efficient today.",
+  "key_points": [
+    {
+      "title": "Subnet Mask",
+      "detail": "A 32-bit number that separates the IP address into the network and host portions. E.g., 255.255.255.0."
+    },
+    {
+      "title": "CIDR Notation",
+      "detail": "A shorthand way to write the subnet mask. /24 means the first 24 bits of the address are the network portion."
+    },
+    {
+      "title": "Bitwise AND",
+      "detail": "The operation routers use (IP AND Mask) to quickly calculate the Network Address of an incoming packet."
+    },
+    {
+      "title": "Usable Hosts",
+      "detail": "Calculated as (2^h - 2), where h is the number of host bits. The -2 accounts for the network address and broadcast address."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking a /24 has 256 usable IP addresses",
+      "explanation": "You must always subtract 2. The very first address (all 0s in the host portion) represents the network itself, and the last address (all 1s) is the broadcast address. A /24 has 254 usable hosts."
+    },
+    {
+      "title": "Assuming a larger CIDR number means more hosts",
+      "explanation": "It is the opposite. A /28 means 28 bits are used for the network, leaving only 4 bits for hosts (14 usable). A /16 leaves 16 bits for hosts (65,534 usable). The larger the slash number, the smaller the subnet."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What problem did CIDR solve compared to Classful addressing?",
+      "answer": "CIDR solved the massive waste of IP addresses by allowing networks to be sized exactly to their needs using variable-length subnet masks, rather than being forced into rigid Class A, B, or C buckets.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How many usable host addresses are available in a /29 subnet?",
+      "answer": "6 usable hosts. A /29 leaves 3 bits for the host portion (32 - 29 = 3). 2^3 = 8 addresses. Subtract 2 (network and broadcast) = 6 usable hosts.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does a router determine the Network ID from an IP address and a Subnet Mask?",
+      "answer": "The router performs a logical bitwise AND operation between the binary representation of the IP address and the binary representation of the Subnet Mask.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An office needs exactly 50 usable IP addresses for a new department. What is the most efficient CIDR block (subnet mask) to assign to them?",
+      "company": "Core CS OA",
+      "answer": "A /26 subnet.",
+      "approach": "We need at least 50 hosts. Let's look at powers of 2 for host bits (h). 2^5 = 32 (too small). 2^6 = 64. 64 - 2 = 62 usable hosts. So we need 6 host bits. 32 total bits - 6 host bits = 26 network bits. Therefore, /26 is the most efficient."
+    },
+    {
+      "question": "Given the IP address 192.168.1.130/25, what is the network address and the broadcast address of this subnet?",
+      "company": "SDE Interview",
+      "answer": "Network address: 192.168.1.128. Broadcast address: 192.168.1.255.",
+      "approach": "A /25 means the first 25 bits are network. The 4th octet has 1 network bit and 7 host bits. The 4th octet is 130, which is 10000010 in binary. The network bit (the first bit) is 1 (value 128). The network address zeroes out the host bits: 10000000 = 128. The broadcast sets host bits to 1s: 11111111 = 255."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc1519",
+    "https://en.wikipedia.org/wiki/Subnetwork"
+  ]
+}

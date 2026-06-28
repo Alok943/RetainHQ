@@ -1,0 +1,129 @@
+{
+  "slug": "race-condition-and-critical-section",
+  "title": "Race Condition & Critical Section",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "multithreading-models"
+    ],
+    "unlocks": [
+      "peterson-s-solution",
+      "mutex-vs-semaphore"
+    ]
+  },
+  "hook": {
+    "scenario": "Two people try to withdraw the last $100 from a joint bank account at the exact same millisecond. They both walk away with $100, leaving the bank short."
+  },
+  "mental_model": {
+    "intuition": "A race condition is two chefs grabbing the same ingredients at the same time, while the critical section is the narrow aisle where only one chef can fit.",
+    "description": "When multiple threads access shared resources without coordination, the final outcome depends on the unpredictable timing of their execution (a race condition). The part of the code where these shared resources are accessed is the critical section. To prevent chaos, we must ensure only one thread enters the critical section at a time."
+  },
+  "explanation": "Imagine a simple program where two threads increment a shared counter variable. Incrementing a counter seems like a single operation, but at the CPU level, it involves three distinct steps: reading the current value from memory into a register, adding one to the register, and writing the new value back to memory. If the counter is at 0, thread A might read 0. Before thread A can add and write back, the operating system pauses it and switches to thread B. Thread B also reads 0, adds 1, and writes 1 to memory. Later, thread A resumes, adds 1 to its stored 0, and also writes 1. Both threads incremented the counter, but the final value is 1 instead of 2. This is a classic race condition.\n\nA race condition occurs anytime the correctness of a program depends on the exact timing or interleaving of multiple threads. Because thread scheduling is controlled by the operating system and is highly unpredictable, race conditions cause bugs that are famously difficult to reproduce and fix. They might happen once in a million runs, only under heavy load, or only on a specific number of CPU cores.\n\nThe segment of code where this vulnerable shared memory is accessed is called the critical section. In our counter example, the critical section is the actual 'counter = counter + 1' line. The overarching goal in concurrent programming is to protect critical sections so that only one thread can execute them at any given time. This concept is called mutual exclusion.\n\nTo properly solve the critical section problem and prevent race conditions, any solution must satisfy three strict requirements. First, it must provide mutual exclusion, meaning no two threads are in the critical section simultaneously. Second, it must guarantee progress; if no thread is in the critical section and some threads want to enter, the decision of which thread enters next cannot be postponed indefinitely. Finally, it must ensure bounded waiting, meaning there must be a limit on how many times other threads can enter the critical section after a thread has made a request to enter, preventing starvation.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "t1",
+        "label": "Thread A"
+      },
+      {
+        "id": "mem",
+        "label": "Shared Counter"
+      },
+      {
+        "id": "t2",
+        "label": "Thread B"
+      }
+    ],
+    "steps": [
+      {
+        "from": "t1",
+        "to": "mem",
+        "label": "Read counter (gets 0)",
+        "term": "Step 1"
+      },
+      {
+        "from": "t2",
+        "to": "mem",
+        "label": "Read counter (gets 0)",
+        "term": "Step 2"
+      },
+      {
+        "from": "t2",
+        "to": "mem",
+        "label": "Write counter (sets 1)",
+        "term": "Step 3"
+      },
+      {
+        "from": "t1",
+        "to": "mem",
+        "label": "Write counter (sets 1)",
+        "term": "Step 4"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Mutual Exclusion",
+      "detail": "Only one process or thread can execute inside the critical section at any given time."
+    },
+    {
+      "title": "Progress",
+      "detail": "If the critical section is empty, threads wanting to enter must not be blocked indefinitely by threads outside the critical section."
+    },
+    {
+      "title": "Bounded Waiting",
+      "detail": "A thread requesting to enter the critical section must eventually be allowed in; it cannot starve forever."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking one line of code means one CPU instruction",
+      "explanation": "Statements like 'count++' look atomic but compile down to multiple CPU instructions (read, modify, write), making them vulnerable to race conditions."
+    },
+    {
+      "title": "Assuming race conditions always crash the program",
+      "explanation": "Often they just silently corrupt data, which is much worse than a crash because the system continues running with invalid state."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is a critical section?",
+      "answer": "The portion of code where shared resources or memory are accessed and modified.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What three conditions must a valid critical section solution satisfy?",
+      "answer": "Mutual exclusion, progress, and bounded waiting.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is 'x = x + 1' vulnerable to a race condition?",
+      "answer": "Because it requires three separate machine instructions: read the value, increment it, and write it back.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following is NOT a requirement for a solution to the critical section problem?",
+      "company": "Core CS OA",
+      "answer": "Context switching",
+      "approach": "The three requirements are mutual exclusion, progress, and bounded waiting. Context switching is an OS mechanism, not a requirement."
+    },
+    {
+      "question": "Two threads execute 'counter++' 100 times each. If the initial value is 0, what is the possible range of the final value?",
+      "company": "SDE interview",
+      "answer": "Any value from 2 to 200.",
+      "approach": "Without synchronization, the minimum possible value requires extreme interleaving where one thread reads early, the other thread loops 99 times, and the first overwrites. The theoretical minimum for N increments by 2 threads is 2."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

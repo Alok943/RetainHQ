@@ -1,0 +1,133 @@
+{
+  "slug": "priority-scheduling-and-starvation",
+  "title": "Priority Scheduling & Starvation",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "scheduling-criteria"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "In a hospital emergency room, patients aren't treated in the order they arrive. A life-threatening injury will always bypass someone with a sprained ankle."
+  },
+  "mental_model": {
+    "intuition": "Priority scheduling assigns a rank to every process and always runs the highest rank first. Starvation happens when low-rank tasks wait forever, which is fixed by slowly increasing their rank over time (aging).",
+    "description": "It's VIP access at a club. VIPs (high priority) always skip the line. If an endless stream of VIPs shows up, regular people (low priority) will starve outside forever. To fix this, the bouncer slowly upgrades regular people to VIP status the longer they wait."
+  },
+  "explanation": "Priority scheduling is a framework rather than a specific algorithm. An integer representing a priority level is attached to every process, and the CPU is always allocated to the process with the highest priority. In some systems, a lower number means higher priority (e.g., 0 is highest), while in others, higher numbers mean higher priority. Priority scheduling can be either preemptive (kicking off a running process if a higher priority arrives) or non-preemptive.\n\nIn fact, many algorithms are just special cases of priority scheduling. Shortest Job First (SJF) is exactly priority scheduling, where the priority integer is simply the predicted next CPU burst time. By generalizing this, the OS can assign priorities based on other factors: internal factors like memory requirements, or external factors like the importance of the user who launched the task.\n\nHowever, strict priority scheduling introduces a massive flaw: indefinite blocking, or Starvation. If a system is heavily loaded with high-priority processes, a low-priority process might sit in the ready queue forever, waiting for a break in the traffic that never comes. In 1973, when MIT shut down their IBM 7094 computer, they reportedly found a low-priority process that had been sitting in the ready queue since 1967!\n\nThe standard, elegant solution to starvation is a technique called Aging. Aging is a mechanism where the OS gradually increases the priority of processes that wait in the system for a long time. For example, if priorities range from 127 (lowest) to 0 (highest), the OS might decrease the priority number of a waiting process by 1 every 15 minutes.\n\nBy using aging, even a process with the absolute lowest starting priority will eventually 'age' into the highest priority class. Once it reaches the top, it is guaranteed to execute, completely eliminating the risk of a process starving to death in the queue.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "vip",
+        "label": "High Priority Task"
+      },
+      {
+        "id": "cpu",
+        "label": "CPU"
+      },
+      {
+        "id": "peasant",
+        "label": "Low Priority Task"
+      }
+    ],
+    "steps": [
+      {
+        "from": "vip",
+        "to": "cpu",
+        "label": "VIP skips queue and takes CPU",
+        "term": "Priority Execution"
+      },
+      {
+        "from": "peasant",
+        "to": "peasant",
+        "label": "Waits endlessly as more VIPs arrive",
+        "term": "Starvation"
+      },
+      {
+        "from": "peasant",
+        "to": "peasant",
+        "label": "Priority gradually increases over time",
+        "term": "Aging"
+      },
+      {
+        "from": "peasant",
+        "to": "cpu",
+        "label": "Eventually becomes highest priority and runs",
+        "term": "Execution"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Priority Assignment",
+      "detail": "Every process is given a priority value based on internal metrics (memory limits) or external metrics (user rank)."
+    },
+    {
+      "title": "Preemptive vs Non-preemptive",
+      "detail": "Can interrupt a running task immediately when a higher priority arrives, or wait for the current task to finish."
+    },
+    {
+      "title": "Starvation (Indefinite Blocking)",
+      "detail": "A scenario where a low-priority process is perpetually denied CPU time because higher-priority processes keep arriving."
+    },
+    {
+      "title": "Aging",
+      "detail": "The solution to starvation, where a process's priority is slowly increased the longer it waits in the queue."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming priority scheduling is always based on user importance",
+      "explanation": "Priorities are often set internally by the OS based on technical requirements, such as favoring I/O-bound processes to keep external devices busy."
+    },
+    {
+      "title": "Confusing deadlock with starvation",
+      "explanation": "Deadlock is when processes are stuck waiting on each other, meaning none can proceed. Starvation is when one process is stuck waiting, but other processes are still happily executing."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How is Shortest Job First (SJF) related to Priority Scheduling?",
+      "answer": "SJF is a specific instance of priority scheduling where the priority value is defined as the inverse of the next CPU burst time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is starvation in the context of OS scheduling?",
+      "answer": "Starvation occurs when a low-priority process is endlessly bypassed by incoming high-priority processes, meaning it never gets to run.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does aging solve the problem of starvation?",
+      "answer": "Aging slowly increases the priority of a process the longer it waits in the queue. Eventually, it will become the highest priority process and be guaranteed to run.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A system uses a priority scheduler where 0 is highest priority and 100 is lowest. Process X enters with priority 90. Every 10 seconds of waiting, its priority improves by 1. How long until it is guaranteed to be in the top priority bracket (0-10)?",
+      "company": "Core CS OA",
+      "answer": "800 seconds.",
+      "approach": "It needs to move from 90 to 10, which is an 80-point improvement. At 1 point per 10 seconds, that takes 80 * 10 = 800 seconds. This demonstrates the predictable nature of aging."
+    },
+    {
+      "question": "In a real-time OS managing a car's brakes and infotainment system, which scheduling algorithm is strictly required?",
+      "company": "SDE interview",
+      "answer": "Strict Preemptive Priority Scheduling.",
+      "approach": "The brake system must have absolute, uninterrupted highest priority. If the brakes need the CPU, they must instantly preempt whatever the infotainment system is doing. Round robin or FCFS would cause fatal delays."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Scheduling_(computing)#Priority_scheduling"
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "slug": "tcp-vs-udp",
+  "title": "TCP vs UDP",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "tcp-3-way-handshake",
+      "flow-control-and-sliding-window",
+      "congestion-control"
+    ],
+    "appears_in": [
+      "Systems Design Interview",
+      "Backend Engineering"
+    ]
+  },
+  "hook": {
+    "scenario": "You're watching a live stream of a football match. Suddenly the screen glitches for a second, but then resumes perfectly. Why didn't the video player stop and wait to recover the lost milliseconds? Because live video uses a different set of rules than downloading a file."
+  },
+  "mental_model": {
+    "intuition": "TCP is a registered delivery service with read receipts. UDP is tossing postcards into a mailbox.",
+    "description": "TCP ensures every single packet arrives exactly in the order it was sent, resending anything lost. UDP just fires packets at the destination as fast as possible and hopes they make it. One prioritizes perfect accuracy; the other prioritizes raw speed."
+  },
+  "explanation": "At the Transport Layer of the OSI model, data needs to travel from one application to another. The network beneath is inherently unreliable\u2014routers drop packets, cables get unplugged, and congestion delays traffic. The Transport Layer's job is to decide how to handle this chaos, and it offers two primary protocols for the job: Transmission Control Protocol (TCP) and User Datagram Protocol (UDP).\n\nTCP is a connection-oriented protocol. Before sending a single byte of data, TCP establishes a formal connection between the sender and receiver (the 'handshake'). Once connected, TCP numbers every packet, tracks what gets delivered, and requests retransmission for anything that goes missing. It also guarantees that data is handed to the receiving application in the exact order it was sent, reassembling out-of-order packets along the way. This makes TCP highly reliable but relatively slow, as the constant bookkeeping and retransmissions introduce overhead and latency.\n\nUDP, on the other hand, is a connectionless protocol. It skips the handshake entirely and simply starts blasting packets (datagrams) toward the target IP address. UDP does not track whether packets arrive, does not care if they arrive out of order, and will never automatically retransmit a lost packet. Without the overhead of connections, ordering, or read receipts, UDP is incredibly lightweight and blazing fast. The tradeoff, of course, is that the application must be tolerant of missing data or handle reliability itself.\n\nHow do you choose between them? The decision comes down to what the application values more: perfect accuracy or low latency. If you are transferring a file, loading a web page, or sending an email, a single missing byte corrupts the whole payload. These applications strictly require TCP. Conversely, if you are on a Zoom call, playing a fast-paced multiplayer game, or streaming live video, receiving slightly outdated data late is useless. You'd rather drop a few frames and keep the real-time flow going, which makes UDP the obvious choice.",
+  "key_points": [
+    {
+      "title": "Connection State",
+      "detail": "TCP establishes a connection before communicating; UDP is connectionless and stateless."
+    },
+    {
+      "title": "Reliability",
+      "detail": "TCP guarantees delivery and handles retransmissions; UDP provides zero delivery guarantees."
+    },
+    {
+      "title": "Ordering",
+      "detail": "TCP preserves packet order; UDP delivers packets in whatever order they happen to arrive."
+    },
+    {
+      "title": "Overhead",
+      "detail": "TCP has a 20-byte header and requires constant acknowledgment traffic; UDP has an 8-byte header and minimal network footprint."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming UDP is 'worse' because it drops packets",
+      "explanation": "UDP dropping packets is a deliberate design choice for real-time applications where stale data is worse than missing data."
+    },
+    {
+      "title": "Thinking UDP guarantees nothing at all",
+      "explanation": "UDP does provide an optional checksum to verify data integrity (so corrupt packets are dropped), it just doesn't guarantee delivery."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is TCP considered 'reliable'?",
+      "answer": "It tracks packet delivery, acknowledges received packets, and retransmits lost ones.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which protocol is better for a multiplayer First-Person Shooter game, and why?",
+      "answer": "UDP, because raw speed and low latency are critical; missing a single movement update is fine if the next one arrives immediately.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does TCP handle packets arriving out of order?",
+      "answer": "It buffers them and reassembles the payload into the correct sequence before handing it to the application.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer is building a high-frequency trading application where receiving the absolute latest stock price is critical, and prices update every millisecond. Should they use TCP or UDP for broadcasting prices?",
+      "company": "SDE Interview",
+      "answer": "UDP",
+      "approach": "Since the data updates constantly, any delayed packet is obsolete. UDP prevents head-of-line blocking and ensures the application only reads the most recent broadcast."
+    },
+    {
+      "question": "Can a developer build a reliable file transfer application over UDP?",
+      "company": "Core CS OA",
+      "answer": "Yes, but they must implement the reliability mechanisms themselves.",
+      "approach": "UDP itself doesn't offer reliability, but the application layer can implement sequence numbers, acknowledgments, and retransmissions on top of UDP (this is how protocols like QUIC work)."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc793",
+    "https://datatracker.ietf.org/doc/html/rfc768"
+  ]
+}

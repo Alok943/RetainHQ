@@ -1,0 +1,89 @@
+{
+  "slug": "tlb-and-effective-access-time",
+  "title": "TLB & Effective Access Time",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "paging-and-page-tables"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "core-cs-os"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine having to look up a friend's phone number in a massive physical phone book every single time you want to text them. That's exactly what standard paging forces the CPU to do."
+  },
+  "mental_model": {
+    "intuition": "The TLB is a sticky-note on your monitor with your most frequently dialed numbers, saving you a trip to the phone book.",
+    "description": "Translation Lookaside Buffer (TLB) is a small, ultra-fast hardware cache specifically for page table entries. If the page you need is in the TLB, you get the physical address instantly. If not, you pay the penalty of going to the main memory 'phone book'."
+  },
+  "explanation": "To understand the Translation Lookaside Buffer (TLB), we must first recognize the massive performance flaw in standard paging. Because page tables are stored in main memory, every memory access requested by the CPU actually requires *two* memory accesses: one to read the page table entry to find the physical frame, and a second to actually read or write the data at that physical address. Since memory access is notoriously slow compared to CPU speed, this effectively halves the computer's performance.\n\nTo solve this, hardware designers introduced the TLB, a specialized hardware cache located inside the Memory Management Unit (MMU). The TLB stores a small number of recent virtual-to-physical address translations. When the CPU generates a virtual address, the MMU first checks the TLB in parallel. If the translation is found (a TLB hit), the physical address is produced immediately, skipping the page table lookup entirely. If the translation is missing (a TLB miss), the MMU must walk the page table in memory, retrieve the physical address, and then cache that mapping in the TLB for future use.\n\nThe performance impact of the TLB is measured using Effective Access Time (EAT). Instead of a rigid formula, think of EAT as a weighted average of two scenarios: hitting the TLB versus missing it. If you hit the TLB, the time taken is just the TLB search time plus one memory access for the data. If you miss, the time taken is the TLB search time, plus a memory access for the page table, plus a memory access for the data. By multiplying these times by the probability of a hit or miss, we arrive at the average time it takes to access memory in practice.\n\nBecause of the principle of locality\u2014programs tend to access the same memory locations repeatedly or access contiguous memory blocks\u2014the TLB hit rate is typically extraordinarily high, often above 95%. This means that despite being very small (usually only storing 64 to 1024 entries), the TLB successfully hides the overhead of paging almost all the time. However, when the OS switches between different processes (a context switch), the virtual-to-physical mappings change, meaning the TLB must be 'flushed' or wiped clean, leading to a temporary spike in memory access times as the new process builds up its own TLB entries.",
+  "key_points": [
+    {
+      "title": "Hardware Cache",
+      "detail": "The TLB is specialized associative memory (hardware) built directly into the MMU, making it fundamentally different from software caches."
+    },
+    {
+      "title": "Locality of Reference",
+      "detail": "The TLB relies heavily on spatial and temporal locality; without locality, the small size of the TLB would render it useless."
+    },
+    {
+      "title": "Context Switching Overhead",
+      "detail": "Flushing the TLB during a context switch is a significant source of performance overhead in modern operating systems."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing TLB with CPU Cache",
+      "detail": "L1/L2/L3 caches store actual data and instructions to avoid accessing main memory. The TLB stores address translations (page table entries) to avoid accessing the page table in memory.",
+      "explanation": "This is a common source of confusion."
+    },
+    {
+      "title": "Ignoring TLB lookup time in EAT calculations",
+      "detail": "Even on a TLB miss, the system still spent time checking the TLB before going to memory. This lookup time must be included in both hit and miss scenarios.",
+      "explanation": "This is a common source of confusion."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is the TLB necessary in a paged memory system?",
+      "answer": "Because standard paging requires two memory accesses per operation (one for the page table, one for data). The TLB caches translations to reduce this to effectively one access.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens to the TLB during a context switch?",
+      "answer": "It is typically flushed (cleared) because the new process has a different page table and its virtual addresses map to different physical frames. (Note: Some architectures use Address Space Identifiers (ASIDs) to avoid full flushes).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If TLB hit rate is 90%, TLB access is 10ns, and memory access is 100ns, what is the Effective Access Time?",
+      "answer": "Hit costs 110ns (TLB + Mem). Miss costs 210ns (TLB + Page Table + Mem). EAT = (0.9 * 110) + (0.1 * 210) = 99 + 21 = 120ns.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A system has a TLB hit ratio of 80%. It takes 20ns to search the TLB and 100ns to access main memory. What is the EAT?",
+      "company": "Core CS OA",
+      "answer": "140ns",
+      "approach": "Hit scenario: TLB (20ns) + Memory (100ns) = 120ns. Miss scenario: TLB (20ns) + PT in Memory (100ns) + Data in Memory (100ns) = 220ns. EAT = (0.80 * 120) + (0.20 * 220) = 96 + 44 = 140ns."
+    },
+    {
+      "question": "Which hardware component is primarily responsible for holding the TLB?",
+      "company": "SDE Interview",
+      "answer": "The Memory Management Unit (MMU).",
+      "approach": "Recall that address translation happens in hardware on the fly. The MMU is the chip (or part of the CPU) that handles this, so the TLB lives there for maximum speed."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Translation_lookaside_buffer",
+    "https://www.geeksforgeeks.org/translation-lookaside-buffer-tlb-in-operating-system/"
+  ]
+}

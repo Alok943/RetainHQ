@@ -1,0 +1,132 @@
+{
+  "slug": "disk-scheduling-algorithms",
+  "title": "Disk Scheduling Algorithms",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "os"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine an elevator taking requests from floors 2, 8, 3, and 9. If it just goes in the exact order requested, bouncing up and down, it wastes a massive amount of time and energy. Hard drives face the exact same problem with data requests scattered across a spinning disk."
+  },
+  "mental_model": {
+    "intuition": "Optimizing an elevator's route to pick up passengers.",
+    "description": "Instead of serving data requests exactly in the order they arrive (which causes the disk read head to thrash wildly back and forth), disk scheduling algorithms organize the queue. They figure out the most efficient path for the read/write head to sweep across the disk tracks to minimize mechanical travel time."
+  },
+  "explanation": "To understand disk scheduling, you first have to visualize a traditional Hard Disk Drive (HDD). Inside an HDD, data is stored on circular tracks, and a mechanical arm moves a read/write head back and forth across these tracks to access the data. The time it takes for this arm to move from its current track to the requested track is called 'seek time'. Because the arm is a physical moving part, seek time is the absolute slowest operation in computing. The overarching goal of disk scheduling algorithms is to reorganize the queue of I/O requests to minimize total head movement.\n\nThe simplest approach is First-Come, First-Served (FCFS). Exactly as the name implies, the disk serves requests in the exact order they arrive in the queue. While perfectly fair, it is wildly inefficient. If requests constantly bounce between the inner tracks and the outer tracks, the disk head spends the majority of its time just traveling back and forth, dragging down the performance of the entire system.\n\nTo improve this, operating systems use Shortest Seek Time First (SSTF). In SSTF, the disk head always moves to the closest unfulfilled request next, regardless of when that request arrived. While this drastically reduces the average travel time and increases throughput, it introduces a critical flaw: starvation. If new requests continuously arrive for nearby tracks, requests located at the far edges of the disk might be ignored indefinitely.\n\nTo solve the starvation problem while maintaining efficiency, the SCAN algorithm (also known as the Elevator algorithm) is used. The disk head moves continuously in one direction\u2014say, from track 0 towards track 199\u2014fulfilling all requests along its path. When it hits the very edge of the disk, it reverses direction and fulfills requests on the way back down. Like a real elevator, it sweeps back and forth, guaranteeing that every request is eventually served without forcing the head to make erratic jumps.\n\nA popular variation of this is C-SCAN (Circular SCAN). C-SCAN operates similarly by sweeping in one direction and fulfilling requests. However, when it reaches the edge, it does not read on the return trip. Instead, it quickly snaps back to the starting edge without servicing any requests, and begins another sweep in the original direction. This provides a much more uniform wait time, because regular SCAN naturally favors tracks in the middle of the disk (which get crossed twice as often) compared to tracks on the edges.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "head",
+        "label": "Disk Head"
+      },
+      {
+        "id": "track_queue",
+        "label": "Request Queue"
+      }
+    ],
+    "steps": [
+      {
+        "from": "track_queue",
+        "to": "head",
+        "label": "New requests arrive: 98, 183, 37, 122, 14",
+        "term": "Queue Initialization"
+      },
+      {
+        "from": "head",
+        "to": "head",
+        "label": "Head sweeps up, fulfilling 98, 122, 183",
+        "term": "SCAN Upward"
+      },
+      {
+        "from": "head",
+        "to": "head",
+        "label": "Head reaches end of disk, reverses direction",
+        "term": "Direction Change"
+      },
+      {
+        "from": "head",
+        "to": "head",
+        "label": "Head sweeps down, fulfilling 37, 14",
+        "term": "SCAN Downward"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "FCFS (First-Come, First-Served)",
+      "detail": "Serves requests in arrival order. Fair, but suffers from massive seek times if requests are scattered."
+    },
+    {
+      "title": "SSTF (Shortest Seek Time First)",
+      "detail": "Serves the closest request next. Excellent throughput, but edge requests can suffer from starvation."
+    },
+    {
+      "title": "SCAN (Elevator Algorithm)",
+      "detail": "Head sweeps back and forth across the disk, fulfilling requests in its path. Prevents starvation."
+    },
+    {
+      "title": "C-SCAN (Circular SCAN)",
+      "detail": "Head sweeps in one direction, snaps back to the start, and sweeps again. Provides uniform wait times."
+    },
+    {
+      "title": "LOOK and C-LOOK",
+      "detail": "Smarter versions of SCAN and C-SCAN that reverse direction immediately after the last request, instead of traveling all the way to the absolute edge of the disk."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing SCAN and C-SCAN",
+      "explanation": "SCAN reads data in both directions as it sweeps back and forth. C-SCAN only reads in one direction, snapping back to the start like a typewriter carriage, ensuring edge tracks don't have to wait longer than middle tracks."
+    },
+    {
+      "title": "Assuming SSTF is the best choice",
+      "explanation": "Because it minimizes immediate head movement, SSTF looks optimal on paper. However, the risk of starvation makes it unsuitable for heavily loaded systems where unfairness cannot be tolerated."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary physical constraint that disk scheduling algorithms attempt to minimize?",
+      "answer": "Seek time, which is the time it takes for the mechanical arm to move the read/write head to the correct track.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is SSTF (Shortest Seek Time First) generally not used in practice despite minimizing average seek time?",
+      "answer": "It causes starvation; if a steady stream of requests for nearby tracks arrives, requests for distant tracks will be ignored indefinitely.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does C-SCAN improve upon the traditional SCAN algorithm?",
+      "answer": "By only reading in one direction and jumping back to the start, C-SCAN ensures a more uniform wait time for all requests, whereas SCAN favors tracks in the middle of the disk.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given a sequence of disk requests, calculate the total head movement required for FCFS versus SSTF.",
+      "company": "SDE Interview",
+      "answer": "Map the starting head position. For FCFS, sum the absolute differences between consecutive requests. For SSTF, repeatedly find and sum the absolute difference to the closest remaining request.",
+      "approach": "This requires walking through the queue manually. Remember that SSTF mutates the remaining list of requests as you jump to the nearest one."
+    },
+    {
+      "question": "Identify which disk scheduling algorithm was used given a starting position and an ordered list of serviced tracks.",
+      "company": "Core CS OA",
+      "answer": "Check the pattern. If it jumps randomly, it's FCFS. If it goes monotonically up to the edge and down, it's SCAN. If it goes up, drops sharply to 0, and goes up again, it's C-SCAN.",
+      "approach": "Look for the turnaround points. If the head turns around before the physical edge of the disk, it's LOOK or C-LOOK."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Elevator_algorithm",
+    "https://en.wikipedia.org/wiki/Shortest_seek_first"
+  ]
+}

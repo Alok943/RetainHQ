@@ -1,0 +1,126 @@
+{
+  "slug": "producer-consumer-problem",
+  "title": "Producer-Consumer Problem",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "mutex-vs-semaphore"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "A chef (producer) makes pizzas and puts them on a heating rack. Waiters (consumers) take pizzas from the rack. If the rack is full, the chef must stop. If the rack is empty, waiters must wait."
+  },
+  "mental_model": {
+    "intuition": "Coordinating two different speeds of work using a bounded buffer in the middle.",
+    "description": "Producers generate data and put it in a buffer; consumers take data out. The challenge is ensuring producers don't overfill the buffer, consumers don't read empty slots, and they don't corrupt the buffer by accessing it at the exact same time."
+  },
+  "explanation": "The Producer-Consumer problem, also known as the Bounded-Buffer problem, is one of the most foundational patterns in concurrent programming. It models a system where one or more threads (Producers) generate data items and place them into a shared, fixed-size queue, while one or more threads (Consumers) remove those items to process them. You use this pattern constantly in real systems: a web server placing incoming requests into a queue for worker threads, or a background process streaming video frames to a renderer.\n\nThe core challenge arises because producers and consumers run asynchronously and at different, fluctuating speeds. There are three critical constraints we must enforce. First, if the buffer is entirely full, the Producer must go to sleep until space opens up. Second, if the buffer is totally empty, the Consumer must go to sleep until a new item arrives. Third, adding to or removing from the buffer modifies shared memory, so these actions must be strictly mutually exclusive to prevent data corruption.\n\nTo solve this cleanly, the classic approach uses three synchronization primitives: one mutex and two counting semaphores. The mutex guarantees that only one thread\u2014whether producer or consumer\u2014can touch the buffer at any given millisecond. The semaphores are used purely for signaling. One semaphore, let's call it 'empty_slots', is initialized to the size of the buffer. The other, 'full_slots', is initialized to 0.\n\nWhen a Producer wants to add an item, it first waits on 'empty_slots'. If space is available, the semaphore decrements. Then, it locks the mutex, adds the item, unlocks the mutex, and finally signals 'full_slots' (incrementing it to tell consumers an item is ready). Conversely, a Consumer waits on 'full_slots' (blocking if 0), locks the mutex, removes an item, unlocks the mutex, and signals 'empty_slots'. By separating the locking (mutex) from the signaling (semaphores), the system remains perfectly balanced, deadlock-free, and handles unpredictable thread speeds effortlessly.",
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "prod",
+        "label": "Producer"
+      },
+      {
+        "id": "buf",
+        "label": "Buffer"
+      },
+      {
+        "id": "cons",
+        "label": "Consumer"
+      }
+    ],
+    "steps": [
+      {
+        "from": "prod",
+        "to": "buf",
+        "label": "Waits on empty, Adds item",
+        "term": "Produce"
+      },
+      {
+        "from": "buf",
+        "to": "cons",
+        "label": "Signals full, Consumer wakes",
+        "term": "Signal"
+      },
+      {
+        "from": "buf",
+        "to": "cons",
+        "label": "Waits on full, Removes item",
+        "term": "Consume"
+      },
+      {
+        "from": "buf",
+        "to": "prod",
+        "label": "Signals empty, Producer wakes",
+        "term": "Signal"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Mutex for Protection",
+      "detail": "Ensures that adding and removing items from the actual queue data structure is thread-safe."
+    },
+    {
+      "title": "Empty Semaphore",
+      "detail": "Initialized to buffer capacity. Blocks producers if the buffer gets completely full."
+    },
+    {
+      "title": "Full Semaphore",
+      "detail": "Initialized to 0. Blocks consumers if the buffer is totally empty."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Locking the mutex before waiting on the semaphore",
+      "explanation": "If a consumer locks the mutex, then waits on an empty buffer, the producer cannot add an item because the consumer holds the mutex. This causes an immediate deadlock."
+    },
+    {
+      "title": "Using a single semaphore",
+      "explanation": "You need two semaphores to track the two distinct conditions (fullness and emptiness) because producers and consumers wait on opposing states."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when a producer tries to add an item to a full buffer?",
+      "answer": "It blocks (waits) until a consumer removes an item and frees up space.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are two semaphores used instead of one in the standard solution?",
+      "answer": "One semaphore tracks available slots (for producers), and the other tracks available items (for consumers).",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the critical order of acquiring the mutex and semaphores?",
+      "answer": "You must wait on the semaphore first, and only lock the mutex once the semaphore grants permission. Doing it backwards causes a deadlock.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In the Producer-Consumer problem, what is the initial value of the 'full_slots' semaphore?",
+      "company": "Core CS OA",
+      "answer": "0",
+      "approach": "At the start, the buffer is empty, so there are zero full slots available for consumers to consume."
+    },
+    {
+      "question": "A web server puts incoming requests into a queue. 5 worker threads take requests from the queue. Which role do the worker threads play?",
+      "company": "SDE interview",
+      "answer": "Consumers.",
+      "approach": "The web server generating the requests is the Producer, the queue is the bounded buffer, and the worker threads process the data, acting as Consumers."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

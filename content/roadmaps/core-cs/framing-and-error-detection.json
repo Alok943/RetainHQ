@@ -1,0 +1,83 @@
+{
+  "slug": "framing-and-error-detection",
+  "title": "Framing & Error Detection",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": ["mac-ethernet-and-csma-cd"],
+    "appears_in": ["Networks"]
+  },
+  "hook": {
+    "scenario": "Imagine listening to someone speak a continuous, unbroken stream of letters without spaces or punctuation. You wouldn't know where one word ends and another begins, or if you misheard a letter. Framing adds the spaces; error detection ensures you heard it right."
+  },
+  "mental_model": {
+    "intuition": "Framing chops a chaotic stream of raw bits into organized chunks (frames). Error detection attaches a mathematical receipt to each chunk to prove it wasn't corrupted in transit.",
+    "description": "At the Data Link layer, a sender wraps data in a 'frame' by adding a start marker and an end marker. It also calculates a checksum (like a Cyclic Redundancy Check) and adds it to the frame trailer. The receiver recalculates this checksum to verify the data arrived intact."
+  },
+  "explanation": "When computers send data over a physical medium like a copper wire, they transmit a continuous stream of electrical signals representing 1s and 0s. However, the receiving computer needs a way to make sense of this endless river of bits. It needs to know exactly where a message starts, where it ends, and whether any bits were flipped by electrical interference along the way.\n\nFraming solves the first problem. It is the process of breaking the bit stream into discrete, manageable blocks called 'frames'. The sender achieves this by adding special bit patterns at the beginning and end of the frame. For example, a specific sequence like '01111110' might act as a flag indicating the start of a frame. If that same pattern naturally occurs in the actual data, the sender uses a technique called 'bit stuffing' to slightly alter the data pattern so it isn't accidentally mistaken for an end flag.\n\nOnce the receiver successfully identifies a frame, it must verify the data's integrity. Physical mediums are noisy; a sudden spike in voltage or a nearby magnetic field can easily flip a 0 to a 1. To catch this, the sender uses Error Detection. The most common method is the Cyclic Redundancy Check (CRC). The sender treats the frame's data as a massive binary number, divides it by a predetermined prime number using polynomial arithmetic, and attaches the remainder (the CRC checksum) to the end of the frame.\n\nWhen the frame arrives, the receiver performs the exact same mathematical division on the data it received. If its calculated remainder matches the checksum attached to the frame, the data is highly likely to be intact. If the numbers don't match, the receiver knows the frame was corrupted in transit.\n\nIn standard Ethernet and Wi-Fi networks, corrupted frames are simply silently discarded by the Data Link layer. It does not ask for a resend. The network relies on higher-level protocols (like TCP at the Transport layer) to eventually notice the missing data and request a retransmission.",
+  "key_points": [
+    {
+      "title": "Framing",
+      "detail": "Adding a Header (start flag, addresses) and a Trailer (error detection, end flag) to raw data to create a discrete packet at Layer 2."
+    },
+    {
+      "title": "Bit Stuffing",
+      "detail": "Inserting extra bits into the data payload so that actual data doesn't accidentally mimic the start/end flags used for framing."
+    },
+    {
+      "title": "Cyclic Redundancy Check (CRC)",
+      "detail": "A robust mathematical algorithm used to generate a checksum based on the frame's contents, capable of detecting multi-bit errors."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Error detection fixes the errors",
+      "explanation": "Error detection only identifies that corruption happened. Error correction (like Forward Error Correction) can fix small errors, but standard Layer 2 framing simply drops corrupted frames."
+    },
+    {
+      "title": "Checksums guarantee 100% accuracy",
+      "explanation": "While CRCs are extremely robust and catch over 99.9% of random errors, it is mathematically possible (though incredibly rare) for a specific pattern of multiple bit flips to produce a matching checksum."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the purpose of framing at the Data Link layer?",
+      "answer": "To break a continuous stream of raw bits into discrete, readable chunks with clear start and end markers.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does bit stuffing work?",
+      "answer": "It inserts extra bits into the data payload to ensure that the data itself does not accidentally contain the bit pattern used for the frame's start/end flags.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if a corrupted frame is detected using CRC in standard Ethernet?",
+      "answer": "The receiver silently drops and discards the frame.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If a network link suffers from frequent electrical interference causing bit flips, at which layer is this corruption first detected and discarded?",
+      "company": "Network Engineer Interview",
+      "answer": "The Data Link layer (Layer 2).",
+      "approach": "Recall that the Data Link layer receives raw bits, forms frames, and immediately uses CRC error detection to drop corrupted frames."
+    },
+    {
+      "question": "Why use CRC instead of a simple parity bit for network error detection?",
+      "company": "Core CS OA",
+      "answer": "A simple parity bit only detects odd numbers of bit flips. CRC can detect burst errors and multiple bit flips, which are common in network transmission.",
+      "approach": "Highlight the robustness of polynomial division in CRC versus the rudimentary addition of parity."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cyclic_redundancy_check",
+    "https://en.wikipedia.org/wiki/Networking_frame"
+  ]
+}

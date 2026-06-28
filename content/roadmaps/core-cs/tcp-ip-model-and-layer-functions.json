@@ -1,0 +1,82 @@
+{
+  "slug": "tcp-ip-model-and-layer-functions",
+  "title": "TCP/IP Model & Layer Functions",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["osi-7-layers"],
+    "unlocks": [],
+    "appears_in": ["Networks"]
+  },
+  "hook": {
+    "scenario": "If the OSI model is a 7-course fine dining blueprint, the TCP/IP model is the actual 4-course meal you get served in reality. It's pragmatic, streamlined, and powers the entire modern internet."
+  },
+  "mental_model": {
+    "intuition": "The TCP/IP model condenses the theoretical 7-layer OSI model into 4 practical layers actually used by the internet.",
+    "description": "It merges the top three OSI layers (Application, Presentation, Session) into a single Application layer, and the bottom two OSI layers (Data Link, Physical) into a single Network Access layer, while keeping Transport and Network (called Internet) distinct."
+  },
+  "explanation": "While the OSI model is the gold standard for networking theory, the TCP/IP (Transmission Control Protocol/Internet Protocol) model is the practical architecture that actually runs the global internet. Developed by the US Department of Defense (DARPA) in the 1970s, it prioritized flexibility and the ability to survive network failures.\n\nThe TCP/IP model consists of four layers. From top to bottom: the Application layer, the Transport layer, the Internet layer, and the Network Access (or Link) layer. This streamlined approach reflects how software and hardware are actually built in the real world.\n\nThe Application layer in TCP/IP handles everything related to user-facing network protocols. It absorbs the OSI model's Session, Presentation, and Application layers. Whether data needs to be encrypted, formatted, or mapped to an application session, it all happens here. Common protocols include HTTP for web traffic, SMTP for email, and DNS for domain names.\n\nThe Transport layer exactly mirrors the OSI model's Layer 4. Its job is to provide communication between applications on different host computers. It primarily uses TCP for reliable, ordered delivery (making sure no data is lost) or UDP for fast, 'fire-and-forget' delivery. It uses port numbers to direct traffic to the correct application on the host.\n\nThe Internet layer (mapping to OSI Layer 3) has one massive responsibility: routing packets across multiple distinct networks to reach their destination. This is where IP addresses live. Finally, the Network Access layer merges OSI Layers 1 and 2. It deals with the physical hardware and local delivery (MAC addresses, Ethernet cables, Wi-Fi) required to move data from one physical node to the next on the same local network.",
+  "key_points": [
+    {
+      "title": "Layer 4: Application",
+      "detail": "Maps to OSI Layers 5, 6, and 7. Handles protocol-specific details like HTTP, FTP, and SSH."
+    },
+    {
+      "title": "Layer 3: Transport",
+      "detail": "Maps to OSI Layer 4. Handles host-to-host communication using ports, TCP, and UDP."
+    },
+    {
+      "title": "Layer 2: Internet",
+      "detail": "Maps to OSI Layer 3. Handles logical addressing (IP) and routing packets across boundaries."
+    },
+    {
+      "title": "Layer 1: Network Access",
+      "detail": "Maps to OSI Layers 1 and 2. Handles physical transmission and local node-to-node delivery (MAC, Ethernet)."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing the numbering",
+      "explanation": "Because TCP/IP has 4 layers, 'Layer 3' in TCP/IP is the Transport layer, but in standard networking jargon, a 'Layer 3 issue' always refers to the OSI model's Network layer (IP routing). Always assume people are using OSI numbering unless stated otherwise."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How many layers does the TCP/IP model have, and what are they?",
+      "answer": "Four: Application, Transport, Internet, and Network Access.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which OSI layers are combined into the TCP/IP Application layer?",
+      "answer": "Session (5), Presentation (6), and Application (7).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why did the TCP/IP model win out over the OSI model for actual implementation?",
+      "answer": "TCP/IP was more pragmatic, simpler, and had a working implementation before OSI was fully standardized.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In the TCP/IP model, which layer is responsible for determining the best path for a packet through a massive network like the internet?",
+      "company": "Core CS OA",
+      "answer": "The Internet layer.",
+      "approach": "Identify that routing and path determination are the job of the Internet layer, which corresponds to the Network layer in the OSI model."
+    },
+    {
+      "question": "A developer writes a custom application protocol on top of TCP. Which layer of the TCP/IP model does this custom protocol reside in?",
+      "company": "SDE interview",
+      "answer": "The Application layer.",
+      "approach": "Any higher-level protocol logic that sits on top of Transport protocols (TCP/UDP) falls into the broad Application layer of the TCP/IP model."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Internet_protocol_suite"
+  ]
+}

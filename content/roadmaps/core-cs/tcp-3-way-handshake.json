@@ -1,0 +1,120 @@
+{
+  "slug": "tcp-3-way-handshake",
+  "title": "TCP 3-Way Handshake",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "tcp-vs-udp"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Backend Engineering",
+      "Systems Design Interview"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine trying to have a serious phone conversation. You don't just start blurting out information the second the call connects. First you say 'Hello?', the other person says 'Hello, I hear you!', and then you say 'Great, let's talk.' TCP does exactly the same thing."
+  },
+  "mental_model": {
+    "intuition": "A polite greeting protocol where both computers confirm they can hear each other before sending actual data.",
+    "description": "Because the internet is unreliable, a sender must prove its packets can reach the receiver, and the receiver must prove its packets can reach the sender. This requires exactly three steps: a synchronization request (SYN), an acknowledgment and counter-request (SYN-ACK), and a final acknowledgment (ACK)."
+  },
+  "explanation": "TCP is a connection-oriented protocol, meaning it requires a dedicated, reliable channel before it transmits any application data. This setup phase is known as the 3-Way Handshake. Its primary goal is to synchronize sequence numbers between the client and server so that both sides can reliably track missing or out-of-order packets once the real data starts flowing.\n\nThe process begins when a client wants to connect to a server. The client sends a packet with the SYN (Synchronize) flag set. This packet essentially says, 'I would like to open a connection, and my starting sequence number is X.' This initial sequence number is randomly generated to prevent stale packets from previous connections from confusing the current one. The client then enters the SYN-SENT state and waits for a reply.\n\nWhen the server receives the SYN packet, it must acknowledge the client's request while also initiating its own half of the two-way connection. It responds with a packet that has both the SYN and ACK flags set. The server says, 'I acknowledge your sequence number X (so I expect X+1 next), and my own starting sequence number is Y.' The server then enters the SYN-RECEIVED state.\n\nFinally, the client receives the SYN-ACK. It now knows the server is listening and reachable. To finish the handshake, the client sends a final ACK packet back to the server, saying, 'I acknowledge your sequence number Y (expecting Y+1 next).' Once the server receives this final ACK, the connection is fully ESTABLISHED. Both parties have verified bidirectional communication, and actual application data (like HTTP requests) can safely begin transmission.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "client",
+        "label": "Client"
+      },
+      {
+        "id": "server",
+        "label": "Server"
+      }
+    ],
+    "steps": [
+      {
+        "from": "client",
+        "to": "server",
+        "label": "SYN (Seq=X)",
+        "term": "SYN"
+      },
+      {
+        "from": "server",
+        "to": "client",
+        "label": "SYN-ACK (Ack=X+1, Seq=Y)",
+        "term": "SYN-ACK"
+      },
+      {
+        "from": "client",
+        "to": "server",
+        "label": "ACK (Ack=Y+1)",
+        "term": "ACK"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "ISN (Initial Sequence Number)",
+      "detail": "Sequence numbers do not start at 1; they are randomly generated to protect against network delays and security spoofing."
+    },
+    {
+      "title": "Full-Duplex Connection",
+      "detail": "The handshake establishes two distinct, synchronized streams of communication (Client-to-Server and Server-to-Client)."
+    },
+    {
+      "title": "SYN Flood Attacks",
+      "detail": "A common DDoS attack where a malicious client sends millions of SYN packets but never sends the final ACK, exhausting the server's memory."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking data is sent during the SYN phase",
+      "explanation": "The standard 3-way handshake carries zero application data. Data transfer only starts after the final ACK is sent (though modern extensions like TCP Fast Open can bend this rule)."
+    },
+    {
+      "title": "Assuming a 2-way handshake would be enough",
+      "explanation": "A 2-way handshake only proves the client can reach the server. The server still needs the client to confirm that the server's responses are making it back."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the purpose of the initial SYN packet?",
+      "answer": "To request a new connection and inform the server of the client's randomly generated Initial Sequence Number.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does the server reply with a SYN-ACK instead of just an ACK?",
+      "answer": "The server must acknowledge the client's sequence number (ACK) but also establish its own starting sequence number for the reverse direction (SYN).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why are sequence numbers randomized instead of starting at 0?",
+      "answer": "To prevent delayed packets from previous closed connections from being accidentally accepted into a new connection.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A server is crashing due to memory exhaustion. Network logs show an massive number of incoming TCP packets with only the SYN flag set, and the server is stuck waiting in the SYN-RECEIVED state. What is happening?",
+      "company": "SDE Interview",
+      "answer": "A SYN Flood DDoS attack.",
+      "approach": "The attacker initiates the first half of the handshake but intentionally drops the connection before sending the final ACK, forcing the server to hold connection state in memory until it crashes."
+    },
+    {
+      "question": "During the final step of the TCP handshake, what flags are set on the packet sent by the client?",
+      "company": "Core CS OA",
+      "answer": "ACK",
+      "approach": "The client has already synchronized (SYN) in step 1. Step 3 is solely an acknowledgment (ACK) of the server's SYN."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc793"
+  ]
+}

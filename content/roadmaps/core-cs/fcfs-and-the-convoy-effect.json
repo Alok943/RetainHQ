@@ -1,0 +1,137 @@
+{
+  "slug": "fcfs-and-the-convoy-effect",
+  "title": "FCFS & the Convoy Effect",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "scheduling-criteria"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "You just want to buy a single pack of gum, but you are stuck in the checkout line behind someone with two carts full of groceries."
+  },
+  "mental_model": {
+    "intuition": "First-Come, First-Served (FCFS) processes tasks in the exact order they arrive, which can cause massive traffic jams (the convoy effect).",
+    "description": "FCFS is like a single-lane highway. If a slow, massive truck gets in front, every fast sports car behind it is forced to crawl at the truck's pace. The 'convoy effect' is this exact scenario: short, quick tasks are trapped waiting for one massive task to finish."
+  },
+  "explanation": "First-Come, First-Served (FCFS) is the simplest possible CPU scheduling algorithm. When a process enters the ready queue, its process control block (PCB) is linked to the tail of the queue. When the CPU becomes free, it is assigned to the process at the head of the queue. The running process is then allowed to execute until it voluntarily yields the CPU, either by finishing its task or by requesting I/O.\n\nBecause FCFS does not interrupt a running process, it is a non-preemptive scheduling algorithm. This simplicity makes it incredibly easy to implement using a basic FIFO (First-In, First-Out) queue. There is virtually no overhead from complex decision-making logic. However, this naive approach comes with a severe performance penalty when process sizes vary significantly.\n\nConsider a scenario where a massive CPU-bound process (like a video rendering job) arrives just moments before several tiny I/O-bound processes (like keyboard stroke handlers). The massive process takes the CPU and holds it for a long time. Meanwhile, the tiny processes, which could have finished in milliseconds, are forced to wait. This drastic increase in average waiting time is known as the Convoy Effect.\n\nThe convoy effect doesn't just hurt the waiting time of the short processes; it also starves I/O devices. While the massive process hogs the CPU, all the I/O devices sit idle because the short processes that need them are stuck in the ready queue. When the massive process finally finishes and goes to do its own I/O, the short processes quickly finish their CPU bursts and pile up in the I/O queues. Now the CPU sits idle! This constant oscillation between idle I/O devices and an idle CPU leads to terrible overall system utilization.\n\nUltimately, while FCFS is fair in the sense of 'first come, first served', it is practically unusable in modern interactive operating systems due to the convoy effect. It is, however, still used in certain background batch-processing environments where turnaround time for individual small tasks is not a priority.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "q",
+        "label": "Ready Queue"
+      },
+      {
+        "id": "p1",
+        "label": "Giant Process P1"
+      },
+      {
+        "id": "p2",
+        "label": "Tiny Process P2"
+      },
+      {
+        "id": "p3",
+        "label": "Tiny Process P3"
+      }
+    ],
+    "steps": [
+      {
+        "from": "q",
+        "to": "p1",
+        "label": "P1 arrives first and takes CPU",
+        "term": "Execution"
+      },
+      {
+        "from": "q",
+        "to": "p2",
+        "label": "P2 arrives and must wait for P1",
+        "term": "Blocked"
+      },
+      {
+        "from": "q",
+        "to": "p3",
+        "label": "P3 arrives and must wait behind P2",
+        "term": "Convoy Effect"
+      },
+      {
+        "from": "p1",
+        "to": "q",
+        "label": "P1 finally finishes, releasing CPU",
+        "term": "Release"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Non-preemptive",
+      "detail": "Once a process gets the CPU, it keeps it until it finishes or requests I/O. The OS cannot force it to stop."
+    },
+    {
+      "title": "FIFO Structure",
+      "detail": "Implementation is just a simple First-In, First-Out queue, making overhead minimal."
+    },
+    {
+      "title": "Convoy Effect",
+      "detail": "The phenomenon where short processes get stuck waiting a very long time for a single long process to release the CPU."
+    },
+    {
+      "title": "Poor Resource Utilization",
+      "detail": "Leads to scenarios where the CPU and I/O devices take turns being completely idle, lowering system efficiency."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming FCFS has the lowest average waiting time",
+      "explanation": "Because it's 'fair', people assume it's efficient. Actually, FCFS often has terrible average waiting time because one long process heavily skews the average."
+    },
+    {
+      "title": "Confusing FCFS with Round Robin",
+      "explanation": "FCFS lets a process run to completion without interruption. Round Robin is FCFS but with a time limit (preemption) to prevent the convoy effect."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Is FCFS a preemptive or non-preemptive scheduling algorithm?",
+      "answer": "It is strictly non-preemptive. A running process cannot be interrupted.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the Convoy Effect?",
+      "answer": "It's a traffic jam scenario where many short processes are forced to wait for one massive process to finish using the CPU, causing high average waiting times.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the Convoy Effect negatively impact I/O device utilization?",
+      "answer": "While a long CPU-bound process hogs the CPU, I/O-bound processes cannot execute to issue their I/O requests, leaving I/O devices completely idle.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given processes P1 (burst 24ms), P2 (burst 3ms), P3 (burst 3ms) arriving at time 0 in that order. What is the average waiting time under FCFS?",
+      "company": "Core CS OA",
+      "answer": "17ms",
+      "approach": "P1 waits 0ms. P2 waits for P1 to finish (24ms). P3 waits for P1 and P2 to finish (24 + 3 = 27ms). Average = (0 + 24 + 27) / 3 = 17ms."
+    },
+    {
+      "question": "If the arrival order of the previous processes changed to P2, P3, P1, what would the new average waiting time be?",
+      "company": "SDE interview",
+      "answer": "3ms",
+      "approach": "P2 waits 0ms. P3 waits 3ms. P1 waits 6ms. Average = (0 + 3 + 6) / 3 = 3ms. This proves how sensitive FCFS is to arrival order and perfectly demonstrates the convoy effect."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/FIFO_(computing_and_electronics)"
+  ]
+}

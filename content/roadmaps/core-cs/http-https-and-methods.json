@@ -1,0 +1,96 @@
+{
+  "slug": "http-https-and-methods",
+  "title": "HTTP, HTTPS & Request Methods",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["ssl-tls-and-firewalls"],
+    "appears_in": ["SDE interview", "Core CS OA"]
+  },
+  "hook": {
+    "scenario": "You type an address into your browser, hit Enter, and instantly see a web page. Behind the scenes, your browser and a server are speaking a highly structured language to trade documents.",
+    "question": "How exactly does the browser ask for data versus submit it securely?"
+  },
+  "mental_model": {
+    "intuition": "HTTP is a restaurant menu, and methods are your instructions to the waiter.",
+    "description": "Just as you can ask a waiter to fetch a dish (GET), add a new dish to your order (POST), or replace a dish (PUT), HTTP methods tell the web server exactly what you want to do with a resource."
+  },
+  "explanation": "HyperText Transfer Protocol (HTTP) is the foundational language of the World Wide Web. It is a 'stateless' protocol operating at the Application Layer (Layer 7). Think of it as a set of rules for how browsers (clients) ask for information and how servers return that information. When you request a webpage, your browser sends an HTTP request message containing a URL, a specific method, and headers (metadata like your browser type). The server processes this and replies with an HTTP response containing a status code (like 200 OK or 404 Not Found) and the requested payload.\n\nThe core of HTTP revolves around its methods, which are verbs indicating the desired action. The most common is **GET**, used exclusively to fetch data without modifying anything on the server. When you submit a form or upload a file, you use **POST**, which sends data to the server to create a new resource. If you want to update an existing resource completely, you use **PUT**, whereas **PATCH** is used for partial updates. Finally, **DELETE** instructs the server to remove a resource. These methods map cleanly to the CRUD operations (Create, Read, Update, Delete) used in databases.\n\nHTTP was originally designed to transmit data in plain text. This meant anyone sitting between your computer and the server—like a hacker on public Wi-Fi—could intercept and read your passwords or credit card numbers. To fix this, HTTPS (HTTP Secure) was introduced. HTTPS is exactly the same protocol as HTTP, but wrapped inside a secure, encrypted tunnel called TLS (Transport Layer Security).\n\nWhen using HTTPS, before any actual data is exchanged, the client and server perform a 'handshake' to establish encrypted communication. The server provides a digital certificate proving its identity, preventing attackers from impersonating the website. Once the secure connection is established, standard HTTP requests and responses are sent back and forth, but they look like gibberish to anyone trying to eavesdrop.\n\nUnderstanding HTTP and its methods is crucial for building and interacting with RESTful APIs, which rely heavily on these standard verbs to manipulate data predictably. Knowing the difference between HTTP and HTTPS is equally vital, as modern browsers penalise non-secure HTTP sites, and secure data transmission is an absolute baseline requirement for any application.",
+  "key_points": [
+    {
+      "title": "GET",
+      "detail": "Retrieves data from the server. It should be safe and 'idempotent'—calling it multiple times has the same effect as calling it once."
+    },
+    {
+      "title": "POST",
+      "detail": "Sends data to the server to create a new resource. It is not idempotent (calling it twice creates two resources)."
+    },
+    {
+      "title": "PUT",
+      "detail": "Replaces an entire resource with the uploaded content. It is idempotent."
+    },
+    {
+      "title": "PATCH",
+      "detail": "Applies partial modifications to a resource."
+    },
+    {
+      "title": "DELETE",
+      "detail": "Removes the specified resource from the server."
+    },
+    {
+      "title": "HTTPS",
+      "detail": "HTTP over TLS/SSL. Provides encryption (privacy), data integrity, and authentication."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing PUT and POST",
+      "explanation": "Many confuse these two. Remember: POST is for creating a *new* resource, while PUT is for *replacing* a specific existing resource. PUT is idempotent; POST is not."
+    },
+    {
+      "title": "Assuming GET requests are completely safe",
+      "explanation": "While GET shouldn't change data according to HTTP standards, a poorly written backend might alter a database on a GET request. This is a bad practice and violates REST principles."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which HTTP method should be used to completely replace an existing user profile?",
+      "answer": "PUT.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is POST considered non-idempotent?",
+      "answer": "Because sending the exact same POST request multiple times will typically create multiple identical resources on the server.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary difference between HTTP and HTTPS?",
+      "answer": "HTTPS encrypts the data using TLS/SSL before transmission, ensuring privacy, data integrity, and server authentication.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following HTTP methods is NOT idempotent?",
+      "company": "Core CS OA",
+      "answer": "POST",
+      "approach": "Idempotent means calling the method multiple times has the same outcome as calling it once. GET, PUT, and DELETE are idempotent. POST is not, because multiple POST requests create multiple resources."
+    },
+    {
+      "question": "In an e-commerce application, which HTTP method is most appropriate for submitting credit card details during checkout?",
+      "company": "SDE interview",
+      "answer": "POST over HTTPS",
+      "approach": "POST is used to send sensitive data to the server for processing (creating an order). It must be sent over HTTPS to encrypt the sensitive payload in transit."
+    }
+  ],
+  "sources": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods",
+    "https://www.cloudflare.com/learning/ssl/what-is-https/"
+  ]
+}

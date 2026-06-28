@@ -1,0 +1,89 @@
+{
+  "slug": "file-allocation-methods",
+  "title": "File Allocation Methods",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": [
+      "os"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine trying to store a 500-page encyclopedia in a library. Do you need a continuous empty shelf that fits all 500 pages side-by-side? Or can you scatter pages wherever there's an empty slot, as long as you leave a note at the end of each page telling the reader where to find the next one?"
+  },
+  "mental_model": {
+    "intuition": "Organizing physical boxes in a warehouse.",
+    "description": "When an OS saves a file to disk, it needs to figure out which physical blocks to put the file's data into. It can either insist on contiguous blocks (fast to read but hard to find space), link scattered blocks like a scavenger hunt, or use a master index block to track where every piece landed."
+  },
+  "explanation": "Disks are divided into fixed-size logical units called blocks. When you save a file that is larger than a single block, the operating system must allocate multiple blocks to hold it. The strategy the OS uses to assign these blocks profoundly impacts how fast the file can be read (especially for random access) and how efficiently the overall disk space is utilized. There are three primary approaches to file allocation.\n\nThe simplest approach is Contiguous Allocation. The OS finds a single, unbroken stretch of blocks large enough to hold the entire file. This makes reading incredibly fast\u2014if a file starts at block 10 and takes up 5 blocks, the disk head just sweeps smoothly from block 10 to 14. However, as files are continually created and deleted, the disk suffers from severe external fragmentation. You might have plenty of total free space scattered across the disk, but not enough contiguous space to store a new file.\n\nLinked Allocation solves the fragmentation problem entirely. The file is split into blocks, and each block contains a pointer to the next block, much like a linked list data structure. The OS can scatter the file into any available blocks anywhere on the disk, completely eliminating external fragmentation. But reading a file is excruciatingly slow if you need to jump to the middle of it (random access), because you have to read and traverse every pointer from the very beginning. Furthermore, the pointers themselves consume a small amount of space inside each data block.\n\nIndexed Allocation offers a powerful middle ground. The OS designates one special block as the 'index block' for a file. This block contains an array of pointers to all the scattered data blocks that make up the file. It operates exactly like the index at the back of a textbook\u2014you look up the piece you want, and it points you directly to the correct page.\n\nWith Indexed Allocation, random access is extremely fast because the OS just looks up the exact block number in the index block, and it avoids external fragmentation just like Linked Allocation. The primary tradeoff is space overhead: even very small files require an entire index block to be allocated, wasting some space. For extremely large files, a single index block might not be big enough to hold all the pointers, requiring the OS to use multi-level indexing (an index block that points to other index blocks).",
+  "key_points": [
+    {
+      "title": "Contiguous Allocation",
+      "detail": "Files occupy consecutive blocks. Excellent for sequential and random access, but suffers heavily from external fragmentation."
+    },
+    {
+      "title": "Linked Allocation",
+      "detail": "Each block points to the next. Eliminates external fragmentation, but random access is practically impossible without traversing the whole chain."
+    },
+    {
+      "title": "Indexed Allocation",
+      "detail": "A dedicated index block holds pointers to all data blocks. Supports efficient random access and has no external fragmentation, but incurs index block overhead."
+    },
+    {
+      "title": "FAT (File Allocation Table)",
+      "detail": "A popular variation of linked allocation where all the pointers are removed from the data blocks and stored centrally in one massive table in memory, significantly speeding up traversal."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing internal and external fragmentation",
+      "explanation": "Contiguous allocation suffers from external fragmentation (free space is chopped into unusable small chunks). All three methods can suffer from internal fragmentation (the last block of a file isn't fully filled)."
+    },
+    {
+      "title": "Thinking Linked allocation supports random access",
+      "explanation": "If you want to read the 500th block of a file in Linked allocation, you physically have to read block 1, 2, 3... all the way to 500 just to find the pointers. It does not support direct access."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which file allocation method suffers from external fragmentation?",
+      "answer": "Contiguous Allocation, because it requires an unbroken sequence of free blocks to store a file.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does Indexed allocation support efficient direct (random) access?",
+      "answer": "It uses a centralized index block that contains pointers to all data blocks. The OS can instantly look up the address of the Nth block by checking the Nth entry in the index.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the major drawback of Linked allocation?",
+      "answer": "It does not support random access, pointers consume space inside the data blocks, and if one pointer is corrupted, the rest of the file is permanently lost.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Compare the number of disk accesses required to read block N in Contiguous vs Linked vs Indexed allocation.",
+      "company": "Core CS OA",
+      "answer": "Contiguous requires 1 access (calculate address directly). Linked requires N accesses (traverse N blocks). Indexed requires 2 accesses (read index block, then read data block).",
+      "approach": "Always account for the overhead of reading pointers. In linked, the pointers are scattered. In indexed, they are centralized in one initial read."
+    },
+    {
+      "question": "Why is multi-level indexing necessary for very large files in Indexed allocation?",
+      "company": "SDE Interview",
+      "answer": "Because a single index block has a fixed size and can only hold a limited number of pointers. To store more data blocks, you need an outer index block that points to inner index blocks.",
+      "approach": "Draw a parallel to page tables in virtual memory. It's the exact same hierarchical pointer concept to bypass fixed block size limits."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/File_system",
+    "https://www.geeksforgeeks.org/file-allocation-methods/"
+  ]
+}

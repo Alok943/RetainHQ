@@ -1,0 +1,88 @@
+{
+  "slug": "ssl-tls-and-firewalls",
+  "title": "SSL/TLS & Firewalls",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["symmetric-vs-asymmetric-encryption", "http-https-and-methods"],
+    "unlocks": [],
+    "appears_in": ["SDE interview", "Core CS OA"]
+  },
+  "hook": {
+    "scenario": "A castle requires multiple layers of defense: guards at the gate to check identities, and a thick stone wall to block unwanted armies. In networks, SSL/TLS are the guards, and Firewalls are the walls.",
+    "question": "How do these two security mechanisms work together to protect both data and the network perimeter?"
+  },
+  "mental_model": {
+    "intuition": "TLS is an armored transport truck; a Firewall is a border checkpoint.",
+    "description": "TLS ensures that the cargo (data) cannot be viewed or tampered with in transit. A firewall sits at the perimeter, inspecting the origin and destination of vehicles, blocking those that aren't allowed to enter or leave."
+  },
+  "explanation": "Securing a network requires protecting both the data traveling across it and the perimeter of the network itself. These two tasks are handled by Transport Layer Security (TLS) and firewalls, respectively. While SSL (Secure Sockets Layer) is the older, deprecated predecessor to TLS, the terms are often used interchangeably in the industry.\n\nTLS is a cryptographic protocol designed to provide privacy, data integrity, and authentication over a network. It is what turns HTTP into HTTPS. When a client connects to a TLS-secured server, they begin with a 'TLS Handshake'. The server presents a digital certificate—signed by a trusted Certificate Authority (CA)—to prove its identity. Once the client verifies the certificate, they use asymmetric encryption to securely negotiate a shared, symmetric 'session key'. All subsequent data (like passwords or emails) is encrypted using this fast symmetric key, ensuring nobody can eavesdrop on or alter the data in transit.\n\nWhile TLS protects data in motion, firewalls protect the network perimeter. A firewall is a network security device (either hardware or software) that monitors and filters incoming and outgoing network traffic based on an organization's previously established security policies. It acts as a barrier between a trusted internal network and an untrusted external network, like the internet.\n\nFirewalls operate at various layers of the network. A basic 'Packet Filtering' firewall looks at Layer 3 and 4 data (IP addresses and port numbers) to block or allow traffic. For example, it might allow incoming traffic on Port 443 (HTTPS) but drop traffic on Port 22 (SSH) to prevent external login attempts. More advanced 'Stateful' firewalls track the state of active connections, ensuring that incoming packets are legitimate responses to outgoing requests. 'Next-Generation Firewalls' (NGFW) go even deeper, inspecting the actual Application Layer (Layer 7) payload to block malware or specific web applications.\n\nTogether, TLS and firewalls form a defense-in-depth strategy. A firewall keeps malicious actors from accessing internal databases or sensitive ports, while TLS ensures that the legitimate traffic allowed through the firewall cannot be read or manipulated as it crosses the open internet.",
+  "key_points": [
+    {
+      "title": "TLS Handshake",
+      "detail": "The process where a client and server authenticate each other and establish a secure, encrypted connection using asymmetric cryptography."
+    },
+    {
+      "title": "Digital Certificate",
+      "detail": "An electronic document used to prove the ownership of a public key, issued by a trusted Certificate Authority (CA)."
+    },
+    {
+      "title": "Packet Filtering Firewall",
+      "detail": "Examines raw network packets (IPs, Ports) and drops them if they violate rules."
+    },
+    {
+      "title": "Stateful Firewall",
+      "detail": "Remembers the state of network connections (e.g., TCP handshake) to differentiate legitimate return traffic from unprompted attacks."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking SSL and TLS are two actively used protocols",
+      "explanation": "SSL is completely obsolete and vulnerable to attacks. Modern systems use TLS (v1.2 or v1.3). People just continue to say 'SSL certificate' out of habit."
+    },
+    {
+      "title": "Assuming a firewall inspects encrypted data",
+      "explanation": "Standard firewalls cannot read data encrypted by TLS. Unless a firewall is specifically configured for 'TLS interception' (acting as a trusted man-in-the-middle), it can only filter based on IPs and Ports, not the payload."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two types of cryptography are used during a standard TLS session?",
+      "answer": "Asymmetric cryptography is used during the handshake to exchange keys, and symmetric cryptography is used for the bulk data transfer.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between a packet-filtering firewall and a stateful firewall?",
+      "answer": "A packet filter evaluates every packet in isolation based on IPs/Ports. A stateful firewall tracks the context of active connections and knows if an incoming packet is a response to an outgoing request.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Who issues the digital certificates used by web servers in TLS?",
+      "answer": "Certificate Authorities (CAs).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which network security mechanism is primarily responsible for ensuring data integrity and confidentiality in transit?",
+      "company": "Core CS OA",
+      "answer": "TLS (Transport Layer Security)",
+      "approach": "TLS encrypts data in motion. Firewalls, on the other hand, manage access control at the network perimeter."
+    },
+    {
+      "question": "A network administrator wants to block all incoming SSH requests from the external internet to an internal server. At which layer does a traditional firewall operate to achieve this?",
+      "company": "SDE interview",
+      "answer": "Transport and Network Layers",
+      "approach": "A standard firewall blocks SSH by denying TCP traffic (Transport layer) destined for port 22 on specific IP addresses (Network layer)."
+    }
+  ],
+  "sources": [
+    "https://www.cloudflare.com/learning/ssl/transport-layer-security-tls/",
+    "https://www.cisco.com/c/en/us/products/security/firewalls/what-is-a-firewall.html"
+  ]
+}

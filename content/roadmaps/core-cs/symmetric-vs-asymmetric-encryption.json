@@ -1,0 +1,84 @@
+{
+  "slug": "symmetric-vs-asymmetric-encryption",
+  "title": "Symmetric vs Asymmetric Encryption",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": ["ssl-tls-and-firewalls"],
+    "appears_in": ["SDE interview", "Core CS OA"]
+  },
+  "hook": {
+    "scenario": "If you want to send a locked box to a friend, you need a way to share the key without someone stealing it in transit. Encryption solves this exact problem for digital data.",
+    "question": "How do two computers establish secure communication over an inherently insecure network?"
+  },
+  "mental_model": {
+    "intuition": "Symmetric is a shared house key; Asymmetric is a padlock and a private key.",
+    "description": "In symmetric encryption, the same key locks and unlocks the door. In asymmetric encryption, you hand out open padlocks to anyone (public key), but only you hold the key that can unlock them (private key) once they are snapped shut."
+  },
+  "explanation": "Encryption is the process of scrambling readable data (plaintext) into an unreadable format (ciphertext) to secure it from unauthorized access. The scrambled data can only be reverted to readable data using a specific cryptographic key. There are two primary paradigms for this: Symmetric and Asymmetric encryption.\n\nSymmetric encryption uses a single, shared key for both encrypting and decrypting the data. Think of it like a secret password between two friends. Because it uses simple mathematical operations, symmetric encryption is incredibly fast and highly efficient for encrypting massive amounts of data. Popular algorithms include AES (Advanced Encryption Standard). However, it has a glaring flaw: the 'Key Distribution Problem'. How do you safely share the secret key with someone over the internet without a hacker intercepting it?\n\nAsymmetric encryption (also known as Public Key Cryptography) solves the key distribution problem by using a mathematically linked pair of keys: a Public Key and a Private Key. The Public Key is shared openly with the world, while the Private Key is kept absolutely secret by the owner. Data encrypted with the Public Key can ONLY be decrypted by the corresponding Private Key. Algorithms like RSA and ECC power this system.\n\nIf Bob wants to send a secret message to Alice, he looks up Alice's Public Key and encrypts the message with it. Even though Alice's Public Key is public, no one—not even Bob—can decrypt the message once it's scrambled. Only Alice, who holds the matching Private Key, can unlock it.\n\nWhile asymmetric encryption solves the sharing problem, the complex math behind it makes it extremely slow and computationally expensive. Therefore, modern systems (like HTTPS/TLS) combine the best of both worlds. They use slow asymmetric encryption merely to securely exchange a temporary, single-use symmetric key. Once both parties have this symmetric key, they switch to lightning-fast symmetric encryption for the rest of their conversation.",
+  "key_points": [
+    {
+      "title": "Symmetric Encryption",
+      "detail": "Uses 1 shared key. Very fast, ideal for bulk data (e.g., AES). Suffers from the key distribution problem."
+    },
+    {
+      "title": "Asymmetric Encryption",
+      "detail": "Uses 2 paired keys (Public & Private). Solves key distribution but is mathematically slow (e.g., RSA)."
+    },
+    {
+      "title": "Hybrid Approach",
+      "detail": "Real-world systems use asymmetric encryption to securely swap a symmetric key, then use the symmetric key for the actual data."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking public keys can decrypt messages",
+      "explanation": "A public key can only encrypt data. Once encrypted, the data is essentially a one-way street until the corresponding private key decrypts it."
+    },
+    {
+      "title": "Assuming asymmetric is 'better' than symmetric",
+      "explanation": "Neither is universally better. Asymmetric is better for establishing trust and sharing keys securely, but symmetric is required for encrypting large amounts of data performantly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary vulnerability of symmetric encryption?",
+      "answer": "The key distribution problem: both parties need the same key, and transmitting that key securely over an untrusted network is difficult.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In asymmetric encryption, if Alice wants to receive a secure message from Bob, whose public key is used to encrypt the message?",
+      "answer": "Alice's public key.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do web browsers use both asymmetric and symmetric encryption for HTTPS?",
+      "answer": "Asymmetric encryption is used during the handshake to securely exchange a shared session key. Symmetric encryption is then used with that session key for the actual data transfer because it is much faster.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which type of encryption uses a single shared key for both encrypting and decrypting data?",
+      "company": "Core CS OA",
+      "answer": "Symmetric Encryption",
+      "approach": "Symmetric means 'same'. The same key is used on both sides of the communication (e.g., AES)."
+    },
+    {
+      "question": "If User A wants to verify that a message mathematically originated from User B (Digital Signature), which key should User B use to sign the message?",
+      "company": "SDE interview",
+      "answer": "User B's Private Key",
+      "approach": "By encrypting a hash of the message with their own Private Key, User B proves they sent it, because anyone can decrypt the hash using User B's Public Key, proving it could only have been encrypted by User B."
+    }
+  ],
+  "sources": [
+    "https://www.cloudflare.com/learning/ssl/what-is-asymmetric-encryption/",
+    "https://www.ibm.com/topics/encryption"
+  ]
+}

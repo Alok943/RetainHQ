@@ -1,0 +1,89 @@
+{
+  "slug": "thrashing-and-working-set",
+  "title": "Thrashing & Working Set",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "demand-paging-and-page-faults"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "core-cs-os"
+    ]
+  },
+  "hook": {
+    "scenario": "Have you ever opened 200 Chrome tabs and watched your computer freeze entirely? The hard drive light blinks furiously, but nothing happens on screen. You've just witnessed thrashing."
+  },
+  "mental_model": {
+    "intuition": "It's like trying to juggle 10 balls when you only have the skill for 3. You spend 100% of your time picking up dropped balls instead of actually juggling.",
+    "description": "Thrashing occurs when a system spends more time swapping pages in and out of disk than executing actual CPU instructions, bringing the system to a complete halt."
+  },
+  "explanation": "Modern operating systems try to maximize CPU utilization by keeping many processes in memory simultaneously. If one process pauses for I/O, the CPU can instantly switch to another. However, if the OS loads too many processes, the total amount of memory actively needed by all these processes will exceed the available physical RAM. When this happens, a vicious cycle begins.\n\nA process experiences a page fault and requests a page from disk. Because RAM is completely full, the OS must evict a page belonging to another process. But that other process actually needed that page, so as soon as it gets CPU time, it immediately page faults and kicks out a different page. The system enters a state of continuous, compounding page faults. Since accessing the disk takes milliseconds (eternities in CPU time), the CPU spends all its time waiting for the disk. CPU utilization drops to near zero, making the system feel completely frozen. This catastrophic state is called thrashing.\n\nTo prevent thrashing, the OS must understand how much memory a process actually needs to function smoothly at any given moment. This is defined as the 'Working Set'. A process's working set is the set of pages it has actively referenced in the recent past. Due to locality of reference, a process only needs its working set in RAM to run without frequent page faults; it does not need its entire memory footprint loaded.\n\nThe OS actively monitors the size of the working set for every running process. If the sum of all working sets exceeds total physical memory, thrashing is imminent. To recover, the OS takes drastic action: it suspends one or more entire processes, swapping them completely to disk. This frees up enough frames so that the remaining active processes have enough room for their working sets, allowing them to finish. Once they finish, the suspended processes can be brought back in.",
+  "key_points": [
+    {
+      "title": "CPU Utilization Drop",
+      "detail": "The hallmark symptom of thrashing is a sudden, massive drop in CPU utilization combined with a massive spike in disk I/O activity."
+    },
+    {
+      "title": "Working Set Model",
+      "detail": "The working set is a dynamic window. As a program shifts from initialization to core processing to cleanup, its working set changes in both size and contained pages."
+    },
+    {
+      "title": "Local vs Global Replacement",
+      "detail": "Global page replacement (allowing a process to steal frames from *any* other process) drastically increases the risk of system-wide thrashing compared to local replacement."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking thrashing is a CPU bottleneck",
+      "detail": "During thrashing, the CPU is actually sitting idle, waiting on the disk. Thrashing is an I/O bottleneck caused by memory exhaustion.",
+      "explanation": "This is a common source of confusion."
+    },
+    {
+      "title": "Assuming more multiprogramming always equals more performance",
+      "detail": "Up to a certain point, adding more processes increases CPU utilization. But once the threshold is crossed and working sets don't fit, utilization collapses off a cliff.",
+      "explanation": "This is a common source of confusion."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is thrashing in the context of Operating Systems?",
+      "answer": "A state where the system is spending a larger fraction of its time swapping pages in and out of secondary storage than executing actual instructions, halting useful work.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What causes the sharp drop in CPU utilization during thrashing?",
+      "answer": "Processes are constantly stuck in the wait queue for disk I/O to handle their page faults, leaving the CPU with no ready processes to execute.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does the Working Set model prevent thrashing?",
+      "answer": "By ensuring that a process is only allowed to execute if its entire working set can fit into available physical memory. If it can't, the process is suspended.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If a system is thrashing, which hardware component is the primary bottleneck?",
+      "company": "Core CS OA",
+      "answer": "The secondary storage (Hard Disk / SSD).",
+      "approach": "Thrashing is characterized by excessive disk I/O as pages are constantly swapped in and out. The CPU is idle."
+    },
+    {
+      "question": "How can an OS recover from a severe thrashing state?",
+      "company": "SDE Interview",
+      "answer": "By decreasing the degree of multiprogramming (suspending or killing some running processes).",
+      "approach": "Thrashing means total working sets > RAM. The only immediate fix is to remove some working sets entirely from the equation by suspending processes."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Thrashing_(computer_science)",
+    "https://www.geeksforgeeks.org/techniques-to-handle-thrashing/"
+  ]
+}

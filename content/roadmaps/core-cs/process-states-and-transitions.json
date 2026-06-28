@@ -1,0 +1,160 @@
+{
+  "slug": "process-states-and-transitions",
+  "title": "Process States and Transitions",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "process-vs-program-and-the-pcb"
+    ],
+    "unlocks": [
+      "context-switching"
+    ],
+    "appears_in": [
+      "os"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine a busy restaurant kitchen. An order comes in, waits to be prepped, is actively cooked, might be paused while waiting for a missing ingredient, and finally is served. Processes in an operating system follow an identical lifecycle."
+  },
+  "mental_model": {
+    "intuition": "A process's lifecycle is like a patient's journey through a hospital.",
+    "description": "A patient is admitted (New), waits in the waiting room (Ready), sees the doctor (Running), might wait for lab results (Blocked/Waiting), and finally is discharged (Terminated)."
+  },
+  "explanation": "When you double-click an application, the operating system doesn't just hand it the CPU and walk away. Instead, the OS manages the process through a strict lifecycle of discrete states, ensuring fair access to system resources. This lifecycle dictates exactly what a process is allowed to do at any given moment.\n\nThe most fundamental distinction in this lifecycle is whether a process is actually executing instructions on the CPU or waiting for its turn. But 'waiting' isn't a single state. A process can be waiting because it's ready to execute but the CPU is busy with another program, or it can be waiting because it's fundamentally stuck until some external event (like an I/O operation or network response) finishes. This distinction is the core of process scheduling.\n\nEvery process starts in the **New** state, where the OS allocates its memory and creates its Process Control Block (PCB). Once initialization is complete, it is moved to the **Ready** state. At this point, the process is fully prepared to execute; it's simply waiting in a queue for the OS scheduler to assign it a CPU core.\n\nWhen the scheduler picks the process, it transitions from Ready to **Running**. This is the only state where the process's actual instructions are being executed by the CPU hardware. However, a process rarely runs to completion uninterrupted. If its time-slice expires, the OS forcefully moves it back to the **Ready** state to let another process run. \n\nIf the running process needs to read from disk or wait for user input, it transitions to the **Blocked** (or Waiting) state. It cannot execute instructions while blocked, even if the CPU is completely idle. Once the disk read or user input completes, the hardware sends an interrupt to the OS, which moves the process from Blocked back to Ready. Finally, when the process finishes its last instruction or is killed, it enters the **Terminated** state, allowing the OS to reclaim its resources.",
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "new",
+        "label": "New State"
+      },
+      {
+        "id": "ready",
+        "label": "Ready Queue"
+      },
+      {
+        "id": "running",
+        "label": "CPU (Running)"
+      },
+      {
+        "id": "blocked",
+        "label": "I/O Wait (Blocked)"
+      },
+      {
+        "id": "terminated",
+        "label": "Terminated"
+      }
+    ],
+    "steps": [
+      {
+        "from": "new",
+        "to": "ready",
+        "label": "Admitted",
+        "term": "New to Ready"
+      },
+      {
+        "from": "ready",
+        "to": "running",
+        "label": "Dispatched",
+        "term": "Ready to Running"
+      },
+      {
+        "from": "running",
+        "to": "ready",
+        "label": "Time slice expired",
+        "term": "Running to Ready"
+      },
+      {
+        "from": "running",
+        "to": "blocked",
+        "label": "I/O Request",
+        "term": "Running to Blocked"
+      },
+      {
+        "from": "blocked",
+        "to": "ready",
+        "label": "I/O Complete",
+        "term": "Blocked to Ready"
+      },
+      {
+        "from": "running",
+        "to": "terminated",
+        "label": "Exit",
+        "term": "Running to Terminated"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "New",
+      "detail": "The process is being created and initialized by the OS."
+    },
+    {
+      "title": "Ready",
+      "detail": "The process is waiting to be assigned to a processor. It has all the resources it needs except the CPU."
+    },
+    {
+      "title": "Running",
+      "detail": "Instructions are being actively executed on the CPU."
+    },
+    {
+      "title": "Blocked (Waiting)",
+      "detail": "The process is waiting for some event to occur (e.g., I/O completion) and cannot run even if given the CPU."
+    },
+    {
+      "title": "Terminated",
+      "detail": "The process has finished execution and is awaiting resource cleanup."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing Blocked and Ready states",
+      "explanation": "Many think both mean 'waiting for the CPU'. Ready means the process CAN execute right now if a CPU is free. Blocked means the process CANNOT execute, even if a CPU is free, because it is waiting on an external event like I/O."
+    },
+    {
+      "title": "Assuming processes go directly from Blocked to Running",
+      "explanation": "When an I/O operation finishes, the OS does not immediately inject the blocked process back into the CPU. Instead, it moves it to the Ready queue to wait its fair turn."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between the Ready and Blocked states?",
+      "answer": "Ready means the process is prepared to execute and is just waiting for CPU time. Blocked means the process is waiting on an external event (like I/O) and cannot execute until that event completes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What transition occurs when a running process issues an I/O request?",
+      "answer": "It transitions from Running to Blocked (Waiting).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Can a process transition directly from Blocked to Running?",
+      "answer": "No, it must first transition to Ready and wait for the scheduler to dispatch it to the CPU.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A process has just completed its I/O operation. Which state does it enter next?",
+      "company": "Core CS OA",
+      "answer": "Ready state.",
+      "approach": "Remember the process lifecycle diagram: I/O completion triggers an interrupt that moves the process from Blocked/Waiting into the Ready queue, not directly to Running."
+    },
+    {
+      "question": "If a CPU has multiple cores, can a single process be in the Running state on multiple cores simultaneously?",
+      "company": "SDE interview",
+      "answer": "No, a single process (assuming a single-threaded context) can only execute on one core at a time. Threads within a process can run on multiple cores.",
+      "approach": "Clarify the distinction between a process (an execution environment) and a thread (an execution unit). A standard single-threaded process executes one instruction stream at a time."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Process_state",
+    "https://www.geeksforgeeks.org/states-of-a-process-in-operating-systems/"
+  ]
+}

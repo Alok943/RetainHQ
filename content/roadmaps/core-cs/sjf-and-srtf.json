@@ -1,0 +1,137 @@
+{
+  "slug": "sjf-and-srtf",
+  "title": "SJF & SRTF",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "scheduling-criteria"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine you have one item to buy, and the person in front of you with a full cart says, 'Go ahead, you'll be fast.' That is optimal scheduling."
+  },
+  "mental_model": {
+    "intuition": "Shortest Job First (SJF) always runs the quickest task next. Shortest Remaining Time First (SRTF) takes it a step further by interrupting a running task if an even quicker one arrives.",
+    "description": "SJF is sorting your to-do list from fastest to slowest. SRTF is being halfway through writing an essay (slow), getting a text message (fast), pausing the essay to reply immediately, and then resuming the essay."
+  },
+  "explanation": "Shortest Job First (SJF) aims to completely solve the convoy effect by dynamically prioritizing tasks based on their size. When the CPU becomes available, it examines the ready queue and selects the process that has the smallest next CPU burst. By always prioritizing short processes, SJF mathematically guarantees the minimum possible average waiting time for a given set of processes.\n\nSJF operates as a non-preemptive algorithm. Once a process is selected and begins executing, it will run until it finishes its CPU burst, even if a new, much shorter process arrives in the queue while it is running. This non-preemptive nature means a short process arriving late still has to wait for the current long process to finish, which isn't entirely optimal.\n\nTo fix this, we introduce the preemptive version of SJF, known as Shortest Remaining Time First (SRTF). In SRTF, the scheduler evaluates the queue every time a new process arrives. If the newly arrived process requires less total CPU time than what is remaining for the currently executing process, the OS violently interrupts the running process and hands the CPU to the newcomer. This ensures that short jobs get immediate attention, further driving down average waiting times.\n\nHowever, both SJF and SRTF suffer from a massive, fundamental flaw: they require knowing the future. To pick the 'shortest job', the OS must know exactly how long a process's next CPU burst will take before it actually runs. In reality, this is impossible. Operating systems can only guess the future burst time by looking at the process's historical behavior, usually using a technique called exponential averaging to predict the next burst length based on past bursts.\n\nAnother critical issue is starvation. Because these algorithms heavily favor short processes, a steady stream of incoming short jobs can cause a long, CPU-heavy process to wait forever at the back of the line. The long process is constantly bypassed by newer, faster jobs, meaning it may never get a chance to execute.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "cpu",
+        "label": "CPU"
+      },
+      {
+        "id": "long_job",
+        "label": "Long Process (10ms)"
+      },
+      {
+        "id": "short_job",
+        "label": "Short Process (2ms)"
+      }
+    ],
+    "steps": [
+      {
+        "from": "cpu",
+        "to": "long_job",
+        "label": "Long process starts running",
+        "term": "Execution"
+      },
+      {
+        "from": "short_job",
+        "to": "cpu",
+        "label": "Short process arrives in queue",
+        "term": "Arrival"
+      },
+      {
+        "from": "long_job",
+        "to": "cpu",
+        "label": "Long process is interrupted",
+        "term": "Preemption (SRTF)"
+      },
+      {
+        "from": "cpu",
+        "to": "short_job",
+        "label": "Short process runs and finishes quickly",
+        "term": "Priority Execution"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "SJF (Non-preemptive)",
+      "detail": "Selects the job with the smallest burst time, but won't interrupt a running job."
+    },
+    {
+      "title": "SRTF (Preemptive)",
+      "detail": "Will interrupt the current job if a new arrival has a shorter remaining time."
+    },
+    {
+      "title": "Optimal Average Waiting Time",
+      "detail": "SJF provides the theoretically lowest average waiting time of any scheduling algorithm."
+    },
+    {
+      "title": "The Prediction Problem",
+      "detail": "It is impossible to know exactly how long a process will take beforehand; the OS must use history to predict the future."
+    },
+    {
+      "title": "Starvation",
+      "detail": "Long processes might never execute if short processes keep arriving continuously."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Believing SJF can be perfectly implemented",
+      "explanation": "Because we cannot predict the exact future execution time of a program, perfect SJF only exists in theory. Real systems can only estimate it."
+    },
+    {
+      "title": "Thinking SJF and SRTF are entirely different algorithms",
+      "explanation": "SRTF is literally just SJF with preemption enabled. They use the exact same logic (shortest time wins)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary difference between SJF and SRTF?",
+      "answer": "SJF is non-preemptive (it lets the current job finish). SRTF is preemptive (it will interrupt the current job if a shorter one arrives).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is SJF considered the 'optimal' scheduling algorithm?",
+      "answer": "It mathematically guarantees the minimum average waiting time for a given set of processes by ensuring short jobs don't wait behind long ones.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does an operating system guess the length of the next CPU burst for SJF?",
+      "answer": "It uses exponential averaging, which calculates a weighted average of the process's previous burst times to predict its future behavior.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What happens to a heavy video-rendering process under SRTF if the system is constantly receiving tiny network packets?",
+      "company": "SDE interview",
+      "answer": "The video rendering process will suffer from starvation. The system will constantly preempt it to handle the tiny network packets, preventing it from ever making progress.",
+      "approach": "Identify the heavy process as a 'long job' and network packets as 'short jobs'. Apply the SRTF rule to show the long job is perpetually pushed to the back of the line."
+    },
+    {
+      "question": "Process A (burst 8) arrives at t=0. Process B (burst 4) arrives at t=1. Process C (burst 2) arrives at t=2. Under SRTF, which process finishes first?",
+      "company": "Core CS OA",
+      "answer": "Process C",
+      "approach": "At t=0, A starts. At t=1, A has 7 left, B has 4. B preempts A. At t=2, B has 3 left, C has 2. C preempts B. C runs to completion."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Shortest_job_next"
+  ]
+}

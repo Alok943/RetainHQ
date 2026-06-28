@@ -1,0 +1,90 @@
+{
+  "slug": "contiguous-allocation-and-fragmentation",
+  "title": "Contiguous Allocation & Fragmentation",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "paging-and-page-tables"
+    ],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine moving into a new neighborhood where you want to buy 3 adjacent houses for your extended family. There are 10 empty houses in the town, but they are scattered individually. Even though there is enough total space, you can't move in because the space isn't continuous."
+  },
+  "mental_model": {
+    "intuition": "Memory must be allocated in single, unbroken blocks, which inevitably leaves small, unusable gaps over time.",
+    "description": "Contiguous memory allocation forces a process to occupy a single, continuous block of physical memory. As processes load and exit, they leave behind empty spaces (holes). Over time, these holes become scattered. Fragmentation is the phenomenon where total free memory is sufficient, but no single contiguous block is large enough to satisfy a new request."
+  },
+  "explanation": "In early operating systems, memory management was straightforward: when a program wanted to run, the OS found a single, unbroken chunk of physical memory large enough to hold the entire program. This is known as Contiguous Memory Allocation. The OS keeps track of which parts of memory are occupied and which are free (often called 'holes').\n\nWhen a new process arrives, the OS must choose which hole to put it in. Common strategies include 'First Fit' (grabbing the first hole that is big enough), 'Best Fit' (finding the smallest hole that is large enough, leaving a tiny remnant), and 'Worst Fit' (taking the largest available hole, leaving a sizable chunk for future use). Regardless of the strategy used, contiguous allocation inevitably leads to a massive problem: Fragmentation.\n\nThere are two distinct types of fragmentation. The first is External Fragmentation. This happens when processes are continuously loaded and removed from memory. Over time, the free memory gets chopped into tiny, isolated pieces scattered across RAM. Eventually, a new process might ask for 10MB of RAM. The OS might have 50MB of total free space, but because it is broken into 1MB chunks, the contiguous allocation fails. The memory exists, but its fractured arrangement makes it useless.\n\nTo fix external fragmentation, the OS can perform 'Compaction'. This involves physically pausing processes, copying their data to clump them all together at one end of the memory, and merging the free space into a single large block at the other end. However, shifting gigabytes of memory is an incredibly slow and computationally expensive operation, stalling the entire system.\n\nThe second type is Internal Fragmentation. This occurs when memory is divided into fixed-size blocks (like partitions). If the OS allocates a 4MB partition to a process that only needs 3MB, that remaining 1MB inside the partition is entirely wasted. It belongs to the process, but the process isn't using it, and the OS can't give it to anyone else.",
+  "key_points": [
+    {
+      "title": "First Fit vs Best Fit",
+      "detail": "First Fit is fast but creates unpredictable gaps. Best Fit saves large blocks but creates tiny, unusable slivers of external fragmentation."
+    },
+    {
+      "title": "External Fragmentation",
+      "detail": "Total free memory is enough, but it is split into non-contiguous blocks that are too small to be used individually."
+    },
+    {
+      "title": "Internal Fragmentation",
+      "detail": "Memory allocated to a process is slightly larger than requested, wasting space 'inside' the allocated block."
+    },
+    {
+      "title": "Compaction",
+      "detail": "The expensive process of shuffling memory contents to merge all free space into one large contiguous block."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing internal and external fragmentation",
+      "explanation": "External fragmentation happens OUTSIDE the allocated blocks (between processes). Internal fragmentation happens INSIDE the allocated block (leftover space given to a process)."
+    },
+    {
+      "title": "Thinking compaction is a routine, cheap operation",
+      "explanation": "Compaction requires halting execution, recalculating addresses, and physically copying data. It is a last-resort performance killer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary drawback of contiguous memory allocation?",
+      "answer": "External fragmentation.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which allocation strategy searches the entire list of free holes to find the smallest one that fits?",
+      "answer": "Best Fit.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does memory compaction solve external fragmentation?",
+      "answer": "By shifting all allocated memory blocks together to merge all scattered free space into a single contiguous block.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A system has free memory blocks of 10KB, 20KB, and 30KB. A process requests 25KB. Which block is chosen using the First Fit strategy, assuming blocks are searched in order?",
+      "company": "Core CS OA",
+      "answer": "The 30KB block.",
+      "approach": "First Fit stops at the first block that is >= 25KB. 10 and 20 are too small. 30 is the first one that fits."
+    },
+    {
+      "question": "An OS allocates memory in fixed 4KB blocks. A process requires 9KB of memory. How much internal fragmentation occurs?",
+      "company": "SDE interview",
+      "answer": "3KB.",
+      "approach": "The process needs 9KB. It will be allocated three 4KB blocks (12KB total). 12KB - 9KB = 3KB of wasted space inside the allocation."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

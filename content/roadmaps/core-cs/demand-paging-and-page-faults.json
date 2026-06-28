@@ -1,0 +1,155 @@
+{
+  "slug": "demand-paging-and-page-faults",
+  "title": "Demand Paging & Page Faults",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "paging-and-page-tables"
+    ],
+    "unlocks": [
+      "page-replacement-fifo-lru-optimal",
+      "thrashing-and-working-set"
+    ],
+    "appears_in": [
+      "core-cs-os"
+    ]
+  },
+  "hook": {
+    "scenario": "How can you play a 100GB video game on a computer that only has 16GB of RAM? The OS is constantly playing a high-speed game of musical chairs with your memory."
+  },
+  "mental_model": {
+    "intuition": "Demand paging is like streaming a movie on Netflix. You don't download the whole 2-hour movie before you hit play; you only download the scenes exactly when you are about to watch them.",
+    "description": "Demand Paging ensures pages are only loaded from the disk into physical memory when the CPU actually requests them. If a requested page isn't in memory, a 'Page Fault' occurs, pausing the program while the OS fetches it."
+  },
+  "explanation": "In traditional execution, a program's entire code and data had to be loaded into physical memory before it could run. This severely limited the size of programs and the number of applications that could run simultaneously. Demand paging revolutionized this by introducing the concept of 'lazy loading'. Under demand paging, a program begins execution with zero pages in memory. Pages are only brought in from the hard disk or SSD when the CPU actively attempts to access them.\n\nTo track which pages are actually in memory, the page table includes a 'Valid/Invalid' bit for every entry. When a page is present in RAM, the bit is set to valid. If the page is still sitting on the disk, the bit is set to invalid. When the CPU tries to access a memory address, the hardware checks the page table. If it sees an invalid bit, the hardware immediately pauses the running program and throws a special interrupt called a Page Fault.\n\nA Page Fault is not a crash; it is an expected part of normal OS operations. When the Page Fault traps to the OS, the OS looks at its internal records to verify the memory access was legal. If it was legal, the OS locates the missing page on the disk. It then finds a free frame in physical memory, schedules a disk read to copy the page into that frame, and updates the page table to mark the bit as valid. \n\nOnce the disk read is complete, the OS reschedules the paused program, explicitly instructing the CPU to re-execute the exact instruction that caused the page fault. This time, the memory access succeeds because the page is physically present in RAM. The entire process is completely invisible to the application; as far as the program knows, it simply has access to a massive, continuous block of memory.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "cpu",
+        "label": "CPU"
+      },
+      {
+        "id": "mmu",
+        "label": "MMU"
+      },
+      {
+        "id": "os",
+        "label": "OS (Trap)"
+      },
+      {
+        "id": "disk",
+        "label": "Disk"
+      },
+      {
+        "id": "mem",
+        "label": "Main Memory"
+      }
+    ],
+    "steps": [
+      {
+        "from": "cpu",
+        "to": "mmu",
+        "label": "Request address (Page M)",
+        "term": "Memory Access"
+      },
+      {
+        "from": "mmu",
+        "to": "os",
+        "label": "Valid bit is 0, trigger interrupt",
+        "term": "Page Fault"
+      },
+      {
+        "from": "os",
+        "to": "disk",
+        "label": "Locate Page M on disk, request read",
+        "term": "Disk I/O"
+      },
+      {
+        "from": "disk",
+        "to": "mem",
+        "label": "Copy Page M into free frame",
+        "term": "Page Transfer"
+      },
+      {
+        "from": "os",
+        "to": "mmu",
+        "label": "Update page table, Valid=1",
+        "term": "Table Update"
+      },
+      {
+        "from": "os",
+        "to": "cpu",
+        "label": "Resume execution, re-run instruction",
+        "term": "Instruction Restart"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Lazy Swapping",
+      "detail": "Pages are never loaded predictively in pure demand paging; they are strictly loaded on-demand, saving RAM and initial load times."
+    },
+    {
+      "title": "Transparent to User",
+      "detail": "The application doesn't write error-handling code for page faults; the hardware and OS pause and resume the process seamlessly."
+    },
+    {
+      "title": "Instruction Restart",
+      "detail": "Crucially, the CPU must be able to roll back its state and re-execute the exact instruction that caused the fault once the page is loaded."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking a Page Fault is an error or crash",
+      "detail": "Despite the word 'fault', it is a completely normal routine mechanism. A segmentation fault is a crash; a page fault is just the OS doing its job.",
+      "explanation": "This is a common source of confusion."
+    },
+    {
+      "title": "Assuming disk reads are fast enough to ignore",
+      "detail": "A page fault requires disk I/O, making it tens of thousands of times slower than a normal memory access. Minimizing page faults is critical for performance.",
+      "explanation": "This is a common source of confusion."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the valid/invalid bit indicate in a page table entry?",
+      "answer": "It indicates whether the corresponding page is currently loaded in physical memory (valid) or still residing on the secondary storage/disk (invalid).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the very first step the OS takes when a Page Fault occurs?",
+      "answer": "It checks the internal process control block to determine if the memory reference was a valid request or an illegal memory access (which would cause a segfault).",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does demand paging improve multi-programming?",
+      "answer": "By not keeping an entire program in memory, the OS can fit the active pages of many more processes into RAM simultaneously, increasing CPU utilization.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following is true about demand paging? \nA) All pages are loaded at startup \nB) Pages are loaded only when referenced \nC) It prevents external fragmentation entirely",
+      "company": "Core CS OA",
+      "answer": "B) Pages are loaded only when referenced",
+      "approach": "Demand paging is defined by its lazy loading nature\u2014pages are brought into memory precisely upon the first fault triggered by referencing them."
+    },
+    {
+      "question": "What must the CPU do immediately after a page fault is serviced by the OS?",
+      "company": "SDE Interview",
+      "answer": "Restart the instruction that caused the page fault.",
+      "approach": "The instruction initially failed to execute because the data wasn't there. Once the OS fetches the data, the CPU must re-attempt that exact same instruction."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Demand_paging",
+    "https://www.geeksforgeeks.org/virtual-memory-in-operating-system/"
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "slug": "routing-distance-vector-vs-link-state",
+  "title": "Routing: Distance Vector vs Link State",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "These are the two main types of dynamic routing protocols used by routers to map network paths.",
+    "why": "They dictate how routers share information and calculate the fastest path for data to travel.",
+    "where_used": ["Networking", "System Design", "Cloud Infrastructure"]
+  },
+  "why_learning_this": [
+    "Understanding these protocols is key to understanding how data robustly routes across the global internet without loops.",
+    "It comes up in System Design when discussing network topology and convergence."
+  ],
+  "hook": {
+    "scenario": "Imagine driving across the country. Distance Vector is like asking the gas station attendant, 'Which way to New York and how far?' Link State is like having a complete drone map of the entire country's road system to plot your own route."
+  },
+  "mental_model": {
+    "intuition": "Distance Vector relies on rumors from neighbors to build a map. Link State shares a complete map of the network so everyone calculates their own best path.",
+    "description": "Routing protocols decide how data travels. Distance Vector (like RIP) works by having routers blindly trust their neighbors' estimates of how far away a destination is (routing by rumor). Link State (like OSPF) works by having every router broadcast the exact status of its direct connections to everyone, allowing each router to build an identical, complete mathematical map of the entire network."
+  },
+  "explanation": "To move data across the internet, routers must build 'routing tables' that tell them which way to forward a packet. They do this dynamically using routing protocols. The two fundamental families of dynamic routing protocols are Distance Vector and Link State. They solve the exact same problem—finding the shortest path to a destination—but they take completely different approaches to gathering information.\n\nIn a Distance Vector protocol, a router only knows two things: the distance (hop count or cost) to a destination, and the vector (which specific neighbor to send it to). It learns this by periodically receiving a copy of its neighbors' routing tables. If Router A tells Router B 'I can reach the destination in 2 hops', Router B adds 1 hop for itself, and records 'I can reach it in 3 hops via A'. The glaring flaw is that Router B has no idea what the actual path looks like; it just blindly trusts Router A. This 'routing by rumor' can cause disastrous routing loops if a link goes down and routers start feeding each other outdated rumors.\n\nLink State protocols fix the 'blind trust' problem by giving every router a complete map of the entire network. Instead of sharing their entire routing table, a Link State router only shares information about its direct links (e.g., 'I am connected to Router C and the cost is 5'). Crucially, this 'Link State Advertisement' (LSA) is flooded to every single router in the network, not just neighbors.\n\nBecause every router receives the exact same puzzle pieces (the LSAs), every router can build an identical, complete graph of the network topology in its memory. Once the map is built, each router independently runs Dijkstra's Shortest Path First algorithm to calculate the best route to every possible destination.\n\nWhile Link State is far more robust, converges faster, and doesn't suffer from routing loops, it is much more CPU and memory intensive. It requires powerful routers to store the entire network graph and constantly run Dijkstra's algorithm. Distance Vector is much lighter, making it suitable for smaller, simpler networks where the memory overhead of a full map isn't justified.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "A",
+        "label": "Router A"
+      },
+      {
+        "id": "B",
+        "label": "Router B"
+      },
+      {
+        "id": "C",
+        "label": "Router C"
+      }
+    ],
+    "steps": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "I am connected to C (Cost 10)",
+        "term": "LSA Flood (Link State)"
+      },
+      {
+        "from": "B",
+        "to": "A",
+        "label": "I can reach D in 3 hops",
+        "term": "Routing Table Share (Distance Vector)"
+      },
+      {
+        "from": "A",
+        "to": "A",
+        "label": "Calculate best paths using Dijkstra",
+        "term": "Independent Calculation"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Distance Vector (e.g., RIP, BGP)",
+      "detail": "Shares full routing tables, but only with direct neighbors. 'Routing by rumor.' Slower to converge when changes happen."
+    },
+    {
+      "title": "Link State (e.g., OSPF, IS-IS)",
+      "detail": "Shares only direct connection status, but with everyone in the network. Uses Dijkstra's algorithm to calculate paths."
+    },
+    {
+      "title": "Convergence",
+      "detail": "The time it takes for all routers to agree on the network topology after a change. Link State converges much faster."
+    },
+    {
+      "title": "Routing Loops",
+      "detail": "A severe issue in Distance Vector where packets bounce back and forth infinitely. Prevented by techniques like 'Split Horizon' or 'Poison Reverse'."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming Link State uses less bandwidth because it doesn't send the full routing table",
+      "explanation": "While it's true they don't send full tables, Link State protocols flood link state updates to the entire network whenever a link changes, which can cause significant burst traffic in large, unstable networks."
+    },
+    {
+      "title": "Confusing the algorithms they use",
+      "explanation": "Distance Vector protocols generally rely on the Bellman-Ford algorithm. Link State protocols rely on Dijkstra's algorithm."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is meant by 'routing by rumor' in a Distance Vector protocol?",
+      "answer": "It means a router makes routing decisions based entirely on the distances reported by its immediate neighbors, without having any actual map of the network topology beyond those neighbors.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which algorithm do Link State routing protocols use to calculate the shortest path?",
+      "answer": "Dijkstra's Shortest Path First algorithm.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Link State more resistant to routing loops than Distance Vector?",
+      "answer": "Because in Link State, every router has a complete, identical map of the entire network topology. They calculate paths independently, so they don't rely on potentially outdated secondary information from neighbors.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A network architect is designing a massive enterprise network with hundreds of routers. They need the network to react instantly to down links without creating routing loops. Which protocol type should they use and why?",
+      "company": "System Design",
+      "answer": "A Link State protocol (like OSPF).",
+      "approach": "Distance Vector protocols are slow to converge in large networks and are highly susceptible to routing loops during topology changes. Link State protocols flood link updates immediately and recalculate paths independently, providing the fast convergence and loop-free routing required for large enterprise networks."
+    },
+    {
+      "question": "What is the 'Count to Infinity' problem?",
+      "company": "Core CS OA",
+      "answer": "A routing loop in Distance Vector protocols where two routers continuously increment the hop count to a destination that has actually gone offline.",
+      "approach": "Explain that if Router A loses its connection to destination X, but Router B still advertises 'I can reach X in 2 hops' (because B was secretly routing through A), A will think 'Oh, I can use B to reach X in 3 hops'. B then updates to 4, A to 5, counting to infinity."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Distance-vector_routing_protocol",
+    "https://en.wikipedia.org/wiki/Link-state_routing_protocol"
+  ]
+}

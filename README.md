@@ -64,6 +64,7 @@ RetainHQ/
 │   │   ├── Hint.jsx          # one-time contextual tutorial hints
 │   │   ├── Roadmaps.jsx      # roadmap list with server-computed progress
 │   │   ├── RoadmapDetail.jsx # List view (default) + Map view (React Flow) + PDF export
+│   │   ├── LessonView.jsx    # node-anchored lessons; renders by `kind` (+ Pyodide/PGlite/SVG anim)
 │   │   ├── KnowledgeVault.jsx# browse captured key-memories (client-side search)
 │   │   ├── Analytics.jsx     # real stats + honest Phase-2 placeholders
 │   │   ├── Admin.jsx         # founder-only funnel + feedback tabs
@@ -92,6 +93,9 @@ RetainHQ/
 │       ├── models/models.py  # single source of truth for the schema
 │       ├── alembic/versions/ # migrations
 │       └── seed_*.py         # idempotent roadmap seed scripts (dev)
+│
+├── content/                  # lesson JSON (one per node) + validate.py + PROMPT-*.md contracts
+│   └── roadmaps/<key>/<slug>.json
 │
 └── docs/                     # ARCHITECTURE, API, FLOWS, CONTRIBUTING, funnel.sql, …
 ```
@@ -158,14 +162,14 @@ python seed_striver_a2z.py    # each roadmap has its own idempotent seed_*.py wi
 
 Postgres, UUID primary keys, naive-UTC timestamps.
 
-- **activities** — `user_id`, `topic`, `key_memory` (capped at 500 chars on create), `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?`, `roadmap_id?` (optional FK → `roadmaps`, ON DELETE SET NULL), `created_at`, plus FSRS card state: `stability?`, `difficulty_fsrs?` (both NULL until the first graded review = a new card), `interval_days`, `last_reviewed_at?`, `next_review_at?`. Legacy SM-2 columns `ease_factor`/`repetitions` are still written so old rows keep working.
+- **activities** — `user_id`, `topic`, `key_memory` (capped at 500 chars on create), `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?` (incl. `lesson`), `roadmap_id?` (optional FK → `roadmaps`, ON DELETE SET NULL), `node_id?` (optional FK → `roadmap_nodes` — set when a card is created from a lesson via "Add to reviews"; dedupes one card per lesson), `created_at`, plus FSRS card state: `stability?`, `difficulty_fsrs?` (both NULL until the first graded review = a new card), `interval_days`, `last_reviewed_at?`, `next_review_at?`. Legacy SM-2 columns `ease_factor`/`repetitions` are still written so old rows keep working.
 - **reviews** — `user_id`, `activity_id`, `status('due'|'completed')`, `scheduled_for`, `completed_at?`, `rating?('easy'|'medium'|'hard')`, `recalled?` (objective got-it/missed-it), `quality?` (0–5 SM-2 grade), and AI grader output `ai_verdict?` / `ai_recalled?` / `ai_feedback?`.
-- **roadmaps** — `title`, `description`.
+- **roadmaps** — `slug` (unique, human-readable URL id — e.g. `aptitude`, `python-swe`; matches the content folder key), `title`, `description`.
 - **roadmap_nodes** — `roadmap_id`, `phase`, `section`, `title`, `tier(easy|medium|hard)`, `order_index`, `description?`, `parent_id?` (self-ref → subtopics are completable child nodes).
 - **user_progress** — `user_id`, `node_id`, `status`.
 - **feedbacks** — `user_id`, `message`, `status('new'|'reviewed'|'resolved')`, `created_at`.
 
-> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `a1b2c3d4e5f6` (adds the FSRS `stability`/`difficulty_fsrs` columns).
+> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `a4b2e9f1c8d3` (adds `activities.node_id`); recent migrations also add the FSRS `stability`/`difficulty_fsrs` columns (`a1b2c3d4e5f6`), node prerequisites (`b2c3d4e5f6a7`), and `roadmaps.slug` (`a3f1c0d4e7b2`).
 
 ---
 
@@ -176,7 +180,7 @@ All routes are under `/api` and require a Bearer JWT (some support `optionalAuth
 | Method & Path | Purpose |
 |---|---|
 | `GET /api/activities/` | List the user's captured activities (Knowledge Vault), newest first |
-| `POST /api/activities/` | Create activity (optional `roadmap_id`); init FSRS card + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. |
+| `POST /api/activities/` | Create activity (optional `roadmap_id`/`node_id`); init FSRS card + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. A `source_type='lesson'` card is idempotent per `node_id` (powers the lesson "Add to reviews" button). |
 | `POST /api/activities/suggest-key-points` | **Capture assist** (gated): `{topic, draft?}` → `{points[]}` — core sub-points under the topic so a stuck user can recognize + keep what they learned. Suggestion only, never auto-applied. |
 | `GET /api/reviews/due` | Due reviews (`status='due'`, `scheduled_for ≤ now`) with activity eager-loaded. Capped to one session (overflow rolls forward). |
 | `POST /api/reviews/{id}/complete` | Complete with `rating` + optional `recalled`; advances FSRS and schedules the next review (IDOR-protected) |
@@ -184,8 +188,8 @@ All routes are under `/api` and require a Bearer JWT (some support `optionalAuth
 | `POST /api/reviews/{id}/questions` | **Question mode** (gated): generate 2–3 short-answer questions grounded in `key_memory`. 404 when disabled → UI falls back to free recall. |
 | `POST /api/reviews/{id}/grade-questions` | **Question mode** (gated): grade the answer set vs `key_memory` → `{recalled, feedback, items[], related_subtopics}`. Advisory only. |
 | `GET /api/dashboard/` | `due_count`, `consistency_window`, `daily_progress`, `total_activities`, `total_reviews_completed`, `next_review_at` |
-| `GET /api/roadmaps/` | List roadmaps with server-computed progress |
-| `GET /api/roadmaps/{id}` | Roadmap + nodes + per-node user status |
+| `GET /api/roadmaps/` | List roadmaps (with `slug`) and server-computed progress |
+| `GET /api/roadmaps/{id-or-slug}` | Roadmap + nodes + per-node user status (resolves by slug or UUID; old UUID links keep working) |
 | `PUT /api/roadmaps/nodes/{id}/progress` | Idempotent upsert of `done` / `not_started` |
 | `POST /api/feedback/` | Submit a feedback message |
 | `GET /api/admin/funnel` | **Admin-only** activation funnel (signups → logged → reviewed → returned) |
@@ -248,7 +252,29 @@ Both are `NULL` until the **first graded review** (`NULL` == a brand-new card wi
 - **Download PDF** — styled jsPDF export reflecting your progress.
 - **Complete → Log** — checking a node off prompts a "Log what you learned" toast that pre-fills the capture form, closing the roadmap → loop.
 
-`phase` = sub-track (step spine), `tier` ∈ {easy, medium, hard}. Roadmap progress counts subtopics as nodes.
+`phase` = sub-track (step spine), `tier` ∈ {easy, medium, hard}. Roadmap progress counts subtopics as nodes. Roadmaps are addressed by **slug** (`/roadmaps/aptitude`), not UUID.
+
+---
+
+## Lessons & content
+
+Roadmap nodes aren't just checkboxes — many carry a **lesson**, rendered at `/roadmaps/<slug>/learn/<lesson-slug>` (e.g. [`/roadmaps/aptitude/learn/percentages`](https://retainhq.app/roadmaps/aptitude/learn/percentages)). Lessons are authored as **static JSON** at `content/roadmaps/<roadmap>/<slug>.json`, validated by [`content/validate.py`](content/validate.py), and synced into the frontend by [`frontend/scripts/sync-content.mjs`](frontend/scripts/sync-content.mjs) — so a new topic ships with **no code change**. `LessonView.jsx` fetches the JSON and renders by `kind`.
+
+Each lesson declares a **`kind`** that sets its shape (and optional client-side runtime):
+
+| `kind` | for | shape | runtime |
+|---|---|---|---|
+| `concept` (python) | Python for SWE | overview · aha-moment · code_walkthrough · understanding-checks | **Pyodide** (CPython → WASM) step-scrubber |
+| `concept` (sql) | SQL | query_walkthrough · row-set flow · JOIN viz | **PGlite** (Postgres → WASM) |
+| `aptitude` | Quant aptitude | hook · mental_model · *pattern_discovery?* · formula · shortcuts · recall · OA | — *(deliberately thin; the review queue does the retaining)* |
+| `reasoning` | Logical / Verbal | mental_model · method · worked_example · recall · OA | — |
+| `theory` | Core CS (OS / DBMS / Networks) | analogy · *process animation?* · **deep explanation** · key_points · recall · OA | — |
+
+- **Runtimes load lazily from CDN** (Pyodide / PGlite) — zero bundle cost until a learner runs code; all execution is **client-side** (no server compute).
+- **Thin vs deep, by design:** `aptitude` lessons are intentionally thin (one intuition + rule + trick — retention is the engine's job). `theory` lessons are the opposite: the `explanation` must *teach a beginner from scratch*, because for Core CS the lesson **is** the learning resource.
+- **Process animations** (`theory`): for flow concepts (TCP handshake, paging, deadlock) the JSON carries structured `animation` metadata — `actors` + directed `steps` — rendered as a **dependency-free animated SVG** (`sequence` row, or `cycle` ring that closes into a loop). The data is the single source of truth, so the same metadata can drive static diagrams later.
+- **Add to reviews:** a button on any lesson turns it into an FSRS card (`source_type='lesson'`, linked via `activities.node_id`) — so what you learn in a lesson enters the same spaced-repetition loop. Idempotent (one card per lesson).
+- **Bulk content** is generated against these contracts (`content/PROMPT-*.md` + `content/_TODO-*.md`) by a separate agentic tool; `validate.py` is the gate. Content roadmaps live so far: **Python for SWE**, **SQL**, **Aptitude** (quant + logical reasoning), **Core CS** (in progress).
 
 ---
 
@@ -292,7 +318,7 @@ Both are `NULL` until the **first graded review** (`NULL` == a brand-new card wi
 
 **Phase 1 (core loop) is live end-to-end and deployed to production.** A real user can sign up, log an activity, run the scheduled review, and exercise the full spaced-repetition loop.
 
-**Anti-fatigue redesign (latest):** first review deferred to tomorrow (first-ever activity keeps an instant demo), daily review session cap with rollover, and an LLM **question mode** + **related-subtopics** suggestions — both gated behind `GRADER_ENABLED`, free recall stays the fallback.
+**Latest — the learning layer:** node-anchored **lessons** with multiple `kind`s (`aptitude`, `reasoning`, `theory` on top of the runtime-backed `python`/`sql`), client-side execution (Pyodide / PGlite), **process animations** for Core CS, clean **slug URLs** (`/roadmaps/<slug>/learn/<lesson>`), and the **content→review bridge** ("Add to reviews" → an FSRS card via `activities.node_id`). Earlier: anti-fatigue redesign (first review deferred to tomorrow, daily session cap with rollover) and an LLM **question mode** + **related-subtopics** (gated behind `GRADER_ENABLED`; free recall stays the fallback).
 
 **Next, in order of leverage:**
 1. Flip the AI grader + question mode on in prod (`GRADER_ENABLED=true`, `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` on Railway) and validate question/subtopic quality on real cards.

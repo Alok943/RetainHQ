@@ -1,0 +1,127 @@
+{
+  "slug": "peterson-s-solution",
+  "title": "Peterson's Solution",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "race-condition-and-critical-section"
+    ],
+    "unlocks": [],
+    "appears_in": []
+  },
+  "hook": {
+    "scenario": "Two polite neighbors share a single narrow driveway. They both want to pull out, but they use a strict system of raising a flag and saying 'you go first' to never collide."
+  },
+  "mental_model": {
+    "intuition": "Peterson's solution is a polite protocol: 'I want to go, but I will offer you the turn first.'",
+    "description": "It is a classic software-based algorithm that guarantees mutual exclusion for two processes by using two variables: a 'flag' array indicating intent, and a 'turn' variable indicating whose turn it is."
+  },
+  "explanation": "Before hardware locks and atomic operations became standard, operating systems theorists needed a pure software way to coordinate two concurrent processes. Peterson's Solution is an elegant algorithm from 1981 that perfectly solves the critical section problem for two processes without needing any special CPU instructions. It relies on just two shared variables: a boolean array called 'flag' and an integer called 'turn'.\n\nThe algorithm works through a combination of declaring intent and being excessively polite. When Process 0 wants to enter the critical section, it first sets 'flag[0] = true' to signal its desire. But before it charges ahead, it explicitly gives away priority by setting 'turn = 1', essentially saying, 'I want to enter, but if Process 1 also wants to enter, Process 1 can go first.' Process 0 then enters a while loop that spins (waits) as long as 'flag[1] is true AND turn == 1'.\n\nIf Process 1 is not interested ('flag[1] == false'), Process 0 immediately enters the critical section. If both processes try to enter at the exact same time, they will both set their flags to true, and both will try to set the 'turn' variable to the other process. Because memory writes happen sequentially, one process will write to 'turn' last. The process that writes to 'turn' last gives the right-of-way to the other process, breaking the tie cleanly.\n\nPeterson's Solution perfectly satisfies the three requirements of a critical section solution. Mutual exclusion is guaranteed because both processes cannot bypass the while loop simultaneously; 'turn' can only hold one value. Progress is ensured because if one process doesn't want to enter, its flag is false, letting the other proceed. Bounded waiting is met because once a process exits, it sets its flag to false, ensuring it cannot indefinitely block the waiting process. However, in modern systems, Peterson's Solution fails to work in practice due to CPU caching, out-of-order execution, and compiler optimizations which reorder memory reads and writes.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "p0",
+        "label": "Process 0"
+      },
+      {
+        "id": "mem",
+        "label": "Shared Variables"
+      },
+      {
+        "id": "p1",
+        "label": "Process 1"
+      }
+    ],
+    "steps": [
+      {
+        "from": "p0",
+        "to": "mem",
+        "label": "Sets flag[0]=True",
+        "term": "Intent"
+      },
+      {
+        "from": "p0",
+        "to": "mem",
+        "label": "Sets turn=1",
+        "term": "Politeness"
+      },
+      {
+        "from": "p1",
+        "to": "mem",
+        "label": "Sets flag[1]=True",
+        "term": "Intent"
+      },
+      {
+        "from": "p1",
+        "to": "mem",
+        "label": "Sets turn=0",
+        "term": "Politeness"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "The 'Flag' Array",
+      "detail": "Indicates if a process is interested in entering the critical section."
+    },
+    {
+      "title": "The 'Turn' Variable",
+      "detail": "Breaks ties by indicating whose turn it is if both are interested."
+    },
+    {
+      "title": "Hardware Limitations",
+      "detail": "Fails on modern CPUs without memory barriers due to out-of-order execution."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking it works for N processes",
+      "explanation": "The standard Peterson's solution only works for exactly two processes. There is a generalized version, but it is highly complex."
+    },
+    {
+      "title": "Assuming it is still used in modern OS design",
+      "explanation": "Modern systems use hardware primitives like Test-and-Set or Compare-and-Swap, making purely software-based spinning algorithms obsolete."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two shared variables are used in Peterson's Solution?",
+      "answer": "A boolean array 'flag' and an integer 'turn'.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does Peterson's Solution break a tie if both processes want to enter?",
+      "answer": "The 'turn' variable determines right-of-way; the process that wrote to 'turn' last yields to the other.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does Peterson's Solution fail on modern multicore processors?",
+      "answer": "Because modern CPUs and compilers aggressively reorder instructions and cache memory, breaking the strict execution order the algorithm relies on.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In Peterson's algorithm, what does the while loop condition 'while (flag[1] && turn == 1)' mean for Process 0?",
+      "company": "Core CS OA",
+      "answer": "Process 0 must wait if Process 1 is interested AND it is currently Process 1's turn.",
+      "approach": "Identify that 'flag[1]' checks the other process's intent, and 'turn == 1' checks if the other process has the right-of-way."
+    },
+    {
+      "question": "Does Peterson's Solution suffer from deadlocks?",
+      "company": "Core CS OA",
+      "answer": "No, it guarantees progress and bounded waiting.",
+      "approach": "Because 'turn' can only hold one value at a time, it is impossible for both processes to wait endlessly in the while loop."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

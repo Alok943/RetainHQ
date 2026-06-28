@@ -1,0 +1,73 @@
+{
+  "slug": "user-mode-vs-kernel-mode",
+  "title": "User mode vs kernel mode",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "kernel-shell-and-system-calls"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Core CS OA",
+      "Systems Interview"
+    ]
+  },
+  "hook": {
+    "scenario": "If every program could execute any CPU instruction, a buggy calculator app could accidentally turn off your hard drive. Dual-mode operation prevents this."
+  },
+  "mental_model": {
+    "intuition": "User Mode is the customer lobby; Kernel Mode is behind the bulletproof glass.",
+    "description": "In the customer lobby (User Mode), you have restricted access and can only perform basic tasks. To do anything sensitive, you must pass your request through the teller window (a system call). The teller then goes behind the bulletproof glass (Kernel Mode) where they have full access to the vault (hardware)."
+  },
+  "explanation": "To protect the operating system from buggy or malicious programs, modern processors operate in at least two distinct privilege levels: User Mode and Kernel Mode. This is a hardware-enforced security boundary. The CPU itself keeps track of which mode it is currently in using a special flag, often called a 'mode bit' (where 1 might mean User Mode and 0 means Kernel Mode).\n\nWhen a regular application\u2014like a web browser, a video game, or a Python script\u2014runs, the CPU is in User Mode. In this mode, the CPU restricts what instructions the program can execute. The program can perform math, logic, and manipulate its own local memory, but it is strictly forbidden from executing 'privileged instructions'. Privileged instructions include commands that interact directly with hardware, manage memory allocation, or attempt to change the CPU's mode bit. If a User Mode program tries to execute a privileged instruction, the CPU hardware throws a fit, triggering a 'trap' that forces the program to crash.\n\nKernel Mode, on the other hand, is the realm of absolute power. When the CPU is in Kernel Mode, it can execute any instruction, access any memory address, and communicate with any hardware device. The operating system's kernel is the only software that runs in this highly privileged state. This is why a crash in a user application just closes the app, but a bug in kernel code (like a bad graphics driver) causes the entire system to crash (resulting in the infamous Blue Screen of Death or Kernel Panic).\n\nSo, how does a User Mode application do anything useful if it's so restricted? It must perform a 'Mode Switch'. When an application needs to read a file or send data over the network, it executes a special instruction (like `syscall` or `sysenter`) that intentionally triggers a trap. This signals the CPU to immediately switch the mode bit to Kernel Mode and jump to a pre-defined, secure entry point in the operating system code.\n\nThe OS kernel then takes over, safely performs the privileged hardware operation on behalf of the application, and then voluntarily drops its privilege back to User Mode before handing control back to the application. This constant, rapid flipping between User Mode and Kernel Mode ensures that programs can get work done without ever having direct, dangerous access to the machine.",
+  "common_mistakes": [
+    {
+      "title": "Thinking User Mode and Kernel Mode are software concepts",
+      "explanation": "These modes are physically baked into the CPU hardware. The OS configures the CPU to use them, but it is the physical processor that checks the mode bit and enforces the access restrictions on instructions."
+    },
+    {
+      "title": "Confusing a Mode Switch with a Context Switch",
+      "explanation": "A Mode Switch simply changes the privilege level of the CPU so the current process can run OS code. A Context Switch is when the OS pauses one entire process (like Spotify) and loads a completely different process (like Chrome) onto the CPU."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of having User Mode and Kernel Mode?",
+      "answer": "To protect the operating system and hardware from being corrupted by buggy or malicious user applications by restricting access to privileged CPU instructions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a program in User Mode attempts to execute a privileged instruction?",
+      "answer": "The CPU hardware detects the violation and triggers an exception (a trap), which usually causes the OS to terminate the offending program.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a program transition from User Mode to Kernel Mode?",
+      "answer": "By making a system call, which executes a specific software interrupt instruction that safely switches the CPU's mode bit and jumps to OS kernel code.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following operations must be performed in Kernel Mode?",
+      "company": "Core CS OA",
+      "answer": "Modifying the page table to allocate new physical memory.",
+      "approach": "Allocating physical memory and updating page tables are privileged operations that directly affect system-wide resource management, so they strictly require Kernel Mode."
+    },
+    {
+      "question": "Why does making frequent system calls negatively impact the performance of an application?",
+      "company": "SDE interview",
+      "answer": "Because transitioning between User Mode and Kernel Mode requires overhead.",
+      "approach": "A mode switch requires saving CPU registers, validating the request, executing the kernel code, and then switching back to user mode. Doing this rapidly in a tight loop consumes significant CPU cycles compared to standard function calls."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

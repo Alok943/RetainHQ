@@ -1,0 +1,73 @@
+{
+  "slug": "what-an-os-is-and-its-functions",
+  "title": "What an OS is & its functions",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": [
+      "kernel-shell-and-system-calls"
+    ],
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
+  },
+  "hook": {
+    "scenario": "You just bought a brand new PC with an incredibly fast processor and massive amounts of RAM. But without an Operating System, it's just an expensive paperweight."
+  },
+  "mental_model": {
+    "intuition": "An OS is the government of your computer.",
+    "description": "Just like a government manages resources (roads, water, electricity) and provides a safe environment for its citizens to live and work, an Operating System manages the computer's resources (CPU, memory, disk) and provides a secure, organized environment for applications to run."
+  },
+  "explanation": "At its core, an Operating System (OS) is the foundational software that acts as an intermediary between computer hardware and the user or their applications. If you strip away the sleek user interfaces of Windows, macOS, or Linux, you are left with a complex resource manager whose primary job is to hide the messy, intricate details of the hardware and provide a clean, simple, and unified set of tools for software to use.\n\nImagine writing a program to save a file to a hard drive. Without an OS, you would need to know exactly what kind of hard drive it is, which specific physical sectors to spin the disk to, and how to send electrical signals to the disk controller. Because of the OS, you simply call a 'save file' function. The OS translates this simple command into the hundreds of low-level hardware instructions required, abstracting away the hardware complexity.\n\nBeyond hardware abstraction, the OS is the ultimate referee for resource allocation. When you run Spotify, a web browser, and a game simultaneously, they all want CPU time, memory space, and network access. The OS is responsible for fairly dividing these resources so that no single application hoards the CPU or crashes another application's memory space. It switches between tasks so quickly that it creates the illusion of everything running exactly at the same time.\n\nTo achieve this, the OS performs several core functions: Process Management (deciding which program runs and for how long), Memory Management (allocating RAM so programs don't overwrite each other), File System Management (organizing data into directories and files on physical disks), and Device Management (communicating with keyboards, mice, monitors, and network cards via drivers).\n\nUltimately, the Operating System is what makes general-purpose computing possible. It turns raw, unpredictable hardware into a predictable, standardized platform. By taking on the heavy lifting of security, resource sharing, and hardware communication, the OS allows software engineers to focus purely on building great applications.",
+  "common_mistakes": [
+    {
+      "title": "Confusing the OS with the User Interface (GUI)",
+      "explanation": "Many people think the visual desktop, windows, and icons are the OS. While they are bundled together, the GUI is just an application running on top of the OS. The true OS is the invisible engine managing resources in the background."
+    },
+    {
+      "title": "Assuming the OS runs all the time",
+      "explanation": "The OS doesn't actively run code concurrently with a user program. Instead, it relies on hardware interrupts to pause the user program, give control back to the OS to manage resources or switch tasks, and then resume the program."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of an Operating System?",
+      "answer": "To act as an intermediary between the user/applications and the computer hardware, managing resources and abstracting hardware complexity.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the four main resource management functions of an OS?",
+      "answer": "Process management, memory management, file system management, and device/I-O management.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does an OS achieve hardware abstraction?",
+      "answer": "It provides standardized software functions (like saving a file) that internally handle the specific, complex electrical signals required by different hardware devices.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following is NOT a core function of an Operating System?",
+      "company": "Core CS OA",
+      "answer": "Compiling source code into machine code.",
+      "approach": "Compiling is done by a compiler, which is an application program, not the Operating System itself. The OS manages memory, processes, and I/O devices."
+    },
+    {
+      "question": "In a multitasking environment, how does the OS prevent one program from crashing another?",
+      "company": "SDE interview",
+      "answer": "Through memory management and process isolation, ensuring each process has its own protected memory space.",
+      "approach": "The OS assigns specific memory boundaries to each running process. If a process tries to access memory outside its assigned boundaries, the OS intervenes and terminates the offending process."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

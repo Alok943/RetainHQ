@@ -1,0 +1,95 @@
+{
+  "slug": "thread-vs-process-and-benefits",
+  "title": "Thread vs Process and Benefits",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "multithreading-models"
+    ],
+    "appears_in": [
+      "os"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine a factory. The factory itself (the building, the power, the toolbelts) is a process. The individual workers inside doing the actual assembly are the threads."
+  },
+  "mental_model": {
+    "intuition": "A process is a container of resources. A thread is the active entity executing code inside that container.",
+    "description": "If a process is a house with shared plumbing and electricity, threads are the roommates living inside. They share the kitchen and living room (memory, files), but each has their own bedroom (stack, registers) for privacy."
+  },
+  "explanation": "To understand modern computing, you must grasp the difference between a process and a thread. A process is an isolated execution environment. It acts as a heavy, protective container that holds memory, file descriptors, and security privileges. Creating a new process is expensive because the operating system must carve out a brand new, isolated chunk of memory and set up complex data structures.\n\nA thread, on the other hand, is the actual unit of execution\u2014the 'worker' that steps through instructions. Every process starts with exactly one thread (the main thread). However, a process can spawn multiple threads. Because these threads live inside the same process container, they inherently share the same memory space, global variables, and open files.\n\nThis shared environment makes threads incredibly lightweight. Creating a thread is much faster than creating a process because the OS doesn't need to allocate new memory blocks or duplicate resources; it only needs to assign a new stack and a set of CPU registers. \n\nConsequently, context switching between threads of the same process is significantly faster than switching between entirely different processes. The OS doesn't have to flush memory caches or swap out virtual memory tables. This efficiency is why modern applications use multithreading to handle thousands of concurrent tasks, like a web server handling thousands of simultaneous user requests within a single process.",
+  "key_points": [
+    {
+      "title": "Resource Isolation",
+      "detail": "Processes are isolated from one another. Threads share the memory and resources of their parent process."
+    },
+    {
+      "title": "Creation Cost",
+      "detail": "Creating a process is slow and resource-heavy. Creating a thread is fast and lightweight."
+    },
+    {
+      "title": "Context Switching",
+      "detail": "Switching processes requires heavy OS intervention and cache flushes. Switching threads within the same process is much faster."
+    },
+    {
+      "title": "Communication",
+      "detail": "Processes require complex Inter-Process Communication (IPC) to share data. Threads can communicate effortlessly via shared memory."
+    },
+    {
+      "title": "Failure Impact",
+      "detail": "If a process crashes, it doesn't affect other processes. If a thread crashes, it often brings down the entire process and all other sibling threads."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Threads share absolutely everything",
+      "explanation": "Threads share the heap, global variables, and code. However, each thread MUST have its own isolated Stack, Program Counter, and Registers to keep track of its own function calls and local variables."
+    },
+    {
+      "title": "Multithreading prevents crashes",
+      "explanation": "Actually, because threads share memory, one thread corrupting memory or encountering a fatal error (like a segmentation fault) will instantly crash the entire process and kill all other threads."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What components are unique to a thread and NOT shared with sibling threads?",
+      "answer": "The Thread Control Block, Program Counter, CPU registers, and the Stack.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Inter-Process Communication (IPC) necessary for processes but not threads?",
+      "answer": "Processes have isolated memory spaces, so they need OS mechanisms to share data. Threads share the same memory space inherently, so they can just read/write the same variables.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which is more resistant to a single fatal error: a multi-process architecture or a multi-threaded architecture?",
+      "answer": "Multi-process. If one process crashes, the OS cleans it up without affecting others. A thread crash typically kills the whole process.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A web browser opens each new tab as a separate process rather than a separate thread. What is the primary benefit of this design?",
+      "company": "SDE interview",
+      "answer": "Fault isolation and security.",
+      "approach": "Explain that if a single tab crashes (due to a heavy script) or gets compromised, it won't crash the entire browser or access data in other tabs, which would happen if they were threads sharing memory."
+    },
+    {
+      "question": "If two threads in the same process declare a local integer variable inside a function, do they share that variable?",
+      "company": "Core CS OA",
+      "answer": "No. Local variables are allocated on the stack. Since each thread has its own separate stack, they each get their own independent copy of the local variable.",
+      "approach": "Differentiate between global variables (stored in shared heap/data segments) and local variables (stored on individual thread stacks)."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Thread_(computing)",
+    "https://www.geeksforgeeks.org/difference-between-process-and-thread/"
+  ]
+}

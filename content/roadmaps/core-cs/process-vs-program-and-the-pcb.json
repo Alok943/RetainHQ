@@ -1,0 +1,73 @@
+{
+  "slug": "process-vs-program-and-the-pcb",
+  "title": "Process vs program & the PCB",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "process-states-and-transitions"
+    ],
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
+  },
+  "hook": {
+    "scenario": "You can open Google Chrome five times, creating five different windows. It's only one program on your hard drive, but the operating system tracks it as five distinct, living entities."
+  },
+  "mental_model": {
+    "intuition": "A Program is a recipe; a Process is the act of cooking that recipe.",
+    "description": "A recipe (program) just sits on the shelf as passive text. When you start cooking (process), you need ingredients (memory), a chef's current step (CPU program counter), and a workspace. The PCB is the clipboard where the chef tracks exactly what step they are on in case they need to pause and cook something else."
+  },
+  "explanation": "In computer science, distinguishing between a program and a process is fundamental. A 'program' is a passive entity\u2014it is a static file sitting on your hard drive containing a list of compiled machine code instructions. A 'process', on the other hand, is an active entity. It is a program in execution. When you double-click an executable file, the operating system loads those static instructions into RAM, allocates resources, and the CPU begins executing it. At that moment, the passive program becomes an active process.\n\nBecause you can run the same program multiple times simultaneously (like having multiple instances of a calculator or terminal open), one program can spawn many separate processes. Even though they execute the exact same underlying code, each process is completely independent. They have their own dedicated memory space, their own variables, and their own execution state. If one calculator process crashes because you divided by zero, the other calculator process remains entirely unaffected.\n\nTo manage all these independent active processes, the operating system needs a way to keep track of them. It does this using a critical data structure called the Process Control Block (PCB). Think of the PCB as the ID card and medical record for a process. Every time a new process is created, the OS creates a new PCB specifically for it.\n\nThe Process Control Block stores all the essential metadata required to manage that process. This includes the Process ID (PID), the current state of the process (running, waiting, or ready), memory allocation details, and a list of open files. Crucially, the PCB also stores the exact contents of the CPU registers and the Program Counter (which tracks the exact line of code currently being executed).\n\nThis register and Program Counter data is what makes multitasking possible. Because a computer has limited CPU cores, the OS must rapidly switch the CPU between dozens of processes. When it pauses Process A to run Process B, it copies the CPU's current state into Process A's PCB. Later, when the OS is ready to resume Process A, it reads the PCB, restores the exact CPU state, and the process continues exactly where it left off, completely unaware that it was ever paused.",
+  "common_mistakes": [
+    {
+      "title": "Using 'program' and 'process' interchangeably",
+      "explanation": "A program is static bytes on a disk. A process is a running instance of that program in RAM. You can have 1 program but 10 processes running it."
+    },
+    {
+      "title": "Assuming processes share memory by default",
+      "explanation": "Each process is strictly isolated by the OS. Variables in one process cannot be read or modified by another process. If they need to share data, they must use specific Inter-Process Communication (IPC) methods."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core difference between a program and a process?",
+      "answer": "A program is a passive set of instructions stored on disk, while a process is an active, running instance of those instructions loaded into memory.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is a Process Control Block (PCB)?",
+      "answer": "A data structure maintained by the OS that contains all the metadata and execution state information needed to manage and track a specific process.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does the PCB need to store the Program Counter and CPU registers?",
+      "answer": "So that when a process is paused during a context switch, its exact execution state is saved. This allows the OS to perfectly resume the process later as if it had never been interrupted.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following pieces of information is NOT typically found in a Process Control Block (PCB)?",
+      "company": "Core CS OA",
+      "answer": "The hard drive's master boot record.",
+      "approach": "The PCB contains process-specific metadata like the Process ID (PID), program counter, register states, memory limits, and open file descriptors. The master boot record is OS-level hardware data, not tied to a specific process."
+    },
+    {
+      "question": "If you open two instances of the same web browser, do they share the same PCB?",
+      "company": "SDE interview",
+      "answer": "No, they are independent processes.",
+      "approach": "Even if two processes are executing the same program code, the operating system treats them as entirely separate entities. Each instance gets its own unique Process ID, isolated memory space, and its own unique Process Control Block."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

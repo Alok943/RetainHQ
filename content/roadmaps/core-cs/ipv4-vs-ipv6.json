@@ -1,0 +1,98 @@
+{
+  "slug": "ipv4-vs-ipv6",
+  "title": "IPv4 vs IPv6",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "ip-addressing-and-classes"
+    ],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "IPv4 and IPv6 are the two protocols that provide unique addresses for devices on the internet.",
+    "why": "IPv4 addresses have run out. IPv6 was designed with a vastly larger address space to accommodate all future devices.",
+    "where_used": ["Networking", "System Administration", "IoT"]
+  },
+  "why_learning_this": [
+    "You need to know why both exist and how they differ since most systems today run dual-stack.",
+    "It helps explain why workarounds like NAT exist."
+  ],
+  "hook": {
+    "scenario": "We ran out of standard phone numbers, so we had to invent area codes. The internet faced the exact same problem: IPv4 only had 4.3 billion addresses, which wasn't enough for a world where every person owns a phone, laptop, and smart fridge."
+  },
+  "mental_model": {
+    "intuition": "IPv4 is like a 4-digit license plate system that ran out of combinations. IPv6 is a new 32-character alphanumeric plate that has enough combinations to assign one to every grain of sand on Earth.",
+    "description": "IPv4 addresses use 32 bits, limiting the internet to about 4.3 billion unique public addresses. We exhausted that limit years ago. IPv6 was designed as the successor, using 128 bits. It fundamentally changes the scale of the internet, completely eliminating the need for address-sharing hacks like NAT."
+  },
+  "explanation": "IPv4 is the fourth version of the Internet Protocol and the foundational technology that built the modern internet. It uses a 32-bit address space, usually written in decimal form as four numbers separated by dots (e.g., 192.168.1.1). Because 2 to the 32nd power is roughly 4.3 billion, that is the absolute maximum number of unique public IPv4 addresses possible. When the protocol was designed in the 1980s, 4.3 billion seemed effectively infinite. Today, with billions of humans each owning multiple internet-connected devices, we have completely run out of IPv4 space.\n\nTo keep the internet functioning despite this shortage, engineers invented workarounds. The most famous is NAT (Network Address Translation), which allows an entire household or office full of devices to share a single public IPv4 address. While NAT saved the internet from immediate collapse, it added complexity, slowed down routing, and broke the original 'end-to-end' principle of the internet where every device could communicate directly with any other device.\n\nIPv6 was developed to solve this address exhaustion permanently. It uses a massive 128-bit address space. To grasp the scale, 2 to the 128th power provides roughly 340 undecillion addresses (that's 340 followed by 36 zeros). With IPv6, every device on the planet—down to individual sensors in a factory or lightbulbs in a house—can have its own unique, globally routable public IP address. NAT is no longer needed.\n\nBecause IPv6 addresses are so long, they are written in hexadecimal format, separated by colons into eight groups of four characters (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334). To make them readable, leading zeros can be omitted, and consecutive groups of zeros can be replaced with a double colon (::) once per address.\n\nBeyond just having more addresses, IPv6 brings technical improvements. Its packet header is much simpler, allowing routers to process packets faster because they no longer have to calculate checksums at every hop or worry about packet fragmentation in transit. It also has built-in support for IPsec (Internet Protocol Security), meaning encryption and authentication are baked into the protocol by default, rather than bolted on as an afterthought like in IPv4.",
+  "key_points": [
+    {
+      "title": "Address Size & Format",
+      "detail": "IPv4 uses 32 bits written in decimal (4.3 billion addresses). IPv6 uses 128 bits written in hexadecimal (340 undecillion addresses)."
+    },
+    {
+      "title": "NAT (Network Address Translation)",
+      "detail": "Crucial for IPv4 to conserve addresses. Completely unnecessary in IPv6 because every device can have a public IP."
+    },
+    {
+      "title": "Header Complexity",
+      "detail": "IPv4 has a complex header (variable length, requires checksum calculations). IPv6 has a streamlined, fixed-length header for faster routing."
+    },
+    {
+      "title": "Security",
+      "detail": "IPsec is optional in IPv4, but it is a mandatory, built-in feature of the IPv6 protocol."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking IPv6 is entirely separate and breaks the old internet",
+      "explanation": "While they are distinct protocols, they run simultaneously via 'Dual Stack' implementations. Most modern operating systems and routers support both at the same time to ensure a smooth, gradual transition."
+    },
+    {
+      "title": "Using multiple double-colons in an IPv6 address",
+      "explanation": "You can only use the double colon (::) abbreviation once in an IPv6 address. Using it twice (e.g., 2001::85a3::7334) makes it impossible for the computer to know how many zeros were in each gap."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary reason the internet is transitioning from IPv4 to IPv6?",
+      "answer": "IPv4's 32-bit address space limits the internet to 4.3 billion addresses, which we have exhausted. IPv6 provides a 128-bit address space, offering a practically infinite number of addresses.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does IPv6 make NAT (Network Address Translation) obsolete?",
+      "answer": "Because IPv6 has so many addresses, every single device can be assigned its own unique, globally routable public IP address, eliminating the need to hide multiple private devices behind a single public address.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does the IPv6 packet header improve routing efficiency compared to IPv4?",
+      "answer": "The IPv6 header is fixed-length and simpler. It removes fields like the header checksum, so routers no longer have to spend CPU cycles recalculating checksums at every hop.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following is a valid abbreviation for the IPv6 address `2001:0db8:0000:0000:0000:ff00:0042:8329`?",
+      "company": "Core CS OA",
+      "answer": "`2001:db8::ff00:42:8329`",
+      "approach": "First, drop leading zeros in each block: `2001:db8:0:0:0:ff00:42:8329`. Next, replace the longest contiguous sequence of zero blocks with a double colon `::`. This gives `2001:db8::ff00:42:8329`."
+    },
+    {
+      "question": "An interviewer asks: 'If IPv6 is so much better and we ran out of IPv4 addresses a decade ago, why isn't the entire internet exclusively on IPv6 today?'",
+      "company": "Network Engineering Interview",
+      "answer": "IPv4 and IPv6 are not inherently interoperable. Devices only speaking IPv4 cannot talk directly to devices only speaking IPv6.",
+      "approach": "Explain that the transition requires upgrading hardware, software, and ISPs worldwide to support 'Dual Stack' (running both protocols simultaneously) or implementing complex translation mechanisms. NAT also successfully delayed the urgency of the IPv4 shortage."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/IPv6",
+    "https://datatracker.ietf.org/doc/html/rfc2460"
+  ]
+}

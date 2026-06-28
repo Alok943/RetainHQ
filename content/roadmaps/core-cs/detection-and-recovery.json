@@ -1,0 +1,86 @@
+{
+  "slug": "detection-and-recovery",
+  "title": "Deadlock: Detection & Recovery",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "prevention-vs-avoidance"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "Instead of building a fortress to prevent a fire, or analyzing every wire to avoid one, you install smoke alarms. When the alarm sounds, you grab a fire extinguisher and put it out."
+  },
+  "mental_model": {
+    "intuition": "Let deadlocks happen. Periodically check for them. When one is found, take drastic action to fix it.",
+    "description": "Deadlock detection and recovery is an optimistic approach. The OS places no restrictions on resource requests and does no upfront simulation. Instead, it periodically runs an algorithm to search for circular wait cycles in the resource allocation graph. If a deadlock is detected, the OS recovers by preempting resources or killing processes."
+  },
+  "explanation": "Preventing and avoiding deadlocks are costly. Prevention ruins resource utilization, and avoidance burns CPU cycles on continuous simulations. Modern operating systems (like Linux and Windows) often prefer a simpler, more optimistic approach: ignore the problem until it happens. This is the core philosophy behind Deadlock Detection and Recovery.\n\nUnder this approach, the OS grants resource requests freely, assuming deadlocks are rare. Behind the scenes, the OS maintains a Resource Allocation Graph\u2014a map showing which processes hold which resources and who is waiting for what. Periodically (or when a process is blocked for too long), the OS runs a detection algorithm to look for cycles in this graph. If a closed loop is found, a deadlock has occurred.\n\nOnce a deadlock is detected, the system enters the Recovery phase. The OS must break the deadlock by forcibly taking away resources, but it has to be careful about how it does it. There are two main strategies: Process Termination and Resource Preemption.\n\nProcess Termination involves killing stuck processes. The OS could ruthlessly terminate all deadlocked processes, which is fast but wastes all their computed progress. Alternatively, it can terminate them one by one, rerunning the detection algorithm after each kill until the cycle is broken. The OS usually tries to kill a 'victim' with the least accumulated CPU time or the lowest priority.\n\nResource Preemption is a more surgical approach. The OS forcibly yanks a resource away from a process and gives it to another to break the cycle. However, the process that lost its resource cannot continue normally; it must be rolled back to a previous safe state and restarted. This requires the OS to maintain checkpoints of process states, adding complexity to the system.",
+  "key_points": [
+    {
+      "title": "Resource Allocation Graph (RAG)",
+      "detail": "A directed graph used by the OS to track resource assignment and requests. Cycles in this graph indicate a deadlock."
+    },
+    {
+      "title": "Process Termination",
+      "detail": "Killing one or more processes to break the circular wait. The OS uses heuristics (like priority or progress) to choose the victim."
+    },
+    {
+      "title": "Resource Preemption",
+      "detail": "Stealing a resource from a process and rolling that process back to a previous checkpoint to recover from deadlock."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming all OSs use avoidance or prevention",
+      "explanation": "Most general-purpose OSs (Windows, Linux) use the 'Ostrich Algorithm' (ignoring it entirely for user apps) or basic detection/recovery, because deadlocks are infrequent and prevention/avoidance overhead is too high."
+    },
+    {
+      "title": "Believing preemption is cost-free",
+      "explanation": "Preempting a resource requires state rollback. You can't just take a half-written file away from a process without cleaning up the corrupted data first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What data structure does the OS analyze to detect a deadlock?",
+      "answer": "The Resource Allocation Graph (looking for cycles).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the two primary methods for recovering from a deadlock?",
+      "answer": "Process termination and resource preemption.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why might an OS choose detection over avoidance?",
+      "answer": "Because detection has lower runtime overhead (it only runs periodically), whereas avoidance checks every single resource request.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An OS regularly runs a cycle-finding algorithm on its resource graph. If a cycle is found, it terminates the lowest-priority process. What strategy is this?",
+      "company": "Core CS OA",
+      "answer": "Deadlock detection and recovery (specifically, recovery via process termination).",
+      "approach": "Recognize that 'cycle-finding' happens after the fact, meaning it's detection. Terminating the process is the recovery step."
+    },
+    {
+      "question": "What is the primary drawback of using resource preemption to recover from a deadlock?",
+      "company": "SDE interview",
+      "answer": "It requires the ability to roll processes back to a previous safe checkpoint, which is complex and difficult to implement for many types of resources.",
+      "approach": "Understand that taking a resource away mid-use leaves the process in an invalid state, requiring rollback."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

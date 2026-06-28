@@ -509,7 +509,7 @@ function AddToReviews({ lesson, nodeId }) {
  *  with a flowing arrow stepping from→to, auto-advancing. Pure SVG — no dependency.
  *  The per-step `term` chip IS the "map the animation to CS terminology" layer. */
 function ProcessAnimation({ animation }) {
-  const { actors = [], steps = [] } = animation || {};
+  const { type = 'sequence', actors = [], steps = [] } = animation || {};
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(true);
 
@@ -521,43 +521,74 @@ function ProcessAnimation({ animation }) {
 
   if (!actors.length || !steps.length) return null;
 
-  const W = 540, pad = 64;
-  const gap = actors.length > 1 ? (W - 2 * pad) / (actors.length - 1) : 0;
-  const xOf = (i) => pad + i * gap;
-  const y = 44;
+  const isCycle = type === 'cycle';
   const idx = (id) => actors.findIndex((a) => a.id === id);
   const cur = steps[step] || {};
-  const fI = idx(cur.from), tI = idx(cur.to);
-  const active = new Set([cur.from, cur.to]);
   const done = step >= steps.length - 1;
+  const active = new Set([cur.from, cur.to]);
+
+  // Layout: cycle = actors on a ring (the closing loop IS the point); else a row.
+  let pos, VB;
+  if (isCycle) {
+    const cx = 170, cy = 122, r = 88;
+    pos = actors.map((_, i) => {
+      const ang = -Math.PI / 2 + (i * 2 * Math.PI) / actors.length;
+      return { x: cx + r * Math.cos(ang), y: cy + r * Math.sin(ang) };
+    });
+    VB = '0 0 340 244';
+  } else {
+    const W = 540, pad = 64, gap = actors.length > 1 ? (W - 2 * pad) / (actors.length - 1) : 0;
+    pos = actors.map((_, i) => ({ x: pad + i * gap, y: 44 }));
+    VB = '0 0 540 88';
+  }
+
+  // Pull endpoints back to the box edge so the arrowhead is visible.
+  const trim = (f, t, back = 40) => {
+    const dx = t.x - f.x, dy = t.y - f.y, d = Math.hypot(dx, dy) || 1;
+    return { x1: f.x + (dx / d) * 36, y1: f.y + (dy / d) * 18, x2: t.x - (dx / d) * back, y2: t.y - (dy / d) * (back * 0.45) };
+  };
+  // cycle accumulates arrows (you watch the loop close); sequence shows only the current step.
+  const shown = isCycle ? steps.slice(0, step + 1) : [steps[step]];
 
   return (
     <div className="rounded-lg border border-[rgba(15,23,42,0.12)] bg-white overflow-hidden">
       <style>{`@keyframes pa-flow{to{stroke-dashoffset:-20}}`}</style>
-      <svg viewBox={`0 0 ${W} 88`} className="w-full">
-        {fI >= 0 && tI >= 0 && (
-          <line x1={xOf(fI)} y1={y} x2={xOf(tI)} y2={y} stroke="#0891B2" strokeWidth="2.5"
-            strokeDasharray="6 4" markerEnd="url(#pa-arr)"
-            style={{ animation: 'pa-flow 0.7s linear infinite' }} />
-        )}
+      <svg viewBox={VB} className="w-full" style={{ maxHeight: isCycle ? 248 : 104 }}>
+        {shown.map((s, si) => {
+          if (!s) return null;
+          const f = pos[idx(s.from)], t = pos[idx(s.to)];
+          if (!f || !t) return null;
+          const L = trim(f, t);
+          const isLast = isCycle ? si === step : true;
+          const loopClosed = isCycle && done;
+          return (
+            <line key={si} x1={L.x1} y1={L.y1} x2={L.x2} y2={L.y2}
+              stroke={loopClosed ? '#B91C1C' : '#0891B2'} strokeWidth="2.5" strokeDasharray="6 4"
+              markerEnd={loopClosed ? 'url(#pa-arr-r)' : 'url(#pa-arr)'}
+              style={isLast ? { animation: 'pa-flow 0.7s linear infinite' } : { opacity: 0.55 }} />
+          );
+        })}
         {actors.map((a, i) => {
           const on = active.has(a.id);
+          const p = pos[i];
           return (
             <g key={a.id}>
-              <rect x={xOf(i) - 36} y={y - 15} width="72" height="30" rx="7"
+              <rect x={p.x - 36} y={p.y - 15} width="72" height="30" rx="7"
                 fill={on ? '#0891B2' : '#f1f5f9'} stroke={on ? '#0891B2' : '#cbd5e1'} strokeWidth="1.5" />
-              <text x={xOf(i)} y={y + 4} textAnchor="middle" fontSize="10.5"
+              <text x={p.x} y={p.y + 4} textAnchor="middle" fontSize="10.5"
                 fontFamily="ui-sans-serif, system-ui" fontWeight="600" fill={on ? '#fff' : '#475569'}>{a.label}</text>
             </g>
           );
         })}
-        <defs><marker id="pa-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-          <path d="M0,0 L7,3 L0,6 Z" fill="#0891B2" /></marker></defs>
+        <defs>
+          <marker id="pa-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0891B2" /></marker>
+          <marker id="pa-arr-r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#B91C1C" /></marker>
+        </defs>
       </svg>
       <div className="flex items-center gap-2 px-3 py-2.5 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6]">
         <span className="font-mono text-[11px] text-[#64748B] shrink-0">{step + 1}/{steps.length}</span>
         <span className="font-sans text-[13px] text-[#0F172A] flex-1 leading-snug">
-          <strong className="font-semibold">{actors[fI]?.label}</strong> {cur.label} <strong className="font-semibold">{actors[tI]?.label}</strong>
+          <strong className="font-semibold">{actors[idx(cur.from)]?.label}</strong> {cur.label} <strong className="font-semibold">{actors[idx(cur.to)]?.label}</strong>
           {cur.term && <span className="ml-2 inline-block rounded bg-[#0891B2]/10 text-[#0891B2] font-medium text-[11px] px-1.5 py-0.5">{cur.term}</span>}
         </span>
         {done

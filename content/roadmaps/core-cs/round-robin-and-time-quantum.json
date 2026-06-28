@@ -1,0 +1,137 @@
+{
+  "slug": "round-robin-and-time-quantum",
+  "title": "Round Robin & Time Quantum",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "scheduling-criteria"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "If you are sharing a single game console among four friends, the only fair way to play is setting a 10-minute timer for each person's turn."
+  },
+  "mental_model": {
+    "intuition": "Round Robin is First-Come, First-Served, but with a strict time limit per turn.",
+    "description": "Every process gets a small slice of CPU time (a time quantum). If a process isn't finished when its time runs out, it is forcibly paused and sent to the back of the line, ensuring everyone gets a fair share of attention."
+  },
+  "explanation": "Round Robin (RR) is the foundational scheduling algorithm for modern time-sharing and interactive operating systems. It is essentially the First-Come, First-Served (FCFS) algorithm upgraded with preemption. The system defines a small unit of time called a time quantum (or time slice), typically ranging from 10 to 100 milliseconds. The ready queue is treated as a circular queue.\n\nThe CPU scheduler picks the first process in the queue, sets a hardware timer to interrupt after exactly one time quantum, and dispatches the process. If the process has a CPU burst less than the time quantum, it finishes on its own, releases the CPU, and the scheduler moves to the next process. However, if the process is still running when the timer goes off, the OS forcibly preempts it, saves its state (a context switch), and places it at the tail of the ready queue.\n\nThe beauty of Round Robin is absolute fairness and guaranteed responsiveness. If there are 'N' processes in the ready queue and the time quantum is 'Q', then no process will ever wait longer than (N-1) * Q time units before getting its next turn. This makes it impossible for the convoy effect or starvation to occur. Every process is guaranteed to make continuous, incremental progress.\n\nThe performance of Round Robin depends entirely on the size of the time quantum. If the quantum is extremely large, RR degrades into standard FCFS scheduling, bringing back the convoy effect. If the quantum is extremely small, the system spends more time performing context switches than actually executing user code. Context switching requires saving registers, updating memory maps, and flushing caches, which is computationally expensive.\n\nTherefore, OS designers must tune the time quantum carefully. A rule of thumb is that the time quantum should be large enough that roughly 80% of CPU bursts finish within a single quantum. This minimizes context switching overhead while still maintaining snappy response times for user interactions.",
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "cpu",
+        "label": "CPU Execution"
+      },
+      {
+        "id": "p1",
+        "label": "Process 1"
+      },
+      {
+        "id": "p2",
+        "label": "Process 2"
+      },
+      {
+        "id": "p3",
+        "label": "Process 3"
+      }
+    ],
+    "steps": [
+      {
+        "from": "cpu",
+        "to": "p1",
+        "label": "Runs for 1 Quantum",
+        "term": "Time Slice"
+      },
+      {
+        "from": "p1",
+        "to": "p2",
+        "label": "Timer fires, context switch to P2",
+        "term": "Preemption"
+      },
+      {
+        "from": "p2",
+        "to": "p3",
+        "label": "Timer fires, context switch to P3",
+        "term": "Preemption"
+      },
+      {
+        "from": "p3",
+        "to": "p1",
+        "label": "Timer fires, back to P1",
+        "term": "Circular Queue"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Time Quantum (Slice)",
+      "detail": "The fixed maximum amount of time a process is allowed to run before being preempted."
+    },
+    {
+      "title": "Guaranteed Responsiveness",
+      "detail": "Ensures that every process gets CPU time regularly, preventing starvation and long wait times for small tasks."
+    },
+    {
+      "title": "Context Switch Overhead",
+      "detail": "If the time quantum is too small, the system wastes too much CPU time swapping processes in and out."
+    },
+    {
+      "title": "Degradation to FCFS",
+      "detail": "If the time quantum is infinitely large, Round Robin behaves exactly like First-Come, First-Served."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking Round Robin has the best turnaround time",
+      "explanation": "Round Robin is excellent for response time, but its turnaround time is often worse than SJF because it forces all processes to share the CPU, extending the time it takes for any single process to fully complete."
+    },
+    {
+      "title": "Assuming a smaller quantum is always better",
+      "explanation": "A smaller quantum improves responsiveness but severely degrades throughput and CPU utilization due to the massive overhead of constant context switching."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if a process finishes its task before its time quantum expires?",
+      "answer": "The process voluntarily yields the CPU immediately, and the scheduler dispatches the next process without waiting for the timer to go off.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the consequence of setting the time quantum too small?",
+      "answer": "The system will spend too much time performing context switches (overhead) and not enough time executing actual processes, heavily reducing throughput.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does Round Robin prevent starvation?",
+      "answer": "Because the ready queue is circular and every process has a strict time limit, every process is mathematically guaranteed to receive CPU time eventually.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A system has 4 processes in the ready queue, and a time quantum of 10ms. What is the maximum time a process will wait before getting CPU time?",
+      "company": "Core CS OA",
+      "answer": "30 milliseconds.",
+      "approach": "The maximum wait is (N-1) * Q. With 4 processes and a 10ms quantum, a process waits for the other 3 processes to each take their 10ms turn (3 * 10 = 30ms)."
+    },
+    {
+      "question": "If your interactive OS is feeling 'sluggish' and unresponsive to keyboard clicks, should you increase or decrease the time quantum?",
+      "company": "SDE interview",
+      "answer": "You should decrease the time quantum.",
+      "approach": "A sluggish system means high response time. Decreasing the quantum means the system cycles through processes faster, ensuring the keyboard handler process gets CPU time sooner, making the system feel more responsive."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Round-robin_scheduling"
+  ]
+}

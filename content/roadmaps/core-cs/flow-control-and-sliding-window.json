@@ -1,0 +1,138 @@
+{
+  "slug": "flow-control-and-sliding-window",
+  "title": "Flow Control & Sliding Window",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "tcp-vs-udp"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Backend Engineering",
+      "Systems Design Interview"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine drinking from a firehose. No matter how thirsty you are, you can only swallow so fast before the water simply blasts you in the face. Computers face the exact same problem when a fast server sends data to a slow smartphone."
+  },
+  "mental_model": {
+    "intuition": "A dynamic buffer system where the receiver constantly tells the sender exactly how much more data it can handle.",
+    "description": "TCP Flow Control prevents a fast sender from overwhelming a slow receiver. It uses a 'Sliding Window'\u2014a moving frame that tracks unacknowledged packets and available buffer space, ensuring the sender pauses before the receiver's memory overflows."
+  },
+  "explanation": "In any network connection, the sender and receiver might operate at drastically different speeds. A high-end server connected to fiber optics can transmit data gigabytes per second, while a budget smartphone on a weak cellular signal might only be able to process a few megabytes per second. If the server transmits at full speed, the smartphone's network buffer will quickly overflow, causing it to drop incoming packets. TCP Flow Control exists entirely to solve this speed mismatch.\n\nThe mechanism powering Flow Control is the Receive Window. When the receiver establishes a connection and acknowledges packets, it includes a 'Window Size' value in the TCP header. This number explicitly tells the sender: 'I currently have X bytes of free space in my buffer.' As the receiving application reads data out of the buffer, space frees up. As new packets arrive from the network, space fills up. The receiver constantly updates the sender with this fluctuating window size.\n\nTo optimize transmission, TCP uses a concept called the Sliding Window. Instead of sending one packet and waiting for an acknowledgment (which would be agonizingly slow), the sender is allowed to transmit a whole batch of packets simultaneously\u2014up to the limit of the receiver's declared Window Size. Visualize a window frame sliding over a long sequence of data bytes. As the sender receives ACKs for early packets, the left edge of the window 'slides' forward, permitting new, later packets on the right edge to be transmitted.\n\nIf the receiving application freezes or processes data too slowly, its buffer will fill completely. In response, the receiver will advertise a Window Size of 0. This is known as a Zero Window. The sender immediately stops transmitting payload data and waits. Periodically, the sender will shoot over tiny 'probe' packets to check if the window has opened up again. Once the receiver's application catches up and clears the buffer, it advertises a non-zero window, and the sliding window resumes its forward march.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "receiver",
+        "label": "Slow Client"
+      },
+      {
+        "id": "sender",
+        "label": "Fast Server"
+      }
+    ],
+    "steps": [
+      {
+        "from": "receiver",
+        "to": "sender",
+        "label": "ACK (Window=200)",
+        "term": "Advertise Space"
+      },
+      {
+        "from": "sender",
+        "to": "receiver",
+        "label": "Data Bytes 1-100",
+        "term": "Send Batch"
+      },
+      {
+        "from": "sender",
+        "to": "receiver",
+        "label": "Data Bytes 101-200",
+        "term": "Send Batch"
+      },
+      {
+        "from": "receiver",
+        "to": "sender",
+        "label": "ACK (Window=0)",
+        "term": "Buffer Full"
+      },
+      {
+        "from": "sender",
+        "to": "receiver",
+        "label": "Zero Window Probe",
+        "term": "Check Status"
+      },
+      {
+        "from": "receiver",
+        "to": "sender",
+        "label": "ACK (Window=500)",
+        "term": "Buffer Cleared"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Flow Control vs Congestion Control",
+      "detail": "Flow Control protects the RECEIVER from being overwhelmed. Congestion Control protects the NETWORK (routers/switches) from being overwhelmed."
+    },
+    {
+      "title": "Receive Window (rwnd)",
+      "detail": "A dynamic byte-count advertised in every TCP header, indicating the receiver's available buffer capacity."
+    },
+    {
+      "title": "Zero Window",
+      "detail": "A state where the receiver's buffer is 100% full, pausing all data transmission until the application reads the buffered data."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing Flow Control with Congestion Control",
+      "explanation": "This is the most common interview trap. Flow control is strictly a 1-to-1 agreement between sender and receiver. Congestion control deals with the physical network infrastructure between them."
+    },
+    {
+      "title": "Assuming a Zero Window closes the TCP connection",
+      "explanation": "A Zero Window pauses data flow, but the connection remains actively open. The sender will periodically probe until the window opens again."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of TCP Flow Control?",
+      "answer": "To prevent a fast sender from overflowing the memory buffers of a slower receiver.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the receiver communicate its buffer capacity to the sender?",
+      "answer": "By updating the 'Window Size' field in the TCP header of its acknowledgment packets.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens when the sender receives a TCP Zero Window advertisement?",
+      "answer": "The sender stops transmitting payload data and periodically sends window probes to check if space has opened up.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A system metrics dashboard shows a server's network connection is entirely stalled, but the CPU and network bandwidth are near zero. Packet captures show the client constantly returning TCP Window Size: 0. What is the root cause?",
+      "company": "SDE Interview",
+      "answer": "The client-side application is deadlocked or running too slowly.",
+      "approach": "The network and server are fine. A Zero Window means the client OS is receiving data, but the client application isn't reading it out of the OS buffer, causing it to fill up."
+    },
+    {
+      "question": "Why does TCP use a sliding window instead of a 'stop-and-wait' protocol (send one packet, wait for ACK, send next packet)?",
+      "company": "Core CS OA",
+      "answer": "Throughput and efficiency.",
+      "approach": "Stop-and-wait severely limits throughput, especially on high-latency networks. A sliding window allows multiple packets to be in transit simultaneously, fully utilizing network bandwidth."
+    }
+  ],
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/rfc793"
+  ]
+}

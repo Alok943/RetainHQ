@@ -1,0 +1,103 @@
+{
+  "slug": "mac-ethernet-and-csma-cd",
+  "title": "MAC, Ethernet & CSMA/CD",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["framing-and-error-detection"],
+    "unlocks": ["arp"],
+    "appears_in": ["Networks"]
+  },
+  "hook": {
+    "scenario": "Imagine a dark room full of people where anyone can speak, but only one person can speak at a time. Before talking, you listen. If it's quiet, you speak. If someone else starts talking at the exact same moment, you both stop, wait a random amount of time, and try again. This is exactly how early Ethernet handled traffic."
+  },
+  "mental_model": {
+    "intuition": "MAC addresses are physical name tags. Ethernet is the room they are in. CSMA/CD is the polite rulebook for taking turns speaking in that room so voices don't overlap.",
+    "description": "Carrier Sense Multiple Access with Collision Detection (CSMA/CD) is the protocol early Ethernet used for shared mediums (like a single copper wire). Nodes 'sense' the line, transmit if clear, and if a collision occurs (two signals crashing), they back off for a random exponential time before retrying."
+  },
+  "explanation": "To move data across a local physical network, computers need unique physical identities. This is the MAC (Media Access Control) address. Unlike an IP address which can change based on your location, a MAC address is permanently burned into a computer's Network Interface Card (NIC) at the factory. It is a 48-bit address, typically represented as six pairs of hexadecimal digits.\n\nEthernet is the dominant technology used for these local wired networks. In its early days, Ethernet used a 'shared medium' architecture. Imagine multiple computers connected to a single, long coaxial cable. Because they shared the same physical wire, if two computers sent electrical signals at the exact same moment, the signals would crash into each other, distorting the voltage and destroying the data. This is called a collision.\n\nTo manage this chaos, Ethernet adopted a protocol called CSMA/CD (Carrier Sense Multiple Access with Collision Detection). 'Carrier Sense' means a computer listens to the wire before transmitting. If it hears existing traffic (a carrier signal), it waits. 'Multiple Access' simply means many devices share the wire.\n\nIf the wire is quiet, a computer begins sending its frame. However, because electrical signals take a tiny fraction of a second to travel down the wire, another computer at the far end might also think the wire is quiet and start transmitting simultaneously. 'Collision Detection' means that while transmitting, the sender actively listens to its own signal on the wire. If the voltage spikes unexpectedly, it knows a collision occurred.\n\nWhen a collision is detected, the transmitting computers immediately stop sending data and instead transmit a 'jam signal' to ensure all other devices on the network know a collision happened. Then, they initiate an Exponential Backoff algorithm. Each computer waits a random amount of time before trying again. If they collide again, the range of random wait times doubles (exponentially). This randomness ensures they don't get stuck in an endless loop of simultaneous retries.\n\nToday, modern Ethernet uses 'switches' instead of shared hubs. A switch creates dedicated, isolated physical circuits between devices. Because devices are on dedicated wires (Full-Duplex), collisions are physically impossible. Consequently, CSMA/CD is largely obsolete in modern wired networks, though its wireless cousin (CSMA/CA) is heavily used in Wi-Fi.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {"id": "nodeA", "label": "Computer A"},
+      {"id": "wire", "label": "Shared Wire"},
+      {"id": "nodeB", "label": "Computer B"}
+    ],
+    "steps": [
+      {"from": "nodeA", "to": "wire", "label": "Listens: Wire is clear. Starts sending.", "term": "Carrier Sense"},
+      {"from": "nodeB", "to": "wire", "label": "Listens: Wire is clear. Starts sending.", "term": "Simultaneous TX"},
+      {"from": "wire", "to": "nodeA", "label": "Voltage spikes (signals crash)", "term": "Collision"},
+      {"from": "nodeA", "to": "wire", "label": "Sends Jam Signal, stops transmitting", "term": "Collision Detected"},
+      {"from": "nodeA", "to": "nodeA", "label": "Wait random time (e.g., 3ms)", "term": "Exponential Backoff"},
+      {"from": "nodeB", "to": "nodeB", "label": "Wait random time (e.g., 7ms)", "term": "Exponential Backoff"}
+    ]
+  },
+  "key_points": [
+    {
+      "title": "MAC Address",
+      "detail": "A 48-bit hardware address burned into the NIC. Used for local Layer 2 delivery."
+    },
+    {
+      "title": "Carrier Sense",
+      "detail": "Listening to the shared medium to ensure no one else is currently transmitting."
+    },
+    {
+      "title": "Collision Detection",
+      "detail": "Monitoring the voltage while transmitting to detect if another signal crashes into yours."
+    },
+    {
+      "title": "Exponential Backoff",
+      "detail": "After a collision, waiting a random amount of time before retrying. The maximum wait time doubles with each consecutive collision."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "CSMA/CD prevents collisions",
+      "explanation": "CSMA/CD does not prevent collisions from happening; it only detects them after they occur and manages the recovery process. (CSMA/CA, used in Wi-Fi, attempts to avoid them)."
+    },
+    {
+      "title": "Modern Ethernet uses CSMA/CD",
+      "explanation": "Modern networks use switches operating in Full-Duplex mode, meaning devices have dedicated wires for sending and receiving. Collisions are physically impossible, so CSMA/CD is disabled."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens in CSMA/CD immediately after a collision is detected?",
+      "answer": "The transmitting devices stop sending data, transmit a jam signal, and wait a random amount of time before retrying.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the wait time after a collision chosen randomly?",
+      "answer": "To prevent the colliding devices from waiting the exact same amount of time and colliding again when they retry.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is CSMA/CD no longer needed in modern wired Ethernet networks?",
+      "answer": "Modern networks use switches with full-duplex connections, creating isolated collision domains where collisions cannot physically happen.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A network has 10 computers connected via an old shared hub. How many collision domains exist in this network?",
+      "company": "Network Engineer Interview",
+      "answer": "One collision domain.",
+      "approach": "Understand that a hub operates at Layer 1 and simply repeats electrical signals to all ports, making the entire network one large shared collision domain."
+    },
+    {
+      "question": "If two computers using CSMA/CD collide repeatedly, what happens to their wait times?",
+      "company": "Core CS OA",
+      "answer": "The maximum possible wait time increases exponentially after each consecutive collision.",
+      "approach": "Recall the 'Exponential' in Exponential Backoff. The window of random wait times doubles to reduce the probability of further collisions under heavy load."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Carrier-sense_multiple_access_with_collision_detection",
+    "https://en.wikipedia.org/wiki/MAC_address"
+  ]
+}

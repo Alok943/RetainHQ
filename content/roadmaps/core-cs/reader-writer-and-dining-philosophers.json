@@ -1,0 +1,126 @@
+{
+  "slug": "reader-writer-and-dining-philosophers",
+  "title": "Reader-Writer & Dining Philosophers",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "mutex-vs-semaphore"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "A scoreboard can be looked at by 10,000 fans at once (readers). But when the referee updates the score (writer), a curtain must drop so no one sees half-changed numbers. Meanwhile, philosophers at a table starve because everyone grabs a left fork and waits forever for a right fork."
+  },
+  "mental_model": {
+    "intuition": "Reader-Writer optimizes for heavy read traffic. Dining Philosophers is a cautionary tale about circular deadlocks.",
+    "description": "These are two classic synchronization problems. The Reader-Writer problem explores how to safely allow concurrent reads while isolating writes. The Dining Philosophers problem illustrates the dangers of multiple processes needing multiple overlapping resources."
+  },
+  "explanation": "The Reader-Writer problem addresses situations where a data structure, like a database table, is heavily read but infrequently modified. If we simply put a standard mutex around the data, only one thread can read at a time, severely bottlenecking performance. The core realization is that reading data doesn't change it; therefore, any number of readers should be allowed to access the data simultaneously. However, if a writer needs to modify the data, it must have exclusive access\u2014meaning no other writers, and no readers, can be active.\n\nImplementing this requires keeping track of how many active readers there are. The first reader to arrive locks the central 'resource' mutex on behalf of all readers. Subsequent readers simply increment a counter and proceed. The last reader to leave decrements the counter to zero and unlocks the resource mutex, allowing a waiting writer to enter. While this maximizes read concurrency, the standard solution heavily favors readers. If a continuous stream of readers keeps arriving, the reader counter never drops to zero, and the writer starves forever. Modern systems solve this by giving writers priority, ensuring new readers are blocked if a writer is waiting.\n\nThe Dining Philosophers problem, proposed by Dijkstra, focuses on a different issue: deadlock and starvation in resource allocation. Imagine five philosophers sitting at a round table. Between each philosopher is a single chopstick (or fork). To eat spaghetti, a philosopher needs both the chopstick on their left and the one on their right. They spend their time alternating between thinking and eating.\n\nA na\u00efve algorithm dictates that every philosopher first grabs their left chopstick, then waits for the right chopstick. If all five philosophers get hungry simultaneously, they all pick up their left chopsticks. Now, every right chopstick is held by the neighbor. The philosophers will wait forever for a chopstick that will never be put down, creating a classic circular deadlock. Solutions to this involve breaking the symmetry: for example, forcing one philosopher to pick up the right chopstick first, or using an arbiter (a waiter) to limit only four philosophers from sitting at the table at once, breaking the circular dependency.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "p1",
+        "label": "Philosopher 1"
+      },
+      {
+        "id": "p2",
+        "label": "Philosopher 2"
+      },
+      {
+        "id": "p3",
+        "label": "Philosopher 3"
+      }
+    ],
+    "steps": [
+      {
+        "from": "p1",
+        "to": "p1",
+        "label": "Grabs left fork",
+        "term": "Acquire"
+      },
+      {
+        "from": "p2",
+        "to": "p2",
+        "label": "Grabs left fork",
+        "term": "Acquire"
+      },
+      {
+        "from": "p3",
+        "to": "p3",
+        "label": "Grabs left fork",
+        "term": "Acquire"
+      },
+      {
+        "from": "p1",
+        "to": "p2",
+        "label": "Waits for right fork (Deadlock)",
+        "term": "Wait"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Reader-Writer: Concurrent Reads",
+      "detail": "Multiple readers can access the resource simultaneously without blocking each other."
+    },
+    {
+      "title": "Reader-Writer: Writer Starvation",
+      "detail": "In a reader-biased implementation, a steady stream of readers can prevent a writer from ever acquiring the lock."
+    },
+    {
+      "title": "Dining Philosophers: Circular Wait",
+      "detail": "Demonstrates deadlock caused by a chain of processes each waiting for a resource held by the next."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking Read-Write locks are always faster than Mutexes",
+      "explanation": "Read-Write locks have more overhead than a simple Mutex. If the critical section is very short, a Mutex is often faster. Read-Write locks only shine when reads are slow and outnumber writes heavily."
+    },
+    {
+      "title": "Assuming deadlock is the only risk in Dining Philosophers",
+      "explanation": "Even if deadlock is avoided (e.g., dropping the fork and trying again later), philosophers can suffer from 'livelock' where they constantly pick up and drop forks simultaneously without ever eating."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a standard Mutex perform poorly for a database that is mostly read and rarely updated?",
+      "answer": "Because a standard Mutex forces readers to wait for each other, even though multiple reads won't corrupt the data.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the circular wait problem in Dining Philosophers?",
+      "answer": "When every philosopher holds one chopstick and waits for the next, forming a closed loop of dependencies where no one can proceed.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How can you break the deadlock in the Dining Philosophers problem without adding new resources?",
+      "answer": "By breaking symmetry: make one philosopher (e.g., the 5th one) pick up their right chopstick first instead of the left.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In the reader-preferring version of the Reader-Writer problem, when does the writer get to access the data?",
+      "company": "Core CS OA",
+      "answer": "Only when the number of active readers drops exactly to zero.",
+      "approach": "Writers need exclusive access. The first reader blocks writers, and the last reader unblocks them."
+    },
+    {
+      "question": "Which Coffman condition for deadlock does the 'break symmetry' solution to Dining Philosophers eliminate?",
+      "company": "SDE interview",
+      "answer": "Circular Wait.",
+      "approach": "By forcing one philosopher to grab resources in the opposite order, the cycle of waiting processes is broken."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

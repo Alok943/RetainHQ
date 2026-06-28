@@ -1,0 +1,98 @@
+{
+  "slug": "osi-7-layers",
+  "title": "OSI 7 Layers",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["tcp-ip-model-and-layer-functions"],
+    "appears_in": ["Networks"]
+  },
+  "hook": {
+    "scenario": "Imagine writing a physical letter. You write the content, put it in an envelope, write the address, hand it to the post office, who loads it onto a truck, which drives on a road. When the letter arrives, the process reverses. The OSI model is the internet's version of this postal system."
+  },
+  "mental_model": {
+    "intuition": "The OSI model is a 7-step assembly line for packaging data to be sent across the world.",
+    "description": "Each layer has a specific, isolated job. Top layers deal with applications and data, middle layers handle routing and connections, and bottom layers handle physical electrical signals. As data goes down the stack, it gets wrapped in new envelopes (encapsulation). As it goes up, envelopes are opened (decapsulation)."
+  },
+  "explanation": "The Open Systems Interconnection (OSI) model is a conceptual framework used to describe the functions of a networking system. Created in the late 1970s, it standardizes how different computer systems communicate with each other regardless of their underlying architecture. Think of it as a universal language for computer networking.\n\nThe model is divided into seven distinct layers: Physical (1), Data Link (2), Network (3), Transport (4), Session (5), Presentation (6), and Application (7). A common mnemonic to remember them from bottom to top is 'Please Do Not Throw Sausage Pizza Away'. Each layer provides services to the layer directly above it and receives services from the layer directly below it.\n\nWhen you send data (like clicking 'send' on an email), the data starts at Layer 7 and travels down to Layer 1. At each step, the layer adds its own specific header (and sometimes trailer) to the data, a process called encapsulation. It's like putting a letter in an envelope, putting that envelope in a larger packet, and putting that packet in a shipping crate.\n\nOnce the data reaches the Physical layer, it is transmitted as raw bits (1s and 0s) over a physical medium like a copper wire, fiber optic cable, or Wi-Fi radio waves. When it reaches the destination computer, the data travels back up the layers from 1 to 7. Each layer reads its corresponding header, strips it off, and passes the remaining data up. This is called decapsulation.\n\nWhile the OSI model is largely theoretical and the modern internet actually uses the simpler TCP/IP model, OSI remains the standard vocabulary for networking. When an engineer says they are troubleshooting a 'Layer 3 issue', everyone immediately knows they are talking about IP routing, not physical cables or application bugs. Understanding OSI is the absolute foundation for all network troubleshooting and design.",
+  "key_points": [
+    {
+      "title": "Layer 7: Application",
+      "detail": "The interface between the network and the application software. Protocols like HTTP, SMTP, and DNS operate here."
+    },
+    {
+      "title": "Layer 6: Presentation",
+      "detail": "Translates, encrypts, and compresses data. It ensures data sent by the application layer of one system is readable by the application layer of another."
+    },
+    {
+      "title": "Layer 5: Session",
+      "detail": "Establishes, manages, and terminates connections (sessions) between local and remote applications."
+    },
+    {
+      "title": "Layer 4: Transport",
+      "detail": "Handles reliable delivery of data segments. Uses TCP for reliable delivery or UDP for fast, unreliable delivery. Uses port numbers."
+    },
+    {
+      "title": "Layer 3: Network",
+      "detail": "Handles routing of packets across multiple networks. IP addresses live here."
+    },
+    {
+      "title": "Layer 2: Data Link",
+      "detail": "Transfers frames node-to-node on the same local network. MAC addresses and switches operate here."
+    },
+    {
+      "title": "Layer 1: Physical",
+      "detail": "The physical medium transmitting raw bits. Includes cables, hubs, and radio frequencies."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "The OSI model is exactly how the internet works",
+      "explanation": "The internet actually uses the TCP/IP model. The OSI model is a conceptual reference tool, though its terminology is used everywhere."
+    },
+    {
+      "title": "Application layer refers to the software itself",
+      "explanation": "Layer 7 does not refer to Chrome or Outlook. It refers to the networking protocols (like HTTP or SMTP) that Chrome or Outlook use to communicate."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the mnemonic to remember the 7 OSI layers from bottom to top?",
+      "answer": "'Please Do Not Throw Sausage Pizza Away' (Physical, Data Link, Network, Transport, Session, Presentation, Application).",
+      "tier": "tier1"
+    },
+    {
+      "q": "At which layer do IP addresses and routing operate?",
+      "answer": "Layer 3: The Network Layer.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is encapsulation?",
+      "answer": "The process of adding headers/trailers to data as it moves down the OSI layers from Application to Physical.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An engineer says there is a 'Layer 2 issue'. Which device and addressing scheme are they likely investigating?",
+      "company": "Network Engineer Interview",
+      "answer": "A Switch and MAC addresses.",
+      "approach": "Recall that Layer 2 is the Data Link layer, which handles local network node-to-node delivery using MAC addresses, typically managed by network switches."
+    },
+    {
+      "question": "Which OSI layer is responsible for end-to-end reliability and flow control?",
+      "company": "Core CS OA",
+      "answer": "The Transport Layer (Layer 4).",
+      "approach": "Remember that Layer 4 (TCP/UDP) handles the end-to-end delivery of data segments, with TCP providing reliability and flow control."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/OSI_model"
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "slug": "arp",
+  "title": "Address Resolution Protocol (ARP)",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["mac-ethernet-and-csma-cd"],
+    "unlocks": [],
+    "appears_in": ["Networks"]
+  },
+  "hook": {
+    "scenario": "You know your coworker's name (IP address) and want to hand them a document, but you're standing in a massive, crowded open-plan office. You shout, 'Who here is John Smith?' John hears his name and shouts back, 'I am over here at desk 4B (MAC address)!' That shout is ARP."
+  },
+  "mental_model": {
+    "intuition": "ARP bridges the gap between software and hardware by translating logical IP addresses into physical MAC addresses.",
+    "description": "When a computer needs to send data locally, it knows the target's IP address but needs the hardware MAC address to actually build the physical frame. It broadcasts an 'ARP Request' to everyone asking 'Who has this IP?'. The target replies with an 'ARP Reply' containing its MAC address."
+  },
+  "explanation": "In computer networking, IP addresses (Layer 3) are used to route data across the global internet, while MAC addresses (Layer 2) are used to deliver data between physical hardware on a local network. When an application wants to send a packet to another computer on the same local network, it only knows the destination's IP address. However, the network card cannot transmit the packet without wrapping it in an Ethernet frame, which requires a destination MAC address. \n\nThe Address Resolution Protocol (ARP) is the glue that connects these two layers. It provides a dynamic mapping from a 32-bit IPv4 address to a 48-bit MAC address. When a computer needs this mapping, it first checks its local 'ARP Cache', a temporary table stored in RAM that remembers recent IP-to-MAC translations. \n\nIf the IP address is not found in the cache, the computer initiates an ARP Request. It creates a special packet containing the target IP address and sends it to the Ethernet broadcast MAC address (FF:FF:FF:FF:FF:FF). Because it's a broadcast, the network switch forwards this frame out of every port. Every single computer on the local network receives and processes this request.\n\nWhen the other computers receive the ARP Request, they check the target IP address against their own. The computers that do not match simply discard the packet. The one computer that does have the matching IP address generates an ARP Reply. This reply contains its own MAC address and is sent directly back to the original requester (unicast, not broadcast).\n\nUpon receiving the ARP Reply, the original computer updates its ARP Cache with the new mapping. It can now construct the Ethernet frame with the correct destination MAC address and finally transmit the actual data payload. Because ARP relies on trusting these broadcasts without verification, it is vulnerable to 'ARP Spoofing', where a malicious attacker floods the network with fake ARP replies to intercept traffic.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {"id": "pc1", "label": "Computer A (IP: 10.0.0.1)"},
+      {"id": "net", "label": "Local Network (Switch)"},
+      {"id": "pc2", "label": "Computer B (IP: 10.0.0.2)"}
+    ],
+    "steps": [
+      {"from": "pc1", "to": "pc1", "label": "Cache miss for 10.0.0.2", "term": "Check Cache"},
+      {"from": "pc1", "to": "net", "label": "Who has 10.0.0.2? Tell 10.0.0.1", "term": "ARP Request (Broadcast)"},
+      {"from": "net", "to": "pc2", "label": "Forward broadcast to everyone", "term": "Flood"},
+      {"from": "pc2", "to": "net", "label": "10.0.0.2 is at MAC: BB-BB-BB", "term": "ARP Reply (Unicast)"},
+      {"from": "net", "to": "pc1", "label": "Forward reply to Computer A", "term": "Deliver"},
+      {"from": "pc1", "to": "pc1", "label": "Saves MAC: BB-BB-BB for 10.0.0.2", "term": "Update Cache"}
+    ]
+  },
+  "key_points": [
+    {
+      "title": "ARP Cache",
+      "detail": "A temporary local table on each device that maps recently resolved IP addresses to MAC addresses to reduce broadcast traffic."
+    },
+    {
+      "title": "ARP Request",
+      "detail": "A broadcast frame sent to all devices on the local network asking 'Who has this IP address?'"
+    },
+    {
+      "title": "ARP Reply",
+      "detail": "A unicast frame sent directly back to the requester containing the requested MAC address."
+    },
+    {
+      "title": "ARP Spoofing",
+      "detail": "A security vulnerability where an attacker sends fake ARP replies to associate their own MAC address with another device's IP (like the router), enabling a Man-in-the-Middle attack."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "ARP routes traffic across the internet",
+      "explanation": "ARP only operates within a single local network boundary (a broadcast domain). It cannot cross routers. When sending data to the internet, ARP is only used to find the local router's MAC address."
+    },
+    {
+      "title": "ARP works with IPv6",
+      "explanation": "ARP is strictly for IPv4. IPv6 uses a completely different protocol called Neighbor Discovery Protocol (NDP), which utilizes ICMPv6 and multicast instead of broadcast."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of ARP?",
+      "answer": "To map a known logical IPv4 address to an unknown physical MAC address on a local network.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is an ARP Request sent as a unicast or broadcast packet?",
+      "answer": "It is sent as a broadcast packet to all devices on the local network.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is an ARP Cache?",
+      "answer": "A temporary table stored in RAM that remembers recent IP-to-MAC address mappings to avoid unnecessary network broadcasts.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A host wants to send a packet to an IP address on a different subnet. Which MAC address will the host ask for via ARP?",
+      "company": "Network Engineer Interview",
+      "answer": "The MAC address of its Default Gateway (the router).",
+      "approach": "Realize that ARP broadcasts cannot cross subnets. To send traffic outside the local network, the host must first send the frame locally to the router, so it ARPs for the router's IP."
+    },
+    {
+      "question": "How does an ARP Spoofing attack achieve a Man-in-the-Middle position?",
+      "company": "Security Interview",
+      "answer": "By flooding the network with unsolicited ARP Replies, tricking devices into updating their ARP cache with the attacker's MAC address instead of the legitimate router or host.",
+      "approach": "Explain that ARP is stateless and trusts incoming replies without verification, allowing an attacker to silently rewrite the mapping tables of victim machines."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Address_Resolution_Protocol",
+    "https://en.wikipedia.org/wiki/ARP_spoofing"
+  ]
+}

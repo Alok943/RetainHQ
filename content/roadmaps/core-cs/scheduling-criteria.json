@@ -1,0 +1,146 @@
+{
+  "slug": "scheduling-criteria",
+  "title": "Scheduling Criteria",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "context-switching"
+    ],
+    "unlocks": [
+      "fcfs-and-the-convoy-effect",
+      "sjf-and-srtf",
+      "round-robin-and-time-quantum",
+      "priority-scheduling-and-starvation"
+    ],
+    "appears_in": [
+      "Operating Systems"
+    ]
+  },
+  "hook": {
+    "scenario": "You are managing a popular coffee shop, but customers are constantly complaining. To fix the issue, you first need to define what 'good service' actually means."
+  },
+  "mental_model": {
+    "intuition": "Scheduling criteria are the key performance indicators (KPIs) for evaluating a CPU scheduler.",
+    "description": "Just like a restaurant might measure its success by how many tables it serves per hour (throughput), how long customers wait for their food (waiting time), or how quickly they get greeted (response time), an operating system uses specific criteria to judge how well its CPU scheduling algorithm is performing."
+  },
+  "explanation": "Before we can design or compare CPU scheduling algorithms, we need a standard set of metrics to evaluate them. Without clear criteria, it is impossible to say whether one algorithm is objectively 'better' than another, because 'better' depends entirely on the system's goals. A personal laptop has very different goals than a batch-processing supercomputer.\n\nTo understand these metrics, imagine a process moving through the system. When a user launches a program, it arrives in the ready queue. The time it spends sitting there, doing absolutely nothing while waiting for the CPU, is its waiting time. If the process gets interrupted and put back in the queue later, all those waiting periods add up. Our goal is almost always to minimize this total waiting time.\n\nOnce the process finally gets the CPU for the first time and starts producing output, the time elapsed from its arrival to that very first response is its response time. This is critical in interactive systems; if you click a button, you expect a visual response immediately, even if the underlying computation takes longer to finish. Meanwhile, the turnaround time is the entire lifecycle: from the exact moment of arrival until the process completely finishes and exits the system. Turnaround time includes waiting time, execution time, and any I/O delays.\n\nFrom the system's broader perspective, we also care about overall efficiency rather than just individual process times. CPU utilization measures how busy the processor is. Since the CPU is the most expensive component, we want to keep it running close to 100% of the time, rather than sitting idle. Similarly, throughput measures the total number of processes completed per unit of time. If a scheduling algorithm spends too much time context switching, throughput drops because the system is busy doing administrative work instead of real computation.\n\nIn reality, no single scheduling algorithm can optimize all these criteria simultaneously. Minimizing response time often requires frequent context switching, which hurts throughput and CPU utilization. Therefore, OS designers must prioritize certain metrics based on the environment. A desktop OS prioritizes response time for a snappy user experience, while a scientific computing cluster prioritizes throughput and CPU utilization to crunch maximum data.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "arrival",
+        "label": "Arrival Time"
+      },
+      {
+        "id": "ready",
+        "label": "Ready Queue"
+      },
+      {
+        "id": "cpu",
+        "label": "CPU Execution"
+      },
+      {
+        "id": "completion",
+        "label": "Completion"
+      }
+    ],
+    "steps": [
+      {
+        "from": "arrival",
+        "to": "ready",
+        "label": "Process enters system",
+        "term": "Submission"
+      },
+      {
+        "from": "ready",
+        "to": "cpu",
+        "label": "Time until first CPU access",
+        "term": "Response Time"
+      },
+      {
+        "from": "ready",
+        "to": "ready",
+        "label": "Total time spent in queue",
+        "term": "Waiting Time"
+      },
+      {
+        "from": "arrival",
+        "to": "completion",
+        "label": "Total time in system",
+        "term": "Turnaround Time"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "CPU Utilization",
+      "detail": "The percentage of time the CPU is actively executing user processes instead of sitting idle."
+    },
+    {
+      "title": "Throughput",
+      "detail": "The number of processes that complete their execution per time unit."
+    },
+    {
+      "title": "Turnaround Time",
+      "detail": "The total amount of time taken to execute a particular process, from submission to termination."
+    },
+    {
+      "title": "Waiting Time",
+      "detail": "The total amount of time a process spends waiting in the ready queue."
+    },
+    {
+      "title": "Response Time",
+      "detail": "The time from the submission of a request until the first response is produced."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing waiting time with turnaround time",
+      "explanation": "Waiting time ONLY counts the time spent in the ready queue. Turnaround time is the total time (Waiting Time + Execution Time + I/O Time)."
+    },
+    {
+      "title": "Thinking response time is when the process finishes",
+      "explanation": "Response time is strictly the time until the system STARTS responding to the request, not when it finishes it. It's crucial for interactive applications."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which scheduling criterion is most important for an interactive system like a desktop OS?",
+      "answer": "Response time, because users expect immediate feedback when they interact with the system.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between turnaround time and waiting time?",
+      "answer": "Waiting time is only the time spent in the ready queue. Turnaround time is the total time from arrival to completion, which includes waiting time plus execution time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a system performs excessive context switching, which metric suffers the most directly?",
+      "answer": "Throughput decreases because the CPU spends too much time performing administrative overhead instead of completing actual user processes.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A process arrives at time 0, waits for 5ms, executes for 10ms, and completes. What is its turnaround time?",
+      "company": "Core CS OA",
+      "answer": "15ms",
+      "approach": "Turnaround time = Completion time - Arrival time = 15 - 0 = 15ms. Alternatively, Turnaround time = Waiting time + Burst time = 5 + 10 = 15ms."
+    },
+    {
+      "question": "Why is it impossible to perfectly optimize both response time and throughput?",
+      "company": "SDE interview",
+      "answer": "Optimizing response time requires frequent context switches to quickly give attention to new processes. Optimizing throughput requires minimizing context switches to spend more time on actual execution.",
+      "approach": "Highlight the tradeoff: frequent context switches (good for response time) introduce overhead that wastes CPU cycles, thereby lowering the total number of jobs completed per second (throughput)."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Scheduling_(computing)"
+  ]
+}

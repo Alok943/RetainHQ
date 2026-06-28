@@ -1,0 +1,136 @@
+{
+  "slug": "context-switching",
+  "title": "Context Switching",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "process-states-and-transitions"
+    ],
+    "unlocks": [
+      "cpu-scheduling-algorithms"
+    ],
+    "appears_in": [
+      "os"
+    ]
+  },
+  "hook": {
+    "scenario": "You're reading a book when your phone rings. You place a bookmark on the exact line you were reading, close the book, and answer the phone. When you're done, you open the book right to your bookmark and resume. That's a context switch."
+  },
+  "mental_model": {
+    "intuition": "Context switching is a chef pausing one dish to prep another, saving the exact state of the first dish so it isn't ruined.",
+    "description": "The chef notes down the temperature and ingredients added for Dish A (saving state to the PCB), cleans the station (flushing registers), sets up the notes for Dish B (loading new PCB), and starts cooking Dish B."
+  },
+  "explanation": "In a multitasking operating system, multiple processes seem to run simultaneously, even on a single CPU core. This illusion is achieved through context switching: the process of pausing one running application, saving its exact state, and resuming another application so quickly that the user doesn't notice the interruption.\n\nA process's 'context' is essentially its exact state at a specific microsecond in time. It includes the values in the CPU registers, the Program Counter (which tracks the next instruction to execute), memory management information, and open file descriptors. When a context switch occurs, the OS must freeze time for the current process by taking a snapshot of this context and saving it into the process's Process Control Block (PCB).\n\nOnce the old process's state is safely tucked away in memory, the OS scheduler selects a new process from the Ready queue. It retrieves the saved context from the new process's PCB and loads it back into the CPU registers. As soon as the Program Counter is restored, the CPU blindly resumes executing the new process exactly where it left off, entirely unaware that a switch occurred.\n\nWhile crucial for multitasking, context switches are not free. They represent pure overhead\u2014time spent switching rather than doing useful computational work. During a context switch, the CPU is entirely occupied with OS administrative tasks. Furthermore, swapping processes heavily disrupts CPU caches, leading to slower memory access immediately following a switch.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "p1",
+        "label": "Process 1"
+      },
+      {
+        "id": "os",
+        "label": "Operating System"
+      },
+      {
+        "id": "p2",
+        "label": "Process 2"
+      }
+    ],
+    "steps": [
+      {
+        "from": "p1",
+        "to": "os",
+        "label": "Interrupt or System Call",
+        "term": "Interrupt"
+      },
+      {
+        "from": "os",
+        "to": "os",
+        "label": "Save state into PCB 1",
+        "term": "Save Context"
+      },
+      {
+        "from": "os",
+        "to": "os",
+        "label": "Load state from PCB 2",
+        "term": "Restore Context"
+      },
+      {
+        "from": "os",
+        "to": "p2",
+        "label": "Resume execution",
+        "term": "Dispatch"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "State Saving",
+      "detail": "The OS saves CPU registers, program counter, and memory mappings to the old process's PCB."
+    },
+    {
+      "title": "State Loading",
+      "detail": "The OS restores the saved registers and program counter from the new process's PCB."
+    },
+    {
+      "title": "Overhead",
+      "detail": "Context switching takes time away from actual execution and flushes CPU caches (TLB), causing performance hits."
+    },
+    {
+      "title": "Triggers",
+      "detail": "Switches are triggered by hardware interrupts (e.g., timer expired, I/O completion) or software system calls."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Context switching executes application code",
+      "explanation": "During a context switch, no application code is running. The CPU is purely executing operating system kernel code to swap states."
+    },
+    {
+      "title": "Thread switching is the same as process switching",
+      "explanation": "Switching threads within the same process is much faster than switching between different processes, because threads share the same memory space (avoiding cache and TLB flushes)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What data structure is used to store the context of a process?",
+      "answer": "The Process Control Block (PCB).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is context switching considered 'pure overhead'?",
+      "answer": "Because the CPU is busy saving and restoring state rather than executing user instructions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name two events that can trigger a context switch.",
+      "answer": "A hardware interrupt (like a timer expiring) or a blocking system call (like an I/O request).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which of the following does NOT happen during a process context switch: saving registers, flushing the TLB, modifying the PCB, or executing user code?",
+      "company": "Core CS OA",
+      "answer": "Executing user code.",
+      "approach": "Recall that context switching is an administrative kernel task. User code execution is explicitly paused during this time."
+    },
+    {
+      "question": "Why is switching between two threads of the same process faster than switching between two different processes?",
+      "company": "SDE interview",
+      "answer": "Threads share the same memory space, so the OS does not need to swap memory management information or flush the Translation Lookaside Buffer (TLB).",
+      "approach": "Highlight the shared resources of threads vs isolated resources of processes."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Context_switch",
+    "https://www.geeksforgeeks.org/context-switch-in-operating-system/"
+  ]
+}

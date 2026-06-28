@@ -1,0 +1,108 @@
+{
+  "slug": "dns",
+  "title": "Domain Name System (DNS)",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": ["SDE interview", "Core CS OA"]
+  },
+  "hook": {
+    "scenario": "Computers route traffic using numeric IP addresses, but humans are terrible at memorizing numbers. If we had to type '142.250.190.46' to visit Google, the internet would be unusable.",
+    "question": "How does your device translate a domain name into an IP address in milliseconds?"
+  },
+  "mental_model": {
+    "intuition": "DNS is the phonebook of the internet.",
+    "description": "You look up a person by their name (google.com) to find their phone number (142.250.190.46) so your device knows exactly who to call."
+  },
+  "explanation": "The Domain Name System (DNS) is a hierarchical and decentralized naming system for computers connected to the internet. Its primary purpose is to translate memorable human-friendly domain names (like 'github.com') into machine-friendly IP addresses. Because there are billions of devices, no single server can hold all the mappings. Instead, DNS distributes this directory across thousands of servers worldwide.\n\nWhen you type a URL into your browser, the first step is checking your local cache—your computer might already remember the IP address from a recent visit. If not, your computer asks a DNS Resolver, typically provided by your Internet Service Provider (ISP) or a public service like Google's 8.8.8.8. The Resolver's job is to hunt down the IP address on your behalf, navigating the DNS hierarchy.\n\nIf the Resolver doesn't have the answer cached, it starts at the top by querying a Root Name Server. The Root server doesn't know the exact IP, but it knows which Top-Level Domain (TLD) server handles '.com' or '.org' extensions. The Resolver then asks the TLD server, which in turn directs the Resolver to the Authoritative Name Server for that specific domain (e.g., the server specifically managing 'github.com').\n\nThe Authoritative Name Server is the final stop. It holds the official DNS records for the domain. It returns the exact IP address to the Resolver, which caches the result to speed up future requests and finally hands the IP back to your browser. Your browser can now establish a direct connection with the web server.\n\nDNS relies heavily on different types of records. An 'A' record maps a domain directly to an IPv4 address, while an 'AAAA' record maps it to an IPv6 address. A 'CNAME' record aliases one domain name to another, acting like a redirect. By caching responses at every level (browser, OS, Resolver), DNS remains incredibly fast despite the complex global lookup process required for a cache miss.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      { "id": "browser", "label": "Browser" },
+      { "id": "resolver", "label": "DNS Resolver" },
+      { "id": "root", "label": "Root Server" },
+      { "id": "tld", "label": "TLD Server" },
+      { "id": "auth", "label": "Authoritative Server" }
+    ],
+    "steps": [
+      { "from": "browser", "to": "resolver", "label": "Who is example.com?", "term": "DNS Query" },
+      { "from": "resolver", "to": "root", "label": "Who handles .com?", "term": "Root Query" },
+      { "from": "root", "to": "resolver", "label": "Ask the .com TLD server", "term": "Root Response" },
+      { "from": "resolver", "to": "tld", "label": "Who handles example.com?", "term": "TLD Query" },
+      { "from": "tld", "to": "resolver", "label": "Ask example's Authoritative server", "term": "TLD Response" },
+      { "from": "resolver", "to": "auth", "label": "What is the IP of example.com?", "term": "Authoritative Query" },
+      { "from": "auth", "to": "resolver", "label": "It is 93.184.216.34 (A Record)", "term": "Authoritative Response" },
+      { "from": "resolver", "to": "browser", "label": "IP is 93.184.216.34 (Saved to cache)", "term": "Final Answer" }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "A Record",
+      "detail": "Maps a domain name to an IPv4 address (e.g., 93.184.216.34)."
+    },
+    {
+      "title": "AAAA Record",
+      "detail": "Maps a domain name to an IPv6 address."
+    },
+    {
+      "title": "CNAME Record",
+      "detail": "Canonical Name record. Maps an alias domain name to the true (canonical) domain name."
+    },
+    {
+      "title": "MX Record",
+      "detail": "Mail Exchange record. Directs email to a mail server."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking DNS is a single central server",
+      "explanation": "DNS is a globally distributed, hierarchical database. A central server would be a massive single point of failure and bottleneck."
+    },
+    {
+      "title": "Confusing CNAME and A records",
+      "explanation": "An A record points a name directly to an IP address. A CNAME points a name to another name (e.g., www.example.com -> example.com)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the role of a DNS Resolver?",
+      "answer": "It acts as a middleman that recursively queries Root, TLD, and Authoritative servers on behalf of the client to find the requested IP address.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What type of DNS record would you use to point a domain to an IPv6 address?",
+      "answer": "An AAAA record.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is caching critical to the DNS architecture?",
+      "answer": "Caching prevents the network from being overwhelmed by repeated queries for popular sites, drastically reducing latency for the user.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Which DNS server is at the top of the DNS hierarchy and provides the IP address of TLD servers?",
+      "company": "Core CS OA",
+      "answer": "Root Name Server",
+      "approach": "The DNS lookup sequence goes: Resolver -> Root -> TLD -> Authoritative. The Root server is the starting point that knows where the .com, .org, etc., servers live."
+    },
+    {
+      "question": "If you want the domain 'blog.mysite.com' to point to exactly the same IP address as 'mysite.com', which DNS record type is best practice to use?",
+      "company": "SDE interview",
+      "answer": "CNAME Record",
+      "approach": "A CNAME allows you to alias 'blog.mysite.com' to 'mysite.com'. If 'mysite.com' changes its IP (its A record), 'blog.mysite.com' will automatically route to the new IP without needing an update."
+    }
+  ],
+  "sources": [
+    "https://www.cloudflare.com/learning/dns/what-is-dns/",
+    "https://aws.amazon.com/route53/what-is-dns/"
+  ]
+}

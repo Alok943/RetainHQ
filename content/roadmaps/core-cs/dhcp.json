@@ -1,0 +1,101 @@
+{
+  "slug": "dhcp",
+  "title": "Dynamic Host Configuration Protocol (DHCP)",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "Imagine moving into a new town where you must manually register your house at City Hall to receive a unique house number before you can receive mail. DHCP automates this: it assigns you a temporary address the moment you step foot in town.",
+    "question": "What is the exact sequence of messages exchanged to acquire an IP address?"
+  },
+  "mental_model": {
+    "intuition": "DHCP is a hotel receptionist handing out room keys.",
+    "description": "When you connect to a network, you need an IP address to participate. The DHCP server 'leases' you an available IP (room key) for a set period. When you disconnect, the key goes back into the pool for the next guest."
+  },
+  "explanation": "Dynamic Host Configuration Protocol (DHCP) is an Application Layer protocol that automatically assigns IP addresses and other network configuration parameters to devices on a network. Without DHCP, a network administrator would have to manually configure the IP address, subnet mask, default gateway, and DNS servers for every single laptop, phone, and smart device that connects. \n\nDHCP operates on a client-server model and uses a four-step transaction famously known as the DORA process: Discover, Offer, Request, and Acknowledge. When a device (the client) joins a network, it has no IP address. It begins by broadcasting a DHCP Discover message to the entire local network, essentially shouting, 'Are there any DHCP servers out there? I need an IP address!'\n\nWhen a DHCP server receives the Discover broadcast, it reserves an available IP address from its configured pool and responds with a DHCP Offer message. This message contains the proposed IP address, lease duration, and other network settings. If there are multiple DHCP servers on the network, the client might receive multiple offers.\n\nThe client usually selects the first offer it receives and broadcasts a DHCP Request message. This message explicitly accepts the offered IP address and implicitly declines any others, letting the other servers return their proposed IPs to their available pools. \n\nFinally, the chosen DHCP server sends a DHCP Acknowledge (ACK) message to the client, confirming the lease of the IP address. The client configures its network interface with the provided details and can now communicate on the network. Because the IP is 'leased' rather than permanently given, the client must periodically renew its lease. If the device leaves the network and the lease expires, the server reclaims the IP address to give to someone else.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      { "id": "client", "label": "Client (New Device)" },
+      { "id": "server", "label": "DHCP Server" }
+    ],
+    "steps": [
+      { "from": "client", "to": "server", "label": "I need an IP! (Broadcast)", "term": "Discover" },
+      { "from": "server", "to": "client", "label": "Here is an IP you can use.", "term": "Offer" },
+      { "from": "client", "to": "server", "label": "I accept this IP! (Broadcast)", "term": "Request" },
+      { "from": "server", "to": "client", "label": "Confirmed. It is yours for 24h.", "term": "Acknowledge" }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Discover",
+      "detail": "Client broadcasts a plea for an IP address."
+    },
+    {
+      "title": "Offer",
+      "detail": "DHCP server offers an available IP address."
+    },
+    {
+      "title": "Request",
+      "detail": "Client requests the specific IP offered."
+    },
+    {
+      "title": "Acknowledge",
+      "detail": "Server confirms the lease and provides configuration details."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking DHCP provides static IP addresses",
+      "explanation": "By default, DHCP provides dynamic IP addresses from a pool. These addresses can change. However, a server can be manually configured to reserve a specific static IP for a specific MAC address."
+    },
+    {
+      "title": "Assuming the Request step is unicast",
+      "explanation": "The DHCP Request is actually broadcast to the entire network. This is necessary so that if multiple DHCP servers made offers, the unselected servers hear the broadcast and know their offers were rejected."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the acronym DORA stand for in the context of DHCP?",
+      "answer": "Discover, Offer, Request, Acknowledge.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when a DHCP lease expires?",
+      "answer": "The client loses the right to use the IP address, and the server returns the IP to its pool for other devices to use.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does a client use a broadcast message for the DHCP Discover step?",
+      "answer": "Because the client doesn't yet have an IP address and doesn't know the IP address of the DHCP server, so it must shout to the entire local network to find one.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "During the DHCP process, which step involves the client accepting a specific IP address and rejecting others?",
+      "company": "Core CS OA",
+      "answer": "DHCP Request",
+      "approach": "The Request step is where the client formally requests the specific IP that was proposed in the Offer step. Because it is broadcast, other servers see the Request and realize their own offers were rejected."
+    },
+    {
+      "question": "Which protocol eliminates the need for manual IP configuration by a network administrator?",
+      "company": "SDE interview",
+      "answer": "DHCP",
+      "approach": "DHCP (Dynamic Host Configuration Protocol) automatically assigns IP addresses, subnet masks, default gateways, and DNS servers."
+    }
+  ],
+  "sources": [
+    "https://www.cisco.com/c/en/us/support/docs/ip/dynamic-host-configuration-protocol-dhcp/116035-tb-dhcp-client-00.html",
+    "https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol"
+  ]
+}

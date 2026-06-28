@@ -1,0 +1,89 @@
+{
+  "slug": "segmentation",
+  "title": "Segmentation",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "paging-and-page-tables"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "core-cs-os"
+    ]
+  },
+  "hook": {
+    "scenario": "Paging treats memory like a giant grid of equal-sized boxes, blindly chopping functions and arrays into pieces. Segmentation maps memory the way a programmer actually thinks about it."
+  },
+  "mental_model": {
+    "intuition": "Paging is cutting a novel into exactly 500-word pages, splitting sentences in half. Segmentation is binding the novel by chapters, regardless of their length.",
+    "description": "Segmentation divides memory into logically distinct, variable-sized units (segments) like 'code', 'data', and 'stack', mapping closely to the programmer's logical view of the program."
+  },
+  "explanation": "While paging is excellent for preventing external fragmentation, it completely ignores the logical structure of a program. Paging divides memory into rigid, fixed-size blocks, meaning a single continuous array or function might be fractured across multiple random frames in memory. Segmentation takes the opposite approach: it divides the process into variable-sized segments that correspond to actual logical entities, such as the main program, standard library routines, symbol tables, the stack, and specific data arrays.\n\nIn a segmented memory system, a logical address consists of two parts: a segment number and an offset within that segment. When a program tries to access a variable, it specifies which segment the variable is in and how far into that segment it lives. The hardware uses a Segment Table, which keeps track of the physical starting address (base) and the exact size (limit) of each segment. \n\nWhen an address is translated, the CPU first checks if the requested offset is greater than the segment's limit. If it is, this means the program is trying to access memory outside of its allowed boundaries, and the hardware triggers a segmentation fault (the infamous 'segfault'). If the offset is valid, the hardware simply adds the offset to the segment's base address to find the exact physical location in memory. This inherent limit-checking provides excellent memory protection and prevents buffer overflows from spilling into other segments.\n\nHowever, segmentation has a major drawback: because segments are variable in size, loading and removing them from memory leaves behind irregularly sized gaps of free space. Over time, these gaps become too small to hold new segments, leading to severe external fragmentation. Modern operating systems usually solve this by combining both concepts into 'paged segmentation', where logically variable segments are broken down into fixed-size pages underneath the hood, giving the logical benefits of segmentation with the memory-management benefits of paging.",
+  "key_points": [
+    {
+      "title": "Variable Size",
+      "detail": "Unlike pages (which are always a fixed size), segments grow and shrink based on the actual logical size of the data structure or code module they contain."
+    },
+    {
+      "title": "Segment Table",
+      "detail": "Contains base (starting physical address) and limit (length of the segment). Both are required because segments vary in size."
+    },
+    {
+      "title": "Protection",
+      "detail": "Segmentation makes it trivial to mark the 'code' segment as read-only and the 'data' segment as read-write, preventing accidental code modification."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming modern OSs use pure segmentation",
+      "detail": "Most modern architectures (like x86-64) have heavily deprecated or removed support for pure segmentation, relying entirely on paging or paged segmentation to avoid external fragmentation.",
+      "explanation": "This is a common source of confusion."
+    },
+    {
+      "title": "Confusing internal and external fragmentation",
+      "detail": "Paging suffers from internal fragmentation (wasted space inside a fixed page). Segmentation suffers from external fragmentation (wasted space between segments).",
+      "explanation": "This is a common source of confusion."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two values does a segment table entry hold?",
+      "answer": "Base (the starting physical address) and Limit (the size or length of the segment).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does segmentation cause external fragmentation?",
+      "answer": "Because segments are variable in size, swapping them in and out of memory leaves oddly-sized gaps (holes) that might be too small to fit future segments.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the primary advantage of segmentation over paging?",
+      "answer": "It aligns with the programmer's logical view of memory, allowing for easy sharing of modules (like shared libraries) and fine-grained protection (e.g., read-only code segments).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A segment has a base of 1000 and a limit of 500. A logical address is generated with segment offset 530. What happens?",
+      "company": "Core CS OA",
+      "answer": "A trap / segmentation fault is generated.",
+      "approach": "The offset (530) must be strictly less than the limit (500). Since it exceeds the limit, it is an illegal memory access."
+    },
+    {
+      "question": "Compare paging and segmentation with respect to fragmentation.",
+      "company": "SDE Interview",
+      "answer": "Paging causes internal fragmentation; segmentation causes external fragmentation.",
+      "approach": "Fixed-size chunks (pages) leave unused space inside the chunk. Variable-sized chunks (segments) leave unused space between the chunks."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Memory_segmentation",
+    "https://www.geeksforgeeks.org/memory-management-segmentation/"
+  ]
+}

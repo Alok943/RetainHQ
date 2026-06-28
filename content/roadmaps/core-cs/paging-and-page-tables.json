@@ -1,0 +1,134 @@
+{
+  "slug": "paging-and-page-tables",
+  "title": "Paging & Page Tables",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "contiguous-allocation-and-fragmentation"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Operating Systems",
+      "Systems Design"
+    ]
+  },
+  "hook": {
+    "scenario": "Imagine reading a massive encyclopedia that was torn apart, with its pages scattered randomly across a library's shelves. You can still read the book seamlessly because the index tells you exactly which shelf holds page 1, page 2, and so on."
+  },
+  "mental_model": {
+    "intuition": "Paging breaks processes into equal-sized chunks and scatters them anywhere in memory, using a map to stitch them back together.",
+    "description": "To eliminate external fragmentation, Paging divorces a program's logical view of memory from the physical reality of RAM. Physical memory is divided into fixed-size 'Frames', and logical memory is divided into identical 'Pages'. A Page Table acts as a translation map, tracking which physical Frame holds which logical Page."
+  },
+  "explanation": "Contiguous memory allocation suffers fatally from external fragmentation. The solution is to completely abandon the requirement that a process must sit in a single, unbroken block of RAM. This is the core concept of Paging: a memory management scheme that permits the physical address space of a process to be non-contiguous.\n\nTo make this work, the OS divides physical memory into fixed-sized blocks called 'Frames' (usually 4KB). It then divides a program's logical memory (the virtual address space the program sees) into blocks of the exact same size, called 'Pages'. When a program is loaded, the OS can grab any available Frames, no matter where they are in RAM, and load the program's Pages into them.\n\nBecause the program believes it occupies one continuous block of memory, the CPU generates continuous logical addresses. The Memory Management Unit (MMU) must intercept every single memory access and translate this logical address into the correct physical address on the fly. It does this using a 'Page Table'.\n\nEvery process has its own Page Table. The logical address is split into two parts: a Page Number and an Offset. The Page Number acts as an index into the Page Table, looking up the exact physical Frame where that chunk of memory lives. The Offset is simply the exact byte location within that chunk. The MMU combines the physical Frame number with the Offset to find the precise physical byte in RAM.\n\nPaging completely eliminates external fragmentation. Any free Frame can be used by any process, meaning there are never unusable gaps of memory between processes. However, it does suffer from a small amount of internal fragmentation (if a process needs 10KB and pages are 4KB, the third page has 2KB of wasted space). Furthermore, storing massive Page Tables for every process introduces significant memory overhead.",
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "cpu",
+        "label": "CPU"
+      },
+      {
+        "id": "pt",
+        "label": "Page Table"
+      },
+      {
+        "id": "ram",
+        "label": "Physical RAM"
+      }
+    ],
+    "steps": [
+      {
+        "from": "cpu",
+        "to": "pt",
+        "label": "Sends Logical Address (Page 2, Offset 50)",
+        "term": "Address Translation"
+      },
+      {
+        "from": "pt",
+        "to": "pt",
+        "label": "Looks up Page 2 -> Frame 8",
+        "term": "Page Table Lookup"
+      },
+      {
+        "from": "pt",
+        "to": "ram",
+        "label": "Accesses Frame 8, Offset 50",
+        "term": "Physical Memory Access"
+      },
+      {
+        "from": "ram",
+        "to": "cpu",
+        "label": "Returns Data",
+        "term": "Data Retrieval"
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Pages and Frames",
+      "detail": "Pages are fixed-size blocks of logical memory. Frames are fixed-size blocks of physical memory. They are always the exact same size."
+    },
+    {
+      "title": "Logical Address Breakdown",
+      "detail": "Composed of a Page Number (used to index the page table) and an Offset (the exact byte location within the page)."
+    },
+    {
+      "title": "Page Table",
+      "detail": "A per-process data structure that maps logical Page Numbers to physical Frame Numbers."
+    },
+    {
+      "title": "No External Fragmentation",
+      "detail": "Because any page can map to any frame, the OS never needs a contiguous block of RAM, eliminating external fragmentation."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking the Offset changes during translation",
+      "explanation": "The Offset represents the position within the block. Because Pages and Frames are identical in size, the Offset remains exactly the same in both the logical and physical address."
+    },
+    {
+      "title": "Assuming there is no fragmentation at all",
+      "explanation": "While paging solves external fragmentation, it still causes internal fragmentation. The last page of a process is rarely 100% full."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the two components of a logical address in a paged system?",
+      "answer": "The Page Number and the Page Offset.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does paging suffer from internal or external fragmentation?",
+      "answer": "It suffers from internal fragmentation (on the final page), but completely eliminates external fragmentation.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does every process need its own Page Table?",
+      "answer": "Because every process has its own isolated logical address space starting at zero, which must be mapped to completely different physical frames.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A system has a page size of 4KB. A process generates a logical address of 10000 (in decimal). What is the page number and the offset?",
+      "company": "Core CS OA",
+      "answer": "Page number is 2, Offset is 1808.",
+      "approach": "4KB is 4096 bytes. Divide the address by the page size: 10000 / 4096 = 2 with a remainder of 1808. Page number = 2, Offset = 1808."
+    },
+    {
+      "question": "In a 32-bit logical address space with 4KB pages, how many entries are in a single-level page table?",
+      "company": "SDE interview",
+      "answer": "1,048,576 (2^20) entries.",
+      "approach": "4KB is 2^12 bytes, so 12 bits are for the offset. The remaining 20 bits are for the page number. 2^20 possible pages means 2^20 page table entries."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Computer_science"
+  ]
+}

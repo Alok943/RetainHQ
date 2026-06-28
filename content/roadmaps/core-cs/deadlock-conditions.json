@@ -22,21 +22,21 @@
     "description": "Nobody is broken; everyone is just politely waiting on someone who is also waiting. The system is alive but frozen. Break any single link in the waiting cycle and traffic flows again."
   },
   "animation": {
-    "type": "sequence",
+    "type": "cycle",
     "actors": [
-      { "id": "t1", "label": "Thread 1" },
-      { "id": "lockA", "label": "Lock A" },
-      { "id": "lockB", "label": "Lock B" },
-      { "id": "t2", "label": "Thread 2" }
+      { "id": "a", "label": "Thread A" },
+      { "id": "b", "label": "Thread B" },
+      { "id": "c", "label": "Thread C" },
+      { "id": "d", "label": "Thread D" }
     ],
     "steps": [
-      { "from": "t1", "to": "lockA", "label": "acquires", "term": "holds Lock A" },
-      { "from": "t2", "to": "lockB", "label": "acquires", "term": "holds Lock B" },
-      { "from": "t1", "to": "lockB", "label": "waits for", "term": "hold-and-wait" },
-      { "from": "t2", "to": "lockA", "label": "waits for", "term": "circular wait → deadlock" }
+      { "from": "a", "to": "b", "label": "waits for a lock held by", "term": "hold & wait" },
+      { "from": "b", "to": "c", "label": "waits for a lock held by", "term": "hold & wait" },
+      { "from": "c", "to": "d", "label": "waits for a lock held by", "term": "hold & wait" },
+      { "from": "d", "to": "a", "label": "waits for a lock held by", "term": "circular wait -> deadlock" }
     ]
   },
-  "explanation": "A deadlock is a state where a set of processes are each blocked waiting for a resource held by another process in the same set, so none of them can ever proceed.\n\nIt can only arise if FOUR conditions hold simultaneously (the Coffman conditions). The key insight: remove any ONE of them and deadlock becomes impossible - which is exactly how deadlock prevention works.\n\nThis is different from starvation, where the system as a whole keeps making progress but one unlucky process is repeatedly passed over.",
+  "explanation": "Start with the simplest case: two threads and two locks. Thread 1 grabs Lock A and, partway through its work, finds it also needs Lock B to finish. At that exact moment Thread 2 has already grabbed Lock B and now needs Lock A. Neither will release what it holds until it finishes - but neither can finish without the lock the other is sitting on. They wait on each other forever. The program hasn't crashed; it is still 'running'. It just produces permanent silence.\n\nThat frozen state is a deadlock: a set of processes, each blocked waiting for a resource that another process in the same set is holding. With more threads the waiting doesn't just pair up - it forms a closed loop, exactly the ring in the animation above, where A waits on B, B on C, C on D, and D back on A.\n\nIn 1971 Coffman showed this can happen ONLY when four conditions are all true at the same time. Mutual exclusion: a resource can be held by just one process at a time. Hold-and-wait: a process keeps the resources it already holds while requesting more. No preemption: the system cannot forcibly take a resource back - the holder must release it voluntarily. Circular wait: there is a closed chain of processes, each waiting for a resource the next one holds.\n\nHere is why those four matter so much: because ALL of them are required, you only have to break ONE to make deadlock impossible. That single fact is the entire basis of deadlock prevention. In practice the easiest condition to attack is circular wait - if every thread must acquire locks in the same global order (say, always A before B), a closed loop can never form.\n\nFinally, don't confuse deadlock with starvation. In starvation the system as a whole keeps making progress; one unlucky process just keeps getting passed over. In deadlock, nothing in the stuck set ever moves again.",
   "key_points": [
     { "title": "Mutual exclusion", "detail": "At least one resource is held in a non-shareable mode - only one process can use it at a time." },
     { "title": "Hold and wait", "detail": "A process holding at least one resource is waiting to acquire additional resources held by others." },
