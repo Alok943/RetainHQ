@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table, Check, Plus } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
+import { useSeo } from './lib/useSeo';
 import CodeTrace from './CodeTrace';
 import { prewarmPython } from './lib/pyodideRunner';
 import { useAuth } from './lib/AuthContext';
@@ -13,6 +14,9 @@ import SqlJoinViz from './SqlJoinViz';
 const TIER_LABEL = { tier1: 'Tier 1', tier2: 'Tier 2', tier3: 'Tier 3' };
 const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
 const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
+
+// Short roadmap labels for the per-page <title> (keyword-targeted SEO).
+const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS' };
 
 // Understanding-check intents → badge label, colour, icon.
 const CHECK_META = {
@@ -100,6 +104,18 @@ export default function LessonView() {
     load();
     return () => { cancelled = true; };
   }, [id, slug, location.state?.contentKey]);
+
+  // Per-page SEO: each static lesson becomes its own keyword-targeted, crawlable
+  // search landing page (backend-independent). Null while loading → defaults stay.
+  const seoTitle = lesson ? `${lesson.title} · ${ROADMAP_LABEL[lesson.roadmap] || 'RetainHQ'} | RetainHQ` : null;
+  const seoRaw = lesson ? ((typeof lesson.overview === 'string' && lesson.overview) || lesson.hook?.scenario || '') : '';
+  const seoDesc = lesson
+    ? (seoRaw
+        ? seoRaw.replace(/\s+/g, ' ').trim()
+        : `Learn ${lesson.title} and lock it into long-term memory with spaced repetition and active recall on RetainHQ.`
+      ).slice(0, 158)
+    : null;
+  useSeo(seoTitle, seoDesc);
 
   if (loading) {
     return (

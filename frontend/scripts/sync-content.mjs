@@ -16,9 +16,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const CONTENT_ROOT = join(__dirname, '..', '..', 'content', 'roadmaps');
 const PUBLIC_ROOT = join(__dirname, '..', 'public', 'content', 'roadmaps');
 const MANIFEST_PATH = join(__dirname, '..', 'public', 'content', 'manifest.json');
+const SITEMAP_PATH = join(__dirname, '..', 'public', 'sitemap.xml');
+const BASE_URL = 'https://retainhq.app';
+
+function urlEntry(path, priority, changefreq) {
+  return `  <url>\n    <loc>${BASE_URL}${path}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+}
 
 async function main() {
   const manifest = {};
+  // Collected for the generated sitemap: every static lesson page is its own
+  // crawlable, keyword-targeted URL.
+  const lessonUrls = [];
+  const roadmapKeys = new Set();
 
   let roadmapDirs;
   try {
@@ -62,6 +72,10 @@ async function main() {
         if (!title) continue;
         if (!manifest[key]) manifest[key] = {};
         manifest[key][title] = slug;
+
+        // URL segment is the route slug = content folder key.
+        lessonUrls.push(`/roadmaps/${roadmapKey}/learn/${slug}`);
+        roadmapKeys.add(roadmapKey);
       } catch (err) {
         console.warn(`[sync-content] Skipping ${file}: ${err.message}`);
       }
@@ -72,8 +86,19 @@ async function main() {
   await mkdir(dirname(MANIFEST_PATH), { recursive: true });
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n');
 
+  // Write sitemap — home + roadmap list + each roadmap + every lesson page.
+  const entries = [
+    urlEntry('/', '1.0', 'weekly'),
+    urlEntry('/roadmaps', '0.8', 'weekly'),
+    ...[...roadmapKeys].sort().map((k) => urlEntry(`/roadmaps/${k}`, '0.7', 'weekly')),
+    ...lessonUrls.sort().map((u) => urlEntry(u, '0.6', 'monthly')),
+  ];
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
+  await writeFile(SITEMAP_PATH, sitemap);
+
   const totalLessons = Object.values(manifest).reduce((s, m) => s + Object.keys(m).length, 0);
   console.log(`[sync-content] Synced ${totalLessons} lesson(s) across ${Object.keys(manifest).length} roadmap(s).`);
+  console.log(`[sync-content] Wrote sitemap with ${entries.length} URL(s).`);
 }
 
 main().catch((err) => {

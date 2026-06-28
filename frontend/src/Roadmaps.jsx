@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
+import { useSeo } from './lib/useSeo';
 
 // Groups — order matters: first match wins.
 const GROUPS = [
@@ -138,6 +139,11 @@ function Roadmaps() {
   const [viewMode, setViewMode] = useState('grouped'); // 'grouped' | 'list'
   const [sortBy, setSortBy] = useState('title-asc');
   const { session } = useAuth();
+
+  useSeo(
+    'Learning Roadmaps · DSA, System Design, Python & SQL | RetainHQ',
+    'Structured learning roadmaps for DSA, system design, Python, SQL, Core CS, and aptitude — each topic tracked by spaced repetition so what you study actually sticks.'
+  );
 
   useEffect(() => {
     async function fetchRoadmaps() {

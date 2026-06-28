@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass, BookOpen } from 'lucide-react';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
+import { useSeo } from './lib/useSeo';
 import { jsPDF } from 'jspdf';
 import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
@@ -151,6 +152,12 @@ function RoadmapDetail() {
   const [instanceReady, setInstanceReady] = useState(false);
   const didInitialFocus = useRef(false);
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+
+  // Per-page SEO — title/description from the loaded roadmap (null until fetched).
+  useSeo(
+    meta?.title ? `${meta.title} Roadmap · Spaced Repetition | RetainHQ` : null,
+    meta?.description ? meta.description.replace(/\s+/g, ' ').trim().slice(0, 158) : null
+  );
 
   const focusNode = useCallback((nodeId, zoom = 1.1) => {
     const inst = rfRef.current;
