@@ -783,6 +783,16 @@ function RoadmapDetail() {
 
 /* ---------------- list view ---------------- */
 
+// Match a roadmap node to its lesson. Lesson files are named slugify(node title),
+// but lesson `title` fields drift from seed node titles — so match by SLUG (robust),
+// with exact-title as a fallback. slugify mirrors content/_TODO generators (Python).
+const slugifyTitle = (t) => (t || '').toLowerCase().replace(/&/g, 'and').replace(/\//g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+function lessonSlugForNode(slugByTitle, title) {
+  if (slugByTitle[title]) return slugByTitle[title];           // exact title match
+  const s = slugifyTitle(title);
+  return Object.values(slugByTitle).includes(s) ? s : null;    // slugified-title match
+}
+
 function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTogglePhase, openTopic, onOpenTopic, onToggleComplete, slugByTitle, roadmapId, contentKey }) {
   const topLevel = rawNodes.filter((n) => !n.parent_id);
   const phases = [];
@@ -829,7 +839,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                           open={openTopic === n.id}
                           onOpen={() => onOpenTopic(n.id)}
                           onToggle={() => onToggleComplete(n.id)}
-                          learnSlug={slugByTitle[n.title]}
+                          learnSlug={lessonSlugForNode(slugByTitle, n.title)}
                           roadmapId={roadmapId}
                           contentKey={contentKey}
                         />
@@ -842,7 +852,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                             onOpen={() => onOpenTopic(c.id)}
                             onToggle={() => onToggleComplete(c.id)}
                             isChild
-                            learnSlug={slugByTitle[c.title]}
+                            learnSlug={lessonSlugForNode(slugByTitle, c.title)}
                             roadmapId={roadmapId}
                             contentKey={contentKey}
                           />
