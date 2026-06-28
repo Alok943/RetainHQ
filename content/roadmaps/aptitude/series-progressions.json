@@ -12,10 +12,9 @@
     "prerequisites": [],
     "unlocks": [],
     "appears_in": [
-      "Infosys",
       "TCS NQT",
-      "Cognizant",
-      "Accenture"
+      "Service-co OA",
+      "AMCAT-style"
     ]
   },
   "hook": {
@@ -26,48 +25,73 @@
     "description": "Progressions are formal math engines (constant addition or constant multiplication). Number series puzzles combine multiple basic engines, like squares, primes, and alternating steps."
   },
   "pattern_discovery": {
+    "setup": "Find the differences between consecutive terms and observe the second-level differences.",
     "cases": [
       "Series: 2, 5, 10, 17, 26",
-      "Differences: 3, 5, 7, 9 (Odd numbers)",
-      "Alternatively: 1^2+1, 2^2+1, 3^2+1, 4^2+1"
+      "First differences: 3, 5, 7, 9 (odd numbers, constant gap of 2)",
+      "Second differences: 2, 2, 2 (constant -> quadratic series)"
     ],
-    "rule": "If the first differences form an arithmetic progression, the original series is quadratic (squares)."
+    "prompt": "If first differences form an arithmetic progression, what type of series is the original?",
+    "rule": "If the first differences form an arithmetic progression, the original series is quadratic (squares). Constant first differences = linear (AP). Constant ratio of terms = geometric (GP)."
   },
   "formula": {
-    "statement": "AP Nth term = a + (n-1)d. GP Nth term = a * r^(n-1). Sum of AP = n/2 * (2a + (n-1)d).",
-    "explain": "AP grows by a constant difference (linear). GP grows by a constant ratio (exponential). For infinite GPs, the sum converges to a / (1 - r) if |r| < 1."
+    "statement": "AP: Nth term = a + (n-1)d. Sum of N terms = n/2 x (2a + (n-1)d) = n/2 x (first + last). GP: Nth term = a x r^(n-1). Sum of N terms = a x (r^n - 1) / (r - 1) for r != 1. Sum of infinite GP = a / (1 - r) for |r| < 1. Special sums: sum of first N naturals = N(N+1)/2. Sum of first N squares = N(N+1)(2N+1)/6. Sum of first N cubes = [N(N+1)/2]^2. AP average = (first + last) / 2 = middle term (if odd count).",
+    "explain": "AP grows by a constant difference d (linear). GP grows by a constant ratio r (exponential). For series puzzles, always compute first differences, then second differences - most OA series reveal their pattern by the second tier."
   },
+  "worked_example": [
+    {
+      "problem": "Find the 15th term and the sum of the first 15 terms of the AP: 3, 7, 11, 15, ...",
+      "steps": [
+        "Identify: a = 3, d = 7 - 3 = 4.",
+        "15th term = a + (n-1)d = 3 + (15-1) x 4 = 3 + 56 = 59.",
+        "Sum of 15 terms = n/2 x (first + last) = 15/2 x (3 + 59) = 7.5 x 62 = 465.",
+        "Sanity-check using formula: n/2 x (2a + (n-1)d) = 15/2 x (6 + 56) = 7.5 x 62 = 465. Matches."
+      ],
+      "answer": "15th term = 59, Sum = 465."
+    },
+    {
+      "problem": "What is the missing term in the series: 4, 9, 19, 34, 54, ?",
+      "steps": [
+        "Find first differences: 9-4=5, 19-9=10, 34-19=15, 54-34=20.",
+        "First differences: 5, 10, 15, 20 - these increase by 5 each time (AP with d=5).",
+        "Next first difference = 25.",
+        "Missing term = 54 + 25 = 79.",
+        "Sanity-check: The pattern of differences (5, 10, 15, 20, 25) is consistent."
+      ],
+      "answer": "79."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Double Difference Method",
-      "trick": "If a pattern isn't obvious, calculate the difference between terms, then the difference between those differences. Most OA series break down by the second tier.",
-      "example": "1, 4, 10, 19. Diffs: 3, 6, 9. Second diffs: 3, 3. The next diff will be 12, so the next term is 19+12 = 31."
+      "trick": "If a pattern is not obvious, calculate the difference between terms, then the difference between those differences. Most OA series break down by the second tier.",
+      "example": "1, 4, 10, 19. Diffs: 3, 6, 9. Second diffs: 3, 3. Next diff = 12, so next term = 19+12 = 31."
     },
     {
       "title": "The Median Average for AP",
-      "trick": "The average of an Arithmetic Progression is always perfectly equal to its middle term (if n is odd), or the average of its first and last terms.",
+      "trick": "The average of an AP is always exactly its middle term (if n is odd), or the average of its first and last terms.",
       "example": "Average of 2, 4, 6, 8, 10 is 6. Also (2+10)/2 = 6."
     }
   ],
   "common_mistakes": [
     {
       "title": "Assuming constant ratio in small samples",
-      "explanation": "If a series is 2, 4..., the next term could be 8 (GP), or 6 (AP), or 16 (x^2). Always confirm the pattern with at least 3 transitions."
+      "explanation": "If a series is 2, 4..., the next term could be 8 (GP), or 6 (AP), or 7 (primes). Always confirm the pattern with at least 3 transitions."
     },
     {
-      "title": "Miscounting the 'N' in progressions",
-      "explanation": "If you want the number of terms between x and y inclusive, it's ((y - x) / d) + 1. Forgetting the '+ 1' is the most common off-by-one error."
+      "title": "Miscounting the N in progressions",
+      "explanation": "The number of terms between x and y inclusive is ((y - x) / d) + 1. Forgetting the '+1' is the most common off-by-one error."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the formula for the nth term of a Geometric Progression?",
-      "answer": "a * r^(n-1)",
+      "answer": "a x r^(n-1)",
       "tier": "tier1"
     },
     {
       "q": "What is the sum of the first N natural numbers?",
-      "answer": "N * (N+1) / 2",
+      "answer": "N x (N+1) / 2",
       "tier": "tier1"
     },
     {
@@ -79,7 +103,7 @@
   "oa_questions": [
     {
       "question": "Find the missing term: 3, 7, 16, 32, 57, ?",
-      "company": "Infosys",
+      "company": "AMCAT-style",
       "answer": "93",
       "approach": "Differences: 4, 9, 16, 25. These are squares (2^2, 3^2, 4^2, 5^2). Next difference is 6^2 = 36. 57 + 36 = 93."
     },
@@ -87,7 +111,7 @@
       "question": "Find the sum of all 2-digit numbers divisible by 3.",
       "company": "TCS NQT",
       "answer": "1665",
-      "approach": "First term a=12, last term L=99, common difference d=3. N = ((99-12)/3) + 1 = 30. Sum = 30/2 * (12 + 99) = 15 * 111 = 1665."
+      "approach": "AP: first term a=12, last term L=99, d=3. N = ((99-12)/3) + 1 = 30. Sum = 30/2 x (12 + 99) = 15 x 111 = 1665."
     }
   ],
   "sources": [

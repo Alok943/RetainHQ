@@ -22,33 +22,58 @@
     "scenario": "Imagine two developers: Dev A can finish an API in 10 days, Dev B in 15 days. If they pair program, how fast does it ship? This is the exact math tech companies test you on."
   },
   "mental_model": {
-    "intuition": "Work = Time * Rate. Instead of adding days, add their per-day speed (rates).",
-    "description": "Never add time directly. If A takes 10 days and B takes 15 days, they don't take 25 days together! Convert everything to 'work done per day' (efficiency) and add those."
+    "intuition": "Work = Time x Rate. Instead of adding days, add their per-day speed (rates).",
+    "description": "Never add time directly. If A takes 10 days and B takes 15 days, they do not take 25 days together. Convert everything to 'work done per day' (efficiency) and add those rates."
   },
   "pattern_discovery": {
+    "setup": "Calculate A and B's combined rate, then find time.",
     "cases": [
       "A takes 10 days -> Rate = 1/10 work/day",
       "B takes 15 days -> Rate = 1/15 work/day",
-      "Together -> 1/10 + 1/15 = 5/30 = 1/6 work/day",
+      "Together -> 1/10 + 1/15 = 3/30 + 2/30 = 5/30 = 1/6 work/day",
       "Time together -> 6 days"
     ],
-    "rule": "To find combined time, add their individual rates (reciprocals of time), then flip it back."
+    "prompt": "Why do you add rates (1/10 + 1/15) and not times (10 + 15)?",
+    "rule": "To find combined time, add their individual rates (reciprocals of time), then flip it back. Rates add; times do not."
   },
   "formula": {
-    "statement": "If A can do work in 'x' days and B in 'y' days, together they take (x*y)/(x+y) days.",
-    "explain": "This is just the algebraic simplification of 1/(1/x + 1/y). For 3 people, stick to the LCM method instead of complex formulas."
+    "statement": "If A takes x days and B takes y days, together they take (x x y) / (x + y) days. Rate of A = 1/x per day. Work done in t days = t / x. For 3+ workers: use LCM method - assume total work = LCM of their individual times, assign each worker their units per day, sum the rates. If A is k times as efficient as B, A takes time = B's time / k. Work remaining after t days of one worker = 1 - (t/x).",
+    "explain": "The formula (xy)/(x+y) is the algebraic simplification of 1/(1/x + 1/y). For 3+ people, the LCM method is faster: set total work = LCM of given days, compute each person's daily output, sum outputs, then divide total by combined daily output."
   },
+  "worked_example": [
+    {
+      "problem": "A can complete a piece of work in 12 days. B is 50% more efficient than A. How long do they take to finish together?",
+      "steps": [
+        "A's rate = 1/12 work per day. B is 50% more efficient: B's rate = 1.5 x (1/12) = 1/8 per day.",
+        "Combined rate = 1/12 + 1/8 = 2/24 + 3/24 = 5/24 per day.",
+        "Time = 1 / (5/24) = 24/5 = 4.8 days.",
+        "Sanity-check via LCM method: LCM(12, 8) = 24 units. A does 2 units/day, B does 3 units/day. Together 5 units/day. Time = 24/5 = 4.8 days. Matches."
+      ],
+      "answer": "4.8 days (24/5 days)."
+    },
+    {
+      "problem": "X and Y together finish a job in 6 days. X alone takes 10 days. After X and Y work together for 3 days, X leaves. How many more days will Y take to finish?",
+      "steps": [
+        "X's rate = 1/10, Y's rate = 1/6 - 1/10 = 5/30 - 3/30 = 2/30 = 1/15. Y alone takes 15 days.",
+        "Work done in 3 days together = 3 x (1/6) = 1/2.",
+        "Remaining work = 1 - 1/2 = 1/2.",
+        "Y alone does 1/15 per day. Time for Y to finish 1/2 = (1/2) / (1/15) = 15/2 = 7.5 days.",
+        "Sanity-check: 7.5 x (1/15) = 0.5. Remaining work matches."
+      ],
+      "answer": "Y needs 7.5 more days."
+    }
+  ],
   "shortcuts": [
     {
       "title": "The LCM (Chocolate) Method",
-      "trick": "Assume total work = LCM of given days. Calculate chocolates eaten per day.",
-      "example": "A=10 days, B=15 days. LCM=30 chocolates. A eats 3/day, B eats 2/day. Together they eat 5/day. 30/5 = 6 days."
+      "trick": "Assume total work = LCM of given days. Calculate work units done per day by each person.",
+      "example": "A=10 days, B=15 days. LCM=30 chocolates. A eats 3/day, B eats 2/day. Together 5/day. 30/5 = 6 days."
     }
   ],
   "common_mistakes": [
     {
       "title": "Adding Days Directly",
-      "explanation": "Assuming A(10) + B(15) = 25 days. More people means LESS time, not more."
+      "explanation": "Assuming A(10 days) + B(15 days) = 25 days. More workers means LESS time, not more. Always add rates, not times."
     }
   ],
   "recall_questions": [
@@ -58,13 +83,13 @@
       "tier": "tier1"
     },
     {
-      "q": "What is the assumed total work (LCM) for 12 days, 15 days, and 20 days?",
+      "q": "What is the assumed total work (LCM) for workers taking 12, 15, and 20 days?",
       "answer": "LCM of 12, 15, and 20 is 60.",
       "tier": "tier1"
     },
     {
       "q": "If A completes 1/3 of the work in 5 days, how many days for the full work?",
-      "answer": "5 * 3 = 15 days.",
+      "answer": "5 x 3 = 15 days.",
       "tier": "tier2"
     }
   ],
@@ -73,13 +98,13 @@
       "question": "A can do a piece of work in 8 days. B is 3 times as efficient as A. In how many days can they complete it together?",
       "company": "TCS NQT",
       "answer": "2 days",
-      "approach": "A's rate = 1 unit/day (takes 8 days, total work = 8). B's rate = 3 units/day. Together = 4 units/day. Time = 8 / 4 = 2 days."
+      "approach": "LCM method: total work = 8 units. A does 1 unit/day, B does 3 units/day (3x efficient). Together = 4 units/day. Time = 8/4 = 2 days."
     },
     {
       "question": "A takes 15 days and B takes 20 days. They work together for 4 days, then A leaves. How many days will B take to finish the remaining work?",
       "company": "AMCAT-style",
       "answer": "10.67 days",
-      "approach": "Total work = LCM(15,20) = 60 units. A=4/day, B=3/day. In 4 days, they do (4+3)*4 = 28 units. Remaining = 32 units. B takes 32/3 = 10.67 days."
+      "approach": "LCM(15,20) = 60 units. A=4/day, B=3/day. In 4 days together: (4+3)*4 = 28 units done. Remaining = 32 units. B takes 32/3 = 10.67 days."
     }
   ],
   "sources": [

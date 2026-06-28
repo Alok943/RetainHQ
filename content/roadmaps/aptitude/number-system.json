@@ -16,8 +16,7 @@
     ],
     "appears_in": [
       "TCS NQT",
-      "Infosys",
-      "Wipro",
+      "AMCAT-style",
       "Service-co OA"
     ]
   },
@@ -26,46 +25,70 @@
   },
   "mental_model": {
     "intuition": "Numbers are just modular clocks.",
-    "description": "Every number system operation breaks down into repeating cycles. Divisibility is simply checking if a number lands perfectly at the '12 o\\'clock' mark of a specific cycle."
+    "description": "Every number system operation breaks down into repeating cycles. Divisibility is simply checking if a number lands perfectly at the '12 o'clock' mark of a specific cycle."
   },
   "pattern_discovery": {
+    "setup": "Find remainders when powers of 10 are divided by 8.",
     "cases": [
       "10 = 8 + 2 -> 10/8 leaves remainder 2",
       "100 = 96 + 4 -> 100/8 leaves remainder 4",
-      "1000 = 8 * 125 -> 1000/8 leaves remainder 0"
+      "1000 = 8 x 125 -> 1000/8 leaves remainder 0"
     ],
-    "rule": "Since 1000 is perfectly divisible by 8, any multiple of 1000 is too. So, to check if a huge number is divisible by 8, just look at the last 3 digits!"
+    "prompt": "Since 1000 is divisible by 8, what does that mean for any number ending in the same 3 digits?",
+    "rule": "Since 1000 is perfectly divisible by 8, any multiple of 1000 is too. So to check if a huge number is divisible by 8, just look at its last 3 digits."
   },
   "formula": {
-    "statement": "Divisibility by 2^n depends on the last n digits. Divisibility by 3 or 9 depends on the sum of digits.",
-    "explain": "Because 10^n is perfectly divisible by 2^n, higher place values don't affect the remainder for powers of 2. For 3 and 9, 10^n always leaves a remainder of 1, so only the digit sum matters."
+    "statement": "Divisibility rules: by 2 -> last digit even. By 3 -> digit sum divisible by 3. By 4 -> last 2 digits divisible by 4. By 5 -> ends in 0 or 5. By 6 -> divisible by both 2 and 3. By 8 -> last 3 digits divisible by 8. By 9 -> digit sum divisible by 9. By 11 -> alternating digit sum (odd positions - even positions) divisible by 11. Unit digit cyclicity: powers of 2 cycle in 4 steps (2,4,8,6), 3 cycles (3,9,7,1), 7 cycles (7,9,3,1), 8 cycles (8,4,2,6). Remainder theorem: x^n / (x+1) -> remainder 1 if n is even, x if n is odd.",
+    "explain": "Because 10^n is perfectly divisible by 2^n, higher place values do not affect the remainder for powers of 2. For 3 and 9, 10^n always leaves remainder 1, so only the digit sum matters. For unit digits, every power cycle repeats every 4 steps - find exponent mod 4 to find position in cycle."
   },
+  "worked_example": [
+    {
+      "problem": "Find the unit digit of 7^53 + 3^29.",
+      "steps": [
+        "Unit digits of powers of 7 cycle every 4 steps: 7, 9, 3, 1, 7, 9, 3, 1 ...",
+        "53 mod 4 = 1 (since 52 is divisible by 4). So 7^53 has the same unit digit as 7^1 = 7.",
+        "Unit digits of powers of 3 cycle every 4 steps: 3, 9, 7, 1, 3, 9, 7, 1 ...",
+        "29 mod 4 = 1. So 3^29 has the same unit digit as 3^1 = 3.",
+        "Unit digit of 7^53 + 3^29 = unit digit of (7 + 3) = unit digit of 10 = 0."
+      ],
+      "answer": "The unit digit is 0."
+    },
+    {
+      "problem": "Is 847392 divisible by 4? By 3? By 6?",
+      "steps": [
+        "Divisible by 4? Check last 2 digits: 92. Is 92 divisible by 4? 92 / 4 = 23. Yes.",
+        "Divisible by 3? Sum of digits: 8+4+7+3+9+2 = 33. Is 33 divisible by 3? Yes (33 = 3 x 11).",
+        "Divisible by 6? Must be divisible by BOTH 2 and 3. Last digit 2 is even (divisible by 2). Digit sum 33 divisible by 3. So yes, divisible by 6."
+      ],
+      "answer": "847392 is divisible by 4, 3, and 6."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Rule of 11 Alternating Sum",
       "trick": "Sum odd place digits, sum even place digits. If the difference is 0 or a multiple of 11, the number is divisible by 11.",
-      "example": "For 1331: (1+3) - (3+1) = 0. So, divisible by 11."
+      "example": "For 1331: (1+3) - (3+1) = 0. Divisible by 11."
     },
     {
       "title": "Unit Digit Cyclicity",
       "trick": "Powers of numbers repeat their last digits in cycles of 4. Divide the exponent by 4 to find the unit digit.",
-      "example": "Find unit digit of 2^50. 50 mod 4 = 2. So it's the same as 2^2, which ends in 4."
+      "example": "Unit digit of 2^50: 50 mod 4 = 2. Same as 2^2 = 4. Unit digit is 4."
     }
   ],
   "common_mistakes": [
     {
       "title": "Ignoring zero as an even number",
-      "explanation": "0 is perfectly divisible by 2. Don't exclude it when counting even digits or applying divisibility rules."
+      "explanation": "0 is perfectly divisible by 2. Do not exclude it when counting even digits or applying divisibility rules."
     },
     {
       "title": "Misapplying the cycle for exponents that are multiples of 4",
-      "explanation": "When the exponent mod 4 is 0, the power is the 4th step in the cycle, NOT the 0th power (which is 1). For example, 2^4 ends in 6, so 2^40 ends in 6."
+      "explanation": "When the exponent mod 4 is 0, the unit digit is the 4th term in the cycle, NOT 1 (which would be 0th power). For example, 2^4 ends in 6, so 2^40 ends in 6."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the unit digit of 3^101?",
-      "answer": "101 mod 4 = 1. So it's 3^1 = 3.",
+      "answer": "101 mod 4 = 1. So it is the same as 3^1 = 3.",
       "tier": "tier1"
     },
     {
@@ -75,7 +98,7 @@
     },
     {
       "q": "How to check divisibility by 6?",
-      "answer": "Check if the number is divisible by both 2 and 3.",
+      "answer": "Check if the number is divisible by both 2 AND 3.",
       "tier": "tier1"
     }
   ],
@@ -84,13 +107,13 @@
       "question": "If a 9-digit number 985x3678y is divisible by 72, find the value of (4x - 3y).",
       "company": "Service-co OA",
       "answer": "4",
-      "approach": "72 = 8 * 9. For 8, 78y must be divisible by 8 (y=4). For 9, sum = 9+8+5+x+3+6+7+8+4 = 50+x. Divisible by 9 means x=4. So 4(4) - 3(4) = 4."
+      "approach": "72 = 8 x 9. For divisibility by 8: last 3 digits 78y must be divisible by 8 -> y = 4. For divisibility by 9: digit sum = 9+8+5+x+3+6+7+8+4 = 50+x must be divisible by 9 -> x = 4. So 4(4) - 3(4) = 4."
     },
     {
       "question": "What is the remainder when 17^200 is divided by 18?",
       "company": "TCS NQT",
       "answer": "1",
-      "approach": "Use polynomial remainder theorem: x^n / (x+1) leaves remainder 1 if n is even. Here 17 = 18 - 1. (-1)^200 = 1."
+      "approach": "17 = 18 - 1 = (-1) mod 18. So 17^200 = (-1)^200 = 1 mod 18. Remainder is 1."
     }
   ],
   "sources": [

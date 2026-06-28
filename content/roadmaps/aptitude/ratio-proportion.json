@@ -22,12 +22,12 @@
     ]
   },
   "hook": {
-    "scenario": "You are splitting a \u20b91200 Swiggy bill among 3 roommates who ate different amounts.",
+    "scenario": "You are splitting a Rs1200 Swiggy bill among 3 roommates who ate different amounts.",
     "question": "How do you divide a single total into uneven, relative slices without losing track of the sum?"
   },
   "mental_model": {
     "intuition": "Ratios are relative slices of a pie. Proportion means two pies are sliced exactly the same way.",
-    "description": "A ratio compares two or more quantities of the same kind. A proportion equates two ratios."
+    "description": "A ratio compares two or more quantities of the same kind. A proportion equates two ratios, letting you scale one up if you know the other."
   },
   "pattern_discovery": {
     "setup": "Divide different totals according to the exact same 2:3 ratio.",
@@ -40,45 +40,67 @@
     "rule": "You divide the total by the sum of the ratio parts. A ratio of 2:3 means the pie is cut into 5 equal slices."
   },
   "formula": {
-    "statement": "If a:b :: c:d (a:b is proportional to c:d), then a/b = c/d, meaning ad = bc.",
-    "explain": "The product of the extremes (a, d) equals the product of the means (b, c)."
+    "statement": "If a:b = c:d (proportional), then ad = bc (cross-product rule). Value of 1 part = Total / Sum of ratio parts. Combining ratios: if A:B = x:y and B:C = m:n, then A:B:C = (x x m) : (y x m) : (y x n). Fourth proportional to a, b, c is d = bc/a. Mean proportional of a and b is sqrt(a x b).",
+    "explain": "The product of extremes equals the product of means. To merge three-part ratios (A:B:C from A:B and B:C), match the B terms by multiplying. For fractions of a whole, total ratio parts always sum to the whole."
   },
+  "worked_example": [
+    {
+      "problem": "Divide Rs1260 among A, B, C in the ratio 3:4:5. How much does each get?",
+      "steps": [
+        "Sum of ratio parts = 3 + 4 + 5 = 12.",
+        "Value of 1 part = 1260 / 12 = Rs105.",
+        "A = 3 x 105 = Rs315. B = 4 x 105 = Rs420. C = 5 x 105 = Rs525.",
+        "Sanity-check: 315 + 420 + 525 = 1260. Correct."
+      ],
+      "answer": "A gets Rs315, B gets Rs420, C gets Rs525."
+    },
+    {
+      "problem": "A:B = 2:3 and B:C = 4:5. Find A:C.",
+      "steps": [
+        "To merge, make B terms equal. A:B = 2:3. Multiply by 4: A:B = 8:12. B:C = 4:5. Multiply by 3: B:C = 12:15.",
+        "Now B = 12 in both. A:B:C = 8:12:15.",
+        "A:C = 8:15.",
+        "Sanity-check: A/C = (A/B) x (B/C) = (2/3) x (4/5) = 8/15. Matches."
+      ],
+      "answer": "A:C = 8:15."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Merging Ratios",
-      "trick": "If A:B = x:y and B:C = m:n, write them stacked. A:B:C = (x\u00d7m) : (y\u00d7m) : (y\u00d7n).",
-      "example": "A:B = 2:3, B:C = 4:5. Multiply A:B by 4 and B:C by 3 to equate B. A:B:C = 8:12:15."
+      "trick": "If A:B = x:y and B:C = m:n, write them stacked. A:B:C = (x x m) : (y x m) : (y x n).",
+      "example": "A:B = 2:3, B:C = 4:5. A:B:C = (2x4) : (3x4) : (3x5) = 8:12:15."
     },
     {
       "title": "Unitary Method",
       "trick": "Divide the total value by the total number of ratio parts to find the value of 1 unit, then scale up.",
-      "example": "Divide \u20b9600 in 1:2:3. Total parts = 6. 1 part = 600/6 = 100. Shares: 100, 200, 300."
+      "example": "Divide Rs600 in 1:2:3. Total parts = 6. 1 part = 100. Shares: 100, 200, 300."
     }
   ],
   "common_mistakes": [
     {
       "title": "Adding Constants to Ratios",
-      "explanation": "If a ratio is 2:3, you cannot assume the values are 2 and 3. They are 2x and 3x. Don't add actual values to ratio numbers."
+      "explanation": "If a ratio is 2:3, you cannot assume the values are 2 and 3. They are 2x and 3x. Do not add actual values to ratio numbers."
     },
     {
       "title": "Area and Volume Scaling",
-      "explanation": "If sides are in ratio 1:2, areas are in ratio 1:4 (squares), and volumes are 1:8 (cubes). Don't use 1:2 for everything."
+      "explanation": "If sides are in ratio 1:2, areas are in ratio 1:4 (squares), and volumes are 1:8 (cubes). Do not apply the linear ratio to all dimensions."
     }
   ],
   "recall_questions": [
     {
       "q": "If A:B = 3:4 and B:C = 8:9, what is A:C?",
-      "answer": "2:3",
+      "answer": "2:3 (A:B:C = 24:32:36 = 3:4:4.5, A:C = 24:36 = 2:3)",
       "tier": "tier1"
     },
     {
       "q": "Divide 70 in the ratio 3:4. What is the larger part?",
-      "answer": "40",
+      "answer": "40 (7 parts = 70, 1 part = 10, larger = 4 x 10 = 40)",
       "tier": "tier1"
     },
     {
       "q": "Find the fourth proportional to 4, 9, 12.",
-      "answer": "27",
+      "answer": "27 (4:9 = 12:x -> x = 9 x 12 / 4 = 27)",
       "tier": "tier1"
     }
   ],
@@ -90,10 +112,10 @@
       "approach": "(3x - 9)/(5x - 9) = 12/23. Cross-multiply: 69x - 207 = 60x - 108. 9x = 99 -> x = 11. Smaller number = 3x = 33."
     },
     {
-      "question": "A bag contains 50p, 25p and 10p coins in the ratio 5:9:4, amounting to \u20b9206. Find the number of coins of 50p.",
+      "question": "A bag contains 50p, 25p and 10p coins in the ratio 5:9:4, amounting to Rs206. Find the number of 50p coins.",
       "company": "TCS NQT",
       "answer": "200",
-      "approach": "Values in Rupee terms = 5x/2 + 9x/4 + 4x/10 = 206. LCM is 20: (50x + 45x + 8x)/20 = 206 -> 103x = 4120 -> x = 40. 50p coins = 5x = 200."
+      "approach": "Values in Rs: 5x/2 + 9x/4 + 4x/10 = 206. LCM 20: (50x + 45x + 8x)/20 = 206 -> 103x = 4120 -> x = 40. 50p coins = 5x = 200."
     }
   ],
   "sources": [

@@ -28,19 +28,42 @@
     "description": "Statistics summarize large datasets into single numbers. Central tendency tells you where the middle is, and dispersion (variance/standard deviation) tells you how reliable that middle is."
   },
   "formula": {
-    "statement": "Mean = Sum/N. Median = Middle value. Mode = Most frequent. Variance = Average of squared deviations. SD = \u221aVariance.",
-    "explain": "Standard Deviation (SD) measures volatility. A high SD means data points are spread far from the mean."
+    "statement": "Mean = Sum / N. Median: sort data; if N is odd, median = middle value; if N is even, median = average of two middle values. Mode = most frequent value. Variance = Sum of (xi - mean)^2 / N. SD = sqrt(Variance). Shift rule: adding k to all values shifts mean/median/mode by k but leaves SD unchanged. Scale rule: multiplying all values by k scales mean/median/mode AND SD by k, and Variance by k^2. Empirical relation: Mode = 3 x Median - 2 x Mean (for moderately skewed data).",
+    "explain": "Standard Deviation (SD) measures volatility or spread. A high SD means data points are far from the mean. Variance is SD squared - always in squared units. Adding a constant to all data only shifts the center, it does not change the spread."
   },
+  "worked_example": [
+    {
+      "problem": "Find the mean, median, and mode of: 4, 7, 3, 7, 9, 2, 7, 5.",
+      "steps": [
+        "Sort: 2, 3, 4, 5, 7, 7, 7, 9.",
+        "Mean = Sum / N = (2+3+4+5+7+7+7+9) / 8 = 44 / 8 = 5.5.",
+        "Median: N=8 (even). Middle two values = 5 and 7. Median = (5+7)/2 = 6.",
+        "Mode = 7 (appears 3 times, more than any other value).",
+        "Sanity-check: Mean (5.5) < Median (6) < Mode (7). This is a left-skewed pattern, consistent with the lower outlier (2)."
+      ],
+      "answer": "Mean = 5.5, Median = 6, Mode = 7."
+    },
+    {
+      "problem": "A dataset has mean 10 and SD 4. If every value is multiplied by 3, what are the new mean, median shift, and variance?",
+      "steps": [
+        "Scale rule: when multiplied by 3, mean becomes 10 x 3 = 30.",
+        "SD scales by 3: new SD = 4 x 3 = 12.",
+        "Variance scales by 3^2 = 9: new Variance = 4^2 x 9 = 16 x 9 = 144.",
+        "Sanity-check: new Variance = new SD^2 = 12^2 = 144. Matches."
+      ],
+      "answer": "New mean = 30, new SD = 12, new Variance = 144."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Shift and Scale",
-      "trick": "Add 'k' to all numbers -> mean/median/mode shift by 'k', but Standard Deviation stays exactly the same. Multiply by 'k' -> EVERYTHING gets multiplied by 'k'.",
+      "trick": "Add 'k' to all numbers -> mean/median/mode shift by 'k', but SD stays the same. Multiply by 'k' -> EVERYTHING gets multiplied by 'k' (Variance by k^2).",
       "example": "Original SD = 5. Add 10 to all values -> New SD is still 5."
     },
     {
       "title": "The Empirical Formula",
-      "trick": "Mode \u2248 3 \u00d7 Median - 2 \u00d7 Mean (for moderately skewed distributions).",
-      "example": "Mean = 10, Median = 12. Mode \u2248 3(12) - 2(10) = 16."
+      "trick": "Mode = 3 x Median - 2 x Mean (for moderately skewed distributions).",
+      "example": "Mean = 10, Median = 12. Mode = 3(12) - 2(10) = 16."
     }
   ],
   "common_mistakes": [
@@ -49,14 +72,14 @@
       "explanation": "You cannot pick the middle element of an unsorted array. Always sort in ascending order first."
     },
     {
-      "title": "Variance vs. Standard Deviation",
-      "explanation": "Variance is in squared units. If you are asked for standard deviation, don't forget to take the square root at the end!"
+      "title": "Variance vs Standard Deviation",
+      "explanation": "Variance is in squared units. If asked for standard deviation, take the square root of variance. Multiplying by k squares the variance but only scales SD by k."
     }
   ],
   "recall_questions": [
     {
       "q": "If the standard deviation of a dataset is 4, what is the variance?",
-      "answer": "16 (since Variance = SD\u00b2).",
+      "answer": "16 (since Variance = SD^2).",
       "tier": "tier1"
     },
     {
@@ -66,7 +89,7 @@
     },
     {
       "q": "If you add 5 to every number in a dataset, what happens to its standard deviation?",
-      "answer": "It remains unchanged.",
+      "answer": "It remains unchanged - adding a constant shifts the center but not the spread.",
       "tier": "tier2"
     }
   ],
@@ -75,13 +98,13 @@
       "question": "The mean of 5 observations is 10. If a new observation 22 is added, what is the new mean?",
       "company": "TCS NQT",
       "answer": "12",
-      "approach": "Total was 50. New total is 72. New mean = 72 / 6 = 12."
+      "approach": "Old total = 50. New total = 72. New mean = 72 / 6 = 12."
     },
     {
       "question": "The standard deviation of 10 values is 3. If each value is multiplied by 4, what is the new variance?",
       "company": "AMCAT-style",
       "answer": "144",
-      "approach": "New SD = 3 * 4 = 12. New Variance = 12\u00b2 = 144."
+      "approach": "New SD = 3 x 4 = 12. New Variance = 12^2 = 144. (Multiplying by k scales SD by k and Variance by k^2.)"
     }
   ],
   "sources": [

@@ -28,52 +28,66 @@
     "setup": "Track the ages of two people as they travel through time together.",
     "cases": [
       "Ages 10 & 15 -> Diff = 5",
-      "Ages 20 & 25 (after 10y) -> Diff = 5",
-      "Ages 50 & 55 (after 40y) -> Diff = 5"
+      "Ages 20 & 25 (after 10 years) -> Diff = 5",
+      "Ages 50 & 55 (after 40 years) -> Diff = 5"
     ],
     "prompt": "While ratios of ages constantly change over time, what metric remains absolutely constant?",
     "rule": "The age difference between two people never changes. This constant difference is the key to solving ratio-based age problems."
   },
   "formula": {
-    "statement": "Let present age be x. Age 'n' years ago = x - n. Age 'n' years from now = x + n.",
-    "explain": "Always anchor your primary variable 'x' to the Present Age to keep equations stable and prevent sign errors."
+    "statement": "Let present age = x. Age n years ago = x - n. Age n years from now = x + n. If present ratio A:B = m:n, then A = mk and B = nk for some k. Equations from different time points -> solve for k or x. Constant difference: A - B = (A-n) - (B-n), always the same.",
+    "explain": "Always anchor your variable to the Present Age to keep equations stable. Set up one equation per given condition. If two people's present ratio and a future or past ratio are both given, use the constant difference to equate them without needing simultaneous equations."
   },
+  "worked_example": [
+    {
+      "problem": "The ratio of the ages of Aman and Bimal is 4:7. After 10 years, the ratio will be 3:4. Find their present ages.",
+      "steps": [
+        "Set up: Let Aman's present age = 4k, Bimal's = 7k.",
+        "After 10 years: (4k + 10) / (7k + 10) = 3/4.",
+        "Cross-multiply: 4(4k + 10) = 3(7k + 10) -> 16k + 40 = 21k + 30.",
+        "5k = 10 -> k = 2.",
+        "Present ages: Aman = 4 x 2 = 8, Bimal = 7 x 2 = 14.",
+        "Sanity-check: After 10 years, 18:24 = 3:4. Correct."
+      ],
+      "answer": "Aman is 8 years old, Bimal is 14 years old."
+    }
+  ],
   "shortcuts": [
     {
       "title": "The Constant Difference Trick",
-      "trick": "Since age difference never changes, if you have two ratios for two different times, multiply the ratios by factors to make their horizontal difference equal.",
-      "example": "Past ratio 1:2 (diff 1), Future ratio 3:4 (diff 1). The difference is already equal. If the time gap is 10 years, then 2 units of ratio = 10 years, so 1 unit = 5 years."
+      "trick": "Since age difference never changes, if you have two ratios at two different times, multiply the ratios by factors to make their difference equal, then each unit equals the years elapsed.",
+      "example": "Past ratio 1:2 (diff 1), Future ratio 3:4 (diff 1). Difference is already equal. If the time gap is 10 years, 2 units of ratio = 10 years, 1 unit = 5 years."
     },
     {
       "title": "Checking Multiples",
-      "trick": "If a person's present age ratio part is 5, their actual age is highly likely a multiple of 5. You can eliminate MCQs rapidly this way.",
-      "example": "If A:B is 5:3, A's age could be 15, 20, 25. If options are 18, 21, 25, 28, pick 25."
+      "trick": "If a person's present age ratio part is 5, their actual age is likely a multiple of 5. Use this to eliminate MCQ options rapidly.",
+      "example": "If A:B is 5:3 and A's age is a multiple of 5, from options 18, 21, 25, 28 - pick 25."
     }
   ],
   "common_mistakes": [
     {
       "title": "Adding Years to Ratios directly",
-      "explanation": "If the present ratio is 2:3, the age 5 years from now is NOT 7:8. The ages are 2x+5 and 3x+5."
+      "explanation": "If the present ratio is 2:3, the ages after 5 years are NOT 7:8. The ages are 2x+5 and 3x+5, which simplify to a different ratio."
     },
     {
       "title": "Wrong Baseline Variable",
-      "explanation": "Setting 'x' as the past age, solving for 'x', and selecting 'x' as the final answer when the question asked for the *present* age."
+      "explanation": "Setting 'x' as the past age, solving for 'x', and selecting 'x' as the answer when the question asked for the present age."
     }
   ],
   "recall_questions": [
     {
       "q": "If A is 10 years older than B today, how much older will A be than B in 15 years?",
-      "answer": "10 years",
+      "answer": "10 years - the difference never changes.",
       "tier": "tier1"
     },
     {
       "q": "Present ages of A and B are in ratio 4:5. If A is 20, what is B's age?",
-      "answer": "25",
+      "answer": "25 (k=5, B=5x5=25)",
       "tier": "tier1"
     },
     {
       "q": "Ten years ago, P was 20. What will be his age 5 years from now?",
-      "answer": "35",
+      "answer": "Present age = 30. Future age = 35.",
       "tier": "tier1"
     }
   ],
@@ -85,7 +99,7 @@
       "approach": "Let son's present age be x. Father's age at son's birth was (38 - x). Given: 38 - x = x -> 2x = 38 -> x = 19. Son's age 5 years back = 19 - 5 = 14."
     },
     {
-      "question": "The sum of ages of 5 children born at the intervals of 3 years each is 50 years. What is the age of the youngest child?",
+      "question": "The sum of ages of 5 children born at intervals of 3 years each is 50 years. What is the age of the youngest child?",
       "company": "Service-co OA",
       "answer": "4 years",
       "approach": "Let youngest be x. Ages: x, x+3, x+6, x+9, x+12. Sum = 5x + 30 = 50. 5x = 20 -> x = 4."

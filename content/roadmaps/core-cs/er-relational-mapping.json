@@ -1,0 +1,53 @@
+{
+  "slug": "er-relational-mapping",
+  "title": "ER to Relational Mapping",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 13,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["er-model-entities-attributes-relationships"],
+    "unlocks": [],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "You've drawn the ER diagram for a university database: Students, Courses, an Enrolls relationship (M:N with a Grade attribute), and a Dependent weak entity tied to a Faculty entity. Now you have to turn this into actual SQL tables. Which concepts become tables? Where do foreign keys go? What happens to the M:N relationship?",
+    "question": "What is the systematic set of rules for translating every ER construct into a relational table?"
+  },
+  "mental_model": {
+    "intuition": "Translating an ER diagram to tables is like turning an architect's blueprint into a building — each room type in the blueprint (entity, relationship, weak entity) has a fixed construction rule, and you apply each rule mechanically.",
+    "description": "The ER diagram is the what; the relational schema is the how. Each construction rule handles one ER construct. Strong entities become tables with their attributes as columns. M:N relationships become their own junction tables. Weak entities merge their identifying relationship's foreign key into their primary key. The rules are deterministic — given the same ER diagram, every competent designer produces the same relational schema."
+  },
+  "explanation": "The ER-to-relational mapping is a set of seven standard steps, each handling a specific ER construct. Mastering these steps means you can mechanically convert any ER diagram into a correct relational schema — which is exactly what an interview or OA question tests.\n\nStep 1 — Strong entities: Each strong entity type becomes a table. Its simple attributes become columns. The key attribute becomes the primary key. Composite attributes are flattened: Address (Street, City, Pin) becomes three columns — Street, City, Pin — unless you choose to store it as a single string. Derived attributes are typically not stored (Age is not a column; DateOfBirth is). For example, a Student entity with StudentID (key), Name, and DateOfBirth becomes a Student table: Student(StudentID PK, Name, DateOfBirth).\n\nStep 2 — Multivalued attributes: Each multivalued attribute becomes a separate table. The new table has the entity's primary key as a foreign key plus the multivalued attribute. A Student with multiple PhoneNumbers becomes: PhoneNumbers(StudentID FK, PhoneNumber) with primary key (StudentID, PhoneNumber). This is because a relational table cell must hold a single atomic value (1NF); you cannot store a list in one cell.\n\nStep 3 — Weak entities: A weak entity becomes a table that includes, as part of its primary key, the primary key of the identifying (owner) entity as a foreign key. A Dependent of Employee becomes: Dependent(EmployeeID FK, DependentName, Relationship) with primary key (EmployeeID, DependentName). The foreign key is part of the composite PK because Dependent can only be uniquely identified together with its owning Employee.\n\nStep 4 — 1:1 relationships: The relationship is implemented by placing the primary key of one entity as a foreign key in the other entity's table. Choose the entity with total participation to receive the foreign key — this avoids NULL values. A Person has exactly one Passport (total participation on Passport side): add PersonID as a foreign key in the Passport table.\n\nStep 5 — 1:N relationships: The relationship is implemented by placing the primary key of the '1' side as a foreign key in the 'N' side's table. A Department (1) has many Employees (N): add DepartmentID as a foreign key in the Employee table. No separate junction table needed.\n\nStep 6 — M:N relationships: A new junction table must be created. Its primary key is the combination of both entities' primary keys. Any relationship attributes become columns in this junction table. Student Enrolls Course (M:N, with Grade attribute): create Enrolls(StudentID FK, CourseID FK, Grade) with primary key (StudentID, CourseID).\n\nStep 7 — N-ary relationships: For ternary (or higher) relationships, create a new table whose primary key is the combination of all participating entities' primary keys, plus any relationship attributes. The principle is the same as Step 6, extended to three or more participants.",
+  "key_points": [
+    { "title": "Strong entity → table", "detail": "Each strong entity becomes a table; its key attribute becomes the primary key. Composite attributes are flattened; derived attributes are usually omitted." },
+    { "title": "Multivalued attribute → separate table", "detail": "Cannot store a list in one cell (1NF). Create a new table with (entity PK, attribute value) as the composite PK." },
+    { "title": "Weak entity → table with composite PK", "detail": "Table includes the owner entity's PK as a foreign key that forms part of the composite primary key. Ensures identification only within the owner's context." },
+    { "title": "1:1 relationship → foreign key", "detail": "Add the PK of one side as a FK in the other's table. Place the FK on the total-participation side to avoid NULLs." },
+    { "title": "1:N relationship → foreign key on the N side", "detail": "Add the PK of the '1' entity as a FK in the 'N' entity's table. No junction table needed." },
+    { "title": "M:N relationship → junction table", "detail": "Create a new table whose PK is the combination of both entities' PKs. Relationship attributes become columns in this junction table." }
+  ],
+  "common_mistakes": [
+    { "title": "Creating a junction table for a 1:N relationship", "explanation": "A 1:N relationship only needs a foreign key on the N side — no junction table. Adding an unnecessary junction table introduces extra joins and complexity. Only M:N relationships require a junction table." },
+    { "title": "Forgetting to include relationship attributes in the junction table", "explanation": "When an M:N relationship has its own attributes (e.g., Grade on Enrolls), those attributes must go into the junction table — not into either entity's table. Grade depends on both the student and the course, so it belongs where both are present." },
+    { "title": "Storing derived attributes as columns", "explanation": "Derived attributes (Age, Duration, TotalPrice) are usually not stored — they can be computed from stored base attributes at query time. Storing them risks inconsistency (the stored Age may not match DateOfBirth). Always store the base fact." },
+    { "title": "Placing the foreign key on the wrong side in a 1:N", "explanation": "In a 1:N (Department has many Employees), the FK (DepartmentID) goes in the Employee table — the N side — not in the Department table. Putting it in Department would require storing an array of EmployeeIDs, violating 1NF." }
+  ],
+  "recall_questions": [
+    { "q": "How do you map a many-to-many (M:N) relationship to the relational model?", "answer": "Create a junction (cross-reference) table whose primary key is the combination of both participating entities' primary keys. Any attributes of the relationship become additional columns in this junction table.", "tier": "tier1" },
+    { "q": "Why does a weak entity's table have a composite primary key?", "answer": "A weak entity cannot be uniquely identified by its own attributes alone — it needs the owner entity's PK included. The composite PK (owner PK + weak entity's partial key) ensures each row is uniquely identified within the context of its owner.", "tier": "tier2" },
+    { "q": "Where does the foreign key go in a 1:N relationship, and why?", "answer": "On the N side (the 'many' entity's table). This is because one Department relates to many Employees, so each Employee row stores which Department it belongs to — a single FK per row. Putting it on the 1 side would require storing multiple employee IDs in one column.", "tier": "tier1" },
+    { "q": "What happens to multivalued attributes during ER-to-relational mapping?", "answer": "They become a separate table containing the entity's primary key (as a foreign key) and the attribute value. The composite (FK + attribute) typically forms the PK of the new table. This enforces 1NF.", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Map the following ER design to relational tables: Student (StudentID, Name) — Enrolls — Course (CourseID, Title); Enrolls has a Grade attribute; one student can enroll in many courses and vice versa.", "company": "Core CS OA", "answer": "Student(StudentID PK, Name), Course(CourseID PK, Title), Enrolls(StudentID FK, CourseID FK, Grade) with PK = (StudentID, CourseID). The Enrolls junction table captures the M:N relationship and holds the relationship attribute Grade.", "approach": "Identify the relationship type first (M:N → junction table). Then check for relationship attributes (Grade → column in junction). Name the junction table after the relationship verb. This 3-table result is the canonical answer." },
+    { "question": "An Employee entity has a multivalued attribute WorksIn (an employee can work in multiple departments). How does this map to relational tables?", "company": "SDE interview", "answer": "Employee(EmployeeID PK, Name, ...). WorksIn(EmployeeID FK, DepartmentID, ...) with PK = (EmployeeID, DepartmentID). The multivalued attribute becomes a separate table because 1NF prohibits storing a list in a single column.", "approach": "Explain that 1NF is the underlying reason — each cell must be atomic. The separate table also allows WorksIn to carry attributes (e.g., a StartDate per department) if needed in the future — a design advantage." }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/mapping-from-er-model-to-relational-model/",
+    "https://www.db-book.com/"
+  ]
+}

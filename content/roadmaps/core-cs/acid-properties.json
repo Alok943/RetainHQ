@@ -1,0 +1,114 @@
+{
+  "slug": "acid-properties",
+  "title": "ACID Properties",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 12,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["schedules-and-serializability", "recovery-and-logging"],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "You transfer $500 from your savings to your checking account. The bank debits savings — and then the server crashes. When it restarts, the $500 is gone from savings but never arrived in checking.",
+    "question": "What guarantee must every database provide so this can never happen — even under crashes and concurrent users?"
+  },
+  "mental_model": {
+    "intuition": "A transaction is an all-or-nothing deal: either every step happens, or it's like none of it ever started.",
+    "description": "Think of a vending machine: you put in coins, select a drink, and the machine either gives you the drink AND your change, or it gives you all your coins back and you get nothing. It never keeps your coins AND fails to give a drink. ACID is the formal version of that guarantee, extended to cover crashes, concurrent users, and system-wide consistency rules."
+  },
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      { "id": "app", "label": "Application" },
+      { "id": "db", "label": "Database" },
+      { "id": "log", "label": "Write-Ahead Log" },
+      { "id": "disk", "label": "Disk (Durable)" }
+    ],
+    "steps": [
+      { "from": "app", "to": "db", "label": "BEGIN — start a transaction", "term": "transaction start" },
+      { "from": "db", "to": "log", "label": "Write changes to log first", "term": "Write-Ahead Logging (WAL)" },
+      { "from": "db", "to": "db", "label": "Apply changes in memory (buffer)", "term": "buffer pool update" },
+      { "from": "db", "to": "log", "label": "Flush log record: COMMIT", "term": "commit record" },
+      { "from": "log", "to": "disk", "label": "Log flushed to disk — now durable", "term": "durability achieved" },
+      { "from": "db", "to": "app", "label": "Return: COMMIT OK", "term": "transaction committed" }
+    ]
+  },
+  "explanation": "ACID stands for Atomicity, Consistency, Isolation, and Durability — the four properties that together guarantee a transaction behaves correctly even in the face of system failures and concurrent access. They were formalised by Jim Gray in the late 1970s and remain the gold standard for relational databases.\n\nAtomicity means a transaction is all-or-nothing. The debit and the credit in the bank transfer are one atomic unit — either both happen or neither does. If the system crashes mid-transaction, the database must undo any partial work during recovery, leaving no trace. This is implemented via an undo log that records the original values before each change.\n\nConsistency means a transaction takes the database from one valid state to another valid state — it must not violate any integrity constraints (primary keys, foreign keys, check constraints, business rules). Importantly, consistency is partly the database's job (enforcing constraints) and partly the application's job (writing correct transaction logic). The DB engine prevents constraint violations; it cannot prevent logic bugs.\n\nIsolation means concurrent transactions execute as if they were running serially — one at a time. If two transactions run simultaneously, neither should see the other's intermediate, uncommitted state. In practice this is expensive to enforce fully, so SQL defines four isolation levels (Read Uncommitted, Read Committed, Repeatable Read, Serializable) that trade correctness for performance. The stricter the level, the more locking/blocking occurs.\n\nDurability means once a transaction is committed, its changes survive any subsequent failure — crash, power cut, OS fault. This is typically achieved via Write-Ahead Logging (WAL), as shown in the animation: the log record is flushed to durable storage BEFORE the commit is acknowledged. On recovery, the database replays the log to restore all committed changes. The data pages themselves may still be in the buffer pool, but the log on disk is sufficient for recovery.\n\nThe practical takeaway is that ACID guarantees are not free. Atomicity needs undo logs, isolation needs locking or MVCC, durability needs a synchronous disk flush per commit. High-throughput systems sometimes relax isolation (accepting stale reads) or batch commits to improve throughput. Knowing which property was relaxed — and why — is exactly what interviewers probe.",
+  "key_points": [
+    {
+      "title": "Atomicity",
+      "detail": "All operations in a transaction succeed together, or none of them take effect. Partial states are rolled back on failure. Implemented via undo logs."
+    },
+    {
+      "title": "Consistency",
+      "detail": "A transaction moves the DB from one valid state to another. Integrity constraints must hold before and after. The DB enforces structural rules; the application enforces business rules."
+    },
+    {
+      "title": "Isolation",
+      "detail": "Concurrent transactions appear to execute serially. SQL defines four levels: Read Uncommitted, Read Committed, Repeatable Read, Serializable — stricter = more blocking."
+    },
+    {
+      "title": "Durability",
+      "detail": "Committed data survives crashes. Implemented via Write-Ahead Logging (WAL): the log is flushed to disk before commit is acknowledged. Recovery replays the log."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking isolation means transactions never overlap in time",
+      "explanation": "Isolation means the EFFECT is as if they ran serially — not that they literally run one at a time. Most DBs use MVCC or locking to allow physical concurrency while giving the illusion of serial execution."
+    },
+    {
+      "title": "Assuming consistency is solely the DB's responsibility",
+      "explanation": "The DB can enforce structural constraints (e.g. a balance column cannot be negative if there is a CHECK constraint). But if you write a transaction that debits twice and credits once, the DB cannot detect that business logic error — consistency there is entirely your code's job."
+    },
+    {
+      "title": "Confusing durability with replication",
+      "explanation": "Durability (WAL flush to local disk) guarantees survival of a single-node crash. It does NOT protect against disk failure or data-centre loss — that requires replication. The two are orthogonal."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does ACID stand for and what does each letter guarantee?",
+      "answer": "Atomicity (all-or-nothing), Consistency (valid state to valid state), Isolation (concurrent = serial effect), Durability (committed data survives crashes).",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a database implement Durability?",
+      "answer": "Via Write-Ahead Logging (WAL): every change is written to a log on durable storage before the commit is acknowledged. On recovery the DB replays the log to restore all committed transactions.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why do databases offer weaker isolation levels instead of always using Serializable?",
+      "answer": "Stricter isolation requires more locking or version management, which increases blocking and reduces throughput. Weaker levels (e.g. Read Committed) allow higher concurrency by accepting some anomalies (dirty reads, non-repeatable reads).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Which ACID property is hardest to implement efficiently, and why?",
+      "answer": "Durability — because it requires a synchronous disk flush per commit, which is orders of magnitude slower than an in-memory write. Techniques like group commit and battery-backed write caches exist to amortise this cost.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You're designing a payment system. Which ACID properties are most critical, and how would you verify the system provides them?",
+      "company": "SDE interview",
+      "answer": "Atomicity (debit + credit as one unit) and Durability (confirmed payment survives a crash) are critical. Verify with failure injection: crash mid-transaction and check the DB state on restart. Confirm WAL is enabled and fsync is not disabled.",
+      "approach": "Frame the answer around the specific failure modes of payments — partial transfer and lost confirmation. Show you know the implementation mechanism (WAL, fsync) not just the acronym."
+    },
+    {
+      "question": "Difference between Atomicity and Durability — they both deal with failures, so what's the distinction?",
+      "company": "Core CS OA",
+      "answer": "Atomicity handles failures DURING a transaction (ensures partial work is rolled back). Durability handles failures AFTER commit (ensures committed work is not lost). Together they cover the full failure window.",
+      "approach": "Draw the timeline: before commit → Atomicity's domain; after commit → Durability's domain. A single crisp sentence for each."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/acid-properties-in-dbms/",
+    "https://en.wikipedia.org/wiki/ACID"
+  ]
+}

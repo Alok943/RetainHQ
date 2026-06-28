@@ -1,0 +1,52 @@
+{
+  "slug": "3-schema-architecture-and-data-independence",
+  "title": "3-Schema Architecture & Data Independence",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 12,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["dbms-vs-file-system"],
+    "unlocks": [],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "A company migrates its database from HDDs to SSDs and reorganises how rows are stored on disk. None of the 50 application programs that query the database need to be changed — they all still work, unchanged. How is this possible?",
+    "question": "What architectural trick does a DBMS use to insulate applications from changes in physical storage?"
+  },
+  "mental_model": {
+    "intuition": "The 3-schema architecture is like a theatre: the audience sees only the stage (external view), backstage crew sees the script and props (conceptual schema), and the building's electrical and structural systems are hidden below (internal schema). Change the wiring without rewriting the play.",
+    "description": "Each layer speaks only to the one directly next to it, via a mapping. The audience (application) never cares about wiring. The director (DBA) can rewrite the script without rebuilding the theatre. The electricians can rewire the theatre without touching the script. Each boundary is a firewall against change — that firewall is data independence."
+  },
+  "explanation": "The ANSI/SPARC 3-schema architecture (1975) defines three distinct levels at which a database can be described: the external level (what individual users see), the conceptual level (the complete logical picture), and the internal level (how data is physically stored). The architecture exists to solve a single problem: changes at one level should not force changes at other levels. Without it, every physical storage optimisation would require rewriting every application, and every application change would require restructuring the physical database.\n\nThe internal schema (also called the physical schema) describes how data is actually stored on disk — file organisation, index structures (B+ trees, hash files), data compression, partitioning. This is the job of the DBMS's storage engine and the DBA tuning performance. The internal schema is invisible to application programmers; it is implementation detail.\n\nThe conceptual schema (also called the logical schema) is the full picture of the entire database: all the tables/entities, their attributes, relationships between them, integrity constraints (primary keys, foreign keys, NOT NULL rules), and security policies. This is what the DBA defines and what 'the database' really means to the organisation. There is exactly one conceptual schema per database. Most developers think of this as 'the schema'.\n\nThe external schema (also called a view or user view) is a subset of the conceptual schema tailored for a specific user or application. A payroll application sees only salary and employee tables. A reporting dashboard sees only aggregated sales figures. An external schema can hide sensitive columns (e.g. salary from the HR portal), simplify complex joins into a single virtual table, or present the same data in a different structure than it actually exists in. There can be many external schemas on top of a single conceptual schema.\n\nData independence is the payoff. Physical data independence means you can change the internal schema (move from row-stores to column-stores, add an index, change a file's block size) without touching the conceptual schema or any applications — only the conceptual-internal mapping changes. Logical data independence means you can change the conceptual schema (add a new table, add a non-breaking column) without breaking existing external schemas or applications — only the external-conceptual mappings are updated. Logical independence is harder to achieve fully because removing a table or changing a column's meaning necessarily breaks anything that used it. But adding new entities or attributes is always safe. These two properties together are why large organisations can run decade-old applications on top of databases whose physical implementation has changed entirely.",
+  "key_points": [
+    { "title": "External schema (View level)", "detail": "What a specific user or application sees — a tailored, possibly simplified subset of the full database. Many external schemas can coexist on one database." },
+    { "title": "Conceptual schema (Logical level)", "detail": "The complete logical description of the entire database: all tables, attributes, relationships, and constraints. There is exactly one conceptual schema per database." },
+    { "title": "Internal schema (Physical level)", "detail": "How data is physically stored on disk: file organisation, indexes, compression, partitioning. Completely hidden from applications." },
+    { "title": "Physical data independence", "detail": "Changing the internal schema (e.g. adding an index, switching storage format) does not require changes to the conceptual schema or any application code." },
+    { "title": "Logical data independence", "detail": "Changing the conceptual schema (e.g. adding a new table or column) does not break existing external views or applications that do not use the new element." },
+    { "title": "Mappings between levels", "detail": "A DBMS maintains an external-conceptual mapping (translates a view query to a conceptual query) and a conceptual-internal mapping (translates a logical access to physical I/O). These mappings absorb the impact of change." }
+  ],
+  "common_mistakes": [
+    { "title": "Treating 'schema' as a single concept", "explanation": "In conversation, 'schema' often means the conceptual schema. But the 3-level model has three distinct schemas. Confusing them makes questions about data independence impossible to answer correctly." },
+    { "title": "Thinking physical independence implies logical independence", "explanation": "They are separate guarantees. Adding an index (physical change) is transparent to applications — that is physical independence. Dropping a table (logical change) breaks every view and app that referenced it — logical independence only protects you from additive changes." },
+    { "title": "Confusing external schema with user interface", "explanation": "An external schema is a database-level construct (a SQL view or schema subset), not a UI. It defines what data a user can see and query, not how that data is displayed." }
+  ],
+  "recall_questions": [
+    { "q": "Name the three levels of the ANSI/SPARC 3-schema architecture.", "answer": "External (view) level, conceptual (logical) level, and internal (physical) level.", "tier": "tier1" },
+    { "q": "What is physical data independence? Give a concrete example.", "answer": "The ability to change the internal schema (e.g. add a B+ tree index, switch row to column storage) without changing the conceptual schema or rewriting any application. Adding an index to a table is transparent to all SELECT queries.", "tier": "tier2" },
+    { "q": "Why is logical data independence harder to achieve than physical data independence?", "answer": "Physical changes (indexes, file format) are hidden by the conceptual-internal mapping. Logical changes that remove or rename existing elements break any external schema or application that referenced them — the mapping cannot invent data that no longer exists.", "tier": "tier2" },
+    { "q": "How many conceptual schemas does a database have? How many external schemas?", "answer": "Exactly one conceptual schema (it is the single logical picture of the whole database). Potentially many external schemas — one per application or user group.", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Explain the 3-schema architecture of a DBMS and how it achieves data independence.", "company": "Core CS OA", "answer": "Three levels: external (user views), conceptual (full logical model), internal (physical storage). Mappings between adjacent levels absorb change. Changing internal without touching conceptual = physical independence. Changing conceptual without breaking external = logical independence.", "approach": "Draw or enumerate the three boxes with arrows and name the two mappings. Then define each type of independence with a one-sentence example. Most MCQ distractors swap the definitions of the two independence types." },
+    { "question": "Your team wants to restructure how a table is physically stored on disk to improve read performance. Will existing application queries break?", "company": "SDE interview", "answer": "No, if the DBMS properly implements physical data independence. The internal schema changes, the conceptual-internal mapping is updated, and all applications continue querying the same conceptual schema unchanged.", "approach": "Use this to show you understand the conceptual-internal mapping as the abstraction layer. Follow up by noting that a poorly designed DBMS that exposes physical storage details (e.g. raw file paths in queries) would break this guarantee." }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/ansi-sparc-three-level-architecture/",
+    "https://www.db-book.com/"
+  ]
+}

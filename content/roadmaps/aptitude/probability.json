@@ -20,53 +20,78 @@
     ]
   },
   "hook": {
-    "scenario": "Calculating the chances of getting exactly 2 surge-pricing rides out of 5 Uber bookings this week."
+    "scenario": "Your IPL fantasy team needs both Rohit Sharma and Jasprit Bumrah to perform in the same match. You want to know the combined chance.",
+    "question": "Do you add or multiply individual probabilities when you need BOTH events to happen?"
   },
   "mental_model": {
-    "intuition": "Probability = What you want / Everything that could happen.",
-    "description": "It's just a fraction representing the frequency of a desired outcome over all possible outcomes. It always stays between 0 (impossible) and 1 (certain)."
+    "intuition": "Probability = favourable branches / all branches. Just count carefully.",
+    "description": "It's a fraction: numerator is the ways the event you want can happen, denominator is all the equally likely outcomes. The hard part isn't the formula — it's counting both numbers correctly. That's why P&C is the prerequisite."
   },
   "formula": {
-    "statement": "P(E) = (Number of favorable outcomes) / (Total number of possible outcomes) \\n P(A or B) = P(A) + P(B) - P(A and B)",
-    "explain": "The core formula requires counting. That's why P&C is a prerequisite. You count the successes using combinations, count the total using combinations, and divide."
+    "statement": "P(E) = (number of favourable outcomes) / (total outcomes). P(not E) = 1 - P(E). P(A or B) = P(A) + P(B) - P(A and B). P(A and B) = P(A) x P(B) [if independent]. nCr = n! / (r! x (n-r)!) for counting combinations within probability. Counting from groups: favourable = product of choices from each group; total = nCr from the whole pool.",
+    "explain": "'AND' events multiply probabilities. 'OR' events add then subtract the overlap. When drawing without replacement, total outcomes shrink with each draw. Use nCr to count the ways to pick r items from n when order doesn't matter."
   },
+  "worked_example": [
+    {
+      "problem": "From a deck of 52 cards, 2 cards are drawn at random. What is the probability that both are Kings?",
+      "steps": [
+        "Set up: Drawing 2 from 52, order doesn't matter — use combinations.",
+        "Total outcomes: 52C2 = (52 x 51) / 2 = 1326.",
+        "Favourable outcomes (both Kings): there are 4 Kings in a deck. 4C2 = (4 x 3) / 2 = 6.",
+        "Apply: P(both Kings) = 6 / 1326 = 1/221.",
+        "Sanity-check: P(first King) = 4/52. P(second King | first King drawn) = 3/51. Product = 12/(52x51) = 12/2652 = 1/221. Matches."
+      ],
+      "answer": "1/221."
+    },
+    {
+      "problem": "In 4 coin tosses, what is the probability of getting at least 1 Head?",
+      "steps": [
+        "Set up: 'At least 1' complement trick: P(at least 1 Head) = 1 - P(no Heads at all).",
+        "Total outcomes: 2^4 = 16.",
+        "P(no Heads) = P(all Tails) = (1/2)^4 = 1/16.",
+        "Apply: P(at least 1 Head) = 1 - 1/16 = 15/16.",
+        "Sanity-check: Only 1 way to get all Tails (TTTT). So 15 of the 16 outcomes have at least one Head. Correct."
+      ],
+      "answer": "15/16."
+    }
+  ],
   "shortcuts": [
     {
       "title": "The 'At Least One' Trick",
-      "trick": "P(At least 1) = 1 - P(None).",
-      "example": "Probability of getting at least one Head in 4 coin tosses = 1 - P(All Tails) = 1 - (1/16) = 15/16. Way faster than calculating 1, 2, 3, and 4 heads separately."
+      "trick": "P(at least 1) = 1 - P(none). Always faster than summing P(exactly 1) + P(exactly 2) + ...",
+      "example": "Probability of at least one Head in 4 tosses = 1 - (1/2)^4 = 1 - 1/16 = 15/16."
     },
     {
-      "title": "Dice Sum Combinations",
-      "trick": "For 2 dice, the most common sum is 7 (6 ways). Sums move symmetrically: 2 and 12 have 1 way, 3 and 11 have 2 ways... up to 7 having 6 ways.",
-      "example": "What's the probability of rolling a sum of 5? It's symmetrically 4 ways. 4/36 = 1/9."
+      "title": "AND vs OR",
+      "trick": "Independent events AND = multiply. Mutually exclusive events OR = add. Mixed OR = add then subtract overlap.",
+      "example": "P(Head AND 6 on dice) = 1/2 x 1/6 = 1/12."
     }
   ],
   "common_mistakes": [
     {
       "title": "Adding independent probabilities instead of multiplying",
-      "explanation": "If rolling a 6 AND flipping a Heads, it's (1/6) * (1/2), not addition. 'AND' means multiply, 'OR' means add."
+      "explanation": "P(Head AND roll 6) = 1/2 x 1/6 = 1/12, NOT 1/2 + 1/6. 'AND' = multiply for independent events."
     },
     {
-      "title": "Forgetting without replacement changes the denominator",
-      "explanation": "Drawing two cards one after another without replacing: First card probability is out of 52, second is out of 51."
+      "title": "Forgetting without-replacement shrinks the denominator",
+      "explanation": "Drawing two cards from a deck without replacing: first card is from 52, second is from 51. Don't use 52 both times."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the maximum value of a probability?",
-      "answer": "1",
+      "q": "P(at least 1 Head in 3 coin tosses) = ?",
+      "answer": "1 - P(all Tails) = 1 - (1/2)^3 = 7/8.",
       "tier": "tier1"
     },
     {
       "q": "If P(E) = 0.3, what is P(not E)?",
-      "answer": "0.7",
+      "answer": "0.7 (complementary events always sum to 1).",
       "tier": "tier1"
     },
     {
-      "q": "What is the probability of a sure event?",
-      "answer": "1",
-      "tier": "tier1"
+      "q": "When drawing 2 balls from a bag of 10, how do you count total outcomes?",
+      "answer": "10C2 = 45 (use combinations — order doesn't matter in drawing).",
+      "tier": "tier2"
     }
   ],
   "oa_questions": [
@@ -74,16 +99,16 @@
       "question": "A bag contains 4 red and 6 black balls. 2 balls are drawn at random. What is the probability that both are red?",
       "company": "AMCAT-style",
       "answer": "2/15",
-      "approach": "Total ways = 10C_2 = 45. Favorable ways (both red) = 4C_2 = 6. Probability = 6/45 = 2/15."
+      "approach": "Total = 10C2 = 45. Favourable = 4C2 = 6. P = 6/45 = 2/15."
     },
     {
       "question": "Two dice are thrown together. What is the probability that the sum of numbers on the two faces is divisible by 4?",
       "company": "Product-co OA",
       "answer": "1/4",
-      "approach": "Divisible by 4 means sums of 4, 8, 12. Sum 4 has 3 ways, Sum 8 has 5 ways, Sum 12 has 1 way. Total = 9 ways. 9/36 = 1/4."
+      "approach": "Divisible by 4: sums 4 (3 ways), 8 (5 ways), 12 (1 way) = 9 favourable. Total = 36. P = 9/36 = 1/4."
     }
   ],
   "sources": [
-    "https://en.wikipedia.org/wiki/probability"
+    "https://www.indiabix.com/aptitude/probability/"
   ]
 }

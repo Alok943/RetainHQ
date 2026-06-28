@@ -27,37 +27,61 @@
     "description": "Highest Common Factor finds the largest measuring stick that perfectly divides multiple quantities. Lowest Common Multiple finds the earliest future moment when independent periodic events align."
   },
   "pattern_discovery": {
+    "setup": "Compare HCF * LCM with the product of the two numbers.",
     "cases": [
       "HCF(12, 18) = 6. LCM(12, 18) = 36.",
-      "12 * 18 = 216",
-      "6 * 36 = 216"
+      "12 x 18 = 216",
+      "6 x 36 = 216"
     ],
-    "rule": "The product of two numbers is always exactly equal to the product of their HCF and LCM. This is because HCF represents the common prime factors, and LCM completes the missing ones."
+    "prompt": "What do you notice about HCF x LCM vs the product of the two numbers?",
+    "rule": "The product of two numbers always equals the product of their HCF and LCM. HCF captures the common prime factors; LCM captures all prime factors at highest powers."
   },
   "formula": {
-    "statement": "HCF(a,b) * LCM(a,b) = a * b (Only valid for two numbers)",
-    "explain": "For fractions: HCF = HCF(Numerators)/LCM(Denominators). LCM = LCM(Numerators)/HCF(Denominators)."
+    "statement": "HCF(a, b) x LCM(a, b) = a x b (valid for exactly two numbers only). HCF by prime factorisation: take LOWEST power of COMMON prime factors. LCM by prime factorisation: take HIGHEST power of ALL prime factors. HCF of fractions = HCF(Numerators) / LCM(Denominators). LCM of fractions = LCM(Numerators) / HCF(Denominators). Remainder trick: to find HCF(a, b) where a > b, subtract remainder repeatedly (Euclidean algorithm): HCF(a, b) = HCF(b, a mod b).",
+    "explain": "The product rule ONLY works for two numbers. For word problems: if equal groups are asked, think HCF. If simultaneous events / periodic syncing are asked, think LCM. If dividing with remainders, subtract the remainder first then find HCF."
   },
+  "worked_example": [
+    {
+      "problem": "Find the HCF and LCM of 36 and 60 using prime factorisation.",
+      "steps": [
+        "Prime factorise: 36 = 2^2 x 3^2. 60 = 2^2 x 3 x 5.",
+        "HCF: take LOWEST powers of COMMON primes. Common primes: 2 and 3. HCF = 2^2 x 3^1 = 4 x 3 = 12.",
+        "LCM: take HIGHEST powers of ALL primes. All primes: 2, 3, 5. LCM = 2^2 x 3^2 x 5 = 4 x 9 x 5 = 180.",
+        "Sanity-check using product rule: HCF x LCM = 12 x 180 = 2160. Product: 36 x 60 = 2160. Matches."
+      ],
+      "answer": "HCF = 12, LCM = 180."
+    },
+    {
+      "problem": "Find the greatest number that divides 70, 100, and 130 leaving remainder 10 in each case.",
+      "steps": [
+        "If remainder is 10 each time, subtract: 70 - 10 = 60, 100 - 10 = 90, 130 - 10 = 120.",
+        "We need HCF(60, 90, 120). Prime factorise: 60 = 2^2 x 3 x 5. 90 = 2 x 3^2 x 5. 120 = 2^3 x 3 x 5.",
+        "HCF = 2^1 x 3^1 x 5^1 = 30.",
+        "Sanity-check: 60/30=2, 90/30=3, 120/30=4 - all divide evenly. So 30 divides 70, 100, 130 with remainder 10."
+      ],
+      "answer": "The greatest such number is 30."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Prime Factorization Speed Run",
       "trick": "For HCF, take the LOWEST power of common prime factors. For LCM, take the HIGHEST power of ALL prime factors.",
-      "example": "a = 2^3 * 3^2, b = 2^2 * 3^3. HCF = 2^2 * 3^2. LCM = 2^3 * 3^3."
+      "example": "a = 2^3 x 3^2, b = 2^2 x 3^3. HCF = 2^2 x 3^2 = 36. LCM = 2^3 x 3^3 = 216."
     },
     {
       "title": "Difference Trick for HCF",
-      "trick": "The HCF of two numbers can never be larger than their difference. It must be a factor of the difference.",
-      "example": "HCF of 81 and 108. Difference is 27. Factors of 27: 27, 9, 3, 1. Since 81 and 108 are divisible by 27, HCF is 27."
+      "trick": "The HCF of two numbers must be a factor of their difference.",
+      "example": "HCF of 81 and 108. Difference is 27. Factors of 27: 27, 9, 3, 1. Since 81 and 108 are both divisible by 27, HCF = 27."
     }
   ],
   "common_mistakes": [
     {
       "title": "Applying Product Rule to 3 Numbers",
-      "explanation": "HCF * LCM = Product ONLY works for exactly two numbers. For three numbers a, b, c, HCF(a,b,c) * LCM(a,b,c) != a*b*c."
+      "explanation": "HCF x LCM = Product ONLY works for exactly two numbers. For three numbers a, b, c, HCF(a,b,c) x LCM(a,b,c) does not equal a x b x c."
     },
     {
-      "title": "Confusing 'Greatest' with HCF in word problems",
-      "explanation": "If a question asks for the 'greatest number of digits' that is a multiple, you need LCM, not HCF. Look at whether you are splitting (HCF) or multiplying/syncing (LCM)."
+      "title": "Confusing Greatest with HCF in word problems",
+      "explanation": "If a question asks for the 'greatest number' that perfectly divides multiple values, that is HCF. If it asks when multiple periodic events next coincide, that is LCM."
     }
   ],
   "recall_questions": [
@@ -72,7 +96,7 @@
       "tier": "tier1"
     },
     {
-      "q": "If HCF(a,b) is 5 and a*b is 150, what is LCM(a,b)?",
+      "q": "If HCF(a,b) is 5 and a x b is 150, what is LCM(a,b)?",
       "answer": "150 / 5 = 30.",
       "tier": "tier1"
     }
@@ -88,7 +112,7 @@
       "question": "Find the greatest number which on dividing 1657 and 2037 leaves remainders 6 and 5 respectively.",
       "company": "Service-co OA",
       "answer": "127",
-      "approach": "Subtract remainders: 1657-6=1651, 2037-5=2032. Find HCF(1651, 2032). Difference is 381. 381 = 3 * 127. 127 divides both."
+      "approach": "Subtract remainders: 1657-6=1651, 2037-5=2032. Find HCF(1651, 2032). Difference = 381 = 3 x 127. Check: 127 divides both 1651 (=13x127) and 2032 (=16x127). HCF = 127."
     }
   ],
   "sources": [

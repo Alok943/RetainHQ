@@ -40,29 +40,52 @@
     "rule": "The exact same operation applies directly to the average. The entire 'center of gravity' shifts."
   },
   "formula": {
-    "statement": "Average = Sum of all values / Total number of values.",
-    "explain": "Sum = Average \u00d7 Number of values. Most tricky average problems are solved by thinking in terms of the Total Sum."
+    "statement": "Average = Sum / Count. Sum = Average x Count. Weighted Average = (w1*x1 + w2*x2 + ...) / (w1 + w2 + ...). New item joining: New Item = Old Average + (New Count x Change in Average). Removing an item: New Average = (Old Sum - Removed Value) / (Old Count - 1).",
+    "explain": "Most tricky average problems are solved by thinking in terms of Total Sum. When a new member joins and shifts the average by d, the new member's value = Old Average + (New Total Size x d). For weighted averages, the group size is the weight."
   },
+  "worked_example": [
+    {
+      "problem": "The average score of 8 students in a test is 72. When the teacher's score is included, the average rises to 75. What is the teacher's score?",
+      "steps": [
+        "Set up: Old sum = 8 x 72 = 576. New count = 9 (8 students + teacher).",
+        "New sum = 9 x 75 = 675.",
+        "Teacher's score = New Sum - Old Sum = 675 - 576 = 99.",
+        "Sanity-check using the shortcut: Teacher must cover the old average (72) PLUS give everyone in the new group +3 points (9 x 3 = 27). 72 + 27 = 99. Matches."
+      ],
+      "answer": "The teacher's score is 99."
+    },
+    {
+      "problem": "Average of 6 numbers is 14. One number 26 is replaced by another number, and the new average becomes 12. What is the replacement number?",
+      "steps": [
+        "Old sum = 6 x 14 = 84.",
+        "New sum = 6 x 12 = 72.",
+        "The change in sum = 72 - 84 = -12.",
+        "New number = 26 + (-12) = 14.",
+        "Sanity-check: Replace 26 with 14 in the sum: 84 - 26 + 14 = 72. 72 / 6 = 12. Correct."
+      ],
+      "answer": "The replacement number is 14."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Assumed Mean (Deviation) Method",
       "trick": "Guess an average. Find how much each number deviates from your guess. Average the deviations and add back to your guess.",
-      "example": "Average of 102, 105, 98. Guess 100. Deviations: +2, +5, -2. Sum of dev = +5. Avg dev = +5/3. True avg = 101.66."
+      "example": "Average of 102, 105, 98. Guess 100. Deviations: +2, +5, -2. Sum of dev = +5. Avg dev = +5/3. True avg = 101.67."
     },
     {
       "title": "Inclusion / Exclusion",
-      "trick": "If a new item joins and increases the average by x, its value is: (Old Average) + (New Total Size \u00d7 x).",
-      "example": "10 items avg 20. New item makes avg 21. New item = 20 + (11 \u00d7 1) = 31."
+      "trick": "If a new item joins and increases the average by x, its value is: (Old Average) + (New Total Size x x).",
+      "example": "10 items avg 20. New item makes avg 21. New item = 20 + (11 x 1) = 31."
     }
   ],
   "common_mistakes": [
     {
       "title": "Average Speed Trap",
-      "explanation": "Average speed is NOT the arithmetic mean of speeds (e.g., 40kmph and 60kmph != 50kmph avg). It is Total Distance / Total Time."
+      "explanation": "Average speed is NOT the arithmetic mean of speeds (e.g., 40 km/hr and 60 km/hr does NOT give 50 km/hr average). It is Total Distance / Total Time."
     },
     {
       "title": "Ignoring Sample Size",
-      "explanation": "You cannot average two averages directly unless they represent the exact same number of items. Use the weighted average."
+      "explanation": "You cannot average two averages directly unless they represent the exact same number of items. Use the weighted average formula."
     }
   ],
   "recall_questions": [
@@ -87,13 +110,13 @@
       "question": "The average age of a class of 30 students is 15 years. If the teacher's age is included, the average increases by 1. What is the teacher's age?",
       "company": "Service-co OA",
       "answer": "46 years",
-      "approach": "Teacher brings enough to match the old average (15) PLUS enough to give everyone including herself +1 year (31 people \u00d7 1 = 31). Age = 15 + 31 = 46."
+      "approach": "Teacher brings enough to match the old average (15) PLUS enough to give everyone including herself +1 year (31 people x 1 = 31). Age = 15 + 31 = 46."
     },
     {
       "question": "The average of 50 numbers is 38. If two numbers, namely 45 and 55, are discarded, what is the average of the remaining numbers?",
       "company": "TCS NQT",
       "answer": "37.5",
-      "approach": "Total Sum = 50 \u00d7 38 = 1900. Discard sum = 100. New sum = 1800. New count = 48. New avg = 1800 / 48 = 37.5."
+      "approach": "Total Sum = 50 x 38 = 1900. Discard sum = 100. New sum = 1800. New count = 48. New avg = 1800 / 48 = 37.5."
     }
   ],
   "sources": [

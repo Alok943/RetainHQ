@@ -26,9 +26,30 @@
     "description": "For trains, always add their lengths as the total distance to cross. For boats, the water's speed physically pushes or pulls the boat."
   },
   "formula": {
-    "statement": "Trains: Time = (L1 + L2) / Relative Speed. Boats: Downstream = B + W, Upstream = B - W.",
-    "explain": "L1 and L2 are object lengths. For a stationary pole, L2 is 0. B = Boat speed in still water, W = Water stream speed."
+    "statement": "Trains crossing each other: Relative Speed = Speed1 + Speed2 (opposite) or |Speed1 - Speed2| (same direction). Time = (L1 + L2) / Relative Speed. Train crossing a stationary object (pole, person): Time = L_train / Speed_train. Train crossing a platform/bridge: Time = (L_train + L_platform) / Speed_train. Boats downstream: Speed = Boat_speed + Stream_speed (B + W). Upstream: Speed = Boat_speed - Stream_speed (B - W). Boat speed in still water = (Downstream + Upstream) / 2. Stream speed = (Downstream - Upstream) / 2. Speed conversion: x m/s = x * 18/5 km/hr. x km/hr = x * 5/18 m/s.",
+    "explain": "For a train crossing a stationary pole, L2 = 0. For a stationary platform/bridge, the platform has no speed but has length. Add L_train + L_platform as the total distance. Always convert units consistently (m/s vs km/hr) before computing time."
   },
+  "worked_example": [
+    {
+      "problem": "A train 240m long crosses a platform 160m long in 20 seconds. What is the speed of the train in km/hr?",
+      "steps": [
+        "Total distance = length of train + length of platform = 240 + 160 = 400m.",
+        "Time = 20 seconds. Speed = Distance / Time = 400 / 20 = 20 m/s.",
+        "Convert to km/hr: 20 x (18/5) = 20 x 3.6 = 72 km/hr.",
+        "Sanity-check: 72 km/hr = 72000m / 3600s = 20 m/s. Correct."
+      ],
+      "answer": "Speed = 72 km/hr."
+    },
+    {
+      "problem": "A boat goes downstream at 15 km/hr and upstream at 9 km/hr. Find the speed of the boat in still water and the speed of the stream.",
+      "steps": [
+        "Boat speed in still water = (Downstream + Upstream) / 2 = (15 + 9) / 2 = 24 / 2 = 12 km/hr.",
+        "Stream speed = (Downstream - Upstream) / 2 = (15 - 9) / 2 = 6 / 2 = 3 km/hr.",
+        "Sanity-check: Downstream = 12 + 3 = 15. Upstream = 12 - 3 = 9. Correct."
+      ],
+      "answer": "Boat speed = 12 km/hr, Stream speed = 3 km/hr."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Finding Boat and Stream Speed",
@@ -39,11 +60,11 @@
   "common_mistakes": [
     {
       "title": "Subtracting Train Lengths",
-      "explanation": "Thinking that because trains move in the same direction, you subtract their lengths. Always ADD lengths (they must completely pass each other)."
+      "explanation": "Thinking that because trains move in the same direction, you subtract their lengths. Always ADD the lengths - both trains must completely pass each other."
     },
     {
-      "title": "Confusing Relative Speed (Trains vs Boats)",
-      "explanation": "Trains same direction = subtract speeds. Boats downstream (moving with stream) = add speeds."
+      "title": "Confusing Relative Speed Direction",
+      "explanation": "Trains moving in opposite directions: ADD speeds. Trains moving same direction: SUBTRACT speeds (faster minus slower). Boats downstream: ADD stream speed. Boats upstream: SUBTRACT stream speed."
     }
   ],
   "recall_questions": [
@@ -68,16 +89,17 @@
       "question": "A 150m long train crosses a pole in 15 seconds. What is the speed of the train in km/hr?",
       "company": "TCS NQT",
       "answer": "36 km/hr",
-      "approach": "Speed = Distance / Time = 150m / 15s = 10 m/s. Convert to km/hr: 10 * (18/5) = 36 km/hr."
+      "approach": "Speed = 150m / 15s = 10 m/s. Convert: 10 x (18/5) = 36 km/hr."
     },
     {
       "question": "A man can row 8 km/hr in still water. If the river runs at 2 km/hr and it takes him 4 hours to row to a place and back, how far is the place?",
       "company": "AMCAT-style",
       "answer": "15 km",
-      "approach": "Downstream = 8+2=10. Upstream = 8-2=6. Let distance be D. D/10 + D/6 = 4. 8D/30 = 4 => D = 120/8 = 15 km."
+      "approach": "Downstream = 8+2=10 km/hr. Upstream = 8-2=6 km/hr. Let distance = D. D/10 + D/6 = 4. 3D/30 + 5D/30 = 4. 8D/30 = 4. D = 15 km."
     }
   ],
   "sources": [
-    "https://www.indiabix.com/aptitude/trains/"
+    "https://www.indiabix.com/aptitude/trains/",
+    "https://www.indiabix.com/aptitude/boats-and-streams/"
   ]
 }

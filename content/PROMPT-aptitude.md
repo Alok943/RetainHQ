@@ -18,7 +18,8 @@ branch). Write to `content/roadmaps/aptitude/<slug>.json` (filename = slug).
 | 1 | `hook` | **optional** | A real 2026 Indian-context scene (Swiggy/IPL/Zomato/dev-tasks). Include ONLY if it genuinely lands; skip if forced. |
 | 2 | `mental_model` | **REQUIRED** | The one-line intuition every topic gets — even definitional ones. *"log = exponent tracker"; "permutation = arrange, combination = choose"; "work rate = speed."* This is the retention anchor. |
 | 3 | `pattern_discovery` | **conditional** | Include ONLY when the rule is genuinely inducible from cases (percentages, successive change, series). OMIT for definitional/derived topics (P&C formula, clocks, log rules, mensuration) — forcing it manufactures fake discovery. `cases` = a list of **short observation STRINGS** (e.g. `"diffs: 3,5,7 → quadratic"`), never objects. |
-| 4 | `formula` | **REQUIRED** | The formal rule. After discovery when discovery exists; right after `mental_model` when it doesn't. |
+| 4 | `formula` | **REQUIRED** | The formal rule(s). After discovery when discovery exists; right after `mental_model` when it doesn't. **Include the key VARIATIONS the topic's questions actually need** — e.g. permutations: `nPr`, `nCr`, AND `n!/(p!q!)` for repeated items; TSD: also average-speed `2xy/(x+y)` and the late/early setup. Not just the one base formula. |
+| 4b | `worked_example` | **REQUIRED, 1–2** | The missing teaching bridge: **a representative problem solved STEP-BY-STEP** with the method, so the learner can actually reach the `oa_questions`. `[{problem, steps:[...], answer}]`. Model the *solving process* (set up → apply formula → compute), not just the answer. NOT drills — the demonstration. |
 | 5 | `shortcuts` | **REQUIRED, ≥1** | The exam-speed trick vs the textbook way (10% base unit; successive %→one multiplier; time-work→LCM units; alligation cross). |
 | 6 | `recall_questions` | **REQUIRED, ≥3** | The rule + applied numbers. tier1 = state it, tier2 = apply it. **These feed the review engine — the actual moat.** |
 | 7 | `oa_questions` | **REQUIRED, ≥2** | Real OA-style questions with `company` + `approach` (the 10-second path, not just the answer). |
@@ -111,6 +112,11 @@ formula inside `hook`/`mental_model`.
 - **Geometry** — name the relationship the figure encodes; discovery before the formula where natural.
 
 ## Quality bar (self-check before saving)
+- **SELF-SUFFICIENCY (the #1 check):** could a learner solve EVERY one of your `oa_questions` using only
+  what THIS lesson teaches (`formula` + `worked_example` + `shortcuts`) plus its listed `prerequisites`?
+  If an OA needs a formula/method the lesson never shows (e.g. `nCr` inside a probability question,
+  `n!/2!` for repeated letters), **either teach it in `formula`/`worked_example`, add the prerequisite,
+  or drop that question.** "Thin" means no padding — NOT too thin to solve its own questions.
 - Does `mental_model.intuition` make the topic feel **obvious**, not memorized?
 - If `pattern_discovery` is present, could a learner **guess the rule** from the cases alone, and is
   the formula genuinely **after** it? If discovery is forced, **delete it**.

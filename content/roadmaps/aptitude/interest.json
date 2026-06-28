@@ -19,29 +19,53 @@
     ]
   },
   "hook": {
-    "scenario": "You put \u20b910,000 in a new neo-bank app offering 12% returns. Do they calculate it simply at year-end, or compounded daily? The difference is whether you can buy a new phone or just a cover."
+    "scenario": "You put Rs10,000 in a new neo-bank app offering 12% returns. Do they calculate it simply at year-end, or compounded daily? The difference is whether you can buy a new phone or just a cover."
   },
   "mental_model": {
     "intuition": "Simple Interest is linear growth. Compound Interest is exponential growth (interest earning its own interest).",
-    "description": "SI adds the exact same amount every cycle. CI multiplies by a constant scaling factor every cycle, making it just successive percentage increases."
+    "description": "SI adds the exact same amount every cycle. CI multiplies by a constant scaling factor every cycle, making it just successive percentage increases applied to the growing total."
   },
   "pattern_discovery": {
+    "setup": "Track interest earned each year on Rs1000 at 10% for both SI and CI.",
     "cases": [
-      "Year 1 @ 10%: SI=100, CI=100",
-      "Year 2 @ 10%: SI=200, CI=210",
-      "Year 3 @ 10%: SI=300, CI=331"
+      "Year 1: SI=100, CI=100 (same for year 1)",
+      "Year 2: SI=100, CI=110 (CI earns interest on last year's interest too)",
+      "Year 3: SI=100, CI=121 (CI keeps growing; SI stays flat)"
     ],
-    "rule": "CI for any year is the previous year's CI scaled by (1 + R/100)."
+    "prompt": "Why does CI pull ahead of SI after year 1, and by how much exactly?",
+    "rule": "CI for any year is the previous year's CI scaled by (1 + R/100). The difference between CI and SI grows each year because CI reinvests the interest."
   },
   "formula": {
-    "statement": "SI = P * R * T / 100. CI Amount = P * (1 + R/100)^T",
-    "explain": "P is Principal, R is Rate (%), T is Time. CI uses a compound multiplier formula. CI = Amount - P."
+    "statement": "SI = P x R x T / 100. Amount under SI = P + SI = P x (1 + RT/100). CI Amount = P x (1 + R/100)^T. CI = Amount - P. Compounded half-yearly: A = P x (1 + R/200)^(2T). Compounded quarterly: A = P x (1 + R/400)^(4T). Difference (CI - SI) for 2 years = P x (R/100)^2. Difference (CI - SI) for 3 years = P x (R/100)^2 x (R/100 + 3).",
+    "explain": "When compounding frequency increases (monthly, quarterly, half-yearly), halve or quarter the rate and multiply the time periods accordingly. The 2-year difference shortcut P(R/100)^2 is the most-tested formula after the basic ones."
   },
+  "worked_example": [
+    {
+      "problem": "Find the compound interest on Rs5,000 at 10% per annum for 2 years, compounded annually. Also find the SI for the same terms and the difference.",
+      "steps": [
+        "CI Amount = P x (1 + R/100)^T = 5000 x (1.1)^2 = 5000 x 1.21 = 6050.",
+        "CI = 6050 - 5000 = 1050.",
+        "SI = P x R x T / 100 = 5000 x 10 x 2 / 100 = 1000.",
+        "Difference = CI - SI = 1050 - 1000 = 50.",
+        "Sanity-check using shortcut: Diff = P x (R/100)^2 = 5000 x (0.1)^2 = 5000 x 0.01 = 50. Matches."
+      ],
+      "answer": "CI = Rs1050, SI = Rs1000, Difference = Rs50."
+    },
+    {
+      "problem": "Rs8,000 is invested at 10% per annum compounded half-yearly. Find the amount after 1 year.",
+      "steps": [
+        "Half-yearly: halve the rate (10/2 = 5%) and double the time periods (1 year = 2 half-years).",
+        "Amount = 8000 x (1 + 5/100)^2 = 8000 x (1.05)^2 = 8000 x 1.1025 = 8820.",
+        "Compare with annual compounding: 8000 x 1.10 = 8800. Half-yearly gives more (8820 > 8800). Makes sense."
+      ],
+      "answer": "Amount = Rs8,820."
+    }
+  ],
   "shortcuts": [
     {
       "title": "2-Year CI-SI Difference",
-      "trick": "Diff = P * (R/100)^2",
-      "example": "Diff on \u20b91000 at 10% for 2 years = 1000 * (10/100)^2 = \u20b910"
+      "trick": "Diff = P x (R/100)^2",
+      "example": "Diff on Rs1000 at 10% for 2 years = 1000 x (10/100)^2 = Rs10"
     },
     {
       "title": "Rule of 72",
@@ -52,23 +76,23 @@
   "common_mistakes": [
     {
       "title": "Monthly vs Annual Rate",
-      "explanation": "If interest is compounded half-yearly, halve the rate and double the time periods. Don't use the annual rate blindly."
+      "explanation": "If interest is compounded half-yearly, halve the rate and double the time periods. If quarterly, use R/4 and 4T. Do not use the annual rate blindly."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the 2-year difference between CI and SI on \u20b95000 at 5%?",
-      "answer": "5000 * (5/100)^2 = 5000 * 0.0025 = \u20b912.5",
+      "q": "What is the 2-year difference between CI and SI on Rs5000 at 5%?",
+      "answer": "5000 x (5/100)^2 = 5000 x 0.0025 = Rs12.5",
       "tier": "tier1"
     },
     {
       "q": "If money doubles in 4 years at SI, what is the rate?",
-      "answer": "Interest = Principal -> P = P*R*4/100 -> R = 25%",
+      "answer": "Interest = Principal -> P = P x R x 4 / 100 -> R = 25%",
       "tier": "tier1"
     },
     {
       "q": "Does SI ever exceed CI for the same rate and positive time?",
-      "answer": "No, for time > 1 year, CI > SI. For time < 1 year, if compounded annually, CI = SI.",
+      "answer": "No, for time > 1 year, CI > SI. For time = 1 year with annual compounding, CI = SI.",
       "tier": "tier2"
     }
   ],
@@ -77,16 +101,17 @@
       "question": "A sum of money doubles itself in 5 years at simple interest. In how many years will it become 4 times itself?",
       "company": "TCS NQT",
       "answer": "15 years",
-      "approach": "SI = P takes 5 years. To become 4P, SI = 3P. Since SI is linear, earning 3P will take 3 * 5 = 15 years."
+      "approach": "SI = P takes 5 years (rate = 20%). To become 4P, SI = 3P. Since SI is linear, 3P takes 3 x 5 = 15 years."
     },
     {
-      "question": "The difference between CI and SI on a sum for 2 years at 8% is \u20b932. What is the sum?",
+      "question": "The difference between CI and SI on a sum for 2 years at 8% is Rs32. What is the sum?",
       "company": "AMCAT-style",
-      "answer": "\u20b95000",
-      "approach": "Diff = P * (R/100)^2 -> 32 = P * (8/100)^2 -> P = 32 * 10000 / 64 = 5000."
+      "answer": "Rs5000",
+      "approach": "Diff = P x (R/100)^2 -> 32 = P x (8/100)^2 -> P = 32 x 10000 / 64 = 5000."
     }
   ],
   "sources": [
-    "https://www.indiabix.com/aptitude/simple-interest/"
+    "https://www.indiabix.com/aptitude/simple-interest/",
+    "https://www.indiabix.com/aptitude/compound-interest/"
   ]
 }

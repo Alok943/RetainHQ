@@ -13,8 +13,8 @@
     "unlocks": [],
     "appears_in": [
       "TCS NQT",
-      "Wipro",
-      "Cognizant"
+      "Service-co OA",
+      "Product-co OA"
     ]
   },
   "hook": {
@@ -22,16 +22,39 @@
   },
   "mental_model": {
     "intuition": "Perimeter = Walking the boundary. Area = Painting the surface. Volume = Filling with water.",
-    "description": "Mensuration is about turning shapes into pure numbers. 2D deals with flat surfaces (floors, walls). 3D adds depth (boxes, cones, spheres)."
+    "description": "Mensuration is about turning shapes into pure numbers. 2D deals with flat surfaces (floors, walls). 3D adds depth (boxes, cones, spheres). Every 3D volume formula is a 2D area formula scaled by a dimension."
   },
   "formula": {
-    "statement": "Rectangle Area = L*B, Circle Area = \u03c0*r^2 \\n Cylinder Vol = \u03c0*r^2*h, Sphere Vol = (4/3)*\u03c0*r^3",
-    "explain": "Notice how 3D volumes often build on 2D areas. Cylinder volume is just a circle's area (\u03c0r^2) stacked up to height 'h'."
+    "statement": "2D: Rectangle Area = L x B, Perimeter = 2(L+B). Triangle Area = 0.5 x base x height. Circle Area = pi x r^2, Circumference = 2 x pi x r. Square Area = a^2, Diagonal = a x sqrt(2). 3D: Cuboid Volume = L x B x H, TSA = 2(LB + BH + LH). Cylinder Volume = pi x r^2 x h, CSA = 2 x pi x r x h, TSA = 2 x pi x r x (r + h). Cone Volume = (1/3) x pi x r^2 x h. Sphere Volume = (4/3) x pi x r^3, SA = 4 x pi x r^2.",
+    "explain": "Cylinder volume is just a circle's area (pi r^2) stacked up to height h. Cone is exactly 1/3 of a cylinder with the same base and height. CSA covers only curved sides; TSA includes flat lids. Always convert all measurements to the same unit before computing."
   },
+  "worked_example": [
+    {
+      "problem": "A cylindrical water tank has radius 3.5 m and height 8 m. What is its volume? How many liters does it hold? (Use pi = 22/7, 1 cu m = 1000 L)",
+      "steps": [
+        "Formula: Volume = pi x r^2 x h = (22/7) x (3.5)^2 x 8.",
+        "(3.5)^2 = 12.25. (22/7) x 12.25 = (22 x 12.25) / 7 = 269.5 / 7 = 38.5.",
+        "Volume = 38.5 x 8 = 308 cubic meters.",
+        "Capacity in liters = 308 x 1000 = 3,08,000 liters.",
+        "Sanity-check: 22/7 x 3.5^2 x 8 = 22 x 1.75 x 8 = 22 x 14 = 308 cu m. Matches."
+      ],
+      "answer": "Volume = 308 cu m = 3,08,000 liters."
+    },
+    {
+      "problem": "The length and breadth of a rectangular plot are in ratio 5:3. If the perimeter is 160 m, find the area.",
+      "steps": [
+        "Let L = 5x, B = 3x. Perimeter = 2(L + B) = 2(5x + 3x) = 16x = 160. So x = 10.",
+        "L = 50 m, B = 30 m.",
+        "Area = L x B = 50 x 30 = 1500 sq m.",
+        "Sanity-check: Perimeter = 2(50 + 30) = 2 x 80 = 160 m. Correct."
+      ],
+      "answer": "Area = 1500 sq m."
+    }
+  ],
   "shortcuts": [
     {
       "title": "The 11 Divisibility Check",
-      "trick": "Almost all formulas with circles (\u03c0) use 22/7. Hence, the final answer for area or volume is usually a multiple of 11. Check options for divisibility by 11 to skip calculations.",
+      "trick": "Almost all formulas with circles (pi) use 22/7. Hence, the final answer for area or volume is usually divisible by 11. Use this to eliminate options.",
       "example": "Find area of circle: Options A) 314 B) 308 C) 320 D) 310. Only 308 is divisible by 11 (3 - 0 + 8 = 11). Answer is B."
     },
     {
@@ -43,7 +66,7 @@
   "common_mistakes": [
     {
       "title": "Confusing Total Surface Area (TSA) and Curved Surface Area (CSA)",
-      "explanation": "CSA only covers the curved sides. TSA includes the top and bottom flat lids. Don't use CSA if you are painting a completely closed box."
+      "explanation": "CSA only covers the curved sides. TSA includes the flat top and bottom lids. If painting a completely closed tin, use TSA."
     },
     {
       "title": "Unit Mismatches",
@@ -53,17 +76,17 @@
   "recall_questions": [
     {
       "q": "What is the perimeter of a rectangle?",
-      "answer": "2 * (Length + Breadth)",
+      "answer": "2 x (Length + Breadth)",
       "tier": "tier1"
     },
     {
       "q": "What is the volume of a cylinder?",
-      "answer": "\u03c0 * r^2 * h",
+      "answer": "pi x r^2 x h",
       "tier": "tier1"
     },
     {
       "q": "Is a cone's volume greater or smaller than a cylinder of same dimensions?",
-      "answer": "Smaller (it is exactly 1/3)",
+      "answer": "Smaller - it is exactly 1/3 of the cylinder's volume.",
       "tier": "tier1"
     }
   ],
@@ -72,16 +95,17 @@
       "question": "A cylindrical tank has a base radius of 7m and a height of 10m. What is its capacity in cubic meters?",
       "company": "TCS NQT",
       "answer": "1540",
-      "approach": "Volume = \u03c0 * r^2 * h = (22/7) * 7 * 7 * 10 = 22 * 7 * 10 = 1540 cubic meters."
+      "approach": "Volume = pi x r^2 x h = (22/7) x 7 x 7 x 10 = 22 x 7 x 10 = 1540 cubic meters."
     },
     {
-      "question": "The diagonal of a square is 10\u221a2 cm. What is its area?",
+      "question": "The diagonal of a square is 10*sqrt(2) cm. What is its area?",
       "company": "Service-co OA",
       "answer": "100",
-      "approach": "Diagonal = a\u221a2 = 10\u221a2, so side 'a' = 10. Area = a^2 = 100 sq cm."
+      "approach": "Diagonal = a*sqrt(2) = 10*sqrt(2), so side a = 10. Area = a^2 = 100 sq cm."
     }
   ],
   "sources": [
-    "https://en.wikipedia.org/wiki/mensuration"
+    "https://www.indiabix.com/aptitude/area/",
+    "https://www.indiabix.com/aptitude/volume-and-surface-area/"
   ]
 }

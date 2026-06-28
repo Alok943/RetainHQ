@@ -26,9 +26,31 @@
     "description": "Pure geometry is about rules that lines and angles follow when they meet. Coordinate geometry takes those rules and plots them on an x-y axis so we can use algebra to find distances and slopes."
   },
   "formula": {
-    "statement": "Distance: d = \u221a((x2-x1)^2 + (y2-y1)^2) \\n Slope: m = (y2-y1)/(x2-x1) \\n Pythagoras: a^2 + b^2 = c^2",
-    "explain": "The distance formula is literally just Pythagoras' theorem applied to the x-y plane. The change in x and change in y are the two legs of the right triangle."
+    "statement": "Distance formula: d = sqrt((x2-x1)^2 + (y2-y1)^2). Slope: m = (y2-y1)/(x2-x1). Pythagoras: a^2 + b^2 = c^2. Area of triangle (coordinates): 0.5 x |x1(y2-y3) + x2(y3-y1) + x3(y1-y2)|. Midpoint: ((x1+x2)/2, (y1+y2)/2). Parallel lines: m1 = m2. Perpendicular lines: m1 x m2 = -1. Line equation: y = mx + c (slope-intercept form).",
+    "explain": "The distance formula is literally Pythagoras applied to the x-y plane. The change in x and change in y are the two legs of the right triangle. The area formula for coordinates is a shortcut for checking if three points are collinear (area = 0 if collinear)."
   },
+  "worked_example": [
+    {
+      "problem": "Find the distance between points A(1, 2) and B(4, 6). Also find the midpoint of AB.",
+      "steps": [
+        "Distance: d = sqrt((4-1)^2 + (6-2)^2) = sqrt(3^2 + 4^2) = sqrt(9 + 16) = sqrt(25) = 5.",
+        "Recognise the 3-4-5 Pythagorean triplet: no calculation even needed.",
+        "Midpoint: ((1+4)/2, (2+6)/2) = (5/2, 8/2) = (2.5, 4).",
+        "Sanity-check: Distance from A(1,2) to midpoint(2.5,4) = sqrt(1.5^2 + 2^2) = sqrt(2.25 + 4) = sqrt(6.25) = 2.5. Half of 5. Correct."
+      ],
+      "answer": "Distance = 5 units, Midpoint = (2.5, 4)."
+    },
+    {
+      "problem": "Find the slope of the line passing through (3, 5) and (7, 13). Is this line parallel or perpendicular to y = 2x + 1?",
+      "steps": [
+        "Slope m = (13 - 5) / (7 - 3) = 8 / 4 = 2.",
+        "The given line y = 2x + 1 also has slope 2.",
+        "Since m1 = m2 = 2, the lines are parallel (not the same line, just same steepness).",
+        "Sanity-check for perpendicular: a perpendicular line would have slope -1/2. Our line has slope 2, so NOT perpendicular."
+      ],
+      "answer": "Slope = 2. The line is parallel to y = 2x + 1."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Pythagorean Triplets",
@@ -38,28 +60,28 @@
     {
       "title": "Collinear Points Check",
       "trick": "If 3 points are in a straight line, the area of the triangle formed by them is exactly 0. Or, the slope between AB = slope between BC.",
-      "example": "To check if (1,1), (2,2), (3,3) are collinear, note the slope is 1 everywhere. Yes, they form a straight line."
+      "example": "To check if (1,1), (2,2), (3,3) are collinear: slope AB = 1, slope BC = 1. Equal, so collinear."
     }
   ],
   "common_mistakes": [
     {
       "title": "Confusing Slope and Intercept",
-      "explanation": "In y = mx + c, 'm' is the steepness (slope) and 'c' is where the line hits the y-axis. Don't swap them."
+      "explanation": "In y = mx + c, 'm' is the steepness (slope) and 'c' is where the line hits the y-axis. Do not swap them."
     },
     {
-      "title": "Assuming lines are parallel just because they don't intersect on paper",
-      "explanation": "Lines are only parallel if their slopes are exactly equal (m1 = m2). Never guess by eye."
+      "title": "Assuming lines are parallel just because they look parallel",
+      "explanation": "Lines are only parallel if their slopes are exactly equal (m1 = m2). Never guess by eye from a diagram."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the equation of a straight line passing through origin?",
+      "q": "What is the equation of a straight line passing through the origin?",
       "answer": "y = mx (since c = 0)",
       "tier": "tier1"
     },
     {
-      "q": "What is the slope of two perpendicular lines?",
-      "answer": "m1 * m2 = -1",
+      "q": "What is the relationship between slopes of two perpendicular lines?",
+      "answer": "m1 x m2 = -1",
       "tier": "tier1"
     },
     {
@@ -73,16 +95,17 @@
       "question": "Find the distance between the points (2, 3) and (5, 7).",
       "company": "TCS NQT",
       "answer": "5",
-      "approach": "dx = 5-2 = 3. dy = 7-3 = 4. Distance = \u221a(3^2 + 4^2) = \u221a25 = 5."
+      "approach": "dx = 5-2 = 3. dy = 7-3 = 4. Distance = sqrt(3^2 + 4^2) = sqrt(25) = 5. Recognise the 3-4-5 triplet."
     },
     {
       "question": "If a triangle has sides 6, 8, and 10, what is its area?",
       "company": "Service-co OA",
       "answer": "24",
-      "approach": "6, 8, 10 is a Pythagorean triplet (right triangle). Area = (1/2) * base * height = (1/2) * 6 * 8 = 24."
+      "approach": "6, 8, 10 is a Pythagorean triplet (6-8-10 = 2x(3-4-5)). Right triangle. Area = (1/2) x 6 x 8 = 24."
     }
   ],
   "sources": [
-    "https://en.wikipedia.org/wiki/geometry"
+    "https://www.khanacademy.org/math/geometry",
+    "https://www.indiabix.com/aptitude/problems-on-coordinate-geometry/"
   ]
 }

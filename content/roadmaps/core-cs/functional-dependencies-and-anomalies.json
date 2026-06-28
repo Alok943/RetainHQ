@@ -1,0 +1,101 @@
+{
+  "slug": "functional-dependencies-and-anomalies",
+  "title": "Functional Dependencies & Anomalies",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 14,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["acid-properties"],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "A college database stores student name, branch, and professor name in one table. Every time a professor changes their phone number, a clerk has to update dozens of rows — and if they miss even one, the data is permanently inconsistent.",
+    "question": "Why does one fact (a professor's phone) appear in hundreds of rows, and how do we fix the design so it lives in exactly one place?"
+  },
+  "mental_model": {
+    "intuition": "A functional dependency is a rule like 'knowing a student's roll number tells you their name — every single time, no exceptions.'",
+    "description": "Think of a spreadsheet where column A always determines column B — if two rows have the same A, they MUST have the same B. Roll number → name is a functional dependency. When you stuff multiple such rules into one table, you create redundancy. That redundancy is the engine that generates anomalies: facts get duplicated, and duplicates drift out of sync."
+  },
+  "explanation": "A functional dependency (FD) X → Y means: for any two tuples in the relation, if their X values match, their Y values must also match. In plain English, X uniquely determines Y. Consider a single table Student(RollNo, Name, BranchCode, BranchName, ProfessorID, ProfName). Here RollNo → Name is obvious. But also BranchCode → BranchName and ProfessorID → ProfName. Two different FDs — representing two different real-world facts — are crammed into one table alongside student data.\n\nThis redundancy gives rise to three classic anomalies. An update anomaly occurs when a fact stored multiple times must be changed: if Prof. Sharma teaches 400 students, updating his name means touching 400 rows. Miss one and you have two 'truths' in the same database. An insertion anomaly occurs when you cannot record a fact without forcing unrelated data to exist first: you cannot add a new professor to the system until at least one student is assigned to them, because ProfessorID has no row of its own. A deletion anomaly is the mirror: deleting the last student in a branch accidentally erases the branch's existence from the database entirely.\n\nThe root cause of all three is that the table is trying to represent multiple independent facts at once — facts that do not all depend on the same key. The fix is decomposition: split the table so each fact (each non-trivial FD) lives in a relation whose key is exactly the determinant of that FD. This is the core idea behind normalization: 1NF to 2NF to 3NF to BCNF, each step removing a class of problematic FD.\n\nTo reason about FDs formally, you need Armstrong's axioms — three inference rules that are sound and complete. Reflexivity: if Y is a subset of X, then X → Y. Augmentation: if X → Y, then XZ → YZ. Transitivity: if X → Y and Y → Z, then X → Z. The closure of an attribute set X, written X+, is the set of all attributes functionally determined by X — computing it tells you whether X is a key.\n\nThe practical takeaway: whenever you spot a non-key attribute determining another non-key attribute (a transitive dependency), or a non-prime attribute depending on only part of a composite key (a partial dependency), your table is not in a good normal form. The design will cause redundancy and anomalies in production. The cure is always the same — decompose into smaller relations that each carry exactly one independent fact.",
+  "key_points": [
+    {
+      "title": "Functional dependency X → Y",
+      "detail": "For every pair of tuples, equal X values imply equal Y values. X uniquely determines Y — no exceptions allowed."
+    },
+    {
+      "title": "Update anomaly",
+      "detail": "A single real-world fact is duplicated across many rows. Changing it in some rows but not all leaves the database in an inconsistent state."
+    },
+    {
+      "title": "Insertion anomaly",
+      "detail": "You cannot record a new fact without also supplying unrelated data, because the table has no row for that entity on its own."
+    },
+    {
+      "title": "Deletion anomaly",
+      "detail": "Deleting the last row that holds a certain entity accidentally destroys facts about that entity that should have been preserved."
+    },
+    {
+      "title": "Armstrong's axioms",
+      "detail": "Reflexivity, augmentation, and transitivity — sound and complete rules for inferring all FDs that hold in a relation."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing FDs with keys",
+      "explanation": "A key is a minimal set of attributes that functionally determines ALL other attributes. An FD can hold between any pair of attribute sets — most FDs are not keys. A key is a special case where X+ equals the full schema."
+    },
+    {
+      "title": "Thinking anomalies only happen in bad designs",
+      "explanation": "Anomalies are the symptom; the bad FD structure is the disease. You can have a perfectly legal SQL table that validates fine but is riddled with anomalies because of unresolved FDs. The DB engine cannot detect them — only a designer reasoning about FDs can."
+    },
+    {
+      "title": "Assuming decomposition is always lossless",
+      "explanation": "Decomposing to remove anomalies must be done so the original table can be reconstructed via a natural join (lossless-join property) AND the FDs are preserved. Careless decompositions can lose information or lose the ability to enforce a dependency."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Define a functional dependency and give a concrete example.",
+      "answer": "X → Y means: whenever two rows agree on X, they must agree on Y. Example: RollNo → StudentName — two rows with the same roll number must have the same student name.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the three update anomalies and what causes them?",
+      "answer": "Update anomaly (duplicate facts drift out of sync), insertion anomaly (cannot add a fact without unrelated data), deletion anomaly (removing a row destroys unrelated facts). Caused by multiple independent FDs crammed into one table.",
+      "tier": "tier1"
+    },
+    {
+      "q": "State Armstrong's three axioms for inferring functional dependencies.",
+      "answer": "Reflexivity: Y subset of X implies X → Y. Augmentation: X → Y implies XZ → YZ. Transitivity: X → Y and Y → Z implies X → Z.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you compute the closure X+ of an attribute set X?",
+      "answer": "Start with X+ = X. Repeatedly scan all FDs: if the left side is a subset of X+, add the right side to X+. Stop when no new attributes are added. X is a key if X+ equals the full set of attributes.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given relation R(A, B, C, D) with FDs A→B, B→C, C→D, what is A+? Is A a candidate key?",
+      "company": "Core CS OA",
+      "answer": "A+ = {A, B, C, D} via transitivity (A→B, B→C, C→D). A+ covers the full schema, so A is a candidate key.",
+      "approach": "Apply transitivity step by step. Write out the closure computation explicitly — examiners reward the process, not just the answer."
+    },
+    {
+      "question": "A table stores (OrderID, ProductID, ProductName, Quantity, CustomerID, CustomerName). What anomalies exist and how would you fix them?",
+      "company": "SDE interview",
+      "answer": "ProductID → ProductName causes update anomaly (changing a product name touches many rows). CustomerID → CustomerName causes the same. Decompose into Orders(OrderID, ProductID, Quantity, CustomerID), Products(ProductID, ProductName), Customers(CustomerID, CustomerName).",
+      "approach": "Identify each non-key FD, name the anomaly it causes, then decompose — one relation per independent fact. This directly demonstrates normalization reasoning."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/functional-dependency-and-attribute-closure/",
+    "https://www.geeksforgeeks.org/anomalies-in-relational-model/"
+  ]
+}

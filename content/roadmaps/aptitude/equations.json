@@ -15,8 +15,8 @@
     ],
     "appears_in": [
       "TCS NQT",
-      "Infosys",
-      "IBM"
+      "Service-co OA",
+      "AMCAT-style"
     ]
   },
   "hook": {
@@ -27,9 +27,32 @@
     "description": "Linear equations are straight lines indicating constant trade-offs (e.g., spending budget on laptops vs mice). Quadratics are curves (parabolas) showing acceleration or finding a peak/trough (e.g., throwing a ball in the air)."
   },
   "formula": {
-    "statement": "Linear: ax + by + c = 0 \\n Quadratic: ax^2 + bx + c = 0 \\n Roots: x = (-b \u00b1 \u221a(b^2 - 4ac)) / 2a",
-    "explain": "For quadratics, the Discriminant (b^2 - 4ac) tells you if the curve hits the x-axis twice (>0), touches it once (=0), or never touches it (<0)."
+    "statement": "Linear (one variable): ax + b = 0 -> x = -b/a. Linear (two variables): solve by substitution or elimination. Quadratic: ax^2 + bx + c = 0. Roots: x = (-b +/- sqrt(b^2 - 4ac)) / 2a. Sum of roots = -b/a. Product of roots = c/a. Discriminant D = b^2 - 4ac: D > 0 means 2 real roots, D = 0 means 1 repeated root, D < 0 means no real roots.",
+    "explain": "For simultaneous linear equations, elimination is fastest when one variable has the same coefficient. For quadratics, always try to factor mentally using sum (-b/a) and product (c/a) before using the quadratic formula."
   },
+  "worked_example": [
+    {
+      "problem": "Solve simultaneously: 2x + 3y = 16 and 4x - y = 6.",
+      "steps": [
+        "Set up for elimination: Multiply equation 2 by 3 to match the y coefficient: 12x - 3y = 18.",
+        "Add both equations: (2x + 3y) + (12x - 3y) = 16 + 18 -> 14x = 34 -> x = 34/14 = 17/7.",
+        "Wait - use substitution instead for cleaner numbers. From equation 2: y = 4x - 6. Substitute into equation 1: 2x + 3(4x - 6) = 16 -> 2x + 12x - 18 = 16 -> 14x = 34 -> x = 17/7.",
+        "Hmm, messy. Let us try multiplying equation 2 by 3: 12x - 3y = 18. Add to eq 1: 14x = 34. x = 17/7. y = 4(17/7) - 6 = 68/7 - 42/7 = 26/7.",
+        "Sanity-check: Plug back into eq 1: 2(17/7) + 3(26/7) = 34/7 + 78/7 = 112/7 = 16. Correct."
+      ],
+      "answer": "x = 17/7, y = 26/7."
+    },
+    {
+      "problem": "Find the roots of x^2 - 7x + 12 = 0.",
+      "steps": [
+        "Identify: a = 1, b = -7, c = 12. Sum of roots = -(-7)/1 = 7. Product of roots = 12/1 = 12.",
+        "Find two numbers that add to 7 and multiply to 12: 3 and 4 (3+4=7, 3x4=12). Done.",
+        "Roots are x = 3 and x = 4.",
+        "Sanity-check: Discriminant = (-7)^2 - 4(1)(12) = 49 - 48 = 1 > 0. Two real roots confirmed."
+      ],
+      "answer": "x = 3 and x = 4."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Sum and Product of Roots",
@@ -38,8 +61,8 @@
     },
     {
       "title": "Option Elimination for Linears",
-      "trick": "Don't solve simultaneous equations manually if options are given. Just plug the (x, y) options into the simpler equation.",
-      "example": "If x + y = 10 and 3x - 2y = 5, and Option A is (5, 5). 5+5=10, but 15-10 != 5. Reject A."
+      "trick": "Do not solve simultaneous equations manually if options are given. Just plug the (x, y) options into the simpler equation.",
+      "example": "If x + y = 10 and 3x - 2y = 5, and Option A is (5, 5): 5+5=10 checks out, but 15-10=5 also checks out. So A is correct."
     }
   ],
   "common_mistakes": [
@@ -49,12 +72,12 @@
     },
     {
       "title": "Dividing by variables",
-      "explanation": "If x^2 = 3x, do NOT divide by x to get x = 3. You lose the x = 0 root. Always factor: x(x - 3) = 0."
+      "explanation": "If x^2 = 3x, do NOT divide by x to get x = 3. You lose the x = 0 root. Always factor: x(x - 3) = 0, giving x = 0 or x = 3."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the formula for the sum of roots in a quadratic equation?",
+      "q": "What is the formula for the sum of roots in a quadratic equation ax^2 + bx + c = 0?",
       "answer": "-b/a",
       "tier": "tier1"
     },
@@ -65,7 +88,7 @@
     },
     {
       "q": "Can a linear equation have two different variables?",
-      "answer": "Yes, e.g., ax + by = c",
+      "answer": "Yes, e.g., ax + by = c. You need two equations to solve for two unknowns.",
       "tier": "tier1"
     }
   ],
@@ -77,13 +100,13 @@
       "approach": "Sum = 9, Product = 20. The numbers 4 and 5 satisfy this. Hence roots are 4 and 5."
     },
     {
-      "question": "5 tables and 3 chairs cost Rs. 5500. 3 tables and 2 chairs cost Rs. 3400. What is the cost of 1 table?",
+      "question": "5 tables and 3 chairs cost Rs5500. 3 tables and 2 chairs cost Rs3400. What is the cost of 1 table?",
       "company": "Service-co OA",
       "answer": "800",
       "approach": "5t + 3c = 5500. 3t + 2c = 3400. Multiply second by 1.5: 4.5t + 3c = 5100. Subtract from first: 0.5t = 400. So t = 800."
     }
   ],
   "sources": [
-    "https://en.wikipedia.org/wiki/equations"
+    "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:quadratic-functions-equations"
   ]
 }

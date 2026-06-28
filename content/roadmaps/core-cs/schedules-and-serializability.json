@@ -1,0 +1,101 @@
+{
+  "slug": "schedules-and-serializability",
+  "title": "Schedules & Serializability",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["acid-properties"],
+    "unlocks": ["concurrency-control-2pl"],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "Two bank tellers both read an account balance of $1000 at the same time. Teller A adds a $200 deposit and writes $1200. Teller B, working from the $1000 she read earlier, subtracts $300 and writes $700. The final balance is $700 — $200 vanished.",
+    "question": "How does a database decide which interleaving of operations is 'safe' — and what exactly does 'safe' mean formally?"
+  },
+  "mental_model": {
+    "intuition": "A schedule is safe if you could have gotten the same result by running the transactions one after the other — even if they actually ran interleaved.",
+    "description": "Imagine two cooks working in one kitchen, using the same set of ingredients. The result is 'correct' if it's the same dish you would have gotten had one cook finished completely before the other started. If they grab the same spice at the same time and overwrite each other's seasoning, the dish is ruined — even though both followed their own recipe perfectly."
+  },
+  "explanation": "When multiple transactions run concurrently, their operations are interleaved into a schedule — a global ordering of all read/write operations from all transactions. The key question is: which schedules are 'correct'? The formal answer is that a schedule is correct if it is serializable — if its outcome is identical to some serial execution of the same transactions (one after another, with no interleaving).\n\nA serial schedule is trivially correct: T1 fully completes, then T2 runs. But serial execution is slow — no concurrency. The goal is to allow interleaving while guaranteeing a serializable result. Two types of serializability are tested. Conflict serializability is the standard one: two operations conflict if they come from different transactions, touch the same data item, and at least one is a write. A schedule is conflict-serializable if you can swap non-conflicting adjacent operations to transform it into a serial schedule. The test uses a precedence graph (also called a serialization graph): draw a directed edge T1 → T2 whenever T1 has an operation that conflicts with and precedes T2's operation. The schedule is conflict-serializable if and only if this graph has no cycle.\n\nView serializability is a broader (and harder to check) notion: two schedules are view-equivalent if every read returns the same value (reading from the same writer) and the same transaction writes the final value for each item. Every conflict-serializable schedule is also view-serializable, but not vice versa — view serializability also allows some 'blind writes' that conflict-serializability rejects. Because checking view serializability is NP-complete, databases only use conflict serializability in practice.\n\nThe classic anomalies that arise from non-serializable schedules have names. A dirty read happens when T2 reads data written by T1, but T1 later aborts — T2 has seen a value that never officially existed. A non-repeatable read happens when T2 reads the same row twice and gets different values because T1 committed a change in between. A phantom read happens when T2 re-executes a query and gets different rows because T1 inserted or deleted rows that match the predicate. These correspond exactly to the isolation anomalies that SQL isolation levels are designed to prevent.\n\nThe practical takeaway: the concurrency control mechanism (locking, MVCC, timestamp ordering) the database uses must guarantee that every schedule it allows is conflict-serializable. This is verifiable via the precedence-graph cycle test. Understanding serializability is what makes 2PL and MVCC make sense — they are not arbitrary rules; they are mechanisms that provably prevent cycles in the precedence graph.",
+  "key_points": [
+    {
+      "title": "Schedule",
+      "detail": "A total ordering of all operations from all concurrent transactions. Serial schedules run one transaction at a time. Concurrent schedules interleave operations."
+    },
+    {
+      "title": "Conflict",
+      "detail": "Two operations conflict if they are from different transactions, access the same data item, and at least one is a write (W-R, R-W, or W-W pairs)."
+    },
+    {
+      "title": "Conflict serializability",
+      "detail": "A schedule is conflict-serializable if its precedence graph (conflict edges between transactions) has no cycle. It is equivalent to some serial schedule by swapping non-conflicting operations."
+    },
+    {
+      "title": "View serializability",
+      "detail": "Broader than conflict serializability — also accepts schedules with blind writes. NP-complete to check, so not used in practice."
+    },
+    {
+      "title": "Dirty / non-repeatable / phantom reads",
+      "detail": "The three classic anomalies from non-serializable interleavings. Each corresponds to a SQL isolation level that prevents it."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking a recoverable schedule is the same as a serializable schedule",
+      "explanation": "Recoverability (no transaction commits before the transactions it read from commit) is a separate property from serializability. A schedule can be serializable but not recoverable, or recoverable but not serializable. Both are needed for full correctness."
+    },
+    {
+      "title": "Checking edges in the wrong direction in the precedence graph",
+      "explanation": "Draw T1 → T2 when T1's conflicting operation comes BEFORE T2's in the schedule. A common mistake is drawing the edge backwards. The direction encodes 'T1 must appear before T2 in the equivalent serial order'."
+    },
+    {
+      "title": "Assuming two transactions always conflict if they access the same table",
+      "explanation": "Conflicts require the same specific data item (row/page), not just the same table, AND at least one write. Two reads on the same row are never a conflict — read-read pairs are always compatible."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does it mean for a schedule to be conflict-serializable?",
+      "answer": "Its precedence graph has no cycle — equivalently, you can reorder non-conflicting operations to produce a serial schedule with the same result.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When do two operations conflict in a schedule?",
+      "answer": "When they come from different transactions, access the same data item, and at least one is a write (W-R, R-W, or W-W).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is a dirty read, and which SQL isolation level prevents it?",
+      "answer": "A dirty read is when a transaction reads uncommitted data from another transaction that later aborts. Read Committed isolation level prevents it by only allowing reads of committed data.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why do databases use conflict serializability instead of view serializability?",
+      "answer": "View serializability is NP-complete to check; conflict serializability is checkable in polynomial time via cycle detection in the precedence graph.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given two transactions T1: R(A), W(A) and T2: R(A), W(A), draw the precedence graph for the schedule T1:R(A), T2:R(A), T1:W(A), T2:W(A) and determine if it is conflict-serializable.",
+      "company": "Core CS OA",
+      "answer": "Conflicts: T1:W(A) vs T2:R(A) — T1 wrote after T2 read, so edge T2→T1. T1:W(A) vs T2:W(A) — T1 wrote before T2, so edge T1→T2. Graph has edges T2→T1 AND T1→T2: a cycle. Not conflict-serializable.",
+      "approach": "List all conflicting pairs first, determine order from the schedule, draw the graph, then check for cycles. Show each step — partial credit is common in OA rubrics."
+    },
+    {
+      "question": "What isolation level should a banking transfer use, and why?",
+      "company": "SDE interview",
+      "answer": "Serializable — to prevent phantom reads and non-repeatable reads that could allow double-spending. Lower levels trade correctness for throughput, which is unacceptable for financial transactions.",
+      "approach": "Name the anomalies each weaker level would introduce, explain the business impact, then conclude Serializable is required. This shows depth beyond buzzwords."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/types-of-schedules-in-dbms/",
+    "https://www.geeksforgeeks.org/conflict-serializability/"
+  ]
+}

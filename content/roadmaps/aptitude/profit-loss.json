@@ -25,7 +25,7 @@
   },
   "mental_model": {
     "intuition": "Cost Price (CP) is the anchor. Everything scales relative to what the seller paid.",
-    "description": "Profit and loss are percentage increases and decreases calculated on the Cost Price. Discount is a percentage decrease calculated on the Marked Price."
+    "description": "Profit and loss are percentage increases/decreases on CP. Discount is a percentage decrease on Marked Price (MP). Three different bases — mix them and every answer is wrong."
   },
   "pattern_discovery": {
     "setup": "Compare the profit or loss against the original cost.",
@@ -38,46 +38,69 @@
     "rule": "Cost Price (CP) is the anchor. Always calculate P/L percentage relative to what was paid originally."
   },
   "formula": {
-    "statement": "Profit% = (Profit / CP) \u00d7 100. Discount% = (Discount / MP) \u00d7 100.",
-    "explain": "Never calculate Profit or Loss on Selling Price unless explicitly asked. Always calculate Discount on Marked Price (MP)."
+    "statement": "Profit% = (Profit / CP) x 100. Loss% = (Loss / CP) x 100. Discount% = (Discount / MP) x 100. SP = MP x (1 - Discount/100). SP = CP x (1 + Profit/100). If two successive discounts a% and b%: net = a + b - ab/100.",
+    "explain": "Three bases, three formulas. Profit/Loss always on CP; Discount always on MP. To find CP from SP when profit% is known: CP = SP / (1 + Profit/100)."
   },
+  "worked_example": [
+    {
+      "problem": "A shopkeeper marks a bag 40% above cost price and gives a 10% discount. Find the profit percentage.",
+      "steps": [
+        "Set up: Let CP = 100. MP = CP x 1.40 = 140.",
+        "Apply discount to MP: SP = 140 x (1 - 10/100) = 140 x 0.90 = 126.",
+        "Compute profit: Profit = SP - CP = 126 - 100 = 26.",
+        "Profit% = (26 / 100) x 100 = 26%.",
+        "Sanity-check: Markup then discount compound multiplicatively: 1.40 x 0.90 = 1.26, so 26% profit. Matches."
+      ],
+      "answer": "26% profit."
+    },
+    {
+      "problem": "By selling an item for Rs660, a person makes 10% loss. At what price must he sell it to make 10% profit?",
+      "steps": [
+        "Set up: SP = 660, Loss = 10%, so SP = CP x 0.90.",
+        "Find CP: CP = 660 / 0.90 = 733.33 (Rs733.33).",
+        "Apply 10% profit: Target SP = CP x 1.10 = 733.33 x 1.10 = 806.67.",
+        "Sanity-check: Rs806.67 > Rs733.33 (CP) by Rs73.33 = 10% of 733.33. Correct."
+      ],
+      "answer": "Rs806.67 (approx Rs807)."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Multiplier Method",
-      "trick": "For 20% profit, SP = 1.2 \u00d7 CP. For 15% loss, SP = 0.85 \u00d7 CP. This skips the intermediate add/subtract step.",
-      "example": "If CP is 400 and profit is 25%, SP = 400 \u00d7 1.25 = 500."
+      "trick": "For 20% profit, SP = 1.2 x CP. For 15% loss, SP = 0.85 x CP. This skips the intermediate add/subtract step.",
+      "example": "If CP is 400 and profit is 25%, SP = 400 x 1.25 = 500."
     },
     {
       "title": "Successive Discount",
       "trick": "Two successive discounts of a% and b% equal a single discount of (a + b - ab/100)%.",
-      "example": "Successive discounts of 20% and 10% = 20 + 10 - (20\u00d710/100) = 28% total discount, not 30%."
+      "example": "Successive discounts of 20% and 10% = 20 + 10 - (20x10/100) = 28% total discount, not 30%."
     }
   ],
   "common_mistakes": [
     {
       "title": "Base Confusion",
-      "explanation": "Calculating profit percentage on Selling Price instead of Cost Price. 20 profit on 120 SP is a 16.66% profit, not 20%."
+      "explanation": "Calculating profit percentage on Selling Price instead of Cost Price. Profit of 20 on SP of 120 is a 16.67% profit, not 20%."
     },
     {
       "title": "Fake Net Zero",
-      "explanation": "Thinking a 20% markup followed by a 20% discount brings you back to the original price. (1.2 \u00d7 0.8 = 0.96, which is a 4% loss)."
+      "explanation": "Thinking a 20% markup followed by a 20% discount brings you back to the original price. 1.2 x 0.8 = 0.96 — that's a 4% loss."
     }
   ],
   "recall_questions": [
     {
-      "q": "If an item is bought for \u20b9500 and sold for \u20b9600, what is the profit percentage?",
-      "answer": "20%",
+      "q": "If an item is bought for Rs500 and sold for Rs600, what is the profit percentage?",
+      "answer": "20% (Profit = 100, CP = 500, Profit% = 100/500 x 100 = 20%).",
       "tier": "tier1"
     },
     {
-      "q": "A shirt marked at \u20b91000 is sold after a 15% discount. What is the selling price?",
-      "answer": "\u20b9850",
+      "q": "A shirt marked at Rs1000 is sold after a 15% discount. What is the selling price?",
+      "answer": "Rs850 (SP = 1000 x 0.85).",
       "tier": "tier1"
     },
     {
-      "q": "If SP is \u20b9900 after a 10% loss, what was the CP?",
-      "answer": "\u20b91000",
-      "tier": "tier1"
+      "q": "If SP is Rs900 after a 10% loss, what was the CP?",
+      "answer": "Rs1000 (CP = 900 / 0.90 = 1000).",
+      "tier": "tier2"
     }
   ],
   "oa_questions": [
@@ -85,13 +108,13 @@
       "question": "A shopkeeper marks his goods 25% above CP and allows a discount of 10%. Find his overall profit percentage.",
       "company": "TCS NQT",
       "answer": "12.5%",
-      "approach": "Let CP = 100. MP = 125. Discount = 10% of 125 = 12.5. SP = 125 - 12.5 = 112.5. Profit = 112.5 - 100 = 12.5%."
+      "approach": "Let CP = 100. MP = 125. SP = 125 x 0.90 = 112.5. Profit = 12.5%."
     },
     {
-      "question": "By selling 33 meters of cloth, a person gains the selling price of 11 meters. Find his gain percentage.",
+      "question": "By selling 33 metres of cloth, a person gains the selling price of 11 metres. Find the gain percentage.",
       "company": "Service-co OA",
       "answer": "50%",
-      "approach": "Let SP of 1m = 1. SP of 33m = 33. Gain = 11. CP = SP - Gain = 33 - 11 = 22. Gain% = (11/22) \u00d7 100 = 50%."
+      "approach": "Let SP of 1m = 1. SP of 33m = 33. Gain = SP of 11m = 11. CP = 33 - 11 = 22. Gain% = (11/22) x 100 = 50%."
     }
   ],
   "sources": [

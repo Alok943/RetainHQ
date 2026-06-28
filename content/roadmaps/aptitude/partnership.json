@@ -19,40 +19,54 @@
     ]
   },
   "hook": {
-    "scenario": "Two college friends build a SaaS side-hustle. One invests \u20b950,000 for 12 months, the other joins later with \u20b91,00,000 for 6 months. Who deserves a bigger cut of the ARR?"
+    "scenario": "Two college friends build a SaaS side-hustle. One invests Rs50,000 for 12 months, the other joins later with Rs1,00,000 for 6 months. Who deserves a bigger cut of the ARR?"
   },
   "mental_model": {
     "intuition": "Profit share is strictly the area under the investment-time curve.",
     "description": "Your reward is proportional to how much money you put in, multiplied by how long it was actively working for the business."
   },
   "pattern_discovery": {
+    "setup": "See how profit ratio changes with capital and time.",
     "cases": [
-      "A: 10k for 12m, B: 20k for 6m -> Profit is 1:1",
-      "A: 10k for 6m, B: 10k for 12m -> Profit is 1:2"
+      "A: 10k for 12m, B: 20k for 6m -> Capital-time: 120k vs 120k -> Profit 1:1",
+      "A: 10k for 6m, B: 10k for 12m -> Capital-time: 60k vs 120k -> Profit 1:2"
     ],
-    "rule": "Profit ratio is exactly the ratio of the products of (Capital * Time)."
+    "prompt": "What single number captures both the size and duration of each investment?",
+    "rule": "Profit ratio is exactly the ratio of the products of (Capital x Time). More capital OR more time gives a proportionally larger share."
   },
   "formula": {
-    "statement": "Profit(A) : Profit(B) = (Capital(A) * Time(A)) : (Capital(B) * Time(B))",
-    "explain": "Calculate Capital * Time for each partner, then reduce it to the simplest ratio to divide the total profit."
+    "statement": "Profit(A) : Profit(B) = (Capital(A) x Time(A)) : (Capital(B) x Time(B)). For 3+ partners: Profit ratio = (C1 x T1) : (C2 x T2) : (C3 x T3). Working partner allowance: subtract the working partner's salary from total profit FIRST, then split the remainder by capital-time ratio.",
+    "explain": "Calculate Capital x Time for each partner, then simplify to the lowest ratio. Use that ratio as parts to divide the total profit. If a partner invests at different amounts at different periods, compute C x T for each period and sum them."
   },
+  "worked_example": [
+    {
+      "problem": "P starts a business with Rs30,000. After 4 months, Q joins with Rs45,000. After another 2 months, R joins with Rs60,000. They work till year-end. If the annual profit is Rs88,000, find each partner's share.",
+      "steps": [
+        "Calculate capital-time for each: P = 30000 x 12 = 360000. Q joins at month 4, so works for 8 months: 45000 x 8 = 360000. R joins at month 6, so works for 6 months: 60000 x 6 = 360000.",
+        "Profit ratio = 360000 : 360000 : 360000 = 1 : 1 : 1.",
+        "Total profit = Rs88,000. Each partner gets 88000 / 3 = Rs29,333.33.",
+        "Sanity-check: All three products are equal (360k), so 3 equal shares. Total = 3 x 29333 = 88000. Correct."
+      ],
+      "answer": "Each partner gets Rs29,333.33."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Working Partner Allowance",
       "trick": "Subtract the working partner's fixed salary/percentage from total profit BEFORE splitting by capital ratio.",
-      "example": "Profit = 100. A gets 10% for managing. Split remaining 90 by capital ratio."
+      "example": "Profit = 100. A gets 10% for managing. Split remaining 90 by capital-time ratio."
     }
   ],
   "common_mistakes": [
     {
       "title": "Ignoring the time factor",
-      "explanation": "Don't divide profits just by the capital invested. A late investor's capital must be multiplied by fewer months."
+      "explanation": "Do not divide profits just by the capital invested. A late investor's capital must be multiplied by fewer months than an early investor."
     }
   ],
   "recall_questions": [
     {
       "q": "A invests 20k for 12 months, B invests 40k for 6 months. What is their profit ratio?",
-      "answer": "(20*12) : (40*6) = 240:240 = 1:1",
+      "answer": "(20x12) : (40x6) = 240:240 = 1:1",
       "tier": "tier1"
     },
     {
@@ -61,23 +75,23 @@
       "tier": "tier2"
     },
     {
-      "q": "A, B, C rent a pasture. A puts 10 cows for 7 months, B puts 12 cows for 5 months, C puts 15 cows for 3 months. Ratio of rent?",
+      "q": "A, B, C rent a pasture. A puts 10 cows for 7 months, B puts 12 cows for 5 months, C puts 15 cows for 3 months. What is the ratio of rent?",
       "answer": "70 : 60 : 45 = 14 : 12 : 9",
       "tier": "tier1"
     }
   ],
   "oa_questions": [
     {
-      "question": "A starts a business with \u20b940,000. After 3 months, B joins with \u20b960,000. If the total profit at year-end is \u20b934,000, what is A's share?",
+      "question": "A starts a business with Rs40,000. After 3 months, B joins with Rs60,000. If the total profit at year-end is Rs34,000, what is A's share?",
       "company": "TCS NQT",
-      "answer": "\u20b916,000",
-      "approach": "A: 40k * 12 = 480. B: 60k * 9 = 540. Ratio = 480:540 = 8:9. Total = 17 parts = 34k. 1 part = 2k. A's share = 8 * 2k = 16,000."
+      "answer": "Rs16,000",
+      "approach": "A: 40k x 12 = 480. B: 60k x 9 = 540. Ratio = 480:540 = 8:9. Total = 17 parts = 34k. 1 part = 2k. A's share = 8 x 2k = 16,000."
     },
     {
-      "question": "A, B, and C invest in a business. A invests 1/3 of total capital, B invests 1/4, and C the rest. If profit is \u20b924,000, what is C's share?",
+      "question": "A, B, and C invest in a business. A invests 1/3 of total capital, B invests 1/4, and C the rest. If profit is Rs24,000, what is C's share?",
       "company": "Service-co OA",
-      "answer": "\u20b910,000",
-      "approach": "C's capital = 1 - (1/3 + 1/4) = 1 - 7/12 = 5/12. Since time is same, profit ratio is 1/3 : 1/4 : 5/12 = 4 : 3 : 5. Total 12 parts = 24k. C's share = 5 * 2k = 10,000."
+      "answer": "Rs10,000",
+      "approach": "C's capital = 1 - (1/3 + 1/4) = 1 - 7/12 = 5/12. Since time is same for all, profit ratio = 1/3 : 1/4 : 5/12 = 4:3:5. Total 12 parts = 24k. C's share = 5 x 2k = 10,000."
     }
   ],
   "sources": [

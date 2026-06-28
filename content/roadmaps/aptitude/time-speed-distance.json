@@ -20,52 +20,76 @@
     ]
   },
   "hook": {
-    "scenario": "Swiggy promises 10-minute delivery. The rider covers 3 km. Half the route is traffic (10 km/hr), half is open road. Can they make it? TSD is about breaking down these real-world constraints."
+    "scenario": "Swiggy promises 10-minute delivery. The rider covers 3 km. Half the route is traffic (10 km/hr), half is open road. Can they make it?",
+    "question": "Is the average speed simply (10 + open-road speed) / 2?"
   },
   "mental_model": {
-    "intuition": "Distance is the output. Speed is the rate. Time is the duration. (D = S * T)",
-    "description": "They are perfectly locked together. If distance is constant, speed and time are inversely proportional (double the speed, half the time)."
+    "intuition": "Distance is the output. Speed is the rate. Time is the duration — three locked numbers; fix any two to find the third.",
+    "description": "D = S x T. They are perfectly locked: if distance is constant, speed and time are inversely proportional (double the speed, half the time). Most TSD problems are just choosing the right form of this one equation."
   },
   "formula": {
-    "statement": "Distance = Speed * Time",
-    "explain": "And its derivatives: Speed = Distance / Time, Time = Distance / Speed. Ensure all units match (km/hr with hours, m/s with seconds) before multiplying!"
+    "statement": "D = S x T. Speed = D/T. Time = D/S. Average speed for equal distances at speeds x and y: Avg = 2xy/(x+y). Late/early setup: D/S_slow - D/S_fast = time_difference (in same units). Unit conversions: km/hr x (5/18) = m/s.",
+    "explain": "The harmonic mean 2xy/(x+y) applies ONLY when distances are equal. For equal times, use simple average (x+y)/2. The late/early equation sets up a ratio of distances equal to a ratio of time differences."
   },
+  "worked_example": [
+    {
+      "problem": "A cyclist rides from home to station at 12 km/hr and arrives 8 min early. If he rides at 8 km/hr he arrives 4 min late. Find the distance.",
+      "steps": [
+        "Set up: Let distance = D km. Total time difference = 8 + 4 = 12 min = 12/60 = 1/5 hr.",
+        "At 8 km/hr he takes D/8 hours. At 12 km/hr he takes D/12 hours.",
+        "Slower minus faster = total difference: D/8 - D/12 = 1/5.",
+        "LCM of 8 and 12 is 24: (3D - 2D) / 24 = 1/5 => D/24 = 1/5 => D = 24/5 = 4.8 km.",
+        "Sanity-check: At 8 km/hr: 4.8/8 = 0.6 hr. At 12 km/hr: 4.8/12 = 0.4 hr. Difference = 0.2 hr = 12 min. Correct."
+      ],
+      "answer": "4.8 km."
+    },
+    {
+      "problem": "A car covers half its journey at 60 km/hr and the rest at 40 km/hr. Find the average speed for the full trip.",
+      "steps": [
+        "Set up: Two equal distances at different speeds — apply the harmonic mean formula.",
+        "Apply: Avg speed = 2xy/(x+y) = (2 x 60 x 40) / (60 + 40) = 4800 / 100.",
+        "Compute: 48 km/hr.",
+        "Sanity-check: If total distance = 120 km (60 each half). Time at 60 km/hr: 1 hr. Time at 40 km/hr: 1.5 hr. Total = 2.5 hr. Avg = 120/2.5 = 48 km/hr. Matches."
+      ],
+      "answer": "48 km/hr."
+    }
+  ],
   "shortcuts": [
     {
       "title": "km/hr to m/s Conversion",
       "trick": "Multiply by 5/18 to go km/hr -> m/s. Multiply by 18/5 to go m/s -> km/hr.",
-      "example": "72 km/hr = 72 * (5/18) = 20 m/s."
+      "example": "72 km/hr = 72 x (5/18) = 20 m/s."
     },
     {
       "title": "Average Speed for Equal Distances",
-      "trick": "If going at speed A and returning at speed B over the same distance, Avg Speed = 2AB / (A + B).",
-      "example": "Go at 40 km/hr, return at 60 km/hr. Avg = (2 * 40 * 60) / 100 = 48 km/hr. (NOT 50!)"
+      "trick": "If going at speed x and returning at speed y over the SAME distance, Avg Speed = 2xy/(x+y). Never (x+y)/2.",
+      "example": "Go at 40 km/hr, return at 60 km/hr. Avg = (2 x 40 x 60) / 100 = 48 km/hr (NOT 50!)."
     }
   ],
   "common_mistakes": [
     {
       "title": "Simple Average of Speeds",
-      "explanation": "Averaging speeds (A+B)/2 only works if they traveled for equal TIME, not equal DISTANCE."
+      "explanation": "Averaging speeds (x+y)/2 only works if they traveled for equal TIME, not equal DISTANCE. For equal distances, always use the harmonic mean 2xy/(x+y)."
     },
     {
       "title": "Unit Mismatch",
-      "explanation": "Multiplying km/hr by minutes without converting minutes to hours first."
+      "explanation": "Multiplying km/hr by minutes without converting minutes to hours first. Convert everything to consistent units before plugging into D = S x T."
     }
   ],
   "recall_questions": [
     {
       "q": "Convert 90 km/hr to m/s.",
-      "answer": "90 * (5/18) = 25 m/s.",
+      "answer": "90 x (5/18) = 25 m/s.",
       "tier": "tier1"
     },
     {
       "q": "If speed is doubled for a fixed distance, what happens to the time taken?",
-      "answer": "It is halved.",
+      "answer": "It is halved (time and speed are inversely proportional for fixed distance).",
       "tier": "tier1"
     },
     {
-      "q": "What is the average speed formula for equal distances traveled at speeds x and y?",
-      "answer": "2xy / (x + y)",
+      "q": "When should you use 2xy/(x+y) vs (x+y)/2 for average speed?",
+      "answer": "2xy/(x+y) for equal DISTANCES. (x+y)/2 for equal TIMES.",
       "tier": "tier2"
     }
   ],
@@ -74,13 +98,13 @@
       "question": "A person walks from his house at 4 km/hr and reaches office 5 minutes late. If his speed is 5 km/hr, he reaches 10 minutes early. What is the distance to the office?",
       "company": "TCS NQT",
       "answer": "5 km",
-      "approach": "Difference in time = 15 mins = 1/4 hr. Let distance be D. D/4 - D/5 = 1/4. D/20 = 1/4 => D = 5 km."
+      "approach": "Difference in time = 15 min = 1/4 hr. D/4 - D/5 = 1/4. D/20 = 1/4 => D = 5 km."
     },
     {
       "question": "A man covers half his journey at 6 km/hr and the remaining half at 3 km/hr. What is his average speed?",
       "company": "AMCAT-style",
       "answer": "4 km/hr",
-      "approach": "Equal distances. Average speed = 2xy/(x+y) = (2 * 6 * 3) / (6 + 3) = 36 / 9 = 4 km/hr."
+      "approach": "Equal distances. Average speed = 2xy/(x+y) = (2 x 6 x 3) / (6 + 3) = 36 / 9 = 4 km/hr."
     }
   ],
   "sources": [

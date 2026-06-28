@@ -15,57 +15,81 @@
     ],
     "appears_in": [
       "TCS NQT",
-      "Infosys",
-      "AMCAT"
+      "Service-co OA",
+      "AMCAT-style"
     ]
   },
   "hook": {
-    "scenario": "Picking a 4-digit UPI PIN (where order matters) vs picking 3 friends for a Goa trip (where order doesn't matter)."
+    "scenario": "Picking a 4-digit UPI PIN (where order matters — 1234 is different from 4321) vs picking 3 friends for a Goa trip (where Alice-Bob-Carol is the same group as Carol-Bob-Alice).",
+    "question": "How do you count the right number of possibilities without listing them all?"
   },
   "mental_model": {
-    "intuition": "Permutation = Position matters. Combination = Choosing matters.",
-    "description": "If swapping two items creates a new valid outcome (like changing a password from 123 to 321), it's a Permutation. If swapping changes nothing (like a team of Alice and Bob vs Bob and Alice), it's a Combination."
+    "intuition": "Permutation = arrange (order matters). Combination = choose (order doesn't).",
+    "description": "If swapping two items creates a new valid outcome (password 123 vs 321), it's a Permutation. If swapping changes nothing (team of Alice+Bob is the same team both ways), it's a Combination. nCr = nPr / r! because combinations kill the r! duplicate orderings."
   },
   "formula": {
-    "statement": "nP_r = n! / (n-r)! \\n nC_r = n! / (r! * (n-r)!)",
-    "explain": "nPr is 'arrange r items out of n'. nCr is 'select r items out of n'. Notice nCr divides by r! to remove duplicate arrangements."
+    "statement": "nPr = n! / (n-r)! (arrange r from n). nCr = n! / (r! x (n-r)!) (choose r from n). Repeated items: arrange n items where one group of p is identical, another q is identical -> n! / (p! x q!). Circular arrangements: (n-1)! for distinct items around a circle.",
+    "explain": "nCr = nC(n-r) by symmetry — choosing r to include is the same as choosing (n-r) to exclude. For repeated items, divide by the factorial of each repeated group's size."
   },
-  "shortcuts": [
+  "worked_example": [
     {
-      "title": "nC_r Complement Rule",
-      "trick": "nC_r = nC_(n-r). If r is more than half of n, subtract it from n to make calculation easier.",
-      "example": "100C_98 is a nightmare. But 100C_98 = 100C_2 = (100 * 99) / 2 = 4950. Done in 3 seconds."
+      "problem": "How many distinct arrangements can be made from the letters of the word GOOGLE?",
+      "steps": [
+        "Set up: GOOGLE has 6 letters. Check for repeats: G appears 2 times, O appears 2 times, L and E appear once each.",
+        "Formula: arrangements with repeats = n! / (p! x q! x ...) = 6! / (2! x 2!) (for the two G's and two O's).",
+        "Compute: 6! = 720. 2! x 2! = 2 x 2 = 4. Total = 720 / 4 = 180.",
+        "Sanity-check: Two repeated groups each halve the count. Starting from 720, halve twice gives 720/4 = 180. Makes sense."
+      ],
+      "answer": "180 distinct arrangements."
     },
     {
-      "title": "Circular Arrangements",
-      "trick": "n items in a circle = (n-1)!. If the circle can be flipped (like a necklace of beads), it's (n-1)! / 2.",
-      "example": "Arranging 5 people around a conference table = (5-1)! = 4! = 24 ways."
+      "problem": "A team of 4 is to be formed from 5 men and 4 women such that there is exactly 1 woman. How many ways?",
+      "steps": [
+        "Set up: Need 1 woman AND 3 men. Order within the team doesn't matter (team, not lineup).",
+        "Count women choices: 4C1 = 4.",
+        "Count men choices: 5C3 = 5! / (3! x 2!) = (5 x 4) / 2 = 10.",
+        "Combine (AND = multiply): 4C1 x 5C3 = 4 x 10 = 40.",
+        "Sanity-check: Total ways to pick 4 from 9 = 9C4 = 126. 40 out of 126 is plausible for the 1-woman restriction."
+      ],
+      "answer": "40 ways."
+    }
+  ],
+  "shortcuts": [
+    {
+      "title": "nCr Complement Rule",
+      "trick": "nCr = nC(n-r). If r > n/2, flip it to make calculation easier.",
+      "example": "100C98 = 100C2 = (100 x 99) / 2 = 4950. Done in 3 seconds."
+    },
+    {
+      "title": "AND vs OR in Counting",
+      "trick": "'AND' (both conditions true) = multiply the counts. 'OR' (either condition) = add the counts.",
+      "example": "3 shirt choices AND 4 pants choices = 3 x 4 = 12 outfits. Red shirt OR blue shirt = 1 + 1 = 2 choices."
     }
   ],
   "common_mistakes": [
     {
       "title": "Using Permutation instead of Combination",
-      "explanation": "Selecting a committee of 3 from 10 people requires 10C_3. Many mistakenly use 10P_3, which assumes the roles of the 3 people are different."
+      "explanation": "Selecting a committee of 3 from 10 people requires 10C3. Many mistakenly use 10P3, which assumes the 3 people have distinct roles."
     },
     {
-      "title": "Forgetting 'AND' vs 'OR'",
-      "explanation": "In counting, 'AND' means multiply. 'OR' means add. If you need a shirt AND pants, multiply the options. If you need a shirt OR a t-shirt, add them."
+      "title": "Forgetting to divide for repeated items",
+      "explanation": "MOON has 2 O's. Arrangements = 4!/2! = 12, not 4! = 24. Every pair of arrangements that only differ in swapping the two O's is actually one arrangement."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the formula for nC_r?",
-      "answer": "n! / (r! * (n-r)!)",
+      "q": "What is the formula for nCr?",
+      "answer": "n! / (r! x (n-r)!).",
       "tier": "tier1"
     },
     {
-      "q": "How many ways can 4 people sit at a round table?",
-      "answer": "3! = 6 ways",
-      "tier": "tier1"
+      "q": "How many distinct arrangements of the letters in MOON?",
+      "answer": "4!/2! = 12 (divide by 2! for the repeated O's).",
+      "tier": "tier2"
     },
     {
-      "q": "If you are choosing 2 pizza toppings out of 5, is it a permutation or combination?",
-      "answer": "Combination (order of toppings doesn't matter)",
+      "q": "Is selecting a committee a permutation or combination problem?",
+      "answer": "Combination — committee membership has no internal ordering.",
       "tier": "tier1"
     }
   ],
@@ -74,16 +98,16 @@
       "question": "How many words can be formed using the letters of the word 'AMAZON'?",
       "company": "Service-co OA",
       "answer": "360",
-      "approach": "Total letters = 6. 'A' repeats 2 times. Total arrangements = 6! / 2! = 720 / 2 = 360."
+      "approach": "6 letters, A repeats 2 times. Arrangements = 6! / 2! = 720 / 2 = 360."
     },
     {
       "question": "A team of 4 is to be formed from 5 men and 4 women such that there is exactly 1 woman. How many ways?",
       "company": "TCS NQT",
       "answer": "40",
-      "approach": "We need 1 woman (out of 4) AND 3 men (out of 5). (4C_1) * (5C_3) = 4 * 10 = 40 ways."
+      "approach": "1 woman from 4 (4C1 = 4) AND 3 men from 5 (5C3 = 10). Multiply: 4 x 10 = 40."
     }
   ],
   "sources": [
-    "https://en.wikipedia.org/wiki/permutations-combinations"
+    "https://www.indiabix.com/aptitude/permutation-and-combination/"
   ]
 }

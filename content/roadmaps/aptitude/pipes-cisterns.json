@@ -23,21 +23,36 @@
   },
   "mental_model": {
     "intuition": "Inlets add work (+), outlets destroy work (-).",
-    "description": "The core logic is identical to Time & Work. The only difference is that a leakage or emptying pipe has a negative rate of work."
+    "description": "The core logic is identical to Time & Work. The only difference is that a leakage or emptying pipe has a negative rate of work. Net rate = sum of all inlets minus sum of all outlets."
   },
   "pattern_discovery": {
+    "setup": "Track the net filling rate when an inlet and an outlet work together.",
     "cases": [
       "Fill pipe A takes 10 mins -> +1/10 per min",
       "Empty pipe B takes 15 mins -> -1/15 per min",
-      "Net work -> 1/10 - 1/15 = 1/30 per min",
+      "Net work -> 1/10 - 1/15 = 3/30 - 2/30 = 1/30 per min",
       "Time to fill -> 30 mins"
     ],
-    "rule": "Add the rates of filling pipes and subtract the rates of emptying pipes."
+    "prompt": "If the outlet were faster than the inlet, what would happen to the net rate?",
+    "rule": "Add the rates of filling pipes and subtract the rates of emptying pipes. If net rate is negative, the tank empties rather than fills."
   },
   "formula": {
-    "statement": "Net rate = sum(inlet rates) - sum(outlet rates)",
-    "explain": "If net rate is positive, the tank fills. If net rate is negative, the tank empties."
+    "statement": "Net rate = sum(inlet rates) - sum(outlet rates). Time to fill = Total Capacity / Net rate. If net rate is negative, Time to empty = Total Capacity / |Net rate|. Inlet rate = 1/T_fill. Outlet rate = 1/T_empty. LCM method: assume capacity = LCM of all times; assign each pipe its units per minute with sign (+/-). Combined time = Capacity / Net rate.",
+    "explain": "If net rate is positive, the tank fills. If net rate is negative, the tank empties. For problems mixing known fill/empty times with known flow rates (liters/min), convert: Capacity = time x flow rate."
   },
+  "worked_example": [
+    {
+      "problem": "Pipe A fills a tank in 20 hours, Pipe B fills it in 30 hours, and Pipe C empties it in 15 hours. If all three are opened simultaneously when the tank is empty, how long will it take to fill?",
+      "steps": [
+        "Use LCM method: Capacity = LCM(20, 30, 15) = 60 units.",
+        "Pipe A fills 60/20 = 3 units/hr (positive). Pipe B fills 60/30 = 2 units/hr (positive). Pipe C empties 60/15 = 4 units/hr (negative).",
+        "Net rate = 3 + 2 - 4 = 1 unit/hr.",
+        "Time to fill = 60 / 1 = 60 hours.",
+        "Sanity-check: 1/20 + 1/30 - 1/15 = 3/60 + 2/60 - 4/60 = 1/60. Time = 60 hours. Matches."
+      ],
+      "answer": "60 hours."
+    }
+  ],
   "shortcuts": [
     {
       "title": "LCM Method with Negatives",
@@ -48,13 +63,13 @@
   "common_mistakes": [
     {
       "title": "Ignoring the sign of outlets",
-      "explanation": "Treating emptying pipes as positive work leads to impossibly fast fill times."
+      "explanation": "Treating emptying pipes as positive work leads to impossibly fast fill times. Always subtract outlet rates."
     }
   ],
   "recall_questions": [
     {
       "q": "Pipe A fills in 4h, Pipe B empties in 6h. What is the net filling rate?",
-      "answer": "1/4 - 1/6 = 1/12 (fills in 12h).",
+      "answer": "1/4 - 1/6 = 1/12 (fills in 12 hours).",
       "tier": "tier1"
     },
     {
@@ -64,7 +79,7 @@
     },
     {
       "q": "Can a tank ever fill if the outlet is faster than the inlet?",
-      "answer": "No, the net rate would be negative, meaning it will always be losing water.",
+      "answer": "No, the net rate would be negative, meaning the tank is always losing water.",
       "tier": "tier1"
     }
   ],
@@ -73,13 +88,13 @@
       "question": "Two pipes can fill a tank in 15 and 20 hours. A third pipe can empty it in 30 hours. If all three are opened, how long to fill the tank?",
       "company": "TCS NQT",
       "answer": "12 hours",
-      "approach": "LCM(15, 20, 30) = 60 units. Pipe1 = +4, Pipe2 = +3, Pipe3 = -2. Net = 4 + 3 - 2 = 5 units/hr. Time = 60/5 = 12 hours."
+      "approach": "LCM(15, 20, 30) = 60 units. Pipe1 = +4 units/hr, Pipe2 = +3 units/hr, Pipe3 = -2 units/hr. Net = 5 units/hr. Time = 60/5 = 12 hours."
     },
     {
       "question": "A leak in the bottom of a tank can empty it in 8 hours. An inlet pipe fills water at 6 liters a minute. When both are open, the tank empties in 12 hours. Find the capacity of the tank.",
       "company": "Service-co OA",
       "answer": "8640 liters",
-      "approach": "Leak takes 8h (-1/8). Let inlet take x hrs (+1/x). Net = 1/x - 1/8 = -1/12. 1/x = 1/8 - 1/12 = 1/24. Inlet takes 24 hours. Capacity = 24 hrs * 60 mins/hr * 6 L/min = 8640 L."
+      "approach": "Leak takes 8h (-1/8 per hr). Let inlet take x hrs (+1/x per hr). Net = 1/x - 1/8 = -1/12. So 1/x = 1/8 - 1/12 = 1/24. Inlet fills in 24 hours. Capacity = 24 hrs x 60 min/hr x 6 L/min = 8640 L."
     }
   ],
   "sources": [

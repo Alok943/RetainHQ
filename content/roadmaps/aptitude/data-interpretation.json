@@ -20,16 +20,38 @@
     ]
   },
   "hook": {
-    "scenario": "Reading DI questions is exactly like reading a Zepto operational dashboard during peak IPL hours. You have a massive table of riders, zones, and delivery times:\n\n| Zone | Active Riders | Avg Delivery Time |\n|------|---------------|-------------------|\n| Kormangala | 450 | 14m |\n| Indiranagar| 320 | 18m |\n\nYour job isn't to calculate every single cell\u2014it's to spot the bottleneck instantly using rough ratios and percentage jumps."
+    "scenario": "Reading DI questions is exactly like reading a Zepto operational dashboard during peak IPL hours. You have a massive table of riders, zones, and delivery times:\n\n| Zone | Active Riders | Avg Delivery Time |\n|------|---------------|-------------------|\n| Kormangala | 450 | 14m |\n| Indiranagar| 320 | 18m |\n\nYour job is not to calculate every single cell - it is to spot the bottleneck instantly using rough ratios and percentage jumps."
   },
   "mental_model": {
     "intuition": "DI is just basic percentages, ratios, and averages hidden inside visual noise.",
     "description": "Data Interpretation tests your ability to extract relevant data from tables, bar graphs, pie charts, and line graphs, and perform quick approximations rather than precise calculations."
   },
   "formula": {
-    "statement": "Visual Data -> Extract Numbers -> Apply Basic Arithmetic (Percentage Change, Ratio, Average). Focus heavily on visual approximation.",
-    "explain": "In a pie chart, 1% = 3.6 degrees. For line graphs, the slope indicates the rate of growth. Don't compute exact values unless options are dangerously close."
+    "statement": "Percentage Change = (New - Old) / Old x 100. Ratio comparison: A/B vs C/D - cross-multiply (A x D vs B x C). Pie chart: Degrees to % = Degrees / 3.6. % to Degrees = % x 3.6. Average = Sum / Count. The workflow: Read question -> Locate only the needed cells -> Approximate -> Eliminate options.",
+    "explain": "In a pie chart, 1% = 3.6 degrees. For line graphs, the slope indicates rate of growth. For bar charts, compare bar heights visually before computing. Never calculate exact values unless the answer choices are dangerously close to each other."
   },
+  "worked_example": [
+    {
+      "problem": "A table shows a startup's monthly active users: Jan=80,000, Feb=92,000, Mar=110,400. (a) What is the % growth Jan to Feb? (b) Which month had the higher growth rate?",
+      "steps": [
+        "Set up: We need % growth for each period. Formula: (New - Old) / Old x 100.",
+        "Jan to Feb: (92000 - 80000) / 80000 x 100 = 12000 / 80000 x 100 = 15%.",
+        "Feb to Mar: (110400 - 92000) / 92000 x 100 = 18400 / 92000 x 100 = 20%.",
+        "Approximate check: 15% of 80k = 12k (correct). 20% of 92k = 18.4k (correct).",
+        "Answer: Feb had 15% growth, Mar had 20% growth. Mar showed the higher growth rate."
+      ],
+      "answer": "Jan-Feb growth: 15%. Feb-Mar growth: 20%. March had the higher growth rate."
+    },
+    {
+      "problem": "In a pie chart of a company's expense budget (total = Rs1,20,000), the 'Salaries' sector spans 150 degrees. What is the salary expenditure?",
+      "steps": [
+        "Set up: Convert degrees to percentage. 150 degrees / 3.6 = 41.67%.",
+        "Apply percentage to total: 41.67% of 1,20,000 = 0.4167 x 1,20,000 = 50,000.",
+        "Sanity-check: 150 out of 360 degrees = 5/12 of the total. 1,20,000 x 5/12 = 50,000. Matches."
+      ],
+      "answer": "Salary expenditure is Rs50,000."
+    }
+  ],
   "shortcuts": [
     {
       "title": "The Approximation Rule",
@@ -44,17 +66,17 @@
     {
       "title": "Ratio Stacking",
       "trick": "When comparing two huge fractions A/B and C/D, compare the percentage growth of numerators vs denominators, or cross-multiply.",
-      "example": "Compare 145/290 vs 160/310. First is exactly 50%. Second is > 50% (since 155 is 50%). So 160/310 is larger."
+      "example": "Compare 145/290 vs 160/310. First is exactly 50%. Second: 160 > 155 (half of 310), so 160/310 > 50%. Second is larger."
     }
   ],
   "common_mistakes": [
     {
       "title": "Calculating Everything",
-      "explanation": "Don't calculate values for all years/categories. Only calculate what the specific question needs."
+      "explanation": "Do not calculate values for all years/categories. Only calculate what the specific question needs."
     },
     {
       "title": "Confusing 'Percentage More' with 'Percentage Of'",
-      "explanation": "If A is 150 and B is 100. A is 150% OF B, but A is 50% MORE than B."
+      "explanation": "If A is 150 and B is 100, A is 150% OF B, but A is only 50% MORE than B."
     }
   ],
   "recall_questions": [
@@ -65,7 +87,7 @@
     },
     {
       "q": "If Company A's revenue grew from 400 to 500, what is the percentage growth?",
-      "answer": "25% (100/400 * 100).",
+      "answer": "25% (100/400 x 100).",
       "tier": "tier1"
     },
     {

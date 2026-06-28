@@ -1,0 +1,52 @@
+{
+  "slug": "dbms-vs-file-system",
+  "title": "DBMS vs File System",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 7,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["3-schema-architecture-and-data-independence", "relational-algebra"],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "A hospital stores patient records in thousands of .txt files — one per patient. When a new doctor needs records by diagnosis, someone has to grep every file manually. Two nurses edit the same file simultaneously and one overwrites the other's notes.",
+    "question": "What exactly is a DBMS buying us that a plain file system cannot provide?"
+  },
+  "mental_model": {
+    "intuition": "A file system is a shoebox of documents; a DBMS is a professional filing clerk who indexes everything, enforces rules, lets multiple people work at once without collision, and can answer complex questions in seconds.",
+    "description": "The shoebox works fine when you have 20 documents and one person. But when you have 2 million records, 50 concurrent users, and queries like 'find all patients over 60 with hypertension', the shoebox collapses. The filing clerk (DBMS) maintains an organised catalogue, enforces rules (no duplicate patient IDs), handles simultaneous access safely, and answers structured questions efficiently — none of which the shoebox does on its own."
+  },
+  "explanation": "A file system is the raw storage layer of an operating system: it organises data as a hierarchy of directories and files. Applications that store data in plain files must solve every data-management problem themselves — they must write code to search, to prevent two programs from corrupting the same file at once, to enforce rules like 'every record must have a unique ID', and to handle recovery after a crash. When two such applications share the same file, they must also agree on a common format, otherwise neither can read what the other wrote. This is called the 'impedance mismatch' problem, and it causes an explosion of custom, fragile code.\n\nA Database Management System (DBMS) is a software layer that sits between the application and raw storage, taking ownership of all those hard problems. Instead of your application encoding 'how to find a record' in its own search loop, it asks the DBMS using a declarative query (SQL's WHERE clause) and the DBMS uses indexes and optimised access paths to answer in milliseconds. The DBMS becomes a single source of truth for the data's structure and rules.\n\nThe classic problems with flat-file storage — and how a DBMS fixes each — fall into several clean categories. Data redundancy and inconsistency: if a customer's address is stored in both an Orders file and a Customers file, the two copies can drift apart. A DBMS enforces a single schema where each fact lives in exactly one place, and foreign keys keep references consistent. Data isolation: in a file system, every application must understand every file format; adding a new field can break unrelated programs. A DBMS provides a logical schema that programs query against, so underlying storage can change without breaking old code.\n\nConcurrency control is where flat files fail most dramatically. If two users open the same file and both save it, the last writer silently destroys the first writer's changes. A DBMS enforces transactions: concurrent updates are serialised so each sees a consistent view of the data, and partial writes due to a crash are rolled back — leaving the database in a valid state always. This is the ACID guarantee (Atomicity, Consistency, Isolation, Durability), which no plain file system provides automatically.\n\nSecurity and access control is another dimension: a file system can grant or deny access to an entire file, but not to individual rows or columns within it. A DBMS lets you say 'the billing department can see account balances; the support team cannot'. Finally, a DBMS stores metadata about the data itself (data types, constraints, relationships between tables) in a system catalogue. This metadata makes queries self-describing and enables the query optimiser to automatically choose the best execution plan. The net result: applications become thinner (they ask rather than search), data stays consistent across many users, and the system survives crashes without corruption.",
+  "key_points": [
+    { "title": "Data redundancy & inconsistency", "detail": "Flat files duplicate the same data across files. A DBMS enforces a single schema; each fact lives in one place, eliminating inconsistent copies." },
+    { "title": "Data isolation", "detail": "In file systems, each application must understand each file format. A DBMS exposes a stable logical interface so storage can change without breaking applications." },
+    { "title": "Concurrent access anomalies", "detail": "Simultaneous writes to a file corrupt data silently. A DBMS serialises concurrent transactions so every user sees a consistent, up-to-date view." },
+    { "title": "Integrity constraints", "detail": "File systems cannot enforce business rules (unique IDs, valid ranges). A DBMS enforces constraints declaratively — violating data is simply rejected." },
+    { "title": "Security & authorisation", "detail": "File systems grant access at the file level. A DBMS supports fine-grained permissions — even row- or column-level access control." },
+    { "title": "Crash recovery", "detail": "A crash mid-write can leave a file half-updated forever. A DBMS uses a write-ahead log to roll back any incomplete transaction, keeping data consistent." }
+  ],
+  "common_mistakes": [
+    { "title": "Thinking DBMS = SQL", "explanation": "SQL is one query language used by relational DBMSs. A DBMS can also be document-based (MongoDB), key-value (Redis), or graph-based — each still provides the core guarantees (concurrency, recovery) that file systems lack." },
+    { "title": "Assuming file systems are always slower", "explanation": "For simple sequential reads of large blobs (video, logs), flat files can outperform a DBMS. A DBMS wins on structured, concurrent, multi-user workloads — not on raw throughput for homogeneous data." },
+    { "title": "Confusing data redundancy with backup", "explanation": "Redundancy here means the same logical fact stored in multiple places (bad — they diverge). Backup means copying valid data elsewhere for recovery (good). A DBMS reduces logical redundancy while still allowing physical backups." }
+  ],
+  "recall_questions": [
+    { "q": "Name four problems with storing application data in plain files that a DBMS solves.", "answer": "Data redundancy/inconsistency, concurrent-access anomalies, lack of integrity enforcement, and no fine-grained security. A DBMS adds crash recovery on top.", "tier": "tier1" },
+    { "q": "Why does a DBMS provide better concurrency than a file system?", "answer": "A DBMS wraps updates in transactions with locking or MVCC, so concurrent users each see a consistent snapshot and partial writes are rolled back on crash. A plain file system has no such mechanism.", "tier": "tier2" },
+    { "q": "What is data isolation in the file-system context (not the transaction sense)?", "answer": "Each application must know each file's exact format. If the format changes, all applications break. A DBMS exposes a stable logical schema, decoupling storage layout from application code.", "tier": "tier1" },
+    { "q": "Give one scenario where plain files are the better choice over a DBMS.", "answer": "Storing large binary blobs (video, sensor logs) read sequentially by one process — no structured queries, no concurrency. The overhead of a DBMS adds no value here.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "What are the main disadvantages of a file-processing system compared to a DBMS?", "company": "Core CS OA", "answer": "Data redundancy and inconsistency; difficulty accessing data (custom search code per app); data isolation (incompatible formats); concurrency problems; integrity and security hard to enforce; no crash recovery.", "approach": "Enumerate the classic six problems from Silberschatz — redundancy, access difficulty, isolation, concurrency, integrity, security — then contrast each with what a DBMS provides. Examiners award marks per bullet." },
+    { "question": "A startup stores all user data in CSV files. What specific risks does this create as the product scales to 100k users and a team of 10 engineers?", "company": "SDE interview", "answer": "Concurrent writes will corrupt files (no transaction isolation); enforcing rules like unique emails requires custom code that will have bugs; a mid-write crash leaves files corrupted; querying across files requires slow full scans in application code; different engineers will write different formats, causing integration failures.", "approach": "Map each risk to a concrete DBMS feature that fixes it: transactions fix concurrency, constraints fix integrity, WAL fixes crash recovery, SQL fixes query complexity, schema fixes format divergence. Shows you understand WHY each DBMS feature exists." }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/difference-between-file-system-and-dbms/",
+    "https://www.db-book.com/"
+  ]
+}

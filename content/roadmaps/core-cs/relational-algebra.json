@@ -1,0 +1,61 @@
+{
+  "slug": "relational-algebra",
+  "title": "Relational Algebra",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["dbms-vs-file-system"],
+    "unlocks": [],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "You write a SQL query: 'SELECT name FROM users WHERE age > 18'. Before the database executes it, it translates your English-like SQL into a mathematical pipeline.",
+    "question": "What is the underlying math language that powers every relational database engine on earth?"
+  },
+  "mental_model": {
+    "intuition": "A physical assembly line for data. Each station (operator) takes in a conveyer belt of rows, transforms them, and passes them to the next station.",
+    "description": "Relational algebra is a procedural query language. It takes instances of relations as input and yields instances of relations as output. Because the output is always the same shape as the input (a table), you can chain operations together indefinitely."
+  },
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      { "id": "t", "label": "Table" },
+      { "id": "s", "label": "Selection (Sigma)" },
+      { "id": "p", "label": "Projection (Pi)" },
+      { "id": "o", "label": "Output Result" }
+    ],
+    "steps": [
+      { "from": "t", "to": "s", "label": "Filters rows (WHERE age > 18)", "term": "Selection" },
+      { "from": "s", "to": "p", "label": "Selects columns (SELECT name)", "term": "Projection" },
+      { "from": "p", "to": "o", "label": "Final derived table", "term": "Closure property" }
+    ]
+  },
+  "explanation": "SQL is a declarative language — you tell the database WHAT you want, not HOW to get it. But computers need a 'how'. Relational algebra is that 'how'. It is the mathematical foundation of the relational model, consisting of a set of fundamental operations that can be chained together to extract any data. Every SQL query you write is compiled down into a relational algebra expression before the execution engine runs it.\n\nThe most basic operations are Selection and Projection. They slice the data in different directions. Selection (represented by the Greek letter Sigma, \u03c3) is a horizontal slice: it filters rows based on a condition, exactly like the WHERE clause in SQL. Projection (represented by Pi, \u03c0) is a vertical slice: it extracts specific columns and discards the rest, exactly like the SELECT clause in SQL. Because relational algebra operates on sets, Projection automatically removes duplicate rows.\n\nTo combine data from multiple tables, we use the Cartesian Product (Cross Product, \u00d7). It combines every row from Table A with every row from Table B. If A has 100 rows and B has 100 rows, the cross product creates 10,000 rows. This is mathematically pure but computationally disastrous. In the real world, we almost never want a raw cross product.\n\nInstead, we use the Join operation (\u2a1d), which is just a Cross Product immediately followed by a Selection condition. An Inner Join takes the massive cross product and instantly filters it down to only the rows where the keys match (e.g., A.id = B.user_id). This combined operation is so common that it gets its own fundamental operator in the algebra.\n\nThe most important characteristic of relational algebra is the 'closure property'. An operation takes one or two tables as input, and always produces a new table as output. This means you can infinitely nest operations: the output of a Join can be fed into a Selection, which can be fed into a Projection. This composability is what allows databases to optimize queries by rearranging the algebraic tree before executing it.",
+  "key_points": [
+    { "title": "Selection (\u03c3)", "detail": "Filters rows horizontally based on a predicate condition (equivalent to SQL WHERE)." },
+    { "title": "Projection (\u03c0)", "detail": "Extracts columns vertically and drops duplicates (equivalent to SQL SELECT)." },
+    { "title": "Cartesian Product (\u00d7)", "detail": "Combines every row of relation A with every row of relation B." },
+    { "title": "Join (\u2a1d)", "detail": "A Cartesian Product followed by a Selection condition on matching attributes." }
+  ],
+  "common_mistakes": [
+    { "title": "Confusing Selection and Projection", "explanation": "It's easy to mix them up because SQL uses the word 'SELECT' for columns. In math, Selection (Sigma) filters ROWS, and Projection (Pi) picks COLUMNS." },
+    { "title": "Thinking relational algebra is just theoretical", "explanation": "It is the literal engine under the hood. Query optimizers work by converting SQL to an algebraic tree, and then applying mathematical rules to rewrite the tree into a faster, equivalent form." }
+  ],
+  "recall_questions": [
+    { "q": "Which relational algebra operator corresponds to the SQL WHERE clause?", "answer": "Selection (Sigma, \u03c3)", "tier": "tier1" },
+    { "q": "Which relational algebra operator corresponds to the SQL SELECT clause?", "answer": "Projection (Pi, \u03c0)", "tier": "tier1" },
+    { "q": "A Join is fundamentally a combination of which two basic operators?", "answer": "Cartesian Product followed by a Selection.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "What is the closure property in relational algebra?", "company": "Core CS OA", "answer": "The property that the output of any relational algebra operation is always a relation (table), allowing operations to be nested.", "approach": "Mention that this is what enables query chaining and optimization trees." },
+    { "question": "Differentiate between Selection and Projection.", "company": "SDE interview", "answer": "Selection filters tuples (rows) based on a condition. Projection extracts specific attributes (columns) and eliminates duplicates.", "approach": "Use the horizontal/vertical slice analogy. Mention the Greek letters (\u03c3 vs \u03c0) for bonus points." }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Relational_algebra"
+  ]
+}

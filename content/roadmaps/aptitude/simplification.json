@@ -17,45 +17,72 @@
     ],
     "appears_in": [
       "TCS NQT",
-      "Wipro",
-      "AMCAT-style"
+      "AMCAT-style",
+      "Service-co OA"
     ]
   },
   "hook": {
-    "scenario": "When load balancers estimate server capacity during an IPL match, they don't calculate to 5 decimal places. They use quick approximation to scale up instantly."
+    "scenario": "When load balancers estimate server capacity during an IPL match, they do not calculate to 5 decimal places. They use quick approximation to scale up instantly."
   },
   "mental_model": {
     "intuition": "Math has a strict order of operations; break it, and the system crashes.",
     "description": "Simplification is about mechanically executing BODMAS/VBODMAS rules. Approximation is about rounding to manageable numbers while preserving the scale of the answer."
   },
   "pattern_discovery": {
+    "setup": "Evaluate 8 / 2 * (2 + 2) two different ways to see where order matters.",
     "cases": [
-      "8 / 2 * (2 + 2)",
-      "Without BODMAS: 8 / 2 * 4 = 4 * 4 = 16",
-      "If you multiply before dividing: 8 / 8 = 1"
+      "8 / 2 * (2 + 2): Brackets first -> 8 / 2 * 4",
+      "Left-to-right division then multiplication: 4 * 4 = 16",
+      "If you multiply before dividing: 8 / 8 = 1 (WRONG)"
     ],
-    "rule": "Division and Multiplication have the SAME precedence. You must evaluate them left-to-right. The correct answer is 16."
+    "prompt": "Division and Multiplication have the same precedence. Which way do you break the tie?",
+    "rule": "Division and Multiplication have the SAME precedence. You must evaluate them strictly left-to-right. The correct answer is 16."
   },
   "formula": {
-    "statement": "VBODMAS: Vinculum, Bracket, Of, Division, Multiplication, Addition, Subtraction.",
-    "explain": "Vinculum (bar over numbers) is solved first. 'Of' implies multiplication but has higher precedence than Division."
+    "statement": "VBODMAS order: Vinculum (overbar) -> Brackets (inner to outer: round, square, curly) -> Of (multiplication by 'of') -> Division -> Multiplication -> Addition -> Subtraction. D and M have equal precedence (left-to-right). A and S have equal precedence (left-to-right). 'Of' implies multiplication but is resolved before Division.",
+    "explain": "Vinculum (bar over numbers) is solved first. 'Of' means multiply but has higher precedence than Division. e.g., 10 / 2 of 5 = 10 / (2 x 5) = 10 / 10 = 1. But 10 / 2 x 5 = 5 x 5 = 25 (different!)."
   },
+  "worked_example": [
+    {
+      "problem": "Evaluate: 5 + 3 * [4 + 2 * {6 - (2 + 1)}] - 2",
+      "steps": [
+        "Innermost bracket (round): (2 + 1) = 3.",
+        "Curly bracket: {6 - 3} = 3.",
+        "Multiplication inside square bracket: 2 * 3 = 6.",
+        "Addition inside square bracket: 4 + 6 = 10.",
+        "Square bracket done: [10] = 10.",
+        "Now: 5 + 3 * 10 - 2. Multiplication first: 3 * 10 = 30.",
+        "Left-to-right: 5 + 30 - 2 = 33."
+      ],
+      "answer": "33."
+    },
+    {
+      "problem": "Approximate: 19.98% of 501.3 + 34.97% of 799.8",
+      "steps": [
+        "Round aggressively: 19.98% ~ 20%, 501.3 ~ 500. 34.97% ~ 35%, 799.8 ~ 800.",
+        "20% of 500 = 100. 35% of 800 = 280.",
+        "Total ~ 380.",
+        "Sanity-check: exact values would be ~100.16 + ~279.93 = ~380.09. Approximation 380 is valid."
+      ],
+      "answer": "Approximately 380."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Digital Sum (Digit Root)",
-      "trick": "The sum of digits of the LHS expression equals the sum of digits of the RHS answer. Ignore 9s.",
-      "example": "23 * 15 = 345. Digit sum of 23 is 5, 15 is 6. 5 * 6 = 30 -> 3. Digit sum of 345 is 3+4+5=12 -> 3. Matches!"
+      "trick": "The digit sum of the LHS expression equals the digit sum of the answer. Use to verify calculations.",
+      "example": "23 x 15 = 345. Digit sum of 23=5, 15=6. 5 x 6 = 30 -> digit root 3. Digit sum of 345 = 12 -> 3. Matches!"
     },
     {
       "title": "Approximation with Percentages",
-      "trick": "Round numbers to the nearest zero or five. If you round one number up in multiplication, round the other down to balance the error.",
+      "trick": "Round numbers to nearest zero or five. If you round one number up in multiplication, round the other down to balance the error.",
       "example": "49.87% of 301.2 -> Approximate as 50% of 300 = 150."
     }
   ],
   "common_mistakes": [
     {
-      "title": "Treating 'Of' same as 'Multiply'",
-      "explanation": "'Of' and 'Multiply' both mean multiplication, but 'Of' is resolved BEFORE division. e.g., 10 / 2 of 5 = 10 / 10 = 1. But 10 / 2 * 5 = 5 * 5 = 25."
+      "title": "Treating 'Of' same as Multiply in BODMAS",
+      "explanation": "'Of' is resolved BEFORE division. e.g., 10 / 2 of 5 = 10 / 10 = 1. But 10 / 2 x 5 = 5 x 5 = 25. They are different."
     },
     {
       "title": "Ignoring left-to-right rule for Division",
@@ -65,17 +92,17 @@
   "recall_questions": [
     {
       "q": "What does the 'V' in VBODMAS stand for?",
-      "answer": "Vinculum, a horizontal bar indicating that the operation under it should be performed first.",
+      "answer": "Vinculum - a horizontal bar indicating that the operation under it should be performed first.",
       "tier": "tier1"
     },
     {
       "q": "Does Division have higher precedence than Multiplication?",
-      "answer": "No, they have the same precedence. You evaluate them left-to-right.",
+      "answer": "No, they have the same precedence. Evaluate them left-to-right.",
       "tier": "tier1"
     },
     {
       "q": "What is 18 / 6 of 3?",
-      "answer": "1. 'Of' is resolved first (6*3=18), then division (18/18).",
+      "answer": "1. 'Of' is resolved first (6 x 3 = 18), then division (18 / 18 = 1).",
       "tier": "tier1"
     }
   ],
@@ -90,7 +117,7 @@
       "question": "Evaluate: 4 + 4 * 4 / 4 of 4",
       "company": "Service-co OA",
       "answer": "5",
-      "approach": "Resolve 'of': 4 * 4 = 16. Expression becomes 4 + 4 * 4 / 16. Division: 4 / 16 = 1/4. Multiplication: 4 * (1/4) = 1. Addition: 4 + 1 = 5."
+      "approach": "Resolve 'of' first: 4 of 4 = 16. Expression: 4 + 4 * 4 / 16. Left-to-right: 4 * 4 = 16, 16 / 16 = 1. Then 4 + 1 = 5."
     }
   ],
   "sources": [

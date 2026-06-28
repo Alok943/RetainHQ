@@ -15,7 +15,6 @@
     "unlocks": [],
     "appears_in": [
       "Product-co OA",
-      "Cognizant",
       "AMCAT-style"
     ]
   },
@@ -24,18 +23,39 @@
     "description": "Indices represent repeated multiplication. Surds are just indices in disguise (fractional powers). Logarithms are the inverse: asking 'what power do I need to raise the base to get this number?'"
   },
   "formula": {
-    "statement": "a^m * a^n = a^(m+n); log_a(b) = log_c(b) / log_c(a); sqrt(a) * sqrt(b) = sqrt(a*b)",
-    "explain": "For indices, multiplying bases adds exponents. For logs, base change allows calculating unusual logs using standard base 10 or e. Surds merge under multiplication but NOT under addition."
+    "statement": "Indices: a^m x a^n = a^(m+n). a^m / a^n = a^(m-n). (a^m)^n = a^(mn). a^0 = 1. a^(-n) = 1/a^n. a^(1/n) = nth root of a. Surds: sqrt(a) x sqrt(b) = sqrt(a x b). sqrt(a) / sqrt(b) = sqrt(a/b). sqrt(a) + sqrt(b) != sqrt(a+b). Logs: log_a(x) means a^? = x. log_a(mn) = log_a(m) + log_a(n). log_a(m/n) = log_a(m) - log_a(n). log_a(m^n) = n x log_a(m). log_a(a) = 1. log_a(1) = 0. Base change: log_a(b) = log_c(b) / log_c(a). Flip: log_a(b) x log_b(a) = 1.",
+    "explain": "For indices, multiplying same-base terms adds exponents. For logs, base change allows converting to base 10 or base e. Surds merge under multiplication and division, but NOT under addition (sqrt(4+9) != sqrt(4)+sqrt(9))."
   },
+  "worked_example": [
+    {
+      "problem": "Simplify: (2^3 x 4^2) / (8^2).",
+      "steps": [
+        "Convert to same base: 4 = 2^2, so 4^2 = (2^2)^2 = 2^4. 8 = 2^3, so 8^2 = (2^3)^2 = 2^6.",
+        "Expression = (2^3 x 2^4) / 2^6 = 2^(3+4) / 2^6 = 2^7 / 2^6 = 2^(7-6) = 2^1 = 2.",
+        "Sanity-check: 8 x 16 / 64 = 128 / 64 = 2. Matches."
+      ],
+      "answer": "2."
+    },
+    {
+      "problem": "If log_2(32) = x and log_4(64) = y, find x + y.",
+      "steps": [
+        "log_2(32): 2^? = 32 = 2^5. So x = 5.",
+        "log_4(64): 4^? = 64. 4 = 2^2, 64 = 2^6. So (2^2)^? = 2^6 -> 2? = 6 -> ? = 3. So y = 3.",
+        "x + y = 5 + 3 = 8.",
+        "Sanity-check: log_4(64) via base change = log_2(64) / log_2(4) = 6 / 2 = 3. Correct."
+      ],
+      "answer": "x + y = 8."
+    }
+  ],
   "shortcuts": [
     {
       "title": "Infinite Nested Roots",
-      "trick": "For sqrt(a + sqrt(a + ...)), if 'a' is a product of two consecutive integers (n * (n+1)), the answer is the larger integer (n+1).",
-      "example": "sqrt(12 + sqrt(12 + ...)). 12 = 3 * 4. The answer is 4."
+      "trick": "For sqrt(a + sqrt(a + ...)), if 'a' is a product of two consecutive integers n x (n+1), the answer is (n+1).",
+      "example": "sqrt(12 + sqrt(12 + ...)). 12 = 3 x 4. Answer = 4."
     },
     {
       "title": "Logarithmic Base Swap",
-      "trick": "log_a(b) * log_b(a) = 1. You can freely flip the base and the argument by taking the reciprocal.",
+      "trick": "log_a(b) x log_b(a) = 1. You can freely flip base and argument by taking the reciprocal.",
       "example": "If log_2(3) = x, then log_3(2) = 1/x."
     }
   ],
@@ -46,7 +66,7 @@
     },
     {
       "title": "Log of a sum",
-      "explanation": "log(a + b) does NOT equal log(a) + log(b). The rule is log(a * b) = log(a) + log(b)."
+      "explanation": "log(a + b) does NOT equal log(a) + log(b). The product rule is log(a x b) = log(a) + log(b)."
     }
   ],
   "recall_questions": [
@@ -71,16 +91,17 @@
       "question": "Find the value of x if log_3(x) + log_9(x) = 3.",
       "company": "Product-co OA",
       "answer": "9",
-      "approach": "Change base: log_9(x) = log_3(x) / log_3(9) = log_3(x) / 2. So, log_3(x) + 0.5*log_3(x) = 3. 1.5*log_3(x) = 3. log_3(x) = 2. x = 3^2 = 9."
+      "approach": "Change base: log_9(x) = log_3(x) / log_3(9) = log_3(x) / 2. So log_3(x) + 0.5 x log_3(x) = 3. 1.5 x log_3(x) = 3. log_3(x) = 2. x = 3^2 = 9."
     },
     {
       "question": "Simplify sqrt(72) - sqrt(18)",
       "company": "AMCAT-style",
-      "answer": "3 * sqrt(2)",
-      "approach": "sqrt(72) = 6*sqrt(2). sqrt(18) = 3*sqrt(2). 6*sqrt(2) - 3*sqrt(2) = 3*sqrt(2)."
+      "answer": "3 x sqrt(2)",
+      "approach": "sqrt(72) = sqrt(36 x 2) = 6 x sqrt(2). sqrt(18) = sqrt(9 x 2) = 3 x sqrt(2). 6 x sqrt(2) - 3 x sqrt(2) = 3 x sqrt(2)."
     }
   ],
   "sources": [
-    "https://en.wikipedia.org/wiki/Logarithm"
+    "https://en.wikipedia.org/wiki/Logarithm",
+    "https://www.indiabix.com/aptitude/surds-and-indices/"
   ]
 }

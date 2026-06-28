@@ -1,0 +1,121 @@
+{
+  "slug": "concurrency-control-2pl",
+  "title": "Concurrency Control: Two-Phase Locking (2PL)",
+  "roadmap": "core-cs",
+  "kind": "theory",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["schedules-and-serializability"],
+    "unlocks": [],
+    "appears_in": ["Core CS OA", "SDE interview"]
+  },
+  "hook": {
+    "scenario": "Two warehouse workers both want to update the same row of inventory. Without any coordination, both read quantity = 10, both subtract 3, and both write 7 — losing one subtraction entirely.",
+    "question": "What rule can every transaction follow independently — without central coordination — that guarantees the schedule is always serializable?"
+  },
+  "mental_model": {
+    "intuition": "2PL is like a library checkout rule: you must gather all the books you need before you start reading, and return them all after you finish — you can never borrow a new book once you've returned one.",
+    "description": "In practice: a transaction can acquire locks freely (growing phase), but the moment it releases its first lock, it can never acquire another (shrinking phase). This single rule provably prevents the cycles in the precedence graph that cause non-serializability — because releasing a lock signals 'I'm done with this data', so no one can interleave a conflicting operation after that point."
+  },
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      { "id": "t1", "label": "Transaction T1" },
+      { "id": "lm", "label": "Lock Manager" },
+      { "id": "t2", "label": "Transaction T2" }
+    ],
+    "steps": [
+      { "from": "t1", "to": "lm", "label": "Request X-lock on row A", "term": "lock acquire (growing phase)" },
+      { "from": "lm", "to": "t1", "label": "X-lock granted", "term": "exclusive lock" },
+      { "from": "t2", "to": "lm", "label": "Request X-lock on row A", "term": "lock request — conflict" },
+      { "from": "lm", "to": "t2", "label": "BLOCKED — lock held by T1", "term": "lock wait" },
+      { "from": "t1", "to": "lm", "label": "Release X-lock on A (shrinking phase starts)", "term": "lock release" },
+      { "from": "lm", "to": "t2", "label": "X-lock granted to T2", "term": "lock acquired" }
+    ]
+  },
+  "explanation": "Two-Phase Locking (2PL) is the most widely used concurrency control protocol. It imposes one simple rule: every transaction goes through exactly two phases. In the growing phase it may only acquire locks and may never release one. In the shrinking phase it may only release locks and may never acquire a new one. The point of transition — the moment the first lock is released — is called the lock point.\n\nWhy does this rule guarantee conflict-serializability? Because the lock point establishes a total order on transactions. If T1 releases a lock that T2 then acquires, T1's lock point comes before T2's, so T1 must appear before T2 in the equivalent serial order. This means the precedence graph built from all conflicting operations is forced to be acyclic — exactly the condition for conflict-serializability.\n\nTwo lock modes exist. A shared lock (S-lock) is granted to a transaction that wants to read a data item; multiple transactions can hold S-locks on the same item simultaneously. An exclusive lock (X-lock) is granted to a transaction that wants to write; it conflicts with both S-locks and other X-locks. A transaction must upgrade from S to X before writing — and this upgrade can cause deadlocks if two transactions both hold S-locks and both try to upgrade.\n\nBasic 2PL prevents non-serializable interleavings but does NOT prevent cascading rollbacks. If T1 releases a lock, T2 reads that data, and then T1 aborts, T2 has read dirty data and must also abort — and any transaction that read from T2 must abort too. Strict 2PL (S2PL) fixes this: a transaction holds ALL its locks until it commits or aborts, releasing them all at once. This prevents dirty reads but increases blocking. Rigorous 2PL (R2PL) is stricter still: all locks (shared and exclusive) are held until commit. Most real databases (PostgreSQL, MySQL InnoDB) implement Strict or Rigorous 2PL combined with MVCC.\n\nThe key weakness of 2PL is deadlock. Two transactions can each hold a lock the other needs, forming a cycle. Databases detect deadlocks by periodically looking for cycles in the waits-for graph (a graph where T1 → T2 means T1 is waiting for a lock held by T2), then aborting one victim transaction to break the cycle. Alternatively, deadlocks can be prevented by lock ordering (impose a global order on data items and acquire locks in that order) or timeout-based policies.",
+  "key_points": [
+    {
+      "title": "Growing phase",
+      "detail": "A transaction may acquire locks freely but may not release any. All reads and writes happen under locks acquired in this phase."
+    },
+    {
+      "title": "Shrinking phase",
+      "detail": "Once a transaction releases its first lock, it may never acquire another. The lock point (first release) defines the serial order."
+    },
+    {
+      "title": "Shared lock (S-lock)",
+      "detail": "For reads. Multiple transactions can hold S-locks on the same item simultaneously. Compatible with other S-locks; incompatible with X-locks."
+    },
+    {
+      "title": "Exclusive lock (X-lock)",
+      "detail": "For writes. Only one transaction can hold an X-lock on an item at a time. Incompatible with both S and X locks from other transactions."
+    },
+    {
+      "title": "Strict 2PL (S2PL)",
+      "detail": "Holds all locks until commit/abort — prevents dirty reads and cascading rollbacks. The variant used by most production databases."
+    },
+    {
+      "title": "Deadlock handling",
+      "detail": "Detected via cycle in the waits-for graph; resolved by aborting one victim. Prevented by global lock ordering or timeout."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking 2PL prevents deadlocks",
+      "explanation": "Basic 2PL does NOT prevent deadlocks — it actually makes them more likely by holding locks longer. Deadlock prevention requires additional mechanisms (lock ordering, timeout). 2PL prevents non-serializability, not deadlock."
+    },
+    {
+      "title": "Confusing 2PL phases with two-phase commit (2PC)",
+      "explanation": "These are completely different protocols. 2PL is a concurrency control mechanism within one database (growing/shrinking lock phases). 2PC is a distributed commit protocol across multiple nodes. The '2-phase' in both is a coincidence."
+    },
+    {
+      "title": "Assuming basic 2PL is what databases use",
+      "explanation": "Most production databases use Strict 2PL or Rigorous 2PL (combined with MVCC). Basic 2PL allows cascading rollbacks, which is unacceptable. If you say '2PL' in an interview, specify the variant."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "State the 2PL rule in one sentence.",
+      "answer": "A transaction may acquire locks in the growing phase and release them in the shrinking phase — once it releases a lock, it can never acquire another.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does 2PL guarantee conflict-serializability?",
+      "answer": "The lock point (first lock release) establishes a total order on transactions — T1 before T2 if T1 releases a lock T2 then acquires. This order is consistent with an acyclic precedence graph, so the schedule is conflict-serializable.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the difference between basic 2PL and Strict 2PL?",
+      "answer": "Basic 2PL releases locks as soon as the shrinking phase starts. Strict 2PL holds all exclusive locks until commit/abort, preventing dirty reads and cascading rollbacks.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does a database detect and resolve a deadlock in 2PL?",
+      "answer": "It builds a waits-for graph (T1→T2 if T1 waits for a lock T2 holds), detects a cycle, and aborts one victim transaction to break the cycle.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "T1 holds S-lock on A and wants X-lock on A. T2 holds S-lock on A and wants X-lock on A. What happens?",
+      "company": "Core CS OA",
+      "answer": "Both try to upgrade their S-lock to X-lock. Neither can succeed because the other holds an S-lock blocking the upgrade. This is a lock upgrade deadlock — the DB must abort one of them.",
+      "approach": "Name the specific deadlock type (upgrade deadlock). Explain that S-to-X upgrade requires exclusive access, which is blocked by the peer's S-lock. Show awareness of the deadlock detection mechanism."
+    },
+    {
+      "question": "Why do databases combine 2PL with MVCC instead of using 2PL alone?",
+      "company": "SDE interview",
+      "answer": "Pure 2PL blocks reads behind write locks, reducing throughput. MVCC lets readers access a consistent snapshot without acquiring locks on written rows. Writers still use 2PL for write-write conflict prevention. The combination gives high read concurrency with correct write ordering.",
+      "approach": "Contrast the bottleneck of pure 2PL (readers block writers and vice versa) with MVCC's snapshot model. Mention PostgreSQL or MySQL InnoDB as real examples."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/two-phase-locking-protocol/",
+    "https://en.wikipedia.org/wiki/Two-phase_locking"
+  ]
+}

@@ -105,6 +105,15 @@ def main():
             fm = d.get("formula")
             if not isinstance(fm, dict) or not fm.get("statement"):
                 err(rel, "formula is required (object with a non-empty 'statement')")
+            # worked_example REQUIRED: 1-2 representative problems solved step-by-step with the
+            # method, so a learner can actually reach the oa_questions. Bridges formula -> OA.
+            we = d.get("worked_example")
+            if not isinstance(we, list) or not we:
+                err(rel, "worked_example is required: a non-empty list of {problem, steps[], answer}")
+            else:
+                for i, w in enumerate(we):
+                    if not isinstance(w, dict) or not w.get("problem") or not w.get("answer") or not isinstance(w.get("steps"), list) or not w.get("steps"):
+                        err(rel, f"worked_example[{i}] needs 'problem', a non-empty 'steps' list, and 'answer'")
             sc = d.get("shortcuts")
             if not isinstance(sc, list) or not sc:
                 err(rel, "shortcuts is required: a non-empty list of trick cards")
