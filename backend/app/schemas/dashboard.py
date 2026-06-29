@@ -23,3 +23,24 @@ class HeatmapResponse(BaseModel):
     longest_streak: int
     total_reviews: int
     active_days: int
+
+
+class RatingCounts(BaseModel):
+    easy: int = 0
+    medium: int = 0
+    hard: int = 0
+
+
+class ReviewMetrics(BaseModel):
+    """User-facing retention metrics, computed from completed-review history.
+
+    `enough_data` gates the UI: below a small threshold we surface an honest
+    "keep reviewing" state instead of a noisy, misleading number from 1-2 reviews.
+    """
+    reviews_completed: int
+    enough_data: bool
+    recall_rate: Optional[float] = None       # 0-1: objective recalled / completed
+    retention_score: Optional[int] = None     # 0-100: recalled reviews weighted by felt difficulty
+    retention_band: Optional[str] = None       # Weak | Developing | Strong | Mastered
+    compliance_rate: Optional[float] = None   # 0-1: completed / (completed + currently-overdue)
+    rating_counts: RatingCounts = RatingCounts()

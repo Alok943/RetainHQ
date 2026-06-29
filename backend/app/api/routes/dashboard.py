@@ -7,10 +7,16 @@ from datetime import datetime, timedelta
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.models.models import Review, Activity
-from app.schemas.dashboard import DashboardStats, HeatmapDay, HeatmapResponse
+from app.schemas.dashboard import (
+    DashboardStats, HeatmapDay, HeatmapResponse, ReviewMetrics, RatingCounts,
+)
 from app.services.scheduler import REVIEW_SESSION_CAP
 
 router = APIRouter()
+
+# Below this many completed reviews, the retention metrics are statistical noise —
+# we tell the user to keep reviewing instead of showing a misleading number.
+REVIEW_METRICS_MIN = 5
 
 @router.get("/", response_model=DashboardStats)
 async def get_dashboard_stats(
@@ -76,6 +82,71 @@ async def get_dashboard_stats(
         total_activities=act.total or 0,
         total_reviews_completed=rev.total_completed or 0,
         next_review_at=rev.next_review,
+    )
+
+
+@router.get("/review-metrics", response_model=ReviewMetrics)
+async def get_review_metrics(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Real retention metrics from completed-review history:
+      - recall_rate: objective recalled / completed
+      - retention_score (0-100) + band: recalled reviews weighted by felt difficulty
+        (easy=100, medium=70, hard=40), misses count as 0
+      - compliance_rate: completed / (completed + currently-overdue)
+    """
+    user_id = uuid.UUID(current_user.id)
+    now = datetime.utcnow()
+
+    # One round-trip: completed count, recalled count, rating mix, and the
+    # recalled-by-rating breakdown needed for the weighted retention score.
+    stmt = (
+        select(
+            func.count(Review.id).filter(Review.status == "completed").label("completed"),
+            func.count(Review.id).filter(Review.status == "completed", Review.recalled == True).label("recalled"),
+            func.count(Review.id).filter(Review.status == "completed", Review.rating == "easy").label("easy"),
+            func.count(Review.id).filter(Review.status == "completed", Review.rating == "medium").label("medium"),
+            func.count(Review.id).filter(Review.status == "completed", Review.rating == "hard").label("hard"),
+            func.count(Review.id).filter(Review.status == "completed", Review.recalled == True, Review.rating == "easy").label("r_easy"),
+            func.count(Review.id).filter(Review.status == "completed", Review.recalled == True, Review.rating == "medium").label("r_medium"),
+            func.count(Review.id).filter(Review.status == "completed", Review.recalled == True, Review.rating == "hard").label("r_hard"),
+            func.count(Review.id).filter(Review.status == "due", Review.scheduled_for < now).label("overdue"),
+        )
+        .where(Review.user_id == user_id)
+    )
+    r = (await db.execute(stmt)).one()
+
+    completed = r.completed or 0
+    if completed < REVIEW_METRICS_MIN:
+        return ReviewMetrics(reviews_completed=completed, enough_data=False)
+
+    recalled = r.recalled or 0
+    recall_rate = recalled / completed
+
+    # Weighted retention: recalled reviews score by felt difficulty; misses = 0.
+    score_sum = (r.r_easy or 0) * 100 + (r.r_medium or 0) * 70 + (r.r_hard or 0) * 40
+    retention_score = round(score_sum / completed)
+    if retention_score >= 90:
+        band = "Mastered"
+    elif retention_score >= 75:
+        band = "Strong"
+    elif retention_score >= 50:
+        band = "Developing"
+    else:
+        band = "Weak"
+
+    overdue = r.overdue or 0
+    compliance_rate = completed / (completed + overdue) if (completed + overdue) else None
+
+    return ReviewMetrics(
+        reviews_completed=completed,
+        enough_data=True,
+        recall_rate=round(recall_rate, 3),
+        retention_score=retention_score,
+        retention_band=band,
+        compliance_rate=round(compliance_rate, 3) if compliance_rate is not None else None,
+        rating_counts=RatingCounts(easy=r.easy or 0, medium=r.medium or 0, hard=r.hard or 0),
     )
 
 

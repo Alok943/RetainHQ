@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart2, CalendarCheck, Zap, ClipboardList, Target, Lock, TrendingUp, BrainCircuit, CalendarDays } from 'lucide-react';
+import { BarChart2, CalendarCheck, Zap, ClipboardList, Target, BrainCircuit, CalendarDays } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import ComingSoonBanner from './ComingSoon';
 import { useAuth } from './lib/AuthContext';
 import ReviewHeatmap from './ReviewHeatmap';
 
+const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
+const BAND_COLOR = { Mastered: '#0F766E', Strong: '#0891B2', Developing: '#B45309', Weak: '#ba1a1a' };
+const REVIEW_METRICS_MIN_UI = 5; // mirrors backend REVIEW_METRICS_MIN
+
 function Analytics() {
   const [stats, setStats] = useState(null);
+  const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { session } = useAuth();
@@ -16,8 +21,11 @@ function Analytics() {
       setLoading(false);
       return;
     }
-    apiFetch('/api/dashboard/')
-      .then(setStats)
+    Promise.all([
+      apiFetch('/api/dashboard/'),
+      apiFetch('/api/dashboard/review-metrics').catch(() => null), // tolerate older backend
+    ])
+      .then(([s, m]) => { setStats(s); setMetrics(m); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -80,32 +88,57 @@ function Analytics() {
         <ReviewHeatmap />
       </section>
 
-      {/* PHASE 2 — honest placeholders, no fabricated numbers */}
+      {/* RETENTION INSIGHTS — real metrics from review history (gated on enough data) */}
       <section>
         <div className="flex items-center gap-2 mb-4">
           <h3 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider">Retention insights</h3>
-          <span className="font-mono text-[10px] font-bold text-[#0891B2] bg-[#0891B2]/10 border border-[#0891B2]/20 rounded px-2 py-0.5">PHASE 2</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <ComingSoon
-            icon={<TrendingUp size={18} />}
-            title="Learning Momentum"
-            body="A single score from your consistency, completion and review compliance — unlocks with adaptive scheduling."
-          />
-          <ComingSoon
-            icon={<BrainCircuit size={18} />}
-            title="Retention Strength"
-            body="How well topics are sticking (Weak → Mastered), computed from your recall outcomes over time."
-          />
-          <ComingSoon
-            icon={<BarChart2 size={18} />}
-            title="Review Compliance"
-            body="How reliably you clear reviews when they're due — needs a few weeks of review history first."
-          />
-        </div>
-        <p className="font-sans text-xs text-[#64748B] mt-4">
-          These need recall history to be meaningful. We're capturing the signals now (every review stores how you rated it and whether you recalled it) — the charts come once there's enough data.
-        </p>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[0, 1, 2].map((i) => <div key={i} className="kinetic-card bg-white p-5 h-[140px] skeleton" />)}
+          </div>
+        ) : !metrics?.enough_data ? (
+          <div className="kinetic-card bg-white p-6 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-lg bg-[#0891B2]/10 flex items-center justify-center text-[#0891B2] shrink-0">
+              <BrainCircuit size={18} />
+            </div>
+            <div>
+              <h4 className="font-sans text-sm font-semibold text-[#0F172A] mb-1">Retention metrics unlock after a few reviews</h4>
+              <p className="font-sans text-xs text-[#64748B] leading-relaxed">
+                You've completed <span className="font-semibold text-[#0F172A]">{metrics?.reviews_completed ?? 0}</span> of {REVIEW_METRICS_MIN_UI} reviews needed. Keep clearing your due reviews — once there's enough recall history, your accuracy, retention strength and compliance show up here for real (no fabricated numbers).
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard
+              icon={<Target size={16} />}
+              title="Recall Accuracy"
+              value={pct(metrics.recall_rate)}
+              ratio={metrics.recall_rate}
+              sub={`${Math.round((metrics.recall_rate || 0) * metrics.reviews_completed)} of ${metrics.reviews_completed} recalled`}
+              color="#0891B2"
+            />
+            <MetricCard
+              icon={<BrainCircuit size={16} />}
+              title="Retention Strength"
+              value={metrics.retention_score}
+              ratio={(metrics.retention_score || 0) / 100}
+              band={metrics.retention_band}
+              sub="Recall weighted by difficulty"
+              color={BAND_COLOR[metrics.retention_band] || '#0891B2'}
+            />
+            <MetricCard
+              icon={<CalendarCheck size={16} />}
+              title="Review Compliance"
+              value={pct(metrics.compliance_rate)}
+              ratio={metrics.compliance_rate}
+              sub="Due reviews you've cleared"
+              color="#0F766E"
+            />
+          </div>
+        )}
       </section>
 
       <ComingSoonBanner
@@ -131,19 +164,29 @@ function StatCard({ title, value, sub, icon, color }) {
   );
 }
 
-function ComingSoon({ icon, title, body }) {
+function MetricCard({ icon, title, value, sub, ratio, band, color }) {
+  const width = Math.max(0, Math.min(100, Math.round((ratio || 0) * 100)));
   return (
-    <div className="kinetic-card bg-white p-5 flex flex-col gap-3 opacity-90">
+    <div className="kinetic-card bg-white p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="w-10 h-10 rounded-lg bg-[rgba(15,23,42,0.04)] flex items-center justify-center text-[#64748B]">
-          {icon}
-        </div>
-        <span className="font-mono text-[10px] text-[#94a3b8] flex items-center gap-1">
-          <Lock size={11} /> Soon
-        </span>
+        <h3 className="font-sans text-[10px] font-bold text-[#64748B] uppercase tracking-widest">{title}</h3>
+        <div style={{ color }}>{icon}</div>
       </div>
-      <h4 className="font-sans text-sm font-semibold text-[#0F172A]">{title}</h4>
-      <p className="font-sans text-xs text-[#64748B] leading-relaxed">{body}</p>
+      <div className="flex items-end gap-2">
+        <span className="font-mono text-3xl font-semibold text-[#0F172A] leading-none">{value}</span>
+        {band && (
+          <span
+            className="font-sans text-[11px] font-bold px-2 py-0.5 rounded-full mb-0.5"
+            style={{ color, backgroundColor: `${color}14`, border: `1px solid ${color}33` }}
+          >
+            {band}
+          </span>
+        )}
+      </div>
+      <div className="w-full h-1.5 rounded-full bg-[rgba(15,23,42,0.06)] overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${width}%`, backgroundColor: color }} />
+      </div>
+      <div className="font-sans text-xs text-[#64748B]">{sub}</div>
     </div>
   );
 }
