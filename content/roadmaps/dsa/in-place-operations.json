@@ -26,6 +26,15 @@
     "description": "In-place operations mean the algorithm does its work using only a constant amount of extra memory (like a few variables for indices or a temporary swap variable). The original data structure is mutated. This requires careful tracking of what data has been processed and what data is safe to overwrite. The classic technique is using two pointers (e.g., left and right, or slow and fast) to coordinate reading and writing within the same array.",
     "repeated_decision": "At each step, identify what data can be overwritten safely without losing information that hasn't been processed yet."
   },
+  "viz": {
+    "generator": "in-place-operations",
+    "default_input": [1, 2, 3, 4, 5],
+    "invariants": {
+      "inv-bounds": "Everything outside the lo..hi window is already in its final reversed position.",
+      "inv-swapped": "Swapping arr[lo] and arr[hi] puts both elements in their final spots at once.",
+      "inv-reversed": "When lo meets hi, the whole array is reversed — using only one temp variable (O(1) space)."
+    }
+  },
   "explanation": "An algorithm is 'in-place' if it requires O(1) extra space. This means the memory it needs does not grow with the size of the input. \n\nTo achieve this, you must overwrite the input array. The challenge is ensuring you don't overwrite data you still need. \n\nConsider removing all zeros from an array while keeping the order of other elements. If you use a new array, it's trivial: loop and append non-zeros. To do it in-place, you use two pointers. A 'fast' pointer scans ahead looking for non-zeros. A 'slow' pointer tracks where the next non-zero should be written. When the fast pointer finds a non-zero, you copy it to the slow pointer's position and advance both. By the end, all non-zeros are packed at the front of the array, and you can fill the rest with zeros. Because the fast pointer is always ahead of or equal to the slow pointer, you never overwrite unread data.\n\nAnother classic is reversing an array. You put a left pointer at the start and a right pointer at the end. You swap their values, then move them towards the center. This uses exactly one temporary variable for the swap, making it perfectly in-place.\n\nIn-place operations are a favorite in interviews because they test your ability to manage state and pointers without relying on the crutch of throwing more memory at the problem.",
   "key_points": [
     { "title": "O(1) Space", "detail": "The defining characteristic. You can use a few variables (pointers, a temp for swapping), but no new arrays or hash maps." },

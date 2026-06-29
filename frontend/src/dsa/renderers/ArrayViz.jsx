@@ -7,7 +7,12 @@ import { motion } from 'framer-motion';
 const C = {
   sorted: '#0F766E', write: '#7C3AED', merging: '#0891B2',
   left: '#0891B2', right: '#B45309', idle: '#cbd5e1', ink: '#0F172A', slate: '#64748B',
+  pointer: '#B45309',
 };
+
+// Named pointers the renderer knows how to draw above a bar. `write` keeps its ▼;
+// the two-pointer / array-family markers (lo/hi/i/j) draw as small labels.
+const PTR_LABELS = { write: '▼', lo: 'lo', hi: 'hi', i: 'i', j: 'j', left: 'L', right: 'R' };
 
 function regionOf(i, regions) {
   for (const r of regions || []) if (i >= r.lo && i <= r.hi) return r.label;
@@ -20,9 +25,16 @@ export default function ArrayViz({ frame }) {
   const sortedSet = new Set(sorted);
   const maxVal = Math.max(1, ...array);
 
+  // index -> the pointer labels sitting on it (e.g. ['lo'] or ['i'])
+  const labelsAt = (i) =>
+    Object.entries(pointers)
+      .filter(([k, v]) => v === i && PTR_LABELS[k] && k !== 'write')
+      .map(([k]) => PTR_LABELS[k]);
+
   const colorOf = (i) => {
     if (sortedSet.has(i)) return C.sorted;
     if (pointers.write === i) return C.write;
+    if (pointers.i === i || pointers.j === i) return C.pointer; // active swap cells
     const reg = regionOf(i, regions);
     if (reg === 'merging') return C.merging;
     if (reg === 'left') return C.left;
@@ -35,8 +47,8 @@ export default function ArrayViz({ frame }) {
       <div className="flex items-end justify-center gap-1.5" style={{ height: 180 }}>
         {array.map((v, i) => (
           <div key={i} className="flex flex-col items-center justify-end" style={{ width: 34 }}>
-            <span className="font-mono text-[11px] mb-1" style={{ color: pointers.write === i ? C.write : C.slate }}>
-              {pointers.write === i ? '▼' : ''}
+            <span className="font-mono text-[11px] mb-1 h-[14px] flex items-center gap-0.5" style={{ color: pointers.write === i ? C.write : C.pointer }}>
+              {pointers.write === i ? '▼' : (labelsAt(i).join(' ') || '')}
             </span>
             <motion.div
               className="w-full rounded-t-md flex items-start justify-center"

@@ -8,8 +8,9 @@ export function compile(input, events) {
   const array = [...input];
   const callStack = [];       // for the StateMachine renderer (recursion / call stack)
   let regions = [];           // brackets under the array: left/right/merging/sorted
-  const sorted = new Set();   // indices known sorted (filled on MERGE_DONE)
+  const sorted = new Set();   // indices known sorted/finalized (filled on MERGE_DONE / DONE / SET)
   const frames = [];
+  let ptrs = {};              // persistent named pointers for array-family traces (lo/hi/i/j)
 
   const top = () => callStack[callStack.length - 1];
 
@@ -49,6 +50,32 @@ export function compile(input, events) {
       case 'RETURN':
         callStack.pop();
         break;
+
+      // --- array family (two-pointers, in-place ops, prefix sums) ---
+      case 'POINT': // set/move named pointers (lo, hi, i, j); persists across frames
+        ptrs = { ...ptrs, ...args };
+        pointers = { ...ptrs };
+        break;
+      case 'SWAP': { // swap two indices in place
+        const { i, j } = args;
+        const tmp = array[i]; array[i] = array[j]; array[j] = tmp;
+        ptrs = { ...ptrs, i, j };
+        pointers = { ...ptrs };
+        break;
+      }
+      case 'SET': // overwrite one cell and mark it finalized (e.g. a built prefix value)
+        if (typeof args.index === 'number') { array[args.index] = args.value; sorted.add(args.index); }
+        pointers = { ...ptrs, write: args.index };
+        break;
+      case 'DONE': // finalize a range (or the whole array when no bounds given)
+        if (typeof args.lo === 'number' && typeof args.hi === 'number') {
+          for (let x = args.lo; x <= args.hi; x++) sorted.add(x);
+        } else {
+          for (let x = 0; x < array.length; x++) sorted.add(x);
+        }
+        pointers = { ...ptrs };
+        break;
+
       default:
         break; // graceful fallback: unknown op -> still a frame with caption/invariant
     }

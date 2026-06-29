@@ -26,6 +26,14 @@
     "description": "A prefix sum array simply keeps a running total. `prefix[i]` holds the sum of the original array elements from index 0 to index i. To find the sum of any slice [i..j], you take the running total up to j, and chop off the running total up to the part just before i (i-1). This reduces a loop over the array into a single O(1) subtraction.",
     "repeated_decision": "During precomputation: `prefix[i] = prefix[i-1] + arr[i]`.\nDuring querying: `sum(i, j) = prefix[j] - prefix[i-1]`."
   },
+  "viz": {
+    "generator": "prefix-sums",
+    "default_input": [2, 4, 1, 5, 3],
+    "invariants": {
+      "inv-prefix": "prefix[i] always holds the running total of arr[0..i] — each step adds exactly one new element to the previous total.",
+      "inv-query": "Once built, the sum of any range [i..j] is prefix[j] − prefix[i−1], answered in O(1)."
+    }
+  },
   "explanation": "Prefix Sums trade O(n) space and O(n) upfront time for O(1) range queries. \n\nLet's say your array is `[2, 4, 1, 5]`. \nYour prefix sum array is built by adding the current element to the previous sum:\n- prefix[0] = 2\n- prefix[1] = 2 + 4 = 6\n- prefix[2] = 6 + 1 = 7\n- prefix[3] = 7 + 5 = 12\nSo the prefix array is `[2, 6, 7, 12]`.\n\nNow, you want the sum of indices 1 through 3 (which is 4 + 1 + 5 = 10).\nInstead of looping, you use the prefix array:\nTake the total sum up to index 3 (which is 12). This includes index 0, which we don't want.\nSubtract the sum up to index 0 (which is 2).\n12 - 2 = 10. \nYou got the answer in O(1) time.\n\nTo avoid bounds checking issues when querying from index 0, it is extremely common to pad the prefix array with a leading zero. So the prefix array becomes `[0, 2, 6, 7, 12]`. Then the sum from i to j is simply `prefix[j+1] - prefix[i]`.",
   "key_points": [
     { "title": "O(1) Range Queries", "detail": "After an O(n) precomputation step, any contiguous subarray sum can be found in constant time." },
