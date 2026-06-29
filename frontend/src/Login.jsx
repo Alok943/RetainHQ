@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
 import WelcomeModal from './WelcomeModal';
-import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles, Code2, Eye } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
@@ -26,8 +26,8 @@ function Login() {
     </button>
   );
 
-  // SM-2 cadence (illustrative): first recall at +1d, then +6d, then intervals
-  // expand by your ease factor. Exact days adapt to how well you recall.
+  // FSRS cadence (illustrative): first recall at +1d, then spacing widens as the
+  // model's predicted recall stays high. Exact days adapt to how well you recall.
   const timeline = [
     { day: 'Day 0', label: 'Learn', sub: 'Log a new topic', state: 'done' },
     { day: 'Day 1', label: 'First recall', sub: 'Pull it from memory', state: 'active' },
@@ -40,6 +40,23 @@ function Login() {
     { icon: <RefreshCw size={22} />, title: 'Review', body: 'Reviews scheduled before you forget.' },
     { icon: <Brain size={22} />, title: 'Recall', body: 'Answer before the reveal — real recall, not recognition.' },
     { icon: <TrendingUp size={22} />, title: 'Retain', body: 'See what actually sticks over time.' },
+  ];
+
+  // Static frame of the step-through execution showcase (the "learn" pillar shown,
+  // not told). A frozen mid-trace moment — no live runtime on the landing page.
+  const codeLines = [
+    'def running_total(n):',
+    '    total = 0',
+    '    for i in range(n):',
+    '        total += i',
+    '    return total',
+    '',
+    'running_total(4)',
+  ];
+  const activeLine = 3; // 0-indexed → the highlighted "total += i" line
+  const traceState = [
+    { name: 'i', value: '2' },
+    { name: 'total', value: '1', changed: true },
   ];
 
   return (
@@ -79,15 +96,15 @@ function Login() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 mb-6">
               <Sparkles size={13} className="text-[#22D3EE]" />
-              <span className="font-sans text-xs text-[#9aa3b8]">Built on spaced repetition &amp; active recall</span>
+              <span className="font-sans text-xs text-[#9aa3b8]">Visual code lessons &amp; spaced repetition</span>
             </div>
 
             <h1 className="font-sans text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.08] mb-5">
-              Track what you remember,{' '}
-              <span className="text-[#22D3EE]">not what you complete.</span>
+              Learn it visually.{' '}
+              <span className="text-[#22D3EE]">Remember it forever.</span>
             </h1>
             <p className="font-sans text-[#9aa3b8] text-lg leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
-              Most study tools measure what you did. RetainHQ measures what you still remember — and schedules each review right before you'd forget, so it sticks.
+              RetainHQ teaches you to actually read and debug code — step through every line as it runs, and guess the output before the reveal. Then spaced repetition locks it in, so what you learn still sticks weeks later.
             </p>
 
             <div className="flex mb-6 justify-center lg:justify-start">
@@ -96,9 +113,9 @@ function Login() {
 
             {/* Honest mechanism strip (no invented stats, no claim of an "optimal" curve) */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center lg:justify-start font-mono text-[11px] text-[#7c839b]">
-              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Active recall, not re-reading</span>
-              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Reviewed right before you forget</span>
-              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Free to start</span>
+              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Step through real code</span>
+              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Predict before the reveal</span>
+              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Reviewed before you forget</span>
             </div>
           </div>
 
@@ -164,11 +181,79 @@ function Login() {
           </div>
         </section>
 
+        {/* ---------- Showcase: see it execute (the "learn" pillar, shown not told) ---------- */}
+        <section id="learn" className="scroll-mt-8 py-12 md:py-16 border-t border-white/5">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 mb-5">
+              <Code2 size={13} className="text-[#22D3EE]" />
+              <span className="font-sans text-xs text-[#9aa3b8]">The hook: watch code actually run</span>
+            </div>
+            <h2 className="font-sans text-3xl font-bold text-white tracking-tight mb-3">See every line execute</h2>
+            <p className="font-sans text-[#9aa3b8] max-w-xl mx-auto">
+              Most tutorials show you finished code. RetainHQ runs it — scrub line by line, watch the variables change, and guess the output <span className="text-white">before</span> you reveal it. That predict-then-see moment is what makes it click.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto rounded-2xl bg-white/[0.04] border border-white/10 shadow-2xl backdrop-blur-sm overflow-hidden">
+            {/* window chrome */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-white/[0.02]">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#ff5f56]/70" />
+                <span className="w-3 h-3 rounded-full bg-[#ffbd2e]/70" />
+                <span className="w-3 h-3 rounded-full bg-[#27c93f]/70" />
+              </div>
+              <span className="font-mono text-[10px] text-[#7c839b]">running_total.py</span>
+              <span className="font-mono text-[10px] text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded px-2 py-0.5">STEP 4 / 7</span>
+            </div>
+
+            <div className="grid md:grid-cols-[1.5fr_1fr]">
+              {/* code — current line highlighted, like the step scrubber */}
+              <div className="p-5 font-mono text-[13px] leading-[1.7] border-b md:border-b-0 md:border-r border-white/10 overflow-x-auto">
+                {codeLines.map((line, i) => (
+                  <div
+                    key={i}
+                    className={`flex gap-3 px-2 -mx-2 rounded ${
+                      i === activeLine ? 'bg-[#0891B2]/15 border-l-2 border-[#22D3EE]' : 'border-l-2 border-transparent'
+                    }`}
+                  >
+                    <span className="text-[#475569] select-none w-4 text-right shrink-0">{i + 1}</span>
+                    <span className={`whitespace-pre ${i === activeLine ? 'text-white' : 'text-[#c9d1e3]'}`}>{line || ' '}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* live state + predict-before-reveal */}
+              <div className="p-5">
+                <div className="font-sans text-[10px] uppercase tracking-widest text-[#7c839b] mb-3">State now</div>
+                <div className="space-y-2 mb-5">
+                  {traceState.map((v) => (
+                    <div key={v.name} className="flex items-center justify-between font-mono text-xs">
+                      <span className="text-[#9aa3b8]">{v.name}</span>
+                      <span className={`rounded px-2 py-0.5 ${v.changed ? 'text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20' : 'text-[#c9d1e3] bg-white/5 border border-white/10'}`}>{v.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-lg bg-[#22D3EE]/[0.06] border border-[#22D3EE]/20 p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Eye size={12} className="text-[#22D3EE]" />
+                    <span className="font-sans text-[11px] font-semibold text-[#22D3EE]">Predict before reveal</span>
+                  </div>
+                  <div className="flex items-center justify-between font-mono text-xs">
+                    <span className="text-[#9aa3b8]">running_total(4)</span>
+                    <span className="text-white bg-white/10 rounded px-2 py-0.5">= 6</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ---------- Features / How it works ---------- */}
         <section id="features" className="scroll-mt-8 pb-6">
           <div id="how" className="scroll-mt-8 text-center mb-10">
-            <h2 className="font-sans text-3xl font-bold text-white tracking-tight mb-3">The learning loop, automated</h2>
-            <p className="font-sans text-[#9aa3b8] max-w-lg mx-auto">Four steps that turn a one-time study session — DSA, system design, a new language — into durable, long-term knowledge.</p>
+            <h2 className="font-sans text-3xl font-bold text-white tracking-tight mb-3">Then it sticks — automatically</h2>
+            <p className="font-sans text-[#9aa3b8] max-w-lg mx-auto">Every lesson you finish and every topic you capture enters a spaced-repetition loop, resurfacing right before you'd forget — so a one-time study session becomes durable, long-term knowledge.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -194,9 +279,9 @@ function Login() {
         <section className="flex flex-col items-center text-center gap-5 py-16 border-t border-white/5">
           <Sparkles size={22} className="text-[#22D3EE]" />
           <h2 className="font-sans text-2xl md:text-3xl font-bold text-white tracking-tight max-w-md">
-            Stop relearning what you already studied.
+            Stop watching tutorials you forget by Friday.
           </h2>
-          <p className="font-sans text-[#9aa3b8] text-sm">Inspired by cognitive science. Free to start.</p>
+          <p className="font-sans text-[#9aa3b8] text-sm">Learn it visually. Remember it for good. Free to start.</p>
           <GetStarted />
           <p className="font-sans text-[11px] text-[#7c839b] max-w-xs leading-relaxed">
             By continuing, you agree to our Terms of Service and Privacy Policy.
