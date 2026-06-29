@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 import { apiFetch } from './lib/api';
+import { pageview } from './lib/analytics';
 
 // Login is the public landing/LCP page — keep it eager so it paints without a
 // chunk round-trip. Logo is tiny chrome used everywhere. Everything else is an
@@ -290,6 +291,11 @@ function NavItem({ icon, label, active, onClick, badge = 0 }) {
 function Root() {
   const { session, loading } = useAuth();
   const location = useLocation();
+
+  // SPA pageviews (autocapture is off) — fire on every path change.
+  useEffect(() => {
+    pageview(location.pathname);
+  }, [location.pathname]);
 
   if (loading) {
     return <div className="min-h-screen bg-[#f9f9f6] flex items-center justify-center font-sans text-[#64748B]">Loading...</div>;

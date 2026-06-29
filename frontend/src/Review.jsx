@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper, Sparkles, Lightbulb } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import { track, EVENTS } from './lib/analytics';
 import Hint from './Hint';
 
 // Each post-reveal choice carries BOTH signals at once:
@@ -53,7 +54,12 @@ function Review({ onBack }) {
       return;
     }
     apiFetch('/api/reviews/due')
-      .then((data) => setReviews(data))
+      .then((data) => {
+        setReviews(data);
+        if (Array.isArray(data) && data.length > 0) {
+          track(EVENTS.REVIEW_STARTED, { due_count: data.length });
+        }
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -162,6 +168,13 @@ function Review({ onBack }) {
       await apiFetch(`/api/reviews/${current.id}/complete`, {
         method: 'POST',
         body: JSON.stringify({ rating: outcome.rating, recalled: outcome.recalled }),
+      });
+      track(EVENTS.REVIEW_COMPLETED, {
+        outcome: outcome.key,
+        rating: outcome.rating,
+        recalled: outcome.recalled,
+        mode: questionMode ? 'question' : 'free',
+        ai_assisted: !!aiResult || questionMode,
       });
       if (index < total - 1) {
         setIndex((i) => i + 1);

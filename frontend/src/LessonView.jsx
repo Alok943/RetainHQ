@@ -8,6 +8,7 @@ import { useSeo } from './lib/useSeo';
 import CodeTrace from './CodeTrace';
 import { prewarmPython } from './lib/pyodideRunner';
 import { useAuth } from './lib/AuthContext';
+import { track, EVENTS } from './lib/analytics';
 import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
@@ -51,6 +52,11 @@ export default function LessonView() {
       return ns;
     });
   }, []);
+
+  // Analytics: a lesson view is a key "learn" funnel event.
+  useEffect(() => {
+    track(EVENTS.LESSON_OPENED, { roadmap: id, slug });
+  }, [id, slug]);
 
   // Predict-before-reveal gate for the aha_moment block.
   const [ahaRevealed, setAhaRevealed] = useState(false);

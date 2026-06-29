@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import AuthModal from '../AuthModal';
+import { identifyUser, resetAnalytics, track, EVENTS } from './analytics';
 
 const AuthContext = createContext({
   session: null,
@@ -38,6 +39,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+      if (_event === 'SIGNED_IN') track(EVENTS.SIGNED_IN);
       if (session && isModalOpen) {
         setIsModalOpen(false);
         if (pendingAction) {
@@ -50,11 +52,18 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [isModalOpen, pendingAction]);
 
+  // Tie the PostHog person to the (pseudonymous) user id; reset on sign-out.
+  useEffect(() => {
+    if (session?.user?.id) identifyUser(session.user.id);
+    else resetAnalytics();
+  }, [session?.user?.id]);
+
   const requireAuth = (callback) => {
     if (session) {
       if (callback) callback();
       return true;
     } else {
+      track(EVENTS.AUTH_WALL_HIT); // guest hit a write that needs an account
       setPendingAction(() => callback);
       setIsModalOpen(true);
       return false;

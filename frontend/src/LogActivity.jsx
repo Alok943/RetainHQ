@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { PlusSquare, Save, Activity, Clock, AlertTriangle, Layers, CheckCircle2, Sparkles, Plus, Map } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import { track, EVENTS } from './lib/analytics';
 
 const KEY_MEMORY_MAX = 500; // ~6 lines: one testable claim, not a paragraph dump
 
@@ -160,6 +161,12 @@ function LogActivity() {
         }),
       });
       localStorage.removeItem('retainhq_log_draft');
+      track(EVENTS.ACTIVITY_LOGGED, {
+        source_type: sourceType,
+        has_roadmap: !!roadmapId,
+        difficulty,
+        first_activity: !!res?.review_due_now,
+      });
       // A user's first-ever activity gets a demo review due now — send them
       // straight into it so they see the recall loop. Every later activity's
       // first review waits until tomorrow (recall after a delay builds memory),

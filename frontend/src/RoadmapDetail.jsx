@@ -6,6 +6,7 @@ import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import { useSeo } from './lib/useSeo';
 import { jsPDF } from 'jspdf';
 import { useAuth } from './lib/AuthContext';
+import { track, EVENTS } from './lib/analytics';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
 import ReactFlow, {
   Background,
@@ -115,6 +116,11 @@ function layoutGraph(rfNodes, rfEdges) {
 function RoadmapDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Analytics: opening a roadmap is a key "explore" funnel event.
+  useEffect(() => {
+    track(EVENTS.ROADMAP_OPENED, { roadmap: id });
+  }, [id]);
 
   const [meta, setMeta] = useState(null);          // {title, description}
   const [rawNodes, setRawNodes] = useState([]);    // flat nodes from API
