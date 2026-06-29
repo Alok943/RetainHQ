@@ -1,0 +1,96 @@
+{
+  "slug": "arrays-and-memory",
+  "title": "Arrays & Memory",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["big-o-notation"],
+    "unlocks": ["in-place-operations", "2d-arrays-and-matrices"],
+    "project_usage": [
+      "Optimizing data structures for cache locality in game engines or high-performance systems",
+      "Understanding memory fragmentation and why contiguous allocation is powerful"
+    ]
+  },
+  "overview": {
+    "what": "An array is a contiguous block of memory where elements of the same size are stored sequentially. Because the memory is contiguous, the address of any element can be calculated instantly using simple math: base_address + (index * element_size).",
+    "why": "Arrays provide O(1) random access, meaning you can retrieve the 1st or the 1,000,000th element in the exact same amount of time. They are the foundational building block for more complex data structures like strings, dynamic arrays, and hash tables.",
+    "where_used": [
+      "Implementing buffers, queues, and stacks",
+      "Serving as the underlying storage for higher-level structures like Python lists or Java ArrayLists"
+    ]
+  },
+  "why_learning_this": [
+    "Arrays are the most commonly tested data structure in coding interviews.",
+    "Understanding memory layout (contiguous vs. scattered) explains why arrays are faster than linked lists for iteration due to CPU cache locality.",
+    "It builds the intuition for why inserting or deleting in the middle of an array costs O(n): you have to shift all subsequent elements."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing index and value",
+      "explanation": "Beginners often mix up 'i' (the position) and 'arr[i]' (the data at that position). An index is just an offset from the start of memory."
+    },
+    {
+      "title": "Out of bounds errors",
+      "explanation": "Because arrays are zero-indexed, an array of size n goes from index 0 to n-1. Accessing index n accesses unallocated memory or throws an error."
+    },
+    {
+      "title": "Assuming insertion is O(1)",
+      "explanation": "While overwriting an existing index is O(1), inserting a new element at index 0 requires shifting every single existing element one spot to the right, which is O(n)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is accessing an array element by index an O(1) operation?",
+      "answer": "Because the memory is contiguous, the computer just calculates the address instantly: base_address + (index * element_size).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of inserting an element at the beginning of an array, and why?",
+      "answer": "O(n). Every existing element must be shifted one position to the right to make room.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are arrays generally faster to iterate over than linked lists, even though both are O(n)?",
+      "answer": "Because array elements are stored contiguously in memory, the CPU can load chunks of them into its cache at once (cache locality), minimizing slow RAM accesses.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "If an array starts at memory address 1000 and holds 32-bit (4-byte) integers, what is the memory address of the element at index 5?",
+      "answer": "1020. The formula is base + (index * size) = 1000 + (5 * 4) = 1000 + 20 = 1020.",
+      "why": "This math is the exact reason arrays offer O(1) access. The CPU doesn't search; it computes the exact physical location."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "You have a Python list containing 10,000 items. Why does `list.pop(0)` feel sluggish compared to `list.pop()`?",
+      "answer": "`pop()` removes the last item, which is O(1). `pop(0)` removes the first item, meaning the remaining 9,999 items must all be shifted left by one index in memory, making it O(n).",
+      "why": "Operations that change the size of the array at the front or middle trigger a cascade of memory shifts. Understanding this prevents writing accidentally quadratic loops."
+    }
+  ],
+  "aha_moment": {
+    "code": "arr = [10, 20, 30]\n# Memory layout:\n# Address 0x00: 10\n# Address 0x04: 20\n# Address 0x08: 30\n# Accessing arr[2] doesn't scan the list. It computes: 0x00 + (2 * 4) = 0x08.",
+    "prediction": "The computer scans through 10 and 20 to find 30.",
+    "common_guess": "It has to walk through the list to know where the 3rd item is.",
+    "why": "Arrays are fundamentally just blocks of math. The index is not a label; it's a distance. 'Index 2' literally means '2 elements away from the start'. This strict geometric layout is what gives arrays their O(1) speed."
+  },
+  "practice_tasks": [
+    {
+      "title": "Reverse an array in place",
+      "prompt": "Given an array, write a loop that swaps the elements at the ends, moving inwards, until the array is reversed. Do not create a new array.",
+      "starter_code": "def reverse(arr):\n    # Your code here",
+      "solution": "Use two pointers, left=0 and right=len(arr)-1. While left < right, swap arr[left] and arr[right], then increment left and decrement right."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Array_data_structure",
+    "https://www.geeksforgeeks.org/introduction-to-arrays/"
+  ]
+}

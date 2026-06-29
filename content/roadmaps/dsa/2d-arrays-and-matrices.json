@@ -1,0 +1,96 @@
+{
+  "slug": "2d-arrays-and-matrices",
+  "title": "2D Arrays & Matrices",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["arrays-and-memory"],
+    "unlocks": [],
+    "project_usage": [
+      "Representing grids for games like chess, tic-tac-toe, or pathfinding on a map",
+      "Image processing: a screen is just a 2D matrix of pixel colors"
+    ]
+  },
+  "overview": {
+    "what": "A 2D array (or matrix) is an array of arrays. It organizes data into rows and columns, accessed via two indices, typically `matrix[row][col]`. Under the hood, memory is fundamentally 1-dimensional, so the computer flattens the grid into a single contiguous line.",
+    "why": "Many real-world problems are inherently two-dimensional: maps, spreadsheets, images, and mathematical matrices. 2D arrays provide a natural mental model to represent and traverse these spatial structures.",
+    "where_used": [
+      "Dynamic Programming: building a 2D table to cache subproblem results",
+      "Graph representations: Adjacency matrices represent connections between nodes"
+    ]
+  },
+  "why_learning_this": [
+    "Matrix traversal problems (like 'Spiral Matrix' or 'Number of Islands') are their own entire category of interview questions.",
+    "Understanding how 2D arrays map to 1D memory is critical for writing cache-efficient code in performance-sensitive applications like graphics rendering.",
+    "It introduces coordinate-based logic (moving up, down, left, right by manipulating row/col variables) which is essential for graph traversal."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing (x, y) with (row, col)",
+      "explanation": "In Cartesian math, (x, y) means (horizontal, vertical). But in 2D arrays, `matrix[r][c]` means `r` is the row (vertical position, Y-axis) and `c` is the column (horizontal position, X-axis). They are flipped."
+    },
+    {
+      "title": "Out of bounds on non-square matrices",
+      "explanation": "If a matrix is M x N, the row limit is M and the col limit is N. Assuming the matrix is square and using `matrix.length` for both bounds will crash on rectangular matrices."
+    },
+    {
+      "title": "Shallow copying nested arrays",
+      "explanation": "In Python, `[[0]*3]*3` creates a list containing three references to the EXACT SAME row. Modifying one row modifies all of them. You must use list comprehensions or loops to create independent rows."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How do you access the element in the 3rd row and 2nd column of a 0-indexed matrix?",
+      "answer": "`matrix[2][1]`. The first bracket is the row, the second is the column.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you are at `matrix[r][c]`, what are the coordinates of the element directly above you?",
+      "answer": "`matrix[r-1][c]`. Subtracting from the row index moves you 'up' the matrix.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is iterating row-by-row (row-major order) faster than iterating column-by-column in memory?",
+      "answer": "Because memory is 1D. In row-major order, a row is stored contiguously, so iterating across a row utilizes the CPU cache perfectly. Jumping down a column causes cache misses.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "A matrix has 5 rows and 4 columns. To flatten it to a 1D array using row-major order, the formula for a 1D index is `(row * NUMBER_OF_COLUMNS) + col`. Why do we multiply by the number of columns instead of the number of rows?",
+      "answer": "Because to get to row 3, you have to skip entirely over row 0, row 1, and row 2. Each of those rows contains exactly `NUMBER_OF_COLUMNS` elements.",
+      "why": "This is the fundamental math the compiler uses to translate a 2D access into a 1D memory address. Understanding it demystifies how multi-dimensional data is actually stored."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "You write a function to search a grid. It checks `grid[r+1][c]` to look down. However, when you are on the very bottom row, the program crashes with an 'Index Out of Bounds' error. How do you fix this structurally?",
+      "answer": "You must check boundaries before accessing the index: `if r + 1 < len(grid): check(grid[r+1][c])`. Guarding directional moves is mandatory in grid traversal.",
+      "why": "Boundary checking is the single most common source of bugs in matrix problems. You must always ensure the next coordinate is within `0 <= r < ROWS` and `0 <= c < COLS`."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Python pitfall:\nbad_grid = [[0] * 3] * 3\nbad_grid[0][0] = 9\nprint(bad_grid) \n# Output: [[9, 0, 0], [9, 0, 0], [9, 0, 0]]\n\n# Correct way:\ngood_grid = [[0 for _ in range(3)] for _ in range(3)]\ngood_grid[0][0] = 9\nprint(good_grid)\n# Output: [[9, 0, 0], [0, 0, 0], [0, 0, 0]]",
+    "prediction": "Modifying `bad_grid[0][0]` will only change the top-left corner.",
+    "common_guess": "Both grids behave exactly the same way.",
+    "why": "The `* 3` operator duplicates REFERENCES to the same inner list. You don't have a 3x3 grid; you have one row with 3 pointers pointing to it. The list comprehension creates 3 distinct, independent lists in memory."
+  },
+  "practice_tasks": [
+    {
+      "title": "Define directional vectors",
+      "prompt": "When traversing a matrix (like in a maze), it's messy to write 4 separate if-statements for Up, Down, Left, Right. Define an array of coordinate pairs `directions` that you can loop over to safely get the 4 adjacent neighbors of `(r, c)`.",
+      "starter_code": "directions = [ (?, ?), (?, ?), (?, ?), (?, ?) ]\n# loop usage:\n# for dr, dc in directions:\n#     nr, nc = r + dr, c + dc",
+      "solution": "`directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]`. This represents Up, Down, Left, and Right. Looping over this array is the standard, clean way to traverse grids in BFS/DFS problems."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Array_data_structure#Multidimensional_arrays",
+    "https://www.geeksforgeeks.org/multidimensional-arrays-in-java/"
+  ]
+}

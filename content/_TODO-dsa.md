@@ -31,10 +31,10 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Amortized analysis  · C · `amortized-analysis`
 
 ## 3. Arrays
-- [ ] Arrays & memory  · C · `arrays-and-memory`
-- [ ] In-place operations  · D · `in-place-operations`
-- [ ] Prefix sums  · D · `prefix-sums`
-- [ ] 2D arrays & matrices  · C · `2d-arrays-and-matrices`
+- [x] Arrays & memory  · C · `arrays-and-memory`
+- [x] In-place operations  · D · `in-place-operations`
+- [x] Prefix sums  · D · `prefix-sums`
+- [x] 2D arrays & matrices  · C · `2d-arrays-and-matrices`
 
 ## 4. Hashing
 - [ ] Hash tables  · C · `hash-tables`

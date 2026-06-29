@@ -1,0 +1,81 @@
+{
+  "slug": "prefix-sums",
+  "title": "Prefix Sums",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["arrays-and-memory"],
+    "unlocks": ["2d-arrays-and-matrices"]
+  },
+  "hook": {
+    "scenario": "You have a log of daily website visitors for the past year. A product manager asks you 10,000 different questions like 'How many visitors between March 4 and August 12?'",
+    "question": "Do you loop over the days and add them up every single time she asks, or can you precalculate something that answers any date range instantly?"
+  },
+  "why_it_exists": {
+    "problem": "Given an array, querying the sum of a subarray (from index i to j) takes O(n) time if you use a loop. If you need to answer q queries, the total time is O(q * n). For large arrays and many queries, this is too slow.",
+    "naive_solution": "Run a `for` loop from index i to j and accumulate the sum every time a query is made.",
+    "better_idea": "Spend O(n) time once to precompute a 'prefix sum' array, where each element at index k stores the sum of all elements from the start up to k. Then, any range sum from i to j can be found in O(1) time using subtraction: prefix[j] - prefix[i-1]."
+  },
+  "mental_model": {
+    "intuition": "It's like the odometer on a car. If the odometer reads 10,000 miles on Tuesday and 10,300 miles on Friday, you know you drove 300 miles in that window. You just subtracted the 'running totals'.",
+    "description": "A prefix sum array simply keeps a running total. `prefix[i]` holds the sum of the original array elements from index 0 to index i. To find the sum of any slice [i..j], you take the running total up to j, and chop off the running total up to the part just before i (i-1). This reduces a loop over the array into a single O(1) subtraction.",
+    "repeated_decision": "During precomputation: `prefix[i] = prefix[i-1] + arr[i]`.\nDuring querying: `sum(i, j) = prefix[j] - prefix[i-1]`."
+  },
+  "explanation": "Prefix Sums trade O(n) space and O(n) upfront time for O(1) range queries. \n\nLet's say your array is `[2, 4, 1, 5]`. \nYour prefix sum array is built by adding the current element to the previous sum:\n- prefix[0] = 2\n- prefix[1] = 2 + 4 = 6\n- prefix[2] = 6 + 1 = 7\n- prefix[3] = 7 + 5 = 12\nSo the prefix array is `[2, 6, 7, 12]`.\n\nNow, you want the sum of indices 1 through 3 (which is 4 + 1 + 5 = 10).\nInstead of looping, you use the prefix array:\nTake the total sum up to index 3 (which is 12). This includes index 0, which we don't want.\nSubtract the sum up to index 0 (which is 2).\n12 - 2 = 10. \nYou got the answer in O(1) time.\n\nTo avoid bounds checking issues when querying from index 0, it is extremely common to pad the prefix array with a leading zero. So the prefix array becomes `[0, 2, 6, 7, 12]`. Then the sum from i to j is simply `prefix[j+1] - prefix[i]`.",
+  "key_points": [
+    { "title": "O(1) Range Queries", "detail": "After an O(n) precomputation step, any contiguous subarray sum can be found in constant time." },
+    { "title": "Space-Time Tradeoff", "detail": "We allocate O(n) extra space to store the prefix sums to save O(n) time on every query." },
+    { "title": "Leading Zero", "detail": "Constructing the prefix array of size n+1 with a leading 0 prevents out-of-bounds errors when querying a range that starts at index 0." }
+  ],
+  "pattern": {
+    "name": "Precomputation / Caching",
+    "recognition_cues": [
+      "The problem asks for the sum of a subarray or contiguous range.",
+      "You need to answer multiple queries on the same static array.",
+      "The problem involves finding a subarray that sums to a specific target."
+    ]
+  },
+  "failure_signals": [
+    "You have a nested loop where the inner loop is just adding up numbers in a range.",
+    "The input array is constantly changing (being updated). Prefix sums are for static arrays; if the array changes, updating the prefix array takes O(n). (Use a Segment Tree or Fenwick Tree instead)."
+  ],
+  "engineering_examples": [
+    { "title": "Financial Ledgers", "problem": "Calculating the total revenue over arbitrary date ranges from daily sales data.", "why_this_algorithm": "Daily data is static once recorded. A prefix sum table allows dashboards to load instantly regardless of the date range selected." },
+    { "title": "Image Processing (Integral Images)", "problem": "Applying a blur filter requires computing the average color of a rectangle of pixels for every single pixel in the image.", "why_this_algorithm": "A 2D prefix sum (integral image) allows finding the sum of any rectangle of pixels in O(1) time, dramatically speeding up rendering." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "The array values are frequently updated", "reason": "If you change `arr[0]`, you have to recalculate every single element in the prefix array, turning an O(1) update into an O(n) nightmare. Use a Fenwick Tree (Binary Indexed Tree) instead." },
+    { "scenario": "You only need to calculate one range sum", "reason": "If you only have one query, O(n) precomputation + O(1) query is the same as just doing an O(n) loop, but wastes O(n) space." }
+  ],
+  "common_mistakes": [
+    { "title": "Off-by-one errors in indices", "explanation": "Without a leading zero in the prefix array, querying a range starting at index 0 requires a special `if i == 0` check. Using a 1-indexed prefix array (leading zero) is highly recommended." },
+    { "title": "Integer overflow", "explanation": "If the array contains many large numbers, the running total can easily exceed the 32-bit integer limit in languages like Java or C++. Always use 64-bit integers (`long`) for prefix arrays if the data warrants it." }
+  ],
+  "recall_questions": [
+    { "q": "What is the formula to find the sum of `arr[i...j]` using a prefix sum array (assuming no leading zero padding)?", "answer": "`prefix[j] - prefix[i-1]` (with a special case if i is 0).", "tier": "tier1" },
+    { "q": "Why is it common practice to make the prefix sum array size n+1 with a leading 0?", "answer": "It eliminates the need for a special if-statement when querying a range that starts at index 0.", "tier": "tier1" },
+    { "q": "Why shouldn't you use a prefix sum array if the original array is frequently updated?", "answer": "Because updating a single element at the beginning of the original array requires updating every subsequent element in the prefix array, making updates O(n).", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Given an array of integers, find the 'pivot index' where the sum of all numbers strictly to the left equals the sum of all numbers strictly to the right.", "company": "SDE interview", "answer": "Compute the total sum of the array first. Then iterate through, keeping a running 'left_sum'. The 'right_sum' is simply `total_sum - left_sum - arr[i]`. If they match, return i.", "approach": "This is a space-optimized prefix sum problem." },
+    { "question": "Given an array and an integer k, find the total number of continuous subarrays whose sum equals to k.", "company": "SDE interview", "answer": "Use a hash map to store the frequencies of all prefix sums seen so far. As you iterate, calculate the current prefix sum. If `current_sum - k` exists in the hash map, it means there is a valid subarray ending here.", "approach": "Combining prefix sums with a hash map for O(n) lookup." }
+  ],
+  "practice": [
+    { "title": "Range Sum Query - Immutable", "url": "https://leetcode.com/problems/range-sum-query-immutable/", "difficulty": "easy", "why": "The purest definition of the pattern." },
+    { "title": "Find Pivot Index", "url": "https://leetcode.com/problems/find-pivot-index/", "difficulty": "easy", "why": "Tests using prefix sums dynamically without allocating a full array." },
+    { "title": "Subarray Sum Equals K", "url": "https://leetcode.com/problems/subarray-sum-equals-k/", "difficulty": "medium", "why": "The classic, highly tested problem combining prefix sums with a Hash Map." }
+  ],
+  "related": ["arrays-and-memory", "hash-tables"],
+  "interesting_facts": [
+    "In 2D graphics and computer vision, a 2D prefix sum is called an 'Integral Image'. It was the secret sauce that allowed the Viola-Jones algorithm to do real-time facial recognition on early 2000s hardware by making box-blur and feature extraction O(1)."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Prefix_sum",
+    "https://www.geeksforgeeks.org/prefix-sum-array-implementation-applications-competitive-programming/"
+  ]
+}
