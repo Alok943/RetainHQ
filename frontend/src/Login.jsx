@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
-import WelcomeModal from './WelcomeModal';
 import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles, Code2, Eye } from 'lucide-react';
 
 function Login() {
@@ -61,10 +60,6 @@ function Login() {
 
   return (
     <div style={{ backgroundColor: '#0B1120' }} className="min-h-screen w-full overflow-y-auto">
-      {/* First-visit explainer — answers "what is this site for" before the user
-          has to read the page. Shown once per browser (shared localStorage flag). */}
-      <WelcomeModal onDone={() => navigate('/dashboard')} ctaLabel="Start exploring →" />
-
       {/* ambient glow */}
       <div className="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-[#0891B2]/10 blur-[140px]" />
 

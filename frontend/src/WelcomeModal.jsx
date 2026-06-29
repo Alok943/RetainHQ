@@ -12,8 +12,8 @@ const STEPS = [
     icon: Sparkles,
     accent: '#22D3EE',
     eyebrow: 'What is RetainHQ?',
-    title: 'Remember what you learn — not just what you finished',
-    body: 'Most study tools track what you completed. RetainHQ tracks what you actually remember, and brings each topic back right before you\'d forget it. Built for DSA, system design, and anything you need to stick.',
+    title: 'Learn it visually. Remember it forever.',
+    body: 'RetainHQ teaches you to actually read and debug code — step through every line as it runs and predict the output before the reveal. Then spaced repetition brings each topic back right before you\'d forget, so it sticks.',
   },
   {
     icon: PenLine,

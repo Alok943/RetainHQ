@@ -80,11 +80,10 @@ function AppLayout() {
 
   return (
     <div className="relative flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
-      {/* First-visit explainer for guests landing straight in the app (e.g. via a
-          deep link or the landing-page CTA). Logged-in first-runs use FirstCapture
-          instead, so this is gated to guests to avoid double onboarding. Shown once
-          per browser via a shared localStorage flag. */}
-      {!session && <WelcomeModal />}
+      {/* First-visit explainer for guests — shown on the Home page only (the landing
+          page no longer renders it; there it covered the hero). Logged-in first-runs
+          use FirstCapture instead. Shown once per browser via a shared localStorage flag. */}
+      {!session && activeTab === 'dashboard' && <WelcomeModal />}
 
       {/* LEFT SIDEBAR (Desktop / Tablet) — floating icon rail that expands on hover.
           The spacer holds the collapsed footprint so content never sits under the rail;
