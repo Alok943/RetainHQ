@@ -195,6 +195,32 @@ LessonView.jsx         # kind:'dsa' -> <Player .../>
 
 ---
 
+## The five questions (every lesson must answer these)
+A DSA lesson isn't done until a learner can answer all five — they map onto the model fields:
+1. **Why does this exist?** — `why_it_exists` (problem → naive → better idea).
+2. **How do I mentally simulate it?** — the trace/visualizer + predict-before-reveal.
+3. **What invariant / repeated decision makes it work?** — `invariants`, `repeated_decision`.
+4. **Where is it used in real systems?** — `real_world` (the engineering problem, not "Google uses X").
+5. **How do I recognize when to apply it?** — `pattern` + the Algorithm Design Patterns capstone.
+If a node can't get a learner to all five, it's incomplete. This is the north-star quality bar — it's
+what makes RetainHQ teach computational *thinking* rather than algorithm memorization.
+
+## Mixed lesson kinds (deliberate)
+This roadmap intentionally combines two kinds — don't force one shape on every node:
+- **`dsa` (execution-trace)** — Merge Sort, BFS, Dijkstra, sliding window… anything you step through.
+- **conceptual (`theory`/`engineering` kind)** — *What is an algorithm?, Big-O, Amortized analysis,
+  Recursive tree thinking, Why greedy works/fails, the DP-thinking nodes, Algorithm Design Patterns.*
+  These are diagram + explanation, NOT traces. `seed_dsa.py` flags which nodes are conceptual.
+
+## Content workflow: deep research BEFORE authoring
+Enrich every node via deep research first, then author. Per node, gather:
+- real engineering use cases (problem → why this algorithm solves it),
+- **`interview_frequency`** (high/med/low from aggregate sources) — NOT company folklore; there is **no
+  per-node "Asked by" field** (it ages badly and is anecdotal; company data only from cited deep research),
+- common mistakes / misconceptions, pattern-recognition cues, and high-quality interview + OA questions.
+Run it in BATCHES per phase (not all 110 nodes at once); prioritize the teaching dimensions. The run-1/
+run-2 JD research already covers the META (that DSA gates ML/GenAI/DE roles).
+
 ## Pilot scope (validate the spine, not the breadth)
 - **Merge sort only.**
 - `mergeSortEvents()` — **golden-tested.**

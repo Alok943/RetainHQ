@@ -1,0 +1,98 @@
+{
+  "slug": "what-is-an-algorithm",
+  "title": "What is an Algorithm?",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["tracing-state-and-invariants", "iteration-and-traversal"],
+    "project_usage": [
+      "Network routing protocols (Dijkstra's, Bellman-Ford)",
+      "Database query optimization via B-tree search algorithms"
+    ]
+  },
+  "overview": {
+    "what": "An algorithm is an abstract mathematical object — a finite, deterministic sequence of unambiguous steps that accepts zero or more inputs and produces at least one output whose relationship to the input is mathematically defined. Unlike a program, it is independent of any specific language or hardware.",
+    "why": "Without formal algorithms, software degrades unpredictably at scale. Formalizing a solution guarantees correctness across all valid inputs, converts intuitive guessing into a mathematically verifiable procedure, and enables rigorous analysis of time and space efficiency using asymptotic notation.",
+    "where_used": [
+      "Network routing: algorithms like Dijkstra's compute optimal paths across dynamic router topologies",
+      "Database engines: B-tree algorithms resolve queries in O(log n) instead of O(n) sequential scans"
+    ]
+  },
+  "why_learning_this": [
+    "It is the foundational mental model that separates ad-hoc coders from rigorous software engineers.",
+    "Every technical interview at top-tier firms evaluates finiteness, definiteness, and efficiency before a line of code is written.",
+    "Understanding what makes a procedure an algorithm — versus a heuristic or a reactive process — prevents an entire class of design errors."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Conflating an algorithm with a program",
+      "explanation": "A program is a concrete implementation bound by a specific language's syntax and a machine's physical limitations. An algorithm is an abstract mathematical entity whose correctness and efficiency can be reasoned about independently of any compiler or hardware."
+    },
+    {
+      "title": "Treating server listener loops as algorithms",
+      "explanation": "A procedure that runs indefinitely — such as an event listener or OS process — violates the finiteness property. Such constructs are reactive operating systems, not algorithms in the strict mathematical sense."
+    },
+    {
+      "title": "Jumping to code before defining inputs, outputs, and constraints",
+      "explanation": "Top-tier interviewers expect candidates to explicitly state input size and constraints, define the expected output relationship, and analyze Big-O complexity before writing a single line. Skipping this signals an inability to design generalizable solutions."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Name Knuth's five properties that every true algorithm must exhibit.",
+      "answer": "Finiteness, definiteness, input, output, and effectiveness.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the key distinction between an algorithm and a computer program?",
+      "answer": "An algorithm is an abstract mathematical object independent of any machine or language; a program is a concrete implementation constrained by syntax and hardware.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are heuristics used instead of algorithms for tasks like generating natural-sounding poetry?",
+      "answer": "Because there is no mathematically definable 'correct' state for such subjective tasks, making a deterministic algorithm impossible to construct for an undecidable problem.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "debug-misconception",
+      "question": "A candidate says: 'My server's request-handling loop is an algorithm because it follows a finite set of rules per request.' What property of a true algorithm does this violate, and why?",
+      "answer": "It violates finiteness. The loop as a whole runs indefinitely — it never terminates after a finite total number of steps. Each individual request handler may be finite, but the enclosing server process is a reactive operating procedure, not an algorithm.",
+      "why": "Finiteness requires the entire procedure to halt after a bounded number of steps regardless of input. An infinite listener loop structurally cannot satisfy this property."
+    },
+    {
+      "type": "choose-model",
+      "question": "You need to find the GCD of two integers. Should you use Euclid's algorithm or a brute-force scan from 1 to min(a, b)? Justify using at least two of Knuth's five properties.",
+      "answer": "Euclid's algorithm. Both satisfy finiteness and effectiveness, but Euclid's is vastly superior in efficiency — O(log min(a, b)) versus O(min(a, b)) — while remaining equally definite and effective. The brute-force scan violates no formal property but is impractical at scale.",
+      "why": "Choosing between correct algorithms requires comparing their efficiency profiles. Understanding all five properties enables a candidate to reason about why one formally correct design outperforms another."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Both terminate and produce correct output. Which is an 'algorithm'?\ndef gcd_brute(a, b):\n    for i in range(min(a, b), 0, -1):\n        if a % i == 0 and b % i == 0:\n            return i\n\ndef gcd_euclid(a, b):\n    while b:\n        a, b = b, a % b\n    return a",
+    "prediction": "Both functions return the same correct GCD. Both are algorithms.",
+    "common_guess": "Only gcd_euclid is a real algorithm because it's faster.",
+    "why": "Both are valid algorithms — they are both finite, definite, accept input, produce output, and are effective. 'Algorithm' is a correctness property, not an efficiency property. The difference between them is in their asymptotic complexity (O(n) vs O(log n)), not their algorithmic status."
+  },
+  "practice_tasks": [
+    {
+      "title": "Classify and justify: algorithm or not?",
+      "prompt": "Given the three code snippets below (an infinite event loop, a recursive Fibonacci with no base case, and a standard binary search), classify each as a true algorithm or not, citing the specific Knuth property each violates. Modify the non-algorithms to fix the violation.",
+      "starter_code": "# Snippet A: while True: handle_request()\n# Snippet B: def fib(n): return fib(n-1) + fib(n-2)\n# Snippet C: standard binary search on a sorted array",
+      "solution": "A violates finiteness (infinite loop). B violates finiteness (no base case, infinite recursion). C is a valid algorithm. Fix A by adding a termination condition; fix B by adding 'if n <= 1: return n'."
+    }
+  ],
+  "sources": [
+    "https://www.cse.ust.hk/~dekai/271/451lects.pdf",
+    "https://grokipedia.com/page/Algorithm",
+    "https://www.enjoyalgorithms.com/blog/introduction-to-algorithms/",
+    "https://medium.com/@kishanbabariya101/data-structures-and-algorithms-deep-dive-foundations-of-algorithmic-thinking-chapter-1-episode-a366a5a41828"
+  ]
+}

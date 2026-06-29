@@ -1,0 +1,104 @@
+{
+  "slug": "tracing-state-and-invariants",
+  "title": "Tracing State & Loop Invariants",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["what-is-an-algorithm"],
+    "unlocks": ["iteration-and-traversal"],
+    "project_usage": [
+      "Formal verification of aerospace and medical device software using Hoare logic",
+      "In-place array manipulation (remove duplicates, two-pointer techniques) in memory-constrained embedded systems"
+    ]
+  },
+  "overview": {
+    "what": "A loop invariant is a logical assertion about variable relationships that holds true at the boundary of every iteration — before it starts and after it ends. Tracing state is the practice of manually simulating a loop's execution step-by-step to verify that this assertion is maintained. Together they form the basis of mathematical correctness proofs for iterative algorithms.",
+    "why": "Empirical testing via print statements or trial-and-error cannot prove correctness because the space of possible inputs is virtually infinite. A loop invariant, proven via the three phases of initialization, maintenance, and termination, provides a mathematical guarantee analogous to proof by induction.",
+    "where_used": [
+      "Formal software verification tools (Hoare logic) in safety-critical systems like avionics and medical devices",
+      "In-place array algorithms: two-pointer duplicate removal where O(1) auxiliary space is guaranteed by the invariant",
+      "Google, Flipkart, and Swiggy SDE interviews, which require explicit dry runs across multiple edge cases before coding"
+    ]
+  },
+  "why_learning_this": [
+    "It is the only scalable method to prove an algorithm correct — testing covers finite cases, invariants cover all cases.",
+    "Top-tier Indian tech interviews (Google L4, Flipkart SDE-1) explicitly require a dry-run trace table before the candidate writes code.",
+    "It develops the debugging skill to self-correct base-case and boundary errors without running the code."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Validating the invariant mid-iteration",
+      "explanation": "Invariants are only required to hold at the strict boundaries — at the exact start and exact end of each iteration. Inside the loop body, state is actively being mutated and the invariant may be temporarily false. Checking it mid-loop leads to incorrect conclusions about correctness."
+    },
+    {
+      "title": "Forgetting to verify the termination condition",
+      "explanation": "An invariant can be perfectly maintained across every iteration and yet the algorithm never halts if the loop's exit condition is never triggered. Both the invariant and the progress toward termination must be verified independently."
+    },
+    {
+      "title": "Relying on an IDE or auto-judge instead of manual tracing",
+      "explanation": "Failing edge cases (empty arrays, single elements, negative boundaries) during interviews is almost always a failure to validate the initialization phase of the invariant. Manual state tracing catches these before any code is run."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the three phases required to prove a loop invariant, and what mathematical technique do they mirror?",
+      "answer": "Initialization (base case), Maintenance (inductive step), and Termination (conclusion). They mirror proof by mathematical induction.",
+      "tier": "tier1"
+    },
+    {
+      "q": "State the loop invariant for Insertion Sort's outer loop.",
+      "answer": "At the start of each iteration i, the subarray A[0..i-1] contains the elements originally in A[0..i-1] but in sorted order.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is an invariant only required to hold at iteration boundaries, not inside the loop body?",
+      "answer": "Because the loop body actively mutates state to achieve the next boundary condition. A temporary violation inside the body is expected and harmless as long as the invariant is restored before the next iteration begins.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "# Two-pointer duplicate removal. What is the invariant?\narr = [1, 1, 2, 3, 3]\nwrite = 1\nfor read in range(1, len(arr)):\n    if arr[read] != arr[write - 1]:\n        arr[write] = arr[read]\n        write += 1\nprint(arr[:write])",
+      "question": "What does this code print, and what is the loop invariant that guarantees the result is correct?",
+      "answer": "It prints [1, 2, 3]. The invariant is: at the start of each iteration, arr[0..write-1] contains exactly the unique elements seen so far, in their original order.",
+      "why": "Understanding the invariant explains why overwriting arr[write] is safe — everything behind the write pointer is already finalized and unique. This is the O(1) auxiliary space guarantee."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A loop's invariant is verified to hold at initialization and is proven to be maintained across every iteration, yet the program times out. What is the most likely cause, and which phase of the invariant proof does it correspond to?",
+      "answer": "The loop's exit condition is never triggered — the state variables never make progress toward terminating the loop. This corresponds to a failure of the Termination phase of the invariant proof.",
+      "why": "Maintenance guarantees the invariant persists, but it says nothing about convergence. The termination phase must separately prove that each iteration moves the loop closer to its exit condition."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Insertion sort outer loop. Where exactly must the invariant hold?\narr = [5, 2, 4, 6, 1, 3]\nfor i in range(1, len(arr)):\n    key = arr[i]\n    j = i - 1\n    while j >= 0 and arr[j] > key:  # <-- invariant may be BROKEN here\n        arr[j + 1] = arr[j]\n        j -= 1\n    arr[j + 1] = key  # <-- invariant RESTORED here\nprint(arr)",
+    "prediction": "The invariant arr[0..i-1] is sorted must hold inside the while loop as well.",
+    "common_guess": "The invariant must hold at all times, including inside the inner while loop.",
+    "why": "The invariant only needs to hold at the START of each outer for-loop iteration. Inside the inner while loop, elements are actively being shifted — the subarray is temporarily unsorted. The invariant is restored only after arr[j+1] = key places the element in its correct position. This is why mid-loop validation is a conceptual error."
+  },
+  "practice_tasks": [
+    {
+      "title": "Prove the two-pointer invariant for LeetCode 26",
+      "prompt": "The starter code solves LeetCode 26 (Remove Duplicates from Sorted Array). Add comments that explicitly state the invariant, then write a dry-run trace table for the input [1, 1, 2, 3, 3] showing the value of 'write' and arr[:write] at the START of each iteration (boundary only, not mid-loop).",
+      "starter_code": "def remove_duplicates(arr):\n    write = 1\n    for read in range(1, len(arr)):\n        if arr[read] != arr[write - 1]:\n            arr[write] = arr[read]\n            write += 1\n    return write",
+      "solution": "Invariant: at the start of iteration 'read', arr[0..write-1] contains all unique elements from arr[0..read-1] in order. Trace: read=1: write=1, arr[:1]=[1]; read=2: write=2 (arr[1]=2), arr[:2]=[1,2]; read=3: write=3, arr[:3]=[1,2,3]; read=4: write=3 (duplicate 3 skipped). Final write=3, arr[:3]=[1,2,3]."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Loop_invariant",
+    "https://www3.cs.stonybrook.edu/~rezaul/Fall-2019/CSE548/CSE548-prereq-2.pdf",
+    "https://www.cl.cam.ac.uk/teaching/2425/Algorithm1/Algorithms1-v3.pdf",
+    "https://web.stanford.edu/class/archive/cs/cs161/cs161.1168/lecture1.pdf",
+    "https://leetcode.com/discuss/post/6479658/google-l4-swe-3-india-offer-by-leethard-owg3/",
+    "https://leetcode.com/discuss/post/5434657/flipkart-sde-1-india-june-2024-by-anonym-nymu/",
+    "https://blog.codekerdos.in/swiggy-sde-1-interview-experience/",
+    "https://stackoverflow.com/questions/77849986/insertion-sort-loop-invariant-maintenance"
+  ]
+}

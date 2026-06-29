@@ -6,4 +6,5 @@ export const CONTENT_KEY_BY_TITLE = {
   'Aptitude — Quant, Reasoning & Verbal': 'aptitude',
   'Core CS — OS, DBMS & Networks': 'core-cs',
   'AI Engineering — LLMs, RAG & Agents': 'ai-engineering',
+  'DSA — Algorithms Visualized': 'dsa',
 };

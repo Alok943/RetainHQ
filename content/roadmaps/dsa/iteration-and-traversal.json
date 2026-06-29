@@ -1,0 +1,102 @@
+{
+  "slug": "iteration-and-traversal",
+  "title": "Iteration & Traversal",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["what-is-an-algorithm", "tracing-state-and-invariants"],
+    "unlocks": [],
+    "project_usage": [
+      "Garbage collectors in Java/Python use mark-and-sweep graph traversal to identify and free unreachable memory",
+      "Browser engines traverse the DOM tree via depth-first search to apply CSS and render UI elements in correct order"
+    ]
+  },
+  "overview": {
+    "what": "Iteration is the control-flow mechanism of repeating a code block until a condition is met, agnostic to any data structure. Traversal is the strategic application of iteration (or recursion) to visit every node or element in a specific data structure exactly once, guided by that structure's topology. Every traversal uses iteration as its engine, but not every iteration is a traversal.",
+    "why": "Modern applications must process vast datasets stored in non-contiguous, dynamically allocated memory structures — linked lists, trees, graphs — where hardcoded indices fail at runtime. Traversal algorithms provide a principled, structure-aware navigation strategy that ensures complete, non-redundant coverage.",
+    "where_used": [
+      "Linear traversal: reversing a linked list by maintaining prev/curr/next pointers in O(n) time and O(1) space",
+      "BFS traversal: finding the shortest path in an unweighted graph using a Queue for level-order discovery",
+      "DFS traversal: syntax tree evaluation in compilers and maze-solving via recursive stack-based backtracking"
+    ]
+  },
+  "why_learning_this": [
+    "Iteration and traversal are the absolute baseline for nearly all DSA problems — inability to write them fluently is an immediate disqualifier in top-tier interviews.",
+    "Understanding the topological constraints of each data structure (linear vs. hierarchical vs. graph) dictates which traversal strategy is correct and why.",
+    "Recognizing when NOT to traverse — using O(1) formulas (Gauss summation) or O(1) hash map lookups instead — is a hallmark of senior engineering thinking."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Conflating iteration with traversal",
+      "explanation": "A while loop that repeatedly halves a number until zero is iteration — it navigates no structure. Traversal carries the explicit intent of visiting every element of a specific collection. Misusing the terms reveals a shallow understanding of structural navigation."
+    },
+    {
+      "title": "Modifying a collection during active traversal",
+      "explanation": "Adding or deleting elements from a dynamic array or list while iterating over it causes index shifting, skipped elements, or iterator invalidation exceptions. Pointer state must be carefully managed if in-place mutation is required."
+    },
+    {
+      "title": "Using DFS when BFS is required for shortest paths",
+      "explanation": "DFS explores depth-first and does not guarantee shortest-path discovery in unweighted graphs. BFS's level-order Queue invariant mathematically ensures that the first time a node is reached, it is via the shortest path."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the precise distinction between iteration and traversal?",
+      "answer": "Iteration is repeating a block of code until a condition is met, with no structural intent. Traversal is the specific application of iteration or recursion to visit every element in a data structure exactly once, guided by its topology.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is a Queue mathematically non-negotiable for BFS, and what invariant does it maintain?",
+      "answer": "A Queue (FIFO) guarantees that all nodes at depth d are fully processed before any node at depth d+1 is visited — the level-order discovery invariant. Replacing it with a Stack would produce DFS, not BFS.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the space complexities of DFS and BFS on a binary tree, and what do their bounding variables represent?",
+      "answer": "DFS: O(h) where h is the maximum height of the tree (call stack depth). BFS: O(w) where w is the maximum width of the tree (maximum nodes at any single level held in the Queue simultaneously).",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you replace the Queue in a BFS implementation with a Stack, what traversal pattern does the algorithm produce, and why does this break shortest-path guarantees?",
+      "answer": "Replacing the Queue with a Stack produces DFS — the algorithm dives as deep as possible along one branch before backtracking. This breaks shortest-path guarantees because nodes are no longer discovered in level order; a deeper node on a longer path may be reached before a shallower node on a shorter path.",
+      "why": "The Queue's FIFO property is the structural mechanism that enforces level-order discovery. The data structure choice is not cosmetic — it defines the fundamental traversal topology."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer writes: 'I used a for-loop to sum integers from 1 to n by iterating through a list. I traversed the list to get the answer.' Identify the two errors in this statement.",
+      "answer": "Error 1: It is iteration, not traversal — the loop processes numbers computationally, not nodes in a structural topology. Error 2: Even framing it as iteration reveals a missed optimization — Gauss's summation formula gives the answer in O(1) without any loop at all.",
+      "why": "Traversal requires structural intent and a data structure to navigate. Recognizing when a mathematical shortcut eliminates the need for iteration entirely is a key signal of algorithmic maturity."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Reverse a linked list: pure iteration or traversal?\nclass Node:\n    def __init__(self, val): self.val, self.next = val, None\n\ndef reverse(head):\n    prev, curr = None, head\n    while curr:             # iteration engine\n        nxt = curr.next     # traversal: following structural links\n        curr.next = prev\n        prev = curr\n        curr = nxt\n    return prev",
+    "prediction": "The while loop is just iteration — it could be replaced with a counter.",
+    "common_guess": "This is just iteration because it uses a while loop.",
+    "why": "The while loop IS the iteration engine, but what makes this a traversal is the explicit navigation of non-contiguous memory via structural links (curr.next). You cannot replace 'curr = nxt' with a counter — the next node's address is unknown until you follow the pointer. The topology of the linked list, not a numeric condition, governs the traversal."
+  },
+  "practice_tasks": [
+    {
+      "title": "Convert iterative BFS to DFS by changing one data structure",
+      "prompt": "The starter code performs BFS level-order traversal on a binary tree (LeetCode 102). Modify it to perform DFS pre-order traversal by replacing exactly one data structure and adjusting the child insertion order. Add a comment explaining the invariant that each data structure maintains.",
+      "starter_code": "from collections import deque\ndef level_order(root):\n    if not root: return []\n    result, queue = [], deque([root])\n    while queue:\n        node = queue.popleft()\n        result.append(node.val)\n        if node.left: queue.append(node.left)\n        if node.right: queue.append(node.right)\n    return result",
+      "solution": "Replace 'deque' with a list used as a stack, 'popleft()' with 'pop()', and append right child before left child (so left is popped first). Stack invariant: the top always holds the next unvisited node on the current deepest path. Queue invariant: the front always holds the leftmost unvisited node at the current shallowest level."
+    }
+  ],
+  "sources": [
+    "https://fiveable.me/ap-comp-sci-a/key-terms/traverse",
+    "https://stackoverflow.com/questions/16327461/what-is-the-difference-between-iteration-and-traversing",
+    "https://runestone.academy/ns/books/published/fopp/Iteration/intro-Iteration.html",
+    "https://medium.com/@AlexanderObregon/binary-tree-traversal-methods-in-java-9ae00524947e",
+    "https://algo.monster/liteproblems/102",
+    "https://algomap.io/problems/reverse-linked-list",
+    "https://algomap.io/problems/binary-tree-level-order-traversal"
+  ]
+}

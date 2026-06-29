@@ -17,12 +17,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent / "roadmaps"
 SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering"}
+KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
 CHECK_TYPES = {"predict-output", "predict-result", "explain-behavior", "find-bug", "choose-model", "debug-misconception"}
-RUNTIMES = {"python", "sql"}
+RUNTIMES = {"python", "sql", "none"}
 
 errors = []
 warnings = []
@@ -360,6 +360,77 @@ def main():
                 by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
             continue
 
+        # DSA (Algorithms Visualized) — computational-thinking lesson (kind: "dsa"). Mixes concept +
+        # execution-trace nodes; the FIVE questions drive the fields. `viz` (a generator key registered
+        # in frontend/src/dsa/registry.js) is present only on trace nodes. See docs/dsa-architecture.md.
+        if d.get("kind") == "dsa":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition')")
+            wie = d.get("why_it_exists")
+            if not isinstance(wie, dict) or not wie.get("problem") or not wie.get("better_idea"):
+                err(rel, "why_it_exists is required: object with 'problem' and 'better_idea' (naive_solution optional)")
+            if not d.get("sections") and (not isinstance(d.get("explanation"), str) or not d.get("explanation").strip()):
+                err(rel, "explanation OR sections is required (the teaching body)")
+            validate_sections(d, rel)
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            else:
+                for i, c in enumerate(cm):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("explanation"):
+                        err(rel, f"common_mistakes[{i}] needs non-empty 'title' and 'explanation'")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            else:
+                for i, q in enumerate(rq):
+                    if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
+                        err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            oq = d.get("oa_questions")
+            if not isinstance(oq, list) or len(oq) < 2:
+                err(rel, "oa_questions is required: >=2 interview-style items")
+            else:
+                for i, q in enumerate(oq):
+                    if not isinstance(q, dict) or not q.get("question") or not q.get("answer"):
+                        err(rel, f"oa_questions[{i}] needs both 'question' and 'answer'")
+            # optional five-questions enrichment — validate shape if present
+            for fld in ("failure_signals", "interesting_facts", "related"):
+                v = d.get(fld)
+                if v is not None and (not isinstance(v, list) or not all(isinstance(x, str) and x.strip() for x in v)):
+                    err(rel, f"{fld}, if present, must be a list of non-empty strings")
+            wn = d.get("when_not_to_use")
+            if wn is not None and (not isinstance(wn, list) or not all(isinstance(x, dict) and x.get("scenario") and x.get("reason") for x in wn)):
+                err(rel, "when_not_to_use, if present, must be a list of {scenario, reason}")
+            ee = d.get("engineering_examples")
+            if ee is not None and (not isinstance(ee, list) or not all(isinstance(x, dict) and x.get("title") and x.get("why_this_algorithm") for x in ee)):
+                err(rel, "engineering_examples, if present, must be a list of {title, why_this_algorithm, problem?}")
+            pr = d.get("practice")
+            if pr is not None and (not isinstance(pr, list) or not all(isinstance(x, dict) and x.get("title") and x.get("url") for x in pr)):
+                err(rel, "practice, if present, must be a list of {title, url, difficulty?, why?}")
+            pat = d.get("pattern")
+            if pat is not None and (not isinstance(pat, dict) or not pat.get("name")):
+                err(rel, "pattern, if present, needs a non-empty 'name'")
+            kp = d.get("key_points")
+            if kp is not None and (not isinstance(kp, list) or not all(isinstance(p, dict) and p.get("title") and p.get("detail") for p in kp)):
+                err(rel, "key_points, if present, must be a list of {title, detail}")
+            viz = d.get("viz")
+            if viz is not None and (not isinstance(viz, dict) or not viz.get("generator")):
+                err(rel, "viz, if present, needs a 'generator' (a key registered in frontend/src/dsa/registry.js)")
+            hk = d.get("hook")
+            if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
+                err(rel, "hook, if present, needs a non-empty 'scenario'")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
+            else:
+                for i, s in enumerate(srcs):
+                    if not isinstance(s, str) or not s.startswith("http"):
+                        err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
         # Reasoning (Logical Reasoning + Verbal) is a method-based lesson (kind: "reasoning"):
         # intuition + an ordered METHOD + one WORKED EXAMPLE. No formula, no discovery.
         # See content/PROMPT-reasoning.md.
@@ -435,7 +506,7 @@ def main():
                 err(rel, "query_walkthrough is required for runtime 'sql': an object with a non-empty 'query'")
             if d.get("code_walkthrough") is not None:
                 err(rel, "code_walkthrough not allowed for runtime 'sql' — use query_walkthrough")
-        else:
+        elif runtime != "none":
             cw = d.get("code_walkthrough")
             if not isinstance(cw, dict) or not cw.get("code"):
                 err(rel, "code_walkthrough is required: an object with a non-empty 'code' string")

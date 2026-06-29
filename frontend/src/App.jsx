@@ -25,6 +25,7 @@ const LessonView = lazy(() => import('./LessonView'));
 const Profile = lazy(() => import('./Profile'));
 const KnowledgeVault = lazy(() => import('./KnowledgeVault'));
 const Admin = lazy(() => import('./Admin'));
+const DsaDev = lazy(() => import('./dsa/DsaDev')); // TEMP: DSA pilot harness (/dsa-dev)
 
 const ADMIN_EMAIL = 'aloksingh98541@gmail.com';
 
@@ -203,6 +204,7 @@ function AppLayout() {
             <Route path="roadmaps" element={<Roadmaps />} />
             <Route path="roadmaps/:id" element={<RoadmapDetail />} />
             <Route path="roadmaps/:id/learn/:slug" element={<LessonView />} />
+            <Route path="dsa-dev" element={<DsaDev />} />
             <Route path="vault" element={<KnowledgeVault />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="profile" element={<Profile />} />
