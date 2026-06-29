@@ -1,0 +1,96 @@
+{
+  "slug": "merge-sort",
+  "title": "Merge Sort",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 18,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["the-call-stack", "recursion-tree"],
+    "unlocks": ["quick-sort", "counting-sort"]
+  },
+  "hook": {
+    "scenario": "You have two stacks of exam papers, each already sorted by score. You need one combined sorted pile.",
+    "question": "Do you re-sort all of them from scratch — or is there a way to merge the two sorted piles in a single pass?"
+  },
+  "why_it_exists": {
+    "problem": "Sorting n items by comparing and swapping neighbours (bubble, insertion, selection) costs O(n^2) — on a million items that's a trillion operations, far too slow.",
+    "naive_solution": "Quadratic sorts repeatedly walk the array swapping out-of-order neighbours; the number of comparisons grows with the square of the input.",
+    "better_idea": "Split the array in half, sort each half independently, then MERGE the two sorted halves in one linear pass. Splitting gives only log n levels, and each level does O(n) work — so the whole thing is O(n log n)."
+  },
+  "mental_model": {
+    "intuition": "Keep splitting until each piece is a single element (already sorted), then zip the sorted pieces back together two at a time.",
+    "description": "The split phase is trivial — halve, halve, halve until size 1. The real work is the merge: given two already-sorted lists, walk a finger down each and repeatedly take the smaller front element. Because both inputs are sorted, you never look back — one linear sweep produces a sorted combination. Merging bubbles correctness up the recursion tree: single elements are sorted by definition, and every merge preserves sortedness for a larger range.",
+    "repeated_decision": "At each merge step: which of the two current front elements (left vs right) is smaller? Take that one and advance its finger."
+  },
+  "viz": {
+    "generator": "merge-sort",
+    "default_input": [5, 2, 8, 1, 9, 3],
+    "invariants": {
+      "inv-subarray": "We are sorting the sub-range [lo..hi]; everything outside it is untouched for now.",
+      "inv-divide": "Splitting at the midpoint yields two independent halves — sorting one never affects the other.",
+      "inv-merge": "Both halves are already sorted, so the smaller of the two current fronts is the smallest unplaced element.",
+      "inv-sorted": "Once a range has been merged, that whole range is fully sorted and stays sorted."
+    }
+  },
+  "explanation": "Merge sort has two phases: SPLIT and MERGE. The split phase is almost free — you keep halving the range until every piece holds a single element. A single element is, by definition, already sorted. That is the base case the recursion bottoms out on.\n\nAll the real work happens on the way back up, in the merge. Suppose you have two halves that are each already sorted. Put a finger at the start of each. Compare the two elements under your fingers, take the smaller one, write it to the output, and advance that finger. Repeat. Because both halves are sorted, the smaller of the two current fronts is always the smallest element you have not yet placed — so one straight left-to-right sweep, O(n), produces a fully sorted combination. When one half runs out, you copy the rest of the other half over (it is already sorted).\n\nNow stack these merges up the recursion tree. Pairs of single elements merge into sorted pairs; pairs of sorted pairs merge into sorted runs of four; and so on, doubling the sorted-run size each level until the whole array is one sorted run. There are log2(n) levels because you halved on the way down, and each level merges n elements in total — so the cost is n × log n. Crucially, this is true no matter how the input was arranged: merge sort has no bad-input case, which is exactly what quicksort cannot promise.\n\nThe one cost is space: the merge needs somewhere to write the combined result, so a standard implementation uses an O(n) scratch array. That is the trade you make for a guaranteed O(n log n), stable sort.",
+  "key_points": [
+    { "title": "Complexity", "detail": "O(n log n) time in all cases (best/average/worst), O(n) auxiliary space. There are log2(n) levels of splitting and each level merges a total of n elements." },
+    { "title": "The merge invariant", "detail": "Merging two SORTED lists works only because the smaller front element is guaranteed to be the next element overall — that's what makes it a single O(n) pass, not a re-sort." },
+    { "title": "Stable, not in-place", "detail": "Equal elements keep their original order (stable), but a standard merge needs an O(n) scratch array — it is not in-place." }
+  ],
+  "pattern": {
+    "name": "Divide & Conquer",
+    "recognition_cues": [
+      "The problem splits into independent subproblems of the same shape.",
+      "Subproblem results combine cheaply (here, an O(n) merge).",
+      "You can write a recurrence like T(n) = 2T(n/2) + O(n)."
+    ]
+  },
+  "failure_signals": [
+    "An O(n^2) sort is too slow for the input size (n is large, or the array is nearly reverse-sorted).",
+    "You need a STABLE sort with guaranteed O(n log n) regardless of input order.",
+    "The data is too big for RAM and must be sorted in streamed, pre-sorted runs."
+  ],
+  "engineering_examples": [
+    { "title": "External sorting in databases", "problem": "Sorting a dataset far larger than memory.", "why_this_algorithm": "Merge naturally combines sorted runs streamed from disk — external merge sort is the backbone of sorting in database engines." },
+    { "title": "Standard library sorts", "problem": "Sort records without reordering equal keys.", "why_this_algorithm": "Timsort (Python's and Java's default) is a merge-sort hybrid — it exploits already-sorted runs and is stable." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "Small or nearly-sorted arrays", "reason": "Insertion sort has lower overhead and better cache behaviour; that's why Timsort switches to it on small runs." },
+    { "scenario": "Memory-constrained, must sort in place", "reason": "Standard merge sort needs O(n) extra space; prefer heapsort or quicksort when auxiliary memory is precious." }
+  ],
+  "common_mistakes": [
+    { "title": "Thinking merge sort is in-place", "explanation": "The merge step writes into an O(n) auxiliary buffer. If an interviewer asks for O(1) extra space, merge sort (in its standard form) is the wrong answer." },
+    { "title": "Off-by-one in the merge bounds", "explanation": "Mishandling the midpoint or the leftover 'tail' of one half is the classic bug. After the main compare loop, you must drain whichever half still has elements." },
+    { "title": "Re-sorting instead of merging", "explanation": "The whole speedup comes from the two halves already being sorted. If you sort during the merge, you've thrown away the O(n) guarantee and made it O(n log^2 n) or worse." }
+  ],
+  "recall_questions": [
+    { "q": "Why is merge sort O(n log n)?", "answer": "There are log2(n) levels of halving, and each level merges a total of n elements — so n work times log n levels.", "tier": "tier1" },
+    { "q": "What invariant makes the merge step a single linear pass?", "answer": "Both halves are already sorted, so the smaller of the two current front elements is always the next smallest overall — you never have to look backward.", "tier": "tier2" },
+    { "q": "Is merge sort stable? Is it in-place?", "answer": "Stable yes (equal elements keep their order); in-place no (it needs O(n) auxiliary space).", "tier": "tier1" },
+    { "q": "When would you choose merge sort over quicksort?", "answer": "When you need guaranteed O(n log n) (no O(n^2) worst case), stability, or you're sorting linked lists / data on disk (external sorting).", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Why is merge sort O(n log n) but quicksort can degrade to O(n^2)?", "company": "SDE interview", "answer": "Merge sort always splits exactly in half (balanced recursion → log n depth); quicksort's split depends on the pivot and can be lopsided, giving O(n) depth in the worst case.", "approach": "Tie the complexity directly to the balance of the recursion tree." },
+    { "question": "Merge two sorted linked lists into one sorted list.", "company": "SDE interview", "answer": "Walk both lists with two pointers, repeatedly splicing the smaller head into the result; append the remaining tail. O(n + m), O(1) extra.", "approach": "Recognize this IS the merge step of merge sort, isolated." },
+    { "question": "Count the number of inversions in an array.", "company": "SDE interview", "answer": "Run merge sort and, during each merge, count how many left-half elements are greater than the right-half element being placed. O(n log n).", "approach": "Pattern transfer: the merge step can do useful counting work for free." }
+  ],
+  "practice": [
+    { "title": "Sort an Array", "url": "https://leetcode.com/problems/sort-an-array/", "difficulty": "medium", "why": "Implement merge sort directly." },
+    { "title": "Merge Sorted Array", "url": "https://leetcode.com/problems/merge-sorted-array/", "difficulty": "easy", "why": "Isolates the merge step — the heart of the algorithm." },
+    { "title": "Count of Smaller Numbers After Self", "url": "https://leetcode.com/problems/count-of-smaller-numbers-after-self/", "difficulty": "hard", "why": "Merge-sort-based inversion counting — proves you understand the pattern, not just the code." }
+  ],
+  "related": ["quick-sort", "merge-two-sorted-lists", "binary-search", "recursion-tree"],
+  "interesting_facts": [
+    "Merge sort was invented by John von Neumann in 1945 — one of the first algorithms designed for a stored-program computer.",
+    "Quicksort is O(n^2) in the worst case yet often beats merge sort in practice, because it sorts in place and has better cache locality — a reminder that Big-O isn't the whole story."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Merge_sort",
+    "https://www.geeksforgeeks.org/merge-sort/"
+  ]
+}

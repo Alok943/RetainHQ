@@ -1,0 +1,99 @@
+{
+  "slug": "counting-operations",
+  "title": "Counting Operations",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["what-is-an-algorithm", "iteration-and-traversal"],
+    "unlocks": ["big-o-notation", "common-complexities"],
+    "project_usage": [
+      "Profiling hot loops in backend services to find performance bottlenecks",
+      "Estimating whether an algorithm will pass within time limits during competitive programming and interviews"
+    ]
+  },
+  "overview": {
+    "what": "Counting operations means tallying the number of primitive steps — comparisons, assignments, arithmetic — an algorithm performs as a function of the input size n. It is the concrete measurement that asymptotic notation (Big-O) later abstracts.",
+    "why": "Two algorithms that both produce correct output can differ by orders of magnitude in speed. Without counting operations, the only way to discover this is to run them on large inputs and hope you notice. Counting gives you a mathematical function T(n) that predicts performance before the code ever executes.",
+    "where_used": [
+      "Interview prep: estimating whether an O(n^2) solution will pass within a 10^8 operations-per-second budget given constraints",
+      "Database query planning: the optimizer counts estimated disk reads and comparisons to choose the fastest execution plan"
+    ]
+  },
+  "why_learning_this": [
+    "It is the prerequisite for understanding Big-O notation — you cannot abstract what you have never concretely measured.",
+    "Interviewers expect candidates to justify why one solution is faster by pointing to the exact operation count difference, not just naming a complexity class.",
+    "It trains the habit of reading code structurally: seeing a nested loop and immediately recognizing n * n iterations rather than guessing."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Counting only one type of operation",
+      "explanation": "Beginners often count comparisons but ignore assignments, or count loop iterations but forget the work done inside each iteration. The total cost is the sum of ALL primitive operations executed."
+    },
+    {
+      "title": "Conflating lines of code with operations",
+      "explanation": "A single line like 'a, b = b, a + b' contains two assignments and one addition — three operations, not one. Lines are a visual convenience; the CPU executes individual operations."
+    },
+    {
+      "title": "Ignoring the cost of inner loops",
+      "explanation": "When a loop runs n times and contains an inner loop that also runs n times, the total is n * n = n^2 operations, not n + n = 2n. Multiplication, not addition, is the rule for nested repetition."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does T(n) represent when you count operations?",
+      "answer": "T(n) is the total number of primitive operations (comparisons, assignments, arithmetic) the algorithm performs as a function of the input size n.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do we count operations instead of measuring wall-clock time?",
+      "answer": "Wall-clock time depends on hardware, OS load, and language — it is not reproducible. Operation counts are machine-independent and give a mathematical function that predicts scaling behavior.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A loop runs n times and each iteration contains a nested loop that runs n times. What is the total operation count, and why is it multiplication not addition?",
+      "answer": "The total is n * n = n^2. For each of the n outer iterations, the inner loop executes all n of its iterations — so the inner work is repeated n times, which is multiplication.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "code": "count = 0\nfor i in range(n):\n    for j in range(i):\n        count += 1",
+      "question": "After this code runs for input size n, what is the value of count? Express it as a closed-form formula.",
+      "answer": "count = n*(n-1)/2. The inner loop runs 0 + 1 + 2 + ... + (n-1) times, which sums to n*(n-1)/2.",
+      "why": "This is the classic triangular-sum pattern that appears in algorithms like insertion sort and bubble sort. Recognizing this sum immediately tells you the algorithm is O(n^2)."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Two algorithms both solve the same problem: Algorithm A performs 5n + 20 operations and Algorithm B performs 2n^2 + 3 operations. For small n (say n = 3), B is faster. At what point does A become faster, and why does this matter?",
+      "answer": "Setting 5n + 20 = 2n^2 + 3 and solving gives a crossover around n = 4. Beyond that, A is faster and the gap grows rapidly. This matters because real-world inputs are typically large — what looks faster on toy inputs can be catastrophically slower at scale.",
+      "why": "This illustrates why constant factors and lower-order terms matter for small inputs but the highest-degree term dominates at scale — the exact motivation for Big-O abstraction."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Algorithm A: linear scan\ndef find_max_a(arr):\n    best = arr[0]        # 1 assignment\n    for x in arr[1:]:    # n-1 iterations\n        if x > best:     # 1 comparison each\n            best = x     # 0 to n-1 assignments\n    return best          # Total: between n and 2n-1 ops\n\n# Algorithm B: sort then pick last\ndef find_max_b(arr):\n    arr.sort()           # roughly n*log(n) comparisons\n    return arr[-1]       # 1 access",
+    "prediction": "Both find the maximum — but how many operations does each actually do?",
+    "common_guess": "They are about the same since both look at all elements.",
+    "why": "Algorithm A does roughly n comparisons — one per element. Algorithm B sorts the entire array first, doing roughly n*log(n) comparisons plus n*log(n) swaps, only to grab a single element at the end. Counting operations reveals B does vastly more work than needed. The correct answer was already accessible in one pass."
+  },
+  "practice_tasks": [
+    {
+      "title": "Count the exact operations in a bubble sort pass",
+      "prompt": "The starter code performs one pass of bubble sort on a 5-element array. Add a counter variable that increments on every comparison and every swap. Run it mentally (dry run) and predict the final counter value before checking.",
+      "starter_code": "arr = [5, 3, 8, 1, 2]\nfor i in range(len(arr) - 1):\n    if arr[i] > arr[i + 1]:\n        arr[i], arr[i + 1] = arr[i + 1], arr[i]",
+      "solution": "There are 4 comparisons (one per iteration, i=0..3). Swaps happen at i=0 (5>3), i=2 (8>1), i=3 (8>2) — 3 swaps, each costing 2 assignments = 6. Total: 4 comparisons + 6 assignments = 10 primitive operations."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Analysis_of_algorithms",
+    "https://web.stanford.edu/class/archive/cs/cs161/cs161.1168/lecture1.pdf",
+    "https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/asymptotic-notation",
+    "https://www.enjoyalgorithms.com/blog/introduction-to-algorithms/"
+  ]
+}

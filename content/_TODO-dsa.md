@@ -24,11 +24,11 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Iteration & traversal  · C · `iteration-and-traversal`
 
 ## 2. Complexity  (all `C`)
-- [ ] Counting operations  · C · `counting-operations`
-- [ ] Big-O notation  · C · `big-o-notation`
-- [ ] Common complexities  · C · `common-complexities`
-- [ ] Logarithms & powers of two  · C · `logarithms-and-powers-of-two`
-- [ ] Amortized analysis  · C · `amortized-analysis`
+- [x] Counting operations  · C · `counting-operations`
+- [x] Big-O notation  · C · `big-o-notation`
+- [x] Common complexities  · C · `common-complexities`
+- [x] Logarithms & powers of two  · C · `logarithms-and-powers-of-two`
+- [x] Amortized analysis  · C · `amortized-analysis`
 
 ## 3. Arrays
 - [ ] Arrays & memory  · C · `arrays-and-memory`

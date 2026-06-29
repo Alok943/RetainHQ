@@ -1,0 +1,99 @@
+{
+  "slug": "amortized-analysis",
+  "title": "Amortized Analysis",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["big-o-notation", "common-complexities", "logarithms-and-powers-of-two"],
+    "unlocks": [],
+    "project_usage": [
+      "Understanding why Python list.append() and Java ArrayList.add() are marketed as O(1) despite occasional O(n) resizes",
+      "Analyzing splay trees in network caches: worst-case O(n) per operation, but O(log n) amortized over any sequence"
+    ]
+  },
+  "overview": {
+    "what": "Amortized analysis determines the average cost per operation over a worst-case sequence of operations, NOT the average case for a single random operation. It proves that even if a few individual operations are expensive (like resizing an array), the cost spread across all operations stays low. The three standard techniques are the aggregate method, the accounting method, and the potential method.",
+    "why": "Worst-case per-operation analysis can be misleadingly pessimistic. If you judge a dynamic array's append by its worst case alone, you would conclude it is O(n) and avoid using it — even though a sequence of n appends costs only O(n) total, making each append O(1) amortized. Amortized analysis gives the true average cost per operation without relying on probabilistic assumptions.",
+    "where_used": [
+      "Dynamic arrays (Python list, Java ArrayList, C++ vector): append is O(1) amortized because resizes are exponentially rare",
+      "Hash table rehashing: doubling the table and rehashing all keys is O(n), but it happens only every O(n) insertions",
+      "Splay trees and union-find with path compression: individual operations can be slow but any sequence of m operations completes in O(m log n) or O(m alpha(n)) total"
+    ]
+  },
+  "why_learning_this": [
+    "It prevents you from over-engineering solutions by incorrectly labeling efficient data structures as slow based on their worst-case per-operation cost.",
+    "Senior-level interview discussions on hash tables, dynamic arrays, and self-balancing trees all require explaining amortized guarantees.",
+    "It deepens your understanding of data structure design: the deliberate choice to make rare operations expensive in order to make common operations cheap."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing amortized with average-case",
+      "explanation": "Average-case analysis assumes a probability distribution over inputs — amortized analysis does not. Amortized cost is a worst-case guarantee over ANY sequence of operations. No randomness or assumptions are involved."
+    },
+    {
+      "title": "Thinking amortized O(1) means every operation is fast",
+      "explanation": "Amortized O(1) means the average per operation is O(1) when spread over many operations. A single operation CAN still take O(n) time (like a resize). In real-time systems where every single operation must meet a deadline, amortized guarantees are insufficient."
+    },
+    {
+      "title": "Forgetting WHY doubling works but incrementing does not",
+      "explanation": "If a dynamic array grows by a fixed amount k each time, a sequence of n appends triggers n/k resizes, each copying O(n) elements — giving O(n^2) total. Doubling ensures the geometric series 1 + 2 + 4 + ... + n sums to 2n, keeping the total at O(n). The exponential growth rate is essential."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the key difference between amortized analysis and average-case analysis?",
+      "answer": "Amortized analysis bounds the average cost per operation over any worst-case sequence of operations, with no probabilistic assumptions. Average-case analysis assumes a specific probability distribution over inputs.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A dynamic array doubles in capacity when full. What is the amortized cost of a single append and why?",
+      "answer": "O(1) amortized. Over n appends, the total resize cost is 1 + 2 + 4 + ... + n = 2n - 1, which is O(n). Dividing by n gives O(1) per append.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name the three standard techniques for amortized analysis.",
+      "answer": "The aggregate method (sum total cost, divide by n), the accounting method (overcharge cheap operations, save credit for expensive ones), and the potential method (define a potential function that captures stored work).",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A colleague proposes that instead of doubling, a dynamic array should add 100 extra slots each time it runs out of space, because 'we waste less memory.' Why does this destroy the amortized O(1) append guarantee?",
+      "answer": "With fixed-increment growth, after inserting n elements you trigger about n/100 resizes, and the i-th resize copies roughly 100*i elements. The total copy cost is proportional to 100 * (1 + 2 + ... + n/100) = O(n^2/100) = O(n^2). Dividing by n gives O(n) amortized cost per append, not O(1).",
+      "why": "The geometric doubling strategy is not arbitrary — it ensures the total resize cost forms a geometric series that converges to O(n). Linear growth produces an arithmetic series that diverges to O(n^2). The growth factor must be multiplicative, not additive."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer avoids using Python lists for a real-time audio processing buffer because 'append is O(n) when it resizes, and audio stutters are unacceptable.' Is this reasoning valid or flawed?",
+      "answer": "The reasoning is VALID. In real-time systems, worst-case latency for every individual operation matters, not amortized averages. A single O(n) resize during audio playback causes a perceptible stutter. A pre-allocated ring buffer with true O(1) worst-case is the correct choice.",
+      "why": "This shows the boundary of amortized analysis: it guarantees low AVERAGE cost but not low WORST-CASE cost for each individual operation. For latency-sensitive systems, amortized guarantees are not strong enough."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Dynamic array: append 8 elements, starting capacity 1\n# Capacity: 1 -> 2 -> 4 -> 8  (3 resizes)\n# Resize copies:  1 + 2 + 4 = 7 elements copied\n# Non-resize appends: 8 - 3 = 5 (cost 1 each = 5)\n# Total cost: 7 + 8 = 15 operations for 8 appends\n# Amortized cost per append: 15/8 < 2\n#\n# For n appends: total resize copies = 1+2+4+...+n = 2n-1\n# Total cost: (2n - 1) + n = 3n - 1 -> O(n) total -> O(1) each",
+    "prediction": "With 3 resizes that copy 1, 2, and 4 elements, the total cost must be high.",
+    "common_guess": "The resizes make append more like O(n) overall.",
+    "why": "Even though resizes copy 1+2+4 = 7 elements, there are 8 total appends, so the average cost is less than 2 operations per append. The crucial insight is that each element is copied at most O(log n) times across all resizes, and the geometric series ensures the total copy work is bounded by 2n. Expensive operations happen so rarely that they are absorbed by the many cheap ones."
+  },
+  "practice_tasks": [
+    {
+      "title": "Trace the resize sequence for 16 appends",
+      "prompt": "A dynamic array starts at capacity 1 and doubles when full. Trace 16 appends: for each append, record the current capacity, whether a resize happens, and the number of elements copied during that resize. Sum the total copies and compute the amortized cost per append.",
+      "starter_code": "# Append 1: capacity 1 -> resize to 2, copies 1 element\n# Append 2: capacity 2 -> resize to 4, copies 2 elements\n# Append 3: capacity 4 -> no resize\n# Append 4: ...\n# Continue to append 16, then sum total copies.",
+      "solution": "Resizes happen at appends 1, 2, 4, 8, 16 (when size equals capacity), copying 1+2+4+8+16 = 31 elements. Total operations: 31 copies + 16 appends = 47. Amortized cost: 47/16 ~ 2.94, which is O(1)."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Amortized_analysis",
+    "https://web.stanford.edu/class/archive/cs/cs161/cs161.1168/lecture1.pdf",
+    "https://www.cs.cornell.edu/courses/cs3110/2013sp/lectures/lec21-amortized/amortized.html",
+    "https://www.enjoyalgorithms.com/blog/time-complexity-of-algorithms/"
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "slug": "big-o-notation",
+  "title": "Big-O Notation",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["counting-operations"],
+    "unlocks": ["common-complexities", "amortized-analysis"],
+    "project_usage": [
+      "Evaluating API endpoint scalability: will this handler survive 10x traffic growth?",
+      "Choosing between data structures (hash map O(1) lookup vs. sorted array O(log n) lookup) in system design"
+    ]
+  },
+  "overview": {
+    "what": "Big-O notation describes the upper bound on an algorithm's growth rate as the input size approaches infinity. It strips away constants and lower-order terms, capturing only the dominant factor that determines how the algorithm scales. O(f(n)) means there exist constants c and n0 such that T(n) <= c * f(n) for all n >= n0.",
+    "why": "Exact operation counts like 3n^2 + 7n + 4 are precise but overwhelming to compare. Big-O compresses them to their essential scaling behavior — O(n^2) — so you can instantly decide whether an algorithm is feasible for a given input size without drowning in arithmetic.",
+    "where_used": [
+      "Every technical interview: candidates must state and justify the Big-O of their solution before it is considered complete",
+      "System design discussions: estimating whether a proposed architecture handles expected load (e.g., O(n) indexing vs. O(log n) B-tree lookups for millions of records)"
+    ]
+  },
+  "why_learning_this": [
+    "It is the universal language for discussing algorithm efficiency — no technical interview or design review proceeds without it.",
+    "It teaches you to ignore noise (constants, hardware) and focus on the structural scaling property that actually determines real-world performance at scale.",
+    "Misusing Big-O (e.g., claiming O(n) when the algorithm is O(n^2)) is one of the fastest ways to lose credibility in a technical discussion."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking Big-O measures exact speed",
+      "explanation": "Big-O measures the growth RATE, not actual time. An O(n) algorithm with a huge constant factor can be slower than an O(n^2) algorithm for small inputs. Big-O tells you what happens as n grows large."
+    },
+    {
+      "title": "Dropping terms from different variables",
+      "explanation": "If an algorithm iterates over n items and then over m items, the complexity is O(n + m), not O(n). You can only drop terms when they share the same variable and one dominates the other."
+    },
+    {
+      "title": "Confusing Big-O (upper bound) with exact complexity",
+      "explanation": "Saying an O(n) algorithm is O(n^2) is technically true — O(n^2) is a valid upper bound — but it is uselessly loose. In interviews, always give the tightest upper bound that accurately describes the algorithm."
+    },
+    {
+      "title": "Forgetting that Big-O applies to space too",
+      "explanation": "Big-O is not just for time. Storing n elements in a hash map is O(n) space; a recursive call stack that goes n levels deep uses O(n) space. Always analyze both dimensions."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "State the formal definition of Big-O in one sentence.",
+      "answer": "T(n) is O(f(n)) if there exist positive constants c and n0 such that T(n) <= c * f(n) for all n >= n0.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does Big-O drop constants and lower-order terms?",
+      "answer": "Because as n approaches infinity, the highest-order term dominates and constants become irrelevant to the growth rate. Dropping them isolates the structural scaling behavior.",
+      "tier": "tier1"
+    },
+    {
+      "q": "An algorithm does 3n^2 + 100n + 500 operations. What is its Big-O, and which terms were dropped and why?",
+      "answer": "O(n^2). The 100n and 500 are lower-order terms that grow slower than n^2, and the coefficient 3 is a constant multiplier — all are irrelevant to asymptotic growth.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "debug-misconception",
+      "question": "A developer says: 'My algorithm runs in 0.5 seconds so it must be O(1).' Why is this reasoning flawed?",
+      "answer": "Big-O is not a measure of absolute time — it describes how time GROWS with input size. A 0.5-second run on one input tells you nothing about the growth rate. The algorithm might be O(n^3) on a small input that happened to be fast.",
+      "why": "Confusing measured time with asymptotic growth rate is one of the most dangerous misconceptions because it makes engineers believe their solution scales when it does not."
+    },
+    {
+      "type": "choose-model",
+      "question": "You have two sorting algorithms: Algorithm X has T(n) = 1000n*log(n) and Algorithm Y has T(n) = 2n^2. For n = 10, Y is faster. For n = 1,000,000, which is faster and why does Big-O predict this?",
+      "answer": "For n = 1,000,000, Algorithm X (O(n log n)) is vastly faster. X does about 20 billion operations vs. Y's 2 trillion. Big-O predicted this because n*log(n) grows strictly slower than n^2 — the crossover is inevitable and the gap widens forever.",
+      "why": "This demonstrates exactly why Big-O drops constants: 1000 is a huge coefficient, but it cannot prevent n*log(n) from eventually beating n^2. The growth rate always wins at scale."
+    }
+  ],
+  "aha_moment": {
+    "code": "# T(n) = 5n^2 + 1000n + 999999\n# At n = 10:    5*100 + 10000 + 999999 = 1,010,499  (n^2 is 0.05% of total!)\n# At n = 10000: 5*100000000 + 10000000 + 999999 = 510,999,999  (n^2 is 97.8%)\n# At n = 1000000: n^2 term is 99.99998% of the total",
+    "prediction": "The constant 999999 dominates for small n, so all three terms matter.",
+    "common_guess": "The lower-order terms always matter because they add to the total.",
+    "why": "At n = 10, the constant term is 99% of the work and the n^2 term is negligible. But at n = 1,000,000, the n^2 term is 99.99998% of the work and everything else vanishes. THIS is why Big-O keeps only the highest-order term — it predicts the reality at scale, where performance actually matters."
+  },
+  "practice_tasks": [
+    {
+      "title": "Simplify operation counts to Big-O",
+      "prompt": "For each of the following T(n) expressions, identify the dominant term and write the Big-O: (a) 7n + 3, (b) 4n^2 + 99n + 12, (c) 2^n + n^3, (d) 500, (e) n*log(n) + n. Justify each by explaining which terms were dropped and why.",
+      "starter_code": "# Fill in:\n# (a) T(n) = 7n + 3       -> O(?)\n# (b) T(n) = 4n^2 + 99n + 12 -> O(?)\n# (c) T(n) = 2^n + n^3    -> O(?)\n# (d) T(n) = 500           -> O(?)\n# (e) T(n) = n*log(n) + n  -> O(?)",
+      "solution": "(a) O(n) — drop constant 3 and coefficient 7. (b) O(n^2) — n^2 dominates n and constants. (c) O(2^n) — exponential dwarfs any polynomial. (d) O(1) — constant work regardless of input. (e) O(n log n) — n*log(n) grows faster than n."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Big_O_notation",
+    "https://web.stanford.edu/class/archive/cs/cs161/cs161.1168/lecture1.pdf",
+    "https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/asymptotic-notation",
+    "https://www.enjoyalgorithms.com/blog/time-complexity-of-algorithms/"
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "slug": "common-complexities",
+  "title": "Common Complexities",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["big-o-notation"],
+    "unlocks": ["logarithms-and-powers-of-two", "amortized-analysis"],
+    "project_usage": [
+      "Choosing the right algorithm for a given constraint: n <= 10^6 rules out O(n^2), demands O(n log n) or better",
+      "Capacity planning: knowing that a hash table lookup is O(1) vs. a sorted array binary search at O(log n) informs architectural decisions"
+    ]
+  },
+  "overview": {
+    "what": "The common complexity classes form a hierarchy of growth rates that virtually all algorithms fall into: O(1), O(log n), O(n), O(n log n), O(n^2), O(n^3), O(2^n), and O(n!). Each class represents a qualitatively different scaling regime — moving one step up the hierarchy can mean the difference between an algorithm finishing in milliseconds or not finishing in your lifetime.",
+    "why": "Knowing the hierarchy lets you immediately judge whether an algorithm is feasible for a given input size. When an interviewer says n can be up to 10^5, you instantly know O(n^2) is borderline and O(n^3) is impossible, and you need an O(n log n) or O(n) approach.",
+    "where_used": [
+      "Constraint-based algorithm selection in competitive programming and interviews",
+      "Load testing and capacity planning: will this O(n log n) sort handle 10 million records within our SLA?"
+    ]
+  },
+  "why_learning_this": [
+    "It provides the mental ruler that makes every future complexity analysis instant — you stop calculating and start recognizing.",
+    "The constraint-to-complexity mapping (n <= 10^6 means you need O(n log n) or better) is used in virtually every timed coding assessment.",
+    "It reveals why certain classes of problems are fundamentally intractable: O(2^n) on n = 50 is more operations than atoms in the universe."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming O(n log n) is 'basically O(n)'",
+      "explanation": "While log n grows slowly, it is NOT a constant. At n = 10^9, log2(n) is about 30 — so an O(n log n) algorithm does 30 billion operations versus 1 billion for O(n). That 30x factor can push you past the time limit."
+    },
+    {
+      "title": "Forgetting that O(n^2) explodes faster than intuition suggests",
+      "explanation": "At n = 1000, O(n^2) means a million operations — fine. At n = 100,000, it means 10 billion operations — likely too slow. The jump from 'works on test cases' to 'times out on the judge' is exactly this transition."
+    },
+    {
+      "title": "Not recognizing O(1) amortized vs. O(1) worst-case",
+      "explanation": "A dynamic array append is O(1) amortized but O(n) worst-case (when it resizes). Confusing these can lead to incorrect analysis of tight inner loops or real-time systems."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "List the common complexity classes from fastest to slowest growth.",
+      "answer": "O(1), O(log n), O(n), O(n log n), O(n^2), O(n^3), O(2^n), O(n!).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Given a problem constraint of n <= 10^6, what is the maximum acceptable time complexity and why?",
+      "answer": "O(n log n), which gives roughly 2 * 10^7 operations — well within the typical 10^8 operations-per-second budget. O(n^2) would be 10^12 operations, which is far too slow.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name one algorithm that runs in each of these classes: O(1), O(log n), O(n), O(n log n), O(n^2).",
+      "answer": "O(1): hash table lookup. O(log n): binary search. O(n): linear scan for max. O(n log n): merge sort. O(n^2): bubble sort.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You need to sort 10 million integers. You have two options: an O(n^2) insertion sort and an O(n log n) merge sort. At roughly 10^8 simple operations per second, estimate the wall-clock time for each and decide.",
+      "answer": "Insertion sort: (10^7)^2 = 10^14 operations, roughly 10^6 seconds (about 11 days). Merge sort: 10^7 * 23 = 2.3 * 10^8 operations, roughly 2.3 seconds. Merge sort is the only feasible option.",
+      "why": "This drives home that the gap between O(n^2) and O(n log n) is not a minor optimization — it is the difference between seconds and days. The complexity class is the single most important factor at scale."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "An algorithm correctly solves a problem for n = 100 in under a second, but times out when n = 10,000. Without seeing the code, what complexity class do you suspect and why?",
+      "answer": "Most likely O(n^2) or O(n^3). At n = 100, n^2 = 10,000 operations (fast). At n = 10,000, n^2 = 10^8 (borderline) and n^3 = 10^12 (certainly times out). The 100x increase in input causing a timeout strongly suggests a polynomial of degree 2 or higher.",
+      "why": "This is the practical skill of reverse-engineering complexity from observed behavior — a direct application of knowing the growth rates of each class."
+    }
+  ],
+  "aha_moment": {
+    "code": "# How long does each take if one operation = 1 nanosecond?\n# n = 100\n# O(n)       = 100 ns         (instant)\n# O(n log n) = 664 ns         (instant)\n# O(n^2)     = 10,000 ns      (instant)\n# O(2^n)     = 1.27 * 10^21 ns = 40,000+ YEARS\n\n# n is just 100. Not a million. One hundred.",
+    "prediction": "O(2^n) on n = 100 will take maybe a few minutes at most.",
+    "common_guess": "All complexities are manageable when n is only 100.",
+    "why": "O(2^100) is approximately 1.27 * 10^30 operations. At a billion operations per second, that is 4 * 10^13 years — thousands of times longer than the age of the universe. Exponential growth does not just slow down your program; it makes it physically impossible to complete. This is why NP-hard problems are fundamentally different from polynomial ones."
+  },
+  "practice_tasks": [
+    {
+      "title": "Map constraints to the tightest feasible complexity",
+      "prompt": "For each constraint below, determine the maximum complexity class that will run within approximately 10^8 operations and suggest an algorithm pattern that achieves it: (a) n <= 10, (b) n <= 1000, (c) n <= 10^5, (d) n <= 10^7.",
+      "starter_code": "# Fill in the complexity and a matching pattern:\n# (a) n <= 10     -> O(?) -- pattern: ?\n# (b) n <= 1000   -> O(?) -- pattern: ?\n# (c) n <= 10^5   -> O(?) -- pattern: ?\n# (d) n <= 10^7   -> O(?) -- pattern: ?",
+      "solution": "(a) O(n!) or O(2^n) — brute force / backtracking is feasible. (b) O(n^2) — nested loops, simple DP. (c) O(n log n) — sorting-based or divide-and-conquer. (d) O(n) — single pass, hash map, prefix sums."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Time_complexity",
+    "https://www.bigocheatsheet.com/",
+    "https://web.stanford.edu/class/archive/cs/cs161/cs161.1168/lecture1.pdf",
+    "https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/asymptotic-notation"
+  ]
+}

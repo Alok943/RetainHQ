@@ -1,0 +1,99 @@
+{
+  "slug": "logarithms-and-powers-of-two",
+  "title": "Logarithms & Powers of Two",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": ["big-o-notation", "common-complexities"],
+    "unlocks": ["amortized-analysis"],
+    "project_usage": [
+      "Estimating B-tree height for database index design: a B-tree of order 100 with 10^8 keys has height log_100(10^8) ~ 4 disk reads",
+      "Sizing hash tables and caches: capacity is typically a power of two for fast bitwise modular arithmetic"
+    ]
+  },
+  "overview": {
+    "what": "A logarithm answers: 'How many times must I divide n by b to reach 1?' log_b(n) is the inverse of exponentiation: if b^k = n, then log_b(n) = k. In algorithms, base 2 is the default because the most common halving operation — dividing a search space in two — produces log2(n) steps.",
+    "why": "Logarithms explain why divide-and-conquer algorithms are so fast. Binary search finishes in log2(n) steps because each comparison eliminates half the remaining data. Without understanding logarithms, the leap from O(n) linear search to O(log n) binary search feels like magic rather than mathematics.",
+    "where_used": [
+      "Binary search: log2(n) halvings to narrow a sorted array to one element",
+      "Balanced binary tree height: a complete binary tree with n nodes has height log2(n), so insert/search/delete are all O(log n)",
+      "Merge sort recurrence: splitting n items log2(n) times, doing O(n) work per level, gives O(n log n) total"
+    ]
+  },
+  "why_learning_this": [
+    "Every O(log n) algorithm — binary search, tree operations, divide-and-conquer — requires fluency in logarithmic thinking to understand why it is fast.",
+    "Powers of two appear everywhere in computer architecture (memory sizes, page sizes, hash table capacities), and understanding them prevents subtle bugs in bitwise operations and modular hashing.",
+    "Interview problems often hint at logarithmic solutions through constraints (n up to 10^18) or keywords ('sorted', 'halve', 'divide'), and recognizing these cues requires mathematical comfort with logs."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking the base of the logarithm matters for Big-O",
+      "explanation": "log_2(n) and log_10(n) differ only by a constant factor (the change-of-base formula: log_a(n) = log_b(n) / log_b(a)). Since Big-O drops constants, O(log_2 n) = O(log_10 n) = O(log n). The base is irrelevant to asymptotic analysis."
+    },
+    {
+      "title": "Confusing log(n) with sqrt(n)",
+      "explanation": "log(n) grows MUCH slower than sqrt(n). At n = 10^6, log2(n) is about 20 while sqrt(n) is 1000 — a 50x difference. Confusing them leads to grossly wrong complexity estimates."
+    },
+    {
+      "title": "Forgetting that repeated doubling is exponential",
+      "explanation": "Starting at 1 and doubling k times gives 2^k. This means it takes only log2(n) doublings to reach n — the inverse perspective of halving. Not seeing this symmetry makes it harder to analyze algorithms that grow (like dynamic array resizing) rather than shrink."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What question does log_2(n) answer in one sentence?",
+      "answer": "How many times can you divide n by 2 before reaching 1 (equivalently, how many bits are needed to represent n).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does the base of the logarithm not matter in Big-O notation?",
+      "answer": "Because the change-of-base formula shows that log_a(n) = log_b(n) / log_b(a), and 1/log_b(a) is a constant. Big-O ignores constant factors.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How many levels deep does merge sort's recursion tree go for an input of size n, and why?",
+      "answer": "log2(n) levels. Each level splits the input in half, so after k splits you have pieces of size n / 2^k. Setting n / 2^k = 1 gives k = log2(n).",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "A sorted array has 1,000,000 elements. Binary search halves the search space each step. How many comparisons does it need in the worst case? What if the array had 1,000,000,000 elements?",
+      "answer": "log2(10^6) is about 20 comparisons. log2(10^9) is about 30 comparisons. Multiplying the data by 1000x only adds about 10 more steps.",
+      "why": "This demonstrates the astonishing practical consequence of logarithmic growth: a thousand-fold increase in data costs only a handful of extra operations. It is the reason binary search and tree-based indices scale to billions of records."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A dynamic array starts with capacity 1 and doubles its capacity each time it fills up. After inserting n elements, how many times has it resized, and why is the total cost of all resizes O(n) despite each individual resize being O(current size)?",
+      "answer": "It resizes log2(n) times (at capacities 1, 2, 4, 8, ..., up to n). The total copy cost is 1 + 2 + 4 + ... + n = 2n - 1, which is O(n). Even though individual resizes are expensive, they happen so rarely that the total is linear.",
+      "why": "This is the geometric series underlying amortized O(1) append: the sum 1 + 2 + 4 + ... + 2^k = 2^(k+1) - 1, which is less than 2n. Powers of two make the series converge, which is why doubling is chosen over, say, adding a fixed amount."
+    }
+  ],
+  "aha_moment": {
+    "code": "# How many times can you halve n before reaching 1?\nn = 1_000_000_000  # one billion\nsteps = 0\nwhile n > 1:\n    n //= 2\n    steps += 1\n# steps = 30. One billion shrinks to 1 in only 30 halves.",
+    "prediction": "Halving a billion will take hundreds or thousands of steps.",
+    "common_guess": "It takes roughly 1000 steps to halve a billion down to 1.",
+    "why": "It takes only 30 steps. This is because 2^30 is about 10^9. Each halving corresponds to removing one bit from the binary representation. A 30-bit number (which represents up to ~10^9) becomes zero in 30 halvings. This is why binary search on a billion elements needs only 30 comparisons."
+  },
+  "practice_tasks": [
+    {
+      "title": "Compute log2 by hand and connect to algorithm steps",
+      "prompt": "Without a calculator, estimate log2 of each value and state what algorithm analysis it corresponds to: (a) 1024, (b) 10^6, (c) 2^20, (d) 10^18. Use the fact that 2^10 is approximately 10^3.",
+      "starter_code": "# (a) log2(1024)  = ? -> corresponds to: ?\n# (b) log2(10^6)  ~ ? -> corresponds to: ?\n# (c) log2(2^20)  = ? -> corresponds to: ?\n# (d) log2(10^18) ~ ? -> corresponds to: ?",
+      "solution": "(a) 10 exactly — binary search on 1024 elements. (b) ~20 — binary search on a million elements. (c) 20 exactly — recursion depth of merge sort on ~10^6 elements. (d) ~60 — binary search on a massive range, still trivially fast."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Logarithm",
+    "https://en.wikipedia.org/wiki/Binary_logarithm",
+    "https://www.khanacademy.org/computing/computer-science/algorithms/binary-search/a/binary-search",
+    "https://www.enjoyalgorithms.com/blog/time-complexity-of-algorithms/"
+  ]
+}

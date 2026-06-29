@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table, Check, Plus, Image as ImageIcon } from 'lucide-react';
 import { apiFetch } from './lib/api';
@@ -12,12 +12,16 @@ import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
 
+// The DSA execution-trace player (Framer Motion + renderers) is heavy and only needed on
+// dsa-kind lessons that carry a `viz` — lazy-load it so every other lesson stays light.
+const DsaPlayer = lazy(() => import('./dsa/Player.jsx'));
+
 const TIER_LABEL = { tier1: 'Tier 1', tier2: 'Tier 2', tier3: 'Tier 3' };
 const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
 const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
 
 // Short roadmap labels for the per-page <title> (keyword-targeted SEO).
-const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS' };
+const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering' };
 
 // Understanding-check intents → badge label, colour, icon.
 const CHECK_META = {
@@ -199,6 +203,24 @@ export default function LessonView() {
       </div>
     </>
   );
+
+  // DSA (Algorithms Visualized) — five-questions lesson built around an execution trace.
+  // Its own shape (why_it_exists, mental_model, the lazy Player for `viz`, recognition cues);
+  // render early before the python/sql overview path.
+  if (lesson.kind === 'dsa') {
+    return (
+      <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+        {header}
+        <DsaBody
+          lesson={lesson}
+          revealed={revealed}
+          toggleReveal={toggleReveal}
+          oaRevealed={checksRevealed}
+          toggleOa={toggleCheck}
+        />
+      </div>
+    );
+  }
 
   // Aptitude (quant) + Reasoning (logical/verbal) are thin, method/intuition-first
   // lessons — a completely different shape from python/sql. Render them here and
@@ -790,6 +812,275 @@ function RichText({ text, tone = 'ink' }) {
         );
       })}
     </div>
+  );
+}
+
+/** DSA lesson body (kind: "dsa"). Section order follows the FIVE questions: why it exists →
+ *  how to simulate it (mental model + the execution-trace Player) → the teaching body → where
+ *  it's used / how to recognize it → mistakes → recall → interview → practice. The `viz` block
+ *  mounts the lazy DsaPlayer; prose-only lessons (no `viz` yet) simply skip it. */
+function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
+  const mm = lesson.mental_model || {};
+  const wie = lesson.why_it_exists || {};
+  const viz = lesson.viz;
+  return (
+    <>
+      {/* Hook (optional) */}
+      {lesson.hook?.scenario && (
+        <Section icon={<Lightbulb size={16} />} title="The setup" accent="#B45309">
+          <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{lesson.hook.scenario}</p>
+          {lesson.hook.question && (
+            <p className="font-sans text-sm font-semibold text-[#B45309] leading-relaxed mt-2">{lesson.hook.question}</p>
+          )}
+        </Section>
+      )}
+
+      {/* Q1 — Why it exists (problem → naive → better idea) */}
+      {(wie.problem || wie.better_idea) && (
+        <Section icon={<HelpCircle size={16} />} title="Why it exists" accent="#0891B2">
+          {wie.problem && <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{wie.problem}</p>}
+          {wie.naive_solution && (
+            <div className="mt-2 rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
+              <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B91C1C] mb-1">The naive way</div>
+              <p className="font-sans text-sm text-[#475569] leading-relaxed">{wie.naive_solution}</p>
+            </div>
+          )}
+          {wie.better_idea && (
+            <div className="mt-2 rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
+              <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">The better idea</div>
+              <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{wie.better_idea}</p>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* Q2/Q3 — Mental model: the intuition + the one repeated decision */}
+      {mm.intuition && (
+        <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
+          <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{mm.intuition}</p>
+          {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" /></div>}
+          {mm.repeated_decision && (
+            <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#7C3AED]/[0.06] border-l-2 border-[#7C3AED] px-3 py-2">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] shrink-0 mt-0.5">Each step</span>
+              <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{mm.repeated_decision}</span>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* The execution trace — predict, then watch it run step by step (lazy-loaded). */}
+      {viz?.generator && (
+        <Section icon={<Sparkles size={16} />} title="Watch it execute" accent="#7C3AED">
+          <Suspense fallback={<div className="rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-8 text-center font-sans text-sm text-[#64748B]">Loading visualizer…</div>}>
+            <DsaPlayer
+              generatorKey={viz.generator}
+              defaultInput={viz.default_input || undefined}
+              invariants={viz.invariants || {}}
+            />
+          </Suspense>
+        </Section>
+      )}
+
+      {/* Teaching body: born-visual sections OR a monolithic explanation */}
+      {Array.isArray(lesson.sections) && lesson.sections.length > 0 ? (
+        <LessonSections sections={lesson.sections} />
+      ) : lesson.explanation ? (
+        <Section icon={<BookOpen size={16} />} title="How it works" accent="#0891B2">
+          <RichText text={lesson.explanation} />
+        </Section>
+      ) : null}
+
+      {/* Key points (optional) — complexity, invariants, preconditions */}
+      {Array.isArray(lesson.key_points) && lesson.key_points.length > 0 && (
+        <Section icon={<Target size={16} />} title="Key points" accent="#0F766E">
+          <div className="flex flex-col gap-2.5">
+            {lesson.key_points.map((p, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {p.detail}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Q5 — Recognize the pattern */}
+      {lesson.pattern?.name && (
+        <Section icon={<GitBranch size={16} />} title="Recognize the pattern" accent="#0891B2">
+          <p className="font-sans text-sm font-semibold text-[#0F172A] leading-relaxed">{lesson.pattern.name}</p>
+          {Array.isArray(lesson.pattern.recognition_cues) && lesson.pattern.recognition_cues.length > 0 && (
+            <ul className="flex flex-col gap-1.5 mt-2">
+              {lesson.pattern.recognition_cues.map((cue, i) => (
+                <li key={i} className="flex items-start gap-2 font-sans text-sm text-[#475569] leading-relaxed">
+                  <span className="text-[#0891B2] mt-0.5 shrink-0">→</span> {cue}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+      )}
+
+      {/* When to reach for it — failure signals */}
+      {Array.isArray(lesson.failure_signals) && lesson.failure_signals.length > 0 && (
+        <Section icon={<Zap size={16} />} title="Signals you need this" accent="#B45309">
+          <ul className="flex flex-col gap-1.5">
+            {lesson.failure_signals.map((s, i) => (
+              <li key={i} className="flex items-start gap-2 font-sans text-sm text-[#0F172A] leading-relaxed">
+                <Zap size={13} className="text-[#B45309] mt-1 shrink-0" /> {s}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {/* Q4 — Where it's used in real systems */}
+      {Array.isArray(lesson.engineering_examples) && lesson.engineering_examples.length > 0 && (
+        <Section icon={<Database size={16} />} title="In real systems" accent="#0F766E">
+          <div className="flex flex-col gap-3">
+            {lesson.engineering_examples.map((e, i) => (
+              <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
+                <div className="font-sans text-sm font-semibold text-[#0F172A] mb-1">{e.title}</div>
+                {e.problem && <p className="font-sans text-[13px] text-[#64748B] leading-relaxed mb-1">{e.problem}</p>}
+                <p className="font-sans text-sm text-[#475569] leading-relaxed">{e.why_this_algorithm}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* When NOT to use — understanding via contrast */}
+      {Array.isArray(lesson.when_not_to_use) && lesson.when_not_to_use.length > 0 && (
+        <Section icon={<AlertTriangle size={16} />} title="When not to use it" accent="#B45309">
+          <div className="flex flex-col gap-2.5">
+            {lesson.when_not_to_use.map((w, i) => (
+              <div key={i} className="font-sans text-sm leading-relaxed">
+                <span className="font-semibold text-[#0F172A]">{w.scenario}</span>
+                <span className="text-[#475569]"> — {w.reason}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Common mistakes (required) */}
+      {Array.isArray(lesson.common_mistakes) && lesson.common_mistakes.length > 0 && (
+        <Section icon={<AlertTriangle size={16} />} title="Common mistakes" accent="#B91C1C">
+          <div className="flex flex-col gap-3">
+            {lesson.common_mistakes.map((m, i) => (
+              <div key={i} className="rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
+                <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1">{m.title}</div>
+                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{m.explanation}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Active recall (required) — predict-before-reveal */}
+      {Array.isArray(lesson.recall_questions) && lesson.recall_questions.length > 0 && (
+        <Section icon={<HelpCircle size={16} />} title="Active recall" accent="#0891B2">
+          <div className="flex flex-col gap-2.5">
+            {lesson.recall_questions.map((rq, i) => (
+              <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
+                <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{rq.q}</p>
+                {revealed.has(i) ? (
+                  <p className="font-sans text-sm text-[#0F766E] leading-relaxed mt-2">{rq.answer}</p>
+                ) : (
+                  <button onClick={() => toggleReveal(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] mt-2 transition-colors">
+                    <Eye size={13} /> Show answer
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Interview / OA questions (required) */}
+      {Array.isArray(lesson.oa_questions) && lesson.oa_questions.length > 0 && (
+        <Section icon={<Trophy size={16} />} title="Interview / OA questions" accent="#B45309">
+          <div className="flex flex-col gap-3">
+            {lesson.oa_questions.map((q, i) => (
+              <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
+                  {q.company && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.company}</span>}
+                </div>
+                {oaRevealed.has(i) ? (
+                  <div className="mt-2">
+                    <p className="font-sans text-sm font-semibold text-[#0F766E] leading-relaxed">{q.answer}</p>
+                    {q.approach && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-1">{q.approach}</p>}
+                  </div>
+                ) : (
+                  <button onClick={() => toggleOa(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#B45309] hover:text-[#0F172A] mt-2 transition-colors">
+                    <Eye size={13} /> Show answer & approach
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Practice (optional) — pattern-transfer problems, links only */}
+      {Array.isArray(lesson.practice) && lesson.practice.length > 0 && (
+        <Section icon={<Code2 size={16} />} title="Practice" accent="#0F766E">
+          <ul className="flex flex-col gap-2">
+            {lesson.practice.map((p, i) => (
+              <li key={i}>
+                <a href={p.url} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-2 font-sans text-sm">
+                  <ExternalLink size={13} className="text-[#0891B2] mt-1 shrink-0" />
+                  <span>
+                    <span className="font-semibold text-[#0891B2] group-hover:text-[#0F172A] transition-colors">{p.title}</span>
+                    {p.difficulty && <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: DIFF_COLOR[p.difficulty] || '#64748B' }}>{p.difficulty}</span>}
+                    {p.why && <span className="block text-[13px] text-[#64748B] leading-snug">{p.why}</span>}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {/* Learn next (optional) */}
+      {Array.isArray(lesson.related) && lesson.related.length > 0 && (
+        <Section icon={<GitBranch size={16} />} title="Learn next" accent="#7C3AED">
+          <div className="flex flex-wrap gap-1.5">
+            {lesson.related.map((slug) => (
+              <span key={slug} className="px-2.5 py-1 rounded-full bg-[#7C3AED]/10 font-sans text-[12px] font-medium text-[#7C3AED]">{slug}</span>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Did you know (optional) — memorable hooks */}
+      {Array.isArray(lesson.interesting_facts) && lesson.interesting_facts.length > 0 && (
+        <Section icon={<Lightbulb size={16} />} title="Did you know" accent="#B45309">
+          <ul className="flex flex-col gap-2">
+            {lesson.interesting_facts.map((f, i) => (
+              <li key={i} className="flex items-start gap-2 font-sans text-sm text-[#0F172A] leading-relaxed">
+                <Lightbulb size={13} className="text-[#B45309] mt-1 shrink-0" /> {f}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {/* Sources */}
+      {lesson.sources?.length > 0 && (
+        <Section icon={<ExternalLink size={16} />} title="Sources">
+          <ul className="flex flex-col gap-2">
+            {lesson.sources.map((url, i) => (
+              <li key={i}>
+                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-sans text-sm text-[#0891B2] hover:text-[#0F172A] font-medium transition-colors break-all">
+                  <ExternalLink size={13} className="shrink-0" /> {url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+    </>
   );
 }
 
