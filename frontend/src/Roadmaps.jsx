@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  Map, ListChecks, ArrowRight, Plus, Sparkles,
+  GraduationCap, ListChecks, ArrowRight, Plus, Sparkles,
   ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -196,9 +196,9 @@ function Roadmaps() {
 
       <header className="mb-2">
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
-          <Map size={24} className="text-[#0891B2]" /> Learning Roadmaps
+          <GraduationCap size={24} className="text-[#0891B2]" /> Learn
         </h2>
-        <p className="font-sans text-sm text-[#64748B] mt-1">Structured learning paths tracking your completion and retention.</p>
+        <p className="font-sans text-sm text-[#64748B] mt-1">Structured roadmaps and step-through lessons, tracked by spaced repetition so what you study sticks.</p>
       </header>
 
       <section>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Home as HomeIcon, CheckSquare, PlusSquare, Map, BarChart2, LogOut, Database, ShieldCheck, LogIn, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -35,9 +35,10 @@ function AppLayout() {
   const { theme } = useTheme();
   const { session, showAuthModal } = useAuth();
   
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    return localStorage.getItem('sidebar_collapsed') === 'true' || location.pathname.startsWith('/roadmaps');
-  });
+  // Floating sidebar: an icon rail by default, expands to a labelled panel on
+  // hover and floats over content (never reflows the page).
+  const [hovered, setHovered] = useState(false);
+  const isCollapsed = !hovered;
 
   // Due-count badge on the Reviews nav item — the habit cue has to live in the
   // chrome, not just on Home. Re-fetched on route change so completing reviews
@@ -52,18 +53,6 @@ function AppLayout() {
       .then((d) => setDueCount(d?.due_count ?? 0))
       .catch(() => {});
   }, [session, location.pathname]);
-
-  useEffect(() => {
-    if (location.pathname.startsWith('/roadmaps')) {
-      setIsCollapsed(true);
-    }
-  }, [location.pathname]);
-
-  const toggleCollapse = () => {
-    const newVal = !isCollapsed;
-    setIsCollapsed(newVal);
-    localStorage.setItem('sidebar_collapsed', newVal.toString());
-  };
 
   const logoVariant = theme === 'dark' ? 'light' : 'dark';
 
@@ -90,32 +79,36 @@ function AppLayout() {
   const isAdmin = email === ADMIN_EMAIL;
 
   return (
-    <div className="flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
+    <div className="relative flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
       {/* First-visit explainer for guests landing straight in the app (e.g. via a
           deep link or the landing-page CTA). Logged-in first-runs use FirstCapture
           instead, so this is gated to guests to avoid double onboarding. Shown once
           per browser via a shared localStorage flag. */}
       {!session && <WelcomeModal />}
 
-      {/* LEFT SIDEBAR (Desktop / Tablet) */}
-      <aside className={`hidden md:flex flex-col border-r glass-nav shrink-0 justify-between transition-all duration-300 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6'}`}>
+      {/* LEFT SIDEBAR (Desktop / Tablet) — floating icon rail that expands on hover.
+          The spacer holds the collapsed footprint so content never sits under the rail;
+          the aside is absolutely positioned and floats over content while expanded. */}
+      <div className="hidden md:block w-[84px] shrink-0" aria-hidden="true" />
+      <aside
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={`hidden md:flex flex-col border-r glass-nav justify-between transition-all duration-300 ease-out absolute inset-y-0 left-0 z-40 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6 shadow-2xl shadow-[rgba(15,23,42,0.18)]'}`}
+      >
         <div className="w-full">
-          <div className={`flex items-center mb-10 ${isCollapsed ? 'flex-col gap-4' : 'justify-between'}`}>
+          <div className={`flex items-center mb-10 ${isCollapsed ? 'flex-col gap-4' : ''}`}>
             <div className="flex items-center gap-2.5 cursor-pointer overflow-hidden" onClick={() => navigate('/dashboard')}>
               <Logo variant={logoVariant} className="h-7 w-auto shrink-0" />
               {!isCollapsed && <h1 className="font-sans font-semibold text-2xl tracking-tight text-[#0F172A] whitespace-nowrap">RetainHQ</h1>}
             </div>
-            <button onClick={toggleCollapse} className="text-[#64748B] hover:text-[#0F172A] transition-colors p-1.5 rounded hover:bg-[rgba(15,23,42,0.05)] shrink-0">
-              {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            </button>
           </div>
-          
+
           <nav className={`flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
-            <SidebarItem isCollapsed={isCollapsed} icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<CheckSquare size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Brain size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
             {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
           </nav>
           
@@ -222,12 +215,12 @@ function AppLayout() {
             100vh is taller than the visible area (the classic mobile-100vh bug). Pages
             already reserve pb-20 for it. */}
         <nav className="md:hidden fixed inset-x-0 bottom-0 glass-nav border-t flex justify-around items-center px-2 py-3 z-30 pb-safe overflow-x-auto gap-1">
-          <NavItem icon={<HomeIcon size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-          <NavItem icon={<CheckSquare size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
+          <NavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
+          <NavItem icon={<Brain size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
           <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
-          <NavItem icon={<Map size={20} />} label="Roadmaps" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
-          <NavItem icon={<Database size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
-          <NavItem icon={<BarChart2 size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
+          <NavItem icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+          <NavItem icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
+          <NavItem icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
           {isAdmin && <NavItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
         </nav>
 
