@@ -27,7 +27,7 @@ from app.core.config import settings
 # Centralizes the client construction + error wrapping shared by every grader
 # function so each one is just a prompt + a Pydantic model.
 # --------------------------------------------------------------------------- #
-async def _groq_json(system_prompt: str, user_msg: str, max_tokens: int = 700) -> str:
+async def _groq_json(system_prompt: str, user_msg: str, max_tokens: int = 700, reasoning: str = "low") -> str:
     if not settings.GROQ_API_KEY:
         raise GraderError("GROQ_API_KEY is not set — grader is disabled.")
     try:
@@ -36,13 +36,15 @@ async def _groq_json(system_prompt: str, user_msg: str, max_tokens: int = 700) -
         raise GraderError("The 'groq' package is not installed (pip install groq).") from e
 
     # gpt-oss is a REASONING model: its hidden reasoning tokens count against
-    # max_tokens (and add latency). Pin reasoning to "low" so a simple grade/gen
-    # task doesn't burn the budget or truncate the JSON. The flag is gpt-oss-only;
-    # sending it to a llama model would 400, so gate it on the model name. We rely
-    # on json_object (not the json_schema strict mode, which gpt-oss ignores).
+    # max_tokens (and add latency). Generation tasks (question/key-point gen) pass
+    # reasoning="low" to stay fast; GRADING passes "medium" because judging whether
+    # an answer is actually correct (not just keyword-similar) needs real reasoning —
+    # at "low" it rubber-stamps answers that merely use the right words. The flag is
+    # gpt-oss-only; sending it to a llama model would 400, so gate it on the model
+    # name. We rely on json_object (not json_schema strict mode, which gpt-oss ignores).
     extra = {}
     if settings.GROQ_MODEL.startswith("openai/gpt-oss"):
-        extra["reasoning_effort"] = "low"
+        extra["reasoning_effort"] = reasoning
 
     client = AsyncGroq(api_key=settings.GROQ_API_KEY)
     try:
@@ -86,15 +88,21 @@ _SYSTEM_PROMPT = (
     "Rules:\n"
     "1. The REFERENCE answer is ground truth. Judge ONLY whether the student's answer "
     "captures its key idea(s) — ignore your own outside knowledge.\n"
-    "2. Be lenient on wording, phrasing, and minor detail; strict on the core concept.\n"
-    "3. 'correct' = key idea fully captured; 'partial' = some of it; 'incorrect' = missing or wrong.\n"
-    "4. 'recalled' is true for correct or solid-partial, false otherwise.\n"
-    "5. feedback: ONE short, encouraging sentence naming what they missed (if anything).\n"
-    "6. revision_note: 2-4 short bullet lines (each prefixed with '- ') of the most crucial "
+    "2. Be lenient on WORDING and phrasing, but strict on CORRECTNESS. If the answer asserts "
+    "something FALSE or muddled — even when it uses the right keywords — it is NOT 'correct'. "
+    "Grade what the student actually SAID, not the right answer you can infer they were reaching for.\n"
+    "3. Do NOT charitably rewrite a flawed answer into the correct one. If something is wrong or "
+    "imprecise, your feedback must name the SPECIFIC error and give the correction.\n"
+    "4. 'correct' = key idea fully and accurately captured; 'partial' = some of it, or right idea "
+    "with a real inaccuracy; 'incorrect' = missing or wrong.\n"
+    "5. 'recalled' is true only for correct or solid-partial with no serious conceptual error.\n"
+    "6. feedback: ONE honest sentence. If they nailed it, say so briefly; if they got something wrong, "
+    "name the exact mistake and the fix. Do NOT give blanket praise when the answer has an error.\n"
+    "7. revision_note: 2-4 short bullet lines (each prefixed with '- ') of the most crucial "
     "points to remember for this topic. Ground it in the REFERENCE answer; you may add a "
     "directly-related point ONLY if you are highly confident it is correct. Keep it concise "
     "and factual — never invent specifics you are unsure about.\n"
-    "7. related_subtopics: 1-2 subtopics under this TOPIC that are highly related and worth "
+    "8. related_subtopics: 1-2 subtopics under this TOPIC that are highly related and worth "
     "learning next. These are SUGGESTIONS, not part of the grade — do not penalize the "
     "student for not mentioning them. Each has a 'title' and a one-line 'explainer'. Pick "
     "genuinely adjacent, high-leverage topics; if nothing strong comes to mind, return [].\n"
@@ -128,7 +136,7 @@ async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderV
         f"STUDENT ANSWER (from memory):\n{user_answer.strip()}"
     )
 
-    raw = await _groq_json(_SYSTEM_PROMPT, user_msg, max_tokens=700)
+    raw = await _groq_json(_SYSTEM_PROMPT, user_msg, max_tokens=1100, reasoning="medium")
     try:
         return GraderVerdict.model_validate_json(raw)
     except ValidationError as e:
@@ -215,13 +223,19 @@ _QGRADE_SYSTEM_PROMPT = (
     "ground truth — judge each answer ONLY against it, ignoring your own outside "
     "knowledge.\n"
     "Rules:\n"
-    "1. Be lenient on wording, strict on the core idea. 'correct' means the answer "
-    "captures the key point the question is after.\n"
-    "2. 'recalled' (overall) is true if the student got the MAJORITY of questions right "
-    "and missed nothing critical.\n"
-    "3. Each item's 'note' is ONE short sentence on what was right or missing.\n"
-    "4. 'feedback' is ONE short, encouraging summary sentence.\n"
-    "5. related_subtopics: 1-2 subtopics under this TOPIC that are highly related and worth "
+    "1. Be lenient on WORDING but strict on CORRECTNESS. Grade what the student actually "
+    "WROTE, not the correct answer you can infer they meant. An answer is 'correct' ONLY if "
+    "what it states is true and on-point. If it contains a false or muddled claim — even with "
+    "the right keywords present — mark it false (correct: false).\n"
+    "2. Do NOT charitably rewrite a flawed answer into the right one. If an answer is wrong or "
+    "imprecise, the 'note' must name the SPECIFIC error and give the correction in one sentence.\n"
+    "3. 'recalled' (overall) is true only if the student got the MAJORITY right AND made no "
+    "serious conceptual error.\n"
+    "4. Each item's 'note': if correct, one sentence on what was right; if wrong, name the exact "
+    "mistake and correct it — do not paper over it.\n"
+    "5. 'feedback' is ONE honest summary sentence: encouraging when earned, but it must mention the "
+    "main gap if they got something wrong. No blanket praise over an incorrect answer.\n"
+    "6. related_subtopics: 1-2 subtopics under this TOPIC that are highly related and worth "
     "learning next. These are SUGGESTIONS, NOT graded — never penalize the student for not "
     "knowing them. Each has a 'title' and a one-line 'explainer'. Pick genuinely adjacent, "
     "high-leverage topics; if nothing strong comes to mind, return [].\n"
@@ -302,7 +316,7 @@ async def grade_question_set(
         f"STUDENT'S ANSWERS:\n{qa_block}"
     )
 
-    raw = await _groq_json(_QGRADE_SYSTEM_PROMPT, user_msg, max_tokens=900)
+    raw = await _groq_json(_QGRADE_SYSTEM_PROMPT, user_msg, max_tokens=1300, reasoning="medium")
     try:
         return QuestionSetGrade.model_validate_json(raw)
     except ValidationError as e:
