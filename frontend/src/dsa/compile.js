@@ -11,12 +11,14 @@ export function compile(input, events) {
   const sorted = new Set();   // indices known sorted/finalized (filled on MERGE_DONE / DONE / SET)
   const frames = [];
   let ptrs = {};              // persistent named pointers for array-family traces (lo/hi/i/j)
+  let freq = null;            // frequency map for COUNT traces (hashing family); null until first COUNT
 
   const top = () => callStack[callStack.length - 1];
 
   for (const ev of events) {
     const { op, args = {}, step_id = null, invariant = null, note } = ev;
     let pointers = {};
+    let mapActive = null;      // the key updated this frame (highlighted in the map panel)
     const caption = note || op;
 
     switch (op) {
@@ -67,6 +69,14 @@ export function compile(input, events) {
         if (typeof args.index === 'number') { array[args.index] = args.value; sorted.add(args.index); }
         pointers = { ...ptrs, write: args.index };
         break;
+      case 'COUNT': { // tally one element into the frequency map (hashing family)
+        const { value, index } = args;
+        if (freq === null) freq = {};
+        freq[value] = (freq[value] || 0) + 1;
+        mapActive = value;
+        pointers = { ...ptrs, i: index };
+        break;
+      }
       case 'DONE': // finalize a range (or the whole array when no bounds given)
         if (typeof args.lo === 'number' && typeof args.hi === 'number') {
           for (let x = args.lo; x <= args.hi; x++) sorted.add(x);
@@ -86,6 +96,8 @@ export function compile(input, events) {
       regions: regions.map((r) => ({ ...r })),
       sorted: [...sorted].sort((a, b) => a - b),
       pointers,
+      map: freq ? { ...freq } : undefined,
+      mapActive,
       activeOp: op,
       caption,
       invariant,

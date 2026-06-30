@@ -5,6 +5,7 @@
 
 import { inPlaceReverseEvents } from './in-place-operations.js';
 import { prefixSumsEvents } from './prefix-sums.js';
+import { frequencyCountEvents } from './frequency-counting.js';
 import { compile } from '../compile.js';
 
 let failures = 0;
@@ -42,6 +43,21 @@ function checkPrefix(input) {
   return last.array;
 }
 
+function checkFreq(input) {
+  const { input: inp, events } = frequencyCountEvents(input);
+  const frames = compile(inp, events);
+  ok(eq(events, frequencyCountEvents(input).events), 'freq: deterministic');
+  const last = frames[frames.length - 1];
+  // independent reference frequency map
+  const expected = {};
+  for (const v of input) expected[v] = (expected[v] || 0) + 1;
+  ok(eq(last.map || {}, expected), `freq ${JSON.stringify(input)} -> got ${JSON.stringify(last.map)} want ${JSON.stringify(expected)}`);
+  // input array is never mutated by counting
+  ok(eq(last.array, input), 'freq: input array untouched');
+  ok(frames.length === events.length, 'freq: one frame per event');
+  return last.map;
+}
+
 console.log('array-family golden check\n');
 for (const input of [[1, 2, 3, 4, 5], [1], [], [9, 7], [3, 8, 1, 6, 2, 4]]) {
   const out = checkReverse(input);
@@ -51,6 +67,11 @@ console.log('');
 for (const input of [[2, 4, 1, 5, 3], [10], [], [5, -2, 7], [1, 1, 1, 1]]) {
   const out = checkPrefix(input);
   console.log(`  prefix  ${JSON.stringify(input).padEnd(22)} -> ${JSON.stringify(out)}`);
+}
+console.log('');
+for (const input of [[2, 3, 2, 1, 3, 2], [7], [], [4, 4, 4], [1, 2, 3, 4]]) {
+  const out = checkFreq(input);
+  console.log(`  freq    ${JSON.stringify(input).padEnd(22)} -> ${JSON.stringify(out)}`);
 }
 
 console.log(failures === 0 ? '\nALL GOLDEN CHECKS PASSED' : `\n${failures} CHECK(S) FAILED`);

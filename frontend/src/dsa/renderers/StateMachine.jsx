@@ -9,6 +9,38 @@ export default function StateMachine({ frame }) {
   const stack = (frame?.callStack || []);
   const view = [...stack].reverse(); // top of stack first (visually on top)
 
+  // Frequency-map traces (hashing family): the map IS the star — render key→count rows,
+  // highlighting the key updated this frame.
+  const map = frame?.map;
+  if (map && typeof map === 'object') {
+    const entries = Object.entries(map);
+    return (
+      <div className="select-none">
+        <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-2">Frequency map</div>
+        <div className="flex flex-col gap-1.5 min-h-[180px] justify-start">
+          {entries.length === 0 ? (
+            <div className="font-mono text-[12px] text-[#94a3b8] italic">— empty —</div>
+          ) : (
+            entries.map(([k, c]) => {
+              const active = String(k) === String(frame.mapActive);
+              return (
+                <div key={k} className="flex items-center justify-between rounded-md px-3 py-2 font-mono text-[13px] border" style={{
+                  background: active ? 'rgba(180,83,9,0.10)' : 'rgba(15,23,42,0.03)',
+                  borderColor: active ? '#B45309' : 'rgba(15,23,42,0.10)',
+                  color: active ? '#B45309' : '#475569',
+                  fontWeight: active ? 700 : 500,
+                }}>
+                  <span>{k}</span>
+                  <span>{c}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // No recursion in this trace → show the pointer state instead of an empty call stack.
   if (stack.length === 0) {
     const ptrs = PTR_ORDER

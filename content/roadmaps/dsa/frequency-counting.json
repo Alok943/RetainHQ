@@ -26,6 +26,14 @@
     "description": "Frequency counting leverages a Hash Map to record occurrences of discrete elements. The keys are the elements themselves, and the values are integer counters. This transforms a sequence of data into a canonical signature (a histogram) that represents its exact makeup, ignoring order.",
     "repeated_decision": "During the build phase: `map[item] = map.get(item, 0) + 1`. During the validation phase: `map[item] -= 1`."
   },
+  "viz": {
+    "generator": "frequency-counting",
+    "default_input": [2, 3, 2, 1, 3, 2],
+    "invariants": {
+      "inv-tally": "map[x] always holds exactly how many times x has appeared so far in the scan.",
+      "inv-signature": "After one pass the map is the collection's order-independent signature — any two anagrams produce the identical map."
+    }
+  },
   "explanation": "Frequency counting is the definitive pattern for problems involving permutations, anagrams, or occurrences.\n\nTo check if 'cinema' and 'iceman' are anagrams, we initialize an empty Hash Map. We iterate over 'cinema'. For 'c', we set its count to 1. For 'i', 1. By the end, our map is: `{'c': 1, 'i': 1, 'n': 1, 'e': 1, 'm': 1, 'a': 1}`.\n\nNext, we iterate over the second string, 'iceman'. For every character, we look it up in the map and decrement its count. 'i' goes from 1 to 0. 'c' goes from 1 to 0. \n\nIf we ever try to decrement a character that isn't in the map, or if a count drops below zero, the strings are not anagrams. Finally, if the strings were of equal length and we never dipped below zero, we know with mathematical certainty that they are exact anagrams.\n\nThis exact same pattern solves problems like finding the majority element, finding the first non-repeating character, or checking if one string can be constructed from a magazine cutout (Ransom Note).",
   "key_points": [
     { "title": "O(N) Time", "detail": "We iterate through the data exactly once (or twice). There is no nested iteration and no sorting." },
