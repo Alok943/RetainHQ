@@ -24,8 +24,10 @@ export default function Player({ generatorKey, defaultInput = [5, 2, 8, 1, 9, 3]
 
   const frames = useMemo(() => {
     if (!generator) return [];
-    const { events } = generator(input);
-    return compile(input, events);
+    // Use the generator's RETURNED input — some generators transform it (e.g. binary
+    // search sorts first), and compile must materialize from that same array.
+    const { input: genInput, events } = generator(input);
+    return compile(genInput ?? input, events);
   }, [generator, input]);
 
   const last = frames.length - 1;

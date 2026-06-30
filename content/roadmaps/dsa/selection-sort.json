@@ -26,6 +26,15 @@
     "description": "The array is divided into a sorted left partition and an unsorted right partition. In each pass, the algorithm scans the entire unsorted partition to locate the absolute minimum element. It then swaps this minimum with the first element of the unsorted partition, growing the sorted partition by one.",
     "repeated_decision": "Is `arr[j] < arr[min_index]`? If yes, update `min_index = j`. After the inner loop, swap `arr[i]` with `arr[min_index]`."
   },
+  "viz": {
+    "generator": "selection-sort",
+    "default_input": [5, 2, 8, 1, 9],
+    "invariants": {
+      "inv-min": "Each pass scans the unsorted suffix to find its smallest element.",
+      "inv-prefix": "arr[0..i-1] holds the i smallest elements, already in final order.",
+      "inv-sorted": "When the sorted prefix covers the array, it's sorted — in ≤ N-1 swaps."
+    }
+  },
   "explanation": "Selection Sort always performs exactly N*(N-1)/2 comparisons, regardless of the input data. Whether the array is already sorted, reverse-sorted, or random, the algorithm executes the same number of comparison operations. It is completely non-adaptive.\n\nHowever, it performs at most N-1 swaps. Each pass through the inner loop identifies the minimum of the unsorted portion and executes exactly one swap to place it. This makes Selection Sort the optimal choice when writes are expensive.\n\nThe loop invariant is: at the start of the i-th iteration, the subarray `arr[0..i-1]` contains the i smallest elements of the original array, in their final sorted positions. Once an element is placed, it is never touched again.\n\nCritically, Selection Sort is NOT stable. The long-distance swap can destroy relative order. Example: `[3A, 3B, 1]`. Finding min=1, we swap it with 3A: `[1, 3B, 3A]`. The relative order of the two 3s has been reversed.",
   "key_points": [
     { "title": "Minimum Writes", "detail": "At most N-1 swaps. The lowest write overhead of any comparison-based sort." },

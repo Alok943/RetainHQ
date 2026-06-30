@@ -26,6 +26,14 @@
     "description": "Iterate through the collection one element at a time. Compare the current element to the target. If it matches, return the index. If the loop finishes without a match, return a 'not found' indicator (like -1).",
     "repeated_decision": "Is `arr[i] == target`? If yes, stop. If no, advance to `i+1`."
   },
+  "viz": {
+    "generator": "linear-search",
+    "default_input": [4, 2, 7, 1, 9, 3],
+    "invariants": {
+      "inv-scan": "Every element before the pointer has been checked and ruled out.",
+      "inv-found": "A match means the target's index is exactly here — no need to look further."
+    }
+  },
   "explanation": "Linear search is the most fundamental retrieval algorithm. Its theoretical time complexity is O(N) in the worst case (the target is at the end or absent) and O(1) in the best case (the target is at index 0).\n\nDespite its O(N) complexity, linear search is exceptionally fast on modern CPUs for small arrays (under ~100 elements). Because it accesses memory sequentially, the CPU's hardware prefetcher successfully anticipates future memory accesses, loading contiguous blocks (cache lines) into the L1 cache. This results in a near-zero cache miss rate.\n\nThe loop invariant is simple: at the start of the i-th iteration, the target value does not exist in any of the preceding elements from index 0 to i-1. When the loop terminates after checking all elements, this invariant proves the target is entirely absent from the array.\n\nLinear search operates strictly in place with O(1) space complexity, making it ideal for memory-constrained environments like IoT firmware.",
   "key_points": [
     { "title": "Sequential Scanning", "detail": "Checks every element one by one. Works on unsorted arrays, linked lists, and streams." },

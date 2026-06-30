@@ -7,6 +7,11 @@ import { frequencyCountEvents } from './generators/frequency-counting.js';
 import { palindromeEvents } from './generators/palindromes.js';
 import { twoPointerStringEvents } from './generators/two-pointers-on-strings.js';
 import { frequencyArrayEvents } from './generators/frequency-arrays.js';
+import { bubbleSortEvents } from './generators/bubble-sort.js';
+import { selectionSortEvents } from './generators/selection-sort.js';
+import { insertionSortEvents } from './generators/insertion-sort.js';
+import { linearSearchEvents } from './generators/linear-search.js';
+import { binarySearchEvents } from './generators/binary-search.js';
 
 export const GENERATORS = {
   'merge-sort': mergeSortEvents,
@@ -16,6 +21,11 @@ export const GENERATORS = {
   'palindromes': palindromeEvents,
   'two-pointers-on-strings': twoPointerStringEvents,
   'frequency-arrays': frequencyArrayEvents,
+  'bubble-sort': bubbleSortEvents,
+  'selection-sort': selectionSortEvents,
+  'insertion-sort': insertionSortEvents,
+  'linear-search': linearSearchEvents,
+  'binary-search': binarySearchEvents,
 };
 
 export function getGenerator(key) {

@@ -77,6 +77,10 @@ export function compile(input, events) {
         pointers = { ...ptrs, i: index };
         break;
       }
+      case 'WINDOW': // set the active sub-range (e.g. binary-search [lo,hi]); cells outside go idle
+        regions = [{ lo: args.lo, hi: args.hi, label: 'merging' }];
+        pointers = { ...ptrs };
+        break;
       case 'MARK': // mark specific indices as confirmed/matched (no value change)
         for (const x of args.indices || []) sorted.add(x);
         pointers = { ...ptrs };

@@ -26,6 +26,15 @@
     "description": "The array is divided into a sorted left partition and an unsorted right partition. The algorithm takes the first element of the unsorted partition (the 'key'), scans backward through the sorted partition, shifts every element larger than the key one position to the right, and inserts the key into the gap.",
     "repeated_decision": "While `j >= 0` and `arr[j] > key`: shift `arr[j]` one position right (`arr[j+1] = arr[j]`), then decrement `j`. Insert the key at `arr[j+1]`."
   },
+  "viz": {
+    "generator": "insertion-sort",
+    "default_input": [5, 2, 8, 1, 9],
+    "invariants": {
+      "inv-prefix": "arr[0..i-1] is already sorted (relative order), and we insert arr[i] into it.",
+      "inv-shift": "Larger sorted elements slide right one step until the key's slot opens up.",
+      "inv-sorted": "Each element gets inserted into the growing sorted prefix — O(N) on nearly-sorted input."
+    }
+  },
   "explanation": "Insertion Sort iterates from index 1 to N-1. For each index i, it stores the value `key = arr[i]`. It then scans backward through the sorted partition (indices 0 to i-1).\n\nCritically, Insertion Sort uses SHIFTS, not swaps. A swap requires 3 memory writes (temp = a; a = b; b = temp). A shift requires only 1 memory write (arr[j+1] = arr[j]). This halves the memory bandwidth compared to Bubble Sort.\n\nThe loop invariant is: at the start of iteration i, the subarray arr[0..i-1] consists of the elements originally in arr[0..i-1], but in sorted order. Note: unlike Selection Sort, these are NOT necessarily the globally smallest elements. They are simply sorted relative to each other.\n\nInsertion Sort is adaptive. If the array is already sorted, the inner `while` loop condition `arr[j] > key` fails immediately on every iteration, making the total work exactly N-1 comparisons: O(N). It is also stable, because the condition is strictly greater-than (`>`), so equal elements are never shifted past each other.\n\nInsertion Sort is also an 'online algorithm': it can process input as it arrives, one element at a time. A live data stream can be kept perpetually sorted by inserting each new element into the correct position as it arrives.\n\nIts dominance on small arrays comes from hardware synergies. The backward scan accesses memory sequentially, which the CPU hardware prefetcher optimizes perfectly, minimizing L1 cache misses. The inner loop branch (`arr[j] > key`) is highly predictable: it evaluates to `true` several times, then `false` exactly once. Modern branch predictors learn this pattern, reducing pipeline stalls to near zero.",
   "key_points": [
     { "title": "Adaptive O(N) Best-Case", "detail": "On sorted or nearly-sorted data, the inner loop barely executes, yielding linear time." },

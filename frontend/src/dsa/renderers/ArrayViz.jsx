@@ -12,7 +12,7 @@ const C = {
 
 // Named pointers the renderer knows how to draw above a bar. `write` keeps its ▼;
 // the two-pointer / array-family markers (lo/hi/i/j) draw as small labels.
-const PTR_LABELS = { write: '▼', lo: 'lo', hi: 'hi', i: 'i', j: 'j', left: 'L', right: 'R' };
+const PTR_LABELS = { write: '▼', lo: 'lo', hi: 'hi', i: 'i', j: 'j', mid: 'mid', left: 'L', right: 'R' };
 
 function regionOf(i, regions) {
   for (const r of regions || []) if (i >= r.lo && i <= r.hi) return r.label;
@@ -35,7 +35,7 @@ export default function ArrayViz({ frame }) {
 
   const colorOf = (i) => {
     if (sortedSet.has(i)) return C.sorted;
-    if (pointers.write === i) return C.write;
+    if (pointers.write === i || pointers.mid === i) return C.write; // active write / binary-search probe
     // active pointer cells (swap / two-pointer compare)
     if (pointers.i === i || pointers.j === i || pointers.lo === i || pointers.hi === i) return C.pointer;
     const reg = regionOf(i, regions);

@@ -26,6 +26,15 @@
     "description": "The algorithm sweeps through the array from left to right, comparing each element with its immediate right neighbor. If the left element is larger, they are swapped. After each complete pass, the largest unsorted element is guaranteed to be in its final position. Subsequent passes only need to process the shrinking unsorted prefix.",
     "repeated_decision": "Is `arr[j] > arr[j+1]`? If yes, swap them."
   },
+  "viz": {
+    "generator": "bubble-sort",
+    "default_input": [5, 2, 8, 1, 9],
+    "invariants": {
+      "inv-bubble": "Each pass walks the unsorted prefix, swapping out-of-order neighbours.",
+      "inv-largest": "After pass i, the largest i elements have bubbled to their final spots at the end.",
+      "inv-sorted": "Once every pass has run, the whole array is sorted."
+    }
+  },
   "explanation": "Bubble Sort uses two nested loops. The outer loop runs N-1 times. The inner loop walks through the unsorted portion, comparing adjacent elements.\n\nThe key optimization is the `swapped` flag. Before each inner-loop pass, set `swapped = False`. If a swap occurs, set `swapped = True`. After the inner loop, if `swapped` is still `False`, the array is sorted and we break out of the outer loop immediately.\n\nThis optimization transforms the best-case (already sorted array) from O(N^2) to O(N), because the first pass performs N-1 comparisons with zero swaps and then halts.\n\nThe loop invariant is: after the i-th pass of the outer loop, the last i elements of the array are in their final sorted positions, and every element in this sorted suffix is greater than or equal to every element in the unsorted prefix.\n\nA notable quirk is the 'Rabbit and Turtle' problem. Large values at the beginning ('rabbits') travel to the end quickly, traversing the array in a single pass. But small values at the end ('turtles') move toward the beginning by only one position per pass. A single misplaced small element at the end forces O(N) passes.",
   "key_points": [
     { "title": "Adaptive Best-Case", "detail": "With the `swapped` flag, Bubble Sort detects a sorted array in O(N) time." },

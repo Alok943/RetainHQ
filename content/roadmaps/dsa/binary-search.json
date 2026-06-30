@@ -26,6 +26,15 @@
     "description": "Maintain two pointers, `low` and `high`, defining the active search space. Calculate the `mid` index. If `arr[mid] == target`, you are done. If `arr[mid] < target`, the target must be to the right, so update `low = mid + 1`. If `arr[mid] > target`, update `high = mid - 1`. Repeat until `low > high`.",
     "repeated_decision": "Compare `arr[mid]` to the target. Discard the half where the target mathematically cannot exist."
   },
+  "viz": {
+    "generator": "binary-search",
+    "default_input": [1, 3, 5, 7, 9, 11, 13],
+    "invariants": {
+      "inv-window": "If the target exists, it always lies inside the current [lo, hi] window.",
+      "inv-halve": "Each probe discards half the remaining range — so it finishes in ~log₂n steps.",
+      "inv-found": "arr[mid] == target means we've located it."
+    }
+  },
   "explanation": "Binary search is the quintessential O(log N) algorithm. Every comparison halves the search space. Searching a billion records requires at most ~30 comparisons.\n\nThe loop invariant is rigid: if the target value exists anywhere within the original array, its index is strictly bounded within the inclusive interval `[low, high]`.\n\nA critical engineering detail is the calculation of the midpoint. The mathematical formula `mid = (low + high) / 2` is flawed. In languages with fixed-size integers (C++, Java), if `low` and `high` are near the 32-bit limit, their sum overflows, wrapping around to a negative number and causing a segmentation fault. The overflow-safe formula is `mid = low + (high - low) / 2`.\n\nBinary search is foundational to highly scaled systems. Databases perform binary search on disk-based SSTables. Network routers use hardware-optimized binary searches on routing tables for Longest Prefix Match (LPM) IP lookups.",
   "key_points": [
     { "title": "O(log N) Time", "detail": "Halves the search space on every iteration. Vastly faster than O(N) for large datasets." },
