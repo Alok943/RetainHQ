@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Play, AlertCircle, Clock, CheckCircle2, Key, PlusSquare } from 'lucide-react';
+import { Play, AlertCircle, Clock, CheckCircle2, Key, PlusSquare, ArrowRight, CalendarDays, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import FirstCapture from './FirstCapture';
 import { useAuth } from './lib/AuthContext';
+import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
+import ReviewHeatmap from './ReviewHeatmap';
 
 // Per-session opt-out: if a new user clicks "I'll look around first", don't re-gate
 // them on every Home visit this session (cleared on tab close).
@@ -27,6 +29,7 @@ function Home({ onStartReviews }) {
   const [dashboard, setDashboard] = useState(null);
   const [dueReviews, setDueReviews] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [roadmaps, setRoadmaps] = useState([]);
   // Independent loading per section so each paints the moment its own call returns,
   // instead of the whole page waiting on the slowest of three requests.
   const [loadingReviews, setLoadingReviews] = useState(true);
@@ -61,7 +64,18 @@ function Home({ onStartReviews }) {
       .then(setDashboard)
       .catch(() => {})
       .finally(() => setLoadingDashboard(false));
+
+    apiFetch('/api/roadmaps/', { optionalAuth: true })
+      .then((data) => setRoadmaps(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
+
+  // In-progress roadmaps first; fall back to a few starters so the section is
+  // never empty for a new user.
+  const inProgress = roadmaps.filter((r) => (r.progress_pct ?? 0) > 0)
+    .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
+  const continueRoadmaps = (inProgress.length > 0 ? inProgress : roadmaps).slice(0, 4);
+  const continueHeading = inProgress.length > 0 ? 'Continue learning' : 'Start a roadmap';
 
   const topReview = dueReviews[0] ?? null;
 
@@ -171,6 +185,36 @@ function Home({ onStartReviews }) {
           )}
         </section>
 
+        {/* Continue learning — in-progress roadmaps (or starters for new users) */}
+        {continueRoadmaps.length > 0 && (
+          <section>
+            <div className="flex justify-between items-end mb-4">
+              <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] flex items-center gap-1.5">
+                <GraduationCap size={15} className="text-[#0891B2]" /> {continueHeading}
+              </h2>
+              <button
+                onClick={() => navigate('/roadmaps')}
+                className="font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
+              >
+                All roadmaps →
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {continueRoadmaps.map((rm) => (
+                <RoadmapMini key={rm.id} rm={rm} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Review calendar — the activity heatmap, surfaced on Home */}
+        <section>
+          <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] flex items-center gap-1.5 mb-4">
+            <CalendarDays size={15} className="text-[#0891B2]" /> Review calendar
+          </h2>
+          <ReviewHeatmap />
+        </section>
+
         {/* Recent Captures — a naked list (no card) so the due-review card stays
             the only elevated element on the page. */}
         <section>
@@ -247,6 +291,34 @@ function Home({ onStartReviews }) {
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
     </div>
+  );
+}
+
+function RoadmapMini({ rm, onClick }) {
+  const { Icon, accent } = getRoadmapStyle(rm.title);
+  const pct = rm.progress_pct ?? 0;
+  return (
+    <button
+      onClick={onClick}
+      className="kinetic-card bg-white p-4 flex items-center gap-3 text-left hover:-translate-y-0.5 transition-transform group"
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ backgroundColor: `${accent}14`, border: `1px solid ${accent}26` }}
+      >
+        <RoadmapLogo title={rm.title} Icon={Icon} accent={accent} size={20} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-sans text-sm font-semibold text-[#0F172A] truncate">{rm.title}</h3>
+          <span className="font-mono text-xs font-semibold shrink-0" style={{ color: accent }}>{pct}%</span>
+        </div>
+        <div className="w-full h-1.5 rounded-full bg-[rgba(15,23,42,0.06)] overflow-hidden mt-2">
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: accent }} />
+        </div>
+      </div>
+      <ArrowRight size={15} className="text-[#94a3b8] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
   );
 }
 

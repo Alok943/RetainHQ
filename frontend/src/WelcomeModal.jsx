@@ -11,6 +11,7 @@ const STEPS = [
   {
     icon: Sparkles,
     accent: '#22D3EE',
+    image: '/welcome/dashboard.png',
     eyebrow: 'What is RetainHQ?',
     title: 'Learn it visually. Remember it forever.',
     body: 'RetainHQ teaches you to actually read and debug code — step through every line as it runs and predict the output before the reveal. Then spaced repetition brings each topic back right before you\'d forget, so it sticks.',
@@ -18,6 +19,7 @@ const STEPS = [
   {
     icon: PenLine,
     accent: '#8B5CF6',
+    image: '/welcome/capture.png',
     eyebrow: 'Step 1 · Capture',
     title: 'Log what you learn in seconds',
     body: 'After you read, watch, or solve something, jot down the one key memory worth keeping — a single sentence. That becomes a card RetainHQ schedules for you.',
@@ -25,6 +27,7 @@ const STEPS = [
   {
     icon: Brain,
     accent: '#F59E0B',
+    image: '/welcome/review.png',
     eyebrow: 'Step 2 · Recall',
     title: 'Pull it back from memory later',
     body: 'Reviews land on a spaced schedule — the next day, then wider apart as it sticks. You type what you remember before the answer is revealed: real recall, not re-reading.',
@@ -32,6 +35,7 @@ const STEPS = [
   {
     icon: TrendingUp,
     accent: '#10B981',
+    image: '/welcome/retain.png',
     eyebrow: 'Step 3 · Retain',
     title: 'Watch knowledge actually stick',
     body: 'Every topic lives in your Knowledge Vault with its next review date. Over time you stop relearning what you already studied — that\'s the whole point.',
@@ -123,6 +127,15 @@ export default function WelcomeModal({ onDone, ctaLabel = 'Got it — let\'s go'
           </p>
           <h3 className="font-sans text-xl font-bold text-white leading-snug mb-2.5">{s.title}</h3>
           <p className="font-sans text-sm text-[#9aa3b8] leading-relaxed">{s.body}</p>
+          {s.image && (
+            <img
+              src={s.image}
+              alt=""
+              loading="lazy"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              className="mt-4 w-full rounded-lg border border-white/10 shadow-lg"
+            />
+          )}
         </div>
 
         {/* footer */}
