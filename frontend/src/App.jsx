@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus } from 'lucide-react';
+import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -20,6 +20,7 @@ const Home = lazy(() => import('./Home'));
 const Review = lazy(() => import('./Review'));
 const LogActivity = lazy(() => import('./LogActivity'));
 const Roadmaps = lazy(() => import('./Roadmaps'));
+const CareerPaths = lazy(() => import('./CareerPaths'));
 const Analytics = lazy(() => import('./Analytics'));
 const RoadmapDetail = lazy(() => import('./RoadmapDetail'));
 const LessonView = lazy(() => import('./LessonView'));
@@ -67,6 +68,7 @@ function AppLayout() {
     if (path.startsWith('/reviews')) return 'review';
     if (path.startsWith('/log')) return 'log';
     if (path.startsWith('/roadmaps')) return 'roadmaps';
+    if (path.startsWith('/paths')) return 'paths';
     if (path.startsWith('/vault')) return 'vault';
     if (path.startsWith('/analytics')) return 'analytics';
     if (path.startsWith('/admin')) return 'admin';
@@ -107,6 +109,7 @@ function AppLayout() {
             <SidebarItem isCollapsed={isCollapsed} icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
             <SidebarItem isCollapsed={isCollapsed} icon={<Brain size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
             <SidebarItem isCollapsed={isCollapsed} icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<RouteIcon size={20} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => navigate('/paths')} />
             <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
             <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
             {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
@@ -197,6 +200,7 @@ function AppLayout() {
             <Route path="roadmaps" element={<Roadmaps />} />
             <Route path="roadmaps/:id" element={<RoadmapDetail />} />
             <Route path="roadmaps/:id/learn/:slug" element={<LessonView />} />
+            <Route path="paths" element={<CareerPaths />} />
             <Route path="dsa-dev" element={<DsaDev />} />
             <Route path="vault" element={<KnowledgeVault />} />
             <Route path="analytics" element={<Analytics />} />
@@ -219,6 +223,7 @@ function AppLayout() {
           <NavItem icon={<Brain size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
           <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
           <NavItem icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
+          <NavItem icon={<RouteIcon size={20} />} label="Paths" active={activeTab === 'paths'} onClick={() => navigate('/paths')} />
           <NavItem icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
           <NavItem icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
           {isAdmin && <NavItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
