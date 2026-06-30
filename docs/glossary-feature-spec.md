@@ -4,9 +4,10 @@
 tap (mobile) → a small card pops up with a **plain, beginner-friendly** definition **and an example
 taken from THIS lesson's own algorithm/topic** — never a random unrelated example.
 
-**Scope (now):** the **DSA — Algorithms Visualized** roadmap only (`content/roadmaps/dsa/*.json`).
-Roll out to other roadmaps later — the mechanism is roadmap-agnostic; only the authored entries are
-per-lesson.
+**Scope:** **every roadmap, every lesson kind** (`content/roadmaps/**/*.json` — python-swe, sql,
+aptitude, core-cs, ai-engineering, dsa, …). The mechanism is roadmap- and kind-agnostic; the authored
+entries are per-lesson. **Build + verify the mechanism on the DSA roadmap first, then author entries
+across all roadmaps.**
 
 **Audience for the writing:** a first-year student from a tier-3 college with weak vocabulary must be
 able to understand every definition. Short sentences, no jargon used to explain jargon.
@@ -106,18 +107,23 @@ on the string child, for ergonomic use in JSX.
 ### 3c. Wire into `LessonView.jsx`
 - Read `lesson.glossary` (default `[]`); create one `used = new Set()` per render and thread it through
   so each term links once across the whole lesson.
-- Wrap the **teaching prose** fields with `GlossaryText`: `overview.what` / `overview.why`,
-  `why_it_exists.problem|naive_solution|better_idea`, `mental_model.intuition|description`,
-  `explanation`, `sections[].body`, `key_points[].detail`, `common_mistakes[].explanation`.
-- **Do NOT** linkify: code blocks / `CodeTrace` / `viz` captions / `recall_questions` answers /
-  `oa_questions` (keep recall a clean test; don't give hints there).
+- Wrap the **teaching prose** wherever it renders, across **all kinds**: `overview.what|why`,
+  `why_it_exists.*`, `why_learning_this[]`, `mental_model.intuition|description`, `analogy`,
+  `explanation`, `method`, `formula` (its text), `worked_example` prose, `sections[].body`,
+  `key_points[].detail`, `common_mistakes[].explanation`. (Some fields only exist on some kinds —
+  apply where present.)
+- **Do NOT** linkify: code blocks / `CodeTrace` / `code_walkthrough` / `query_walkthrough` /
+  `viz` captions / `recall_questions` & `oa_questions` answers / `understanding_checks` answers.
+- **Principle:** linkify the parts that **teach**, never the parts that **test** or **run**.
 - If `glossary` is empty, output is byte-for-byte the current behaviour.
 
 ---
 
 ## 4. Authoring contract (Antigravity) — the `glossary` entries
 
-For each **DSA lesson** (`content/roadmaps/dsa/<slug>.json`), add a `glossary` array:
+For **every lesson in every roadmap** (`content/roadmaps/<roadmap>/<slug>.json`), add a `glossary`
+array. The example must come from **that lesson's own topic** — a `pointer` in a Python lesson uses a
+Python example, in SQL a SQL example, in DSA the algorithm at hand:
 1. Pick **3–8 genuinely hard words** a beginner wouldn't know — real jargon: *pointer, invariant,
    in-place, amortized, recursion, pivot, stable sort, auxiliary space, load factor, prefix, monotonic*,
    etc. **Do not** gloss everyday words.
@@ -148,5 +154,6 @@ For each **DSA lesson** (`content/roadmaps/dsa/<slug>.json`), add a `glossary` a
 2. Build `GlossaryTerm.jsx` + `linkifyGlossary`.
 3. Wire into `LessonView.jsx` for the prose fields.
 4. Hand-author a `glossary` on **one** lesson (e.g. `merge-sort.json`), sync, verify the popover on
-   `/roadmaps/dsa/learn/merge-sort`.
-5. Bulk-author `glossary` across the rest of the DSA lessons (Antigravity).
+   `/roadmaps/dsa/learn/merge-sort`. Spot-check one lesson of a **different kind** (e.g. a `concept`
+   python lesson, an `aptitude` lesson) so the prose-field wiring is confirmed across kinds.
+5. Bulk-author `glossary` across **all DSA lessons, then all other roadmaps** (Antigravity).
