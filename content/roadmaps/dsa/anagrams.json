@@ -1,0 +1,77 @@
+{
+  "slug": "anagrams",
+  "title": "Anagrams",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["frequency-arrays"],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have an array of 10,000 words. You need to instantly group together all words that are anagrams of each other (like 'eat', 'tea', and 'ate').",
+    "question": "Checking every word against every other word takes O(N^2). Can you do this in a single pass?"
+  },
+  "why_it_exists": {
+    "problem": "Anagrammatic comparison strips away sequential order. Generating all permutations to check for matches scales factorially (O(N!)), which is computationally impossible for long strings.",
+    "naive_solution": "Generate all permutations of a string and search an array for matches.",
+    "better_idea": "Standardize the string into a 'canonical signature' (either by sorting its characters or creating a frequency array) and use a Hash Map to bucket matching signatures together."
+  },
+  "mental_model": {
+    "intuition": "Imagine deconstructing two Lego structures into piles of raw bricks. If the piles contain the exact same quantity of each color and size, they are anagrams. You don't care how they were built, only what they are made of.",
+    "description": "Anagram algorithms rely on equivalence classes. If you map every string to a standardized signature, all anagrams will produce the exact same signature. You can use that signature as a Hash Map key, grouping all original strings in a list attached to that key.",
+    "repeated_decision": "For each word: compute its signature -> use signature as Hash Map key -> append word to the key's list."
+  },
+  "explanation": "To solve 'Group Anagrams', we iterate through the list of strings.\n\nOption 1: Sort the string. 'eat', 'tea', and 'ate' all sort to 'aet'. We use 'aet' as a key in a Hash Map, and append the original strings to its value list: `{'aet': ['eat', 'tea', 'ate']}`. This takes O(K log K) per string, where K is string length.\n\nOption 2: Frequency Array. We count the characters into a size-26 integer array. 'eat' becomes an array with 1 at 'a', 1 at 'e', 1 at 't', and zeros elsewhere. We convert this array into an immutable tuple or a string, and use THAT as the Hash Map key. This takes O(K) time per string, completely bypassing the sorting overhead.\n\nAt the end of the pass, the values of the Hash Map contain perfect lists of grouped anagrams.",
+  "key_points": [
+    { "title": "Canonical Signatures", "detail": "Anagram algorithms always transform strings into a uniform representation that ignores original ordering." },
+    { "title": "O(N * K) Time Limit", "detail": "By using a frequency array signature instead of sorting, grouping N strings of maximum length K takes optimal O(N * K) time." },
+    { "title": "Hash Map Bucketing", "detail": "The standardized signature acts as the exact memory address (key) to group related data." }
+  ],
+  "pattern": {
+    "name": "Canonical Signature Mapping",
+    "recognition_cues": [
+      "The problem asks to 'group' related permutations.",
+      "The problem asks if one string is an anagram of another."
+    ]
+  },
+  "failure_signals": [
+    "You are using a library to generate permutations (`itertools.permutations`).",
+    "You are using an O(N^2) nested loop to compare every string with every other string."
+  ],
+  "engineering_examples": [
+    { "title": "Search Engine Indexing", "problem": "Returning results for a user's query even if they swapped the order of the letters.", "why_this_algorithm": "Indexing engines map sorted/standardized versions of words to documents, bypassing typos instantly." },
+    { "title": "Cryptanalysis", "problem": "Breaking a transposition cipher.", "why_this_algorithm": "Transposition ciphers only rearrange letters. The ciphertext and plaintext are perfect anagrams sharing identical frequency signatures." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "The character set is massive (full Unicode)", "reason": "Creating a frequency array signature for Unicode is highly inefficient. In this case, the O(K log K) sorting method is actually preferred over a sparse array." }
+  ],
+  "common_mistakes": [
+    { "title": "Using mutable arrays as Hash Map keys", "explanation": "In Python and Java, arrays/lists cannot be used as dictionary keys because they are mutable (unhashable). You must convert the frequency array to a string or tuple first." },
+    { "title": "Assuming lengths are equal", "explanation": "Always check if strings have different lengths immediately. If `len(A) != len(B)`, they mathematically cannot be anagrams. Return false instantly." }
+  ],
+  "recall_questions": [
+    { "q": "What are the two ways to create a canonical signature for an anagram?", "answer": "Lexicographically sorting the string, or creating a character frequency array.", "tier": "tier1" },
+    { "q": "Why is the frequency array signature faster than the sorting signature?", "answer": "Sorting takes O(K log K) time per string, whereas the frequency array is built in a single O(K) linear pass.", "tier": "tier1" },
+    { "q": "Why do we use a Hash Map in grouping anagrams?", "answer": "The signature serves as a key, allowing us to bucket all original strings that produce that same signature into a list in O(1) time.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Given an array of strings, group the anagrams together in O(N*K) time.", "company": "SDE interview", "answer": "Iterate through the array. Convert each string into a size-26 frequency tuple. Use the tuple as a Hash Map key, appending the string to the value list. Return all the lists.", "approach": "Frequency array signatures with Hash Map bucketing." },
+    { "question": "Determine if two given strings are valid anagrams of each other.", "company": "General interview", "answer": "Check if lengths are equal first. Create a size-26 integer array. Increment for chars in string1, decrement for string2. If the array has any non-zero value at the end, return false. Otherwise, return true.", "approach": "Direct addressing frequency array." }
+  ],
+  "practice": [
+    { "title": "Group Anagrams", "url": "https://leetcode.com/problems/group-anagrams/", "difficulty": "medium", "why": "The definitive, canonical problem for this specific architectural pattern." }
+  ],
+  "related": ["frequency-arrays"],
+  "interesting_facts": [
+    "You can generate a perfect anagram signature using prime numbers: assign each letter a unique prime, and multiply them. The product is guaranteed to be unique (Fundamental Theorem of Arithmetic), but it causes integer overflow rapidly in code."
+  ],
+  "sources": [
+    "https://www.hellointerview.com/community/questions/group-anagrams/cm5eh7nrh04od838oi2p9pzk1",
+    "https://algo.monster/liteproblems/49"
+  ]
+}

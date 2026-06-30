@@ -1,0 +1,79 @@
+{
+  "slug": "two-pointers-on-strings",
+  "title": "Two Pointers on Strings",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["string-traversal"],
+    "unlocks": ["palindromes"]
+  },
+  "hook": {
+    "scenario": "You need to reverse a massive string or sanitize it of leading/trailing spaces in an embedded C system with strict memory limits.",
+    "question": "How do you manipulate the string without allocating any new memory buffers?"
+  },
+  "why_it_exists": {
+    "problem": "Naive string operations (reversing, filtering) typically allocate entirely new string buffers, costing O(N) auxiliary memory. This is unacceptable in low-memory environments.",
+    "naive_solution": "Create a new empty array, iterate backward through the input, and copy elements over one by one.",
+    "better_idea": "Place two integer pointers (indices) at opposite ends of the string. Swap their values, then move them inward. This modifies the data in-place using O(1) auxiliary space."
+  },
+  "mental_model": {
+    "intuition": "Imagine holding the two opposite ends of a string of beads. You swap the beads in your hands, then move your hands one bead closer to the center, and swap again. You stop when your hands touch.",
+    "description": "The Two-Pointer technique uses two indices traversing the data structure simultaneously. For strings, they usually converge from opposite ends (to reverse or validate symmetry) or move in the same direction at different speeds (to filter data).",
+    "repeated_decision": "While `left < right`: evaluate the characters, perform a swap or validation, increment `left`, and decrement `right`."
+  },
+  "explanation": "To reverse an array of characters in-place, initialize `left = 0` and `right = length - 1`.\n\nWhile `left < right`:\n1. Swap the character at `left` with the character at `right`.\n2. Increment `left` by 1 (moving inward).\n3. Decrement `right` by 1 (moving inward).\n\nThe loop terminates exactly when the pointers cross in the middle. The algorithm touches every element exactly once, taking O(N) time, but requires literally zero extra memory allocations (O(1) space). \n\nThis paradigm isn't just for swapping; it handles complex conditional logic. If you need to reverse only the vowels in a string, the `left` pointer moves right until it finds a vowel, the `right` pointer moves left until it finds a vowel, and then they swap. The core invariant remains: everything outside the [left, right] boundary is completely finalized.",
+  "key_points": [
+    { "title": "O(N) Time", "detail": "The pointers only move inward, evaluating each character at most once." },
+    { "title": "O(1) Auxiliary Space", "detail": "All operations occur directly on the existing character array." },
+    { "title": "Convergence Boundary", "detail": "The loop condition `left < right` mathematically guarantees that pointers will not cross and undo their own swaps." }
+  ],
+  "pattern": {
+    "name": "Opposite-End Convergence",
+    "recognition_cues": [
+      "The problem asks to 'reverse' a sequence.",
+      "The problem demands an 'in-place' algorithm with O(1) extra memory.",
+      "The problem requires validating symmetry (palindromes)."
+    ]
+  },
+  "failure_signals": [
+    "You are calling `.reverse()` in a high-level language without understanding that it allocates O(N) memory under the hood.",
+    "Your loop condition is `left <= right` when swapping, which causes the middle element to uselessly swap with itself."
+  ],
+  "engineering_examples": [
+    { "title": "Embedded Systems", "problem": "Processing raw serial port text in microcontrollers that lack a garbage collector.", "why_this_algorithm": "In-place two-pointer manipulation prevents heap fragmentation by mutating the existing character buffers directly." },
+    { "title": "Data Pipeline Sanitization", "problem": "Stripping whitespace from millions of log entries.", "why_this_algorithm": "A fast/slow two-pointer approach overwrites spaces in a single pass without copying strings." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "Strings are strictly immutable in your language", "reason": "In Java or Python, you cannot mutate strings in-place. You MUST convert them to a character array first (costing O(N) space), perform the two-pointer logic, and join them back. The two-pointer logic is still faster than naive copying, but true O(1) space is impossible without mutable buffers." }
+  ],
+  "common_mistakes": [
+    { "title": "Out of bounds errors", "explanation": "Always ensure the `left` pointer never exceeds the array length and the `right` pointer never drops below 0, especially when adding inner `while` loops to skip characters." },
+    { "title": "Skipping characters incorrectly", "explanation": "If moving `left` forward to skip spaces, you must STILL ensure `left < right` inside that inner loop, otherwise `left` will blast past the end of the array." }
+  ],
+  "recall_questions": [
+    { "q": "What is the primary spatial advantage of the two-pointer reversal technique?", "answer": "It operates in-place, requiring O(1) auxiliary space.", "tier": "tier1" },
+    { "q": "What loop condition prevents the pointers from crossing and undoing their work?", "answer": "`while left < right`", "tier": "tier1" },
+    { "q": "What is the structural invariant regarding the characters outside the pointers?", "answer": "Everything strictly outside the inclusive bounds of [left, right] has been completely finalized and processed.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Reverse only the vowels of a given string.", "company": "SDE interview", "answer": "Use two converging pointers. Move `left` until it hits a vowel. Move `right` until it hits a vowel. Swap them, increment/decrement, and continue until they cross.", "approach": "Conditional two-pointer convergence." },
+    { "question": "Given a string containing only letters, reverse it without affecting the positions of special characters.", "company": "SDE interview", "answer": "Use two pointers, `left` and `right`. If either points to a non-letter, advance it. Otherwise, swap and advance both.", "approach": "Two pointers with conditional skipping." }
+  ],
+  "practice": [
+    { "title": "Reverse String", "url": "https://leetcode.com/problems/reverse-string/", "difficulty": "easy", "why": "The purest baseline for two-pointer implementation." },
+    { "title": "Reverse Vowels of a String", "url": "https://leetcode.com/problems/reverse-vowels-of-a-string/", "difficulty": "easy", "why": "Forces you to handle conditional skipping while maintaining pointer bounds." }
+  ],
+  "related": ["palindromes"],
+  "interesting_facts": [
+    "The C standard library function `strrev()` is historically implemented using exactly this two-pointer logic."
+  ],
+  "sources": [
+    "https://nareshit.com/blogs/two-pointer-technique-coding-interviews",
+    "https://www.pass4sure.com/blog/advanced-string-reversal-in-c-real-world-applications-optimization-and-integration/"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "slug": "palindromes",
+  "title": "Palindromes",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["two-pointers-on-strings"],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to verify if a DNA sequence is a perfect mirror image of itself.",
+    "question": "Do you reverse the entire sequence and check for equality, or is there a way to halt instantly at the first sign of mismatch?"
+  },
+  "why_it_exists": {
+    "problem": "A palindrome reads identically forward and backward. The naive approach—duplicating the string, reversing it, and comparing—requires O(N) auxiliary space and always scans the entire string even if it fails immediately.",
+    "naive_solution": "Return `string == reverse(string)`.",
+    "better_idea": "Use the two-pointer technique to check symmetry from the outside in. If any character mismatches, halt immediately. This uses O(1) space and optimizes the average-case runtime."
+  },
+  "mental_model": {
+    "intuition": "Imagine folding a piece of paper in half. For the text to be a palindrome, every letter on the left side must perfectly overlap with the corresponding letter on the right side.",
+    "description": "Validating a palindrome uses converging two-pointers checking for equality. Finding the longest palindromic substring requires the inverse: placing pointers at a 'center' and expanding outward until symmetry breaks.",
+    "repeated_decision": "During validation: `if string[left] != string[right]`, it's not a palindrome. During expansion: `if string[left] == string[right]`, expand the bounds."
+  },
+  "explanation": "To validate if a string is a palindrome, place a pointer at index 0 and a pointer at N-1. If they match, move inward. If they ever mismatch, return false instantly. If they cross, return true.\n\nA more complex problem is finding the *longest* palindromic substring within a larger text. You cannot easily use outside-in pointers here. Instead, you use the 'Expand Around Center' algorithm.\n\nA palindrome must have a center of symmetry. It's either an odd-length center (a single character, like 'c' in \"racecar\") or an even-length center (the imaginary gap between two identical characters, like the gap between the 'b's in \"abba\").\n\nThe algorithm iterates through every character in the string, treating it as a potential center. It initializes pointers at the center and expands outward. `left--` and `right++`. As long as the characters match and are within array bounds, the palindrome grows. It checks both odd and even centers for every index, keeping track of the absolute maximum length found.",
+  "key_points": [
+    { "title": "Validation: O(N) Time", "detail": "Checking if a string is a palindrome takes O(N) time and O(1) space." },
+    { "title": "Search: O(N^2) Time", "detail": "Expanding around 2N-1 potential centers (N odd, N-1 even) takes O(N^2) time." },
+    { "title": "Early Exit", "detail": "Both algorithms halt the exact moment symmetry is broken, saving massive computational cycles on invalid strings." }
+  ],
+  "pattern": {
+    "name": "Symmetrical Expansion / Convergence",
+    "recognition_cues": [
+      "The problem explicitly mentions 'palindromes'.",
+      "The problem asks for symmetrical patterns or mirror images."
+    ]
+  },
+  "failure_signals": [
+    "You are using `[::-1]` in Python to reverse strings for validation.",
+    "When expanding from the center, you forget to check for the even-length (gap) centers."
+  ],
+  "engineering_examples": [
+    { "title": "Bioinformatics", "problem": "Identifying gene expression markers in DNA.", "why_this_algorithm": "Restriction enzymes search for palindromic DNA sequences to cut DNA for genetic cloning. Algorithms mimicking this use palindromic expansion." },
+    { "title": "Network Data Integrity", "problem": "Verifying lossless transmission of symmetrical packets.", "why_this_algorithm": "Symmetry checks validate that the payload structure wasn't corrupted in transit." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "You need the absolute optimal runtime for searching massive strings", "reason": "Expand Around Center takes O(N^2). For truly massive datasets, Manacher's Algorithm can find the longest palindromic substring in O(N) time, though it is exceedingly complex to implement." }
+  ],
+  "common_mistakes": [
+    { "title": "Failing to sanitize input", "explanation": "Standard palindromes ignore spaces, punctuation, and capitalization. You must skip these non-alphanumeric characters by advancing the pointers inside your while loop." },
+    { "title": "Out of bounds on expansion", "explanation": "When expanding from the center, the loop must always check `left >= 0` and `right < length` BEFORE checking if the characters match, or it will throw an error." }
+  ],
+  "recall_questions": [
+    { "q": "Why is two-pointer validation better than reversing the entire string?", "answer": "It uses O(1) auxiliary space instead of O(N), and can exit instantly upon the first mismatch instead of always processing the entire string.", "tier": "tier1" },
+    { "q": "What are the two types of palindromic centers?", "answer": "Odd-length centers (a single character) and even-length centers (the gap between two identical characters).", "tier": "tier1" },
+    { "q": "What is the time complexity of the 'Expand Around Center' algorithm?", "answer": "O(N^2), because it potentially expands outward up to N/2 times for each of the 2N-1 centers.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Verify if a phrase is a palindrome, ignoring non-alphanumeric characters and casing.", "company": "SDE interview", "answer": "Use two converging pointers. If a pointer sits on a non-alphanumeric character, move it inward until it hits a valid character. Compare the lowercase versions. If they differ, return false.", "approach": "Converging pointers with conditional skipping." },
+    { "question": "Count all palindromic substrings in a given string.", "company": "SDE interview", "answer": "Use the Expand Around Center approach. For each of the 2N-1 centers, expand outwards. Increment a count for each valid expansion.", "approach": "Expand Around Center." }
+  ],
+  "practice": [
+    { "title": "Valid Palindrome", "url": "https://leetcode.com/problems/valid-palindrome/", "difficulty": "easy", "why": "The ultimate test of in-place converging validation." },
+    { "title": "Longest Palindromic Substring", "url": "https://leetcode.com/problems/longest-palindromic-substring/", "difficulty": "medium", "why": "Forces you to implement the Expand Around Center logic for both odd and even lengths." }
+  ],
+  "related": ["two-pointers-on-strings"],
+  "interesting_facts": [
+    "Manacher's algorithm uses dynamic programming to reuse previously expanded palindrome boundaries, achieving O(N) time complexity for the longest palindrome problem."
+  ],
+  "sources": [
+    "https://www.upgrad.com/tutorials/software-engineering/python-tutorial/palindrome-in-python/"
+  ]
+}

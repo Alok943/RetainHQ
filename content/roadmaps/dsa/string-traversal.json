@@ -1,0 +1,91 @@
+{
+  "slug": "string-traversal",
+  "title": "String Traversal",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["iteration-and-traversal"],
+    "unlocks": ["frequency-arrays", "two-pointers-on-strings"],
+    "project_usage": [
+      "Parsing user input character-by-character to sanitize inputs",
+      "Building lexical analyzers (lexers) in compiler design"
+    ]
+  },
+  "overview": {
+    "what": "String traversal is the process of examining or transforming a string character-by-character in a single linear pass. Since strings are essentially arrays of characters, traversal involves moving a cursor across the sequence and updating a state based on the current character.",
+    "why": "Naive string manipulation often relies on chained high-level methods (e.g., splitting, replacing, joining) which can cause severe memory bloat and degrade performance to O(N^2) due to repeated memory allocations. A single-pass O(N) traversal requires minimal, constant auxiliary memory.",
+    "where_used": [
+      "UTF-8 decoders parsing byte streams into characters",
+      "Validating formatting or executing simple character transformations"
+    ]
+  },
+  "why_learning_this": [
+    "It forms the foundational building block for all advanced string algorithms.",
+    "Interviewers look for candidates who avoid unnecessary string copies in languages with immutable strings.",
+    "Understanding state-tracking during traversal is critical for parsing logic."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Repeated string concatenation",
+      "explanation": "In languages like Java or Python, strings are immutable. Doing `str += char` inside a loop creates a brand new string in memory every single time, leading to O(N^2) time complexity. You must use a mutable structure like a StringBuilder or an array instead."
+    },
+    {
+      "title": "Unnecessary multiple passes",
+      "explanation": "Calling `.replace()`, then `.lower()`, then `.strip()` traverses the entire string three separate times. A single manual traversal can do all three in one O(N) pass."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is string traversal fundamentally O(N) time?",
+      "answer": "Because the algorithm must visit every single character in the sequence exactly once to evaluate the entire string.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it dangerous to repeatedly concatenate strings inside a loop?",
+      "answer": "Immutable strings require reallocating and copying the entire string every time a character is added, degrading an O(N) loop into an O(N^2) operation.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the primary structural invariant of a standard linear traversal?",
+      "answer": "At step i, all characters before index i have been completely processed and their implications are captured in the current state variables.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you need to parse a massive 10GB log file and count the number of error flags, why is a manual line-by-line traversal better than calling `file.read().split('\\n')`?",
+      "answer": "Calling `read().split()` attempts to load the entire 10GB file into RAM simultaneously, crashing the program. A manual line-by-line traversal only keeps a single line in memory at any given time (O(1) auxiliary space).",
+      "why": "This demonstrates the difference between high-level abstractions that prioritize developer convenience and low-level traversal that prioritize memory constraints."
+    },
+    {
+      "type": "predict-result",
+      "question": "You are traversing a string to check if it contains valid brackets. You maintain a `balance` integer, incrementing on `(` and decrementing on `)`. What must be true about this state variable for the string to be valid?",
+      "answer": "The `balance` must never drop below 0 at any point during the traversal, and it must exactly equal 0 at the very end.",
+      "why": "This is a classic state-tracking pattern. It proves that you cannot just count the total number of brackets; the state at every individual step of the traversal matters."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Bad: O(N^2) memory reallocation\nresult = \"\"\nfor char in string:\n    if char.isalpha():\n        result += char.lower()\n\n# Good: O(N) array join\nresult_arr = []\nfor char in string:\n    if char.isalpha():\n        result_arr.append(char.lower())\nresult = \"\".join(result_arr)",
+    "prediction": "The first method is simpler and just as fast.",
+    "common_guess": "String concatenation is a basic O(1) operation in modern languages.",
+    "why": "Strings are immutable arrays. You cannot append to them. You have to allocate a entirely new array and copy the old data over. The array-join method allocates a dynamic array once and writes into it, maintaining true linear time."
+  },
+  "practice_tasks": [
+    {
+      "title": "Count specific characters",
+      "prompt": "Write a function that traverses a string in a single pass and returns the count of vowels.",
+      "starter_code": "def count_vowels(s):\n    # Your code here",
+      "solution": "Initialize a counter to 0. Loop through `s`. If the character is in 'aeiouAEIOU', increment the counter. Return the counter."
+    }
+  ],
+  "sources": [
+    "https://www.scribd.com/document/913078449/ilovepdf-merged"
+  ]
+}

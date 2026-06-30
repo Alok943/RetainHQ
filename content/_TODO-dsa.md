@@ -43,12 +43,12 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Collisions & load factor  · C · `collisions-and-load-factor`
 
 ## 5. Strings
-- [ ] String traversal  · C · `string-traversal`
-- [ ] Frequency arrays  · D · `frequency-arrays`
-- [ ] Two pointers on strings  · D · `two-pointers-on-strings`
-- [ ] Palindromes  · D · `palindromes`
-- [ ] Anagrams  · D · `anagrams`
-- [ ] Pattern matching (KMP)  · D · `pattern-matching-kmp`
+- [x] String traversal  · C · `string-traversal`
+- [x] Frequency arrays  · D · `frequency-arrays`
+- [x] Two pointers on strings  · D · `two-pointers-on-strings`
+- [x] Palindromes  · D · `palindromes`
+- [x] Anagrams  · D · `anagrams`
+- [x] Pattern matching (KMP)  · D · `pattern-matching-kmp`
 
 ## 6. Sorting — Basics  (all `D`)
 - [ ] Bubble sort  · D · `bubble-sort`

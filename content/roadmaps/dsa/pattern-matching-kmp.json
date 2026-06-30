@@ -1,0 +1,76 @@
+{
+  "slug": "pattern-matching-kmp",
+  "title": "Pattern Matching (KMP)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": ["string-traversal"],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You are writing a Network Intrusion Detection System that must find a 100-character malware signature hidden within a streaming 10-Terabyte network payload.",
+    "question": "If you use a brute-force search and hit a mismatch on the 99th character, rewinding the search forces you to reread terabytes of data. How do you find the pattern without ever stepping backward?"
+  },
+  "why_it_exists": {
+    "problem": "The brute-force sliding window search resets the main text pointer backward every time a mismatch occurs. This redundant rescanning degrades performance to a catastrophic O(N * M) time complexity.",
+    "naive_solution": "Align the pattern, check sequentially. On mismatch, move the pattern forward exactly 1 space, reset the pointers, and start checking from the beginning again.",
+    "better_idea": "The Knuth-Morris-Pratt (KMP) algorithm precomputes the internal repetitions of the pattern. On a mismatch, it uses a state table to mathematically determine the maximum safe distance to shift the pattern forward, ensuring the main text pointer never moves backward."
+  },
+  "mental_model": {
+    "intuition": "Imagine sliding a puzzle piece over a board. If the first half fits but the second half doesn't, you don't start over from millimeter one. You look at the ridges you already matched and slide the piece to the next logical ridge that could possibly fit.",
+    "description": "KMP is a state machine. It builds a 'Failure Table' (LPS Array - Longest Proper Prefix which is also Suffix). When a mismatch happens, the table tells the algorithm: 'You successfully matched X characters. Based on internal repetitions, shift the pattern index to Y, but keep the main text pointer exactly where it is.'",
+    "repeated_decision": "If characters match: advance both pointers. If they mismatch: look up the fallback index in the LPS array and shift the pattern pointer. The text pointer NEVER decrements."
+  },
+  "explanation": "KMP has two phases.\n\n1. Preprocessing (O(M)): It analyzes the pattern string to find internal repetitions, building the LPS array. If the pattern is 'ABABC', the array tracks that 'AB' repeats. The LPS value at a given index j indicates the length of the longest proper prefix that matches a suffix ending at j.\n\n2. Search (O(N)): It traverses the main text. Let's say we matched 'ABAB' but failed on 'C'. A brute-force search shifts the pattern forward by 1 and restarts. KMP consults the LPS array for 'ABAB'. It realizes, 'Wait, a suffix of ABAB is AB, which is also the prefix of the pattern!' \n\nInstead of restarting, KMP slides the pattern forward so that the prefix 'AB' aligns with the already-scanned suffix 'AB' in the text. The main text pointer doesn't move. We instantly resume checking the next character. This guarantees an O(N) linear scan.",
+  "key_points": [
+    { "title": "O(N + M) Time", "detail": "Preprocessing takes O(M) where M is pattern length. Searching takes O(N). It is strictly linear." },
+    { "title": "Zero Backtracking", "detail": "The primary pointer traversing the massive text string is strictly monotonically increasing. It never decrements." },
+    { "title": "The LPS Array", "detail": "The Longest Proper Prefix which is also Suffix array acts as a deterministic state machine telling the algorithm how to recover from failure." }
+  ],
+  "pattern": {
+    "name": "State Machine / Redundancy Elimination",
+    "recognition_cues": [
+      "The problem asks you to implement `strStr()` or find the first occurrence of a substring.",
+      "The text dataset is described as a 'stream' that cannot be rewound or buffered in memory."
+    ]
+  },
+  "failure_signals": [
+    "You have nested loops where the outer loop iterates `i` through the text, and the inner loop iterates `j` through the pattern, and a failure breaks the inner loop (this is O(N*M))."
+  ],
+  "engineering_examples": [
+    { "title": "Genomic Sequence Alignment", "problem": "Finding specific gene markers in billions of DNA base pairs.", "why_this_algorithm": "Genomic data has massive repeating sequences (e.g., GATTACA). Brute-force degrades instantly. KMP jumps repetitive mismatches optimally." },
+    { "title": "Network Packet Sniffing", "problem": "Detecting malware signatures in real-time streaming traffic.", "why_this_algorithm": "Because KMP never backtracks the main pointer, it can process infinite streams of data byte-by-byte as they arrive on the network card." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "You need to search for hundreds of patterns simultaneously", "reason": "KMP is for a single pattern. For searching multiple keywords concurrently (like a censor filter), algorithms like Aho-Corasick are required." }
+  ],
+  "common_mistakes": [
+    { "title": "Over-engineering simple tasks", "explanation": "In production, language built-ins like `.indexOf()` or `.find()` are heavily optimized at the C/Assembly level and are almost always faster for normal-sized strings than manually writing KMP in a high-level language." },
+    { "title": "Misunderstanding the 'Proper Prefix'", "explanation": "The LPS array strictly requires a *proper* prefix—one that is strictly shorter than the full string being evaluated. The full string cannot be its own prefix in this calculation." }
+  ],
+  "recall_questions": [
+    { "q": "What fatal flaw in the brute-force substring search does KMP fix?", "answer": "It prevents the main text pointer from resetting backward upon a mismatch, avoiding redundant rescanning.", "tier": "tier1" },
+    { "q": "What is the purpose of the LPS array in KMP?", "answer": "It serves as a Failure Table, telling the algorithm exactly how far to shift the pattern forward based on internal repetitions.", "tier": "tier2" },
+    { "q": "What is the total time complexity of KMP?", "answer": "O(N + M), where N is the text length and M is the pattern length.", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Implement strStr(): Find the index of the first occurrence of `needle` in `haystack` in O(N) time.", "company": "SDE interview", "answer": "Precompute the LPS array for the `needle` in O(M) time. Traverse the `haystack`. On mismatch, update the needle pointer using the LPS array without decrementing the haystack pointer.", "approach": "Knuth-Morris-Pratt Algorithm." },
+    { "question": "Find the shortest string that contains the given string as a repeating substring.", "company": "SDE interview", "answer": "Compute the LPS array of the string. The length of the shortest repeating substring is `N - LPS[N-1]`. If `N % (N - LPS[N-1]) == 0`, it is a valid repeating substring.", "approach": "LPS array properties." }
+  ],
+  "practice": [
+    { "title": "Find the Index of the First Occurrence in a String", "url": "https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/", "difficulty": "medium", "why": "The canonical textbook problem for implementing KMP from scratch." }
+  ],
+  "related": ["string-traversal"],
+  "interesting_facts": [
+    "KMP was conceived independently in 1969 by Matiyasevich (via Turing machine research) and later formalized by Knuth, Morris, and Pratt in 1970."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm",
+    "https://blog.nashtechglobal.com/boyer-moore-knuth-morris-prattkmp-smarter-ways-to-search-substrings/"
+  ]
+}
