@@ -28,6 +28,26 @@
     {
       "term": "call sites",
       "definition": "The specific places in your code where a function is actually executed or invoked."
+    },
+    {
+      "term": "keyword argument",
+      "definition": "An argument passed to a function by explicitly stating its name, like `role='admin'`."
+    },
+    {
+      "term": "positional argument",
+      "definition": "An argument passed to a function based purely on its order in the call, without a name, like `10` or `'alice'`."
+    },
+    {
+      "term": "keyword-only",
+      "definition": "A parameter that MUST be passed as a keyword argument."
+    },
+    {
+      "term": "positional-only",
+      "definition": "A parameter that MUST be passed as a positional argument."
+    },
+    {
+      "term": "TypeError",
+      "definition": "An error that Python throws when an operation or function is applied to an object of inappropriate type, or when function arguments don't match the signature."
     }
   ],
   "overview": {
@@ -46,7 +66,7 @@
   "common_mistakes": [
     {
       "title": "Passing a keyword-only argument positionally",
-      "explanation": "If a parameter follows * in the signature, you must name it. Passing it positionally raises TypeError."
+      "explanation": "If a parameter follows * in the signature, you must name it. This means you must pass it as a keyword argument. Passing it as a positional argument raises TypeError."
     },
     {
       "title": "Naming a positional-only argument",
