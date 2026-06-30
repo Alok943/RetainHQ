@@ -9,6 +9,7 @@ const KEY_MEMORY_MAX = 500; // ~6 lines: one testable claim, not a paragraph dum
 
 const SOURCE_TYPES = [
   { value: 'problem', label: 'Problem Solving' },
+  { value: 'self_learn', label: 'Self Learning (sites / LLMs / RetainHQ)' },
   { value: 'lecture', label: 'Lecture' },
   { value: 'video', label: 'Video' },
   { value: 'book', label: 'Book' },

@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, AlertTriangle } from 'lucide-react';
+import { ArrowRight, AlertTriangle, CalendarDays } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import RoadmapMini from './RoadmapMini';
+import ReviewHeatmap from './ReviewHeatmap';
 
 // Example topics for someone who blanks on the empty form. Clicking one drops it
 // into Topic and moves the cursor to the memory — it's a prompt, not a prefill.
@@ -24,6 +26,14 @@ export default function FirstCapture({ onSkip }) {
   const [keyMemory, setKeyMemory] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [roadmaps, setRoadmaps] = useState([]);
+
+  // A few roadmaps to explore — gives a brand-new user a path beyond the empty form.
+  useEffect(() => {
+    apiFetch('/api/roadmaps/', { optionalAuth: true })
+      .then((d) => setRoadmaps(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
 
   const canSubmit = topic.trim().length > 0 && keyMemory.trim().length > 0 && !submitting;
 
@@ -58,7 +68,7 @@ export default function FirstCapture({ onSkip }) {
   };
 
   return (
-    <div className="min-h-full flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+    <div className="min-h-full flex flex-col items-center justify-start p-4 md:p-8 animate-in fade-in duration-300">
       <div className="w-full max-w-lg flex flex-col gap-6">
         <div>
           <h1 className="font-sans text-2xl md:text-3xl font-semibold text-[#0F172A] leading-tight">
@@ -131,6 +141,26 @@ export default function FirstCapture({ onSkip }) {
           >
             I'll look around first
           </button>
+        </div>
+
+        {/* Explore a roadmap — a path for a new user who isn't ready to capture yet. */}
+        {roadmaps.length > 0 && (
+          <div className="border-t border-[rgba(15,23,42,0.08)] pt-6 flex flex-col gap-3">
+            <p className="font-sans text-sm font-semibold text-[#0F172A]">Or start with a roadmap</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {roadmaps.slice(0, 4).map((rm) => (
+                <RoadmapMini key={rm.id} rm={rm} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Review calendar — previews the retention loop (empty until reviews happen). */}
+        <div className="border-t border-[rgba(15,23,42,0.08)] pt-6 flex flex-col gap-3">
+          <p className="font-sans text-sm font-semibold text-[#0F172A] flex items-center gap-1.5">
+            <CalendarDays size={15} className="text-[#0891B2]" /> Your review calendar
+          </p>
+          <ReviewHeatmap />
         </div>
       </div>
     </div>
