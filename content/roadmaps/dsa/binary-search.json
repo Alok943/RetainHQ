@@ -1,0 +1,77 @@
+{
+  "slug": "binary-search",
+  "title": "Binary Search",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["linear-search"],
+    "unlocks": ["lower-bound", "upper-bound", "binary-search-on-the-answer"]
+  },
+  "hook": {
+    "scenario": "A NoSQL database uses LSM Trees to flush data to disk as immutable, sorted files (SSTables) with millions of records. A linear scan would take seconds per query, destroying throughput.",
+    "question": "How does the database instantly locate a specific record on disk without scanning?"
+  },
+  "why_it_exists": {
+    "problem": "O(N) linear scanning is too slow for massive datasets. Searching a billion records takes a billion operations.",
+    "naive_solution": "Keep data in a Hash Map. But Hash Maps cannot perform range queries or find the 'next largest' element, and they use significant memory overhead.",
+    "better_idea": "If the array is strictly sorted, checking the middle element allows you to mathematically eliminate half of the remaining array instantly. This 'decrease and conquer' approach drops the search time to O(log N)."
+  },
+  "mental_model": {
+    "intuition": "Looking up a word in a physical dictionary. You don't read page by page. You open to the middle; if your word is alphabetically earlier, you discard the right half of the book and repeat.",
+    "description": "Maintain two pointers, `low` and `high`, defining the active search space. Calculate the `mid` index. If `arr[mid] == target`, you are done. If `arr[mid] < target`, the target must be to the right, so update `low = mid + 1`. If `arr[mid] > target`, update `high = mid - 1`. Repeat until `low > high`.",
+    "repeated_decision": "Compare `arr[mid]` to the target. Discard the half where the target mathematically cannot exist."
+  },
+  "explanation": "Binary search is the quintessential O(log N) algorithm. Every comparison halves the search space. Searching a billion records requires at most ~30 comparisons.\n\nThe loop invariant is rigid: if the target value exists anywhere within the original array, its index is strictly bounded within the inclusive interval `[low, high]`.\n\nA critical engineering detail is the calculation of the midpoint. The mathematical formula `mid = (low + high) / 2` is flawed. In languages with fixed-size integers (C++, Java), if `low` and `high` are near the 32-bit limit, their sum overflows, wrapping around to a negative number and causing a segmentation fault. The overflow-safe formula is `mid = low + (high - low) / 2`.\n\nBinary search is foundational to highly scaled systems. Databases perform binary search on disk-based SSTables. Network routers use hardware-optimized binary searches on routing tables for Longest Prefix Match (LPM) IP lookups.",
+  "key_points": [
+    { "title": "O(log N) Time", "detail": "Halves the search space on every iteration. Vastly faster than O(N) for large datasets." },
+    { "title": "Requires Sorted Data", "detail": "The elimination logic relies on the strict monotonicity (sorted order) of the data." },
+    { "title": "Overflow-Safe Midpoint", "detail": "Always use `mid = low + (high - low) / 2` to prevent integer overflow." }
+  ],
+  "pattern": {
+    "name": "Decrease and Conquer",
+    "recognition_cues": [
+      "The input array is explicitly stated to be sorted.",
+      "The problem requires an O(log N) time complexity."
+    ]
+  },
+  "failure_signals": [
+    "You are using binary search on an unsorted array. The logic completely breaks down.",
+    "You used `(low + high) / 2` and failed hidden test cases due to integer overflow."
+  ],
+  "engineering_examples": [
+    { "title": "Database Storage (LSM Trees)", "problem": "Quickly finding records in massive, immutable SSTable files on disk.", "why_this_algorithm": "Because SSTables are pre-sorted, binary search locates records directly on disk blocks without linear scanning." },
+    { "title": "Git Bisect", "problem": "Isolating the single commit that introduced a bug out of 10,000 commits.", "why_this_algorithm": "By testing the midpoint commit and flagging it 'good' or 'bad', git bisect discards half the history graph per step, finding the bug in ~13 steps." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "Data is frequently inserted or deleted", "reason": "Maintaining a sorted array for binary search requires O(N) time for insertions/deletions. If data changes constantly, a Balanced Binary Search Tree (O(log N) inserts/searches) is better." }
+  ],
+  "common_mistakes": [
+    { "title": "Integer Overflow on Midpoint", "explanation": "Using `(low + high) / 2` causes integer overflow on large arrays. Always use `low + (high - low) / 2`." },
+    { "title": "Infinite Loops (Off-by-One)", "explanation": "Failing to aggressively update `low = mid + 1` or `high = mid - 1`. If you write `low = mid`, the pointers may never cross, causing an infinite loop." }
+  ],
+  "recall_questions": [
+    { "q": "Why is `mid = (low + high) / 2` considered a bug in languages like Java and C++?", "answer": "If `low` and `high` are large, their sum can exceed the maximum 32-bit integer limit, overflowing to a negative number and causing an out-of-bounds error.", "tier": "tier1" },
+    { "q": "What is the overflow-safe formula for calculating the midpoint?", "answer": "`mid = low + (high - low) / 2`.", "tier": "tier1" },
+    { "q": "What is the loop invariant for binary search?", "answer": "If the target exists in the array, it must be located within the inclusive bounds of `[low, high]`.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Implement a standard binary search to find a target in a sorted array.", "company": "SDE interview", "answer": "Set `low = 0, high = len - 1`. While `low <= high`, calculate safe `mid`. If `arr[mid] == target`, return `mid`. If `< target`, `low = mid + 1`. If `> target`, `high = mid - 1`.", "approach": "Standard Binary Search." },
+    { "question": "Find the peak element in an array where elements increase then decrease.", "company": "SDE interview", "answer": "Use binary search. Compare `arr[mid]` to `arr[mid+1]`. If it's greater, the peak is to the left (including mid), so `high = mid`. Otherwise, the peak is to the right, so `low = mid + 1`.", "approach": "Binary search on unsorted (but conditionally monotonic) array." }
+  ],
+  "practice": [
+    { "title": "Binary Search", "url": "https://leetcode.com/problems/binary-search/", "difficulty": "easy", "why": "The purest test of implementing the binary search skeleton without off-by-one errors." }
+  ],
+  "related": ["lower-bound", "binary-search-on-the-answer"],
+  "interesting_facts": [
+    "Jon Bentley, in his book 'Programming Pearls', noted that while the first binary search was published in 1946, the first published binary search without bugs (handling integer overflow) didn't appear until 1962."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Binary_search_algorithm",
+    "https://strncat.github.io/jekyll/update/2019/08/19/binary-search-proof.html"
+  ]
+}

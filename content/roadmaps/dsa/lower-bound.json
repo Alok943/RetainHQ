@@ -1,0 +1,74 @@
+{
+  "slug": "lower-bound",
+  "title": "Lower Bound",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["binary-search"],
+    "unlocks": ["upper-bound", "binary-search-on-the-answer"]
+  },
+  "hook": {
+    "scenario": "You are querying a database for all logs that occurred after a specific timestamp. The log table has millions of rows sorted by time.",
+    "question": "How do you find the exact byte offset of the FIRST log that matches or exceeds your timestamp in O(log N) time?"
+  },
+  "why_it_exists": {
+    "problem": "Standard binary search is non-deterministic on duplicates. If an array has 5,000 identical elements, standard binary search will return whatever index it happens to hit first, which could be in the middle of the block.",
+    "naive_solution": "Use standard binary search to find any match, then run a linear scan backwards to find the first occurrence. In the worst case (all duplicates), this degrades to O(N) time.",
+    "better_idea": "Modify the binary search condition. When you find a match, don't stop. Treat it as an upper limit and continue searching the left half to pinpoint the absolute leftmost occurrence in guaranteed O(log N) time."
+  },
+  "mental_model": {
+    "intuition": "You are looking for the start of a chapter in a book. You open to a page in the middle of the chapter. You know you need to go backwards, so you keep flipping left until you hit the title page.",
+    "description": "Lower Bound returns the index of the first element that is GREATER THAN OR EQUAL TO the target. If `arr[mid] >= target`, the current element is valid, but an earlier valid element might exist to the left. We update `high = mid` (or `mid - 1`) to aggressively search leftward without losing our current valid boundary.",
+    "repeated_decision": "Is `arr[mid] >= target`? If yes, the leftmost answer is at `mid` or to its left (`high = mid`). If no, the leftmost answer is strictly to its right (`low = mid + 1`)."
+  },
+  "explanation": "The Lower Bound algorithm fundamentally alters the termination logic of binary search. Instead of halting on a match, it squeezes the search window `[low, high]` inward until the two pointers converge on the precise leftmost boundary.\n\nCrucially, if the target is entirely absent from the array, Lower Bound returns the exact insertion point where the target *should* go to maintain sorted order.\n\nAnother powerful engineering detail: Lower Bound does not require the entire array to be fully sorted. It only requires the array to be *partitioned* with respect to a boolean predicate (e.g., `element < target`). This allows you to use Lower Bound on custom object arrays divided by boolean states (e.g., all active users preceding inactive users).\n\nIn systems programming, Lower Bound is used for memory allocators to find the smallest free memory block that can satisfy a requested size, minimizing fragmentation.",
+  "key_points": [
+    { "title": "Leftmost Occurrence", "detail": "Finds the very first instance of a duplicate value in O(log N) time." },
+    { "title": "Insertion Point", "detail": "If the target is absent, it returns the index where it should be inserted to keep the array sorted." },
+    { "title": "Predicate Partitioning", "detail": "Only requires the array to be partitioned by a boolean condition, not strictly sorted." }
+  ],
+  "pattern": {
+    "name": "Leftmost Boundary / Insertion Point",
+    "recognition_cues": [
+      "The problem asks for the 'first occurrence' of an element.",
+      "The problem asks to find the smallest element that is >= the target.",
+      "The data contains heavy duplicates."
+    ]
+  },
+  "failure_signals": [
+    "You used standard binary search and are failing test cases with duplicate values.",
+    "You used binary search and then a `while` loop to scan left, getting Time Limit Exceeded (O(N) fallback)."
+  ],
+  "engineering_examples": [
+    { "title": "Database Range Queries", "problem": "Finding the start position for a query like `SELECT * WHERE timestamp >= X`.", "why_this_algorithm": "Lower bound instantly jumps to the first valid record on disk, establishing the start for a sequential read." },
+    { "title": "Memory Allocators", "problem": "Given a sorted list of free memory blocks, find the smallest block that fits an N-byte allocation.", "why_this_algorithm": "Lower bound finds the first block >= N instantly, ensuring fast allocation with minimal fragmentation." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "You need the exact last occurrence", "reason": "Lower bound only finds the first occurrence. To find the last occurrence, you need the Upper Bound algorithm." }
+  ],
+  "common_mistakes": [
+    { "title": "Incorrect pointer updates", "explanation": "If `arr[mid] >= target`, writing `high = mid - 1` without saving `mid` as a potential answer will cause you to jump entirely over the true leftmost boundary." }
+  ],
+  "recall_questions": [
+    { "q": "What does Lower Bound return if the target is entirely missing from the array?", "answer": "It returns the index where the target *should* be inserted to maintain the sorted order.", "tier": "tier1" },
+    { "q": "Why doesn't Lower Bound require a fully sorted array?", "answer": "It only requires the array to be *partitioned* by a boolean condition (e.g., all elements `< target` precede all elements `>= target`).", "tier": "tier2" },
+    { "q": "Why is using standard binary search + a linear scan backwards a bad idea for finding duplicates?", "answer": "If the array consists entirely of duplicates, the linear scan degrades the O(log N) search into an O(N) linear scan.", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Implement the lower bound algorithm.", "company": "SDE interview", "answer": "Set `ans = len`. While `low <= high`: if `arr[mid] >= target`, update `ans = mid` and `high = mid - 1` (search left). Else, `low = mid + 1` (search right).", "approach": "Lower Bound with tracking variable." },
+    { "question": "Find the insertion position of a target in a sorted array. If it exists, return its first index.", "company": "SDE interview", "answer": "This is the exact definition of Lower Bound. Run standard Lower Bound and return the converged index.", "approach": "Direct Lower Bound application." }
+  ],
+  "practice": [
+    { "title": "Search Insert Position", "url": "https://leetcode.com/problems/search-insert-position/", "difficulty": "easy", "why": "The literal, fundamental implementation of Lower Bound." }
+  ],
+  "related": ["binary-search", "upper-bound"],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Binary_search_algorithm",
+    "https://dmoj.uclv.edu.cu/docs/cpp/en/w/cpp/algorithm/lower_bound.html"
+  ]
+}

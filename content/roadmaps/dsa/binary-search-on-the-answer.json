@@ -1,0 +1,79 @@
+{
+  "slug": "binary-search-on-the-answer",
+  "title": "Binary Search on the Answer",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 35,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["binary-search", "lower-bound"],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "A physics engine calculates that a high-velocity bullet is in front of a wall at Frame 1, and completely behind the wall at Frame 2. It missed the collision entirely ('tunneling').",
+    "question": "How does the engine calculate the exact fractional millisecond the collision occurred without doing infinite math?"
+  },
+  "why_it_exists": {
+    "problem": "Many optimization problems (e.g., 'minimize the maximum load', 'maximize the minimum distance') are mathematically complex to solve directly. There is no physical array to search.",
+    "naive_solution": "Guess every possible answer starting from 0, run a simulation to see if the guess works, and stop at the best one. This linear scan of the theoretical answer space takes too long.",
+    "better_idea": "If the problem space is monotonic (if a guess works, all larger guesses also work; or vice versa), we can Binary Search the theoretical answer range itself. We guess the midpoint, run a validation function, and halve the search space based on the result."
+  },
+  "mental_model": {
+    "intuition": "You are guessing a number between 1 and 100. I only tell you 'Too High' or 'Too Low'. You don't need a physical list of numbers; you just guess 50, then 25 or 75, honing in on the concept of the answer.",
+    "description": "Abandon the physical array. Define a `low` and `high` representing the theoretical minimum and maximum possible answers. Calculate `mid`. Pass `mid` into a separate `isValid(mid)` subroutine that simulates the problem constraints. Based on whether the simulation succeeds or fails, adjust `low` or `high`.",
+    "repeated_decision": "Does `isValid(mid)` return true? If yes, record it as a potential answer and try to optimize further (e.g., search the left half for a smaller valid answer). If no, search the right half."
+  },
+  "explanation": "Binary Search on the Answer (often called Bisection) requires a strict property: Monotonicity. This means the answers form a boolean progression like `[False, False, True, True, True]`. Once a threshold is crossed, the validity never flips back.\n\nThe algorithm is split into two parts: the O(log(Range)) binary search, and the O(N) `isValid()` function. Total time is O(N log(Range)).\n\nWhen applying this to continuous decimal variables (floating-point bisection), using `low <= high` causes an infinite loop due to floating-point precision exhaustion. The hardware cannot represent the microscopic fraction separating the pointers. Instead, you must use a tolerance threshold (epsilon): `while (high - low > 1e-7)`. This guarantees termination while providing massive precision.\n\nIn engineering, Continuous Collision Detection (CCD) in physics engines uses bisection over time to find the exact fractional millisecond of impact. Networking protocols use bisection (Path MTU Discovery) to find the maximum packet size a network route can handle without fragmentation.",
+  "key_points": [
+    { "title": "No Physical Array", "detail": "The search space is the mathematical range of possible answers, not array indices." },
+    { "title": "Monotonicity Required", "detail": "The `isValid()` function must produce a clean `False -> True` or `True -> False` boundary." },
+    { "title": "Floating-Point Epsilon", "detail": "Use `while (high - low > 1e-7)` for decimal bisection to prevent infinite loops." }
+  ],
+  "pattern": {
+    "name": "Bisection / Min-Max Optimization",
+    "recognition_cues": [
+      "The problem asks to 'minimize the maximum' or 'maximize the minimum'.",
+      "Direct mathematical formulas are too complex, but verifying a 'guessed' answer is easy.",
+      "The phrasing implies a threshold: 'What is the smallest capacity that can ship all packages?'"
+    ]
+  },
+  "failure_signals": [
+    "You used `while (low <= high)` on floating-point numbers and got a Time Limit Exceeded due to precision exhaustion.",
+    "Your `isValid()` function is O(N^2), making the total algorithm O(N^2 log(Range)) which is too slow."
+  ],
+  "engineering_examples": [
+    { "title": "Physics Engines (Continuous Collision Detection)", "problem": "Preventing high-speed objects from tunneling through walls between discrete frames.", "why_this_algorithm": "Bisection searches the time interval [0.0, 1.0] between frames. If they overlap at t=0.5, the collision was earlier (search left). It zeroes in on the exact impact millisecond." },
+    { "title": "Path MTU Discovery (Networking)", "problem": "Finding the largest packet size a route can handle without dropping it.", "why_this_algorithm": "Sends probe packets of varying sizes. A dropped packet means 'too big' (search smaller). A successful packet means 'can go bigger' (search larger)." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "The problem is not monotonic", "reason": "If the `isValid()` results look like `[True, False, True, False]`, you cannot use bisection because you don't know which half of the space to discard." }
+  ],
+  "common_mistakes": [
+    { "title": "Writing a slow validation function", "explanation": "The `isValid()` function runs on every step of the binary search. If `isValid()` is not efficient (e.g., O(N^2) instead of O(N)), the entire algorithm will fail performance tests." },
+    { "title": "Incorrect initialization of bounds", "explanation": "Setting `high` too low will exclude the correct answer. Always ensure `high` represents the absolute worst-case mathematical maximum possible answer." }
+  ],
+  "recall_questions": [
+    { "q": "What does 'monotonicity' mean in the context of Binary Search on the Answer?", "answer": "It means the validity of answers transitions exactly once, e.g., from a sequence of Falses to a sequence of Trues. If an answer is valid, all answers beyond it in that direction are also valid.", "tier": "tier1" },
+    { "q": "Why must you use an epsilon (e.g., `1e-7`) for the loop condition when doing bisection on floating-point numbers?", "answer": "Floating-point numbers suffer from precision limits. `low` and `high` will eventually get so close the CPU cannot represent the number between them, causing an infinite loop if you use `low <= high`.", "tier": "tier1" },
+    { "q": "What is the time complexity of Binary Search on the Answer?", "answer": "O(V * log(Range)), where `V` is the time complexity of the `isValid()` function and `Range` is the difference between the low and high bounds.", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "A conveyor belt has packages of various weights. You have D days to ship all packages in order. Find the minimum weight capacity the ship must have to achieve this.", "company": "SDE interview", "answer": "Binary search the capacity. `low` is the max single package weight. `high` is the sum of all weights. `isValid(capacity)` simulates shipping greedily. If you need <= D days, the capacity works, try a smaller one. Otherwise, try a larger one.", "approach": "Minimize the Maximum (Bisection)." },
+    { "question": "Koko loves to eat bananas. There are N piles of bananas. She has H hours. Find the minimum bananas-per-hour eating speed K she needs to finish all piles.", "company": "SDE interview", "answer": "Binary search the speed K. `low = 1`. `high = max(piles)`. `isValid(K)` calculates total hours needed by summing `ceil(pile / K)`. If hours <= H, it's valid (try smaller K). Else, try larger K.", "approach": "Binary Search on the Answer." }
+  ],
+  "practice": [
+    { "title": "Capacity To Ship Packages Within D Days", "url": "https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/", "difficulty": "medium", "why": "The definitive 'minimize the maximum' problem that tests your ability to write the `isValid()` simulation." },
+    { "title": "Koko Eating Bananas", "url": "https://leetcode.com/problems/koko-eating-bananas/", "difficulty": "medium", "why": "A classic bisection problem that requires careful math (ceiling division) in the validation function." }
+  ],
+  "related": ["binary-search", "lower-bound"],
+  "interesting_facts": [
+    "Machine Learning engineers use this exact technique (often formalized as the Bisection Method) to find optimal threshold cutoffs for classification models without training the model infinitely."
+  ],
+  "sources": [
+    "https://pub.towardsai.net/pattern-3-binary-search-c2728d25a289",
+    "https://box2d.org/files/ErinCatto_ContinuousCollision_GDC2013.pdf"
+  ]
+}

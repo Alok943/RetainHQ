@@ -51,16 +51,16 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Pattern matching (KMP)  · D · `pattern-matching-kmp`
 
 ## 6. Sorting — Basics  (all `D`)
-- [ ] Bubble sort  · D · `bubble-sort`
-- [ ] Selection sort  · D · `selection-sort`
-- [ ] Insertion sort  · D · `insertion-sort`
+- [x] Bubble sort  · D · `bubble-sort`
+- [x] Selection sort  · D · `selection-sort`
+- [x] Insertion sort  · D · `insertion-sort`
 
 ## 7. Searching  (all `D`)
-- [ ] Linear search  · D · `linear-search`
-- [ ] Binary search  · D · `binary-search`
-- [ ] Lower bound  · D · `lower-bound`
-- [ ] Upper bound  · D · `upper-bound`
-- [ ] Binary search on the answer  · D · `binary-search-on-the-answer`
+- [x] Linear search  · D · `linear-search`
+- [x] Binary search  · D · `binary-search`
+- [x] Lower bound  · D · `lower-bound`
+- [x] Upper bound  · D · `upper-bound`
+- [x] Binary search on the answer  · D · `binary-search-on-the-answer`
 
 ## 8. Two Pointers & Windows  (all `D`)
 - [ ] Two pointers  · D · `two-pointers`

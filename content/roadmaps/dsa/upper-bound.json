@@ -1,0 +1,73 @@
+{
+  "slug": "upper-bound",
+  "title": "Upper Bound",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["lower-bound"],
+    "unlocks": ["binary-search-on-the-answer"]
+  },
+  "hook": {
+    "scenario": "You are processing time-series data and need to count exactly how many transactions occurred at exactly `12:00:00`.",
+    "question": "If there are a million transactions that second, how do you count them in O(log N) time without iterating through them?"
+  },
+  "why_it_exists": {
+    "problem": "Lower Bound finds the start of a sequence of duplicates. But to process a range or count the frequency of an element, you also need to know where the sequence ends.",
+    "naive_solution": "Use Lower Bound to find the start, then linearly scan forward until the value changes. This degrades to O(N) time for large blocks of duplicates.",
+    "better_idea": "Use Upper Bound to find the exact exclusive limit (the first element STRICTLY GREATER than the target) in O(log N) time. Subtracting the Lower Bound index from the Upper Bound index gives the exact frequency instantly."
+  },
+  "mental_model": {
+    "intuition": "If Lower Bound finds the front door of a building, Upper Bound finds the back door—specifically, the first step outside the back door.",
+    "description": "Upper Bound returns the index of the first element that is STRICTLY GREATER THAN the target. Even if the current element matches the target, the algorithm treats it as 'too small' (or 'not great enough') and pushes the `low` pointer rightward (`low = mid + 1`). It only updates the potential answer when it finds an element definitively larger than the target.",
+    "repeated_decision": "Is `arr[mid] > target`? If yes, the boundary is at `mid` or to its left (`high = mid`). If no (meaning it is `<= target`), the boundary is strictly to the right (`low = mid + 1`)."
+  },
+  "explanation": "The only difference between Lower Bound and Upper Bound is the relational operator in the predicate. \n- Lower Bound predicate: `element < target` (Finds first element `>= target`)\n- Upper Bound predicate: `target < element` (Finds first element `> target`)\n\nIf the target value does not exist in the array at all, both Lower Bound and Upper Bound will return the exact same index (the insertion point).\n\nIn computer science, combining these two algorithms creates a 'Half-Open Interval': `[start, end)`. Half-open intervals are the standard for loop boundaries because they prevent off-by-one errors. You can loop over all duplicates safely using `for (int i = lower; i < upper; i++)`. Because `upper` points one index *past* the target, the loop terminates exactly when it should.",
+  "key_points": [
+    { "title": "Strictly Greater", "detail": "Upper Bound finds the first element > target, marking the end of a sequence." },
+    { "title": "Frequency Counting", "detail": "Frequency = (Upper Bound Index) - (Lower Bound Index). Calculates count in O(log N) time." },
+    { "title": "Half-Open Intervals", "detail": "Provides the exclusive `end` index for safe `[start, end)` iteration." }
+  ],
+  "pattern": {
+    "name": "Rightmost Boundary / Exclusive Limit",
+    "recognition_cues": [
+      "The problem asks for the 'last occurrence' of an element (Upper Bound - 1).",
+      "You need to count the frequency of elements in a sorted array.",
+      "The problem asks for the first element strictly greater than X."
+    ]
+  },
+  "failure_signals": [
+    "You used `>=` instead of `>` in your Upper Bound logic, accidentally implementing Lower Bound instead."
+  ],
+  "engineering_examples": [
+    { "title": "Time-Series Data Aggregation", "problem": "Counting occurrences or isolating a time window `[start_time, end_time]` in logs.", "why_this_algorithm": "Lower Bound gets the start, Upper Bound gets the end. The exact slice is isolated in O(log N) without scanning." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "You need the element itself", "reason": "Upper Bound returns the element *after* the target. If you just need to check if an element exists, standard Binary Search is sufficient." }
+  ],
+  "common_mistakes": [
+    { "title": "Confusing the condition with Lower Bound", "explanation": "If you use `arr[mid] >= target`, you are writing Lower Bound. Upper Bound MUST be strictly `arr[mid] > target`." },
+    { "title": "Returning Upper Bound for 'Last Occurrence'", "explanation": "Upper Bound gives the index *after* the last occurrence. If asked for the last occurrence of a target, you must return `upper_bound_index - 1` (and handle out-of-bounds checks)." }
+  ],
+  "recall_questions": [
+    { "q": "What is the predicate condition difference between Lower Bound and Upper Bound?", "answer": "Lower Bound checks `element >= target`. Upper Bound checks `element > target`.", "tier": "tier1" },
+    { "q": "How do you calculate the frequency of an element using these algorithms?", "answer": "Frequency = Upper Bound Index - Lower Bound Index.", "tier": "tier1" },
+    { "q": "If an element does not exist in the array, what is the relationship between its Lower Bound and Upper Bound?", "answer": "They will return the exact same index (the insertion point).", "tier": "tier2" }
+  ],
+  "oa_questions": [
+    { "question": "Find the first and last position of an element in a sorted array.", "company": "SDE interview", "answer": "Use Lower Bound to find the first position. Use Upper Bound to find the exclusive end. The last position is `UpperBound - 1`. If Lower == Upper, the element isn't in the array.", "approach": "Half-Open Interval construction." },
+    { "question": "Implement the upper bound algorithm.", "company": "SDE interview", "answer": "Set `ans = len`. While `low <= high`: if `arr[mid] > target`, update `ans = mid` and `high = mid - 1` (search left for an earlier valid limit). Else, `low = mid + 1` (search right).", "approach": "Upper Bound with tracking variable." }
+  ],
+  "practice": [
+    { "title": "Find First and Last Position of Element in Sorted Array", "url": "https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array/", "difficulty": "medium", "why": "The definitive problem that requires implementing both Lower Bound and Upper Bound to form a range." }
+  ],
+  "related": ["lower-bound", "binary-search"],
+  "sources": [
+    "https://cppreference-45864d.gitlab-pages.liu.se/en/cpp/algorithm/upper_bound.html",
+    "https://www.dogeystamp.com/cpp-binary-search/"
+  ]
+}

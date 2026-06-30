@@ -1,0 +1,73 @@
+{
+  "slug": "linear-search",
+  "title": "Linear Search",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": ["iteration-and-traversal"],
+    "unlocks": ["binary-search"]
+  },
+  "hook": {
+    "scenario": "You are processing an endless, streaming log file of a production system and need to find the first occurrence of a specific system error.",
+    "question": "The logs are ordered chronologically, not alphabetically by error type. How do you find the error without buffering the entire stream into memory to sort it?"
+  },
+  "why_it_exists": {
+    "problem": "Finding a specific element in an unsorted or dynamically streaming data structure requires checking elements until the target is found.",
+    "naive_solution": "Load the entire dataset into memory, sort it in O(N log N) time, and then perform a fast binary search.",
+    "better_idea": "Simply scan the data sequentially from left to right. This takes O(N) time but requires zero pre-processing overhead and works on endless streams or unstructured data."
+  },
+  "mental_model": {
+    "intuition": "Like looking for a specific book on an unorganized shelf, you check the first book, then the second, and so on until you find it.",
+    "description": "Iterate through the collection one element at a time. Compare the current element to the target. If it matches, return the index. If the loop finishes without a match, return a 'not found' indicator (like -1).",
+    "repeated_decision": "Is `arr[i] == target`? If yes, stop. If no, advance to `i+1`."
+  },
+  "explanation": "Linear search is the most fundamental retrieval algorithm. Its theoretical time complexity is O(N) in the worst case (the target is at the end or absent) and O(1) in the best case (the target is at index 0).\n\nDespite its O(N) complexity, linear search is exceptionally fast on modern CPUs for small arrays (under ~100 elements). Because it accesses memory sequentially, the CPU's hardware prefetcher successfully anticipates future memory accesses, loading contiguous blocks (cache lines) into the L1 cache. This results in a near-zero cache miss rate.\n\nThe loop invariant is simple: at the start of the i-th iteration, the target value does not exist in any of the preceding elements from index 0 to i-1. When the loop terminates after checking all elements, this invariant proves the target is entirely absent from the array.\n\nLinear search operates strictly in place with O(1) space complexity, making it ideal for memory-constrained environments like IoT firmware.",
+  "key_points": [
+    { "title": "Sequential Scanning", "detail": "Checks every element one by one. Works on unsorted arrays, linked lists, and streams." },
+    { "title": "Cache-Friendly", "detail": "Sequential memory access allows hardware prefetchers to eliminate cache misses, making it extremely fast on small arrays." },
+    { "title": "Zero Overhead", "detail": "Requires no pre-processing (sorting) and O(1) auxiliary space." }
+  ],
+  "pattern": {
+    "name": "Sequential Scan",
+    "recognition_cues": [
+      "The dataset is unsorted and small.",
+      "The data is arriving as a continuous stream and cannot be buffered or sorted.",
+      "You need to find all occurrences of a value (global linear search)."
+    ]
+  },
+  "failure_signals": [
+    "You are running linear search repeatedly on a massive, static dataset. You should sort it once and use binary search, or use a Hash Map."
+  ],
+  "engineering_examples": [
+    { "title": "Log Analysis", "problem": "Finding the first occurrence of an error in an unsorted log file.", "why_this_algorithm": "It processes the stream sequentially without needing to buffer or sort the data." },
+    { "title": "Embedded Systems", "problem": "Finding a value on an IoT device with severe memory constraints.", "why_this_algorithm": "It requires O(1) auxiliary space and avoids recursive call stacks." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "Repeated queries on a large, static dataset", "reason": "Doing M queries takes O(M * N) time. It is better to build a Hash Map (O(N) build, O(1) query) or sort and binary search (O(N log N) build, O(log N) query)." }
+  ],
+  "common_mistakes": [
+    { "title": "Returning inside the loop incorrectly", "explanation": "When doing a global linear search (finding all occurrences), returning on the first match terminates the loop prematurely. You must append to a list and return after the loop finishes." }
+  ],
+  "recall_questions": [
+    { "q": "Why might linear search outperform binary search on a very small array (e.g., 20 elements)?", "answer": "Linear search accesses memory sequentially, which modern CPU prefetchers perfectly optimize for the L1 cache. Binary search jumps around, causing cache misses.", "tier": "tier2" },
+    { "q": "What is the loop invariant of linear search?", "answer": "At the start of the i-th iteration, the target value is mathematically guaranteed to not exist in the range from index 0 to i-1.", "tier": "tier1" },
+    { "q": "When is linear search the only viable option?", "answer": "When the data is unsorted, dynamically streaming, or stored in a data structure that does not support random access (like a singly linked list).", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Implement a standard linear search.", "company": "General interview", "answer": "Loop through the array with an index `i`. If `arr[i] == target`, return `i`. If the loop finishes, return `-1`.", "approach": "Sequential scan." },
+    { "question": "Find the maximum element in an unsorted array.", "company": "General interview", "answer": "Initialize `max_val` to the first element. Perform a linear scan. If the current element is greater than `max_val`, update `max_val`. Return `max_val` after the loop.", "approach": "Linear scan for extremum." }
+  ],
+  "practice": [
+    { "title": "Find Numbers with Even Number of Digits", "url": "https://leetcode.com/problems/find-numbers-with-even-number-of-digits/", "difficulty": "easy", "why": "A classic linear scan where you evaluate a condition on every element." }
+  ],
+  "related": ["binary-search", "hash-maps"],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Linear_search",
+    "https://sites.math.rutgers.edu/~ajl213/CLRS/Ch2.pdf"
+  ]
+}

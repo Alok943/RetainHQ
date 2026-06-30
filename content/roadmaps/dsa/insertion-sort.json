@@ -1,0 +1,80 @@
+{
+  "slug": "insertion-sort",
+  "title": "Insertion Sort",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["bubble-sort", "selection-sort"],
+    "unlocks": ["merge-sort"]
+  },
+  "hook": {
+    "scenario": "Python's built-in `sorted()` function uses Timsort, which recursively breaks the array into small chunks. But once a chunk is smaller than 32 elements, Timsort stops dividing and switches to a different algorithm.",
+    "question": "What O(N^2) algorithm is so fast on tiny arrays that it outperforms O(N log N) divide-and-conquer at small scale?"
+  },
+  "why_it_exists": {
+    "problem": "O(N log N) algorithms like Merge Sort and Quick Sort rely on recursion, pivot selection, and auxiliary memory. For very small subarrays (N < 32), this overhead exceeds the actual sorting work.",
+    "naive_solution": "Continue recursing all the way down to single elements, paying stack frame allocation and function call overhead for trivial 2-3 element subarrays.",
+    "better_idea": "Stop recursion early and hand the small subarray to Insertion Sort. It uses no recursion, no extra memory, shifts elements in a cache-friendly sequential pattern, and achieves O(N) time on nearly-sorted data."
+  },
+  "mental_model": {
+    "intuition": "You are sorting a hand of playing cards. You pick up the next card from the table (unsorted pile) and slide it into the correct position among the cards already in your hand (sorted pile).",
+    "description": "The array is divided into a sorted left partition and an unsorted right partition. The algorithm takes the first element of the unsorted partition (the 'key'), scans backward through the sorted partition, shifts every element larger than the key one position to the right, and inserts the key into the gap.",
+    "repeated_decision": "While `j >= 0` and `arr[j] > key`: shift `arr[j]` one position right (`arr[j+1] = arr[j]`), then decrement `j`. Insert the key at `arr[j+1]`."
+  },
+  "explanation": "Insertion Sort iterates from index 1 to N-1. For each index i, it stores the value `key = arr[i]`. It then scans backward through the sorted partition (indices 0 to i-1).\n\nCritically, Insertion Sort uses SHIFTS, not swaps. A swap requires 3 memory writes (temp = a; a = b; b = temp). A shift requires only 1 memory write (arr[j+1] = arr[j]). This halves the memory bandwidth compared to Bubble Sort.\n\nThe loop invariant is: at the start of iteration i, the subarray arr[0..i-1] consists of the elements originally in arr[0..i-1], but in sorted order. Note: unlike Selection Sort, these are NOT necessarily the globally smallest elements. They are simply sorted relative to each other.\n\nInsertion Sort is adaptive. If the array is already sorted, the inner `while` loop condition `arr[j] > key` fails immediately on every iteration, making the total work exactly N-1 comparisons: O(N). It is also stable, because the condition is strictly greater-than (`>`), so equal elements are never shifted past each other.\n\nInsertion Sort is also an 'online algorithm': it can process input as it arrives, one element at a time. A live data stream can be kept perpetually sorted by inserting each new element into the correct position as it arrives.\n\nIts dominance on small arrays comes from hardware synergies. The backward scan accesses memory sequentially, which the CPU hardware prefetcher optimizes perfectly, minimizing L1 cache misses. The inner loop branch (`arr[j] > key`) is highly predictable: it evaluates to `true` several times, then `false` exactly once. Modern branch predictors learn this pattern, reducing pipeline stalls to near zero.",
+  "key_points": [
+    { "title": "Adaptive O(N) Best-Case", "detail": "On sorted or nearly-sorted data, the inner loop barely executes, yielding linear time." },
+    { "title": "Shifts, Not Swaps", "detail": "One memory write per shift vs. three per swap. Half the memory bandwidth of Bubble Sort." },
+    { "title": "Cache-Friendly", "detail": "Sequential backward scanning is perfectly predicted by hardware prefetchers, minimizing cache misses." },
+    { "title": "Online Algorithm", "detail": "Can maintain a sorted list as new elements arrive in real-time." }
+  ],
+  "pattern": {
+    "name": "Adaptive In-Place Sort / Base-Case Optimization",
+    "recognition_cues": [
+      "You need to sort a very small array (N < ~50).",
+      "The data is known to be nearly sorted.",
+      "You are implementing a hybrid sort (Timsort, Introsort) and need a base-case."
+    ]
+  },
+  "failure_signals": [
+    "You are using Insertion Sort on a large, randomly ordered dataset. Its O(N^2) worst-case is too slow.",
+    "The inner loop never triggers the early exit, meaning the data is reverse-sorted (worst case)."
+  ],
+  "engineering_examples": [
+    { "title": "Timsort Base Case", "problem": "Python, Java, and V8 use Timsort, which needs a fast sort for chunks of 32-64 elements.", "why_this_algorithm": "Insertion Sort's low overhead, cache locality, and adaptive behavior make it faster than O(N log N) algorithms at this scale." },
+    { "title": "Real-Time Stream Processing", "problem": "Maintaining a sorted buffer of the last 20 sensor readings as new readings arrive.", "why_this_algorithm": "As an online algorithm, Insertion Sort inserts each new element into the correct position in O(N) time without needing the full dataset." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "Large, randomly ordered datasets", "reason": "The O(N^2) worst-case makes it catastrophically slow. Use Merge Sort, Quick Sort, or a hybrid like Timsort." }
+  ],
+  "common_mistakes": [
+    { "title": "Confusing with Selection Sort", "explanation": "Selection Sort's sorted partition contains elements in their FINAL positions. Insertion Sort's sorted partition may shift to accommodate new insertions. They look similar but have fundamentally different invariants." },
+    { "title": "Using swaps instead of shifts", "explanation": "Implementing the inner loop with `swap(arr[j], arr[j-1])` works correctly but triples the memory writes. The proper implementation stores the key in a temporary variable and uses single-write shifts." }
+  ],
+  "recall_questions": [
+    { "q": "Why do production sort libraries (Timsort) use Insertion Sort as a base case?", "answer": "For small arrays, Insertion Sort's low overhead, zero recursion, cache-friendly sequential access, and predictable branching make it faster than O(N log N) algorithms despite its O(N^2) worst case.", "tier": "tier1" },
+    { "q": "How does Insertion Sort differ from Selection Sort in terms of its loop invariant?", "answer": "Insertion Sort's sorted partition contains the original elements in sorted order, but not necessarily the globally smallest. Selection Sort's sorted partition contains the globally smallest elements in their final positions.", "tier": "tier2" },
+    { "q": "Why is Insertion Sort classified as an 'online algorithm'?", "answer": "It can process input one element at a time as it arrives, maintaining a sorted state without needing the entire dataset upfront.", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Implement Insertion Sort using shifts (not swaps).", "company": "General interview", "answer": "For i from 1 to N-1: store key = arr[i]. Set j = i-1. While j >= 0 and arr[j] > key: shift arr[j] to arr[j+1], decrement j. Place key at arr[j+1].", "approach": "Insertion Sort with shift optimization." },
+    { "question": "Given a sorted array with one new element appended at the end, sort the array in O(N) time.", "company": "SDE interview", "answer": "Treat the new element as the 'key' and scan backward through the sorted portion, shifting elements right until the correct position is found. This is exactly one pass of Insertion Sort.", "approach": "Single-pass Insertion Sort." }
+  ],
+  "practice": [
+    { "title": "Insertion Sort List", "url": "https://leetcode.com/problems/insertion-sort-list/", "difficulty": "medium", "why": "Applies Insertion Sort to a linked list, testing whether you understand the shift logic beyond arrays." }
+  ],
+  "related": ["bubble-sort", "selection-sort", "merge-sort"],
+  "interesting_facts": [
+    "Timsort, the default sort in Python, Java (for objects), Android, and V8 (Chrome's JavaScript engine), was invented by Tim Peters in 2002. It identifies natural 'runs' of sorted data and extends short runs using Insertion Sort before merging them."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Insertion_sort",
+    "https://en.wikipedia.org/wiki/Timsort",
+    "https://paulbiggar.com/research/jea-2008.pdf"
+  ]
+}
