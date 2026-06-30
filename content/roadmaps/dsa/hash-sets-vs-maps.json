@@ -1,0 +1,86 @@
+{
+  "slug": "hash-sets-vs-maps",
+  "title": "Hash Sets vs Maps",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["hash-tables"],
+    "unlocks": [],
+    "project_usage": [
+      "Using Hash Sets to deduplicate massive datasets of user IDs or logs",
+      "Using Hash Maps to build frequency counters for text analysis"
+    ]
+  },
+  "overview": {
+    "what": "Both Hash Maps (Dictionaries) and Hash Sets are powered by hash tables under the hood. A Hash Map binds a unique key to an associated value (e.g., UserID -> Profile). A Hash Set stores ONLY unique keys, with no associated values.",
+    "why": "You use a Map when the data has inherent duality—you need to look up a key to retrieve a specific payload. You use a Set when you purely need to answer a binary existence query: 'Have I seen this exact item before?'",
+    "where_used": [
+      "Sets: Identifying the boundaries of sequences by checking if `num - 1` exists in O(1) time.",
+      "Maps: Grouping anagrams by mapping a sorted signature string to a list of matching words."
+    ]
+  },
+  "why_learning_this": [
+    "Choosing the correct semantic data structure signals competence to an interviewer. Using a Map when a Set would suffice indicates a lack of precision.",
+    "Many modern language implementations of Hash Sets (like Java's `HashSet`) literally just use a Hash Map under the hood with dummy values, proving the underlying mechanics are identical.",
+    "Sets are the ultimate tool for O(n) array deduplication."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Iterating over a map to find a key",
+      "explanation": "If you write `if key in my_map.values():`, you have fundamentally broken the hash table. Values are not hashed. Searching values takes O(n) linear time. You must search by keys."
+    },
+    {
+      "title": "Forgetting Sets enforce uniqueness",
+      "explanation": "Adding the same element to a Set 100 times results in a Set of size 1. If you need to track how many times an element appeared, you must use a Hash Map where the value is an integer counter."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary structural difference between a Hash Map and a Hash Set?",
+      "answer": "A Map stores Key-Value pairs; a Set stores only Keys.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you need to know if a specific username has already been taken, which structure is more semantically correct?",
+      "answer": "A Hash Set, because you only care about binary existence (yes or no), not retrieving an associated payload.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A developer wants to count how many times each word appears in a book. They try to use a Hash Set, adding each word as they read it. Why does this fail to solve the problem?",
+      "answer": "Sets enforce strict uniqueness and discard duplicates. At the end, the developer will only have a list of unique words, with no record of their frequencies. They need a Hash Map mapping `Word -> Count`.",
+      "why": "This distinction is the crux of choosing between the two structures. Frequencies require a payload (the count), mandating a Map."
+    },
+    {
+      "type": "predict-result",
+      "question": "You have an array of 100,000 user IDs, and you need to repeatedly check if incoming requests match any of these IDs. Does using a Hash Set or a Hash Map make more sense here?",
+      "answer": "A Hash Set makes more sense. You only need to verify existence (is the ID in the allowed list?), which requires no associated value.",
+      "why": "Sets are the standard data structure for fast O(1) membership testing where no payload is required."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Deduplicating an array in Python\nraw_data = [1, 2, 2, 3, 4, 4, 4, 5]\n\n# The O(n) magic trick:\nclean_data = list(set(raw_data))\nprint(clean_data) # [1, 2, 3, 4, 5]",
+    "prediction": "You have to write a loop to filter out duplicates.",
+    "common_guess": "Deduplication requires sorting the array first or using nested loops.",
+    "why": "Because a Set mathematically cannot contain duplicates, simply casting an array to a Set automatically deduplicates it in a single O(n) pass. It is the cleanest, fastest way to extract unique elements in any language."
+  },
+  "practice_tasks": [
+    {
+      "title": "Array intersection",
+      "prompt": "Given two arrays, `arr1` and `arr2`, return a list of elements that appear in both arrays in O(n + m) time.",
+      "starter_code": "def intersection(arr1, arr2):\n    # Your code here",
+      "solution": "Convert `arr1` into a Hash Set. Then loop through `arr2`; if the element is in the set, add it to a results array."
+    }
+  ],
+  "sources": [
+    "https://youcademy.org/hash-table-applications/"
+  ]
+}

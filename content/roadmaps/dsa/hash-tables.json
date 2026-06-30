@@ -1,0 +1,87 @@
+{
+  "slug": "hash-tables",
+  "title": "Hash Tables",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["arrays-and-memory"],
+    "unlocks": ["hash-sets-vs-maps", "collisions-and-load-factor", "frequency-counting"],
+    "project_usage": [
+      "In-memory caching layers (Redis, Memcached) to return expensive database query results in microseconds",
+      "Compiler symbol tables for instant type checking of variables"
+    ]
+  },
+  "overview": {
+    "what": "A hash table is a data structure that provides near-instantaneous O(1) retrieval, insertion, and deletion. It works by passing a key (like a string or object) into a 'hash function', which mathematically scrambles it into a deterministic integer. This integer is used as the exact array index to store the value.",
+    "why": "Direct addressing (creating an array slot for every possible key) requires impossible amounts of memory for things like 64-bit strings. Hash tables decouple the table size from the universe of possible keys, compressing the memory footprint while maintaining the O(1) speed of direct array access.",
+    "where_used": [
+      "Database indexing for exact-match primary key lookups",
+      "Algorithmic problem solving to drop O(n^2) nested loops down to O(n) linear passes"
+    ]
+  },
+  "why_learning_this": [
+    "Hash tables (HashMaps/Dictionaries) are the most frequently used data structure in coding interviews to optimize brute-force solutions.",
+    "Understanding that a hash function must be deterministic (same input always equals same output) is critical to avoiding elusive bugs when using custom objects as keys.",
+    "It explains the architectural backbone of modern distributed systems and caching layers."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using mutable objects as keys",
+      "explanation": "If a key's internal state changes after it is inserted into the hash table, its computed hash value will also change. The table will look in the new hash slot and fail to find the object, effectively losing the data."
+    },
+    {
+      "title": "Assuming O(1) is guaranteed",
+      "explanation": "O(1) is the expected, amortized time complexity. In the worst-case scenario (where many keys collide), lookups can degrade to O(n) or O(log n). Real-time systems must account for this."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What problem with 'direct addressing' do hash tables solve?",
+      "answer": "Direct addressing requires an array large enough to hold every theoretically possible key (e.g., every possible string), which requires impossible amounts of memory. Hash tables map that infinite universe into a small, fixed-size array.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the expected time complexity of retrieval in a hash table, and why?",
+      "answer": "O(1). The hash function instantly calculates the exact memory address, skipping the need to search or traverse the data.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you create a custom `User` class in Java or Python and use instances of it as keys in a hash map, but forget to implement a custom hash function, what happens when you look up a user with identical data?",
+      "answer": "The lookup fails. By default, languages hash the physical memory address of the object, not its contents. Two distinct objects with identical data will have different memory addresses and thus different hashes.",
+      "why": "This is a notorious bug. If you want two distinct objects with the same logical data to be treated as the same key, you must override both the hash function and the equality operator."
+    },
+    {
+      "type": "predict-result",
+      "question": "An array of 1,000,000 elements needs to be searched for 10,000 specific targets. A nested loop takes 10^10 operations. If we put the 1,000,000 elements in a hash set, what is the new approximate operation count?",
+      "answer": "1,010,000 operations. It takes 1,000,000 operations to insert the elements into the hash set, and then 10,000 O(1) lookups to find the targets.",
+      "why": "This math demonstrates the core pattern of hash-based algorithms: trading O(n) auxiliary space to drop a multiplicative time factor down to an additive one."
+    }
+  ],
+  "aha_moment": {
+    "code": "# The Two Sum Problem\ntarget = 9\narr = [2, 11, 7, 15]\n# Brute force: nested loops check (2,11), (2,7) -> 9. O(n^2) time.\n\n# Hash map optimization:\nseen = {}\nfor num in arr:\n    complement = target - num\n    if complement in seen:\n        print(\"Found it!\")\n    seen[num] = True\n# O(n) time. The hash map remembers the past instantly.",
+    "prediction": "You still have to search the `seen` hash map, so it must still be slow.",
+    "common_guess": "Checking `if complement in seen` takes time proportional to how big `seen` is.",
+    "why": "Checking `if complement in seen` takes O(1) time regardless of whether `seen` has 10 items or 10 billion items. The hash function instantly calculates the memory address of the complement. We completely eliminated the inner loop."
+  },
+  "practice_tasks": [
+    {
+      "title": "Use a hash map to find a duplicate",
+      "prompt": "Given an array of integers, use a hash map (or set) to find the first number that appears twice in O(n) time.",
+      "starter_code": "def find_first_duplicate(arr):\n    # Your code here",
+      "solution": "Initialize an empty set. Loop through `arr`. For each `num`, check if it's in the set. If yes, return it. If no, add it to the set."
+    }
+  ],
+  "sources": [
+    "https://www.cs.otago.ac.nz/cosc242/pdf/L09.pdf",
+    "https://csweb.wooster.edu/hguarnera/cs200/slides/lec05-hashtables.pdf"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "slug": "frequency-counting",
+  "title": "Frequency Counting",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["hash-sets-vs-maps"],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have two massive strings and need to know if they are anagrams of each other (contain the exact same letters in different orders).",
+    "question": "Do you sort both strings which costs O(N log N) time, or is there a way to verify them in a single O(N) pass?"
+  },
+  "why_it_exists": {
+    "problem": "Comparing two collections of items to see if they share the same composition typically requires nested loops (O(N^2)) or sorting them first (O(N log N)). Both are too slow for massive datasets.",
+    "naive_solution": "Sort both arrays or strings, then walk through them side-by-side to ensure they match exactly.",
+    "better_idea": "Use a Hash Map to count the frequencies of every element in the first collection. Then, walk through the second collection and decrement those counts. If all counts reach zero, the collections are identical in composition. This takes O(N) time."
+  },
+  "mental_model": {
+    "intuition": "Imagine comparing two bags of marbles. Instead of lining them all up by size (sorting), you just make a tally sheet: '3 red, 2 blue'. Then you pull marbles from the second bag and cross off the tallies. If you cross everything off perfectly, the bags match.",
+    "description": "Frequency counting leverages a Hash Map to record occurrences of discrete elements. The keys are the elements themselves, and the values are integer counters. This transforms a sequence of data into a canonical signature (a histogram) that represents its exact makeup, ignoring order.",
+    "repeated_decision": "During the build phase: `map[item] = map.get(item, 0) + 1`. During the validation phase: `map[item] -= 1`."
+  },
+  "explanation": "Frequency counting is the definitive pattern for problems involving permutations, anagrams, or occurrences.\n\nTo check if 'cinema' and 'iceman' are anagrams, we initialize an empty Hash Map. We iterate over 'cinema'. For 'c', we set its count to 1. For 'i', 1. By the end, our map is: `{'c': 1, 'i': 1, 'n': 1, 'e': 1, 'm': 1, 'a': 1}`.\n\nNext, we iterate over the second string, 'iceman'. For every character, we look it up in the map and decrement its count. 'i' goes from 1 to 0. 'c' goes from 1 to 0. \n\nIf we ever try to decrement a character that isn't in the map, or if a count drops below zero, the strings are not anagrams. Finally, if the strings were of equal length and we never dipped below zero, we know with mathematical certainty that they are exact anagrams.\n\nThis exact same pattern solves problems like finding the majority element, finding the first non-repeating character, or checking if one string can be constructed from a magazine cutout (Ransom Note).",
+  "key_points": [
+    { "title": "O(N) Time", "detail": "We iterate through the data exactly once (or twice). There is no nested iteration and no sorting." },
+    { "title": "O(K) Space", "detail": "The space complexity depends on the number of UNIQUE elements, not the total number of elements. For English letters, space is O(1) because there are only 26 possible keys." },
+    { "title": "Canonical Signatures", "detail": "A frequency map acts as a fingerprint. Any two anagrams will produce the exact same frequency map, allowing you to group them together easily." }
+  ],
+  "pattern": {
+    "name": "Frequency Map / Counting",
+    "recognition_cues": [
+      "The problem asks about anagrams or permutations.",
+      "You need to find elements that appear a specific number of times (e.g., 'majority element').",
+      "The problem asks if you can construct string A from the letters of string B."
+    ]
+  },
+  "failure_signals": [
+    "You are using `.count()` inside a `for` loop (this is accidentally O(N^2) in most languages).",
+    "You are calling a `.sort()` function to compare compositions."
+  ],
+  "engineering_examples": [
+    { "title": "Text Analysis and NLP", "problem": "Generating a Bag-of-Words model to feed text into a machine learning algorithm.", "why_this_algorithm": "Frequency counting converts raw text into numerical vectors (word counts) that neural networks can process." },
+    { "title": "Rate Limiting", "problem": "Tracking how many times an IP address has accessed a server in the last minute.", "why_this_algorithm": "A Hash Map of `IP -> Request Count` provides instantaneous tracking to block abusers." }
+  ],
+  "when_not_to_use": [
+    { "scenario": "You need to maintain the original order of the elements", "reason": "Hash Maps destroy ordering. If sequence matters, frequency counting is the wrong tool." }
+  ],
+  "common_mistakes": [
+    { "title": "KeyError or NullPointer exceptions", "explanation": "When incrementing, you must check if the key already exists before adding 1 to it. Use `map.get(key, 0)` in Python or `map.getOrDefault(key, 0)` in Java." },
+    { "title": "Not checking lengths first", "explanation": "If checking for valid anagrams, check if `len(s1) == len(s2)` immediately. If they differ, return false instantly and save O(N) work." }
+  ],
+  "recall_questions": [
+    { "q": "Why is frequency counting faster than sorting for checking anagrams?", "answer": "Sorting takes O(N log N) time. Frequency counting uses a Hash Map to tally characters in a single O(N) pass.", "tier": "tier1" },
+    { "q": "What is the space complexity of a frequency map of English letters?", "answer": "O(1), because the map will never hold more than 26 keys regardless of how long the string is.", "tier": "tier2" },
+    { "q": "What two operations form the core of the frequency counting pattern?", "answer": "Building the map by tallying elements, and then validating or checking against the map to answer the query.", "tier": "tier1" }
+  ],
+  "oa_questions": [
+    { "question": "Given a string, find the first non-repeating character in it and return its index.", "company": "SDE interview", "answer": "Pass 1: Build a frequency map of all characters. Pass 2: Iterate through the string again and check the map. The first character with a count of exactly 1 is the answer.", "approach": "Two-pass frequency counting." },
+    { "question": "Given an array of strings, group the anagrams together.", "company": "SDE interview", "answer": "For each string, build a frequency array (size 26). Convert that array into a tuple or string to use as a key in a Hash Map. Append the original string to the list of values for that key.", "approach": "Frequency array as a canonical signature." }
+  ],
+  "practice": [
+    { "title": "Valid Anagram", "url": "https://leetcode.com/problems/valid-anagram/", "difficulty": "easy", "why": "The purest test of basic frequency counting." },
+    { "title": "Ransom Note", "url": "https://leetcode.com/problems/ransom-note/", "difficulty": "easy", "why": "Tests the build-and-decrement pattern perfectly." },
+    { "title": "Group Anagrams", "url": "https://leetcode.com/problems/group-anagrams/", "difficulty": "medium", "why": "An essential interview problem combining frequency counting with canonical Hash Map signatures." }
+  ],
+  "related": ["hash-tables", "hash-sets-vs-maps"],
+  "interesting_facts": [
+    "In Python, the `collections.Counter` module does this exact pattern automatically in highly optimized C code."
+  ],
+  "sources": [
+    "https://algo.monster/liteproblems/49",
+    "https://neetcode.io/solutions/group-anagrams"
+  ]
+}

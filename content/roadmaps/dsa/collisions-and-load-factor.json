@@ -1,0 +1,92 @@
+{
+  "slug": "collisions-and-load-factor",
+  "title": "Collisions & Load Factor",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["hash-tables"],
+    "unlocks": [],
+    "project_usage": [
+      "Tuning Hash Map initialization capacity to avoid expensive mid-execution memory reallocation",
+      "Designing resilient backend systems that cannot be crashed by algorithmic complexity attacks"
+    ]
+  },
+  "overview": {
+    "what": "A hash collision occurs when two distinct keys mathematically produce the exact same array index. The Load Factor is the ratio of stored elements to total array slots (N / Capacity). As the load factor increases, collisions become highly probable.",
+    "why": "Because the universe of possible keys is infinitely larger than the physical array, collisions are a mathematical certainty (the Pigeonhole Principle). How a hash table resolves these collisions dictates whether it maintains O(1) performance or degrades to a catastrophic O(N).",
+    "where_used": [
+      "Language runtime engineering: deciding when a dictionary must resize its underlying array",
+      "Security: defending against hash-flooding Denial of Service (DoS) attacks"
+    ]
+  },
+  "why_learning_this": [
+    "Senior engineering interviews frequently ask how Hash Maps work 'under the hood', specifically demanding explanations of collision resolution strategies.",
+    "It explains why inserting into a Hash Map is 'amortized' O(1): occasionally, the table gets too full, crosses a load factor threshold, and must undergo an expensive O(N) resize and rehash.",
+    "Understanding the degradation of hash tables prepares you for real-world system failures."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Believing good hash functions prevent collisions",
+      "explanation": "No matter how perfect a hash function is, collisions are unavoidable if you put more items in the table than there are slots. Collisions are a structural reality, not a cryptographic failure."
+    },
+    {
+      "title": "Assuming all languages handle collisions the same way",
+      "explanation": "Java uses 'Separate Chaining' (linked lists/trees hanging off the array). Python uses 'Open Addressing' (jumping to a new empty slot in the array). The behaviors and performance tradeoffs are radically different."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is a hash collision?",
+      "answer": "When two distinct keys are processed by the hash function and produce the exact same array index.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the formula for the Load Factor of a hash table?",
+      "answer": "Number of stored elements divided by the total number of slots in the underlying array (N / Capacity).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between Separate Chaining and Open Addressing?",
+      "answer": "Separate Chaining stores colliding elements in a linked list outside the main array. Open Addressing stores all elements in the main array, searching for the next empty slot when a collision occurs.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A malicious user realizes your web server uses a basic Hash Map for HTTP parameters. They send a single request with 10,000 parameters carefully crafted to all hash to the exact same bucket. If your language uses basic Separate Chaining, what happens to your server?",
+      "answer": "The server experiences a Denial of Service (DoS). The 10,000 parameters form a massive linked list in one bucket. Looking up parameters degrades to O(N) time, locking up the CPU.",
+      "why": "This is a real-world 'Hash Flooding' attack. To fix this, Java 8 started upgrading long linked lists into Red-Black Trees (capping worst-case time at O(log N)), and Python added cryptographic salting to randomize hashes."
+    },
+    {
+      "type": "predict-result",
+      "question": "An open-addressed hash table has 10 slots and currently holds 9 elements. What happens to the performance of inserting the 10th element compared to inserting the 1st?",
+      "answer": "It will be catastrophically slow. The algorithm must probe almost the entire array, hitting 9 filled slots before finally finding the 1 empty slot.",
+      "why": "Open addressing falls apart as the load factor approaches 1.0. This is why hash tables strictly monitor their load factor and automatically double their array size (rehashing) long before they actually get full."
+    }
+  ],
+  "aha_moment": {
+    "code": "# Python dictionaries double in size when they reach a 2/3 load factor.\ninitial_capacity = 8\nitems_inserted = 5\nload_factor = 5 / 8  # 0.625. Getting close to 0.66!\n\n# The 6th insertion triggers an O(N) resize.\n# The dictionary creates a new array of size 16 and rehashes everything.",
+    "prediction": "The dictionary will wait until it holds 8 items before resizing.",
+    "common_guess": "Arrays resize when they are completely full.",
+    "why": "Hash tables intentionally waste memory to buy speed. If a hash table waits until it is full to resize, the collision rate skyrockets and performance plummets. Resizing early guarantees that there is always empty space, keeping probes short and lookups O(1)."
+  },
+  "practice_tasks": [
+    {
+      "title": "Preallocate capacity",
+      "prompt": "If you know in advance that you are going to load exactly 1,000,000 records into a Java HashMap (which has a default load factor threshold of 0.75), what should you set the initial capacity to in order to avoid ANY expensive O(N) resizes?",
+      "starter_code": "// int capacity = ?\n// HashMap<String, String> map = new HashMap<>(capacity);",
+      "solution": "You need the capacity * 0.75 to be > 1,000,000. So capacity should be at least 1,333,334 (Java will round this up to the next power of two, which is 2^21 or ~2 million). Preallocating prevents massive latency spikes."
+    }
+  ],
+  "sources": [
+    "https://www.cs.rochester.edu/u/gildea/csc282/slides/C11-hashing.pdf",
+    "https://courses.csail.mit.edu/6.006/fall09/lecture_notes/lecture07.pdf"
+  ]
+}

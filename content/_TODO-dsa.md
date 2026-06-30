@@ -37,10 +37,10 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] 2D arrays & matrices  · C · `2d-arrays-and-matrices`
 
 ## 4. Hashing
-- [ ] Hash tables  · C · `hash-tables`
-- [ ] Hash sets vs maps  · C · `hash-sets-vs-maps`
-- [ ] Frequency counting  · D · `frequency-counting`
-- [ ] Collisions & load factor  · C · `collisions-and-load-factor`
+- [x] Hash tables  · C · `hash-tables`
+- [x] Hash sets vs maps  · C · `hash-sets-vs-maps`
+- [x] Frequency counting  · D · `frequency-counting`
+- [x] Collisions & load factor  · C · `collisions-and-load-factor`
 
 ## 5. Strings
 - [ ] String traversal  · C · `string-traversal`
