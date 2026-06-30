@@ -13,10 +13,11 @@ import StateMachine from './renderers/StateMachine.jsx';
 const READ_DELAY = 1400; // ms to read the comment before the animation plays
 const DWELL = 950;       // ms to watch the animation before auto-advancing
 
-export default function Player({ generatorKey, defaultInput = [5, 2, 8, 1, 9, 3], invariants = {} }) {
+export default function Player({ generatorKey, defaultInput = [5, 2, 8, 1, 9, 3], invariants = {}, inputMode = 'number' }) {
   const generator = getGenerator(generatorKey);
+  const isString = inputMode === 'string';
   const [input, setInput] = useState(defaultInput);
-  const [draft, setDraft] = useState(defaultInput.join(', '));
+  const [draft, setDraft] = useState(defaultInput.join(isString ? '' : ', '));
   const [step, setStep] = useState(0);
   const [animatedStep, setAnimatedStep] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -54,7 +55,9 @@ export default function Player({ generatorKey, defaultInput = [5, 2, 8, 1, 9, 3]
   const seek = (v) => { setPlaying(false); setStep(v); setAnimatedStep(v); }; // scrub = immediate, no read pause
   const nav = (v) => { setPlaying(false); setStep(Math.max(0, Math.min(last, v))); }; // prev/next = read pause applies
   const applyInput = () => {
-    const vals = draft.split(/[\s,]+/).map((x) => parseInt(x, 10)).filter((x) => Number.isFinite(x)).slice(0, 12);
+    const vals = isString
+      ? draft.replace(/\s+/g, '').split('').slice(0, 14)
+      : draft.split(/[\s,]+/).map((x) => parseInt(x, 10)).filter((x) => Number.isFinite(x)).slice(0, 12);
     if (vals.length) { setInput(vals); setStep(0); setAnimatedStep(0); setPlaying(false); }
   };
 
@@ -107,9 +110,9 @@ export default function Player({ generatorKey, defaultInput = [5, 2, 8, 1, 9, 3]
 
       {/* tweak the values */}
       <div className="px-5 py-3 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6] flex items-center gap-2">
-        <span className="font-sans text-[12px] font-semibold text-[#475569] shrink-0">Tweak input:</span>
+        <span className="font-sans text-[12px] font-semibold text-[#475569] shrink-0">{isString ? 'Try a word:' : 'Tweak input:'}</span>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyInput()}
-          className="flex-1 min-w-[120px] font-mono text-[13px] rounded-md border border-[rgba(15,23,42,0.15)] px-2.5 py-1.5 bg-white" placeholder="5, 2, 8, 1, 9, 3" />
+          className="flex-1 min-w-[120px] font-mono text-[13px] rounded-md border border-[rgba(15,23,42,0.15)] px-2.5 py-1.5 bg-white" placeholder={isString ? 'racecar' : '5, 2, 8, 1, 9, 3'} />
         <button className={btn} onClick={applyInput}>Run</button>
       </div>
     </div>

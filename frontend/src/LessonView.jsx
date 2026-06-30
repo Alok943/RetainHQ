@@ -882,6 +882,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
               generatorKey={viz.generator}
               defaultInput={viz.default_input || undefined}
               invariants={viz.invariants || {}}
+              inputMode={viz.input_mode || 'number'}
             />
           </Suspense>
         </Section>

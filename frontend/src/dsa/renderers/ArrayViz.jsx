@@ -23,7 +23,9 @@ export default function ArrayViz({ frame }) {
   if (!frame) return null;
   const { array, regions = [], sorted = [], pointers = {} } = frame;
   const sortedSet = new Set(sorted);
-  const maxVal = Math.max(1, ...array);
+  // String/char traces render fixed-height cells (the letter), not value-scaled bars.
+  const isNumeric = array.every((v) => typeof v === 'number');
+  const maxVal = Math.max(1, ...(isNumeric ? array : [1]));
 
   // index -> the pointer labels sitting on it (e.g. ['lo'] or ['i'])
   const labelsAt = (i) =>
@@ -34,7 +36,8 @@ export default function ArrayViz({ frame }) {
   const colorOf = (i) => {
     if (sortedSet.has(i)) return C.sorted;
     if (pointers.write === i) return C.write;
-    if (pointers.i === i || pointers.j === i) return C.pointer; // active swap cells
+    // active pointer cells (swap / two-pointer compare)
+    if (pointers.i === i || pointers.j === i || pointers.lo === i || pointers.hi === i) return C.pointer;
     const reg = regionOf(i, regions);
     if (reg === 'merging') return C.merging;
     if (reg === 'left') return C.left;
@@ -51,11 +54,11 @@ export default function ArrayViz({ frame }) {
               {pointers.write === i ? '▼' : (labelsAt(i).join(' ') || '')}
             </span>
             <motion.div
-              className="w-full rounded-t-md flex items-start justify-center"
-              animate={{ height: 24 + (v / maxVal) * 130, backgroundColor: colorOf(i) }}
+              className={`w-full ${isNumeric ? 'rounded-t-md flex items-start justify-center' : 'rounded-md flex items-center justify-center'}`}
+              animate={{ height: isNumeric ? 24 + (v / maxVal) * 130 : 40, backgroundColor: colorOf(i) }}
               transition={{ type: 'spring', stiffness: 320, damping: 30 }}
             >
-              <span className="font-mono text-[12px] font-bold text-white mt-1">{v}</span>
+              <span className={`font-mono text-[13px] font-bold text-white ${isNumeric ? 'mt-1' : ''}`}>{v}</span>
             </motion.div>
             <span className="font-mono text-[10px] text-[#94a3b8] mt-1">{i}</span>
           </div>

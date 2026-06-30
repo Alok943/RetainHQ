@@ -26,6 +26,15 @@
     "description": "A frequency array is a direct-address table. Because characters have underlying integer representations (ASCII/Unicode), you can map them directly to array indices via simple subtraction, achieving O(1) lookups with zero collisions.",
     "repeated_decision": "For each character, calculate its array index `offset = ord(char) - ord('a')`, and then increment the array at that index: `arr[offset] += 1`."
   },
+  "viz": {
+    "generator": "frequency-arrays",
+    "default_input": ["b", "a", "n", "a", "n", "a"],
+    "input_mode": "string",
+    "invariants": {
+      "inv-tally": "count[c] always holds how many times character c has appeared so far.",
+      "inv-signature": "The final counts are an order-independent signature — anagrams share the same counts."
+    }
+  },
   "explanation": "To build a frequency array for lowercase letters, we initialize an array of size 26 with zeros. \n\nWhen we process the character 'c', we compute its index relative to 'a'. In ASCII, 'a' is 97 and 'c' is 99. `99 - 97 = 2`. We immediately increment `array[2]`.\n\nThis completely bypasses hashing. There are no hash functions, no collision handling, and no dynamic resizing. The array stays exactly size 26 regardless of whether the string is 5 characters or 5 billion characters.\n\nFurthermore, an array of 26 integers requires only 104 bytes of memory, fitting perfectly into a modern CPU's L1 cache line. This guarantees zero latency during processing, making it orders of magnitude faster than a Hash Map in low-level languages.",
   "key_points": [
     { "title": "O(N) Time", "detail": "We process the string in a single linear pass." },

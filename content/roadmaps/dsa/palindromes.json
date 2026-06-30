@@ -26,6 +26,16 @@
     "description": "Validating a palindrome uses converging two-pointers checking for equality. Finding the longest palindromic substring requires the inverse: placing pointers at a 'center' and expanding outward until symmetry breaks.",
     "repeated_decision": "During validation: `if string[left] != string[right]`, it's not a palindrome. During expansion: `if string[left] == string[right]`, expand the bounds."
   },
+  "viz": {
+    "generator": "palindromes",
+    "default_input": ["r", "a", "c", "e", "c", "a", "r"],
+    "input_mode": "string",
+    "invariants": {
+      "inv-bounds": "Everything outside the [lo, hi] window has already been confirmed to mirror.",
+      "inv-match": "A palindrome reads the same both ways, so arr[lo] must equal arr[hi] at every step.",
+      "inv-palindrome": "If every outer pair matches until the pointers cross, the whole string is a palindrome."
+    }
+  },
   "explanation": "To validate if a string is a palindrome, place a pointer at index 0 and a pointer at N-1. If they match, move inward. If they ever mismatch, return false instantly. If they cross, return true.\n\nA more complex problem is finding the *longest* palindromic substring within a larger text. You cannot easily use outside-in pointers here. Instead, you use the 'Expand Around Center' algorithm.\n\nA palindrome must have a center of symmetry. It's either an odd-length center (a single character, like 'c' in \"racecar\") or an even-length center (the imaginary gap between two identical characters, like the gap between the 'b's in \"abba\").\n\nThe algorithm iterates through every character in the string, treating it as a potential center. It initializes pointers at the center and expands outward. `left--` and `right++`. As long as the characters match and are within array bounds, the palindrome grows. It checks both odd and even centers for every index, keeping track of the absolute maximum length found.",
   "key_points": [
     { "title": "Validation: O(N) Time", "detail": "Checking if a string is a palindrome takes O(N) time and O(1) space." },

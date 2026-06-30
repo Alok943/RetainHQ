@@ -77,6 +77,10 @@ export function compile(input, events) {
         pointers = { ...ptrs, i: index };
         break;
       }
+      case 'MARK': // mark specific indices as confirmed/matched (no value change)
+        for (const x of args.indices || []) sorted.add(x);
+        pointers = { ...ptrs };
+        break;
       case 'DONE': // finalize a range (or the whole array when no bounds given)
         if (typeof args.lo === 'number' && typeof args.hi === 'number') {
           for (let x = args.lo; x <= args.hi; x++) sorted.add(x);

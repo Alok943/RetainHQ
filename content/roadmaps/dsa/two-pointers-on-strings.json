@@ -26,6 +26,16 @@
     "description": "The Two-Pointer technique uses two indices traversing the data structure simultaneously. For strings, they usually converge from opposite ends (to reverse or validate symmetry) or move in the same direction at different speeds (to filter data).",
     "repeated_decision": "While `left < right`: evaluate the characters, perform a swap or validation, increment `left`, and decrement `right`."
   },
+  "viz": {
+    "generator": "two-pointers-on-strings",
+    "default_input": ["h", "e", "l", "l", "o"],
+    "input_mode": "string",
+    "invariants": {
+      "inv-bounds": "Everything outside the [lo, hi] window is already in its final position.",
+      "inv-swap": "Swapping the two ends puts both characters where they belong at once.",
+      "inv-reversed": "When the pointers cross, the string is fully reversed using O(1) extra space."
+    }
+  },
   "explanation": "To reverse an array of characters in-place, initialize `left = 0` and `right = length - 1`.\n\nWhile `left < right`:\n1. Swap the character at `left` with the character at `right`.\n2. Increment `left` by 1 (moving inward).\n3. Decrement `right` by 1 (moving inward).\n\nThe loop terminates exactly when the pointers cross in the middle. The algorithm touches every element exactly once, taking O(N) time, but requires literally zero extra memory allocations (O(1) space). \n\nThis paradigm isn't just for swapping; it handles complex conditional logic. If you need to reverse only the vowels in a string, the `left` pointer moves right until it finds a vowel, the `right` pointer moves left until it finds a vowel, and then they swap. The core invariant remains: everything outside the [left, right] boundary is completely finalized.",
   "key_points": [
     { "title": "O(N) Time", "detail": "The pointers only move inward, evaluating each character at most once." },
