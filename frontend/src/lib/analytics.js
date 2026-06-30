@@ -20,6 +20,7 @@ let enabled = false;
 // The curated event vocabulary — the core-loop funnel. Keep this small.
 export const EVENTS = {
   SIGNED_IN: 'signed_in',
+  LANDING_CTA: 'landing_cta', // landing-page CTA click — top of the funnel
   ACTIVITY_LOGGED: 'activity_logged',
   REVIEW_STARTED: 'review_started',
   REVIEW_COMPLETED: 'review_completed', // carries { outcome, rating, recalled, mode } props

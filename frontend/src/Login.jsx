@@ -2,12 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
+import { track, EVENTS } from './lib/analytics';
 import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles, Code2, Eye } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
-  
+
   const handleGoogleLogin = async () => {
+    track(EVENTS.LANDING_CTA, { action: 'login' });
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
@@ -18,7 +20,7 @@ function Login() {
   // Primary CTA navigates to dashboard for PLG exploration.
   const GetStarted = ({ className = '' }) => (
     <button
-      onClick={() => navigate('/dashboard')}
+      onClick={() => { track(EVENTS.LANDING_CTA, { action: 'get_started' }); navigate('/dashboard'); }}
       className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold px-7 py-3.5 text-white bg-gradient-to-r from-[#0891B2] to-[#06B6D4] shadow-lg shadow-[#0891B2]/25 hover:-translate-y-0.5 hover:shadow-[#0891B2]/40 transition-all ${className}`}
     >
       Get Started <ArrowRight size={17} />
