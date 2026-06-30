@@ -9,14 +9,41 @@ import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
 import { useSeo } from './lib/useSeo';
 
-// Groups — order matters: first match wins.
+// Trade-wise grouping (JD Research Run 3): roadmaps organized by the career track
+// they build toward, ordered by the SDE → Backend → GenAI pathway + foundations.
+// Each group carries the run-3 insight for that trade. Order matters: first match wins,
+// so trade-specific patterns (backend/sql/ai) sit ABOVE the catch-all "python" foundation.
 const GROUPS = [
-  { label: 'DSA & Interviews',      match: (t) => /dsa|blind|lld|low.level|behavioral/.test(t) },
-  { label: 'AI & Machine Learning', match: (t) => /machine learning|deep learning|ai eng/.test(t) },
-  { label: 'Systems & DevOps',      match: (t) => /system design|devops|linux|git/.test(t) },
-  { label: 'Web & Backend',         match: (t) => /web|backend|sql/.test(t) },
-  { label: 'Languages',             match: (t) => /python|java|c\+\+|typescript/.test(t) },
-  { label: 'Core CS',               match: (t) => /core cs|aptitude/.test(t) },
+  {
+    label: 'DSA & Problem Solving',
+    blurb: 'The Round-1 gate for every role — SDE, Backend, even GenAI (JD Run 3).',
+    match: (t) => /dsa|neetcode|striver|algorithm|data structure|blind|lld|low.level/.test(t),
+  },
+  {
+    label: 'GenAI & AI Engineering',
+    blurb: 'Backend → GenAI is the single highest-ROI transition in 2026 (Zinnov, JD Run 3).',
+    match: (t) => /ai eng|machine learning|deep learning|genai|llm/.test(t),
+  },
+  {
+    label: 'Backend & Data',
+    blurb: 'SDE → Backend is near friction-free; these production skills launch the GenAI pathway. SQL is also the #1 Data-Engineer filter.',
+    match: (t) => /backend|system design|sql|api|database|data eng/.test(t),
+  },
+  {
+    label: 'Web Development',
+    blurb: 'Full-stack foundations for product and web-engineering roles.',
+    match: (t) => /web|frontend|react|javascript|typescript/.test(t),
+  },
+  {
+    label: 'CS Fundamentals',
+    blurb: 'OS, DBMS, networks + core Python — the shared base under every engineering track.',
+    match: (t) => /core cs|operating system|dbms|network|python|java|c\+\+/.test(t),
+  },
+  {
+    label: 'Aptitude & Reasoning',
+    blurb: 'Often cleared before the coding round at campus & mass recruiters.',
+    match: (t) => /aptitude|quant|reasoning|verbal/.test(t),
+  },
 ];
 
 const SORT_OPTIONS = [
@@ -102,14 +129,14 @@ function RoadmapCard({ rm, index, onClick }) {
   );
 }
 
-function CollapsibleGroup({ label, items, navigate }) {
+function CollapsibleGroup({ label, blurb, items, navigate }) {
   const [open, setOpen] = useState(true);
 
   return (
     <div className="mb-6">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 w-full text-left mb-3 group/hdr"
+        className="flex items-center gap-2 w-full text-left mb-1 group/hdr"
       >
         {open
           ? <ChevronDown size={14} className="text-[#64748B] shrink-0" />
@@ -120,6 +147,10 @@ function CollapsibleGroup({ label, items, navigate }) {
         <span className="font-mono text-[10px] text-[#94A3B8]">({items.length})</span>
         <div className="flex-1 h-px bg-[rgba(15,23,42,0.07)] ml-1" />
       </button>
+
+      {blurb && (
+        <p className="font-sans text-xs text-[#64748B] mb-3 ml-6 leading-snug">{blurb}</p>
+      )}
 
       {open && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -177,8 +208,8 @@ function Roadmaps() {
     }
     // Return in GROUPS order, then 'Other' last
     const result = [];
-    for (const { label } of GROUPS) {
-      if (map[label]?.length) result.push({ label, items: map[label] });
+    for (const { label, blurb } of GROUPS) {
+      if (map[label]?.length) result.push({ label, blurb, items: map[label] });
     }
     if (map['Other']?.length) result.push({ label: 'Other', items: map['Other'] });
     return result;
@@ -272,8 +303,8 @@ function Roadmaps() {
           <div className="p-8 text-center text-[#64748B] bg-white rounded border border-[rgba(15,23,42,0.1)]">No roadmaps found.</div>
         ) : viewMode === 'grouped' ? (
           <div>
-            {grouped.map(({ label, items }) => (
-              <CollapsibleGroup key={label} label={label} items={items} navigate={navigate} />
+            {grouped.map(({ label, blurb, items }) => (
+              <CollapsibleGroup key={label} label={label} blurb={blurb} items={items} navigate={navigate} />
             ))}
           </div>
         ) : (
