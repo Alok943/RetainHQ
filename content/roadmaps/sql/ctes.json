@@ -10,14 +10,40 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["subqueries"],
-    "unlocks": ["recursive-ctes"],
-    "project_usage": ["analytics queries", "reporting pipelines", "readable multi-step queries"]
+    "prerequisites": [
+      "subqueries"
+    ],
+    "unlocks": [
+      "recursive-ctes"
+    ],
+    "project_usage": [
+      "analytics queries",
+      "reporting pipelines",
+      "readable multi-step queries"
+    ]
   },
+  "glossary": [
+    {
+      "term": "inlined",
+      "definition": "A performance trick where the database replaces a reference to a calculation directly with the calculation itself to speed things up."
+    },
+    {
+      "term": "materialized",
+      "definition": "When a database temporarily saves the actual results of a complex query to memory or disk so it does not have to recalculate them."
+    },
+    {
+      "term": "optimizer",
+      "definition": "The part of the database system that figures out the fastest and most efficient way to execute your query."
+    }
+  ],
   "overview": {
     "what": "A Common Table Expression (CTE) is a named, temporary result set defined with the WITH keyword. It exists only for the duration of the query that follows it. Think of it as giving a name to a subquery so you can reference it like a table.\n\n  WITH paid_orders AS (\n    SELECT customer_id, COUNT(*) AS order_count\n    FROM orders\n    WHERE status = 'paid'\n    GROUP BY customer_id\n  )\n  SELECT c.name, po.order_count\n  FROM customers c\n  JOIN paid_orders po ON po.customer_id = c.id\n  ORDER BY c.name;\n\nThe CTE 'paid_orders' computes a summary (customer_id + count of paid orders), then the main query joins it to customers. Result: Alice (2), Bob (1), Carlos (1), Emma (1), Farah (1).\n\nYou can chain multiple CTEs separated by commas, and later CTEs can reference earlier ones:\n\n  WITH step1 AS (...),\n       step2 AS (SELECT ... FROM step1 ...)\n  SELECT ... FROM step2 ...;\n\nMental model: CTEs are named building blocks. Each one transforms a row-set, and you snap them together top-to-bottom, with the final SELECT assembling the answer.",
     "why": "CTEs make complex queries readable by breaking them into named, sequential steps instead of deeply nested subqueries. They are easier to debug (you can run each CTE independently), easier to maintain, and a natural fit for analytics pipelines where each step builds on the last.",
-    "where_used": ["multi-step analytics reports", "breaking complex dashboard queries into readable stages", "reusing the same derived table multiple times in one query"]
+    "where_used": [
+      "multi-step analytics reports",
+      "breaking complex dashboard queries into readable stages",
+      "reusing the same derived table multiple times in one query"
+    ]
   },
   "why_learning_this": [
     "Replace deeply nested subqueries with named, sequential steps that are easy to read, test, and modify",
@@ -72,7 +98,14 @@
   ],
   "query_walkthrough": {
     "query": "WITH paid_orders AS (\n  SELECT customer_id, COUNT(*) AS order_count\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n)\nSELECT c.name, po.order_count\nFROM customers c\nJOIN paid_orders po ON po.customer_id = c.id\nORDER BY c.name;",
-    "flow_stages": ["from", "where", "group_by", "select", "join", "order_by"],
+    "flow_stages": [
+      "from",
+      "where",
+      "group_by",
+      "select",
+      "join",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch the CTE build a summary table (customer_id + count of paid orders), then see the main query join it to customers — two clean, named steps instead of a nested subquery."
   },

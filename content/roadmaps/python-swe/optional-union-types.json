@@ -9,14 +9,36 @@
     "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["type-hints-basic"],
-    "unlocks": ["generic-types"],
-    "project_usage": ["FastAPI", "Pydantic", "Database queries"]
+    "prerequisites": [
+      "type-hints-basic"
+    ],
+    "unlocks": [
+      "generic-types"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Pydantic",
+      "Database queries"
+    ]
   },
+  "glossary": [
+    {
+      "term": "type hinting",
+      "definition": "Adding labels to your code to indicate what kind of data (like an integer or string) a variable should hold, helping catch errors early."
+    },
+    {
+      "term": "Static type checkers",
+      "definition": "Tools that analyze your code without running it to find potential errors related to data types."
+    }
+  ],
   "overview": {
     "what": "In Python type hinting, a `Union` indicates that a variable can be one of several distinct types (e.g., `Union[int, str]`). Since Python 3.10, this is written more concisely as `int | str`. `Optional[T]` is just a shorthand for `Union[T, None]`, representing a value that might be of type `T` or might be `None` (missing). If a box has a union type, it's like sticking two labels on it: 'Only ints OR strings go here'. `Optional` specifically warns: 'This box might be empty (`None`), so check before you use it'.",
     "why": "It forces you to explicitly handle cases where data might be missing (`None`) or take multiple valid forms, preventing runtime errors like `AttributeError: 'NoneType' object has no attribute '...'`.",
-    "where_used": ["FastAPI optional query parameters", "Database queries that might return no rows", "Pydantic model fields without defaults"]
+    "where_used": [
+      "FastAPI optional query parameters",
+      "Database queries that might return no rows",
+      "Pydantic model fields without defaults"
+    ]
   },
   "why_learning_this": [
     "Preventing the infamous `NoneType` errors that crash applications.",

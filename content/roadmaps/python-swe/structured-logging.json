@@ -9,14 +9,35 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["loggers-handlers-formatters", "dictionaries"],
+    "prerequisites": [
+      "loggers-handlers-formatters",
+      "dictionaries"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Datadog", "ELK Stack"]
+    "project_usage": [
+      "FastAPI",
+      "Datadog",
+      "ELK Stack"
+    ]
   },
+  "glossary": [
+    {
+      "term": "machine-readable",
+      "definition": "Data formatted in a specific way so that computers and software can easily process and understand it."
+    },
+    {
+      "term": "aggregate",
+      "definition": "To collect and combine many separate pieces of data into a single, summarized view or total."
+    }
+  ],
   "overview": {
     "what": "Structured logging means emitting logs as machine-readable data structures (like JSON) rather than plain text strings. Instead of logging `'User 123 failed login from 192.168.1.1'`, you log `{\"event\": \"login_failed\", \"user_id\": 123, \"ip\": \"192.168.1.1\", \"level\": \"error\"}`. Think of it like filling out a spreadsheet with specific columns instead of writing a free-form diary entry; machines can easily filter and aggregate the spreadsheet.",
     "why": "Plain text logs require brittle regular expressions (regex) to parse in log aggregation tools (like Datadog or Splunk). JSON logs are instantly parsed into queryable fields, making production debugging exponentially faster.",
-    "where_used": ["FastAPI", "CloudWatch", "Microservices"]
+    "where_used": [
+      "FastAPI",
+      "CloudWatch",
+      "Microservices"
+    ]
   },
   "why_learning_this": [
     "Prepare your app for professional log aggregators (ELK, Datadog)",

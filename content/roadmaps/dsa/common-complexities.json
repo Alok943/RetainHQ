@@ -10,13 +10,32 @@
     "estimated_minutes": 25,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["big-o-notation"],
-    "unlocks": ["logarithms-and-powers-of-two", "amortized-analysis"],
+    "prerequisites": [
+      "big-o-notation"
+    ],
+    "unlocks": [
+      "logarithms-and-powers-of-two",
+      "amortized-analysis"
+    ],
     "project_usage": [
       "Choosing the right algorithm for a given constraint: n <= 10^6 rules out O(n^2), demands O(n log n) or better",
       "Capacity planning: knowing that a hash table lookup is O(1) vs. a sorted array binary search at O(log n) informs architectural decisions"
     ]
   },
+  "glossary": [
+    {
+      "term": "qualitatively different",
+      "definition": "Differing fundamentally in kind or nature rather than just in amount."
+    },
+    {
+      "term": "fundamentally intractable",
+      "definition": "Practically impossible to solve for large inputs because it would take too long."
+    },
+    {
+      "term": "dynamic array append",
+      "definition": "Adding a new element to the end of a list that can automatically grow in size."
+    }
+  ],
   "overview": {
     "what": "The common complexity classes form a hierarchy of growth rates that virtually all algorithms fall into: O(1), O(log n), O(n), O(n log n), O(n^2), O(n^3), O(2^n), and O(n!). Each class represents a qualitatively different scaling regime — moving one step up the hierarchy can mean the difference between an algorithm finishing in milliseconds or not finishing in your lifetime.",
     "why": "Knowing the hierarchy lets you immediately judge whether an algorithm is feasible for a given input size. When an interviewer says n can be up to 10^5, you instantly know O(n^2) is borderline and O(n^3) is impossible, and you need an O(n log n) or O(n) approach.",

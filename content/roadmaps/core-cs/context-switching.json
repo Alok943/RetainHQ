@@ -19,6 +19,20 @@
       "os"
     ]
   },
+  "glossary": [
+    {
+      "term": "multitasking",
+      "definition": "The ability of a computer operating system to run multiple programs at what appears to be the exact same time by rapidly sharing the CPU between them."
+    },
+    {
+      "term": "context switching",
+      "definition": "The process where the CPU pauses the current program, saves its exact state, and loads the saved state of a different program to resume running it."
+    },
+    {
+      "term": "Program Counter",
+      "definition": "A special memory area in the CPU that constantly keeps track of exactly which instruction or line of code the program needs to execute next."
+    }
+  ],
   "hook": {
     "scenario": "You're reading a book when your phone rings. You place a bookmark on the exact line you were reading, close the book, and answer the phone. When you're done, you open the book right to your bookmark and resume. That's a context switch."
   },
@@ -26,7 +40,7 @@
     "intuition": "Context switching is a chef pausing one dish to prep another, saving the exact state of the first dish so it isn't ruined.",
     "description": "The chef notes down the temperature and ingredients added for Dish A (saving state to the PCB), cleans the station (flushing registers), sets up the notes for Dish B (loading new PCB), and starts cooking Dish B."
   },
-  "explanation": "In a multitasking operating system, multiple processes seem to run simultaneously, even on a single CPU core. This illusion is achieved through context switching: the process of pausing one running application, saving its exact state, and resuming another application so quickly that the user doesn't notice the interruption.\n\nA process's 'context' is essentially its exact state at a specific microsecond in time. It includes the values in the CPU registers, the Program Counter (which tracks the next instruction to execute), memory management information, and open file descriptors. When a context switch occurs, the OS must freeze time for the current process by taking a snapshot of this context and saving it into the process's Process Control Block (PCB).\n\nOnce the old process's state is safely tucked away in memory, the OS scheduler selects a new process from the Ready queue. It retrieves the saved context from the new process's PCB and loads it back into the CPU registers. As soon as the Program Counter is restored, the CPU blindly resumes executing the new process exactly where it left off, entirely unaware that a switch occurred.\n\nWhile crucial for multitasking, context switches are not free. They represent pure overhead\u2014time spent switching rather than doing useful computational work. During a context switch, the CPU is entirely occupied with OS administrative tasks. Furthermore, swapping processes heavily disrupts CPU caches, leading to slower memory access immediately following a switch.",
+  "explanation": "In a multitasking operating system, multiple processes seem to run simultaneously, even on a single CPU core. This illusion is achieved through context switching: the process of pausing one running application, saving its exact state, and resuming another application so quickly that the user doesn't notice the interruption.\n\nA process's 'context' is essentially its exact state at a specific microsecond in time. It includes the values in the CPU registers, the Program Counter (which tracks the next instruction to execute), memory management information, and open file descriptors. When a context switch occurs, the OS must freeze time for the current process by taking a snapshot of this context and saving it into the process's Process Control Block (PCB).\n\nOnce the old process's state is safely tucked away in memory, the OS scheduler selects a new process from the Ready queue. It retrieves the saved context from the new process's PCB and loads it back into the CPU registers. As soon as the Program Counter is restored, the CPU blindly resumes executing the new process exactly where it left off, entirely unaware that a switch occurred.\n\nWhile crucial for multitasking, context switches are not free. They represent pure overhead—time spent switching rather than doing useful computational work. During a context switch, the CPU is entirely occupied with OS administrative tasks. Furthermore, swapping processes heavily disrupts CPU caches, leading to slower memory access immediately following a switch.",
   "animation": {
     "type": "sequence",
     "actors": [

@@ -24,6 +24,16 @@
       "SQLModel"
     ]
   },
+  "glossary": [
+    {
+      "term": "hash table",
+      "definition": "A data structure that stores information in a way that allows for extremely fast retrieval using a unique key."
+    },
+    {
+      "term": "serialize",
+      "definition": "The process of converting complex data structures into a format that can be easily stored or transmitted, like turning a Python dictionary into a JSON string."
+    }
+  ],
   "overview": {
     "what": "A dict maps hashable keys to values using a hash table, giving O(1) average-time lookups, inserts, and deletes. Keys must be immutable (str, int, tuple) — lists and dicts cannot be keys. Since Python 3.7+ dicts preserve insertion order.\n\nCreate one with braces or dict():\n\n  user = {'name': 'sam', 'role': 'admin', 'active': True}\n\nAccess a value by key — direct access raises KeyError if the key is missing, while .get() returns a default instead:\n\n  user['name']              # 'sam'\n  user['email']             # KeyError!\n  user.get('email', 'n/a')  # 'n/a' — safe fallback\n\n.keys(), .values(), and .items() return live view objects — they reflect changes to the dict without copying:\n\n  for k, v in user.items():\n      print(k, v)\n\nMutation methods:\n  user['email'] = 'sam@co.io'          # add or overwrite a key\n  del user['active']                    # remove a key (KeyError if missing)\n  user.pop('role', None)                # remove and return value, or default\n  user.setdefault('plan', 'free')       # insert 'plan' only if absent\n  user.update({'active': False})        # merge another dict in place\n\nDict unpacking (**) merges dicts into a new one without mutating either source:\n\n  merged = {**defaults, **overrides}\n\nCommon pattern — grouping items by a key:\n\n  groups = {}\n  for item in items:\n      groups.setdefault(item['team'], []).append(item)\n\nThink of a dict as a filing cabinet: each drawer has a unique label (key) and holds one document (value). You open a drawer by its label in constant time — you never search drawer-by-drawer.",
     "why": "Dicts are the backbone of Python data handling — JSON payloads are dicts, FastAPI response models serialize to dicts, config files parse into dicts, and ORM row objects expose dict-like access. Choosing .get() over direct access prevents crashes on optional fields, and understanding view objects avoids wasteful copies in hot loops.",

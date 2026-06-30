@@ -10,14 +10,39 @@
     "estimated_minutes": 25,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["group-by", "aggregate-functions"],
+    "prerequisites": [
+      "group-by",
+      "aggregate-functions"
+    ],
     "unlocks": [],
-    "project_usage": ["cross-tab reports", "analytics dashboards", "pivot-style summaries"]
+    "project_usage": [
+      "cross-tab reports",
+      "analytics dashboards",
+      "pivot-style summaries"
+    ]
   },
+  "glossary": [
+    {
+      "term": "combination",
+      "definition": "A specific pairing or grouping of different values across multiple columns, like a unique country and status together."
+    },
+    {
+      "term": "dimension",
+      "definition": "A category or attribute used to organize and analyze data, like time, location, or product type."
+    },
+    {
+      "term": "summarisation",
+      "definition": "The process of condensing a large amount of detailed data into a shorter, aggregated form."
+    }
+  ],
   "overview": {
     "what": "When you GROUP BY two or more columns, the database creates one group for each unique COMBINATION of values across those columns. A single-column GROUP BY country gives one row per country; adding a second column, e.g. GROUP BY country, status, gives one row per (country, status) pair.\n\nAgainst the shared dataset:\n\n  SELECT c.country, o.status, COUNT(*) AS n\n  FROM customers c\n  JOIN orders o ON o.customer_id = c.id\n  GROUP BY c.country, o.status\n  ORDER BY c.country, o.status;\n\nThis produces one row for each (country, status) combination that exists in the data. US has both 'paid' and 'pending' orders, so US gets two rows.\n\nThink of multi-column grouping as creating a grid: each axis is a grouping column, each cell that has data becomes a result row.",
     "why": "Real-world reports almost always need more than one dimension — revenue by country AND year, count by department AND status. Multi-column grouping is how you produce these cross-tabulated summaries.",
-    "where_used": ["cross-tab and pivot reports", "multi-dimensional analytics", "breakdown-by dashboards"]
+    "where_used": [
+      "cross-tab and pivot reports",
+      "multi-dimensional analytics",
+      "breakdown-by dashboards"
+    ]
   },
   "why_learning_this": [
     "Building any report with two or more dimensions (e.g. sales by country and product category) requires multi-column GROUP BY",
@@ -67,7 +92,14 @@
   ],
   "query_walkthrough": {
     "query": "SELECT c.country, o.status, COUNT(*) AS n\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE c.country IS NOT NULL\nGROUP BY c.country, o.status\nORDER BY c.country, o.status;",
-    "flow_stages": ["from", "join", "where", "group_by", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "join",
+      "where",
+      "group_by",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch how 7 joined rows (after excluding Emma's NULL country) collapse into 5 groups when grouped by (country, status) — US splits into two rows because it has both paid and pending orders."
   },

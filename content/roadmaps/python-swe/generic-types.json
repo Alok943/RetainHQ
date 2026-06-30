@@ -9,14 +9,35 @@
     "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["type-hints-basic", "optional-union-types"],
-    "unlocks": ["typevar-generic-functions"],
-    "project_usage": ["FastAPI", "SQLAlchemy relationships"]
+    "prerequisites": [
+      "type-hints-basic",
+      "optional-union-types"
+    ],
+    "unlocks": [
+      "typevar-generic-functions"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "SQLAlchemy relationships"
+    ]
   },
+  "glossary": [
+    {
+      "term": "static type checkers",
+      "definition": "Tools that analyze your code without running it to find potential errors related to data types."
+    },
+    {
+      "term": "deprecated",
+      "definition": "A feature or practice that is no longer recommended and may be removed in future versions."
+    }
+  ],
   "overview": {
     "what": "Generic types allow you to specify the *contents* of a container type. Instead of just saying a variable is a `list`, you say it is a `list[str]`. For dictionaries, you specify both key and value types: `dict[str, int]`. In older Python (<3.9), you had to import `List` and `Dict` from the `typing` module, but modern Python allows using the built-in lowercase types directly.",
     "why": "A bare `list` or `dict` annotation doesn't tell the IDE or type checker what methods are safe to call on the items inside the container. Generics provide that inner visibility.",
-    "where_used": ["Defining nested JSON payloads in APIs", "ORM query results (e.g. list of models)"]
+    "where_used": [
+      "Defining nested JSON payloads in APIs",
+      "ORM query results (e.g. list of models)"
+    ]
   },
   "why_learning_this": [
     "Enabling autocomplete for elements inside loops.",

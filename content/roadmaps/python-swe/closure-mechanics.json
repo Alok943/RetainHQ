@@ -19,6 +19,16 @@
       "Django"
     ]
   },
+  "glossary": [
+    {
+      "term": "cell objects",
+      "definition": "Internal structures Python uses to store variables that are needed by a nested function."
+    },
+    {
+      "term": "pointer",
+      "definition": "A reference that points to the location of a value in memory, rather than holding the value itself."
+    }
+  ],
   "overview": {
     "what": "Closures in Python are implemented using cell objects. When a nested function references a variable from its enclosing scope, Python creates a 'cell' to store that variable. The inner function's `__closure__` attribute is a tuple of these cell objects. Each cell acts as an indirect pointer to the value. This is the mental model: 'variables are labels, objects are boxes, and a closure cell is a special box that holds another label'.",
     "why": "Understanding how closures hold references rather than values explains why late-binding closures inside loops behave unexpectedly, and how the `nonlocal` keyword can mutate state across function calls.",

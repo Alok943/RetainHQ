@@ -22,6 +22,16 @@
       "SDK error hierarchies"
     ]
   },
+  "glossary": [
+    {
+      "term": "inheriting",
+      "definition": "A way for a new class to take on the properties and behaviors of an existing class."
+    },
+    {
+      "term": "traceback",
+      "definition": "A detailed report showing the sequence of function calls that led to an error in your code."
+    }
+  ],
   "overview": {
     "what": "Custom exceptions are your own error classes created by inheriting from Python's built-in `Exception` class. By convention, their names end in `Error` (e.g. `UserNotFoundError`). You can add custom attributes to them, such as `status_code` or `user_id`, allowing the exception to carry structured data about the failure up to the caller. A common professional pattern is to create one base exception for your application (`class MyAppError(Exception): pass`), and have all specific errors inherit from it.",
     "why": "Built-in exceptions like `ValueError` are too generic. If your service catches a `ValueError`, did it happen because a user provided bad input, or because a database configuration was malformed? Custom exceptions create a domain-specific vocabulary. By raising `InsufficientFundsError`, the caller can catch EXACTLY that error and trigger a specific UI flow, without accidentally catching unrelated standard library errors.",

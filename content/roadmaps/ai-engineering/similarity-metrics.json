@@ -21,12 +21,26 @@
       "RAG system design"
     ]
   },
+  "glossary": [
+    {
+      "term": "Cosine Similarity",
+      "definition": "A mathematical formula that checks if two pieces of text mean the same thing by seeing if their vectors point in the same direction."
+    },
+    {
+      "term": "Euclidean Distance",
+      "definition": "A method that measures the physical straight-line gap between two points in space to see how different they are."
+    },
+    {
+      "term": "Dot Product",
+      "definition": "A very fast mathematical shortcut that databases use to compare vectors, which works perfectly if all the vectors are the same length."
+    }
+  ],
   "hook": {
     "scenario": "Your embedding model turns 'dog' and 'puppy' into two arrays of 1,536 floats. How does the vector database actually calculate that they mean the same thing?",
     "question": "When everything is just numbers, what is the mathematical definition of 'semantic similarity'?"
   },
   "mental_model": {
-    "intuition": "Similarity is just geometry\u2014measuring how close two points are, or if two arrows point in the exact same direction.",
+    "intuition": "Similarity is just geometry—measuring how close two points are, or if two arrows point in the exact same direction.",
     "description": "Once text becomes a vector, comparing meaning means measuring distance or angle. Cosine similarity checks if two vectors point in the same direction, ignoring how 'long' they are. Euclidean distance measures the physical gap between them. You don't need to memorize the formulas, but you must know which one your model and database are using."
   },
   "sections": [
@@ -52,7 +66,7 @@
     },
     {
       "body": "Most modern models (like OpenAI's text-embedding-3) output normalized vectors by default. Because length is fixed at 1, Cosine, Euclidean, and Dot Product will all perfectly rank your search results in the exact same order. You just configure your database to use whichever is fastest (usually Dot Product).",
-      "recap": "Pipeline recap: Text \u2192 Embed \u2192 Score (Similarity Metric) \u2192 Retrieve."
+      "recap": "Pipeline recap: Text → Embed → Score (Similarity Metric) → Retrieve."
     }
   ],
   "code_snippets": [

@@ -25,9 +25,19 @@
       "config parsing"
     ]
   },
+  "glossary": [
+    {
+      "term": "iterable",
+      "definition": "Any collection or data structure in Python that you can loop through one item at a time, like a list or a string."
+    },
+    {
+      "term": "idiomatic",
+      "definition": "Writing code in a way that is natural, concise, and follows the widely accepted best practices of the programming language."
+    }
+  ],
   "overview": {
-    "what": "Python has two loop forms. A for loop iterates over any iterable \u2014 a list, string, range, dict, or file \u2014 consuming it item by item:\n\n  for record in db_results:\n      process(record)\n\nA while loop runs as long as its condition is truthy:\n\n  retries = 0\n  while retries < 3:\n      retries += 1\n\nThree built-ins that make for loops more powerful in practice: range(n) produces integers 0..n-1 for index-counting; enumerate(items) yields (index, value) pairs so you don't need a separate counter; dict.items() yields (key, value) pairs for iterating over every entry in a dict. Think of for as 'do this once per item in the collection' and while as 'keep going until a condition flips'.",
-    "why": "Loops are the mechanism behind every batch operation in real backends \u2014 processing rows, retrying HTTP requests, building response payloads from multiple sources. Knowing enumerate() and dict.items() eliminates the need for error-prone manual index management.",
+    "what": "Python has two loop forms. A for loop iterates over any iterable — a list, string, range, dict, or file — consuming it item by item:\n\n  for record in db_results:\n      process(record)\n\nA while loop runs as long as its condition is truthy:\n\n  retries = 0\n  while retries < 3:\n      retries += 1\n\nThree built-ins that make for loops more powerful in practice: range(n) produces integers 0..n-1 for index-counting; enumerate(items) yields (index, value) pairs so you don't need a separate counter; dict.items() yields (key, value) pairs for iterating over every entry in a dict. Think of for as 'do this once per item in the collection' and while as 'keep going until a condition flips'.",
+    "why": "Loops are the mechanism behind every batch operation in real backends — processing rows, retrying HTTP requests, building response payloads from multiple sources. Knowing enumerate() and dict.items() eliminates the need for error-prone manual index management.",
     "where_used": [
       "FastAPI batch endpoint handlers",
       "ETL pipelines",
@@ -84,7 +94,7 @@
   ],
   "code_walkthrough": {
     "code": "config = {'host': 'localhost', 'port': 5432, 'db': 'main'}\nfor key, value in config.items():\n    print(f'{key}={value}')",
-    "focus": "config.items() yields each key-value pair as a tuple; the for loop unpacks it into key and value \u2014 no index variable needed."
+    "focus": "config.items() yields each key-value pair as a tuple; the for loop unpacks it into key and value — no index variable needed."
   },
   "challenge": {
     "title": "Retry loop with backoff counter",

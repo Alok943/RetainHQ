@@ -9,9 +9,27 @@
     "estimated_minutes": 20,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["string-traversal"],
-    "unlocks": ["anagrams"]
+    "prerequisites": [
+      "string-traversal"
+    ],
+    "unlocks": [
+      "anagrams"
+    ]
   },
+  "glossary": [
+    {
+      "term": "L1 cache line",
+      "definition": "A very small, ultra-fast memory storage unit directly inside the computer processor."
+    },
+    {
+      "term": "direct-address table",
+      "definition": "An array where each possible key corresponds to exactly one specific index slot."
+    },
+    {
+      "term": "dynamic resizing",
+      "definition": "Automatically growing or shrinking a data structure when it gets too full or empty."
+    }
+  ],
   "hook": {
     "scenario": "You need to count character frequencies for ASCII text, but using a generic Hash Map creates thousands of wrapper objects and incurs hash-computation overhead.",
     "question": "How can you count frequencies using zero hashing math and ensuring perfect cache locality?"
@@ -28,7 +46,14 @@
   },
   "viz": {
     "generator": "frequency-arrays",
-    "default_input": ["b", "a", "n", "a", "n", "a"],
+    "default_input": [
+      "b",
+      "a",
+      "n",
+      "a",
+      "n",
+      "a"
+    ],
     "input_mode": "string",
     "invariants": {
       "inv-tally": "count[c] always holds how many times character c has appeared so far.",
@@ -37,9 +62,18 @@
   },
   "explanation": "To build a frequency array for lowercase letters, we initialize an array of size 26 with zeros. \n\nWhen we process the character 'c', we compute its index relative to 'a'. In ASCII, 'a' is 97 and 'c' is 99. `99 - 97 = 2`. We immediately increment `array[2]`.\n\nThis completely bypasses hashing. There are no hash functions, no collision handling, and no dynamic resizing. The array stays exactly size 26 regardless of whether the string is 5 characters or 5 billion characters.\n\nFurthermore, an array of 26 integers requires only 104 bytes of memory, fitting perfectly into a modern CPU's L1 cache line. This guarantees zero latency during processing, making it orders of magnitude faster than a Hash Map in low-level languages.",
   "key_points": [
-    { "title": "O(N) Time", "detail": "We process the string in a single linear pass." },
-    { "title": "O(1) Space", "detail": "The array is fixed at size 26 or 256. It never grows." },
-    { "title": "Cache Locality", "detail": "Contiguous arrays are prefetched by the CPU, making this vastly faster than navigating the scattered memory of a Hash Map." }
+    {
+      "title": "O(N) Time",
+      "detail": "We process the string in a single linear pass."
+    },
+    {
+      "title": "O(1) Space",
+      "detail": "The array is fixed at size 26 or 256. It never grows."
+    },
+    {
+      "title": "Cache Locality",
+      "detail": "Contiguous arrays are prefetched by the CPU, making this vastly faster than navigating the scattered memory of a Hash Map."
+    }
   ],
   "pattern": {
     "name": "Direct Addressing / Frequency Array",
@@ -53,29 +87,76 @@
     "You are writing a giant switch statement with 26 cases to count characters."
   ],
   "engineering_examples": [
-    { "title": "Data Compression", "problem": "Building a Huffman Tree requires knowing the exact byte frequencies of a 100GB file.", "why_this_algorithm": "A 256-element frequency array tracks the exact count of every possible byte with zero memory overhead, running at maximum disk I/O speed." },
-    { "title": "Cryptography", "problem": "Breaking a substitution cipher requires analyzing the distribution of letters.", "why_this_algorithm": "Frequency arrays map the encrypted text into a histogram that can be matched against standard English letter distributions." }
+    {
+      "title": "Data Compression",
+      "problem": "Building a Huffman Tree requires knowing the exact byte frequencies of a 100GB file.",
+      "why_this_algorithm": "A 256-element frequency array tracks the exact count of every possible byte with zero memory overhead, running at maximum disk I/O speed."
+    },
+    {
+      "title": "Cryptography",
+      "problem": "Breaking a substitution cipher requires analyzing the distribution of letters.",
+      "why_this_algorithm": "Frequency arrays map the encrypted text into a histogram that can be matched against standard English letter distributions."
+    }
   ],
   "when_not_to_use": [
-    { "scenario": "Processing arbitrary Unicode strings", "reason": "Unicode has over 1 million characters. Allocating an array of 1 million integers for a string that only contains 5 distinct characters is a massive waste of memory. Use a Hash Map for sparse distributions." }
+    {
+      "scenario": "Processing arbitrary Unicode strings",
+      "reason": "Unicode has over 1 million characters. Allocating an array of 1 million integers for a string that only contains 5 distinct characters is a massive waste of memory. Use a Hash Map for sparse distributions."
+    }
   ],
   "common_mistakes": [
-    { "title": "Forgetting the offset subtraction", "explanation": "If you try to execute `array[char]`, high-level languages will throw a type error because the index must be an integer. You must use ASCII values: `int index = char - 'a';`." },
-    { "title": "Assuming all alphabets are 26 characters", "explanation": "If the problem allows uppercase and lowercase, the offset math gets complicated. It's often safer to allocate an array of size 128 (standard ASCII) and just use the raw ASCII value `array[char]` without subtracting 'a'." }
+    {
+      "title": "Forgetting the offset subtraction",
+      "explanation": "If you try to execute `array[char]`, high-level languages will throw a type error because the index must be an integer. You must use ASCII values: `int index = char - 'a';`."
+    },
+    {
+      "title": "Assuming all alphabets are 26 characters",
+      "explanation": "If the problem allows uppercase and lowercase, the offset math gets complicated. It's often safer to allocate an array of size 128 (standard ASCII) and just use the raw ASCII value `array[char]` without subtracting 'a'."
+    }
   ],
   "recall_questions": [
-    { "q": "Why is a frequency array faster than a Hash Map for counting English letters?", "answer": "It avoids hash function computation, object allocation, and collision resolution, and it maximizes CPU cache locality.", "tier": "tier1" },
-    { "q": "How do you calculate the array index for a lowercase character 'x'?", "answer": "Subtract the ASCII value of 'a' from the ASCII value of the character: `ord('x') - ord('a')`.", "tier": "tier1" },
-    { "q": "Why shouldn't you use a frequency array for full Unicode text?", "answer": "Unicode has over 1 million characters. The data distribution is too sparse, and a 1-million-element array wastes immense memory.", "tier": "tier2" }
+    {
+      "q": "Why is a frequency array faster than a Hash Map for counting English letters?",
+      "answer": "It avoids hash function computation, object allocation, and collision resolution, and it maximizes CPU cache locality.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you calculate the array index for a lowercase character 'x'?",
+      "answer": "Subtract the ASCII value of 'a' from the ASCII value of the character: `ord('x') - ord('a')`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why shouldn't you use a frequency array for full Unicode text?",
+      "answer": "Unicode has over 1 million characters. The data distribution is too sparse, and a 1-million-element array wastes immense memory.",
+      "tier": "tier2"
+    }
   ],
   "oa_questions": [
-    { "question": "Given two strings restricted to lowercase letters, determine if they are anagrams.", "company": "SDE interview", "answer": "Initialize an array of size 26. Iterate through both strings simultaneously: increment the array for string A's character, and decrement for string B's character. If the array is all zeros at the end, they are anagrams.", "approach": "Frequency array direct addressing." },
-    { "question": "Find the first non-repeating character in a string.", "company": "SDE interview", "answer": "Do a first pass building a frequency array. Do a second pass over the string checking the frequency array. Return the first character with a count of 1.", "approach": "Frequency array with 2 passes." }
+    {
+      "question": "Given two strings restricted to lowercase letters, determine if they are anagrams.",
+      "company": "SDE interview",
+      "answer": "Initialize an array of size 26. Iterate through both strings simultaneously: increment the array for string A's character, and decrement for string B's character. If the array is all zeros at the end, they are anagrams.",
+      "approach": "Frequency array direct addressing."
+    },
+    {
+      "question": "Find the first non-repeating character in a string.",
+      "company": "SDE interview",
+      "answer": "Do a first pass building a frequency array. Do a second pass over the string checking the frequency array. Return the first character with a count of 1.",
+      "approach": "Frequency array with 2 passes."
+    }
   ],
   "practice": [
-    { "title": "Find All Anagrams in a String", "url": "https://leetcode.com/problems/find-all-anagrams-in-a-string/", "difficulty": "medium", "why": "Combines a sliding window with frequency arrays perfectly." }
+    {
+      "title": "Find All Anagrams in a String",
+      "url": "https://leetcode.com/problems/find-all-anagrams-in-a-string/",
+      "difficulty": "medium",
+      "why": "Combines a sliding window with frequency arrays perfectly."
+    }
   ],
-  "related": ["string-traversal", "frequency-counting"],
+  "related": [
+    "string-traversal",
+    "frequency-counting"
+  ],
   "interesting_facts": [
     "Counting Sort algorithm uses this exact logic: it creates a frequency array of the elements, and then rebuilds the sorted array directly from the counts in O(N) time."
   ],

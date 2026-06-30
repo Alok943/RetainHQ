@@ -20,6 +20,20 @@
       "Backend Engineering"
     ]
   },
+  "glossary": [
+    {
+      "term": "Transport Layer",
+      "definition": "The specific section of network communication responsible for making sure data successfully makes the trip from an app on one computer to an app on another."
+    },
+    {
+      "term": "Transmission Control Protocol (TCP)",
+      "definition": "A highly reliable, careful networking method that tracks every single piece of data to ensure absolutely nothing gets lost in transit."
+    },
+    {
+      "term": "User Datagram Protocol (UDP)",
+      "definition": "A fast, lightweight networking method that fires data at the destination as quickly as possible without checking if it actually arrived safely."
+    }
+  ],
   "hook": {
     "scenario": "You're watching a live stream of a football match. Suddenly the screen glitches for a second, but then resumes perfectly. Why didn't the video player stop and wait to recover the lost milliseconds? Because live video uses a different set of rules than downloading a file."
   },
@@ -27,7 +41,7 @@
     "intuition": "TCP is a registered delivery service with read receipts. UDP is tossing postcards into a mailbox.",
     "description": "TCP ensures every single packet arrives exactly in the order it was sent, resending anything lost. UDP just fires packets at the destination as fast as possible and hopes they make it. One prioritizes perfect accuracy; the other prioritizes raw speed."
   },
-  "explanation": "At the Transport Layer of the OSI model, data needs to travel from one application to another. The network beneath is inherently unreliable\u2014routers drop packets, cables get unplugged, and congestion delays traffic. The Transport Layer's job is to decide how to handle this chaos, and it offers two primary protocols for the job: Transmission Control Protocol (TCP) and User Datagram Protocol (UDP).\n\nTCP is a connection-oriented protocol. Before sending a single byte of data, TCP establishes a formal connection between the sender and receiver (the 'handshake'). Once connected, TCP numbers every packet, tracks what gets delivered, and requests retransmission for anything that goes missing. It also guarantees that data is handed to the receiving application in the exact order it was sent, reassembling out-of-order packets along the way. This makes TCP highly reliable but relatively slow, as the constant bookkeeping and retransmissions introduce overhead and latency.\n\nUDP, on the other hand, is a connectionless protocol. It skips the handshake entirely and simply starts blasting packets (datagrams) toward the target IP address. UDP does not track whether packets arrive, does not care if they arrive out of order, and will never automatically retransmit a lost packet. Without the overhead of connections, ordering, or read receipts, UDP is incredibly lightweight and blazing fast. The tradeoff, of course, is that the application must be tolerant of missing data or handle reliability itself.\n\nHow do you choose between them? The decision comes down to what the application values more: perfect accuracy or low latency. If you are transferring a file, loading a web page, or sending an email, a single missing byte corrupts the whole payload. These applications strictly require TCP. Conversely, if you are on a Zoom call, playing a fast-paced multiplayer game, or streaming live video, receiving slightly outdated data late is useless. You'd rather drop a few frames and keep the real-time flow going, which makes UDP the obvious choice.",
+  "explanation": "At the Transport Layer of the OSI model, data needs to travel from one application to another. The network beneath is inherently unreliable—routers drop packets, cables get unplugged, and congestion delays traffic. The Transport Layer's job is to decide how to handle this chaos, and it offers two primary protocols for the job: Transmission Control Protocol (TCP) and User Datagram Protocol (UDP).\n\nTCP is a connection-oriented protocol. Before sending a single byte of data, TCP establishes a formal connection between the sender and receiver (the 'handshake'). Once connected, TCP numbers every packet, tracks what gets delivered, and requests retransmission for anything that goes missing. It also guarantees that data is handed to the receiving application in the exact order it was sent, reassembling out-of-order packets along the way. This makes TCP highly reliable but relatively slow, as the constant bookkeeping and retransmissions introduce overhead and latency.\n\nUDP, on the other hand, is a connectionless protocol. It skips the handshake entirely and simply starts blasting packets (datagrams) toward the target IP address. UDP does not track whether packets arrive, does not care if they arrive out of order, and will never automatically retransmit a lost packet. Without the overhead of connections, ordering, or read receipts, UDP is incredibly lightweight and blazing fast. The tradeoff, of course, is that the application must be tolerant of missing data or handle reliability itself.\n\nHow do you choose between them? The decision comes down to what the application values more: perfect accuracy or low latency. If you are transferring a file, loading a web page, or sending an email, a single missing byte corrupts the whole payload. These applications strictly require TCP. Conversely, if you are on a Zoom call, playing a fast-paced multiplayer game, or streaming live video, receiving slightly outdated data late is useless. You'd rather drop a few frames and keep the real-time flow going, which makes UDP the obvious choice.",
   "key_points": [
     {
       "title": "Connection State",

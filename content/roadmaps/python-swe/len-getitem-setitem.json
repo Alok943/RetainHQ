@@ -25,6 +25,16 @@
       "FastAPI configurations"
     ]
   },
+  "glossary": [
+    {
+      "term": "dunder",
+      "definition": "A special built-in method in Python that has double underscores before and after its name."
+    },
+    {
+      "term": "Pythonic",
+      "definition": "Writing code in a way that is natural, concise, and follows the best practices of the Python programming language."
+    }
+  ],
   "overview": {
     "what": "In Python, using square brackets like `obj[key]` and calling `len(obj)` do not have special compiler-level behavior for custom classes. Instead, they are routed directly to specific 'dunder' (double underscore) methods on the object: `__getitem__(self, key)`, `__setitem__(self, key, value)`, and `__len__(self)`. For example, `my_list[0]` internally calls `my_list.__getitem__(0)`. Any custom class that implements these methods will seamlessly behave like a built-in list or dictionary. Analogy: Dunder methods are like standardized electrical outlets in a house. You don't need to know how the electricity is generated inside the appliance; as long as the appliance has the right plug (implements the right dunder method), you can plug it into the wall (use standard Python syntax like `len()` or `[]`).",
     "why": "Implementing these methods allows custom objects to integrate natively with Python's built-in syntax. This makes your code more intuitive and 'Pythonic' by relying on standard operators instead of custom methods like `obj.get_value(key)`.",

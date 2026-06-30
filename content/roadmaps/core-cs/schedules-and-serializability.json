@@ -9,10 +9,31 @@
     "estimated_minutes": 15,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["acid-properties"],
-    "unlocks": ["concurrency-control-2pl"],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "prerequisites": [
+      "acid-properties"
+    ],
+    "unlocks": [
+      "concurrency-control-2pl"
+    ],
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "schedule",
+      "definition": "The specific chronological order in which a database decides to execute the individual steps of multiple transactions happening at the same time."
+    },
+    {
+      "term": "serializable",
+      "definition": "A guarantee that even though multiple database transactions are running simultaneously and overlapping, the final result is perfectly correct as if they had run one by one."
+    },
+    {
+      "term": "conflicting operations",
+      "definition": "Two database actions trying to access the exact same piece of data at the same time, where at least one of them is trying to change it."
+    }
+  ],
   "hook": {
     "scenario": "Two bank tellers both read an account balance of $1000 at the same time. Teller A adds a $200 deposit and writes $1200. Teller B, working from the $1000 she read earlier, subtracts $300 and writes $700. The final balance is $700 — $200 vanished.",
     "question": "How does a database decide which interleaving of operations is 'safe' — and what exactly does 'safe' mean formally?"

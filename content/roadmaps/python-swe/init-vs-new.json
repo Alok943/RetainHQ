@@ -22,6 +22,16 @@
       "Pydantic"
     ]
   },
+  "glossary": [
+    {
+      "term": "Singleton",
+      "definition": "A design pattern that ensures a class only ever has one single instance created, no matter how many times you try to instantiate it."
+    },
+    {
+      "term": "flyweight",
+      "definition": "A design pattern that minimizes memory usage by sharing as much data as possible with other similar objects."
+    }
+  ],
   "overview": {
     "what": "When creating an object in Python, `__new__` is called first to allocate memory and return an uninitialized instance. `__init__` is then called on that instance to initialize its state. Most developers only use `__init__`. You only need `__new__` when you need to control the creation of a new instance (like returning an existing one for a Singleton) or subclassing immutable types like `tuple` or `str`. It is like building a house: `__new__` lays the foundation and frames the structure, while `__init__` paints the walls and moves the furniture in.",
     "why": "Understanding the two-step instantiation process allows you to implement advanced patterns like Singletons, flyweight objects, and custom metaclasses.",

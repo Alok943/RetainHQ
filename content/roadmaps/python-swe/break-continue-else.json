@@ -22,13 +22,23 @@
       "validation pipelines"
     ]
   },
+  "glossary": [
+    {
+      "term": "iteration",
+      "definition": "One single cycle of repeating a set of instructions, like going through one item in a list."
+    },
+    {
+      "term": "boolean flag",
+      "definition": "A variable that holds either True or False, often used to track if a specific condition was met."
+    }
+  ],
   "overview": {
-    "what": "Three keywords that control loop flow:\n\nbreak exits the loop immediately \u2014 the remaining items are never visited:\n\n  for user in users:\n      if user['role'] == 'admin':\n          admin = user\n          break\n\ncontinue skips the rest of the current iteration and jumps to the next item:\n\n  for record in records:\n      if record['status'] == 'deleted':\n          continue\n      process(record)\n\nThe else clause on a loop runs ONLY when the loop completes without hitting a break. It does NOT run if break was used:\n\n  for route in routes:\n      if route == '/admin':\n          print('found')\n          break\n  else:\n      print('/admin not registered')\n\nThe loop else is the correct way to express 'search completed with no match found' \u2014 no flag variable required.",
+    "what": "Three keywords that control loop flow:\n\nbreak exits the loop immediately — the remaining items are never visited:\n\n  for user in users:\n      if user['role'] == 'admin':\n          admin = user\n          break\n\ncontinue skips the rest of the current iteration and jumps to the next item:\n\n  for record in records:\n      if record['status'] == 'deleted':\n          continue\n      process(record)\n\nThe else clause on a loop runs ONLY when the loop completes without hitting a break. It does NOT run if break was used:\n\n  for route in routes:\n      if route == '/admin':\n          print('found')\n          break\n  else:\n      print('/admin not registered')\n\nThe loop else is the correct way to express 'search completed with no match found' — no flag variable required.",
     "why": "Without break you must add a boolean flag to track whether a search succeeded. Without continue you must nest all your processing inside an if block. The loop else pattern eliminates an entire class of 'found it / not found' flag variables.",
     "where_used": [
       "Searching for a matching config entry",
       "Skipping soft-deleted records before processing",
-      "Validating a list of permissions \u2014 stop on first failure or confirm all passed"
+      "Validating a list of permissions — stop on first failure or confirm all passed"
     ]
   },
   "why_learning_this": [
@@ -38,7 +48,7 @@
   "common_mistakes": [
     {
       "title": "Thinking loop else means 'if the loop body never ran'",
-      "explanation": "The else clause runs when no break occurred \u2014 even if the loop executed zero iterations. It is about break, not about iteration count."
+      "explanation": "The else clause runs when no break occurred — even if the loop executed zero iterations. It is about break, not about iteration count."
     },
     {
       "title": "Using break in a nested loop expecting it to exit the outer loop",
@@ -62,12 +72,12 @@
     },
     {
       "q": "When does a loop's else clause run?",
-      "answer": "Only when the loop completes without hitting a break \u2014 not when break was used to exit early.",
+      "answer": "Only when the loop completes without hitting a break — not when break was used to exit early.",
       "tier": "tier2"
     },
     {
       "q": "What problem does the loop else clause solve cleanly?",
-      "answer": "The 'search completed with no match found' pattern \u2014 it eliminates the need for a separate boolean flag variable.",
+      "answer": "The 'search completed with no match found' pattern — it eliminates the need for a separate boolean flag variable.",
       "tier": "tier2"
     }
   ],
@@ -97,7 +107,7 @@
   ],
   "code_walkthrough": {
     "code": "routes = ['/health', '/users', '/items']\nfor route in routes:\n    if route == '/admin':\n        print('admin route found')\n        break\nelse:\n    print('/admin not registered')",
-    "focus": "The loop checks all three routes without hitting break, so the else clause runs and prints '/admin not registered' \u2014 no flag variable needed."
+    "focus": "The loop checks all three routes without hitting break, so the else clause runs and prints '/admin not registered' — no flag variable needed."
   },
   "challenge": {
     "title": "Permission validator",

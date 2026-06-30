@@ -21,6 +21,20 @@
       "user profile saves"
     ]
   },
+  "glossary": [
+    {
+      "term": "idempotent",
+      "definition": "An operation that produces the same result no matter how many times it is run."
+    },
+    {
+      "term": "vulnerable",
+      "definition": "Exposed to the possibility of being attacked or harmed; in code, a weakness that can cause bugs or errors."
+    },
+    {
+      "term": "constitutes",
+      "definition": "To make up, form, or be considered as something, like defining what counts as a duplicate record."
+    }
+  ],
   "overview": {
     "what": "UPSERT is a combination of 'update' and 'insert'. In Postgres, it's written as INSERT ... ON CONFLICT. If a row with the same unique key already exists, instead of throwing an error, the database can either DO NOTHING or DO UPDATE to modify the existing row.",
     "why": "It safely handles race conditions where multiple requests might try to create the same record simultaneously, and it simplifies application logic by merging check-and-create into a single database operation.",

@@ -9,14 +9,36 @@
     "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["enter-exit-dunders", "decorators", "yield-generators"],
+    "prerequisites": [
+      "enter-exit-dunders",
+      "decorators",
+      "yield-generators"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI Dependencies", "Testing setups", "Temporary configurations"]
+    "project_usage": [
+      "FastAPI Dependencies",
+      "Testing setups",
+      "Temporary configurations"
+    ]
   },
+  "glossary": [
+    {
+      "term": "generator function",
+      "definition": "A special function that can pause its execution and yield multiple values over time."
+    },
+    {
+      "term": "teardown",
+      "definition": "The process of cleaning up resources, like closing a file or database connection, after they are no longer needed."
+    }
+  ],
   "overview": {
     "what": "The `@contextmanager` decorator from `contextlib` lets you build a context manager using a generator function instead of a class with `__enter__` and `__exit__`. The code before the `yield` statement acts as `__enter__` (setup), the value yielded is bound to the `as` variable, and the code after the `yield` acts as `__exit__` (teardown).",
     "why": "It drastically reduces boilerplate. Instead of writing a full class with dunder methods, you write a single generator function, keeping setup and teardown logic localized in one place.",
-    "where_used": ["FastAPI database sessions", "Patching in unit tests", "Timing execution blocks"]
+    "where_used": [
+      "FastAPI database sessions",
+      "Patching in unit tests",
+      "Timing execution blocks"
+    ]
   },
   "why_learning_this": [
     "Write cleaner, more readable context managers without class overhead.",

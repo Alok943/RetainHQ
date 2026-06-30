@@ -10,14 +10,39 @@
     "estimated_minutes": 15,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["select-from", "where-operators"],
+    "prerequisites": [
+      "select-from",
+      "where-operators"
+    ],
     "unlocks": [],
-    "project_usage": ["dropdown filter values", "unique category lists", "data quality checks"]
+    "project_usage": [
+      "dropdown filter values",
+      "unique category lists",
+      "data quality checks"
+    ]
   },
+  "glossary": [
+    {
+      "term": "duplicate",
+      "definition": "An exact copy of a row or piece of data that appears more than once in the results."
+    },
+    {
+      "term": "overhead",
+      "definition": "The extra work or processing time required by the database system to perform a specific task, like sorting data to find duplicates."
+    },
+    {
+      "term": "unique",
+      "definition": "Being the only one of its kind; a value or row that does not appear anywhere else in the results."
+    }
+  ],
   "overview": {
     "what": "DISTINCT removes duplicate rows from the result set. It operates on the entire selected row — two rows are duplicates only if every column value matches.\n\nIn the logical query flow: FROM → WHERE → SELECT → DISTINCT → ORDER BY. DISTINCT runs after SELECT has picked the columns, comparing complete rows.\n\n  SELECT DISTINCT category\n  FROM products\n  ORDER BY category;\n\nProducts has 6 rows spanning 3 categories. Without DISTINCT you would get 6 rows (Electronics three times, Furniture twice, Stationery once). With DISTINCT, you get 3 rows: Electronics, Furniture, Stationery.\n\nDISTINCT on multiple columns deduplicates based on the combination:\n\n  SELECT DISTINCT country, status\n  FROM customers c\n  JOIN orders o ON o.customer_id = c.id\n  ORDER BY country, status;\n\nThis returns only the unique (country, status) pairs, not unique countries or unique statuses separately.\n\nDISTINCT treats NULLs as equal to each other — if two rows both have NULL in a column, DISTINCT considers them duplicates on that column:\n\n  SELECT DISTINCT country\n  FROM customers\n  ORDER BY country;\n\nReturns 5 rows: AE, JP, MX, UK, US — plus one NULL row for Emma. Even if multiple customers had NULL country, only one NULL row would appear.\n\nMental model: DISTINCT is a row-level deduplication filter that runs after SELECT. It answers 'what unique combinations exist?' — not 'how many of each?' (that's GROUP BY + COUNT).",
     "why": "DISTINCT is essential for extracting the set of unique values — populating a dropdown of countries, listing which categories exist, or checking data quality by finding unexpected duplicates.",
-    "where_used": ["populating filter dropdowns in a UI", "data quality checks for unexpected duplicates", "analytics queries needing unique value lists"]
+    "where_used": [
+      "populating filter dropdowns in a UI",
+      "data quality checks for unexpected duplicates",
+      "analytics queries needing unique value lists"
+    ]
   },
   "why_learning_this": [
     "Building filter dropdowns (unique countries, categories, statuses) requires DISTINCT to avoid showing duplicates to the user",
@@ -72,7 +97,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT DISTINCT category\nFROM products\nORDER BY category;",
-    "flow_stages": ["from", "select", "distinct", "order_by"],
+    "flow_stages": [
+      "from",
+      "select",
+      "distinct",
+      "order_by"
+    ],
     "visualization": "result-table",
     "focus": "Watch DISTINCT collapse 6 product rows into 3 unique category values — the duplicates vanish between SELECT and ORDER BY."
   },

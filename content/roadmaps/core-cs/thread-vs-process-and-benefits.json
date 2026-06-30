@@ -17,6 +17,20 @@
       "os"
     ]
   },
+  "glossary": [
+    {
+      "term": "isolated execution environment",
+      "definition": "A secure, fenced-off area in the computer's memory where a program can run safely without interfering with or crashing other programs."
+    },
+    {
+      "term": "process",
+      "definition": "A heavyweight, independent program running on your computer, complete with its own dedicated memory space and security permissions."
+    },
+    {
+      "term": "file descriptors",
+      "definition": "Digital tracking numbers the operating system gives a program so it can keep track of which specific files or network connections it currently has open."
+    }
+  ],
   "hook": {
     "scenario": "Imagine a factory. The factory itself (the building, the power, the toolbelts) is a process. The individual workers inside doing the actual assembly are the threads."
   },
@@ -24,7 +38,7 @@
     "intuition": "A process is a container of resources. A thread is the active entity executing code inside that container.",
     "description": "If a process is a house with shared plumbing and electricity, threads are the roommates living inside. They share the kitchen and living room (memory, files), but each has their own bedroom (stack, registers) for privacy."
   },
-  "explanation": "To understand modern computing, you must grasp the difference between a process and a thread. A process is an isolated execution environment. It acts as a heavy, protective container that holds memory, file descriptors, and security privileges. Creating a new process is expensive because the operating system must carve out a brand new, isolated chunk of memory and set up complex data structures.\n\nA thread, on the other hand, is the actual unit of execution\u2014the 'worker' that steps through instructions. Every process starts with exactly one thread (the main thread). However, a process can spawn multiple threads. Because these threads live inside the same process container, they inherently share the same memory space, global variables, and open files.\n\nThis shared environment makes threads incredibly lightweight. Creating a thread is much faster than creating a process because the OS doesn't need to allocate new memory blocks or duplicate resources; it only needs to assign a new stack and a set of CPU registers. \n\nConsequently, context switching between threads of the same process is significantly faster than switching between entirely different processes. The OS doesn't have to flush memory caches or swap out virtual memory tables. This efficiency is why modern applications use multithreading to handle thousands of concurrent tasks, like a web server handling thousands of simultaneous user requests within a single process.",
+  "explanation": "To understand modern computing, you must grasp the difference between a process and a thread. A process is an isolated execution environment. It acts as a heavy, protective container that holds memory, file descriptors, and security privileges. Creating a new process is expensive because the operating system must carve out a brand new, isolated chunk of memory and set up complex data structures.\n\nA thread, on the other hand, is the actual unit of execution—the 'worker' that steps through instructions. Every process starts with exactly one thread (the main thread). However, a process can spawn multiple threads. Because these threads live inside the same process container, they inherently share the same memory space, global variables, and open files.\n\nThis shared environment makes threads incredibly lightweight. Creating a thread is much faster than creating a process because the OS doesn't need to allocate new memory blocks or duplicate resources; it only needs to assign a new stack and a set of CPU registers. \n\nConsequently, context switching between threads of the same process is significantly faster than switching between entirely different processes. The OS doesn't have to flush memory caches or swap out virtual memory tables. This efficiency is why modern applications use multithreading to handle thousands of concurrent tasks, like a web server handling thousands of simultaneous user requests within a single process.",
   "key_points": [
     {
       "title": "Resource Isolation",

@@ -19,6 +19,16 @@
       "Pydantic"
     ]
   },
+  "glossary": [
+    {
+      "term": "pre-allocates",
+      "definition": "Reserving memory space in advance for specific data before the program actually asks for it."
+    },
+    {
+      "term": "identity check",
+      "definition": "Comparing two variables to see if they point to the exact same object in the computer's memory."
+    }
+  ],
   "overview": {
     "what": "Python pre-allocates and caches small integers (-5 to 256) and certain strings (like identifiers or short strings without spaces) to save memory and improve performance. This is called 'interning'. When you assign one of these cached values to a variable, Python reuses the existing object in memory rather than creating a new one. Think of it like a library keeping multiple copies of popular books (the interned values) ready at the front desk, while rarely requested books (large numbers or long strings) have to be fetched from the back (created dynamically). For example, `status_code = 200` and `default_status = 200` in a FastAPI route will point to the exact same object in memory, but `timeout = 1000` and `max_retries = 1000` might not.",
     "why": "It optimizes memory usage and allows Python to use fast pointer comparison (identity check via `is`) instead of slower character-by-character comparison (equality check via `==`) for common values like dictionary keys or HTTP status codes.",

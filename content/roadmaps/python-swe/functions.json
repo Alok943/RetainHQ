@@ -26,6 +26,24 @@
       "any Python module"
     ]
   },
+  "glossary": [
+    {
+      "term": "parameters",
+      "definition": "The placeholder names in a function definition that will receive actual values when called."
+    },
+    {
+      "term": "arguments",
+      "definition": "The actual values passed to a function when it is called."
+    },
+    {
+      "term": "tuple",
+      "definition": "An ordered, unchanging list of values."
+    },
+    {
+      "term": "built-in",
+      "definition": "A standard Python function or variable that comes out-of-the-box."
+    }
+  ],
   "overview": {
     "what": "def creates a function object and binds it to a name. Parameters are the placeholder names in the definition; arguments are the actual values passed at call time:\n\n  def validate_port(port, min_port=1024):\n      return port >= min_port\n\nreturn exits the function immediately and sends a value back to the caller. A function with no return statement (or a bare return) returns None \u2014 Python does this silently. You can return multiple values by separating them with a comma; Python packs them into a tuple:\n\n  def parse_dsn(dsn):\n      host, port = dsn.rsplit(':', 1)\n      return host, int(port)\n\n  h, p = parse_dsn('localhost:5432')\n\nThink of a function as a named, reusable machine: you feed arguments in, it processes them, and return hands the result back out.",
     "why": "Functions are the primary unit of reuse in Python. Every FastAPI route, Pydantic validator, and utility helper is a function. Understanding return None vs returning a value is critical \u2014 forgetting to return a value is a common source of None-related bugs.",

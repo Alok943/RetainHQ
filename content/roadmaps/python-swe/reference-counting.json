@@ -20,6 +20,16 @@
       "Debugging Memory Leaks"
     ]
   },
+  "glossary": [
+    {
+      "term": "reclaimed",
+      "definition": "The process where a computer takes back memory that is no longer being used by a program so it can be used for something else."
+    },
+    {
+      "term": "circular references",
+      "definition": "When two or more objects hold references to each other, preventing the system from realizing they are no longer needed."
+    }
+  ],
   "overview": {
     "what": "In CPython, every object keeps a count of how many labels (variables, list elements, attributes) point to it. This is called the reference count. When a reference count drops to zero, the object is immediately destroyed and its memory is reclaimed. Think of an object as a balloon and references as strings holding it down. Every time you assign a variable or append it to a list, you tie a new string to the balloon. Every time a variable goes out of scope, you cut a string. When the last string is cut, the balloon flies away.",
     "why": "Understanding reference counting explains when Python cleans up objects, why `__del__` is called (or not called), and how circular references can cause memory leaks.",

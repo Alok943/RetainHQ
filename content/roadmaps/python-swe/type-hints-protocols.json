@@ -9,14 +9,35 @@
     "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["duck-typing", "type-hints-basics"],
+    "prerequisites": [
+      "duck-typing",
+      "type-hints-basics"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Dependency Injection", "Domain-Driven Design"]
+    "project_usage": [
+      "FastAPI",
+      "Dependency Injection",
+      "Domain-Driven Design"
+    ]
   },
+  "glossary": [
+    {
+      "term": "duck typing",
+      "definition": "A programming concept where an object's suitability is determined by its methods and properties rather than its explicit class type."
+    },
+    {
+      "term": "structural subtyping",
+      "definition": "A type system where a variable's type is determined by the methods and properties it has, rather than its explicit class name."
+    }
+  ],
   "overview": {
     "what": "In Python type hints, a Protocol defines a set of methods or attributes that an object must have, without requiring the object to inherit from a base class. It formalizes 'duck typing'. For example, if you define a `Speaker` protocol with a `speak()` method, any class that implements `speak()` is considered a valid `Speaker` by the type checker, even if it doesn't subclass `Speaker`.\n\nThe mental model is 'shape-matching': the type checker verifies if an object's 'shape' (its methods and attributes) matches the Protocol's required shape. It's an analogy to checking if a plug fits a socket—the brand of the plug doesn't matter, only the pin layout.",
     "why": "Protocols allow you to write strongly typed code without coupling classes together through inheritance, leading to cleaner and more flexible designs.",
-    "where_used": ["Dependency Injection", "Abstracting external libraries", "Mocking in tests"]
+    "where_used": [
+      "Dependency Injection",
+      "Abstracting external libraries",
+      "Mocking in tests"
+    ]
   },
   "why_learning_this": [
     "You can define what a function needs from an argument without forcing the caller to inherit from a specific base class.",

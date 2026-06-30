@@ -20,6 +20,20 @@
       "ensuring data consistency"
     ]
   },
+  "glossary": [
+    {
+      "term": "inconsistent",
+      "definition": "A state where data does not match or make sense anymore, like money leaving one account but not arriving in another."
+    },
+    {
+      "term": "destructive",
+      "definition": "Having the potential to cause significant damage or permanent loss of data."
+    },
+    {
+      "term": "aborted",
+      "definition": "A process that is stopped early before it can finish, usually because an error occurred."
+    }
+  ],
   "overview": {
     "what": "A transaction groups multiple SQL statements into a single, all-or-nothing logical unit of work. You start with BEGIN. If all commands succeed, you COMMIT to save them permanently. If something fails, you ROLLBACK to undo all changes made since BEGIN, leaving the database exactly as it was.",
     "why": "Without transactions, a failure halfway through a complex operation (like deducting money from one account but failing to add it to another) leaves the database in an inconsistent, corrupt state.",

@@ -21,8 +21,18 @@
       "SQLAlchemy"
     ]
   },
+  "glossary": [
+    {
+      "term": "evaluating",
+      "definition": "Running a piece of code or calculation to determine its final result or value."
+    },
+    {
+      "term": "sprawl",
+      "definition": "When code becomes messy, spread out, and difficult to manage because too many similar or repetitive methods are used."
+    }
+  ],
   "overview": {
-    "what": "The `@property` decorator transforms a class method so it can be accessed like a normal attribute, evaluating its logic on-the-fly. If you have an `User` object, you can compute `user.full_name` dynamically rather than storing it. You can also define `.setter` and `.deleter` methods under the same property name to intercept assignment (`user.full_name = 'Alice Smith'`) or deletion. The mental model: variables are usually direct labels to objects, but a property is a 'computed label' that secretly runs a function whenever you read, write, or delete it. Analogy: a property is like an automatic sliding door\u2014it looks like a regular wall (an attribute), but approaching it triggers a hidden motor (a function call).",
+    "what": "The `@property` decorator transforms a class method so it can be accessed like a normal attribute, evaluating its logic on-the-fly. If you have an `User` object, you can compute `user.full_name` dynamically rather than storing it. You can also define `.setter` and `.deleter` methods under the same property name to intercept assignment (`user.full_name = 'Alice Smith'`) or deletion. The mental model: variables are usually direct labels to objects, but a property is a 'computed label' that secretly runs a function whenever you read, write, or delete it. Analogy: a property is like an automatic sliding door—it looks like a regular wall (an attribute), but approaching it triggers a hidden motor (a function call).",
     "why": "It allows you to safely change internal implementation without breaking the external API. You can start with a simple attribute, and later add validation or computation without forcing everyone to rewrite `obj.attr` to `obj.get_attr()`.",
     "where_used": [
       "SQLAlchemy models",

@@ -22,8 +22,18 @@
       "caching"
     ]
   },
+  "glossary": [
+    {
+      "term": "cached",
+      "definition": "Storing frequently used data in a temporary, fast-access memory area so it doesn't have to be recreated every time."
+    },
+    {
+      "term": "CPython",
+      "definition": "The standard, original, and most widely used version of the Python programming language, written in C."
+    }
+  ],
   "overview": {
-    "what": "Every Python object has a unique identity \u2014 its location in memory \u2014 which you read with id(). The `is` operator compares identity (are these the same object?), while `==` compares value (do they have equal contents?). Two separate lists with the same items are == but not `is`, because they are distinct objects; only a name assigned from another (c = a) shares identity. Think of id() as a house's street address and == as two houses having identical furniture: the same address is literally the same house, identical furniture is not.",
+    "what": "Every Python object has a unique identity — its location in memory — which you read with id(). The `is` operator compares identity (are these the same object?), while `==` compares value (do they have equal contents?). Two separate lists with the same items are == but not `is`, because they are distinct objects; only a name assigned from another (c = a) shares identity. Think of id() as a house's street address and == as two houses having identical furniture: the same address is literally the same house, identical furniture is not.",
     "why": "Confusing `is` with `==` causes real bugs. The safe rule: use `is` only for None, True, and False, and use `==` for comparing values. Checking values with `is` (e.g. x is 1000) can pass or fail unpredictably because only some objects are cached.",
     "where_used": [
       "None checks in API handlers",
@@ -82,7 +92,7 @@
   },
   "challenge": {
     "title": "A correct None check",
-    "prompt": "Write get_or_default(value, default) that returns default ONLY when value is None \u2014 not when value is 0, '', or an empty list. Use the correct operator, then print three calls to prove 0 and '' are kept.",
+    "prompt": "Write get_or_default(value, default) that returns default ONLY when value is None — not when value is 0, '', or an empty list. Use the correct operator, then print three calls to prove 0 and '' are kept.",
     "solution": "def get_or_default(value, default):\n    return default if value is None else value\n\nprint(get_or_default(None, 'fallback'))\nprint(get_or_default(0, 'fallback'))\nprint(get_or_default('', 'fallback'))"
   },
   "sources": [

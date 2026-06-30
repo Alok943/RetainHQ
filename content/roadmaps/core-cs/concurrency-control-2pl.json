@@ -9,10 +9,29 @@
     "estimated_minutes": 15,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["schedules-and-serializability"],
+    "prerequisites": [
+      "schedules-and-serializability"
+    ],
     "unlocks": [],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Two-Phase Locking",
+      "definition": "A rule that makes a database transaction first gather all the locks it needs (growing phase) before it starts releasing any of them (shrinking phase) to safely handle simultaneous operations."
+    },
+    {
+      "term": "growing phase",
+      "definition": "The first stage of a transaction where it can only ask for new locks on data and is not allowed to let go of any locks it already has."
+    },
+    {
+      "term": "shrinking phase",
+      "definition": "The second stage of a transaction where it can only release the locks it holds and is strictly forbidden from asking for any new ones."
+    }
+  ],
   "hook": {
     "scenario": "Two warehouse workers both want to update the same row of inventory. Without any coordination, both read quantity = 10, both subtract 3, and both write 7 — losing one subtraction entirely.",
     "question": "What rule can every transaction follow independently — without central coordination — that guarantees the schedule is always serializable?"
@@ -24,17 +43,56 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      { "id": "t1", "label": "Transaction T1" },
-      { "id": "lm", "label": "Lock Manager" },
-      { "id": "t2", "label": "Transaction T2" }
+      {
+        "id": "t1",
+        "label": "Transaction T1"
+      },
+      {
+        "id": "lm",
+        "label": "Lock Manager"
+      },
+      {
+        "id": "t2",
+        "label": "Transaction T2"
+      }
     ],
     "steps": [
-      { "from": "t1", "to": "lm", "label": "Request X-lock on row A", "term": "lock acquire (growing phase)" },
-      { "from": "lm", "to": "t1", "label": "X-lock granted", "term": "exclusive lock" },
-      { "from": "t2", "to": "lm", "label": "Request X-lock on row A", "term": "lock request — conflict" },
-      { "from": "lm", "to": "t2", "label": "BLOCKED — lock held by T1", "term": "lock wait" },
-      { "from": "t1", "to": "lm", "label": "Release X-lock on A (shrinking phase starts)", "term": "lock release" },
-      { "from": "lm", "to": "t2", "label": "X-lock granted to T2", "term": "lock acquired" }
+      {
+        "from": "t1",
+        "to": "lm",
+        "label": "Request X-lock on row A",
+        "term": "lock acquire (growing phase)"
+      },
+      {
+        "from": "lm",
+        "to": "t1",
+        "label": "X-lock granted",
+        "term": "exclusive lock"
+      },
+      {
+        "from": "t2",
+        "to": "lm",
+        "label": "Request X-lock on row A",
+        "term": "lock request — conflict"
+      },
+      {
+        "from": "lm",
+        "to": "t2",
+        "label": "BLOCKED — lock held by T1",
+        "term": "lock wait"
+      },
+      {
+        "from": "t1",
+        "to": "lm",
+        "label": "Release X-lock on A (shrinking phase starts)",
+        "term": "lock release"
+      },
+      {
+        "from": "lm",
+        "to": "t2",
+        "label": "X-lock granted to T2",
+        "term": "lock acquired"
+      }
     ]
   },
   "explanation": "Two-Phase Locking (2PL) is the most widely used concurrency control protocol. It imposes one simple rule: every transaction goes through exactly two phases. In the growing phase it may only acquire locks and may never release one. In the shrinking phase it may only release locks and may never acquire a new one. The point of transition — the moment the first lock is released — is called the lock point.\n\nWhy does this rule guarantee conflict-serializability? Because the lock point establishes a total order on transactions. If T1 releases a lock that T2 then acquires, T1's lock point comes before T2's, so T1 must appear before T2 in the equivalent serial order. This means the precedence graph built from all conflicting operations is forced to be acyclic — exactly the condition for conflict-serializability.\n\nTwo lock modes exist. A shared lock (S-lock) is granted to a transaction that wants to read a data item; multiple transactions can hold S-locks on the same item simultaneously. An exclusive lock (X-lock) is granted to a transaction that wants to write; it conflicts with both S-locks and other X-locks. A transaction must upgrade from S to X before writing — and this upgrade can cause deadlocks if two transactions both hold S-locks and both try to upgrade.\n\nBasic 2PL prevents non-serializable interleavings but does NOT prevent cascading rollbacks. If T1 releases a lock, T2 reads that data, and then T1 aborts, T2 has read dirty data and must also abort — and any transaction that read from T2 must abort too. Strict 2PL (S2PL) fixes this: a transaction holds ALL its locks until it commits or aborts, releasing them all at once. This prevents dirty reads but increases blocking. Rigorous 2PL (R2PL) is stricter still: all locks (shared and exclusive) are held until commit. Most real databases (PostgreSQL, MySQL InnoDB) implement Strict or Rigorous 2PL combined with MVCC.\n\nThe key weakness of 2PL is deadlock. Two transactions can each hold a lock the other needs, forming a cycle. Databases detect deadlocks by periodically looking for cycles in the waits-for graph (a graph where T1 → T2 means T1 is waiting for a lock held by T2), then aborting one victim transaction to break the cycle. Alternatively, deadlocks can be prevented by lock ordering (impose a global order on data items and acquire locks in that order) or timeout-based policies.",

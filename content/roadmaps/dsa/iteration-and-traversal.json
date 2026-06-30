@@ -10,13 +10,30 @@
     "estimated_minutes": 25,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["what-is-an-algorithm", "tracing-state-and-invariants"],
+    "prerequisites": [
+      "what-is-an-algorithm",
+      "tracing-state-and-invariants"
+    ],
     "unlocks": [],
     "project_usage": [
       "Garbage collectors in Java/Python use mark-and-sweep graph traversal to identify and free unreachable memory",
       "Browser engines traverse the DOM tree via depth-first search to apply CSS and render UI elements in correct order"
     ]
   },
+  "glossary": [
+    {
+      "term": "dynamically allocated memory",
+      "definition": "Memory space that is requested and assigned while the program is running, not fixed beforehand."
+    },
+    {
+      "term": "topological constraints",
+      "definition": "The specific physical or logical structure that dictates how data is connected (like a line vs a tree)."
+    },
+    {
+      "term": "iterator invalidation exceptions",
+      "definition": "An error that occurs when you try to change a collection while you are in the middle of looping through it."
+    }
+  ],
   "overview": {
     "what": "Iteration is the control-flow mechanism of repeating a code block until a condition is met, agnostic to any data structure. Traversal is the strategic application of iteration (or recursion) to visit every node or element in a specific data structure exactly once, guided by that structure's topology. Every traversal uses iteration as its engine, but not every iteration is a traversal.",
     "why": "Modern applications must process vast datasets stored in non-contiguous, dynamically allocated memory structures — linked lists, trees, graphs — where hardcoded indices fail at runtime. Traversal algorithms provide a principled, structure-aware navigation strategy that ensures complete, non-redundant coverage.",

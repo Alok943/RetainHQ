@@ -10,14 +10,41 @@
     "estimated_minutes": 25,
     "importance": 7,
     "interview_frequency": "high",
-    "prerequisites": ["inner-join"],
-    "unlocks": ["recursive-ctes"],
-    "project_usage": ["org chart queries", "hierarchy navigation", "comparing rows within the same table"]
+    "prerequisites": [
+      "inner-join"
+    ],
+    "unlocks": [
+      "recursive-ctes"
+    ],
+    "project_usage": [
+      "org chart queries",
+      "hierarchy navigation",
+      "comparing rows within the same table"
+    ]
   },
+  "glossary": [
+    {
+      "term": "occurrence",
+      "definition": "A specific instance or time that something appears, like writing the same table name twice in a query."
+    },
+    {
+      "term": "mandatory",
+      "definition": "Required by a rule or law; something that must be done, like using an alias when joining a table to itself."
+    },
+    {
+      "term": "subordinates",
+      "definition": "People or items that are at a lower rank or level in a hierarchy, like employees reporting to a manager."
+    }
+  ],
   "overview": {
     "what": "A self join is a join where a table is joined to ITSELF. You write the same table name twice, giving each occurrence a different alias, then join on a relationship between rows in that table — typically a foreign key that points back to the same table's primary key.\n\nThe classic example is the employees table, where manager_id references another row's id in the same table:\n\n  SELECT e.name AS employee, m.name AS manager\n  FROM employees e\n  INNER JOIN employees m ON e.manager_id = m.id\n  ORDER BY e.name;\n\nThis pairs each employee with their manager. Sara (the CEO, manager_id = NULL) is excluded because INNER JOIN drops unmatched rows — she has no manager to match.\n\nSelf joins are not a special syntax — they use the exact same JOIN you already know. The only difference is both sides of the join reference the same table, so aliases are mandatory to distinguish 'the employee row' from 'the manager row'.\n\nMental model: imagine two COPIES of the same table side by side — one copy represents 'the child row', the other represents 'the parent row'. The ON clause links them.",
     "why": "Hierarchical data lives in a single table (employees → manager, categories → parent category, comments → parent comment). Self joins let you navigate one level of that hierarchy. They also let you compare rows within the same table — e.g., finding employees who earn more than their manager.",
-    "where_used": ["org chart and manager lookups", "threaded comment trees", "category → subcategory navigation", "comparing rows in the same table"]
+    "where_used": [
+      "org chart and manager lookups",
+      "threaded comment trees",
+      "category → subcategory navigation",
+      "comparing rows in the same table"
+    ]
   },
   "why_learning_this": [
     "Hierarchical relationships (employee→manager, category→parent) are stored in self-referencing tables — self join is the only way to query them",
@@ -72,7 +99,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT e.name AS employee, m.name AS manager\nFROM employees e\nINNER JOIN employees m ON e.manager_id = m.id\nORDER BY e.name;",
-    "flow_stages": ["from", "join", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "join",
+      "select",
+      "order_by"
+    ],
     "visualization": "join-diagram",
     "focus": "Watch the employees table appear TWICE — alias 'e' is the employee copy, alias 'm' is the manager copy. The ON clause links each employee's manager_id to the manager's id. Sara vanishes because her NULL manager_id matches no id."
   },

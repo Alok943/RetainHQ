@@ -25,9 +25,19 @@
       "Pydantic"
     ]
   },
+  "glossary": [
+    {
+      "term": "iterable",
+      "definition": "Any collection or data structure in Python that you can loop through one item at a time, like a list or a string."
+    },
+    {
+      "term": "declarative",
+      "definition": "A style of programming where you describe what you want the result to be, rather than writing the step-by-step instructions on how to get it."
+    }
+  ],
   "overview": {
-    "what": "A list comprehension is an expression that builds a new list by transforming and optionally filtering items from an iterable, all in a single line. The syntax is:\n\n  [expression for item in iterable]\n  [expression for item in iterable if condition]\n\nPython evaluates it by iterating over the iterable, optionally testing the condition, and collecting the expression result into a new list. It is exactly equivalent to writing a for-loop that appends to an empty list, but more concise and often faster because the append is handled internally by the interpreter.\n\nConcrete examples:\n\n  status_codes = [200, 404, 200, 500, 301]\n  ok_codes = [code for code in status_codes if code == 200]\n  # ok_codes -> [200, 200]\n\n  usernames = ['alice', 'bob', 'carol']\n  upper_names = [name.upper() for name in usernames]\n  # upper_names -> ['ALICE', 'BOB', 'CAROL']\n\n  prices = [9.99, 24.50, 3.75, 49.00]\n  discounted = [round(p * 0.9, 2) for p in prices]\n  # discounted -> [9.0, 22.05, 3.38, 44.1]\n\nYou can call any function in the expression part \u2014 str.upper(), round(), or your own helpers. The if clause is optional; without it every item is included.\n\nThink of a list comprehension as a factory conveyor belt: items roll in from the iterable, a filter gate (the if clause) drops items that fail the test, and each surviving item is reshaped by the expression before landing in the output bin. Back in Python, the 'conveyor belt' is the for clause, the 'gate' is the optional if clause, and the 'reshaping step' is the expression.\n\nReadability rule: keep comprehensions to one readable line. If you need nested loops, multiple conditions, or side effects, use a regular for-loop instead.",
-    "why": "List comprehensions replace the repetitive pattern of creating an empty list, looping, and appending \u2014 the most common list-building pattern in Python. They make data-transformation code shorter, more declarative, and often faster. Mastering them is essential because they appear everywhere in production Python code.",
+    "what": "A list comprehension is an expression that builds a new list by transforming and optionally filtering items from an iterable, all in a single line. The syntax is:\n\n  [expression for item in iterable]\n  [expression for item in iterable if condition]\n\nPython evaluates it by iterating over the iterable, optionally testing the condition, and collecting the expression result into a new list. It is exactly equivalent to writing a for-loop that appends to an empty list, but more concise and often faster because the append is handled internally by the interpreter.\n\nConcrete examples:\n\n  status_codes = [200, 404, 200, 500, 301]\n  ok_codes = [code for code in status_codes if code == 200]\n  # ok_codes -> [200, 200]\n\n  usernames = ['alice', 'bob', 'carol']\n  upper_names = [name.upper() for name in usernames]\n  # upper_names -> ['ALICE', 'BOB', 'CAROL']\n\n  prices = [9.99, 24.50, 3.75, 49.00]\n  discounted = [round(p * 0.9, 2) for p in prices]\n  # discounted -> [9.0, 22.05, 3.38, 44.1]\n\nYou can call any function in the expression part — str.upper(), round(), or your own helpers. The if clause is optional; without it every item is included.\n\nThink of a list comprehension as a factory conveyor belt: items roll in from the iterable, a filter gate (the if clause) drops items that fail the test, and each surviving item is reshaped by the expression before landing in the output bin. Back in Python, the 'conveyor belt' is the for clause, the 'gate' is the optional if clause, and the 'reshaping step' is the expression.\n\nReadability rule: keep comprehensions to one readable line. If you need nested loops, multiple conditions, or side effects, use a regular for-loop instead.",
+    "why": "List comprehensions replace the repetitive pattern of creating an empty list, looping, and appending — the most common list-building pattern in Python. They make data-transformation code shorter, more declarative, and often faster. Mastering them is essential because they appear everywhere in production Python code.",
     "where_used": [
       "Transforming API response lists",
       "Filtering database query results",
@@ -37,7 +47,7 @@
   },
   "why_learning_this": [
     "Write concise data transforms when building FastAPI response payloads from database rows",
-    "Read and maintain real codebases faster \u2014 comprehensions are used more often than explicit append loops",
+    "Read and maintain real codebases faster — comprehensions are used more often than explicit append loops",
     "Unlocks dict/set comprehensions and generator expressions, which follow the same syntax pattern"
   ],
   "common_mistakes": [
@@ -51,7 +61,7 @@
     },
     {
       "title": "Forgetting that the result is a new list",
-      "explanation": "A comprehension never mutates the original iterable \u2014 it always creates a fresh list. If you discard the return value, the work is wasted."
+      "explanation": "A comprehension never mutates the original iterable — it always creates a fresh list. If you discard the return value, the work is wasted."
     },
     {
       "title": "Putting the if clause in the wrong position",
@@ -76,7 +86,7 @@
     },
     {
       "q": "When should you use a regular for-loop instead of a comprehension?",
-      "answer": "When the comprehension would need nested loops, multiple conditions, or side effects \u2014 if it does not fit on one readable line, use a regular loop.",
+      "answer": "When the comprehension would need nested loops, multiple conditions, or side effects — if it does not fit on one readable line, use a regular loop.",
       "tier": "tier2"
     }
   ],
@@ -95,13 +105,13 @@
   },
   "code_walkthrough": {
     "code": "status_codes = [200, 404, 200, 500, 301]\n\n# Equivalent for-loop\nok_loop = []\nfor code in status_codes:\n    if code == 200:\n        ok_loop.append(code)\n\n# Same result with a comprehension\nok_comp = [code for code in status_codes if code == 200]\n\nprint('loop:', ok_loop)\nprint('comp:', ok_comp)",
-    "focus": "Both produce the same list \u2014 the comprehension collapses the loop, condition, and append into one expression."
+    "focus": "Both produce the same list — the comprehension collapses the loop, condition, and append into one expression."
   },
   "aha_moment": {
     "code": "tags = ['python', 'fastapi', 'sql', 'python', 'docker']\nunique_sorted = sorted([t for t in tags if t != 'sql'])\noriginal = tags\nprint('result:', unique_sorted)\nprint('original:', original)\nprint('same object?', unique_sorted is original)",
     "prediction": "Does the comprehension modify the original `tags` list?",
     "common_guess": "Yes, it removes 'sql' from tags",
-    "why": "A comprehension always builds a brand-new list \u2014 it never mutates the source iterable. The original list is untouched, and `is` confirms they are different objects."
+    "why": "A comprehension always builds a brand-new list — it never mutates the source iterable. The original list is untouched, and `is` confirms they are different objects."
   },
   "sources": [
     "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions",

@@ -10,14 +10,43 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["select-from", "where-operators"],
-    "unlocks": ["aggregate-functions", "multi-column-grouping", "over-partition-by"],
-    "project_usage": ["analytics dashboards", "reporting queries", "API summary endpoints"]
+    "prerequisites": [
+      "select-from",
+      "where-operators"
+    ],
+    "unlocks": [
+      "aggregate-functions",
+      "multi-column-grouping",
+      "over-partition-by"
+    ],
+    "project_usage": [
+      "analytics dashboards",
+      "reporting queries",
+      "API summary endpoints"
+    ]
   },
+  "glossary": [
+    {
+      "term": "collapse",
+      "definition": "To shrink or merge multiple related rows into a single summary row."
+    },
+    {
+      "term": "prerequisite",
+      "definition": "A foundational concept or skill that you must understand first before you can learn something more advanced."
+    },
+    {
+      "term": "aggregate",
+      "definition": "A function that takes multiple rows of data and performs a calculation to return a single summarized value."
+    }
+  ],
   "overview": {
     "what": "GROUP BY collapses rows that share the same value(s) in the grouping column(s) into a single summary row. Before GROUP BY you have many individual rows; after it, you have one row per unique group. Any column in SELECT must either appear in the GROUP BY list or be wrapped in an aggregate function (COUNT, SUM, etc.).\n\nAgainst the shared dataset:\n\n  SELECT status, COUNT(*) AS order_count\n  FROM orders\n  GROUP BY status\n  ORDER BY status;\n\nThe 8 order rows collapse into 3 groups: cancelled (1), paid (6), pending (1).\n\nThink of GROUP BY as putting rows into labelled buckets — one bucket per unique grouping-key value — and then squeezing each bucket down to a single summary row.",
     "why": "Almost every reporting or analytics query needs GROUP BY. Without it, you can only look at individual rows. GROUP BY lets you answer 'how many?', 'what total?', and 'what average?' for each category — the bread and butter of dashboards and business metrics.",
-    "where_used": ["analytics dashboards", "summary statistics APIs", "report generation"]
+    "where_used": [
+      "analytics dashboards",
+      "summary statistics APIs",
+      "report generation"
+    ]
   },
   "why_learning_this": [
     "Writing any query that summarises data — revenue per country, orders per customer, items per category — requires GROUP BY",
@@ -72,7 +101,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT status, COUNT(*) AS order_count\nFROM orders\nGROUP BY status\nORDER BY status;",
-    "flow_stages": ["from", "group_by", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "group_by",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch 8 individual order rows collapse into 3 group rows — one per distinct status value."
   },

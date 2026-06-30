@@ -24,6 +24,16 @@
       "validating JSON payloads"
     ]
   },
+  "glossary": [
+    {
+      "term": "bare except:",
+      "definition": "An exception handler that catches absolutely every type of error, which is generally considered bad practice."
+    },
+    {
+      "term": "SystemExit",
+      "definition": "A special exception that is raised when a program tries to shut itself down or stop running."
+    }
+  ],
   "overview": {
     "what": "The `try/except` block is how Python handles errors (exceptions) without crashing the program. You put risky code in the `try` block. If an error occurs, Python stops executing the `try` block immediately and jumps to the `except` block. You should always catch specific exception types (like `ValueError` or `KeyError`) rather than using a bare `except:`. A bare except catches absolutely everything, including `SystemExit` and `KeyboardInterrupt` (Ctrl+C), making your program impossible to stop and hiding unrelated bugs.",
     "why": "In the real world, things fail: networks drop, users send 'abc' instead of an age, and files go missing. `try/except` lets your program recover gracefully, logging the error or returning a 400 Bad Request instead of terminating entirely. Catching specific exceptions ensures you only handle the exact error you anticipate, letting unexpected bugs crash loudly so they can be fixed.",

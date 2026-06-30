@@ -46,6 +46,79 @@ def req(d, key, f, typ=None):
     return True
 
 
+def extract_prose(d):
+    prose = []
+    
+    # overview
+    ov = d.get("overview", {})
+    if isinstance(ov, dict):
+        prose.extend([ov.get("what"), ov.get("why")])
+        
+    # why_it_exists
+    wie = d.get("why_it_exists", {})
+    if isinstance(wie, dict):
+        prose.extend([wie.get("problem"), wie.get("naive_solution"), wie.get("better_idea")])
+        
+    # mental_model
+    mm = d.get("mental_model", {})
+    if isinstance(mm, dict):
+        prose.extend([mm.get("intuition"), mm.get("description")])
+        
+    # explanation, analogy
+    prose.extend([d.get("explanation"), d.get("analogy")])
+    
+    # sections[].body
+    for s in d.get("sections", []) or []:
+        if isinstance(s, dict):
+            prose.append(s.get("body"))
+            
+    # why_learning_this[]
+    wlt = d.get("why_learning_this", [])
+    if isinstance(wlt, list):
+        prose.extend(wlt)
+        
+    # method[]
+    m = d.get("method", [])
+    if isinstance(m, list):
+        prose.extend(m)
+        
+    # formula.explain
+    fm = d.get("formula", {})
+    if isinstance(fm, dict):
+        prose.append(fm.get("explain"))
+        
+    # worked_example
+    we = d.get("worked_example")
+    if isinstance(we, list):
+        for w in we:
+            if isinstance(w, dict):
+                prose.extend([w.get("problem"), w.get("answer")])
+                steps = w.get("steps")
+                if isinstance(steps, list):
+                    prose.extend(steps)
+    elif isinstance(we, dict):
+        prose.extend([we.get("problem"), we.get("answer")])
+        steps = we.get("steps")
+        if isinstance(steps, list):
+            prose.extend(steps)
+
+    # key_points[].detail
+    kp = d.get("key_points")
+    if isinstance(kp, list):
+        for k in kp:
+            if isinstance(k, dict):
+                prose.append(k.get("detail"))
+
+    # common_mistakes[].explanation
+    cm = d.get("common_mistakes")
+    if isinstance(cm, list):
+        for c in cm:
+            if isinstance(c, dict):
+                prose.append(c.get("explanation"))
+
+    return " ".join(str(x) for x in prose if isinstance(x, str) and x.strip())
+
+
 def validate_sections(d, rel):
     """Optional 'illustration' (a hero image) + 'sections' (the born-visual interleaved
     layout: each block = a short body + optional image/animation + optional recap). Both
@@ -119,6 +192,34 @@ def main():
             for edge in ("prerequisites", "unlocks"):
                 if not isinstance(m.get(edge), list):
                     err(rel, f"metadata.{edge} must be a list of slugs")
+
+        # Glossary validation (optional, all kinds)
+        glos = d.get("glossary")
+        if glos is not None:
+            if not isinstance(glos, list):
+                err(rel, "glossary must be a list")
+            else:
+                seen_terms = set()
+                prose_text = extract_prose(d)
+                for i, entry in enumerate(glos):
+                    if not isinstance(entry, dict) or not entry.get("term") or not entry.get("definition"):
+                        err(rel, f"glossary[{i}] must be an object with non-empty 'term' and 'definition' strings")
+                        continue
+                    term = entry["term"]
+                    if not isinstance(term, str) or not isinstance(entry["definition"], str):
+                        err(rel, f"glossary[{i}] 'term' and 'definition' must be strings")
+                        continue
+                    if "example" in entry and not isinstance(entry["example"], str):
+                        err(rel, f"glossary[{i}] 'example' if present must be a string")
+                        
+                    t_lower = term.lower()
+                    if t_lower in seen_terms:
+                        err(rel, f"duplicate term in glossary: {term!r}")
+                    seen_terms.add(t_lower)
+                    
+                    escaped_term = re.escape(term)
+                    if not re.search(r'\b' + escaped_term + r'\b', prose_text, re.IGNORECASE):
+                        warn(rel, f"glossary term {term!r} does not appear as a whole word in the lesson's prose fields")
 
         # Aptitude is its OWN thin lesson shape (kind: "aptitude"): intuition + rule + trick + recall.
         # None of the python/sql fields (overview, *_walkthrough, understanding_checks, practice_tasks)

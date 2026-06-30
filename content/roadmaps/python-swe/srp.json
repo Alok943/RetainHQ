@@ -20,8 +20,18 @@
       "pytest"
     ]
   },
+  "glossary": [
+    {
+      "term": "God objects",
+      "definition": "Massive, overly complex classes in a program that try to do too many different things at once."
+    },
+    {
+      "term": "brittle",
+      "definition": "Code that easily breaks or causes unexpected errors when you try to make small changes or updates."
+    }
+  ],
   "overview": {
-    "what": "The Single Responsibility Principle (SRP) states that a class or module should have one, and only one, reason to change. For example, an `OrderValidator` class should check if data is correct, but should not save the order to a database or send an email. Think of it like a restaurant kitchen: the chef cooks, the waiter serves, and the dishwasher cleans. If the chef has to wash dishes, cooking stops when the sink breaks. In Python, violating SRP often leads to 'God objects'\u2014massive, brittle classes that handle API requests, database queries, and business logic all at once.",
+    "what": "The Single Responsibility Principle (SRP) states that a class or module should have one, and only one, reason to change. For example, an `OrderValidator` class should check if data is correct, but should not save the order to a database or send an email. Think of it like a restaurant kitchen: the chef cooks, the waiter serves, and the dishwasher cleans. If the chef has to wash dishes, cooking stops when the sink breaks. In Python, violating SRP often leads to 'God objects'—massive, brittle classes that handle API requests, database queries, and business logic all at once.",
     "why": "It isolates changes. When a requirement shifts (e.g., switching from a local database to a cloud API), you only update one focused class without risking bugs in unrelated logic (like data validation).",
     "where_used": [
       "FastAPI routers",

@@ -9,10 +9,31 @@
     "estimated_minutes": 15,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["grounding-with-retrieval"],
-    "unlocks": ["embed-and-retrieve-top-k"],
-    "appears_in": ["RAG system design", "GenAI Engineer interview"]
+    "prerequisites": [
+      "grounding-with-retrieval"
+    ],
+    "unlocks": [
+      "embed-and-retrieve-top-k"
+    ],
+    "appears_in": [
+      "RAG system design",
+      "GenAI Engineer interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "chunking",
+      "definition": "The process of breaking a large document into smaller, digestible pieces so an AI can understand and retrieve specific details easily."
+    },
+    {
+      "term": "overlap",
+      "definition": "A technique where chunks share a bit of text at their edges to ensure sentences are not cut in half and context is not lost."
+    },
+    {
+      "term": "recursive character chunking",
+      "definition": "A smart way of splitting text that tries to keep natural boundaries like paragraphs and sentences intact."
+    }
+  ],
   "hook": {
     "scenario": "You have a 50-page PDF. You slice it into fixed 100-word blocks. A user asks about 'pricing'. The retriever finds a block saying 'It costs $50 per month', but misses the previous sentence that specifies 'For the Enterprise tier:'. The context was sliced cleanly in half.",
     "question": "How do you split a document so that each piece still makes sense on its own?"
@@ -62,10 +83,22 @@
     }
   ],
   "key_points": [
-    { "title": "Why we chunk", "detail": "Large documents dilute embeddings. We need smaller chunks so the meaning is concentrated." },
-    { "title": "Overlap is mandatory", "detail": "Always overlap chunks by 10-20% to prevent losing context when a sentence straddles a boundary." },
-    { "title": "Recursive > Fixed", "detail": "Splitting by paragraphs and sentences preserves meaning far better than blindly splitting by character count." },
-    { "title": "The Goldilocks size", "detail": "Too small = lacks context. Too large = too much noise and high token cost. 250-500 tokens is a standard starting point." }
+    {
+      "title": "Why we chunk",
+      "detail": "Large documents dilute embeddings. We need smaller chunks so the meaning is concentrated."
+    },
+    {
+      "title": "Overlap is mandatory",
+      "detail": "Always overlap chunks by 10-20% to prevent losing context when a sentence straddles a boundary."
+    },
+    {
+      "title": "Recursive > Fixed",
+      "detail": "Splitting by paragraphs and sentences preserves meaning far better than blindly splitting by character count."
+    },
+    {
+      "title": "The Goldilocks size",
+      "detail": "Too small = lacks context. Too large = too much noise and high token cost. 250-500 tokens is a standard starting point."
+    }
   ],
   "common_mistakes": [
     {

@@ -19,6 +19,16 @@
       "resource release in API handlers"
     ]
   },
+  "glossary": [
+    {
+      "term": "happy-path",
+      "definition": "The default scenario where everything goes exactly as planned, without any errors or unexpected problems."
+    },
+    {
+      "term": "connection leaks",
+      "definition": "When a program opens a connection to a database but fails to close it, eventually exhausting the database's ability to handle new connections."
+    }
+  ],
   "overview": {
     "what": "Python's exception handling includes two optional blocks: `else` and `finally`. The `else` block runs ONLY if the `try` block completes successfully without raising any exceptions. The `finally` block ALWAYS runs, regardless of whether an exception occurred, whether it was caught, or even if the `try` block contains a `return` statement. The standard pattern is: try to do something dangerous, except handle the error, else do the happy-path continuation, finally clean up resources.",
     "why": "The `finally` block guarantees that critical cleanup—like closing a database connection or releasing a lock—happens even if your code crashes halfway through. The `else` block improves readability by separating the code that might fail from the code that should only run if the dangerous operation succeeded, keeping your `try` blocks perfectly minimized.",

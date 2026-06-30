@@ -9,10 +9,29 @@
     "estimated_minutes": 15,
     "importance": 10,
     "interview_frequency": "medium",
-    "prerequisites": ["cost-and-latency-budgeting"],
+    "prerequisites": [
+      "cost-and-latency-budgeting"
+    ],
     "unlocks": [],
-    "appears_in": ["AI systems design", "GenAI / LLM Engineer interview"]
+    "appears_in": [
+      "AI systems design",
+      "GenAI / LLM Engineer interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Observability",
+      "definition": "Like a flight data recorder for your AI, it tracks every single decision, tool use, and piece of data throughout a request."
+    },
+    {
+      "term": "Trace",
+      "definition": "A complete, tree-like record of everything that happened during a single user request from start to finish."
+    },
+    {
+      "term": "Span",
+      "definition": "A single step within a trace, representing one specific action like searching a database or calling the AI."
+    }
+  ],
   "hook": {
     "scenario": "A user complains that your RAG bot told them to 'reboot the router' for a software password reset. You look at the logs. You see the user's question, and you see the bot's bad answer. But you have no idea WHY it said that.",
     "question": "If you can't see what chunks the bot read, or what exact prompt it received, how do you debug the hallucination?"
@@ -58,10 +77,22 @@
     }
   ],
   "key_points": [
-    { "title": "Traces vs Spans", "detail": "A Trace is the full request. A Span is a single step (retrieval, tool call, LLM call) within that trace." },
-    { "title": "Log the fully hydrated prompt", "detail": "The prompt template isn't enough. You need the exact text sent to the API, including the injected RAG context." },
-    { "title": "Track Tokens & Latency", "detail": "Every LLM span must log `prompt_tokens` and `completion_tokens` so you can debug cost spikes." },
-    { "title": "Blame Assignment", "detail": "Tracing separates 'The model hallucinated' from 'The vector DB returned garbage'." }
+    {
+      "title": "Traces vs Spans",
+      "detail": "A Trace is the full request. A Span is a single step (retrieval, tool call, LLM call) within that trace."
+    },
+    {
+      "title": "Log the fully hydrated prompt",
+      "detail": "The prompt template isn't enough. You need the exact text sent to the API, including the injected RAG context."
+    },
+    {
+      "title": "Track Tokens & Latency",
+      "detail": "Every LLM span must log `prompt_tokens` and `completion_tokens` so you can debug cost spikes."
+    },
+    {
+      "title": "Blame Assignment",
+      "detail": "Tracing separates 'The model hallucinated' from 'The vector DB returned garbage'."
+    }
   ],
   "common_mistakes": [
     {

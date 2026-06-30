@@ -10,14 +10,38 @@
     "estimated_minutes": 20,
     "importance": 5,
     "interview_frequency": "medium",
-    "prerequisites": ["inner-join"],
+    "prerequisites": [
+      "inner-join"
+    ],
     "unlocks": [],
-    "project_usage": ["cleaner join syntax in analytics", "multi-column key joins", "natural key matching"]
+    "project_usage": [
+      "cleaner join syntax in analytics",
+      "multi-column key joins",
+      "natural key matching"
+    ]
   },
+  "glossary": [
+    {
+      "term": "shorthand",
+      "definition": "A shorter and quicker way of writing a piece of code or syntax."
+    },
+    {
+      "term": "composite",
+      "definition": "Made up of multiple parts, like a key that uses two or more columns together to uniquely identify a row."
+    },
+    {
+      "term": "redundant",
+      "definition": "Information that is repeated unnecessarily and does not add any new value."
+    }
+  ],
   "overview": {
     "what": "Every join needs a condition that says which rows match. SQL gives you two syntaxes for this:\n\n1. ON — the general-purpose form. Write any boolean expression:\n   FROM orders o JOIN customers c ON c.id = o.customer_id\n\n2. USING — a shorthand when the join column has the SAME name in BOTH tables:\n   FROM order_items oi JOIN orders o USING (id)  -- WRONG: 'id' means different things!\n   USING only works when the column name is identical on both sides AND means the same thing.\n\nIn the shared dataset, no foreign-key column shares its name with the referenced primary key (customer_id ≠ id, order_id ≠ id), so ON is the correct choice for these tables. USING would be appropriate if the orders table had a column called 'customer_id' and the customers table also had a column called 'customer_id'.\n\nJoin keys can be composite — matching on multiple columns:\n   ON a.col1 = b.col1 AND a.col2 = b.col2\nor\n   USING (col1, col2)\n\nMental model: ON is a free-form filter applied during the join. USING is syntactic sugar for ON when the column name is shared.",
     "why": "Choosing the right join-condition syntax makes queries more readable. USING eliminates redundant column names in SELECT * results (the shared column appears once, not twice). Understanding join keys also helps you identify correct foreign-key relationships and avoid accidental Cartesian products.",
-    "where_used": ["any multi-table query choosing between ON and USING", "composite key joins in normalized schemas", "code reviews debating join style"]
+    "where_used": [
+      "any multi-table query choosing between ON and USING",
+      "composite key joins in normalized schemas",
+      "code reviews debating join style"
+    ]
   },
   "why_learning_this": [
     "Knowing when USING applies lets you write cleaner, shorter joins — and knowing when it does NOT apply prevents subtle bugs",
@@ -71,7 +95,13 @@
   ],
   "query_walkthrough": {
     "query": "SELECT c.name, o.id AS order_id, p.name AS product\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nINNER JOIN order_items oi ON oi.order_id = o.id\nINNER JOIN products p ON p.id = oi.product_id\nWHERE c.name = 'Carlos'\nORDER BY o.id, p.name;",
-    "flow_stages": ["from", "join", "where", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "join",
+      "where",
+      "select",
+      "order_by"
+    ],
     "visualization": "join-diagram",
     "focus": "Each ON clause uses different column names (customer_id→id, order_id→id, product_id→id) — USING would not work here because the foreign key columns are named differently from the primary keys they reference."
   },

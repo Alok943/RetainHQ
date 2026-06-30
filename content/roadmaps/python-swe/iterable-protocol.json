@@ -21,6 +21,16 @@
       "Pydantic"
     ]
   },
+  "glossary": [
+    {
+      "term": "traversing",
+      "definition": "Systematically going through or visiting every single item in a collection or data structure."
+    },
+    {
+      "term": "lazy evaluation",
+      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance."
+    }
+  ],
   "overview": {
     "what": "The Iterable Protocol is Python's mechanism for traversing containers. An object is an *iterable* if it implements `__iter__()` returning an *iterator*. An *iterator* implements `__next__()` to yield elements one at a time and raises `StopIteration` when exhausted. When you run a `for` loop, Python automatically calls `iter()` to get an iterator, then repeatedly calls `next()` until the exception is caught. Think of an iterable as a book (a collection of pages) and an iterator as a bookmark (the current reading state); you can have many bookmarks in the same book.",
     "why": "It allows Python to loop over any object uniformly (lists, strings, files, or custom streams) without needing to know its internal structure, enabling infinite sequences and lazy evaluation to save memory.",

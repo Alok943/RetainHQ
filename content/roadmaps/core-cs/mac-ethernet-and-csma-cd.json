@@ -9,10 +9,30 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["framing-and-error-detection"],
-    "unlocks": ["arp"],
-    "appears_in": ["Networks"]
+    "prerequisites": [
+      "framing-and-error-detection"
+    ],
+    "unlocks": [
+      "arp"
+    ],
+    "appears_in": [
+      "Networks"
+    ]
   },
+  "glossary": [
+    {
+      "term": "MAC (Media Access Control) address",
+      "definition": "A permanent, unique physical serial number burned into your computer's network chip at the factory so it can be identified on a local network."
+    },
+    {
+      "term": "Network Interface Card (NIC)",
+      "definition": "The actual physical hardware component inside a computer that allows it to connect to a network using Wi-Fi or a cable."
+    },
+    {
+      "term": "hexadecimal digits",
+      "definition": "A counting system based on 16 (using numbers 0-9 and letters A-F) often used in computing to write long binary addresses more compactly."
+    }
+  ],
   "hook": {
     "scenario": "Imagine a dark room full of people where anyone can speak, but only one person can speak at a time. Before talking, you listen. If it's quiet, you speak. If someone else starts talking at the exact same moment, you both stop, wait a random amount of time, and try again. This is exactly how early Ethernet handled traffic."
   },
@@ -24,17 +44,56 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      {"id": "nodeA", "label": "Computer A"},
-      {"id": "wire", "label": "Shared Wire"},
-      {"id": "nodeB", "label": "Computer B"}
+      {
+        "id": "nodeA",
+        "label": "Computer A"
+      },
+      {
+        "id": "wire",
+        "label": "Shared Wire"
+      },
+      {
+        "id": "nodeB",
+        "label": "Computer B"
+      }
     ],
     "steps": [
-      {"from": "nodeA", "to": "wire", "label": "Listens: Wire is clear. Starts sending.", "term": "Carrier Sense"},
-      {"from": "nodeB", "to": "wire", "label": "Listens: Wire is clear. Starts sending.", "term": "Simultaneous TX"},
-      {"from": "wire", "to": "nodeA", "label": "Voltage spikes (signals crash)", "term": "Collision"},
-      {"from": "nodeA", "to": "wire", "label": "Sends Jam Signal, stops transmitting", "term": "Collision Detected"},
-      {"from": "nodeA", "to": "nodeA", "label": "Wait random time (e.g., 3ms)", "term": "Exponential Backoff"},
-      {"from": "nodeB", "to": "nodeB", "label": "Wait random time (e.g., 7ms)", "term": "Exponential Backoff"}
+      {
+        "from": "nodeA",
+        "to": "wire",
+        "label": "Listens: Wire is clear. Starts sending.",
+        "term": "Carrier Sense"
+      },
+      {
+        "from": "nodeB",
+        "to": "wire",
+        "label": "Listens: Wire is clear. Starts sending.",
+        "term": "Simultaneous TX"
+      },
+      {
+        "from": "wire",
+        "to": "nodeA",
+        "label": "Voltage spikes (signals crash)",
+        "term": "Collision"
+      },
+      {
+        "from": "nodeA",
+        "to": "wire",
+        "label": "Sends Jam Signal, stops transmitting",
+        "term": "Collision Detected"
+      },
+      {
+        "from": "nodeA",
+        "to": "nodeA",
+        "label": "Wait random time (e.g., 3ms)",
+        "term": "Exponential Backoff"
+      },
+      {
+        "from": "nodeB",
+        "to": "nodeB",
+        "label": "Wait random time (e.g., 7ms)",
+        "term": "Exponential Backoff"
+      }
     ]
   },
   "key_points": [

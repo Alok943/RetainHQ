@@ -9,10 +9,29 @@
     "estimated_minutes": 15,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["grounding-with-retrieval"],
+    "prerequisites": [
+      "grounding-with-retrieval"
+    ],
     "unlocks": [],
-    "appears_in": ["GenAI / LLM Engineer interview", "RAG system design"]
+    "appears_in": [
+      "GenAI / LLM Engineer interview",
+      "RAG system design"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Hallucinations",
+      "definition": "When an AI does not know an answer but guesses by inventing a plausible-sounding, completely false response."
+    },
+    {
+      "term": "temperature",
+      "definition": "A setting that controls how creative the AI is; setting it to 0 forces the AI to be strict and factual instead of creative."
+    },
+    {
+      "term": "Grounding",
+      "definition": "The technique of forcing the AI to base its answers strictly on facts you provide, stopping it from relying on its unreliable memory."
+    }
+  ],
   "hook": {
     "scenario": "Your customer service bot confidently tells a user: 'Yes, we offer a lifetime warranty on all products!' The user buys the product. You do not, in fact, offer a lifetime warranty.",
     "question": "How do you stop a model from making up facts when it doesn't know the answer?"
@@ -64,10 +83,22 @@
     }
   ],
   "key_points": [
-    { "title": "Grounding", "detail": "Provide the exact facts in the prompt so the model doesn't rely on its pre-trained weights." },
-    { "title": "The 'Out'", "detail": "Explicitly tell the model what to say if it doesn't know (e.g., 'I don't know')." },
-    { "title": "Temperature 0", "detail": "Turn off creativity. Force the model to take the most statistically probable path." },
-    { "title": "Citations", "detail": "Force the model to quote its sources before answering." }
+    {
+      "title": "Grounding",
+      "detail": "Provide the exact facts in the prompt so the model doesn't rely on its pre-trained weights."
+    },
+    {
+      "title": "The 'Out'",
+      "detail": "Explicitly tell the model what to say if it doesn't know (e.g., 'I don't know')."
+    },
+    {
+      "title": "Temperature 0",
+      "detail": "Turn off creativity. Force the model to take the most statistically probable path."
+    },
+    {
+      "title": "Citations",
+      "detail": "Force the model to quote its sources before answering."
+    }
   ],
   "common_mistakes": [
     {

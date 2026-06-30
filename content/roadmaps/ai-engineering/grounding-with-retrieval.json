@@ -9,10 +9,32 @@
     "estimated_minutes": 15,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["embeddings"],
-    "unlocks": ["chunking-strategies", "hallucination-mitigation"],
-    "appears_in": ["GenAI Engineer interview", "RAG system design"]
+    "prerequisites": [
+      "embeddings"
+    ],
+    "unlocks": [
+      "chunking-strategies",
+      "hallucination-mitigation"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview",
+      "RAG system design"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Retrieval-Augmented Generation",
+      "definition": "A system that searches your private documents for facts and forces the AI to read them before answering, rather than relying on its memory."
+    },
+    {
+      "term": "hallucinate",
+      "definition": "When an AI does not know the answer but confidently invents a convincing, completely false response."
+    },
+    {
+      "term": "grounding",
+      "definition": "The practice of giving the AI explicit instructions and factual text to anchor its response, preventing it from making things up."
+    }
+  ],
   "hook": {
     "scenario": "You ask your company's internal bot, 'What is the standard SLA for enterprise customers?' and it confidently replies '99.9%'. You check the docs, and it's actually 99.99%. The bot just guessed based on its training data.",
     "question": "How do you stop an LLM from hallucinating answers to questions it doesn't know?"
@@ -39,14 +61,38 @@
       "animation": {
         "type": "sequence",
         "actors": [
-          { "id": "user", "label": "User" },
-          { "id": "retriever", "label": "Vector DB" },
-          { "id": "llm", "label": "Model" }
+          {
+            "id": "user",
+            "label": "User"
+          },
+          {
+            "id": "retriever",
+            "label": "Vector DB"
+          },
+          {
+            "id": "llm",
+            "label": "Model"
+          }
         ],
         "steps": [
-          { "from": "user", "to": "retriever", "label": "search query", "term": "Retrieve" },
-          { "from": "retriever", "to": "llm", "label": "return relevant chunks", "term": "Augment" },
-          { "from": "llm", "to": "user", "label": "answer based on chunks", "term": "Generate" }
+          {
+            "from": "user",
+            "to": "retriever",
+            "label": "search query",
+            "term": "Retrieve"
+          },
+          {
+            "from": "retriever",
+            "to": "llm",
+            "label": "return relevant chunks",
+            "term": "Augment"
+          },
+          {
+            "from": "llm",
+            "to": "user",
+            "label": "answer based on chunks",
+            "term": "Generate"
+          }
         ]
       },
       "recap": "RAG pipeline: Retrieve relevant facts, augment the prompt, generate the answer."
@@ -75,10 +121,22 @@
     }
   ],
   "key_points": [
-    { "title": "Memory vs Reading", "detail": "LLMs are bad databases but excellent readers. Give them the text to read." },
-    { "title": "The RAG Pipeline", "detail": "Retrieve the facts, Augment the prompt with those facts, Generate the answer." },
-    { "title": "Strict Instructions", "detail": "Grounding requires explicitly telling the model to ignore outside knowledge and refuse to answer if the context is empty." },
-    { "title": "Retrieval Bottleneck", "detail": "The LLM can only answer what you retrieve. If your search fails, your bot fails." }
+    {
+      "title": "Memory vs Reading",
+      "detail": "LLMs are bad databases but excellent readers. Give them the text to read."
+    },
+    {
+      "title": "The RAG Pipeline",
+      "detail": "Retrieve the facts, Augment the prompt with those facts, Generate the answer."
+    },
+    {
+      "title": "Strict Instructions",
+      "detail": "Grounding requires explicitly telling the model to ignore outside knowledge and refuse to answer if the context is empty."
+    },
+    {
+      "title": "Retrieval Bottleneck",
+      "detail": "The LLM can only answer what you retrieve. If your search fails, your bot fails."
+    }
   ],
   "common_mistakes": [
     {

@@ -19,6 +19,16 @@
       "List comprehensions with lambdas"
     ]
   },
+  "glossary": [
+    {
+      "term": "bind",
+      "definition": "Connecting a variable name to a specific object or value in the computer's memory."
+    },
+    {
+      "term": "eager evaluation",
+      "definition": "Calculating or capturing a value immediately at the exact moment the code is run, rather than waiting until it is needed."
+    }
+  ],
   "overview": {
     "what": "Python's closures bind to variables (names), not their values at the time the closure is created. When you create functions inside a loop (like a list of lambdas), they all keep a reference to the same loop variable. When the loop finishes, that variable holds its final value, so all the closures see that final value when called. Think of it like giving a group of people a link to a live Google Doc (the variable) instead of handing each person a printed PDF (the value) at different times. When they look at the doc later, they all see the latest version.",
     "why": "This is a very common bug when dynamically generating callbacks, event listeners, or routes in a loop, leading to all callbacks executing with the arguments intended for the final iteration.",

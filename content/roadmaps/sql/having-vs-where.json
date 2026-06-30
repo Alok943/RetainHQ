@@ -10,14 +10,41 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["group-by", "aggregate-functions"],
-    "unlocks": ["subqueries"],
-    "project_usage": ["analytics dashboards", "filtered reports", "data quality audits"]
+    "prerequisites": [
+      "group-by",
+      "aggregate-functions"
+    ],
+    "unlocks": [
+      "subqueries"
+    ],
+    "project_usage": [
+      "analytics dashboards",
+      "filtered reports",
+      "data quality audits"
+    ]
   },
+  "glossary": [
+    {
+      "term": "logical",
+      "definition": "Relating to the step-by-step sequence of operations or rules that a computer follows to process information."
+    },
+    {
+      "term": "evaluate",
+      "definition": "To calculate or determine the outcome of a condition, like checking if a customer has more than two orders."
+    },
+    {
+      "term": "clause",
+      "definition": "A specific part of a SQL statement, like WHERE or HAVING, that performs a particular function in the query."
+    }
+  ],
   "overview": {
     "what": "WHERE and HAVING both filter rows, but they operate at different stages of the logical query flow:\n\n- WHERE filters INDIVIDUAL rows BEFORE grouping. It cannot reference aggregate functions.\n- HAVING filters GROUPS AFTER GROUP BY. It CAN reference aggregate functions.\n\nAgainst the shared dataset:\n\n  SELECT customer_id, COUNT(*) AS order_count\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n  HAVING COUNT(*) >= 2\n  ORDER BY customer_id;\n\nStep by step: WHERE keeps only paid orders (6 rows). GROUP BY collapses them by customer_id. HAVING keeps only groups with 2 or more paid orders. Result: customer_id 1 (2 paid orders).\n\nThink of it this way: WHERE is a bouncer at the door (filters rows before they enter the GROUP BY room). HAVING is a judge inside the room (evaluates each group after they've formed).",
     "why": "Filtering before vs after grouping produces fundamentally different results. Putting an aggregate condition in WHERE causes a syntax error; putting a row-level filter in HAVING is legal but wastes work — it groups rows only to discard them. Knowing which clause to use is a common interview question and a daily practical need.",
-    "where_used": ["finding high-value customer segments", "data quality checks (groups with too few rows)", "dashboard filters on aggregated metrics"]
+    "where_used": [
+      "finding high-value customer segments",
+      "data quality checks (groups with too few rows)",
+      "dashboard filters on aggregated metrics"
+    ]
   },
   "why_learning_this": [
     "Filtering groups by aggregate results (e.g. 'customers with more than 2 orders') requires HAVING — WHERE cannot do it",
@@ -72,7 +99,14 @@
   ],
   "query_walkthrough": {
     "query": "SELECT customer_id, COUNT(*) AS order_count\nFROM orders\nWHERE status = 'paid'\nGROUP BY customer_id\nHAVING COUNT(*) >= 2\nORDER BY customer_id;",
-    "flow_stages": ["from", "where", "group_by", "having", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "where",
+      "group_by",
+      "having",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch WHERE reduce 8 rows to 6, GROUP BY collapse them into 5 groups, then HAVING keep only the group with 2+ orders."
   },

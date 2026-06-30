@@ -9,9 +9,27 @@
     "estimated_minutes": 20,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["in-place-operations"],
-    "unlocks": ["insertion-sort"]
+    "prerequisites": [
+      "in-place-operations"
+    ],
+    "unlocks": [
+      "insertion-sort"
+    ]
   },
+  "glossary": [
+    {
+      "term": "unsorted prefix",
+      "definition": "The beginning part of a list that hasn't been organized yet."
+    },
+    {
+      "term": "auxiliary space",
+      "definition": "Extra temporary memory required by an algorithm beyond the original data."
+    },
+    {
+      "term": "early-exit flag",
+      "definition": "A specific marker used to stop a process immediately when it's no longer needed."
+    }
+  ],
   "hook": {
     "scenario": "A graphics engine renders polygons by maintaining an Active Edge Table sorted by x-coordinate. As the scanline moves down one pixel, only two adjacent edges may swap order at an intersection.",
     "question": "What sorting algorithm can detect that the list is already nearly sorted and fix the one swap in O(N) time?"
@@ -28,7 +46,13 @@
   },
   "viz": {
     "generator": "bubble-sort",
-    "default_input": [5, 2, 8, 1, 9],
+    "default_input": [
+      5,
+      2,
+      8,
+      1,
+      9
+    ],
     "invariants": {
       "inv-bubble": "Each pass walks the unsorted prefix, swapping out-of-order neighbours.",
       "inv-largest": "After pass i, the largest i elements have bubbled to their final spots at the end.",
@@ -37,9 +61,18 @@
   },
   "explanation": "Bubble Sort uses two nested loops. The outer loop runs N-1 times. The inner loop walks through the unsorted portion, comparing adjacent elements.\n\nThe key optimization is the `swapped` flag. Before each inner-loop pass, set `swapped = False`. If a swap occurs, set `swapped = True`. After the inner loop, if `swapped` is still `False`, the array is sorted and we break out of the outer loop immediately.\n\nThis optimization transforms the best-case (already sorted array) from O(N^2) to O(N), because the first pass performs N-1 comparisons with zero swaps and then halts.\n\nThe loop invariant is: after the i-th pass of the outer loop, the last i elements of the array are in their final sorted positions, and every element in this sorted suffix is greater than or equal to every element in the unsorted prefix.\n\nA notable quirk is the 'Rabbit and Turtle' problem. Large values at the beginning ('rabbits') travel to the end quickly, traversing the array in a single pass. But small values at the end ('turtles') move toward the beginning by only one position per pass. A single misplaced small element at the end forces O(N) passes.",
   "key_points": [
-    { "title": "Adaptive Best-Case", "detail": "With the `swapped` flag, Bubble Sort detects a sorted array in O(N) time." },
-    { "title": "Stable Sort", "detail": "Only adjacent elements are swapped, so equal elements never leapfrog each other. Relative order is preserved." },
-    { "title": "In-Place", "detail": "O(1) auxiliary space. No extra arrays needed." }
+    {
+      "title": "Adaptive Best-Case",
+      "detail": "With the `swapped` flag, Bubble Sort detects a sorted array in O(N) time."
+    },
+    {
+      "title": "Stable Sort",
+      "detail": "Only adjacent elements are swapped, so equal elements never leapfrog each other. Relative order is preserved."
+    },
+    {
+      "title": "In-Place",
+      "detail": "O(1) auxiliary space. No extra arrays needed."
+    }
   ],
   "pattern": {
     "name": "Adjacent Swap / Adaptive Detection",
@@ -53,28 +86,71 @@
     "Profiling reveals the bottleneck is memory writes. Bubble Sort does up to O(N^2) swaps (3 writes each)."
   ],
   "engineering_examples": [
-    { "title": "Computer Graphics: Active Edge Tables", "problem": "Sorting polygon edges by x-coordinate as a scanline advances. The edge order only changes at intersection points.", "why_this_algorithm": "The data is nearly sorted between scanlines. Bubble Sort detects this in O(N) time and fixes the one or two adjacent swaps instantly." }
+    {
+      "title": "Computer Graphics: Active Edge Tables",
+      "problem": "Sorting polygon edges by x-coordinate as a scanline advances. The edge order only changes at intersection points.",
+      "why_this_algorithm": "The data is nearly sorted between scanlines. Bubble Sort detects this in O(N) time and fixes the one or two adjacent swaps instantly."
+    }
   ],
   "when_not_to_use": [
-    { "scenario": "Large, randomly ordered datasets", "reason": "Bubble Sort degrades to O(N^2) with poor branch prediction and high memory write overhead, making it far slower than O(N log N) alternatives." }
+    {
+      "scenario": "Large, randomly ordered datasets",
+      "reason": "Bubble Sort degrades to O(N^2) with poor branch prediction and high memory write overhead, making it far slower than O(N log N) alternatives."
+    }
   ],
   "common_mistakes": [
-    { "title": "Forgetting the `swapped` flag optimization", "explanation": "Without the early-exit flag, Bubble Sort always runs the full N-1 passes even on a sorted array, guaranteeing O(N^2) time." },
-    { "title": "Not shrinking the inner loop boundary", "explanation": "After pass i, the last i elements are sorted. The inner loop should only iterate up to N-1-i, not N-1. Failing to do this doubles the number of unnecessary comparisons." }
+    {
+      "title": "Forgetting the `swapped` flag optimization",
+      "explanation": "Without the early-exit flag, Bubble Sort always runs the full N-1 passes even on a sorted array, guaranteeing O(N^2) time."
+    },
+    {
+      "title": "Not shrinking the inner loop boundary",
+      "explanation": "After pass i, the last i elements are sorted. The inner loop should only iterate up to N-1-i, not N-1. Failing to do this doubles the number of unnecessary comparisons."
+    }
   ],
   "recall_questions": [
-    { "q": "What optimization gives Bubble Sort an O(N) best-case?", "answer": "A boolean `swapped` flag that checks if any swaps occurred during a pass. If not, the array is sorted and the algorithm halts.", "tier": "tier1" },
-    { "q": "What is the loop invariant of Bubble Sort?", "answer": "After the i-th pass, the last i elements are in their final sorted positions, and every element in this sorted suffix is >= every element in the unsorted prefix.", "tier": "tier2" },
-    { "q": "Why is Bubble Sort a stable sorting algorithm?", "answer": "It only swaps adjacent elements, and the condition is strictly greater-than (`>`), so equal elements are never swapped past each other.", "tier": "tier1" }
+    {
+      "q": "What optimization gives Bubble Sort an O(N) best-case?",
+      "answer": "A boolean `swapped` flag that checks if any swaps occurred during a pass. If not, the array is sorted and the algorithm halts.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the loop invariant of Bubble Sort?",
+      "answer": "After the i-th pass, the last i elements are in their final sorted positions, and every element in this sorted suffix is >= every element in the unsorted prefix.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is Bubble Sort a stable sorting algorithm?",
+      "answer": "It only swaps adjacent elements, and the condition is strictly greater-than (`>`), so equal elements are never swapped past each other.",
+      "tier": "tier1"
+    }
   ],
   "oa_questions": [
-    { "question": "Implement Bubble Sort with the early-termination optimization.", "company": "General interview", "answer": "Use a nested loop. Before the inner loop, set `swapped = False`. Inside, compare adjacent elements and swap if out of order, setting `swapped = True`. After the inner loop, break if `swapped` is still `False`.", "approach": "Optimized Bubble Sort." },
-    { "question": "Given an array that is already sorted except for one element that is misplaced, sort it in O(N) time.", "company": "SDE interview", "answer": "Use a single pass of Bubble Sort (or Insertion Sort). Both detect the nearly-sorted state and terminate early.", "approach": "Adaptive sorting." }
+    {
+      "question": "Implement Bubble Sort with the early-termination optimization.",
+      "company": "General interview",
+      "answer": "Use a nested loop. Before the inner loop, set `swapped = False`. Inside, compare adjacent elements and swap if out of order, setting `swapped = True`. After the inner loop, break if `swapped` is still `False`.",
+      "approach": "Optimized Bubble Sort."
+    },
+    {
+      "question": "Given an array that is already sorted except for one element that is misplaced, sort it in O(N) time.",
+      "company": "SDE interview",
+      "answer": "Use a single pass of Bubble Sort (or Insertion Sort). Both detect the nearly-sorted state and terminate early.",
+      "approach": "Adaptive sorting."
+    }
   ],
   "practice": [
-    { "title": "Sort an Array", "url": "https://leetcode.com/problems/sort-an-array/", "difficulty": "medium", "why": "Implementing Bubble Sort here will TLE, teaching you exactly why O(N^2) fails at scale." }
+    {
+      "title": "Sort an Array",
+      "url": "https://leetcode.com/problems/sort-an-array/",
+      "difficulty": "medium",
+      "why": "Implementing Bubble Sort here will TLE, teaching you exactly why O(N^2) fails at scale."
+    }
   ],
-  "related": ["insertion-sort", "selection-sort"],
+  "related": [
+    "insertion-sort",
+    "selection-sort"
+  ],
   "interesting_facts": [
     "Former Google CEO Eric Schmidt once asked Barack Obama how to sort a million integers in an interview. Obama correctly replied, 'I think Bubble Sort would be the wrong way to go.'"
   ],

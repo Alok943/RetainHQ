@@ -9,14 +9,38 @@
     "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["class-basics", "try-except"],
-    "unlocks": ["contextmanager-decorator", "async-context-managers"],
-    "project_usage": ["Database connections", "File I/O", "Locks"]
+    "prerequisites": [
+      "class-basics",
+      "try-except"
+    ],
+    "unlocks": [
+      "contextmanager-decorator",
+      "async-context-managers"
+    ],
+    "project_usage": [
+      "Database connections",
+      "File I/O",
+      "Locks"
+    ]
   },
+  "glossary": [
+    {
+      "term": "suppressed",
+      "definition": "Preventing an error or exception from stopping the program, effectively hiding or neutralizing it."
+    },
+    {
+      "term": "hooks",
+      "definition": "Special functions or methods that let you insert your own code into the normal sequence of a program's execution."
+    }
+  ],
   "overview": {
     "what": "The `__enter__` and `__exit__` dunder methods define the context manager protocol, allowing objects to hook into the `with` statement. When `with Obj() as x:` runs, Python calls `Obj.__enter__()` and assigns its return value to `x`. When the block ends (normally or via exception), Python automatically calls `Obj.__exit__(exc_type, exc_val, traceback)`. If `__exit__` returns `True`, exceptions are suppressed. Think of them as automatic setup and teardown hooks for an object's lifecycle.",
     "why": "They guarantee cleanup (like closing files or releasing locks) happens reliably, even if the code inside the block crashes, replacing repetitive `try/finally` blocks.",
-    "where_used": ["Custom database sessions", "Temporary file management", "Resource locks"]
+    "where_used": [
+      "Custom database sessions",
+      "Temporary file management",
+      "Resource locks"
+    ]
   },
   "why_learning_this": [
     "Write custom resources that cleanly manage their own state.",

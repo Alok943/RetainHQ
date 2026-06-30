@@ -10,14 +10,40 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["group-by"],
-    "unlocks": ["having-vs-where"],
-    "project_usage": ["analytics dashboards", "KPI endpoints", "reporting queries"]
+    "prerequisites": [
+      "group-by"
+    ],
+    "unlocks": [
+      "having-vs-where"
+    ],
+    "project_usage": [
+      "analytics dashboards",
+      "KPI endpoints",
+      "reporting queries"
+    ]
   },
+  "glossary": [
+    {
+      "term": "scalar",
+      "definition": "A single, one-dimensional value, like a number or a string, rather than a list or a table of values."
+    },
+    {
+      "term": "denominator",
+      "definition": "The bottom number in a fraction or division calculation that tells you how many parts the whole is divided into."
+    },
+    {
+      "term": "metric",
+      "definition": "A measurable value used to track and assess the status or performance of a specific business process, like total revenue or user count."
+    }
+  ],
   "overview": {
     "what": "Aggregate functions take a set of rows and return a single scalar value. The five core aggregates are COUNT, SUM, AVG, MIN, and MAX.\n\n- COUNT(*) counts all rows; COUNT(column) counts non-NULL values in that column.\n- SUM and AVG work on numeric columns and ignore NULLs.\n- MIN and MAX work on any orderable type (numbers, strings, dates).\n\nWithout GROUP BY, an aggregate collapses the entire table into one row. With GROUP BY, each group gets its own aggregate result.\n\nAgainst the shared dataset:\n\n  SELECT COUNT(*) AS total_products,\n         AVG(price) AS avg_price,\n         MIN(price) AS cheapest,\n         MAX(price) AS most_expensive\n  FROM products;\n\nReturns: 6 | 85.82333... | 4.99 | 199.99 — one summary row from six product rows.\n\nThink of aggregates as squeezers: they take a bag of values and squeeze out one number.",
     "why": "Aggregates are the building blocks of every business metric — total revenue, average order size, highest salary, number of active users. Without them you can only list individual rows, never summarize.",
-    "where_used": ["KPI dashboards", "summary API responses", "data quality checks"]
+    "where_used": [
+      "KPI dashboards",
+      "summary API responses",
+      "data quality checks"
+    ]
   },
   "why_learning_this": [
     "Computing any business metric — totals, averages, counts — requires aggregate functions",
@@ -72,7 +98,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT category,\n       COUNT(*) AS num_products,\n       MIN(price) AS cheapest,\n       MAX(price) AS priciest\nFROM products\nGROUP BY category\nORDER BY category;",
-    "flow_stages": ["from", "group_by", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "group_by",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch 6 product rows collapse into 3 category groups, each summarised by COUNT, MIN, and MAX."
   },

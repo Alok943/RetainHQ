@@ -23,6 +23,16 @@
       "Pytest"
     ]
   },
+  "glossary": [
+    {
+      "term": "abstractions",
+      "definition": "Simplified representations of complex systems, hiding the complicated details so you can focus on what the system does rather than how it works."
+    },
+    {
+      "term": "decouples",
+      "definition": "Separating different parts of a program so that a change in one part does not force you to change the other parts."
+    }
+  ],
   "overview": {
     "what": "The Dependency Inversion Principle (DIP) states that high-level modules should not depend on low-level modules; both should depend on abstractions. Furthermore, abstractions should not depend on details; details should depend on abstractions. In Python, this means your core business logic (high-level) shouldn't import concrete database or API classes (low-level). Instead, both should depend on an interface (like an abstract base class or Protocol). For example, instead of a `PaymentProcessor` instantiating a `StripeAPI` directly, it accepts any object that satisfies a `PaymentGateway` abstraction. Analogy: When you plug a lamp into a wall, the lamp (high-level) depends on a standard outlet interface (abstraction), not the specific wiring in the wall (low-level detail).",
     "why": "It decouples your system's core logic from volatile implementation details, making it significantly easier to swap out components, mock dependencies for testing, and maintain code without breaking existing functionality.",

@@ -19,6 +19,16 @@
       "Django views"
     ]
   },
+  "glossary": [
+    {
+      "term": "coupling",
+      "definition": "The degree to which different parts of a program rely on or are connected to each other; lower is usually better."
+    },
+    {
+      "term": "Strategy and Factory",
+      "definition": "Common design patterns; Strategy lets you swap out behaviors on the fly, while Factory helps create new objects."
+    }
+  ],
   "overview": {
     "what": "The Open/Closed Principle (OCP) states that software entities should be open for extension, but closed for modification. You should be able to add new functionality without changing existing code. In Python, this is typically achieved using inheritance, composition, or duck typing.\n\nFor example, instead of a single function checking types:\n\n  def process(item):\n    if isinstance(item, Text):\n      item.read()\n    elif isinstance(item, Image):\n      item.render()\n\nYou rely on a common interface:\n\n  def process(item):\n    item.handle()\n\nNow, adding a `Video` class doesn't require modifying `process`. Think of a power strip: it is closed for modification (you don't rewire it to plug in a new device) but open for extension (you just plug a new adapter into an existing socket).",
     "why": "It prevents bugs from being introduced into tested, working code when requirements change. It also reduces coupling and makes codebases easier to maintain as they grow.",

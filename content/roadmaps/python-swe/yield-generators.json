@@ -25,6 +25,16 @@
       "pytest"
     ]
   },
+  "glossary": [
+    {
+      "term": "local state",
+      "definition": "The current values of variables that exist only within a specific function and are usually lost when the function ends."
+    },
+    {
+      "term": "execution pointer",
+      "definition": "An internal marker that keeps track of exactly which line of code a program is currently running or paused at."
+    }
+  ],
   "overview": {
     "what": "A generator function is a function that contains the `yield` keyword. Unlike a normal function that computes a result and returns it all at once, destroying its local state, a generator function pauses its execution at each `yield`, returning a value to the caller but keeping its local variables and execution pointer intact. When `next()` is called on it again, it resumes exactly where it left off. You can think of a generator function as a resumable machine: instead of building the entire product and handing it over at the end, it spits out one piece on demand, pauses, and waits for you to ask for the next piece.",
     "why": "Generators allow you to produce sequences of values over time without having to load all of them into memory at once, enabling efficient processing of large datasets, infinite sequences, or streams.",

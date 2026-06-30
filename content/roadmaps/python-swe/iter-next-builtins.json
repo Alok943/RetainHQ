@@ -9,14 +9,35 @@
     "estimated_minutes": 20,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["iterable-protocol", "iterator-protocol"],
-    "unlocks": ["custom-iterator"],
-    "project_usage": ["Data pipelines", "Streaming APIs"]
+    "prerequisites": [
+      "iterable-protocol",
+      "iterator-protocol"
+    ],
+    "unlocks": [
+      "custom-iterator"
+    ],
+    "project_usage": [
+      "Data pipelines",
+      "Streaming APIs"
+    ]
   },
+  "glossary": [
+    {
+      "term": "user-facing",
+      "definition": "The parts of a program, framework, or language that developers or end-users directly interact with."
+    },
+    {
+      "term": "traversal",
+      "definition": "The process of systematically visiting or moving through every item in a collection, like a list."
+    }
+  ],
   "overview": {
     "what": "The `iter()` builtin calls an object's `__iter__()` method to get an iterator, while `next()` calls the iterator's `__next__()` method to get the next value. It's the user-facing interface for the iterator protocol. Think of `iter()` as 'give me a bookmark' and `next()` as 'turn to the next page'. This mechanism powers every `for` loop under the hood.",
     "why": "It allows manual traversal of iterables. This is critical when you need more control than a standard `for` loop provides, such as advancing conditionally or passing the iterator across different functions.",
-    "where_used": ["Parsing large CSV files line-by-line", "Custom paginated API clients"]
+    "where_used": [
+      "Parsing large CSV files line-by-line",
+      "Custom paginated API clients"
+    ]
   },
   "why_learning_this": [
     "You can manually process streams of data without loading everything into memory",

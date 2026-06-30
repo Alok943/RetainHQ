@@ -20,13 +20,27 @@
       "LLM Engineer OA"
     ]
   },
+  "glossary": [
+    {
+      "term": "HNSW",
+      "definition": "A popular way for databases to quickly find similar data by building a multi-layered map, much like a highway system."
+    },
+    {
+      "term": "IVF",
+      "definition": "A method that groups similar data into clusters, so the search engine only has to look inside the most relevant cluster."
+    },
+    {
+      "term": "ANN",
+      "definition": "Stands for Approximate Nearest Neighbor, a fast search technique that skips checking every item by trading a tiny bit of accuracy for a massive speed boost."
+    }
+  ],
   "hook": {
     "scenario": "You have 10 million document chunks. To answer one user question, do you calculate the cosine similarity between the query and all 10 million stored vectors? That would take seconds per query.",
     "question": "How do vector databases find the nearest neighbors in milliseconds without checking every single dot?"
   },
   "mental_model": {
     "intuition": "ANN trades a tiny bit of accuracy for a massive speed boost by building a map that lets you skip checking 99% of the vectors.",
-    "description": "A brute-force scan calculates the exact distance to every vector (Exact kNN). That's too slow at scale. Approximate Nearest Neighbor (ANN) indexes build a map\u2014like a multi-layer highway system (HNSW) or clustered neighborhoods (IVF)\u2014so the search can jump straight to the right area. You might miss the absolute #1 match, but you'll get 99% of the best matches in a fraction of the time."
+    "description": "A brute-force scan calculates the exact distance to every vector (Exact kNN). That's too slow at scale. Approximate Nearest Neighbor (ANN) indexes build a map—like a multi-layer highway system (HNSW) or clustered neighborhoods (IVF)—so the search can jump straight to the right area. You might miss the absolute #1 match, but you'll get 99% of the best matches in a fraction of the time."
   },
   "sections": [
     {
@@ -42,12 +56,12 @@
       "recap": "HNSW navigates a multi-layer graph to zoom in on the nearest neighbors quickly."
     },
     {
-      "body": "**IVF (Inverted File Index)** is another approach. It groups vectors into clusters around a center point (a 'centroid'). When you query, the database only calculates distance against the centroids, picks the closest cluster, and only searches inside that cluster\u2014ignoring the rest of the database entirely.",
+      "body": "**IVF (Inverted File Index)** is another approach. It groups vectors into clusters around a center point (a 'centroid'). When you query, the database only calculates distance against the centroids, picks the closest cluster, and only searches inside that cluster—ignoring the rest of the database entirely.",
       "recap": "IVF clusters vectors and only searches the closest neighborhood."
     },
     {
       "body": "Because these algorithms are approximate, you control the dials. You can tell the database to search a bit wider (more accurate, slightly slower) or narrower (less accurate, much faster). For RAG, 'approximate' retrieval is perfectly acceptable.",
-      "recap": "Pipeline recap: The ANN index is the engine inside your Vector Database making the Embed \u2192 Retrieve step millisecond-fast at scale."
+      "recap": "Pipeline recap: The ANN index is the engine inside your Vector Database making the Embed → Retrieve step millisecond-fast at scale."
     }
   ],
   "code_snippets": [

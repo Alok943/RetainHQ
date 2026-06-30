@@ -10,9 +10,33 @@
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [],
-    "unlocks": ["schedules-and-serializability", "recovery-and-logging"],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "unlocks": [
+      "schedules-and-serializability",
+      "recovery-and-logging"
+    ],
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Atomicity",
+      "definition": "The rule that guarantees a database transaction is treated as a single, indivisible unit. If one part fails, the entire transaction is cancelled and rolled back."
+    },
+    {
+      "term": "Consistency",
+      "definition": "The requirement that a database transaction must only change the database from one valid state to another, strictly following all established rules and constraints."
+    },
+    {
+      "term": "Isolation",
+      "definition": "The property that ensures multiple transactions happening at the same time do not interfere with each other, acting as if they were processed one by one."
+    },
+    {
+      "term": "Durability",
+      "definition": "The guarantee that once a transaction is successfully completed, its changes are permanently saved and will survive a system crash or power failure."
+    }
+  ],
   "hook": {
     "scenario": "You transfer $500 from your savings to your checking account. The bank debits savings — and then the server crashes. When it restarts, the $500 is gone from savings but never arrived in checking.",
     "question": "What guarantee must every database provide so this can never happen — even under crashes and concurrent users?"
@@ -24,18 +48,60 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      { "id": "app", "label": "Application" },
-      { "id": "db", "label": "Database" },
-      { "id": "log", "label": "Write-Ahead Log" },
-      { "id": "disk", "label": "Disk (Durable)" }
+      {
+        "id": "app",
+        "label": "Application"
+      },
+      {
+        "id": "db",
+        "label": "Database"
+      },
+      {
+        "id": "log",
+        "label": "Write-Ahead Log"
+      },
+      {
+        "id": "disk",
+        "label": "Disk (Durable)"
+      }
     ],
     "steps": [
-      { "from": "app", "to": "db", "label": "BEGIN — start a transaction", "term": "transaction start" },
-      { "from": "db", "to": "log", "label": "Write changes to log first", "term": "Write-Ahead Logging (WAL)" },
-      { "from": "db", "to": "db", "label": "Apply changes in memory (buffer)", "term": "buffer pool update" },
-      { "from": "db", "to": "log", "label": "Flush log record: COMMIT", "term": "commit record" },
-      { "from": "log", "to": "disk", "label": "Log flushed to disk — now durable", "term": "durability achieved" },
-      { "from": "db", "to": "app", "label": "Return: COMMIT OK", "term": "transaction committed" }
+      {
+        "from": "app",
+        "to": "db",
+        "label": "BEGIN — start a transaction",
+        "term": "transaction start"
+      },
+      {
+        "from": "db",
+        "to": "log",
+        "label": "Write changes to log first",
+        "term": "Write-Ahead Logging (WAL)"
+      },
+      {
+        "from": "db",
+        "to": "db",
+        "label": "Apply changes in memory (buffer)",
+        "term": "buffer pool update"
+      },
+      {
+        "from": "db",
+        "to": "log",
+        "label": "Flush log record: COMMIT",
+        "term": "commit record"
+      },
+      {
+        "from": "log",
+        "to": "disk",
+        "label": "Log flushed to disk — now durable",
+        "term": "durability achieved"
+      },
+      {
+        "from": "db",
+        "to": "app",
+        "label": "Return: COMMIT OK",
+        "term": "transaction committed"
+      }
     ]
   },
   "explanation": "ACID stands for Atomicity, Consistency, Isolation, and Durability — the four properties that together guarantee a transaction behaves correctly even in the face of system failures and concurrent access. They were formalised by Jim Gray in the late 1970s and remain the gold standard for relational databases.\n\nAtomicity means a transaction is all-or-nothing. The debit and the credit in the bank transfer are one atomic unit — either both happen or neither does. If the system crashes mid-transaction, the database must undo any partial work during recovery, leaving no trace. This is implemented via an undo log that records the original values before each change.\n\nConsistency means a transaction takes the database from one valid state to another valid state — it must not violate any integrity constraints (primary keys, foreign keys, check constraints, business rules). Importantly, consistency is partly the database's job (enforcing constraints) and partly the application's job (writing correct transaction logic). The DB engine prevents constraint violations; it cannot prevent logic bugs.\n\nIsolation means concurrent transactions execute as if they were running serially — one at a time. If two transactions run simultaneously, neither should see the other's intermediate, uncommitted state. In practice this is expensive to enforce fully, so SQL defines four isolation levels (Read Uncommitted, Read Committed, Repeatable Read, Serializable) that trade correctness for performance. The stricter the level, the more locking/blocking occurs.\n\nDurability means once a transaction is committed, its changes survive any subsequent failure — crash, power cut, OS fault. This is typically achieved via Write-Ahead Logging (WAL), as shown in the animation: the log record is flushed to durable storage BEFORE the commit is acknowledged. On recovery, the database replays the log to restore all committed changes. The data pages themselves may still be in the buffer pool, but the log on disk is sufficient for recovery.\n\nThe practical takeaway is that ACID guarantees are not free. Atomicity needs undo logs, isolation needs locking or MVCC, durability needs a synchronous disk flush per commit. High-throughput systems sometimes relax isolation (accepting stale reads) or batch commits to improve throughput. Knowing which property was relaxed — and why — is exactly what interviewers probe.",

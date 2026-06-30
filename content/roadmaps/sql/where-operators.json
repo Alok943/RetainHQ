@@ -10,14 +10,44 @@
     "estimated_minutes": 25,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["select-from"],
-    "unlocks": ["order-by-limit", "distinct", "null-handling", "case-expressions", "update-delete"],
-    "project_usage": ["filtering API list endpoints", "analytics queries", "report filters"]
+    "prerequisites": [
+      "select-from"
+    ],
+    "unlocks": [
+      "order-by-limit",
+      "distinct",
+      "null-handling",
+      "case-expressions",
+      "update-delete"
+    ],
+    "project_usage": [
+      "filtering API list endpoints",
+      "analytics queries",
+      "report filters"
+    ]
   },
+  "glossary": [
+    {
+      "term": "discarded",
+      "definition": "Thrown away or rejected; in SQL, rows that do not meet a certain condition and are removed from the results."
+    },
+    {
+      "term": "inclusive",
+      "definition": "Containing or including the endpoints or limits of a range, like counting from 1 to 10 and including both 1 and 10."
+    },
+    {
+      "term": "membership",
+      "definition": "The state of belonging to a specific group or list, like checking if a country is in a specific list of countries."
+    }
+  ],
   "overview": {
     "what": "WHERE filters the row-set that FROM produced, keeping only rows where the condition evaluates to TRUE. Any row where the condition is FALSE or NULL is discarded.\n\nIn the logical query flow: FROM builds the full row-set → WHERE removes rows that fail the test → SELECT picks the output columns.\n\nComparison operators — =, <>, <, >, <=, >= — compare a column to a value:\n\n  SELECT name, price\n  FROM products\n  WHERE price > 50\n  ORDER BY price;\n\nReturns 3 rows: Chair (89.99), Desk (149.99), Monitor (199.99).\n\nLogical operators — AND, OR, NOT — combine conditions:\n\n  SELECT name, price\n  FROM products\n  WHERE category = 'Electronics' AND price < 50\n  ORDER BY name;\n\nReturns 2 rows: Keyboard (49.99), Mouse (19.99).\n\nBETWEEN tests an inclusive range:\n\n  SELECT name, price\n  FROM products\n  WHERE price BETWEEN 20 AND 100\n  ORDER BY price;\n\nReturns 3 rows: Keyboard (49.99), Chair (89.99) — equivalent to price >= 20 AND price <= 100. Mouse (19.99) is excluded because 19.99 < 20.\n\nIN tests membership in a list:\n\n  SELECT name, country\n  FROM customers\n  WHERE country IN ('US', 'UK')\n  ORDER BY name;\n\nReturns 4 rows: Alice, Bob, Diana, Greg.\n\nLIKE matches text patterns (% = any characters, _ = one character):\n\n  SELECT name\n  FROM customers\n  WHERE name LIKE 'A%'\n  ORDER BY name;\n\nReturns 1 row: Alice.\n\nKey mental model: WHERE is a row-by-row TRUE/FALSE gate. It never changes values — it only decides which rows survive to the next stage.",
     "why": "Almost every real query filters data. Without WHERE, every query returns every row in the table — useless for any application that needs specific records. WHERE is also critical for UPDATE and DELETE safety: forgetting it updates or deletes every row.",
-    "where_used": ["API endpoints with search/filter parameters", "dashboard queries with date ranges", "UPDATE/DELETE safety guards"]
+    "where_used": [
+      "API endpoints with search/filter parameters",
+      "dashboard queries with date ranges",
+      "UPDATE/DELETE safety guards"
+    ]
   },
   "why_learning_this": [
     "Every filtered API list endpoint translates user parameters into WHERE conditions",
@@ -72,7 +102,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT name, price\nFROM products\nWHERE category = 'Electronics' AND price < 50\nORDER BY name;",
-    "flow_stages": ["from", "where", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch WHERE discard 4 of the 6 product rows — only rows where BOTH conditions are TRUE survive to SELECT."
   },

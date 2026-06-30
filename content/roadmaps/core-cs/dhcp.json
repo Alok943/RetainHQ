@@ -11,8 +11,25 @@
     "interview_frequency": "medium",
     "prerequisites": [],
     "unlocks": [],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "DHCP",
+      "definition": "A network protocol that automatically hands out IP addresses and settings to devices as soon as they connect to a network, saving you from typing them in manually."
+    },
+    {
+      "term": "subnet mask",
+      "definition": "A specific network setting that helps a computer figure out which other devices are on its local network versus which ones are far away on the internet."
+    },
+    {
+      "term": "Application Layer protocol",
+      "definition": "A high-level set of rules that defines how specific software applications (like web browsers or email clients) talk to each other over the network."
+    }
+  ],
   "hook": {
     "scenario": "Imagine moving into a new town where you must manually register your house at City Hall to receive a unique house number before you can receive mail. DHCP automates this: it assigns you a temporary address the moment you step foot in town.",
     "question": "What is the exact sequence of messages exchanged to acquire an IP address?"
@@ -25,14 +42,40 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      { "id": "client", "label": "Client (New Device)" },
-      { "id": "server", "label": "DHCP Server" }
+      {
+        "id": "client",
+        "label": "Client (New Device)"
+      },
+      {
+        "id": "server",
+        "label": "DHCP Server"
+      }
     ],
     "steps": [
-      { "from": "client", "to": "server", "label": "I need an IP! (Broadcast)", "term": "Discover" },
-      { "from": "server", "to": "client", "label": "Here is an IP you can use.", "term": "Offer" },
-      { "from": "client", "to": "server", "label": "I accept this IP! (Broadcast)", "term": "Request" },
-      { "from": "server", "to": "client", "label": "Confirmed. It is yours for 24h.", "term": "Acknowledge" }
+      {
+        "from": "client",
+        "to": "server",
+        "label": "I need an IP! (Broadcast)",
+        "term": "Discover"
+      },
+      {
+        "from": "server",
+        "to": "client",
+        "label": "Here is an IP you can use.",
+        "term": "Offer"
+      },
+      {
+        "from": "client",
+        "to": "server",
+        "label": "I accept this IP! (Broadcast)",
+        "term": "Request"
+      },
+      {
+        "from": "server",
+        "to": "client",
+        "label": "Confirmed. It is yours for 24h.",
+        "term": "Acknowledge"
+      }
     ]
   },
   "key_points": [

@@ -9,14 +9,32 @@
     "estimated_minutes": 40,
     "importance": 7,
     "interview_frequency": "low",
-    "prerequisites": ["generic-types"],
+    "prerequisites": [
+      "generic-types"
+    ],
     "unlocks": [],
-    "project_usage": ["Reusable utilities", "Framework internals"]
+    "project_usage": [
+      "Reusable utilities",
+      "Framework internals"
+    ]
   },
+  "glossary": [
+    {
+      "term": "generic function",
+      "definition": "A function designed to work with various data types while still keeping track of the specific type being used."
+    },
+    {
+      "term": "placeholder",
+      "definition": "A temporary symbol or variable (like T) that stands in for an actual, concrete data type until the function is called."
+    }
+  ],
   "overview": {
     "what": "A `TypeVar` creates a generic function that adapts its return type based on the input type. If you have `T = TypeVar('T')` and a function `def get_first(items: list[T]) -> T:`, it tells the type checker: 'Whatever type `T` is in the input list, that exact same type `T` will be returned.' If you pass a `list[int]`, `T` becomes `int`. In Python 3.12+, you can skip the `TypeVar` import and write `def get_first[T](items: list[T]) -> T:` directly.",
     "why": "Without `TypeVar`, you'd have to use `Any` or `Union` for a function that works on many types, but that destroys autocomplete. `TypeVar` preserves the exact type information passing *through* the function.",
-    "where_used": ["Utility functions like 'first_or_default'", "Decorators that preserve the decorated function's signature"]
+    "where_used": [
+      "Utility functions like 'first_or_default'",
+      "Decorators that preserve the decorated function's signature"
+    ]
   },
   "why_learning_this": [
     "Writing utility functions that work for any type without breaking the IDE's autocomplete.",

@@ -10,13 +10,32 @@
     "estimated_minutes": 25,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["counting-operations"],
-    "unlocks": ["common-complexities", "amortized-analysis"],
+    "prerequisites": [
+      "counting-operations"
+    ],
+    "unlocks": [
+      "common-complexities",
+      "amortized-analysis"
+    ],
     "project_usage": [
       "Evaluating API endpoint scalability: will this handler survive 10x traffic growth?",
       "Choosing between data structures (hash map O(1) lookup vs. sorted array O(log n) lookup) in system design"
     ]
   },
+  "glossary": [
+    {
+      "term": "upper bound",
+      "definition": "The maximum limit on how much time or memory an algorithm can use."
+    },
+    {
+      "term": "constant factor",
+      "definition": "A fixed multiplier that affects actual speed but not the overall scaling category."
+    },
+    {
+      "term": "recursive call stack",
+      "definition": "The memory structure used by a computer to keep track of a function calling itself."
+    }
+  ],
   "overview": {
     "what": "Big-O notation describes the upper bound on an algorithm's growth rate as the input size approaches infinity. It strips away constants and lower-order terms, capturing only the dominant factor that determines how the algorithm scales. O(f(n)) means there exist constants c and n0 such that T(n) <= c * f(n) for all n >= n0.",
     "why": "Exact operation counts like 3n^2 + 7n + 4 are precise but overwhelming to compare. Big-O compresses them to their essential scaling behavior — O(n^2) — so you can instantly decide whether an algorithm is feasible for a given input size without drowning in arithmetic.",

@@ -9,14 +9,35 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["type-hints", "classes"],
+    "prerequisites": [
+      "type-hints",
+      "classes"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Pydantic", "mypy"]
+    "project_usage": [
+      "FastAPI",
+      "Pydantic",
+      "mypy"
+    ]
   },
+  "glossary": [
+    {
+      "term": "nominal typing",
+      "definition": "A type system where a variable's type is determined by the explicit name of its class or inheritance, rather than its structure."
+    },
+    {
+      "term": "structural subtyping",
+      "definition": "A type system where a variable's type is determined by the methods and properties it has, rather than its explicit class name."
+    }
+  ],
   "overview": {
     "what": "Python's `typing.Protocol` allows you to define structural interfaces. Instead of checking if an object inherits from a specific class (nominal typing), Protocols check if an object *has the right methods and attributes* (structural typing). Think of a Protocol like a bouncer at a club who only checks if you have a valid ID card, not what family you belong to. For example, if you define a `Logger` Protocol with a `.log(message)` method, any class that implements `.log(message)` implicitly matches the Protocol, without needing to explicitly inherit from it. This gives you the safety of static typing with the flexibility of Python's natural duck typing.",
     "why": "It decouples your code. You can specify what a function needs an object to *do* rather than what the object *is*, making it much easier to swap implementations or mock objects for testing without creating complex inheritance hierarchies.",
-    "where_used": ["Dependency injection", "Mocking in tests", "Plugin architectures"]
+    "where_used": [
+      "Dependency injection",
+      "Mocking in tests",
+      "Plugin architectures"
+    ]
   },
   "why_learning_this": [
     "Writing functions that accept any object matching a shape, improving reusability",

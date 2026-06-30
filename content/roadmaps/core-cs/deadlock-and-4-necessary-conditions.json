@@ -10,9 +10,28 @@
     "importance": 8,
     "interview_frequency": "high",
     "prerequisites": [],
-    "unlocks": ["deadlock-prevention-avoidance"],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "unlocks": [
+      "deadlock-prevention-avoidance"
+    ],
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "deadlock",
+      "definition": "A permanent state where two or more programs are completely stuck because each is waiting for the other to release a resource, causing everything to freeze."
+    },
+    {
+      "term": "thread",
+      "definition": "A small sequence of instructions or tasks within a program that the computer can execute independently."
+    },
+    {
+      "term": "lock",
+      "definition": "A software mechanism that prevents multiple programs from accessing the exact same piece of data or resource at the exact same time."
+    }
+  ],
   "hook": {
     "scenario": "Two threads each grab one lock, then each waits forever for the lock the other is holding. The program just... stops. No crash, no error.",
     "question": "What exactly has to be true for this freeze to be possible - and which single condition is easiest to break?"
@@ -24,37 +43,109 @@
   "animation": {
     "type": "cycle",
     "actors": [
-      { "id": "a", "label": "Thread A" },
-      { "id": "b", "label": "Thread B" },
-      { "id": "c", "label": "Thread C" },
-      { "id": "d", "label": "Thread D" }
+      {
+        "id": "a",
+        "label": "Thread A"
+      },
+      {
+        "id": "b",
+        "label": "Thread B"
+      },
+      {
+        "id": "c",
+        "label": "Thread C"
+      },
+      {
+        "id": "d",
+        "label": "Thread D"
+      }
     ],
     "steps": [
-      { "from": "a", "to": "b", "label": "waits for a lock held by", "term": "hold & wait" },
-      { "from": "b", "to": "c", "label": "waits for a lock held by", "term": "hold & wait" },
-      { "from": "c", "to": "d", "label": "waits for a lock held by", "term": "hold & wait" },
-      { "from": "d", "to": "a", "label": "waits for a lock held by", "term": "circular wait -> deadlock" }
+      {
+        "from": "a",
+        "to": "b",
+        "label": "waits for a lock held by",
+        "term": "hold & wait"
+      },
+      {
+        "from": "b",
+        "to": "c",
+        "label": "waits for a lock held by",
+        "term": "hold & wait"
+      },
+      {
+        "from": "c",
+        "to": "d",
+        "label": "waits for a lock held by",
+        "term": "hold & wait"
+      },
+      {
+        "from": "d",
+        "to": "a",
+        "label": "waits for a lock held by",
+        "term": "circular wait -> deadlock"
+      }
     ]
   },
   "explanation": "Start with the simplest case: two threads and two locks. Thread 1 grabs Lock A and, partway through its work, finds it also needs Lock B to finish. At that exact moment Thread 2 has already grabbed Lock B and now needs Lock A. Neither will release what it holds until it finishes - but neither can finish without the lock the other is sitting on. They wait on each other forever. The program hasn't crashed; it is still 'running'. It just produces permanent silence.\n\nThat frozen state is a deadlock: a set of processes, each blocked waiting for a resource that another process in the same set is holding. With more threads the waiting doesn't just pair up - it forms a closed loop, exactly the ring in the animation above, where A waits on B, B on C, C on D, and D back on A.\n\nIn 1971 Coffman showed this can happen ONLY when four conditions are all true at the same time. Mutual exclusion: a resource can be held by just one process at a time. Hold-and-wait: a process keeps the resources it already holds while requesting more. No preemption: the system cannot forcibly take a resource back - the holder must release it voluntarily. Circular wait: there is a closed chain of processes, each waiting for a resource the next one holds.\n\nHere is why those four matter so much: because ALL of them are required, you only have to break ONE to make deadlock impossible. That single fact is the entire basis of deadlock prevention. In practice the easiest condition to attack is circular wait - if every thread must acquire locks in the same global order (say, always A before B), a closed loop can never form.\n\nFinally, don't confuse deadlock with starvation. In starvation the system as a whole keeps making progress; one unlucky process just keeps getting passed over. In deadlock, nothing in the stuck set ever moves again.",
   "key_points": [
-    { "title": "Mutual exclusion", "detail": "At least one resource is held in a non-shareable mode - only one process can use it at a time." },
-    { "title": "Hold and wait", "detail": "A process holding at least one resource is waiting to acquire additional resources held by others." },
-    { "title": "No preemption", "detail": "A resource cannot be forcibly taken away; it is released only voluntarily by the process holding it." },
-    { "title": "Circular wait", "detail": "A closed chain of processes exists where each is waiting for a resource that the next one in the chain holds." }
+    {
+      "title": "Mutual exclusion",
+      "detail": "At least one resource is held in a non-shareable mode - only one process can use it at a time."
+    },
+    {
+      "title": "Hold and wait",
+      "detail": "A process holding at least one resource is waiting to acquire additional resources held by others."
+    },
+    {
+      "title": "No preemption",
+      "detail": "A resource cannot be forcibly taken away; it is released only voluntarily by the process holding it."
+    },
+    {
+      "title": "Circular wait",
+      "detail": "A closed chain of processes exists where each is waiting for a resource that the next one in the chain holds."
+    }
   ],
   "common_mistakes": [
-    { "title": "Confusing deadlock with starvation", "explanation": "Deadlock = a cycle where every process in the set is stuck forever. Starvation = one process keeps getting passed over while the system overall still progresses." },
-    { "title": "Thinking the four conditions are independent", "explanation": "All four must hold AT ONCE. Prevention works by making just ONE of them impossible - usually circular wait, via a global resource-ordering rule." }
+    {
+      "title": "Confusing deadlock with starvation",
+      "explanation": "Deadlock = a cycle where every process in the set is stuck forever. Starvation = one process keeps getting passed over while the system overall still progresses."
+    },
+    {
+      "title": "Thinking the four conditions are independent",
+      "explanation": "All four must hold AT ONCE. Prevention works by making just ONE of them impossible - usually circular wait, via a global resource-ordering rule."
+    }
   ],
   "recall_questions": [
-    { "q": "Name the four necessary conditions for deadlock.", "answer": "Mutual exclusion, hold-and-wait, no preemption, and circular wait.", "tier": "tier1" },
-    { "q": "Why does breaking circular wait prevent deadlock?", "answer": "Imposing a global ordering on resource acquisition makes a closed waiting cycle impossible, so the fourth condition can never hold.", "tier": "tier2" },
-    { "q": "Deadlock vs starvation - the one-line difference?", "answer": "Deadlock freezes a whole set of processes forever; starvation indefinitely delays one process while others keep proceeding.", "tier": "tier1" }
+    {
+      "q": "Name the four necessary conditions for deadlock.",
+      "answer": "Mutual exclusion, hold-and-wait, no preemption, and circular wait.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does breaking circular wait prevent deadlock?",
+      "answer": "Imposing a global ordering on resource acquisition makes a closed waiting cycle impossible, so the fourth condition can never hold.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Deadlock vs starvation - the one-line difference?",
+      "answer": "Deadlock freezes a whole set of processes forever; starvation indefinitely delays one process while others keep proceeding.",
+      "tier": "tier1"
+    }
   ],
   "oa_questions": [
-    { "question": "How would you prevent deadlock in a system that uses multiple locks?", "company": "SDE interview", "answer": "Impose a global lock-acquisition order so a circular wait can never form; alternatively use try-lock with backoff or lock-free structures.", "approach": "Anchor the answer to breaking ONE Coffman condition - resource ordering kills circular wait and is the cleanest, most common real fix." },
-    { "question": "A web server hangs intermittently under load with no error. How do you suspect and confirm a deadlock?", "company": "Core CS OA", "answer": "Symptoms: threads blocked, CPU idle, no progress. Confirm with a thread dump showing a cycle of threads each waiting on a lock another holds.", "approach": "Distinguish deadlock (idle CPU, cyclic wait) from a livelock or thrashing (busy CPU, no progress)." }
+    {
+      "question": "How would you prevent deadlock in a system that uses multiple locks?",
+      "company": "SDE interview",
+      "answer": "Impose a global lock-acquisition order so a circular wait can never form; alternatively use try-lock with backoff or lock-free structures.",
+      "approach": "Anchor the answer to breaking ONE Coffman condition - resource ordering kills circular wait and is the cleanest, most common real fix."
+    },
+    {
+      "question": "A web server hangs intermittently under load with no error. How do you suspect and confirm a deadlock?",
+      "company": "Core CS OA",
+      "answer": "Symptoms: threads blocked, CPU idle, no progress. Confirm with a thread dump showing a cycle of threads each waiting on a lock another holds.",
+      "approach": "Distinguish deadlock (idle CPU, cyclic wait) from a livelock or thrashing (busy CPU, no progress)."
+    }
   ],
   "sources": [
     "https://www.geeksforgeeks.org/introduction-of-deadlock-in-operating-system/"

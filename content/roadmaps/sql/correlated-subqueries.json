@@ -10,14 +10,38 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "high",
-    "prerequisites": ["subqueries"],
+    "prerequisites": [
+      "subqueries"
+    ],
     "unlocks": [],
-    "project_usage": ["row-level comparisons", "existence checks in analytics", "interview questions"]
+    "project_usage": [
+      "row-level comparisons",
+      "existence checks in analytics",
+      "interview questions"
+    ]
   },
+  "glossary": [
+    {
+      "term": "idiomatic",
+      "definition": "The most natural, standard, and widely accepted way of doing something in a specific programming language."
+    },
+    {
+      "term": "degrade",
+      "definition": "To drop in quality or performance, such as a query becoming slower as the amount of data increases."
+    },
+    {
+      "term": "alias",
+      "definition": "A temporary alternative name given to a table to make queries shorter and easier to write."
+    }
+  ],
   "overview": {
     "what": "A correlated subquery references a column from the outer query, so it is re-evaluated for every row the outer query considers. This is the key difference from a regular (non-correlated) subquery, which runs once and produces a fixed result.\n\nThe most common pattern is EXISTS:\n\n  SELECT c.name\n  FROM customers c\n  WHERE EXISTS (\n    SELECT 1 FROM orders o\n    WHERE o.customer_id = c.id AND o.status = 'paid'\n  )\n  ORDER BY c.name;\n\nFor each customer row, the inner query checks: 'does at least one paid order exist for THIS customer?' The reference to c.id makes it correlated. Result: Alice, Bob, Carlos, Emma, Farah.\n\nCorrelated scalar subqueries also work — returning one value per outer row:\n\n  SELECT c.name,\n         (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS order_count\n  FROM customers c\n  ORDER BY c.name;\n\nFor each customer, the inner query counts THAT customer's orders. Greg and Hana get 0.\n\nMental model: a regular subquery is a constant — computed once, plugged in. A correlated subquery is a function — called once per outer row with that row's values as arguments.",
     "why": "Correlated subqueries express per-row logic that is awkward or impossible with plain JOINs or non-correlated subqueries. 'Find employees earning more than their department average' or 'find customers who have at least one paid order' map naturally to correlated patterns. EXISTS in particular is the idiomatic way to test for the presence or absence of related rows.",
-    "where_used": ["existence checks (does this user have at least one X?)", "per-row aggregates in SELECT without GROUP BY", "row-by-row comparisons against group-level statistics"]
+    "where_used": [
+      "existence checks (does this user have at least one X?)",
+      "per-row aggregates in SELECT without GROUP BY",
+      "row-by-row comparisons against group-level statistics"
+    ]
   },
   "why_learning_this": [
     "Express 'for each row, check or compute something against related rows' — a pattern that appears in nearly every analytics dashboard",
@@ -72,7 +96,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT c.name\nFROM customers c\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.customer_id = c.id AND o.status = 'paid'\n)\nORDER BY c.name;",
-    "flow_stages": ["from", "where", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "For each customer row, watch the correlated subquery check whether any paid order exists for THAT customer. The reference to c.id is what makes it correlated."
   },

@@ -22,6 +22,16 @@
       "SQLAlchemy"
     ]
   },
+  "glossary": [
+    {
+      "term": "time complexity",
+      "definition": "A way to describe how the runtime of an operation increases as the amount of data grows."
+    },
+    {
+      "term": "hash collisions",
+      "definition": "When two different keys accidentally get mapped to the exact same location in a hash table."
+    }
+  ],
   "overview": {
     "what": "Every Python collection operation has a time complexity — a measure of how the number of steps grows as the collection grows. Big-O notation describes that growth rate:\n\n  O(1) — constant time, the same speed regardless of size (like opening a book to a page number you already know).\n  O(n) — linear time, you must scan every element in the worst case.\n  O(n log n) — log-linear time, typical of efficient sorting algorithms.\n\nThink of a dict or set as a filing cabinet with labelled drawers: you walk straight to the right drawer in O(1). A list used for membership testing is an unlabelled pile: you must rifle through every item, O(n).\n\nHere are the key operations and their average-case complexities:\n\n  list: index access `xs[i]` O(1), append O(1) amortised, insert/delete at position 0 O(n), `x in xs` O(n), sort O(n log n).\n\n  dict: get/set/delete by key O(1), `key in d` O(1).\n\n  set: add/discard/`x in s` O(1).\n\n  tuple: index access `t[i]` O(1), `x in t` O(n) (tuples have no hash table — they are scanned linearly, just like lists).\n\nThe practical takeaway: whenever you need to check whether a value exists in a collection, convert it to a set or use a dict. A membership test against a list of 1 000 000 items is up to 1 000 000× slower than the same test against a set.\n\nExample — filtering allowed user IDs from an API request:\n\n  allowed = {'u-101', 'u-202', 'u-303'}        # set, O(1) lookup\n  payload_ids = ['u-202', 'u-999', 'u-101']\n  valid = [uid for uid in payload_ids if uid in allowed]\n\nExample — building a fast cache index:\n\n  cache = {}                                     # dict, O(1) lookup\n  for record in db_rows:\n      cache[record['id']] = record",
     "why": "Choosing the wrong collection for the job is the most common performance mistake in Python. A single `if item in big_list` inside a loop can silently turn an O(n) endpoint into an O(n²) endpoint. Understanding these costs lets you pick the right structure before profiling tells you something is slow.",

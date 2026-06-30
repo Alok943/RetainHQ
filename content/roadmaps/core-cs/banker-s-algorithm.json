@@ -17,6 +17,20 @@
       "Operating Systems"
     ]
   },
+  "glossary": [
+    {
+      "term": "Bankers Algorithm",
+      "definition": "A resource allocation strategy used by operating systems to carefully grant resources to programs, ensuring the system never gets stuck in a deadlock where everyone is waiting."
+    },
+    {
+      "term": "Safe Sequence",
+      "definition": "A theoretical order of execution where all running programs can finish their tasks one by one using currently available resources without getting stuck."
+    },
+    {
+      "term": "Unsafe state",
+      "definition": "A vulnerable system condition where resources have been handed out in such a way that a deadlock could occur if every program simultaneously requested all the remaining resources they need."
+    }
+  ],
   "hook": {
     "scenario": "A small-town bank has $10,000 in cash. Three local businesses have credit lines totaling $20,000. The banker must carefully approve loans so that there's always enough cash to let at least one business finish its project, pay back its entire loan, and fund the others."
   },
@@ -24,7 +38,7 @@
     "intuition": "The OS acts like a banker, only lending out resources if it can guarantee a path for everyone to eventually finish and return what they borrowed.",
     "description": "The Banker's Algorithm is a deadlock avoidance strategy. It tracks the maximum possible resource needs of every process, what they currently hold, and what is currently available. Before granting a request, it simulates the allocation. If the system can find a 'safe sequence' where all processes can theoretically finish one by one, the request is approved."
   },
-  "explanation": "The Banker's Algorithm, developed by Edsger Dijkstra, is the most famous algorithm for Deadlock Avoidance. It gets its name from how a bank manages liquidity: a bank never lends out so much money that it can't satisfy the maximum credit limit of at least one of its customers. If it did, and all customers suddenly maxed out their credit, the bank would go bankrupt (deadlock).\n\nTo make this work, the OS requires three pieces of information upfront: the 'Maximum' resources each process might need, the 'Allocation' of resources each process currently has, and the 'Available' resources currently free in the system. By subtracting Allocation from Maximum, the OS calculates the 'Need' matrix\u2014how many more resources each process might request to finish its job.\n\nWhen a process requests a resource, the OS pretends to grant it. It updates the matrices and runs a safety check. The safety check looks for a process whose remaining 'Need' is less than or equal to the 'Available' pool. If it finds one, it assumes that process will finish and return all its resources, adding them back to the 'Available' pool.\n\nThe algorithm repeats this step, looking for the next process that can finish with the newly expanded 'Available' pool. If it can find a sequence that allows every single process to finish, this is called a 'Safe Sequence'. The simulated state is deemed a 'Safe State', and the original resource request is permanently granted.\n\nHowever, if the simulation gets stuck\u2014meaning no process can finish with the available resources\u2014the state is 'Unsafe'. An unsafe state isn't a deadlock yet, but it means deadlock is possible if processes request their maximum needs. To avoid this, the OS denies the request, forcing the process to wait until more resources are freed up by others.",
+  "explanation": "The Banker's Algorithm, developed by Edsger Dijkstra, is the most famous algorithm for Deadlock Avoidance. It gets its name from how a bank manages liquidity: a bank never lends out so much money that it can't satisfy the maximum credit limit of at least one of its customers. If it did, and all customers suddenly maxed out their credit, the bank would go bankrupt (deadlock).\n\nTo make this work, the OS requires three pieces of information upfront: the 'Maximum' resources each process might need, the 'Allocation' of resources each process currently has, and the 'Available' resources currently free in the system. By subtracting Allocation from Maximum, the OS calculates the 'Need' matrix—how many more resources each process might request to finish its job.\n\nWhen a process requests a resource, the OS pretends to grant it. It updates the matrices and runs a safety check. The safety check looks for a process whose remaining 'Need' is less than or equal to the 'Available' pool. If it finds one, it assumes that process will finish and return all its resources, adding them back to the 'Available' pool.\n\nThe algorithm repeats this step, looking for the next process that can finish with the newly expanded 'Available' pool. If it can find a sequence that allows every single process to finish, this is called a 'Safe Sequence'. The simulated state is deemed a 'Safe State', and the original resource request is permanently granted.\n\nHowever, if the simulation gets stuck—meaning no process can finish with the available resources—the state is 'Unsafe'. An unsafe state isn't a deadlock yet, but it means deadlock is possible if processes request their maximum needs. To avoid this, the OS denies the request, forcing the process to wait until more resources are freed up by others.",
   "animation": {
     "type": "sequence",
     "actors": [

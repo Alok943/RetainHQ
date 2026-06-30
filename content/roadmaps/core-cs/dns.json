@@ -11,8 +11,25 @@
     "interview_frequency": "medium",
     "prerequisites": [],
     "unlocks": [],
-    "appears_in": ["SDE interview", "Core CS OA"]
+    "appears_in": [
+      "SDE interview",
+      "Core CS OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Domain Name System",
+      "definition": "The internet's phonebook that automatically translates human-readable website names into the computer-friendly IP addresses needed to load them."
+    },
+    {
+      "term": "decentralized",
+      "definition": "A system design where power and information are spread out across many different computers worldwide, rather than being controlled by a single central server."
+    },
+    {
+      "term": "local cache",
+      "definition": "A temporary, super-fast storage area on your computer that remembers recently visited website IP addresses so you don't have to look them up again."
+    }
+  ],
   "hook": {
     "scenario": "Computers route traffic using numeric IP addresses, but humans are terrible at memorizing numbers. If we had to type '142.250.190.46' to visit Google, the internet would be unusable.",
     "question": "How does your device translate a domain name into an IP address in milliseconds?"
@@ -25,21 +42,76 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      { "id": "browser", "label": "Browser" },
-      { "id": "resolver", "label": "DNS Resolver" },
-      { "id": "root", "label": "Root Server" },
-      { "id": "tld", "label": "TLD Server" },
-      { "id": "auth", "label": "Authoritative Server" }
+      {
+        "id": "browser",
+        "label": "Browser"
+      },
+      {
+        "id": "resolver",
+        "label": "DNS Resolver"
+      },
+      {
+        "id": "root",
+        "label": "Root Server"
+      },
+      {
+        "id": "tld",
+        "label": "TLD Server"
+      },
+      {
+        "id": "auth",
+        "label": "Authoritative Server"
+      }
     ],
     "steps": [
-      { "from": "browser", "to": "resolver", "label": "Who is example.com?", "term": "DNS Query" },
-      { "from": "resolver", "to": "root", "label": "Who handles .com?", "term": "Root Query" },
-      { "from": "root", "to": "resolver", "label": "Ask the .com TLD server", "term": "Root Response" },
-      { "from": "resolver", "to": "tld", "label": "Who handles example.com?", "term": "TLD Query" },
-      { "from": "tld", "to": "resolver", "label": "Ask example's Authoritative server", "term": "TLD Response" },
-      { "from": "resolver", "to": "auth", "label": "What is the IP of example.com?", "term": "Authoritative Query" },
-      { "from": "auth", "to": "resolver", "label": "It is 93.184.216.34 (A Record)", "term": "Authoritative Response" },
-      { "from": "resolver", "to": "browser", "label": "IP is 93.184.216.34 (Saved to cache)", "term": "Final Answer" }
+      {
+        "from": "browser",
+        "to": "resolver",
+        "label": "Who is example.com?",
+        "term": "DNS Query"
+      },
+      {
+        "from": "resolver",
+        "to": "root",
+        "label": "Who handles .com?",
+        "term": "Root Query"
+      },
+      {
+        "from": "root",
+        "to": "resolver",
+        "label": "Ask the .com TLD server",
+        "term": "Root Response"
+      },
+      {
+        "from": "resolver",
+        "to": "tld",
+        "label": "Who handles example.com?",
+        "term": "TLD Query"
+      },
+      {
+        "from": "tld",
+        "to": "resolver",
+        "label": "Ask example's Authoritative server",
+        "term": "TLD Response"
+      },
+      {
+        "from": "resolver",
+        "to": "auth",
+        "label": "What is the IP of example.com?",
+        "term": "Authoritative Query"
+      },
+      {
+        "from": "auth",
+        "to": "resolver",
+        "label": "It is 93.184.216.34 (A Record)",
+        "term": "Authoritative Response"
+      },
+      {
+        "from": "resolver",
+        "to": "browser",
+        "label": "IP is 93.184.216.34 (Saved to cache)",
+        "term": "Final Answer"
+      }
     ]
   },
   "key_points": [

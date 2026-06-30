@@ -9,14 +9,34 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["dataclasses"],
+    "prerequisites": [
+      "dataclasses"
+    ],
     "unlocks": [],
-    "project_usage": ["Data validation", "Derived fields", "API payload normalization"]
+    "project_usage": [
+      "Data validation",
+      "Derived fields",
+      "API payload normalization"
+    ]
   },
+  "glossary": [
+    {
+      "term": "normalizing",
+      "definition": "Adjusting or changing data so it follows a standard, consistent format, like converting all text to lowercase."
+    },
+    {
+      "term": "hook",
+      "definition": "A specific place or method provided by a system that allows you to insert your own custom code to run automatically."
+    }
+  ],
   "overview": {
     "what": "The `__post_init__` method is a special method in dataclasses that runs immediately after the auto-generated `__init__` finishes. It allows you to execute custom logic like validating data, normalizing inputs (e.g., lowercasing strings), or computing dependent fields (fields whose values depend on other fields). Mental model: `__init__` puts the raw data into the box, and `__post_init__` inspects or modifies the box before handing it back to the caller.",
     "why": "Because `@dataclass` generates `__init__` for you, you can't easily add validation or compute fields inside the constructor. `__post_init__` provides a hook to perform these actions automatically every time an instance is created.",
-    "where_used": ["Configuration parsing", "Data validation pipelines", "Pydantic-like early validation"]
+    "where_used": [
+      "Configuration parsing",
+      "Data validation pipelines",
+      "Pydantic-like early validation"
+    ]
   },
   "why_learning_this": [
     "You can validate data at creation time rather than dealing with invalid state later.",

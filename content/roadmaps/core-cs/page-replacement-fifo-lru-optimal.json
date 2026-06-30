@@ -17,6 +17,20 @@
       "core-cs-os"
     ]
   },
+  "glossary": [
+    {
+      "term": "physical memory",
+      "definition": "The actual, fast RAM chips inside a computer where active programs must be loaded before the CPU can work on them."
+    },
+    {
+      "term": "evict",
+      "definition": "The process where the operating system forcefully removes a chunk of data from fast RAM to slow disk storage to make room for something more urgent."
+    },
+    {
+      "term": "Page Replacement Algorithms",
+      "definition": "The mathematical strategies the operating system uses to intelligently guess which chunks of memory it should evict when the RAM gets completely full."
+    }
+  ],
   "hook": {
     "scenario": "When your RAM is 100% full and you need to load a new page from disk, someone has to get kicked out. But who? Kick out the wrong page, and you'll just have to fetch it again a microsecond later."
   },
@@ -24,7 +38,7 @@
     "intuition": "It's like deciding which old t-shirt to donate so a new one fits in your closet. You want to donate the one you're least likely to wear again soon.",
     "description": "Page replacement algorithms decide which memory page to evict to disk when RAM is full. The goal is to minimize total page faults by making smart guesses about which pages won't be needed in the near future."
   },
-  "explanation": "During demand paging, the OS routinely brings pages from disk into RAM. Eventually, physical memory fills up. When a new page fault occurs and there are no free frames left, the OS must choose an existing page to evict (swap out to disk) to make room. If the OS makes poor choices, it will spend all its time swapping pages in and out\u2014a state that ruins system performance. To prevent this, operating systems use Page Replacement Algorithms.\n\nThe most basic algorithm is First-In, First-Out (FIFO). As the name implies, it blindly evicts the oldest page in memory, regardless of how often that page is being used. While trivially easy to implement using a simple queue, FIFO performs poorly in practice because a program's oldest pages often contain core logic or frequently accessed global variables. Evicting them guarantees an immediate page fault when the program inevitably tries to access them again.\n\nAt the other extreme is the Optimal Page Replacement algorithm (OPT). This algorithm looks into the future and evicts the page that will not be needed for the longest time. While OPT guarantees the lowest possible number of page faults, it is literally impossible to implement in a real OS because the operating system cannot predict future CPU instructions. However, OPT serves as a theoretical baseline; we evaluate real-world algorithms by seeing how closely their fault rate approaches the Optimal rate.\n\nThe standard practical solution is Least Recently Used (LRU). LRU operates on the principle of temporal locality: if a page hasn't been used recently, it likely won't be used again soon. When an eviction is needed, LRU kicks out the page that has been inactive the longest. While LRU is highly effective and closely approximates OPT, implementing perfect LRU is hardware-intensive because it requires stamping every page with a timestamp or moving it in a linked list on every single memory access. Real operating systems typically use approximations of LRU (like the Clock algorithm) to balance high accuracy with low overhead.",
+  "explanation": "During demand paging, the OS routinely brings pages from disk into RAM. Eventually, physical memory fills up. When a new page fault occurs and there are no free frames left, the OS must choose an existing page to evict (swap out to disk) to make room. If the OS makes poor choices, it will spend all its time swapping pages in and out—a state that ruins system performance. To prevent this, operating systems use Page Replacement Algorithms.\n\nThe most basic algorithm is First-In, First-Out (FIFO). As the name implies, it blindly evicts the oldest page in memory, regardless of how often that page is being used. While trivially easy to implement using a simple queue, FIFO performs poorly in practice because a program's oldest pages often contain core logic or frequently accessed global variables. Evicting them guarantees an immediate page fault when the program inevitably tries to access them again.\n\nAt the other extreme is the Optimal Page Replacement algorithm (OPT). This algorithm looks into the future and evicts the page that will not be needed for the longest time. While OPT guarantees the lowest possible number of page faults, it is literally impossible to implement in a real OS because the operating system cannot predict future CPU instructions. However, OPT serves as a theoretical baseline; we evaluate real-world algorithms by seeing how closely their fault rate approaches the Optimal rate.\n\nThe standard practical solution is Least Recently Used (LRU). LRU operates on the principle of temporal locality: if a page hasn't been used recently, it likely won't be used again soon. When an eviction is needed, LRU kicks out the page that has been inactive the longest. While LRU is highly effective and closely approximates OPT, implementing perfect LRU is hardware-intensive because it requires stamping every page with a timestamp or moving it in a linked list on every single memory access. Real operating systems typically use approximations of LRU (like the Clock algorithm) to balance high accuracy with low overhead.",
   "key_points": [
     {
       "title": "FIFO Anomaly (Belady's Anomaly)",

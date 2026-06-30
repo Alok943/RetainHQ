@@ -10,14 +10,43 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["select-from", "where-operators", "inner-join"],
-    "unlocks": ["full-cross-join", "self-join"],
-    "project_usage": ["analytics dashboards", "API list endpoints", "reporting queries"]
+    "prerequisites": [
+      "select-from",
+      "where-operators",
+      "inner-join"
+    ],
+    "unlocks": [
+      "full-cross-join",
+      "self-join"
+    ],
+    "project_usage": [
+      "analytics dashboards",
+      "API list endpoints",
+      "reporting queries"
+    ]
   },
+  "glossary": [
+    {
+      "term": "preserve",
+      "definition": "To keep something exactly as it is and prevent it from being lost or removed, like keeping unmatched rows."
+    },
+    {
+      "term": "spine",
+      "definition": "The main structure or foundation of a query, usually the starting table to which other data is attached."
+    },
+    {
+      "term": "trim",
+      "definition": "Extra or optional information added to the main structure of a query, like details attached from a secondary table."
+    }
+  ],
   "overview": {
     "what": "A LEFT JOIN keeps EVERY row from the left table, and attaches matching rows from the right table — filling the right-hand columns with NULL when there is no match. An INNER JOIN would silently drop those unmatched left rows; LEFT JOIN preserves them.\n\nAgainst the shared dataset, customers Greg and Hana placed no orders:\n\n  SELECT c.name, o.id AS order_id\n  FROM customers c\n  LEFT JOIN orders o ON o.customer_id = c.id\n  ORDER BY c.id, o.id;\n\nEvery customer appears; Greg and Hana come back with order_id = NULL. With INNER JOIN they would vanish entirely.\n\nA RIGHT JOIN is the mirror image — it keeps every row from the RIGHT table instead. RIGHT JOIN is rare in practice: you can always rewrite it as a LEFT JOIN by swapping the table order, which reads more naturally.\n\nThink of LEFT JOIN as 'keep all of the left, decorate with the right where it exists' — the left table is the spine, the right table is optional trim.",
     "why": "LEFT JOIN answers 'show me ALL X, with their Y if any' — all customers and their orders (including customers with none), all products and their sales (including unsold ones). That 'including the ones with nothing' is exactly what an INNER JOIN throws away, so choosing the wrong join silently hides rows.",
-    "where_used": ["customer lists that must include zero-order customers", "inventory reports including unsold products", "left-outer lookups in API endpoints"]
+    "where_used": [
+      "customer lists that must include zero-order customers",
+      "inventory reports including unsold products",
+      "left-outer lookups in API endpoints"
+    ]
   },
   "why_learning_this": [
     "Building list endpoints that must include rows with no related records (e.g. users with zero orders)",
@@ -72,7 +101,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT c.name, o.id AS order_id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nORDER BY c.id, o.id;",
-    "flow_stages": ["from", "join", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "join",
+      "select",
+      "order_by"
+    ],
     "visualization": "join-diagram",
     "focus": "Watch Greg and Hana survive the join with order_id = NULL — the rows an INNER JOIN would delete."
   },

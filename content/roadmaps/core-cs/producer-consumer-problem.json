@@ -14,6 +14,20 @@
     ],
     "unlocks": []
   },
+  "glossary": [
+    {
+      "term": "concurrent programming",
+      "definition": "The tricky art of writing software where multiple parts of the program are designed to run at the exact same time without crashing into each other."
+    },
+    {
+      "term": "threads",
+      "definition": "Small, independent sequences of instructions within a larger program that the computer can run simultaneously."
+    },
+    {
+      "term": "fixed-size queue",
+      "definition": "A digital waiting line for data that has a strict maximum capacity; once it is full, no more data can be added until some is removed."
+    }
+  ],
   "hook": {
     "scenario": "A chef (producer) makes pizzas and puts them on a heating rack. Waiters (consumers) take pizzas from the rack. If the rack is full, the chef must stop. If the rack is empty, waiters must wait."
   },
@@ -21,7 +35,7 @@
     "intuition": "Coordinating two different speeds of work using a bounded buffer in the middle.",
     "description": "Producers generate data and put it in a buffer; consumers take data out. The challenge is ensuring producers don't overfill the buffer, consumers don't read empty slots, and they don't corrupt the buffer by accessing it at the exact same time."
   },
-  "explanation": "The Producer-Consumer problem, also known as the Bounded-Buffer problem, is one of the most foundational patterns in concurrent programming. It models a system where one or more threads (Producers) generate data items and place them into a shared, fixed-size queue, while one or more threads (Consumers) remove those items to process them. You use this pattern constantly in real systems: a web server placing incoming requests into a queue for worker threads, or a background process streaming video frames to a renderer.\n\nThe core challenge arises because producers and consumers run asynchronously and at different, fluctuating speeds. There are three critical constraints we must enforce. First, if the buffer is entirely full, the Producer must go to sleep until space opens up. Second, if the buffer is totally empty, the Consumer must go to sleep until a new item arrives. Third, adding to or removing from the buffer modifies shared memory, so these actions must be strictly mutually exclusive to prevent data corruption.\n\nTo solve this cleanly, the classic approach uses three synchronization primitives: one mutex and two counting semaphores. The mutex guarantees that only one thread\u2014whether producer or consumer\u2014can touch the buffer at any given millisecond. The semaphores are used purely for signaling. One semaphore, let's call it 'empty_slots', is initialized to the size of the buffer. The other, 'full_slots', is initialized to 0.\n\nWhen a Producer wants to add an item, it first waits on 'empty_slots'. If space is available, the semaphore decrements. Then, it locks the mutex, adds the item, unlocks the mutex, and finally signals 'full_slots' (incrementing it to tell consumers an item is ready). Conversely, a Consumer waits on 'full_slots' (blocking if 0), locks the mutex, removes an item, unlocks the mutex, and signals 'empty_slots'. By separating the locking (mutex) from the signaling (semaphores), the system remains perfectly balanced, deadlock-free, and handles unpredictable thread speeds effortlessly.",
+  "explanation": "The Producer-Consumer problem, also known as the Bounded-Buffer problem, is one of the most foundational patterns in concurrent programming. It models a system where one or more threads (Producers) generate data items and place them into a shared, fixed-size queue, while one or more threads (Consumers) remove those items to process them. You use this pattern constantly in real systems: a web server placing incoming requests into a queue for worker threads, or a background process streaming video frames to a renderer.\n\nThe core challenge arises because producers and consumers run asynchronously and at different, fluctuating speeds. There are three critical constraints we must enforce. First, if the buffer is entirely full, the Producer must go to sleep until space opens up. Second, if the buffer is totally empty, the Consumer must go to sleep until a new item arrives. Third, adding to or removing from the buffer modifies shared memory, so these actions must be strictly mutually exclusive to prevent data corruption.\n\nTo solve this cleanly, the classic approach uses three synchronization primitives: one mutex and two counting semaphores. The mutex guarantees that only one thread—whether producer or consumer—can touch the buffer at any given millisecond. The semaphores are used purely for signaling. One semaphore, let's call it 'empty_slots', is initialized to the size of the buffer. The other, 'full_slots', is initialized to 0.\n\nWhen a Producer wants to add an item, it first waits on 'empty_slots'. If space is available, the semaphore decrements. Then, it locks the mutex, adds the item, unlocks the mutex, and finally signals 'full_slots' (incrementing it to tell consumers an item is ready). Conversely, a Consumer waits on 'full_slots' (blocking if 0), locks the mutex, removes an item, unlocks the mutex, and signals 'empty_slots'. By separating the locking (mutex) from the signaling (semaphores), the system remains perfectly balanced, deadlock-free, and handles unpredictable thread speeds effortlessly.",
   "animation": {
     "type": "cycle",
     "actors": [

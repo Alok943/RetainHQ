@@ -10,14 +10,40 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["where-operators"],
-    "unlocks": ["left-right-join"],
-    "project_usage": ["handling optional fields in APIs", "data cleaning queries", "reporting with fallback values"]
+    "prerequisites": [
+      "where-operators"
+    ],
+    "unlocks": [
+      "left-right-join"
+    ],
+    "project_usage": [
+      "handling optional fields in APIs",
+      "data cleaning queries",
+      "reporting with fallback values"
+    ]
   },
+  "glossary": [
+    {
+      "term": "three-valued",
+      "definition": "A logic system in SQL where a condition can be true, false, or unknown (NULL), rather than just true or false."
+    },
+    {
+      "term": "concrete",
+      "definition": "A specific, actual value rather than something unknown or missing, like returning a default string instead of a NULL."
+    },
+    {
+      "term": "fallback",
+      "definition": "A default option or alternative plan that is used when the primary choice is missing or fails."
+    }
+  ],
   "overview": {
     "what": "NULL is not a value — it means 'unknown' or 'missing'. It is NOT the same as zero, an empty string, or false. This distinction is the single most important thing to understand about NULL.\n\nSQL uses three-valued logic: every comparison can be TRUE, FALSE, or NULL. Any arithmetic or comparison involving NULL produces NULL:\n\n  5 > NULL    → NULL  (not FALSE)\n  NULL = NULL → NULL  (not TRUE)\n  NULL <> NULL → NULL (not TRUE)\n\nBecause WHERE keeps only TRUE rows, a NULL result means the row is silently dropped — the most common source of 'missing rows' bugs.\n\nTo test for NULL, use IS NULL and IS NOT NULL — never = NULL:\n\n  SELECT name, country\n  FROM customers\n  WHERE country IS NULL\n  ORDER BY name;\n\nReturns 1 row: Emma (country is NULL).\n\nCOALESCE returns the first non-NULL argument — a fallback for missing data:\n\n  SELECT name, COALESCE(country, 'Unknown') AS country\n  FROM customers\n  ORDER BY id;\n\nReturns 8 rows. Emma's row shows 'Unknown' instead of NULL.\n\nNULLIF returns NULL if two arguments are equal — useful for avoiding division by zero:\n\n  SELECT NULLIF(0, 0);\n\nReturns NULL (since both are 0).\n\nPostgreSQL common data types: INTEGER (whole numbers), NUMERIC/DECIMAL (exact decimals like prices), TEXT/VARCHAR (strings), BOOLEAN (true/false), DATE (calendar dates), TIMESTAMP (date + time). Every type can hold NULL — it represents the absence of any value regardless of the column's type.\n\nAggregate functions (COUNT, SUM, AVG) skip NULLs except COUNT(*), which counts rows regardless:\n\n  SELECT COUNT(*) AS total_rows, COUNT(country) AS has_country\n  FROM customers;\n\nReturns total_rows = 8, has_country = 7 (Emma's NULL country is skipped by COUNT(country)).\n\nMental model: NULL is a 'fog' — any operation that touches it produces fog. IS NULL is the only flashlight that can see through it. COALESCE is a default value that replaces the fog with something concrete.",
     "why": "Mishandling NULLs causes silent data loss in queries. Rows vanish from WHERE filters, JOINs drop unmatched records, and aggregations skip values without warning. Understanding three-valued logic is prerequisite to writing correct LEFT JOINs and safe analytics.",
-    "where_used": ["handling optional fields (nullable columns) in REST APIs", "data cleaning and ETL pipelines", "COALESCE for default display values in reports"]
+    "where_used": [
+      "handling optional fields (nullable columns) in REST APIs",
+      "data cleaning and ETL pipelines",
+      "COALESCE for default display values in reports"
+    ]
   },
   "why_learning_this": [
     "LEFT JOINs produce NULL-padded rows — without understanding NULL, you cannot filter or aggregate join results correctly",
@@ -81,7 +107,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT name, COALESCE(country, 'Unknown') AS country\nFROM customers\nWHERE country IS NULL\nORDER BY name;",
-    "flow_stages": ["from", "where", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch WHERE use IS NULL to find Emma — the only customer with a missing country — then COALESCE replace the NULL with 'Unknown' in the output."
   },

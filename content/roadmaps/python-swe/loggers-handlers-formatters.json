@@ -9,14 +9,38 @@
     "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["logging-basics", "class-basics"],
-    "unlocks": ["structured-logging", "log-rotation"],
-    "project_usage": ["FastAPI", "Django", "Celery"]
+    "prerequisites": [
+      "logging-basics",
+      "class-basics"
+    ],
+    "unlocks": [
+      "structured-logging",
+      "log-rotation"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Celery"
+    ]
   },
+  "glossary": [
+    {
+      "term": "LogRecord",
+      "definition": "An internal object in Python that packages all the details about a single logging event, such as the message, time, and severity."
+    },
+    {
+      "term": "propagate",
+      "definition": "The automatic passing of a log message from a specific logger up to the main, root logger to be processed."
+    }
+  ],
   "overview": {
     "what": "Python's `logging` module separates concerns into three parts: Loggers (the interface you call), Handlers (where the logs go), and Formatters (what the logs look like). When `logger.error('msg')` is called, the Logger packages it into a LogRecord, then passes it to all attached Handlers. Each Handler uses its Formatter to turn the record into text, and sends it to its destination (console, file, network). Think of it like a newsroom: the Logger is the reporter writing the story, the Formatter is the editor formatting it for print or web, and the Handlers are the delivery trucks taking it to different audiences.",
     "why": "It allows a single application to send different log levels to different destinations (e.g., debug logs to a file, errors to standard error and an alerting service) without changing the logging calls in the business logic.",
-    "where_used": ["FastAPI", "Celery", "Production Web Apps"]
+    "where_used": [
+      "FastAPI",
+      "Celery",
+      "Production Web Apps"
+    ]
   },
   "why_learning_this": [
     "Route error logs to a file while keeping info logs in the console",

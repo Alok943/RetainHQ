@@ -10,13 +10,27 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["big-o-notation", "common-complexities", "logarithms-and-powers-of-two"],
+    "prerequisites": [
+      "big-o-notation",
+      "common-complexities",
+      "logarithms-and-powers-of-two"
+    ],
     "unlocks": [],
     "project_usage": [
       "Understanding why Python list.append() and Java ArrayList.add() are marketed as O(1) despite occasional O(n) resizes",
       "Analyzing splay trees in network caches: worst-case O(n) per operation, but O(log n) amortized over any sequence"
     ]
   },
+  "glossary": [
+    {
+      "term": "probabilistic assumptions",
+      "definition": "Relying on random chances instead of mathematical guarantees."
+    },
+    {
+      "term": "geometric series",
+      "definition": "A sequence of numbers where each term is found by multiplying the previous one by a fixed number."
+    }
+  ],
   "overview": {
     "what": "Amortized analysis determines the average cost per operation over a worst-case sequence of operations, NOT the average case for a single random operation. It proves that even if a few individual operations are expensive (like resizing an array), the cost spread across all operations stays low. The three standard techniques are the aggregate method, the accounting method, and the potential method.",
     "why": "Worst-case per-operation analysis can be misleadingly pessimistic. If you judge a dynamic array's append by its worst case alone, you would conclude it is O(n) and avoid using it — even though a sequence of n appends costs only O(n) total, making each append O(1) amortized. Amortized analysis gives the true average cost per operation without relying on probabilistic assumptions.",

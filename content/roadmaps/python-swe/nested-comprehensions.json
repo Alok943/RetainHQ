@@ -20,6 +20,16 @@
       "cross-product generation"
     ]
   },
+  "glossary": [
+    {
+      "term": "flatten",
+      "definition": "To convert a complex, layered structure (like a list containing other lists) into a single, simple, one-dimensional list."
+    },
+    {
+      "term": "combinatorial cross-products",
+      "definition": "Every possible combination formed by matching each item in one list with every item in another list."
+    }
+  ],
   "overview": {
     "what": "A nested comprehension allows you to put multiple `for` clauses in a single comprehension, or place a comprehension completely inside another one. When combining multiple `for` clauses like `[x for row in matrix for x in row]`, the order reads left-to-right exactly as the loops would be nested top-to-bottom in standard code. Alternatively, you can nest the comprehensions themselves: `[[0 for _ in range(3)] for _ in range(3)]` creates a grid of lists.",
     "why": "Nested data structures like lists of lists are common (e.g. database rows containing JSON arrays, paginated API endpoints returning pages of results). Nested comprehensions provide a concise way to flatten those structures or generate combinatorial cross-products without verbose loop boilerplate.",

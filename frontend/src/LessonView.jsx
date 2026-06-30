@@ -12,6 +12,7 @@ import { track, EVENTS } from './lib/analytics';
 import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
+import { GlossaryText } from './lib/glossary';
 
 // The DSA execution-trace player (Framer Motion + renderers) is heavy and only needed on
 // dsa-kind lessons that carry a `viz` — lazy-load it so every other lesson stays light.
@@ -70,6 +71,8 @@ export default function LessonView() {
       return ns;
     });
   }, []);
+
+  const usedGlossaryTerms = new Set();
 
   useEffect(() => {
     let cancelled = false;
@@ -223,6 +226,7 @@ export default function LessonView() {
           toggleReveal={toggleReveal}
           oaRevealed={checksRevealed}
           toggleOa={toggleCheck}
+          usedGlossaryTerms={usedGlossaryTerms}
         />
       </div>
     );
@@ -243,6 +247,7 @@ export default function LessonView() {
           setAhaRevealed={setAhaRevealed}
           oaRevealed={checksRevealed}
           toggleOa={toggleCheck}
+          usedGlossaryTerms={usedGlossaryTerms}
         />
       </div>
     );
@@ -254,8 +259,8 @@ export default function LessonView() {
 
       {/* --- §1 Overview --- */}
       <Section icon={<BookOpen size={16} />} title="Overview">
-        <RichText text={lesson.overview.what} />
-        <div className="mt-3"><RichText text={lesson.overview.why} tone="muted" /></div>
+        <RichText text={lesson.overview.what} glossary={lesson.glossary} used={usedGlossaryTerms} />
+        <div className="mt-3"><RichText text={lesson.overview.why} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>
         {lesson.overview.where_used?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
             {lesson.overview.where_used.map((tag) => (
@@ -304,7 +309,9 @@ export default function LessonView() {
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0891B2]/10 text-[#0891B2] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">
                   {i + 1}
                 </span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{item}</span>
+                <span className="font-sans text-sm text-[#0F172A] leading-relaxed">
+                  <GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{item}</GlossaryText>
+                </span>
               </li>
             ))}
           </ul>
@@ -340,7 +347,9 @@ export default function LessonView() {
                 <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1.5 flex items-center gap-2">
                   <AlertTriangle size={13} /> {m.title}
                 </div>
-                <p className="font-sans text-sm text-[#475569] leading-relaxed">{m.explanation}</p>
+                <p className="font-sans text-sm text-[#475569] leading-relaxed">
+                  <GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{m.explanation}</GlossaryText>
+                </p>
               </div>
             ))}
           </div>
@@ -768,12 +777,12 @@ function LessonImage({ image }) {
 /** Born-visual interleaved layout (engineering/theory, optional). Each block is a short
  *  idea (body) followed by an optional image/animation and an optional one-line recap —
  *  the "small idea → visual → checkpoint" rhythm that replaces a monolithic explanation. */
-function LessonSections({ sections }) {
+function LessonSections({ sections, glossary, used }) {
   return (
     <div className="mb-4 flex flex-col gap-4">
       {sections.map((s, i) => (
         <div key={i} className="glass-card p-5">
-          {s.body && <RichText text={s.body} />}
+          {s.body && <RichText text={s.body} glossary={glossary} used={used} />}
           {s.image?.asset && <div className="mt-3"><LessonImage image={s.image} /></div>}
           {s.animation && (
             <div className="mt-3">
@@ -785,7 +794,7 @@ function LessonSections({ sections }) {
           {s.recap && (
             <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#0F766E]/[0.06] border-l-2 border-[#0F766E] px-3 py-2">
               <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] shrink-0 mt-0.5">So far</span>
-              <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{s.recap}</span>
+              <span className="font-sans text-[13px] text-[#0F172A] leading-snug"><GlossaryText terms={glossary} used={used}>{s.recap}</GlossaryText></span>
             </div>
           )}
         </div>
@@ -797,7 +806,7 @@ function LessonSections({ sections }) {
 /** Renders a content string as structured blocks: paragraphs separated by blank
  *  lines, with indented blocks rendered as real code. Overviews embed code examples
  *  this way, and a plain <p> would collapse the newlines into one run-on blob. */
-function RichText({ text, tone = 'ink' }) {
+function RichText({ text, tone = 'ink', glossary, used }) {
   const color = tone === 'muted' ? 'text-[#475569]' : 'text-[#0F172A]';
   const blocks = String(text || '').split(/\n[ \t]*\n/).filter((b) => b.trim() !== '');
   return (
@@ -814,7 +823,9 @@ function RichText({ text, tone = 'ink' }) {
           );
         }
         return (
-          <p key={i} className={`font-sans text-sm ${color} leading-relaxed`}>{block.trim()}</p>
+          <p key={i} className={`font-sans text-sm ${color} leading-relaxed`}>
+            <GlossaryText terms={glossary} used={used}>{block.trim()}</GlossaryText>
+          </p>
         );
       })}
     </div>
@@ -825,7 +836,7 @@ function RichText({ text, tone = 'ink' }) {
  *  how to simulate it (mental model + the execution-trace Player) → the teaching body → where
  *  it's used / how to recognize it → mistakes → recall → interview → practice. The `viz` block
  *  mounts the lazy DsaPlayer; prose-only lessons (no `viz` yet) simply skip it. */
-function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
+function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlossaryTerms }) {
   const mm = lesson.mental_model || {};
   const wie = lesson.why_it_exists || {};
   const viz = lesson.viz;
@@ -844,17 +855,17 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
       {/* Q1 — Why it exists (problem → naive → better idea) */}
       {(wie.problem || wie.better_idea) && (
         <Section icon={<HelpCircle size={16} />} title="Why it exists" accent="#0891B2">
-          {wie.problem && <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{wie.problem}</p>}
+          {wie.problem && <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{wie.problem}</GlossaryText></p>}
           {wie.naive_solution && (
             <div className="mt-2 rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
               <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B91C1C] mb-1">The naive way</div>
-              <p className="font-sans text-sm text-[#475569] leading-relaxed">{wie.naive_solution}</p>
+              <p className="font-sans text-sm text-[#475569] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{wie.naive_solution}</GlossaryText></p>
             </div>
           )}
           {wie.better_idea && (
             <div className="mt-2 rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
               <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">The better idea</div>
-              <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{wie.better_idea}</p>
+              <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{wie.better_idea}</GlossaryText></p>
             </div>
           )}
         </Section>
@@ -863,8 +874,8 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
       {/* Q2/Q3 — Mental model: the intuition + the one repeated decision */}
       {mm.intuition && (
         <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
-          <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{mm.intuition}</p>
-          {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" /></div>}
+          <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{mm.intuition}</GlossaryText></p>
+          {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
           {mm.repeated_decision && (
             <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#7C3AED]/[0.06] border-l-2 border-[#7C3AED] px-3 py-2">
               <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] shrink-0 mt-0.5">Each step</span>
@@ -890,10 +901,10 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
 
       {/* Teaching body: born-visual sections OR a monolithic explanation */}
       {Array.isArray(lesson.sections) && lesson.sections.length > 0 ? (
-        <LessonSections sections={lesson.sections} />
+        <LessonSections sections={lesson.sections} glossary={lesson.glossary} used={usedGlossaryTerms} />
       ) : lesson.explanation ? (
         <Section icon={<BookOpen size={16} />} title="How it works" accent="#0891B2">
-          <RichText text={lesson.explanation} />
+          <RichText text={lesson.explanation} glossary={lesson.glossary} used={usedGlossaryTerms} />
         </Section>
       ) : null}
 
@@ -1093,7 +1104,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa }) {
 
 /** Thin, intuition-first lesson body for aptitude (quant) + reasoning (logical/verbal).
  *  Field order mirrors the teaching order in PROMPT-aptitude.md / PROMPT-reasoning.md. */
-function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, setAhaRevealed, oaRevealed, toggleOa }) {
+function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, setAhaRevealed, oaRevealed, toggleOa, usedGlossaryTerms }) {
   const mm = lesson.mental_model || {};
   const pd = lesson.pattern_discovery;
   const we = lesson.worked_example;
@@ -1111,8 +1122,8 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
 
       {/* Mental model (required) — the intuition anchor */}
       <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
-        <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{mm.intuition}</p>
-        {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" /></div>}
+        <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{mm.intuition}</GlossaryText></p>
+        {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
       </Section>
 
       {/* Hero illustration (optional) — a single picture right after the mental model */}
@@ -1125,7 +1136,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Born-visual interleaved sections REPLACE the monolithic animation + explanation
           when present (small idea → visual → checkpoint). Else: the classic two blocks. */}
       {Array.isArray(lesson.sections) && lesson.sections.length > 0 ? (
-        <LessonSections sections={lesson.sections} />
+        <LessonSections sections={lesson.sections} glossary={lesson.glossary} used={usedGlossaryTerms} />
       ) : (
         <>
           {/* Animation (optional). vector-space = embeddings/RAG geometry; sequence/cycle = box-flow. */}
@@ -1136,10 +1147,16 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
                 : <ProcessAnimation animation={lesson.animation} />}
             </Section>
           )}
+          {/* Analogy (theory, optional) */}
+          {lesson.analogy && (
+            <Section icon={<Lightbulb size={16} />} title="Analogy" accent="#7C3AED">
+              <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{lesson.analogy}</GlossaryText></p>
+            </Section>
+          )}
           {/* Explanation — the concept, plainly */}
           {lesson.explanation && (
             <Section icon={<BookOpen size={16} />} title="The concept" accent="#0891B2">
-              <RichText text={lesson.explanation} />
+              <RichText text={lesson.explanation} glossary={lesson.glossary} used={usedGlossaryTerms} />
             </Section>
           )}
         </>
@@ -1152,7 +1169,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.key_points.map((p, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {p.detail}</span>
+                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> <GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{p.detail}</GlossaryText></span>
               </div>
             ))}
           </div>
@@ -1209,7 +1226,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.method.map((step, i) => (
               <li key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0891B2]/10 text-[#0891B2] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{step}</span>
+                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{step}</GlossaryText></span>
               </li>
             ))}
           </ol>
@@ -1219,15 +1236,15 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Formula (aptitude, required) */}
       {lesson.formula?.statement && (
         <Section icon={<Target size={16} />} title="The rule" accent="#0F766E">
-          <p className="font-mono text-[13px] text-[#0F172A] bg-[#0F766E]/[0.06] rounded px-3 py-2 leading-relaxed">{lesson.formula.statement}</p>
-          {lesson.formula.explain && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2">{lesson.formula.explain}</p>}
+          <p className="font-mono text-[13px] text-[#0F172A] bg-[#0F766E]/[0.06] rounded px-3 py-2 leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{lesson.formula.statement}</GlossaryText></p>
+          {lesson.formula.explain && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{lesson.formula.explain}</GlossaryText></p>}
         </Section>
       )}
 
       {/* Worked example (reasoning, required) — method applied; reveal the solution */}
       {we?.problem && (
         <Section icon={<Sparkles size={16} />} title="Worked example" accent="#7C3AED">
-          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3">{we.problem}</p>
+          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{we.problem}</GlossaryText></p>
           {!ahaRevealed ? (
             <button onClick={() => setAhaRevealed(true)} className="flex items-center gap-2 text-sm font-semibold text-white bg-[#7C3AED] hover:bg-[#6D28D9] rounded px-3.5 py-2 transition-colors">
               <Eye size={15} /> Reveal the solution
@@ -1239,7 +1256,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
                   {we.steps.map((step, i) => (
                     <li key={i} className="flex items-start gap-2.5">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                      <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{step}</span>
+                      <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{step}</GlossaryText></span>
                     </li>
                   ))}
                 </ol>
@@ -1275,7 +1292,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.common_mistakes.map((m, i) => (
               <div key={i} className="rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
                 <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1">{m.title}</div>
-                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{m.explanation}</p>
+                <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{m.explanation}</GlossaryText></p>
               </div>
             ))}
           </div>

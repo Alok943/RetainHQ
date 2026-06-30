@@ -9,14 +9,34 @@
     "estimated_minutes": 25,
     "importance": 7,
     "interview_frequency": "low",
-    "prerequisites": ["type-hints-basics"],
+    "prerequisites": [
+      "type-hints-basics"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Django", "SQLAlchemy models"]
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "SQLAlchemy models"
+    ]
   },
+  "glossary": [
+    {
+      "term": "circular import",
+      "definition": "An error that occurs when two or more modules attempt to import each other, creating an infinite loop."
+    },
+    {
+      "term": "static analysis tools",
+      "definition": "Programs that analyze your code without running it to find potential errors, like incorrect data types."
+    }
+  ],
   "overview": {
     "what": "In Python, using type hints often requires importing classes from other modules. If two modules import each other just for type hinting, it creates a 'circular import' error at runtime. `typing.TYPE_CHECKING` is a special constant that is `True` when the type checker (like mypy) is running, but `False` at runtime. By placing type-only imports inside an `if TYPE_CHECKING:` block, you hide them from Python at runtime, preventing the circular import.\n\nThe mental model is 'two parallel universes': one universe where the type checker runs (and sees the imports), and another where Python runs the code (and skips the imports).",
     "why": "It solves the catch-22 of needing to import a module to annotate types, but not being able to import it because it would cause a circular import crash.",
-    "where_used": ["Bidirectional relationships in ORM models", "Complex project structures", "Interdependent service layers"]
+    "where_used": [
+      "Bidirectional relationships in ORM models",
+      "Complex project structures",
+      "Interdependent service layers"
+    ]
   },
   "why_learning_this": [
     "You can type hint complex architectures without restructuring your entire codebase to avoid import cycles.",

@@ -9,14 +9,34 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "low",
-    "prerequisites": ["loggers-handlers-formatters"],
+    "prerequisites": [
+      "loggers-handlers-formatters"
+    ],
     "unlocks": [],
-    "project_usage": ["Long-running scripts", "Flask", "Django"]
+    "project_usage": [
+      "Long-running scripts",
+      "Flask",
+      "Django"
+    ]
   },
+  "glossary": [
+    {
+      "term": "data retention policies",
+      "definition": "Rules set by an organization that dictate how long specific types of data, like logs, must be kept before being deleted."
+    },
+    {
+      "term": "worker processes",
+      "definition": "Separate instances of a program running simultaneously to handle multiple tasks or requests at the same time."
+    }
+  ],
   "overview": {
     "what": "Log rotation is the practice of automatically creating a new log file when the current one gets too large or too old, renaming the old files (e.g., `app.log.1`, `app.log.2`), and deleting the oldest ones. In Python, this is done using `RotatingFileHandler` (by size) or `TimedRotatingFileHandler` (by time). Think of it like a security camera system that only keeps the last 7 days of footage, overwriting the oldest tapes so the hard drive never fills up.",
     "why": "If a long-running application writes to a single file forever, that file will eventually consume all available disk space and crash the server.",
-    "where_used": ["Linux Servers", "Docker Volumes", "Background Workers"]
+    "where_used": [
+      "Linux Servers",
+      "Docker Volumes",
+      "Background Workers"
+    ]
   },
   "why_learning_this": [
     "Prevent servers from crashing due to `Disk Out Of Space` errors",

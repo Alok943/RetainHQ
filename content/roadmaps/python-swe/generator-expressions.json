@@ -20,6 +20,16 @@
       "aggregating metrics without loading all into memory"
     ]
   },
+  "glossary": [
+    {
+      "term": "lazy evaluation",
+      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance."
+    },
+    {
+      "term": "random-access",
+      "definition": "The ability to instantly retrieve an item at any specific position in a collection, like getting the 5th item in a list."
+    }
+  ],
   "overview": {
     "what": "A generator expression looks just like a list comprehension, but uses parentheses `()` instead of square brackets `[]`. Instead of building an entire list in memory all at once, a generator expression uses lazy evaluation. It calculates and yields exactly one item at a time, pausing execution until the next item is requested. This means a generator expression takes up virtually no memory, regardless of how many items it will eventually produce. You can use them directly inside aggregation functions like `sum()`, `max()`, or `any()`.",
     "why": "When processing millions of database rows or gigabytes of log files, loading the entire dataset into memory with a list comprehension will crash your application with an OutOfMemory error. Generator expressions allow you to process massive datasets in a constant O(1) memory footprint.",

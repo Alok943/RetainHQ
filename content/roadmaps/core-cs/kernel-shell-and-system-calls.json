@@ -20,14 +20,28 @@
       "Systems Interview"
     ]
   },
+  "glossary": [
+    {
+      "term": "kernel",
+      "definition": "The deeply hidden core of an operating system that acts as the ultimate boss, directly controlling the computer's hardware and memory."
+    },
+    {
+      "term": "shell",
+      "definition": "The outer layer of an operating system that humans or scripts actually interact with to type commands and launch programs."
+    },
+    {
+      "term": "highly privileged code",
+      "definition": "Special, protected computer instructions that only the operating system's core is allowed to run, preventing regular apps from crashing the machine."
+    }
+  ],
   "hook": {
-    "scenario": "When you type `ls` or double-click a folder, you're interacting with the shell. But the shell doesn't actually read your hard drive\u2014it begs the kernel to do it."
+    "scenario": "When you type `ls` or double-click a folder, you're interacting with the shell. But the shell doesn't actually read your hard drive—it begs the kernel to do it."
   },
   "mental_model": {
     "intuition": "The Kernel is the vault manager, the Shell is the bank teller, and System Calls are the request slips.",
     "description": "You (the user/app) can't directly access the vault (hardware). You talk to the bank teller (shell or UI), who fills out a specific request slip (system call) to ask the vault manager (kernel) to securely fetch what you need."
   },
-  "explanation": "To understand how an operating system is structured, we divide it into two primary components: the kernel and the shell. The kernel is the absolute core of the operating system. It is the highly privileged code that talks directly to the hardware. It manages memory, schedules CPU time, and controls disk drives. Because it holds total power over the system, user programs are not allowed to directly execute kernel code or access hardware\u2014doing so could crash the entire computer.\n\nSince users and applications are locked out of the hardware, they need a way to communicate with the kernel. For users, this is the 'shell'. A shell is a program that wraps around the kernel, taking user commands (like typing 'mkdir new_folder' in a terminal) and translating them into actions the kernel can understand. While we often think of a shell as a text-based terminal (like Bash or Zsh), graphical user interfaces (GUIs) like the Windows Desktop are also conceptually shells, acting as the outer layer of the OS.\n\nBut how do programs like your web browser or Python scripts talk to the kernel? They use 'System Calls' (often abbreviated as syscalls). A system call is the programmatic interface provided by the kernel. It is a strictly defined, secure gateway that applications must use when they want the kernel to do something on their behalf, such as opening a file, sending data over a network, or creating a new process.\n\nThink of a system call as an API for the operating system. When a Python script wants to read a file, it calls Python's `open()` function. Under the hood, Python triggers a system call (like `sys_open` in Linux). The CPU pauses the Python program, securely transitions control to the kernel, and the kernel performs the actual disk read. Once the kernel finishes, it hands the data back to Python and lets the script continue running.\n\nThis separation of powers is what keeps your computer stable. By forcing all hardware and resource requests to pass through the strict checkpoint of system calls, the kernel can validate every request. If a malicious program tries to delete a system file via a system call, the kernel checks the permissions and simply rejects the request, protecting the system from harm.",
+  "explanation": "To understand how an operating system is structured, we divide it into two primary components: the kernel and the shell. The kernel is the absolute core of the operating system. It is the highly privileged code that talks directly to the hardware. It manages memory, schedules CPU time, and controls disk drives. Because it holds total power over the system, user programs are not allowed to directly execute kernel code or access hardware—doing so could crash the entire computer.\n\nSince users and applications are locked out of the hardware, they need a way to communicate with the kernel. For users, this is the 'shell'. A shell is a program that wraps around the kernel, taking user commands (like typing 'mkdir new_folder' in a terminal) and translating them into actions the kernel can understand. While we often think of a shell as a text-based terminal (like Bash or Zsh), graphical user interfaces (GUIs) like the Windows Desktop are also conceptually shells, acting as the outer layer of the OS.\n\nBut how do programs like your web browser or Python scripts talk to the kernel? They use 'System Calls' (often abbreviated as syscalls). A system call is the programmatic interface provided by the kernel. It is a strictly defined, secure gateway that applications must use when they want the kernel to do something on their behalf, such as opening a file, sending data over a network, or creating a new process.\n\nThink of a system call as an API for the operating system. When a Python script wants to read a file, it calls Python's `open()` function. Under the hood, Python triggers a system call (like `sys_open` in Linux). The CPU pauses the Python program, securely transitions control to the kernel, and the kernel performs the actual disk read. Once the kernel finishes, it hands the data back to Python and lets the script continue running.\n\nThis separation of powers is what keeps your computer stable. By forcing all hardware and resource requests to pass through the strict checkpoint of system calls, the kernel can validate every request. If a malicious program tries to delete a system file via a system call, the kernel checks the permissions and simply rejects the request, protecting the system from harm.",
   "common_mistakes": [
     {
       "title": "Assuming the shell and the terminal are the exact same thing",

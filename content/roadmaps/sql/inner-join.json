@@ -10,14 +10,43 @@
     "estimated_minutes": 25,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["select-from", "where-operators"],
-    "unlocks": ["left-right-join", "full-cross-join", "self-join"],
-    "project_usage": ["analytics queries", "API list endpoints", "reporting dashboards"]
+    "prerequisites": [
+      "select-from",
+      "where-operators"
+    ],
+    "unlocks": [
+      "left-right-join",
+      "full-cross-join",
+      "self-join"
+    ],
+    "project_usage": [
+      "analytics queries",
+      "API list endpoints",
+      "reporting dashboards"
+    ]
   },
+  "glossary": [
+    {
+      "term": "foreign",
+      "definition": "A column in one table that connects to the primary key in another table, creating a relationship between the two."
+    },
+    {
+      "term": "exclude",
+      "definition": "To deliberately leave out or remove items from a result, such as ignoring rows that do not have a match."
+    },
+    {
+      "term": "insight",
+      "definition": "A deep understanding or realization about how a specific concept or system works."
+    }
+  ],
   "overview": {
     "what": "INNER JOIN combines rows from two tables where a condition is true — typically matching a foreign key in one table to a primary key in another. Rows that have no match in the other table are silently dropped from the result.\n\nThink of it as a filter across two tables: start with every possible pair of rows (the Cartesian product), then keep only the pairs where the ON condition is true.\n\nAgainst the shared dataset:\n\n  SELECT c.name, o.id AS order_id\n  FROM customers c\n  INNER JOIN orders o ON o.customer_id = c.id\n  ORDER BY c.name, o.id;\n\nThis returns 8 rows — one for every order matched to its customer. Customers Greg and Hana appear nowhere because they have no orders; the join silently excludes them.\n\nMental model: INNER JOIN = 'give me only the rows that exist in BOTH tables'.",
     "why": "INNER JOIN is the most common join type. Almost every multi-table query starts here — listing orders with customer names, showing line items with product details, connecting any two related tables. Understanding that unmatched rows vanish is the key insight that separates it from outer joins.",
-    "where_used": ["order detail pages joining orders to products", "analytics dashboards combining customers and orders", "API endpoints returning enriched records"]
+    "where_used": [
+      "order detail pages joining orders to products",
+      "analytics dashboards combining customers and orders",
+      "API endpoints returning enriched records"
+    ]
   },
   "why_learning_this": [
     "Querying across two or more tables is the single most common SQL task — you cannot build any realistic report without joins",
@@ -72,7 +101,13 @@
   ],
   "query_walkthrough": {
     "query": "SELECT c.name, p.name AS product, oi.quantity\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id\nINNER JOIN order_items oi ON oi.order_id = o.id\nINNER JOIN products p ON p.id = oi.product_id\nWHERE c.name = 'Alice'\nORDER BY o.id, p.name;",
-    "flow_stages": ["from", "join", "where", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "join",
+      "where",
+      "select",
+      "order_by"
+    ],
     "visualization": "join-diagram",
     "focus": "Watch four tables chain together: customers → orders → order_items → products. Each INNER JOIN narrows the result to only matching rows, and the WHERE further filters to Alice's rows only."
   },

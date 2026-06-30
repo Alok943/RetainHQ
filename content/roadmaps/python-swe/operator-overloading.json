@@ -20,6 +20,16 @@
       "Pathlib"
     ]
   },
+  "glossary": [
+    {
+      "term": "syntactic sugar",
+      "definition": "Syntax in a programming language that makes things easier to read or to express, but doesn't add any new functionality."
+    },
+    {
+      "term": "operand",
+      "definition": "The object or value that an operator (like + or -) works on or manipulates."
+    }
+  ],
   "overview": {
     "what": "In Python, operators like `+`, `==`, and `<` are syntactic sugar for method calls on objects. When you run `a + b`, Python translates it to `a.__add__(b)`. Operator overloading allows you to define these double-underscore (dunder) methods in your own classes, giving your objects custom behaviour for built-in operators. For instance, defining `__eq__` lets you compare two separate instances by their data rather than their memory identity, and defining `__lt__` (less than) is required for built-in functions like `sorted()` to work. Think of operators as universal remotes: the button `+` is standard, but the specific device (the object) decides what action is taken when the button is pressed. When a dunder method doesn't know how to handle the other operand's type, it must return the singleton `NotImplemented`, which tells Python to try the reverse operation (like `__radd__`) on the other object. Lastly, operators like `+` should return a completely new instance, leaving the original operands unchanged.",
     "why": "It allows custom objects to integrate seamlessly with Python's built-in syntax and functions, making code cleaner and more expressive. It also enables objects to be sorted or compared for equality without writing custom method names.",

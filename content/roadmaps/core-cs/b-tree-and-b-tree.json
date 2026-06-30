@@ -11,8 +11,25 @@
     "interview_frequency": "high",
     "prerequisites": [],
     "unlocks": [],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "B-Tree",
+      "definition": "A wide, shallow tree data structure optimized for fast read and write operations on slow storage systems like hard drives, where each node stores many keys and data pointers."
+    },
+    {
+      "term": "B+ Tree",
+      "definition": "An advanced version of a B-Tree where all the actual data is kept only in the bottom leaf nodes, allowing the upper levels to pack in more search keys and the leaves to be linked for fast range searches."
+    },
+    {
+      "term": "leaf nodes",
+      "definition": "The bottom-most elements in a tree structure that do not have any child nodes beneath them. In a B+ Tree, these hold the actual data or pointers to the data."
+    }
+  ],
   "hook": {
     "scenario": "You need to search through 1 billion rows in a database table. A binary search tree would require 30 disk reads to find a record.",
     "question": "How do modern databases reduce those 30 agonizingly slow disk reads down to just 3 or 4?"
@@ -24,35 +41,99 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      { "id": "r", "label": "Root Node (RAM)" },
-      { "id": "i", "label": "Internal Node (Disk)" },
-      { "id": "l", "label": "Leaf Node (Disk)" }
+      {
+        "id": "r",
+        "label": "Root Node (RAM)"
+      },
+      {
+        "id": "i",
+        "label": "Internal Node (Disk)"
+      },
+      {
+        "id": "l",
+        "label": "Leaf Node (Disk)"
+      }
     ],
     "steps": [
-      { "from": "r", "to": "i", "label": "Find range, fetch block", "term": "1 Disk Read" },
-      { "from": "i", "to": "l", "label": "Find exact range, fetch block", "term": "1 Disk Read" },
-      { "from": "l", "to": "l", "label": "Scan linked list for ranges", "term": "B+ Tree advantage" }
+      {
+        "from": "r",
+        "to": "i",
+        "label": "Find range, fetch block",
+        "term": "1 Disk Read"
+      },
+      {
+        "from": "i",
+        "to": "l",
+        "label": "Find exact range, fetch block",
+        "term": "1 Disk Read"
+      },
+      {
+        "from": "l",
+        "to": "l",
+        "label": "Scan linked list for ranges",
+        "term": "B+ Tree advantage"
+      }
     ]
   },
   "explanation": "To understand database indexing, you first have to understand hardware. Reading from memory (RAM) is lightning fast. Reading from a spinning hard disk (or even an SSD) is thousands of times slower. When data is on disk, it is read in chunks called 'blocks' or 'pages' (typically 4KB to 16KB). If you use a standard Binary Search Tree for 1 billion records, the tree is ~30 levels deep. That means traversing it takes 30 separate disk reads. That is far too slow.\n\nEnter the B-Tree. It is a self-balancing search tree designed explicitly for systems that read and write large blocks of data. Instead of having just 1 key and 2 children per node, a B-Tree node is exactly the size of one disk block and contains hundreds of keys and children. This makes the tree extremely wide and extremely shallow. A B-Tree with a branching factor of 100 can store 1 million records in just 3 levels, and 100 million in 4 levels. Finding any record takes at most 3 or 4 disk reads.\n\nWhile B-Trees are great, databases almost exclusively use a variant called the B+ Tree. In a standard B-Tree, both the search keys and the actual data pointers are stored in every node (root, internal, and leaf). This takes up space, meaning fewer keys fit in a block, making the tree taller.\n\nThe B+ Tree solves this with two massive improvements. First, it pushes ALL the actual data pointers down to the leaf nodes. The internal nodes only contain search keys to guide the traversal. Because internal nodes now hold no data, they can pack in far more keys, making the tree even shorter and flatter.\n\nSecond, in a B+ Tree, all the leaf nodes are linked together in a continuous, doubly-linked list. This makes range queries (e.g., `WHERE age BETWEEN 20 AND 30`) incredibly fast. In a standard B-Tree, you would have to constantly traverse up and down the tree branches to find the next value. In a B+ Tree, you traverse down the tree exactly once to find '20', and then simply walk sideways across the linked leaves until you hit '30'.",
   "key_points": [
-    { "title": "Disk Block Optimization", "detail": "B-Tree nodes are sized to match disk blocks, packing many keys into one read to minimize slow disk access." },
-    { "title": "B-Tree", "detail": "Stores data pointers in ALL nodes (internal and leaf). Good for single-key lookups." },
-    { "title": "B+ Tree", "detail": "Stores data pointers ONLY in leaf nodes. Internal nodes just guide search. Results in a flatter tree." },
-    { "title": "Linked Leaves", "detail": "B+ Tree leaves are linked sequentially, allowing blazing fast range scans without traversing up and down the tree." }
+    {
+      "title": "Disk Block Optimization",
+      "detail": "B-Tree nodes are sized to match disk blocks, packing many keys into one read to minimize slow disk access."
+    },
+    {
+      "title": "B-Tree",
+      "detail": "Stores data pointers in ALL nodes (internal and leaf). Good for single-key lookups."
+    },
+    {
+      "title": "B+ Tree",
+      "detail": "Stores data pointers ONLY in leaf nodes. Internal nodes just guide search. Results in a flatter tree."
+    },
+    {
+      "title": "Linked Leaves",
+      "detail": "B+ Tree leaves are linked sequentially, allowing blazing fast range scans without traversing up and down the tree."
+    }
   ],
   "common_mistakes": [
-    { "title": "Thinking binary search trees are fine for databases", "explanation": "BSTs are great in RAM, but terrible on disk because their depth requires too many separate I/O operations." },
-    { "title": "Confusing B-Tree and B+ Tree lookups", "explanation": "In a B-Tree, if the key is in the root, the search stops immediately. In a B+ Tree, the search MUST always travel all the way to a leaf node, because internal nodes don't have the actual data." }
+    {
+      "title": "Thinking binary search trees are fine for databases",
+      "explanation": "BSTs are great in RAM, but terrible on disk because their depth requires too many separate I/O operations."
+    },
+    {
+      "title": "Confusing B-Tree and B+ Tree lookups",
+      "explanation": "In a B-Tree, if the key is in the root, the search stops immediately. In a B+ Tree, the search MUST always travel all the way to a leaf node, because internal nodes don't have the actual data."
+    }
   ],
   "recall_questions": [
-    { "q": "Why are B-Trees preferred over Binary Search Trees for databases?", "answer": "B-Trees are short and wide, minimizing the number of slow disk I/O operations required to find a record.", "tier": "tier1" },
-    { "q": "Where is the actual data stored in a B+ Tree?", "answer": "Only in the leaf nodes.", "tier": "tier1" },
-    { "q": "What structural feature of a B+ Tree makes range queries extremely fast?", "answer": "The leaf nodes are connected in a sequential linked list.", "tier": "tier2" }
+    {
+      "q": "Why are B-Trees preferred over Binary Search Trees for databases?",
+      "answer": "B-Trees are short and wide, minimizing the number of slow disk I/O operations required to find a record.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Where is the actual data stored in a B+ Tree?",
+      "answer": "Only in the leaf nodes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What structural feature of a B+ Tree makes range queries extremely fast?",
+      "answer": "The leaf nodes are connected in a sequential linked list.",
+      "tier": "tier2"
+    }
   ],
   "oa_questions": [
-    { "question": "Explain the difference between a B-Tree and a B+ Tree.", "company": "Core CS OA", "answer": "In a B-Tree, data is stored in all nodes. In a B+ Tree, data is only in leaf nodes, and leaves are linked. B+ Trees have higher fan-out (shorter trees) and faster range queries.", "approach": "Always emphasize the linked leaves for range queries, as it's the primary reason relational databases use B+ Trees." },
-    { "question": "How many disk accesses are required to find a record in a B+ Tree?", "company": "SDE interview", "answer": "Equal to the height of the tree (usually 3 or 4). The root node is almost always cached in RAM, reducing it further.", "approach": "Mention that the height is log_m(N) where m is the massive branching factor (like 100+)." }
+    {
+      "question": "Explain the difference between a B-Tree and a B+ Tree.",
+      "company": "Core CS OA",
+      "answer": "In a B-Tree, data is stored in all nodes. In a B+ Tree, data is only in leaf nodes, and leaves are linked. B+ Trees have higher fan-out (shorter trees) and faster range queries.",
+      "approach": "Always emphasize the linked leaves for range queries, as it's the primary reason relational databases use B+ Trees."
+    },
+    {
+      "question": "How many disk accesses are required to find a record in a B+ Tree?",
+      "company": "SDE interview",
+      "answer": "Equal to the height of the tree (usually 3 or 4). The root node is almost always cached in RAM, reducing it further.",
+      "approach": "Mention that the height is log_m(N) where m is the massive branching factor (like 100+)."
+    }
   ],
   "sources": [
     "https://en.wikipedia.org/wiki/B%2B_tree"

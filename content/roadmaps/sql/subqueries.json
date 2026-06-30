@@ -10,14 +10,42 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["where-operators", "aggregate-functions"],
-    "unlocks": ["correlated-subqueries", "ctes"],
-    "project_usage": ["analytics queries", "filtering with derived values", "reporting"]
+    "prerequisites": [
+      "where-operators",
+      "aggregate-functions"
+    ],
+    "unlocks": [
+      "correlated-subqueries",
+      "ctes"
+    ],
+    "project_usage": [
+      "analytics queries",
+      "filtering with derived values",
+      "reporting"
+    ]
   },
+  "glossary": [
+    {
+      "term": "nested",
+      "definition": "Placed or hidden inside something else of the same type, like one query sitting inside another."
+    },
+    {
+      "term": "compositional",
+      "definition": "Relating to the ability to combine simple parts to build more complex structures or logic."
+    },
+    {
+      "term": "genuinely",
+      "definition": "Truly or authentically; used when the logic actually requires a specific approach rather than just seeming to."
+    }
+  ],
   "overview": {
     "what": "A subquery is a SELECT nested inside another SQL statement. It runs first and feeds its result into the outer query.\n\nTwo common shapes:\n\n1. **Scalar subquery** — returns exactly ONE value (one row, one column). You can use it anywhere a single value is expected: in SELECT, WHERE, or even HAVING.\n\n  SELECT name, price\n  FROM products\n  WHERE price > (SELECT AVG(price) FROM products)\n  ORDER BY price;\n\nThe inner SELECT AVG(price) returns 85.82 (the average of all 6 products). The outer query then keeps only products whose price exceeds that single number: Monitor (199.99), Desk (149.99), Chair (89.99).\n\n2. **IN subquery** — returns a list of values (one column, many rows). Used with WHERE col IN (subquery) to filter the outer query against that list.\n\n  SELECT name\n  FROM customers\n  WHERE id IN (SELECT customer_id FROM orders WHERE status = 'paid')\n  ORDER BY name;\n\nThe inner query finds customer_ids with paid orders: {1, 2, 3, 5, 6}. The outer query returns the matching names: Alice, Bob, Carlos, Emma, Farah.\n\nThink of subqueries as 'compute a value or a list first, then plug it in'. The inner query produces a row-set; the outer query consumes it.",
     "why": "Subqueries let you express multi-step logic in a single statement — 'find products above the average price' or 'find customers who ordered at least once' — without needing temporary tables or multiple round-trips. They are the bridge between simple single-table queries and the powerful compositional SQL that real dashboards and APIs rely on.",
-    "where_used": ["filtering rows against a derived threshold (e.g. above-average price)", "checking membership in a dynamic list (e.g. customers who placed orders)", "embedding computed values in SELECT for inline comparisons"]
+    "where_used": [
+      "filtering rows against a derived threshold (e.g. above-average price)",
+      "checking membership in a dynamic list (e.g. customers who placed orders)",
+      "embedding computed values in SELECT for inline comparisons"
+    ]
   },
   "why_learning_this": [
     "Write single-statement queries that compare rows against aggregates — 'products priced above average' — instead of hard-coding values",
@@ -72,7 +100,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT name, price\nFROM products\nWHERE price > (SELECT AVG(price) FROM products)\nORDER BY price;",
-    "flow_stages": ["from", "where", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "where",
+      "select",
+      "order_by"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch the scalar subquery resolve to a single number (85.82), then see WHERE filter the products row-set down to only those above that threshold."
   },

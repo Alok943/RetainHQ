@@ -10,9 +10,28 @@
     "importance": 8,
     "interview_frequency": "high",
     "prerequisites": [],
-    "unlocks": ["er-relational-mapping"],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "unlocks": [
+      "er-relational-mapping"
+    ],
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Entity-Relationship",
+      "definition": "A visual diagramming technique used to sketch out the blueprint of a database by showing what 'things' exist and how they are connected."
+    },
+    {
+      "term": "data model",
+      "definition": "An abstract way of organizing and defining how data should be structured, stored, and related within an information system."
+    },
+    {
+      "term": "DBMS",
+      "definition": "The complex software application (like MySQL or Oracle) that physically creates, maintains, and secures the actual database on a server."
+    }
+  ],
   "hook": {
     "scenario": "Before a single line of SQL is written, a database designer sits down with a blank sheet of paper and a business problem: 'We need to track students, courses, and enrollments.' She draws boxes, ovals, and lines. That sketch will become the entire database schema.",
     "question": "What are the rules of this visual language, and how does it capture real-world complexity faithfully?"
@@ -23,29 +42,88 @@
   },
   "explanation": "The Entity-Relationship (ER) model, introduced by Peter Chen in 1976, is a high-level, conceptual data model. Its purpose is to describe what data a system must store and how the data items relate to each other, in a way that is independent of any particular DBMS or storage technology. Think of it as the blueprint phase of database design — done before you commit to any implementation.\n\nAn entity is a 'thing' in the real world that is distinguishable from all other things and that the database needs to represent. Concrete examples: a Student, an Employee, a Product, an Order. An entity type is the class (Student); an entity instance is a specific member of that class (the student named Priya Sharma with ID 2023-0045). In ER diagrams, entity types are drawn as rectangles. Weak entities are a special case: they cannot be uniquely identified by their own attributes alone — they depend on a related strong entity. A Dependent (spouse/child) of an Employee is a classic example: 'Dependent named Rahul' is only meaningful relative to a specific employee. Weak entities are drawn with double rectangles.\n\nAttributes describe properties of an entity. A Student entity might have attributes: StudentID, Name, DateOfBirth, Email. Attributes are drawn as ovals connected to their entity. Key attributes (those that uniquely identify an instance) are underlined in the diagram — StudentID is the key attribute for Student. Composite attributes are made of sub-parts: Name can be broken into FirstName and LastName. Multivalued attributes can hold multiple values per instance: PhoneNumbers (a student might have two phone numbers) — drawn as double ovals. Derived attributes can be computed from other stored data: Age can be derived from DateOfBirth and the current date — drawn as dashed ovals. You store DateOfBirth; Age is derived.\n\nRelationships describe how entity instances associate with each other. An Enrolls relationship connects Student and Course. A relationship type is the class (Enrolls); a relationship instance is a specific pairing (Priya enrolled in CS301). In ER diagrams, relationships are drawn as diamonds. Relationships can also have attributes — the Enrolls relationship might carry a Grade attribute, because grade belongs to the enrollment, not to the student or the course alone. The degree of a relationship is how many entity types participate: binary (two entities, most common), ternary (three entities), etc.\n\nCardinality and participation constraints are the most important part of ER design because they encode business rules. Cardinality specifies the maximum number of instances one entity can be associated with via the relationship: one-to-one (1:1), one-to-many (1:N), or many-to-many (M:N). A Department has many Employees (1:N); a Student can enroll in many Courses and a Course can have many Students (M:N); a Person has at most one Passport (1:1). Participation specifies whether every entity instance must participate: total participation (every Student must be enrolled in at least one Course — mandatory) versus partial participation (not every Employee manages a Department — optional). Total participation is shown with a double line in the diagram. Getting cardinality and participation right is the entire intellectual work of ER design — the rest is notation.",
   "key_points": [
-    { "title": "Entity & entity type", "detail": "An entity is a distinguishable real-world object. An entity type (rectangle) is the class; an entity instance is one member of that class." },
-    { "title": "Weak entity", "detail": "An entity whose instances cannot be uniquely identified without a related strong entity. Drawn with a double rectangle. Example: Dependent identified only relative to an Employee." },
-    { "title": "Simple attribute", "detail": "Atomic, single-valued property. Drawn as an oval. Key attributes (uniquely identify the entity) are underlined." },
-    { "title": "Composite attribute", "detail": "An attribute composed of sub-attributes (e.g., Name = FirstName + LastName). Shown as an oval with child ovals." },
-    { "title": "Multivalued attribute", "detail": "Can hold multiple values per instance (e.g., PhoneNumbers). Drawn as a double oval." },
-    { "title": "Derived attribute", "detail": "Computed from other stored data (e.g., Age from DateOfBirth). Drawn as a dashed oval — stored in the real world, not necessarily in the DB." },
-    { "title": "Relationship & cardinality", "detail": "Relationships (diamonds) link entity types. Cardinality (1:1, 1:N, M:N) encodes the maximum pairings. Participation (single/double line) encodes whether membership is optional or mandatory." }
+    {
+      "title": "Entity & entity type",
+      "detail": "An entity is a distinguishable real-world object. An entity type (rectangle) is the class; an entity instance is one member of that class."
+    },
+    {
+      "title": "Weak entity",
+      "detail": "An entity whose instances cannot be uniquely identified without a related strong entity. Drawn with a double rectangle. Example: Dependent identified only relative to an Employee."
+    },
+    {
+      "title": "Simple attribute",
+      "detail": "Atomic, single-valued property. Drawn as an oval. Key attributes (uniquely identify the entity) are underlined."
+    },
+    {
+      "title": "Composite attribute",
+      "detail": "An attribute composed of sub-attributes (e.g., Name = FirstName + LastName). Shown as an oval with child ovals."
+    },
+    {
+      "title": "Multivalued attribute",
+      "detail": "Can hold multiple values per instance (e.g., PhoneNumbers). Drawn as a double oval."
+    },
+    {
+      "title": "Derived attribute",
+      "detail": "Computed from other stored data (e.g., Age from DateOfBirth). Drawn as a dashed oval — stored in the real world, not necessarily in the DB."
+    },
+    {
+      "title": "Relationship & cardinality",
+      "detail": "Relationships (diamonds) link entity types. Cardinality (1:1, 1:N, M:N) encodes the maximum pairings. Participation (single/double line) encodes whether membership is optional or mandatory."
+    }
   ],
   "common_mistakes": [
-    { "title": "Putting relationship attributes on the wrong entity", "explanation": "Grade belongs to the Enrolls relationship, not to Student or Course — because one student can have different grades in different courses. Always ask: 'Does this attribute describe the association, or one of the participants alone?' If the association, it goes on the relationship diamond." },
-    { "title": "Confusing entity with attribute", "explanation": "A Phone Number can be an attribute (multivalued oval on Person) or an entity (its own rectangle with relationships). If you need to store additional properties about phone numbers (e.g., carrier, type), model it as an entity. If it's just a contact detail, an attribute is fine." },
-    { "title": "Getting cardinality direction wrong", "explanation": "Cardinality is read from one entity TOWARD the other. '1:N from Department to Employee' means one Department has many Employees, not the other way around. Always verify by asking 'can a single X relate to many Ys?' for each direction." },
-    { "title": "Ignoring participation constraints", "explanation": "Cardinality (max) and participation (min) are separate. A relationship can be 1:N with partial participation (an Employee doesn't have to manage a Department). Both constraints together fully specify the business rule." }
+    {
+      "title": "Putting relationship attributes on the wrong entity",
+      "explanation": "Grade belongs to the Enrolls relationship, not to Student or Course — because one student can have different grades in different courses. Always ask: 'Does this attribute describe the association, or one of the participants alone?' If the association, it goes on the relationship diamond."
+    },
+    {
+      "title": "Confusing entity with attribute",
+      "explanation": "A Phone Number can be an attribute (multivalued oval on Person) or an entity (its own rectangle with relationships). If you need to store additional properties about phone numbers (e.g., carrier, type), model it as an entity. If it's just a contact detail, an attribute is fine."
+    },
+    {
+      "title": "Getting cardinality direction wrong",
+      "explanation": "Cardinality is read from one entity TOWARD the other. '1:N from Department to Employee' means one Department has many Employees, not the other way around. Always verify by asking 'can a single X relate to many Ys?' for each direction."
+    },
+    {
+      "title": "Ignoring participation constraints",
+      "explanation": "Cardinality (max) and participation (min) are separate. A relationship can be 1:N with partial participation (an Employee doesn't have to manage a Department). Both constraints together fully specify the business rule."
+    }
   ],
   "recall_questions": [
-    { "q": "What is the difference between an entity type and an entity instance?", "answer": "An entity type is the class or category (e.g., Student). An entity instance is one specific member of that class (e.g., the student with ID 2023-0045). ER diagrams model entity types; the actual database stores entity instances.", "tier": "tier1" },
-    { "q": "Why does the Grade attribute belong to the Enrolls relationship rather than to Student or Course?", "answer": "Because grade depends on both the student and the specific course — one student can have different grades in different courses. An attribute that depends on the combination of entities belongs to the relationship between them.", "tier": "tier2" },
-    { "q": "What is a weak entity and what makes it 'weak'?", "answer": "A weak entity cannot be uniquely identified by its own attributes alone — it needs to be identified in the context of a related strong entity. Example: a Dependent is identified by name only within the context of a specific Employee.", "tier": "tier1" },
-    { "q": "Distinguish between cardinality and participation constraints.", "answer": "Cardinality specifies the maximum number of associations (1:1, 1:N, M:N). Participation specifies the minimum — whether every entity instance must participate (total/mandatory) or whether participation is optional (partial).", "tier": "tier2" }
+    {
+      "q": "What is the difference between an entity type and an entity instance?",
+      "answer": "An entity type is the class or category (e.g., Student). An entity instance is one specific member of that class (e.g., the student with ID 2023-0045). ER diagrams model entity types; the actual database stores entity instances.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does the Grade attribute belong to the Enrolls relationship rather than to Student or Course?",
+      "answer": "Because grade depends on both the student and the specific course — one student can have different grades in different courses. An attribute that depends on the combination of entities belongs to the relationship between them.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is a weak entity and what makes it 'weak'?",
+      "answer": "A weak entity cannot be uniquely identified by its own attributes alone — it needs to be identified in the context of a related strong entity. Example: a Dependent is identified by name only within the context of a specific Employee.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Distinguish between cardinality and participation constraints.",
+      "answer": "Cardinality specifies the maximum number of associations (1:1, 1:N, M:N). Participation specifies the minimum — whether every entity instance must participate (total/mandatory) or whether participation is optional (partial).",
+      "tier": "tier2"
+    }
   ],
   "oa_questions": [
-    { "question": "Draw an ER diagram for a library system: books can be borrowed by members; a book can have multiple authors; each loan has a due date.", "company": "Core CS OA", "answer": "Entities: Book (BookID, Title), Member (MemberID, Name), Author (AuthorID, Name). Relationships: Written-By (M:N between Book and Author, no attribute), Borrows (M:N between Member and Book, DueDate attribute on relationship). Book participates totally in Written-By (every book has at least one author); Member participates partially in Borrows.", "approach": "Start by identifying the nouns (entities) and the verbs (relationships). Then place attributes — check whether each attribute describes one entity alone or the interaction between two. Finally add cardinality and participation." },
-    { "question": "What is the difference between a multivalued attribute and a composite attribute? Give an example of each.", "company": "SDE interview", "answer": "A multivalued attribute holds multiple values of the same type for one entity instance (e.g., a Person can have multiple PhoneNumbers). A composite attribute is made of structured sub-parts (e.g., Address = Street + City + PinCode). They can coexist: a Person could have multiple composite Addresses.", "approach": "The key distinction: multivalued = multiple copies of the same field; composite = one value with internal structure. In a relational database, both require special handling: multivalued attributes become a separate table; composite attributes can be stored as sub-columns or split into flat columns." }
+    {
+      "question": "Draw an ER diagram for a library system: books can be borrowed by members; a book can have multiple authors; each loan has a due date.",
+      "company": "Core CS OA",
+      "answer": "Entities: Book (BookID, Title), Member (MemberID, Name), Author (AuthorID, Name). Relationships: Written-By (M:N between Book and Author, no attribute), Borrows (M:N between Member and Book, DueDate attribute on relationship). Book participates totally in Written-By (every book has at least one author); Member participates partially in Borrows.",
+      "approach": "Start by identifying the nouns (entities) and the verbs (relationships). Then place attributes — check whether each attribute describes one entity alone or the interaction between two. Finally add cardinality and participation."
+    },
+    {
+      "question": "What is the difference between a multivalued attribute and a composite attribute? Give an example of each.",
+      "company": "SDE interview",
+      "answer": "A multivalued attribute holds multiple values of the same type for one entity instance (e.g., a Person can have multiple PhoneNumbers). A composite attribute is made of structured sub-parts (e.g., Address = Street + City + PinCode). They can coexist: a Person could have multiple composite Addresses.",
+      "approach": "The key distinction: multivalued = multiple copies of the same field; composite = one value with internal structure. In a relational database, both require special handling: multivalued attributes become a separate table; composite attributes can be stored as sub-columns or split into flat columns."
+    }
   ],
   "sources": [
     "https://www.geeksforgeeks.org/introduction-of-er-model/",

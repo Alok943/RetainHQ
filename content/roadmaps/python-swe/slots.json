@@ -19,6 +19,16 @@
       "SQLAlchemy"
     ]
   },
+  "glossary": [
+    {
+      "term": "memory footprint",
+      "definition": "The total amount of computer memory or RAM that a program or object uses while running."
+    },
+    {
+      "term": "rigidly",
+      "definition": "In a strict, inflexible way that cannot be easily changed or bent."
+    }
+  ],
   "overview": {
     "what": "By default, Python objects store their instance attributes in a dynamic dictionary (`__dict__`). The `__slots__` attribute allows you to explicitly declare which attributes an instance can have. When you define `__slots__`, Python suppresses the creation of `__dict__` and allocates a fixed amount of space for the specified attributes. Think of `__dict__` as a flexible, expanding cargo container that takes up a lot of space, whereas `__slots__` is like a custom-molded foam insert that perfectly and rigidly fits only the tools you need.",
     "why": "Using `__slots__` drastically reduces the memory footprint of objects, which is critical when creating millions of instances. It also provides faster attribute access.",

@@ -21,6 +21,16 @@
       "logging"
     ]
   },
+  "glossary": [
+    {
+      "term": "side effect",
+      "definition": "When a function or expression changes something outside of its own scope, like modifying a global variable or printing to the screen."
+    },
+    {
+      "term": "conditional expression",
+      "definition": "Another name for a ternary expression; a piece of code that evaluates a condition and returns one of two possible values."
+    }
+  ],
   "overview": {
     "what": "A ternary expression (also called a conditional expression) evaluates to one of two values based on a condition, all in a single line:\n\n  value_if_true if condition else value_if_false\n\nExamples:\n\n  label = 'admin' if user['role'] == 'superuser' else 'member'\n  display = name if name else 'Anonymous'\n  status_text = 'enabled' if config.get('debug') else 'disabled'\n\nThe expression evaluates the condition first, then returns exactly ONE of the two branches — the other is never evaluated. It is an expression, not a statement, so it can appear anywhere a value is expected: assignment, function argument, f-string, list element. Think of it as a compressed two-branch decision that returns a value — not a replacement for multi-branch logic.",
     "why": "Ternary expressions compress routine two-outcome decisions (present vs missing, enabled vs disabled, role A vs role B) into one readable line. They become unreadable when nested or when the condition or branches are complex — those cases still call for a full if/else block.",

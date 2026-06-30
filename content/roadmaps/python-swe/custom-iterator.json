@@ -22,6 +22,16 @@
       "Pagination"
     ]
   },
+  "glossary": [
+    {
+      "term": "exhausted",
+      "definition": "When an iterator has gone through all its items and has no more left to provide."
+    },
+    {
+      "term": "lazily",
+      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance."
+    }
+  ],
   "overview": {
     "what": "A custom iterator class is a class that implements both the `__iter__()` and `__next__()` dunder methods, allowing its instances to be looped over with a `for` loop. `__iter__()` returns the iterator object itself (usually `self`), and `__next__()` returns the next value in the sequence or raises `StopIteration` when the sequence is exhausted. Think of it like a Pez dispenser: the dispenser is the iterator (handling `__iter__`), and each time you push the head back, you call `__next__` to get a candy. Once empty, it raises a signal that there's no more candy.",
     "why": "It allows you to create custom, memory-efficient data streams that compute or fetch values lazily, instead of loading everything into memory at once.",

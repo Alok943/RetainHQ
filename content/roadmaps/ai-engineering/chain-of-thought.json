@@ -9,10 +9,29 @@
     "estimated_minutes": 12,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["zero-shot-vs-few-shot"],
+    "prerequisites": [
+      "zero-shot-vs-few-shot"
+    ],
     "unlocks": [],
-    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+    "appears_in": [
+      "GenAI Engineer interview",
+      "LLM Engineer OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Zero-shot CoT",
+      "definition": "A technique where you simply add a phrase like Let us think step by step to make the AI explain its reasoning before answering, without giving it prior examples."
+    },
+    {
+      "term": "Few-shot CoT",
+      "definition": "A method where you show the AI a few examples of how to reason through a problem, teaching it the exact thinking style you want."
+    },
+    {
+      "term": "forward pass",
+      "definition": "The underlying computation step the AI takes to generate a single word; more reasoning steps mean more computations, giving it time to think."
+    }
+  ],
   "hook": {
     "scenario": "You ask gpt-4o-mini: 'A store has 120 apples. They sell 40% in the morning and then sell half of the remainder in the afternoon. How many are left?' It answers 36. Wrong — the correct answer is 36... wait, let me check. (It's actually 36.) But try a harder multi-step problem: the model often blunders when it jumps straight to an answer.",
     "question": "Why do LLMs make arithmetic and logic errors when answering directly, and why does asking them to 'think step by step' fix it?"

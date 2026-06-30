@@ -10,13 +10,32 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["big-o-notation", "common-complexities"],
-    "unlocks": ["amortized-analysis"],
+    "prerequisites": [
+      "big-o-notation",
+      "common-complexities"
+    ],
+    "unlocks": [
+      "amortized-analysis"
+    ],
     "project_usage": [
       "Estimating B-tree height for database index design: a B-tree of order 100 with 10^8 keys has height log_100(10^8) ~ 4 disk reads",
       "Sizing hash tables and caches: capacity is typically a power of two for fast bitwise modular arithmetic"
     ]
   },
+  "glossary": [
+    {
+      "term": "divide-and-conquer",
+      "definition": "A strategy of breaking a large problem into smaller, identical pieces to solve it faster."
+    },
+    {
+      "term": "bitwise operations",
+      "definition": "Manipulating data at its most basic level by directly changing ones and zeros."
+    },
+    {
+      "term": "modular hashing",
+      "definition": "A technique to wrap large numbers back around into a fixed range using division remainders."
+    }
+  ],
   "overview": {
     "what": "A logarithm answers: 'How many times must I divide n by b to reach 1?' log_b(n) is the inverse of exponentiation: if b^k = n, then log_b(n) = k. In algorithms, base 2 is the default because the most common halving operation — dividing a search space in two — produces log2(n) steps.",
     "why": "Logarithms explain why divide-and-conquer algorithms are so fast. Binary search finishes in log2(n) steps because each comparison eliminates half the remaining data. Without understanding logarithms, the leap from O(n) linear search to O(log n) binary search feels like magic rather than mathematics.",

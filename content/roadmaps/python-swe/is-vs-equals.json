@@ -22,6 +22,16 @@
       "SQLAlchemy"
     ]
   },
+  "glossary": [
+    {
+      "term": "identity",
+      "definition": "The unique memory address or location of an object in a computer, confirming it is the exact same object."
+    },
+    {
+      "term": "singletons",
+      "definition": "Objects or classes that are designed so that only one unique instance of them can ever exist in a program."
+    }
+  ],
   "overview": {
     "what": "The `==` operator compares the VALUES of two objects (equality), while the `is` operator compares the MEMORY ADDRESSES of two objects (identity). Two distinct objects can have the exact same value (`==` is True), but because they live in different places in memory, they are not the same object (`is` is False). Think of `==` as asking 'Do these two houses look identical?' and `is` as asking 'Are these two addresses pointing to the exact same house?'. In Python, `is` checks if `id(a) == id(b)`.",
     "why": "Mixing up `is` and `==` causes subtle bugs. Use `==` when you want to know if the data matches. Only use `is` when you need to know if two variables refer to the exact same object in memory (most commonly, checking `is None`).",

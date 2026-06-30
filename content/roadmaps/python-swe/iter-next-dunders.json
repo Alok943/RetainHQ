@@ -9,14 +9,38 @@
     "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["everything-is-an-object", "init-vs-new"],
-    "unlocks": ["iterable-protocol", "iterator-protocol"],
-    "project_usage": ["FastAPI", "Django", "Pydantic"]
+    "prerequisites": [
+      "everything-is-an-object",
+      "init-vs-new"
+    ],
+    "unlocks": [
+      "iterable-protocol",
+      "iterator-protocol"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Pydantic"
+    ]
   },
+  "glossary": [
+    {
+      "term": "iteration protocol",
+      "definition": "A specific set of rules in Python that an object must follow to be used in a loop."
+    },
+    {
+      "term": "seamlessly",
+      "definition": "Working smoothly and perfectly together without any awkward transitions or extra effort required."
+    }
+  ],
   "overview": {
     "what": "The `__iter__` and `__next__` dunder methods form the foundation of Python's iteration protocol. `__iter__` returns an iterator object (often `self`), and `__next__` returns the next item in the sequence or raises `StopIteration` when exhausted. Just like a bookmark in a book, the iterator keeps track of your current page (`__next__` turns the page), while `__iter__` is simply the act of grabbing a new bookmark for that book.",
     "why": "They allow custom objects to behave like built-in sequences (e.g., lists or strings) in `for` loops, comprehensions, and functions like `sum()` or `list()`.",
-    "where_used": ["Custom data structures", "Database cursors", "Streaming APIs"]
+    "where_used": [
+      "Custom data structures",
+      "Database cursors",
+      "Streaming APIs"
+    ]
   },
   "why_learning_this": [
     "You can make your own classes work seamlessly in `for` loops.",

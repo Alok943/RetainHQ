@@ -18,14 +18,28 @@
       "Systems Design Interview"
     ]
   },
+  "glossary": [
+    {
+      "term": "network buffer",
+      "definition": "A small, temporary storage area in a device's memory where incoming data waits patiently to be processed."
+    },
+    {
+      "term": "TCP Flow Control",
+      "definition": "A digital communication rule that ensures a fast sender doesn't overwhelm a slow receiver by sending too much data too quickly."
+    },
+    {
+      "term": "speed mismatch",
+      "definition": "A situation where one device can send information much faster than the other device can receive and understand it."
+    }
+  ],
   "hook": {
     "scenario": "Imagine drinking from a firehose. No matter how thirsty you are, you can only swallow so fast before the water simply blasts you in the face. Computers face the exact same problem when a fast server sends data to a slow smartphone."
   },
   "mental_model": {
     "intuition": "A dynamic buffer system where the receiver constantly tells the sender exactly how much more data it can handle.",
-    "description": "TCP Flow Control prevents a fast sender from overwhelming a slow receiver. It uses a 'Sliding Window'\u2014a moving frame that tracks unacknowledged packets and available buffer space, ensuring the sender pauses before the receiver's memory overflows."
+    "description": "TCP Flow Control prevents a fast sender from overwhelming a slow receiver. It uses a 'Sliding Window'—a moving frame that tracks unacknowledged packets and available buffer space, ensuring the sender pauses before the receiver's memory overflows."
   },
-  "explanation": "In any network connection, the sender and receiver might operate at drastically different speeds. A high-end server connected to fiber optics can transmit data gigabytes per second, while a budget smartphone on a weak cellular signal might only be able to process a few megabytes per second. If the server transmits at full speed, the smartphone's network buffer will quickly overflow, causing it to drop incoming packets. TCP Flow Control exists entirely to solve this speed mismatch.\n\nThe mechanism powering Flow Control is the Receive Window. When the receiver establishes a connection and acknowledges packets, it includes a 'Window Size' value in the TCP header. This number explicitly tells the sender: 'I currently have X bytes of free space in my buffer.' As the receiving application reads data out of the buffer, space frees up. As new packets arrive from the network, space fills up. The receiver constantly updates the sender with this fluctuating window size.\n\nTo optimize transmission, TCP uses a concept called the Sliding Window. Instead of sending one packet and waiting for an acknowledgment (which would be agonizingly slow), the sender is allowed to transmit a whole batch of packets simultaneously\u2014up to the limit of the receiver's declared Window Size. Visualize a window frame sliding over a long sequence of data bytes. As the sender receives ACKs for early packets, the left edge of the window 'slides' forward, permitting new, later packets on the right edge to be transmitted.\n\nIf the receiving application freezes or processes data too slowly, its buffer will fill completely. In response, the receiver will advertise a Window Size of 0. This is known as a Zero Window. The sender immediately stops transmitting payload data and waits. Periodically, the sender will shoot over tiny 'probe' packets to check if the window has opened up again. Once the receiver's application catches up and clears the buffer, it advertises a non-zero window, and the sliding window resumes its forward march.",
+  "explanation": "In any network connection, the sender and receiver might operate at drastically different speeds. A high-end server connected to fiber optics can transmit data gigabytes per second, while a budget smartphone on a weak cellular signal might only be able to process a few megabytes per second. If the server transmits at full speed, the smartphone's network buffer will quickly overflow, causing it to drop incoming packets. TCP Flow Control exists entirely to solve this speed mismatch.\n\nThe mechanism powering Flow Control is the Receive Window. When the receiver establishes a connection and acknowledges packets, it includes a 'Window Size' value in the TCP header. This number explicitly tells the sender: 'I currently have X bytes of free space in my buffer.' As the receiving application reads data out of the buffer, space frees up. As new packets arrive from the network, space fills up. The receiver constantly updates the sender with this fluctuating window size.\n\nTo optimize transmission, TCP uses a concept called the Sliding Window. Instead of sending one packet and waiting for an acknowledgment (which would be agonizingly slow), the sender is allowed to transmit a whole batch of packets simultaneously—up to the limit of the receiver's declared Window Size. Visualize a window frame sliding over a long sequence of data bytes. As the sender receives ACKs for early packets, the left edge of the window 'slides' forward, permitting new, later packets on the right edge to be transmitted.\n\nIf the receiving application freezes or processes data too slowly, its buffer will fill completely. In response, the receiver will advertise a Window Size of 0. This is known as a Zero Window. The sender immediately stops transmitting payload data and waits. Periodically, the sender will shoot over tiny 'probe' packets to check if the window has opened up again. Once the receiver's application catches up and clears the buffer, it advertises a non-zero window, and the sliding window resumes its forward march.",
   "animation": {
     "type": "sequence",
     "actors": [

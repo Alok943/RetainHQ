@@ -24,6 +24,16 @@
       "introspection tooling"
     ]
   },
+  "glossary": [
+    {
+      "term": "introspection",
+      "definition": "The ability of a program to examine its own structure, like figuring out the type of a variable while it runs."
+    },
+    {
+      "term": "boxed/unboxed distinction",
+      "definition": "A concept in some languages where simple data types (like numbers) are handled differently than complex objects; Python does not do this."
+    }
+  ],
   "overview": {
     "what": "In Python, every value is an object — an entity with a type, a unique identity, and attributes. This includes things other languages treat as 'not values': functions, classes, and modules are all objects too.\n\nThree consequences you can see directly:\n\n1. Everything has a type, and types are themselves objects: type(42) is int, and type(int) is type.\n\n  print(type(42))     # <class 'int'>\n  print(type(int))    # <class 'type'>\n\n2. Functions are objects, so they have attributes and can even carry custom ones:\n\n  def handler(): pass\n  print(handler.__name__)   # 'handler'\n  handler.route = '/health' # attach a custom attribute\n\n3. Anything that is an object can be stored in a variable, put in a list, or passed as an argument — including functions and classes:\n\n  registry = [int, str, handler]\n\nThink of Python as a world where there are no 'primitives' standing outside the object system — even an integer is a full object with methods (42 .bit_length()). The uniform rule 'it's an object' is what makes introspection (type(), getattr, dir) work on everything.",
     "why": "This uniformity is why Python can pass functions as arguments, build registries of classes, and introspect any value at runtime. Frameworks like FastAPI rely on it: a route decorator receives your function as an object and stores it; dependency injection stores classes in a registry. Understanding it explains why function.attribute, type(x), and storing a class in a dict all just work.",

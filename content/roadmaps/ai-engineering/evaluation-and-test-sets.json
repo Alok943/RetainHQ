@@ -9,10 +9,29 @@
     "estimated_minutes": 15,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["rag-evaluation"],
+    "prerequisites": [
+      "rag-evaluation"
+    ],
     "unlocks": [],
-    "appears_in": ["GenAI / LLM Engineer interview", "AI systems design"]
+    "appears_in": [
+      "GenAI / LLM Engineer interview",
+      "AI systems design"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Golden Dataset",
+      "definition": "A master list of test questions and the perfect answers you expect, used as a measuring stick to see how well your AI performs."
+    },
+    {
+      "term": "LLM-as-a-judge",
+      "definition": "A technique where you use a very smart AI to grade the answers of another AI, acting like a teacher grading a test."
+    },
+    {
+      "term": "regression",
+      "definition": "When a change that was supposed to improve the AI actually causes it to fail at things it used to do perfectly."
+    }
+  ],
   "hook": {
     "scenario": "You tweak the system prompt to make the bot more concise. It works beautifully on your three test queries. You deploy it, and suddenly the bot refuses to answer complex questions at all, saying 'I must be concise'.",
     "question": "How do you know if a prompt change actually improved the system, or just broke things you forgot to check?"
@@ -64,10 +83,22 @@
     }
   ],
   "key_points": [
-    { "title": "Vibes don't scale", "detail": "Manual testing misses regressions. You need automated, repeatable measurements." },
-    { "title": "Golden Dataset", "detail": "A curated, static list of inputs and expected outcomes. It's your anchor." },
-    { "title": "LLM-as-a-judge", "detail": "Using a strong model to grade outputs because exact string matching fails on natural language." },
-    { "title": "Continuous Evaluation", "detail": "Run the dataset on every prompt or pipeline change, treating it like standard CI/CD unit tests." }
+    {
+      "title": "Vibes don't scale",
+      "detail": "Manual testing misses regressions. You need automated, repeatable measurements."
+    },
+    {
+      "title": "Golden Dataset",
+      "detail": "A curated, static list of inputs and expected outcomes. It's your anchor."
+    },
+    {
+      "title": "LLM-as-a-judge",
+      "detail": "Using a strong model to grade outputs because exact string matching fails on natural language."
+    },
+    {
+      "title": "Continuous Evaluation",
+      "detail": "Run the dataset on every prompt or pipeline change, treating it like standard CI/CD unit tests."
+    }
   ],
   "common_mistakes": [
     {

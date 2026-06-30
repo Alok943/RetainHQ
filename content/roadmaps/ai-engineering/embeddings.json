@@ -9,10 +9,34 @@
     "estimated_minutes": 16,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["tokens-and-tokenization"],
-    "unlocks": ["grounding-with-retrieval", "similarity-metrics", "embed-and-retrieve-top-k"],
-    "appears_in": ["GenAI Engineer interview", "RAG system design", "LLM Engineer OA"]
+    "prerequisites": [
+      "tokens-and-tokenization"
+    ],
+    "unlocks": [
+      "grounding-with-retrieval",
+      "similarity-metrics",
+      "embed-and-retrieve-top-k"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview",
+      "RAG system design",
+      "LLM Engineer OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "embedding",
+      "definition": "A list of numbers that acts like a GPS coordinate for the meaning of a text, placing similar concepts close together."
+    },
+    {
+      "term": "vector",
+      "definition": "The actual list of numbers that an AI uses to represent data, allowing it to calculate how closely related two ideas are."
+    },
+    {
+      "term": "embedding model",
+      "definition": "A specialized AI that reads text and translates it into a list of numbers, capturing the underlying meaning instead of just words."
+    }
+  ],
   "hook": {
     "scenario": "A user asks your support bot 'how do I recover my account?' Your docs contain a paragraph titled 'Password Reset Steps'. No word matches — 'recover', 'account' vs 'password', 'reset'. A keyword search returns nothing. The question goes unanswered.",
     "question": "How do you make a computer find semantically similar text without a single shared keyword?"
@@ -35,11 +59,23 @@
       "animation": {
         "type": "vector-space",
         "clusters": [
-          { "label": "Password / Account", "color": "teal" },
-          { "label": "Billing / Invoice", "color": "amber" },
-          { "label": "API / Developer", "color": "cyan" }
+          {
+            "label": "Password / Account",
+            "color": "teal"
+          },
+          {
+            "label": "Billing / Invoice",
+            "color": "amber"
+          },
+          {
+            "label": "API / Developer",
+            "color": "cyan"
+          }
         ],
-        "query": { "label": "recover my account", "near": "Password / Account" },
+        "query": {
+          "label": "recover my account",
+          "near": "Password / Account"
+        },
         "k": 3
       },
       "recap": "Embeddings capture meaning, not words — semantic neighbors without keyword overlap."
@@ -78,10 +114,22 @@
     }
   ],
   "key_points": [
-    { "title": "Same model both sides", "detail": "Embedding model must be identical for all chunks AND for every query — mixing models makes vectors incomparable." },
-    { "title": "1,536 or 3,072 dimensions", "detail": "text-embedding-3-small = 1,536 dims (default, cheapest). text-embedding-3-large = 3,072 dims (higher quality, 2× cost)." },
-    { "title": "Cosine = direction, not distance", "detail": "Similarity is the angle between vectors; 1 = same direction / same meaning, 0 = perpendicular / unrelated." },
-    { "title": "Batch at ingest time", "detail": "Pass a list of up to 2,048 chunks per API call — not one chunk per call." }
+    {
+      "title": "Same model both sides",
+      "detail": "Embedding model must be identical for all chunks AND for every query — mixing models makes vectors incomparable."
+    },
+    {
+      "title": "1,536 or 3,072 dimensions",
+      "detail": "text-embedding-3-small = 1,536 dims (default, cheapest). text-embedding-3-large = 3,072 dims (higher quality, 2× cost)."
+    },
+    {
+      "title": "Cosine = direction, not distance",
+      "detail": "Similarity is the angle between vectors; 1 = same direction / same meaning, 0 = perpendicular / unrelated."
+    },
+    {
+      "title": "Batch at ingest time",
+      "detail": "Pass a list of up to 2,048 chunks per API call — not one chunk per call."
+    }
   ],
   "common_mistakes": [
     {

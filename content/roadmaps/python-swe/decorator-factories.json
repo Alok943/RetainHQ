@@ -21,6 +21,16 @@
       "Celery task configuration"
     ]
   },
+  "glossary": [
+    {
+      "term": "decorator",
+      "definition": "A special function that wraps another function to modify or enhance its behavior without changing its code."
+    },
+    {
+      "term": "wrapper",
+      "definition": "An inner function that surrounds the original function, allowing it to run extra code before or after the original function runs."
+    }
+  ],
   "overview": {
     "what": "A decorator factory is a function that returns a decorator. Standard decorators only accept one argument (the function being decorated). To pass custom arguments to a decorator, we create an outer function that receives those arguments and returns the actual decorator.\n\n  @retry(max_retries=3)\n  def fetch_data():\n      pass\n\nThis forms three nested levels: the factory (takes config), the decorator (takes the target function), and the wrapper (takes the function's arguments). Think of the factory as a machine that configures and builds a custom decorator based on the specs you give it.",
     "why": "It enables configurable decorators. Instead of writing separate decorators for different behaviors, you write one configurable factory.",

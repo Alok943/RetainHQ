@@ -18,6 +18,20 @@
       "Backend Engineering"
     ]
   },
+  "glossary": [
+    {
+      "term": "congestion collapse",
+      "definition": "A disastrous network state where too much data is sent at once causing routers to drop packets, leading to endless retransmissions that bring the whole network to a standstill."
+    },
+    {
+      "term": "TCP Congestion Control",
+      "definition": "A built-in safety mechanism in the internet that detects when the network is getting jammed and automatically slows down how fast computers are allowed to send data."
+    },
+    {
+      "term": "router",
+      "definition": "A specialized network device that acts like a traffic cop, receiving data packets and directing them toward their final destination across different networks."
+    }
+  ],
   "hook": {
     "scenario": "Imagine hundreds of cars trying to merge onto a single-lane highway at the same time. If they all accelerate, traffic grinds to a complete halt. To keep traffic flowing, on-ramp stoplights force cars to enter slowly, only speeding up when the road is clear."
   },
@@ -25,7 +39,7 @@
     "intuition": "A probing mechanism where a sender cautiously tests the network's speed limit, backing off immediately if it detects a traffic jam.",
     "description": "While Flow Control protects the receiver, Congestion Control protects the internet infrastructure. Senders start transmitting slowly, exponentially increase their speed until packets get dropped, and then slash their speed to allow routers to recover."
   },
-  "explanation": "In a complex network like the internet, data packets must hop through multiple routers and switches. If thousands of computers simultaneously push maximum data through a single router, that router's queues will overflow, and it will be forced to drop packets. If senders respond to missing packets by simply retransmitting them aggressively, the network enters a state of 'congestion collapse', where nothing gets through. TCP Congestion Control exists to prevent this catastrophe.\n\nUnlike the Receive Window (which the receiver explicitly advertises), the network itself does not tell the sender how much capacity it has. The sender has to guess. It maintains a hidden variable called the Congestion Window (cwnd). The actual amount of data a sender is allowed to transmit is the minimum of the Receive Window (Flow Control) and the Congestion Window (Congestion Control).\n\nTCP begins with a phase called Slow Start. A newly established connection starts with a very small Congestion Window (historically 1 to 10 packets). For every acknowledgment the sender receives, it doubles the window size. The transmission rate grows exponentially, quickly ramping up to probe the network's true capacity.\n\nEventually, the network hits its limit. A router's queue fills up, and a packet is dropped. The sender realizes the packet was lost (either via a timeout or duplicate acknowledgments). TCP treats packet loss as undeniable proof of network congestion. In response, it immediately slashes the Congestion Window\u2014often cutting it in half (Congestion Avoidance phase)\u2014and slowly begins ramping up again linearly. This creates TCP's characteristic 'sawtooth' throughput graph: accelerating until a drop occurs, braking sharply, and accelerating again.",
+  "explanation": "In a complex network like the internet, data packets must hop through multiple routers and switches. If thousands of computers simultaneously push maximum data through a single router, that router's queues will overflow, and it will be forced to drop packets. If senders respond to missing packets by simply retransmitting them aggressively, the network enters a state of 'congestion collapse', where nothing gets through. TCP Congestion Control exists to prevent this catastrophe.\n\nUnlike the Receive Window (which the receiver explicitly advertises), the network itself does not tell the sender how much capacity it has. The sender has to guess. It maintains a hidden variable called the Congestion Window (cwnd). The actual amount of data a sender is allowed to transmit is the minimum of the Receive Window (Flow Control) and the Congestion Window (Congestion Control).\n\nTCP begins with a phase called Slow Start. A newly established connection starts with a very small Congestion Window (historically 1 to 10 packets). For every acknowledgment the sender receives, it doubles the window size. The transmission rate grows exponentially, quickly ramping up to probe the network's true capacity.\n\nEventually, the network hits its limit. A router's queue fills up, and a packet is dropped. The sender realizes the packet was lost (either via a timeout or duplicate acknowledgments). TCP treats packet loss as undeniable proof of network congestion. In response, it immediately slashes the Congestion Window—often cutting it in half (Congestion Avoidance phase)—and slowly begins ramping up again linearly. This creates TCP's characteristic 'sawtooth' throughput graph: accelerating until a drop occurs, braking sharply, and accelerating again.",
   "key_points": [
     {
       "title": "Congestion Window (cwnd)",

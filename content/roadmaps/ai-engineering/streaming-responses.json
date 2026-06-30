@@ -9,10 +9,29 @@
     "estimated_minutes": 12,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["chat-completions-api"],
+    "prerequisites": [
+      "chat-completions-api"
+    ],
     "unlocks": [],
-    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+    "appears_in": [
+      "GenAI Engineer interview",
+      "LLM Engineer OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Streaming",
+      "definition": "A feature that sends the AI answer to you piece by piece as it is being written, rather than making you wait for the whole thing to finish."
+    },
+    {
+      "term": "Server-Sent Events",
+      "definition": "The underlying technology that keeps a web connection open so the server can push new words to your screen instantly."
+    },
+    {
+      "term": "delta",
+      "definition": "A small fragment or chunk of new text that arrives in the stream, which you must piece together to get the full answer."
+    }
+  ],
   "hook": {
     "scenario": "Your LLM pipeline takes 8 seconds to generate a 400-token answer. Users see a blank screen for 8 seconds, then the full answer appears at once. They assume the app is broken and hit refresh.",
     "question": "How does ChatGPT show tokens appearing one by one, cutting the perceived wait from 8 seconds to near-zero?"
@@ -27,17 +46,54 @@
       "animation": {
         "type": "sequence",
         "actors": [
-          { "id": "model", "label": "Model (GPU)" },
-          { "id": "api", "label": "API Server" },
-          { "id": "app", "label": "Your App" },
-          { "id": "ui", "label": "User UI" }
+          {
+            "id": "model",
+            "label": "Model (GPU)"
+          },
+          {
+            "id": "api",
+            "label": "API Server"
+          },
+          {
+            "id": "app",
+            "label": "Your App"
+          },
+          {
+            "id": "ui",
+            "label": "User UI"
+          }
         ],
         "steps": [
-          { "from": "model", "to": "api", "label": "token 1 generated", "term": "chunk" },
-          { "from": "api", "to": "app", "label": "SSE chunk arrives", "term": "stream" },
-          { "from": "app", "to": "ui", "label": "render token immediately", "term": "progressive render" },
-          { "from": "model", "to": "api", "label": "...400 more tokens...", "term": "chunk" },
-          { "from": "api", "to": "app", "label": "finish_reason='stop'", "term": "stream end" }
+          {
+            "from": "model",
+            "to": "api",
+            "label": "token 1 generated",
+            "term": "chunk"
+          },
+          {
+            "from": "api",
+            "to": "app",
+            "label": "SSE chunk arrives",
+            "term": "stream"
+          },
+          {
+            "from": "app",
+            "to": "ui",
+            "label": "render token immediately",
+            "term": "progressive render"
+          },
+          {
+            "from": "model",
+            "to": "api",
+            "label": "...400 more tokens...",
+            "term": "chunk"
+          },
+          {
+            "from": "api",
+            "to": "app",
+            "label": "finish_reason='stop'",
+            "term": "stream end"
+          }
         ]
       },
       "recap": "Streaming = same compute time, tokens arrive progressively — first token in ~200ms instead of 8s."

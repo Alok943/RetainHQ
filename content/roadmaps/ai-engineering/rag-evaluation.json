@@ -9,10 +9,32 @@
     "estimated_minutes": 20,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["context-injection-and-prompt-assembly"],
-    "unlocks": ["evaluation-and-test-sets"],
-    "appears_in": ["RAG system design", "GenAI Engineer interview", "LLM Engineer OA"]
+    "prerequisites": [
+      "context-injection-and-prompt-assembly"
+    ],
+    "unlocks": [
+      "evaluation-and-test-sets"
+    ],
+    "appears_in": [
+      "RAG system design",
+      "GenAI Engineer interview",
+      "LLM Engineer OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "RAG Triad",
+      "definition": "The three key metrics used to grade an AI search system: did it find good info, did it stick to the facts, and did it answer the question?"
+    },
+    {
+      "term": "Context Relevance",
+      "definition": "A metric that checks if the documents pulled from your database actually have anything to do with the user question."
+    },
+    {
+      "term": "Faithfulness",
+      "definition": "A score that checks if the AI strictly used the facts provided to it, or if it started making things up."
+    }
+  ],
   "hook": {
     "scenario": "Your team just swapped the embedding model from 'text-embedding-ada-002' to 'text-embedding-3-small'. The developer says 'it feels better'. A week later, user complaints spike because the bot is hallucinating. 'Vibes' are not a testing strategy.",
     "question": "How do you mathematically prove that a change to your RAG pipeline actually made it better?"
@@ -52,10 +74,22 @@
     }
   ],
   "key_points": [
-    { "title": "The RAG Triad", "detail": "The three pillars of RAG evaluation: Context Relevance (Retriever), Faithfulness (Generator), Answer Relevance (End-to-End)." },
-    { "title": "Isolate the Failure", "detail": "If Context Relevance is low, tune the vector DB. If Faithfulness is low, tune the prompt. Never tune the prompt to fix a retrieval problem." },
-    { "title": "LLM-as-a-Judge", "detail": "Using GPT-4 to grade GPT-3.5's outputs is industry standard. It correlates highly with human graders but costs pennies and takes seconds." },
-    { "title": "Golden Datasets", "detail": "To run evals, you need a 'golden dataset' of 100+ diverse, representative questions. You run your pipeline on these questions every time you change a line of code." }
+    {
+      "title": "The RAG Triad",
+      "detail": "The three pillars of RAG evaluation: Context Relevance (Retriever), Faithfulness (Generator), Answer Relevance (End-to-End)."
+    },
+    {
+      "title": "Isolate the Failure",
+      "detail": "If Context Relevance is low, tune the vector DB. If Faithfulness is low, tune the prompt. Never tune the prompt to fix a retrieval problem."
+    },
+    {
+      "title": "LLM-as-a-Judge",
+      "detail": "Using GPT-4 to grade GPT-3.5's outputs is industry standard. It correlates highly with human graders but costs pennies and takes seconds."
+    },
+    {
+      "title": "Golden Datasets",
+      "detail": "To run evals, you need a 'golden dataset' of 100+ diverse, representative questions. You run your pipeline on these questions every time you change a line of code."
+    }
   ],
   "common_mistakes": [
     {

@@ -9,14 +9,33 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "low",
-    "prerequisites": ["functions"],
+    "prerequisites": [
+      "functions"
+    ],
     "unlocks": [],
-    "project_usage": ["Debugging in production", "Server logs"]
+    "project_usage": [
+      "Debugging in production",
+      "Server logs"
+    ]
   },
+  "glossary": [
+    {
+      "term": "severity levels",
+      "definition": "Categories that indicate how serious or important a log message is, like INFO for general updates or CRITICAL for system failures."
+    },
+    {
+      "term": "verbosity",
+      "definition": "The amount of detail or the number of messages a program outputs, which can be adjusted to be more or less chatty."
+    }
+  ],
   "overview": {
     "what": "Python's `logging` module replaces `print()` for production code. It categorizes messages into five severity levels (DEBUG, INFO, WARNING, ERROR, CRITICAL). `logging.basicConfig()` configures the root logger, setting the minimum level to display and the format of the output. By default, the logging level is set to WARNING, meaning DEBUG and INFO messages are ignored.",
     "why": "Unlike `print()`, logging gives you a dial to control output volume without changing code (e.g., hiding DEBUG logs in production). It also automatically includes metadata like timestamps and module names.",
-    "where_used": ["Web servers (Django/FastAPI)", "Data pipelines", "CLI tools"]
+    "where_used": [
+      "Web servers (Django/FastAPI)",
+      "Data pipelines",
+      "CLI tools"
+    ]
   },
   "why_learning_this": [
     "Write production-ready code that emits searchable, structured logs instead of scattered print statements.",

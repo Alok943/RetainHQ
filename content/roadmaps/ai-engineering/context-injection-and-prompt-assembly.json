@@ -9,10 +9,31 @@
     "estimated_minutes": 15,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["embed-and-retrieve-top-k"],
-    "unlocks": ["rag-evaluation"],
-    "appears_in": ["RAG system design", "GenAI Engineer interview"]
+    "prerequisites": [
+      "embed-and-retrieve-top-k"
+    ],
+    "unlocks": [
+      "rag-evaluation"
+    ],
+    "appears_in": [
+      "RAG system design",
+      "GenAI Engineer interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Context injection",
+      "definition": "The process of inserting relevant facts or documents directly into the AI prompt so it can base its answer on your specific data."
+    },
+    {
+      "term": "Prompt Assembly",
+      "definition": "The step where you carefully stitch together instructions, retrieved facts, and the user question into one clean, formatted package for the AI."
+    },
+    {
+      "term": "recency bias",
+      "definition": "A quirk where the AI pays more attention to information at the very end of a prompt, which is why you should always put the main question last."
+    }
+  ],
   "hook": {
     "scenario": "You've successfully retrieved the top 5 most relevant paragraphs from your database. Now you have a raw list of strings and a user's question. If you just glue them all together with `+`, the LLM gets confused about what is an instruction, what is the context, and what is the user's actual question.",
     "question": "How do you format retrieved text so the model strictly understands its role?"
@@ -52,10 +73,22 @@
     }
   ],
   "key_points": [
-    { "title": "Use Delimiters", "detail": "Always wrap injected text in structural delimiters like XML tags or triple backticks so the model knows where the evidence starts and ends." },
-    { "title": "Query goes last", "detail": "LLMs suffer from 'recency bias'. Put the user's actual question at the very end of the prompt so they don't forget what they are supposed to do with the context." },
-    { "title": "Inject Metadata for Citations", "detail": "Don't just inject text. Inject the document title or ID alongside the text so the model can cite its sources." },
-    { "title": "Defend against Prompt Injection", "detail": "Retrieved text might contain malicious instructions (e.g. from an uploaded PDF). Delimiters help, but the system prompt must explicitly command the model to treat the context strictly as data, not instructions." }
+    {
+      "title": "Use Delimiters",
+      "detail": "Always wrap injected text in structural delimiters like XML tags or triple backticks so the model knows where the evidence starts and ends."
+    },
+    {
+      "title": "Query goes last",
+      "detail": "LLMs suffer from 'recency bias'. Put the user's actual question at the very end of the prompt so they don't forget what they are supposed to do with the context."
+    },
+    {
+      "title": "Inject Metadata for Citations",
+      "detail": "Don't just inject text. Inject the document title or ID alongside the text so the model can cite its sources."
+    },
+    {
+      "title": "Defend against Prompt Injection",
+      "detail": "Retrieved text might contain malicious instructions (e.g. from an uploaded PDF). Delimiters help, but the system prompt must explicitly command the model to treat the context strictly as data, not instructions."
+    }
   ],
   "common_mistakes": [
     {

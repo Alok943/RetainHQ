@@ -24,9 +24,19 @@
       "CLI argument parsing"
     ]
   },
+  "glossary": [
+    {
+      "term": "truthiness",
+      "definition": "How Python decides if a value is considered true or false in an if-statement without you having to explicitly check."
+    },
+    {
+      "term": "falsy",
+      "definition": "Values that Python automatically treats as false, such as zero, empty lists, or None."
+    }
+  ],
   "overview": {
-    "what": "Python evaluates an if/elif/else chain top-down and runs the FIRST block whose condition is truthy, then skips all remaining branches \u2014 elif and else are optional.\n\n  status = 404\n  if status == 200:\n      print('ok')\n  elif status == 404:\n      print('not found')\n  else:\n      print('other')\n\nPython's truthiness rules determine what counts as truthy or falsy without an explicit comparison. Falsy values: False, None, 0, 0.0, '' (empty string), [] (empty list), {} (empty dict), set(). Everything else is truthy. So if response: works when response is a non-empty list, and if not user: works when user is None.\n\nThink of truthiness as Python asking 'does this value carry meaningful content?' \u2014 zero-quantities and empty containers say no.",
-    "why": "Truthiness lets you write concise guards (if items: instead of if len(items) > 0:). The danger is when 0 or '' are valid values that must NOT be treated as 'missing' \u2014 a naked truthiness check would silently skip them.",
+    "what": "Python evaluates an if/elif/else chain top-down and runs the FIRST block whose condition is truthy, then skips all remaining branches — elif and else are optional.\n\n  status = 404\n  if status == 200:\n      print('ok')\n  elif status == 404:\n      print('not found')\n  else:\n      print('other')\n\nPython's truthiness rules determine what counts as truthy or falsy without an explicit comparison. Falsy values: False, None, 0, 0.0, '' (empty string), [] (empty list), {} (empty dict), set(). Everything else is truthy. So if response: works when response is a non-empty list, and if not user: works when user is None.\n\nThink of truthiness as Python asking 'does this value carry meaningful content?' — zero-quantities and empty containers say no.",
+    "why": "Truthiness lets you write concise guards (if items: instead of if len(items) > 0:). The danger is when 0 or '' are valid values that must NOT be treated as 'missing' — a naked truthiness check would silently skip them.",
     "where_used": [
       "FastAPI route guards (if not current_user: raise 401)",
       "Pydantic field validators",
@@ -35,7 +45,7 @@
   },
   "why_learning_this": [
     "Writing correct guards in FastAPI handlers that distinguish None from 0 or an empty string",
-    "Understanding why if value: can silently hide a valid 0 \u2014 the foundation of safe API input validation"
+    "Understanding why if value: can silently hide a valid 0 — the foundation of safe API input validation"
   ],
   "common_mistakes": [
     {
@@ -55,17 +65,17 @@
     },
     {
       "q": "If the first branch of an if/elif chain matches, what happens to the remaining elif and else branches?",
-      "answer": "They are all skipped \u2014 only the first matching branch executes.",
+      "answer": "They are all skipped — only the first matching branch executes.",
       "tier": "tier1"
     },
     {
       "q": "When is using `if value:` unsafe?",
-      "answer": "When 0 or an empty string are valid values that should not be treated as missing \u2014 a truthiness check would silently skip them.",
+      "answer": "When 0 or an empty string are valid values that should not be treated as missing — a truthiness check would silently skip them.",
       "tier": "tier2"
     },
     {
       "q": "What is the difference between chaining elif vs using separate if statements?",
-      "answer": "elif is part of the same chain \u2014 only the first match runs. Separate if statements are independent \u2014 multiple can run if multiple conditions are true.",
+      "answer": "elif is part of the same chain — only the first match runs. Separate if statements are independent — multiple can run if multiple conditions are true.",
       "tier": "tier2"
     }
   ],

@@ -22,8 +22,18 @@
       "FastAPI request bodies"
     ]
   },
+  "glossary": [
+    {
+      "term": "in place",
+      "definition": "Modifying the original object directly, rather than creating a brand-new copy of it."
+    },
+    {
+      "term": "shared-state",
+      "definition": "When two or more parts of a program access and modify the exact same data in memory, often leading to unexpected bugs."
+    }
+  ],
   "overview": {
-    "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page \u2014 to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple can safely be a dict key while a list cannot.",
+    "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page — to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple can safely be a dict key while a list cannot.",
     "why": "Mutability decides whether an operation edits an object in place or returns a new one. Getting this wrong causes two classic bugs: assuming a string method changed the string (it didn't), and two names sharing one mutable object so an edit through one is unexpectedly seen through the other.",
     "where_used": [
       "Pydantic models",
@@ -78,7 +88,7 @@
     "code": "cart = ['laptop']\nbackup = cart\nbackup.append('mouse')\nprint(cart)",
     "prediction": "backup looks like a safe copy of cart. After appending 'mouse' to backup, what does print(cart) show?",
     "common_guess": "['laptop']",
-    "why": "backup = cart binds a SECOND label to the same list object \u2014 it does not copy. So backup.append('mouse') mutates the one list both names point to, and cart sees it too. For an independent copy use cart.copy()."
+    "why": "backup = cart binds a SECOND label to the same list object — it does not copy. So backup.append('mouse') mutates the one list both names point to, and cart sees it too. For an independent copy use cart.copy()."
   },
   "challenge": {
     "title": "Merge config without mutating",

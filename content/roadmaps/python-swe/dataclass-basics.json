@@ -9,14 +9,39 @@
     "estimated_minutes": 20,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["class-basics", "init-vs-new", "str-vs-repr", "type-hints-basics"],
-    "unlocks": ["dataclass-field"],
-    "project_usage": ["Data models", "API responses", "Configuration objects"]
+    "prerequisites": [
+      "class-basics",
+      "init-vs-new",
+      "str-vs-repr",
+      "type-hints-basics"
+    ],
+    "unlocks": [
+      "dataclass-field"
+    ],
+    "project_usage": [
+      "Data models",
+      "API responses",
+      "Configuration objects"
+    ]
   },
+  "glossary": [
+    {
+      "term": "type hints",
+      "definition": "Annotations in Python code that indicate what type of data (like an integer or string) a variable should hold."
+    },
+    {
+      "term": "boilerplate",
+      "definition": "Standard pieces of code that have to be written repeatedly with little to no alteration."
+    }
+  ],
   "overview": {
     "what": "The `@dataclass` decorator in Python automatically generates boilerplate code for classes that primarily store data. When you add it to a class with type-hinted attributes, it automatically writes the `__init__()`, `__repr__()`, and `__eq__()` methods for you behind the scenes.\n\nThe mental model is a 'code generator': the decorator inspects the class at definition time, looks at the type hints, and injects the standard dunder methods into the class dictionary as if you had typed them yourself.",
     "why": "It eliminates the repetitive and error-prone work of writing `def __init__(self, x): self.x = x` for every data object.",
-    "where_used": ["Defining ORM models", "Config structures", "Returning structured data from functions"]
+    "where_used": [
+      "Defining ORM models",
+      "Config structures",
+      "Returning structured data from functions"
+    ]
   },
   "why_learning_this": [
     "You can define a class with 5 attributes in 6 lines of code instead of 20.",

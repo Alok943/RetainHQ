@@ -18,6 +18,20 @@
       "SDE interview"
     ]
   },
+  "glossary": [
+    {
+      "term": "passive entity",
+      "definition": "Something that is inactive and just sitting in storage, much like a recipe written in a book that isn't currently being cooked."
+    },
+    {
+      "term": "machine code instructions",
+      "definition": "The lowest-level, raw binary commands (1s and 0s) that a computer's processor can directly understand and execute."
+    },
+    {
+      "term": "active entity",
+      "definition": "A program that has been woken up, loaded into fast memory, and is actively executing actions, like a chef actively cooking a recipe."
+    }
+  ],
   "hook": {
     "scenario": "You can open Google Chrome five times, creating five different windows. It's only one program on your hard drive, but the operating system tracks it as five distinct, living entities."
   },
@@ -25,7 +39,7 @@
     "intuition": "A Program is a recipe; a Process is the act of cooking that recipe.",
     "description": "A recipe (program) just sits on the shelf as passive text. When you start cooking (process), you need ingredients (memory), a chef's current step (CPU program counter), and a workspace. The PCB is the clipboard where the chef tracks exactly what step they are on in case they need to pause and cook something else."
   },
-  "explanation": "In computer science, distinguishing between a program and a process is fundamental. A 'program' is a passive entity\u2014it is a static file sitting on your hard drive containing a list of compiled machine code instructions. A 'process', on the other hand, is an active entity. It is a program in execution. When you double-click an executable file, the operating system loads those static instructions into RAM, allocates resources, and the CPU begins executing it. At that moment, the passive program becomes an active process.\n\nBecause you can run the same program multiple times simultaneously (like having multiple instances of a calculator or terminal open), one program can spawn many separate processes. Even though they execute the exact same underlying code, each process is completely independent. They have their own dedicated memory space, their own variables, and their own execution state. If one calculator process crashes because you divided by zero, the other calculator process remains entirely unaffected.\n\nTo manage all these independent active processes, the operating system needs a way to keep track of them. It does this using a critical data structure called the Process Control Block (PCB). Think of the PCB as the ID card and medical record for a process. Every time a new process is created, the OS creates a new PCB specifically for it.\n\nThe Process Control Block stores all the essential metadata required to manage that process. This includes the Process ID (PID), the current state of the process (running, waiting, or ready), memory allocation details, and a list of open files. Crucially, the PCB also stores the exact contents of the CPU registers and the Program Counter (which tracks the exact line of code currently being executed).\n\nThis register and Program Counter data is what makes multitasking possible. Because a computer has limited CPU cores, the OS must rapidly switch the CPU between dozens of processes. When it pauses Process A to run Process B, it copies the CPU's current state into Process A's PCB. Later, when the OS is ready to resume Process A, it reads the PCB, restores the exact CPU state, and the process continues exactly where it left off, completely unaware that it was ever paused.",
+  "explanation": "In computer science, distinguishing between a program and a process is fundamental. A 'program' is a passive entity—it is a static file sitting on your hard drive containing a list of compiled machine code instructions. A 'process', on the other hand, is an active entity. It is a program in execution. When you double-click an executable file, the operating system loads those static instructions into RAM, allocates resources, and the CPU begins executing it. At that moment, the passive program becomes an active process.\n\nBecause you can run the same program multiple times simultaneously (like having multiple instances of a calculator or terminal open), one program can spawn many separate processes. Even though they execute the exact same underlying code, each process is completely independent. They have their own dedicated memory space, their own variables, and their own execution state. If one calculator process crashes because you divided by zero, the other calculator process remains entirely unaffected.\n\nTo manage all these independent active processes, the operating system needs a way to keep track of them. It does this using a critical data structure called the Process Control Block (PCB). Think of the PCB as the ID card and medical record for a process. Every time a new process is created, the OS creates a new PCB specifically for it.\n\nThe Process Control Block stores all the essential metadata required to manage that process. This includes the Process ID (PID), the current state of the process (running, waiting, or ready), memory allocation details, and a list of open files. Crucially, the PCB also stores the exact contents of the CPU registers and the Program Counter (which tracks the exact line of code currently being executed).\n\nThis register and Program Counter data is what makes multitasking possible. Because a computer has limited CPU cores, the OS must rapidly switch the CPU between dozens of processes. When it pauses Process A to run Process B, it copies the CPU's current state into Process A's PCB. Later, when the OS is ready to resume Process A, it reads the PCB, restores the exact CPU state, and the process continues exactly where it left off, completely unaware that it was ever paused.",
   "common_mistakes": [
     {
       "title": "Using 'program' and 'process' interchangeably",

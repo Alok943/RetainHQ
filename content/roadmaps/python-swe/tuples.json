@@ -23,6 +23,16 @@
       "composite dict keys"
     ]
   },
+  "glossary": [
+    {
+      "term": "hashable",
+      "definition": "An object that has a fixed value that never changes during its lifetime, allowing it to be used as a dictionary key or set item."
+    },
+    {
+      "term": "unpacking",
+      "definition": "Extracting multiple items from a collection, like a tuple or list, and assigning them to separate variables all at once."
+    }
+  ],
   "overview": {
     "what": "A tuple is an ordered, immutable sequence. You create one with parentheses or just commas — the commas are what actually make the tuple, not the parentheses:\n\n  coords = (40.7128, -74.0060)\n  same = 40.7128, -74.0060\n\nA single-element tuple REQUIRES a trailing comma — without it Python sees plain parentheses:\n\n  one = (42,)    # tuple with one int\n  not_a_tuple = (42)  # just the int 42\n\nBecause tuples are immutable, you cannot append, remove, or reassign an element after creation. But immutability makes tuples hashable (as long as every element inside is also hashable), so they can serve as dict keys or set members:\n\n  cache = {}\n  cache[('users', 'page', 2)] = [{'id': 7}, {'id': 8}]\n\nTuple unpacking lets you extract elements into named variables in one step:\n\n  status, body = (200, {'ok': True})\n\nThis is why functions that return multiple values actually return a tuple — `return status, body` packs them, and the caller unpacks.\n\nThink of a tuple as a sealed envelope: once you put items inside and close it, you can read the contents but cannot swap, add, or remove anything. That seal is what makes it safe to use as a dict key.",
     "why": "Tuples give you a lightweight, read-only container for fixed-size data: coordinates, status-and-body pairs, composite cache keys. Their immutability guarantees the data will not change by accident, and their hashability lets you use multi-part keys in dicts and sets — something a list cannot do.",

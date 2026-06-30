@@ -9,9 +9,27 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["arrays-and-memory"],
-    "unlocks": ["prefix-sums"]
+    "prerequisites": [
+      "arrays-and-memory"
+    ],
+    "unlocks": [
+      "prefix-sums"
+    ]
   },
+  "glossary": [
+    {
+      "term": "O(1) extra space",
+      "definition": "A fixed, small amount of memory that doesn't increase even if the input gets huge."
+    },
+    {
+      "term": "temporary swap variable",
+      "definition": "A small placeholder memory spot used to safely exchange two values without losing either."
+    },
+    {
+      "term": "simultaneous swap",
+      "definition": "Exchanging two values at the exact same time so neither gets overwritten incorrectly."
+    }
+  ],
   "hook": {
     "scenario": "You need to reverse a massive 10GB array of image data.",
     "question": "Do you allocate another 10GB array to hold the reversed copy, crashing the server, or can you just shuffle the data where it already sits?"
@@ -28,7 +46,13 @@
   },
   "viz": {
     "generator": "in-place-operations",
-    "default_input": [1, 2, 3, 4, 5],
+    "default_input": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "invariants": {
       "inv-bounds": "Everything outside the lo..hi window is already in its final reversed position.",
       "inv-swapped": "Swapping arr[lo] and arr[hi] puts both elements in their final spots at once.",
@@ -37,9 +61,18 @@
   },
   "explanation": "An algorithm is 'in-place' if it requires O(1) extra space. This means the memory it needs does not grow with the size of the input. \n\nTo achieve this, you must overwrite the input array. The challenge is ensuring you don't overwrite data you still need. \n\nConsider removing all zeros from an array while keeping the order of other elements. If you use a new array, it's trivial: loop and append non-zeros. To do it in-place, you use two pointers. A 'fast' pointer scans ahead looking for non-zeros. A 'slow' pointer tracks where the next non-zero should be written. When the fast pointer finds a non-zero, you copy it to the slow pointer's position and advance both. By the end, all non-zeros are packed at the front of the array, and you can fill the rest with zeros. Because the fast pointer is always ahead of or equal to the slow pointer, you never overwrite unread data.\n\nAnother classic is reversing an array. You put a left pointer at the start and a right pointer at the end. You swap their values, then move them towards the center. This uses exactly one temporary variable for the swap, making it perfectly in-place.\n\nIn-place operations are a favorite in interviews because they test your ability to manage state and pointers without relying on the crutch of throwing more memory at the problem.",
   "key_points": [
-    { "title": "O(1) Space", "detail": "The defining characteristic. You can use a few variables (pointers, a temp for swapping), but no new arrays or hash maps." },
-    { "title": "Destructive", "detail": "In-place operations mutate the input. In real-world software, mutating inputs can cause bugs if other parts of the system expect the original data, but in algorithmic problems, it's often the goal." },
-    { "title": "Two-Pointer Technique", "detail": "The most common mechanism for in-place array manipulation. Either left/right converging, or fast/slow moving in the same direction." }
+    {
+      "title": "O(1) Space",
+      "detail": "The defining characteristic. You can use a few variables (pointers, a temp for swapping), but no new arrays or hash maps."
+    },
+    {
+      "title": "Destructive",
+      "detail": "In-place operations mutate the input. In real-world software, mutating inputs can cause bugs if other parts of the system expect the original data, but in algorithmic problems, it's often the goal."
+    },
+    {
+      "title": "Two-Pointer Technique",
+      "detail": "The most common mechanism for in-place array manipulation. Either left/right converging, or fast/slow moving in the same direction."
+    }
   ],
   "pattern": {
     "name": "Two Pointers (In-Place)",
@@ -55,33 +88,96 @@
     "You are using recursion (the call stack uses O(n) space)."
   ],
   "engineering_examples": [
-    { "title": "Embedded Systems", "problem": "Sorting sensor data on a microcontroller with 2KB of RAM.", "why_this_algorithm": "Allocating a copy of the array would exhaust memory and crash the device. An in-place sort (like Quicksort or Heapsort) is mandatory." },
-    { "title": "Database Compaction", "problem": "Removing deleted records from a page file.", "why_this_algorithm": "In-place shifting is used to pack the live records together so the free space is contiguous." }
+    {
+      "title": "Embedded Systems",
+      "problem": "Sorting sensor data on a microcontroller with 2KB of RAM.",
+      "why_this_algorithm": "Allocating a copy of the array would exhaust memory and crash the device. An in-place sort (like Quicksort or Heapsort) is mandatory."
+    },
+    {
+      "title": "Database Compaction",
+      "problem": "Removing deleted records from a page file.",
+      "why_this_algorithm": "In-place shifting is used to pack the live records together so the free space is contiguous."
+    }
   ],
   "when_not_to_use": [
-    { "scenario": "Functional programming or concurrent systems", "reason": "Mutating state is dangerous when multiple threads read the data. Pure functions (returning a new array) are safer." },
-    { "scenario": "When the original data must be preserved", "reason": "If the caller still needs the unreversed or unfiltered data for downstream logic, you must make a copy." }
+    {
+      "scenario": "Functional programming or concurrent systems",
+      "reason": "Mutating state is dangerous when multiple threads read the data. Pure functions (returning a new array) are safer."
+    },
+    {
+      "scenario": "When the original data must be preserved",
+      "reason": "If the caller still needs the unreversed or unfiltered data for downstream logic, you must make a copy."
+    }
   ],
   "common_mistakes": [
-    { "title": "Overwriting data before reading it", "explanation": "If you copy arr[i] to arr[j] without saving arr[j] first, the original value at j is gone forever. Always use a temp variable or a simultaneous swap (like Python's a, b = b, a)." },
-    { "title": "Forgetting that strings are immutable in many languages", "explanation": "In Python and Java, you cannot modify a string in-place (e.g., `s[0] = 'a'`). You must convert it to a list/char array, do the in-place work, and join it back." },
-    { "title": "Confusing O(1) extra space with O(1) time", "explanation": "In-place means space is O(1). The time complexity is usually still O(n) because you have to touch every element." }
+    {
+      "title": "Overwriting data before reading it",
+      "explanation": "If you copy arr[i] to arr[j] without saving arr[j] first, the original value at j is gone forever. Always use a temp variable or a simultaneous swap (like Python's a, b = b, a)."
+    },
+    {
+      "title": "Forgetting that strings are immutable in many languages",
+      "explanation": "In Python and Java, you cannot modify a string in-place (e.g., `s[0] = 'a'`). You must convert it to a list/char array, do the in-place work, and join it back."
+    },
+    {
+      "title": "Confusing O(1) extra space with O(1) time",
+      "explanation": "In-place means space is O(1). The time complexity is usually still O(n) because you have to touch every element."
+    }
   ],
   "recall_questions": [
-    { "q": "What is the space complexity of an in-place algorithm?", "answer": "O(1) auxiliary space.", "tier": "tier1" },
-    { "q": "What is the most common technique used to modify arrays in-place?", "answer": "The two-pointer technique (either left/right or slow/fast).", "tier": "tier1" },
-    { "q": "Why might you avoid an in-place algorithm in a production codebase?", "answer": "Because it mutates the input data, which can cause subtle bugs if other parts of the program still rely on the original state.", "tier": "tier2" }
+    {
+      "q": "What is the space complexity of an in-place algorithm?",
+      "answer": "O(1) auxiliary space.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the most common technique used to modify arrays in-place?",
+      "answer": "The two-pointer technique (either left/right or slow/fast).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why might you avoid an in-place algorithm in a production codebase?",
+      "answer": "Because it mutates the input data, which can cause subtle bugs if other parts of the program still rely on the original state.",
+      "tier": "tier2"
+    }
   ],
   "oa_questions": [
-    { "question": "Remove all instances of a specific value from an array in-place and return the new length.", "company": "SDE interview", "answer": "Use a slow pointer and a fast pointer. The fast pointer scans every element. If it's NOT the target value, copy it to the slow pointer and increment slow.", "approach": "Standard fast/slow pointer compaction." },
-    { "question": "Move all zeros to the end of an array while maintaining the relative order of the non-zero elements.", "company": "SDE interview", "answer": "Similar to removal: use a slow pointer for the next non-zero write position. After the fast pointer finishes, fill the rest of the array from slow to the end with zeros.", "approach": "Compaction followed by a fill." }
+    {
+      "question": "Remove all instances of a specific value from an array in-place and return the new length.",
+      "company": "SDE interview",
+      "answer": "Use a slow pointer and a fast pointer. The fast pointer scans every element. If it's NOT the target value, copy it to the slow pointer and increment slow.",
+      "approach": "Standard fast/slow pointer compaction."
+    },
+    {
+      "question": "Move all zeros to the end of an array while maintaining the relative order of the non-zero elements.",
+      "company": "SDE interview",
+      "answer": "Similar to removal: use a slow pointer for the next non-zero write position. After the fast pointer finishes, fill the rest of the array from slow to the end with zeros.",
+      "approach": "Compaction followed by a fill."
+    }
   ],
   "practice": [
-    { "title": "Remove Element", "url": "https://leetcode.com/problems/remove-element/", "difficulty": "easy", "why": "The canonical slow/fast pointer in-place compaction problem." },
-    { "title": "Move Zeroes", "url": "https://leetcode.com/problems/move-zeroes/", "difficulty": "easy", "why": "Builds on removal by asking you to fill the remaining space." },
-    { "title": "Reverse String", "url": "https://leetcode.com/problems/reverse-string/", "difficulty": "easy", "why": "The canonical left/right converging pointer problem." }
+    {
+      "title": "Remove Element",
+      "url": "https://leetcode.com/problems/remove-element/",
+      "difficulty": "easy",
+      "why": "The canonical slow/fast pointer in-place compaction problem."
+    },
+    {
+      "title": "Move Zeroes",
+      "url": "https://leetcode.com/problems/move-zeroes/",
+      "difficulty": "easy",
+      "why": "Builds on removal by asking you to fill the remaining space."
+    },
+    {
+      "title": "Reverse String",
+      "url": "https://leetcode.com/problems/reverse-string/",
+      "difficulty": "easy",
+      "why": "The canonical left/right converging pointer problem."
+    }
   ],
-  "related": ["arrays-and-memory", "two-pointers"],
+  "related": [
+    "arrays-and-memory",
+    "two-pointers"
+  ],
   "interesting_facts": [
     "Python's `list.sort()` sorts the list in-place and returns `None`, while `sorted(list)` returns a new list and leaves the original untouched. This API design explicitly signals whether mutation is happening."
   ],

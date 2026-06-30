@@ -9,10 +9,29 @@
     "estimated_minutes": 15,
     "importance": 9,
     "interview_frequency": "medium",
-    "prerequisites": ["cost-and-latency-budgeting"],
+    "prerequisites": [
+      "cost-and-latency-budgeting"
+    ],
     "unlocks": [],
-    "appears_in": ["AI systems design", "GenAI Engineer interview"]
+    "appears_in": [
+      "AI systems design",
+      "GenAI Engineer interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Semantic Caching",
+      "definition": "A smart memory system that recognizes when two questions mean the same thing and reuses the answer to save money."
+    },
+    {
+      "term": "max_tokens",
+      "definition": "A safety limit you set to tell the AI exactly how long its response is allowed to be, preventing it from rambling."
+    },
+    {
+      "term": "Model Routing",
+      "definition": "The practice of sending easy tasks to cheap, fast AI models, while saving the expensive, complex models only for hard problems."
+    }
+  ],
   "hook": {
     "scenario": "Your new AI feature goes viral. You wake up to a $4,000 OpenAI bill because 10,000 users asked the exact same question: 'How do I start?'",
     "question": "Why are you paying a supercomputer to generate the same answer 10,000 times?"
@@ -64,10 +83,22 @@
     }
   ],
   "key_points": [
-    { "title": "Exact Caching", "detail": "Use Redis to cache exact string matches. Safe, easy, high impact for repetitive traffic." },
-    { "title": "Semantic Caching", "detail": "Use Vector DBs to cache similar meanings. Higher hit rate, but risks returning slightly inaccurate answers." },
-    { "title": "Model Routing", "detail": "Don't use GPT-4o for everything. Downgrade to mini/Haiku for easy tasks." },
-    { "title": "max_tokens", "detail": "Always set a token limit to prevent runaway generation costs." }
+    {
+      "title": "Exact Caching",
+      "detail": "Use Redis to cache exact string matches. Safe, easy, high impact for repetitive traffic."
+    },
+    {
+      "title": "Semantic Caching",
+      "detail": "Use Vector DBs to cache similar meanings. Higher hit rate, but risks returning slightly inaccurate answers."
+    },
+    {
+      "title": "Model Routing",
+      "detail": "Don't use GPT-4o for everything. Downgrade to mini/Haiku for easy tasks."
+    },
+    {
+      "title": "max_tokens",
+      "detail": "Always set a token limit to prevent runaway generation costs."
+    }
   ],
   "common_mistakes": [
     {

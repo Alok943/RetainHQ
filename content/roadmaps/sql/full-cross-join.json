@@ -10,14 +10,39 @@
     "estimated_minutes": 25,
     "importance": 6,
     "interview_frequency": "medium",
-    "prerequisites": ["inner-join", "left-right-join"],
+    "prerequisites": [
+      "inner-join",
+      "left-right-join"
+    ],
     "unlocks": [],
-    "project_usage": ["data reconciliation reports", "combinatorial product grids", "gap analysis queries"]
+    "project_usage": [
+      "data reconciliation reports",
+      "combinatorial product grids",
+      "gap analysis queries"
+    ]
   },
+  "glossary": [
+    {
+      "term": "Cartesian",
+      "definition": "A mathematical term describing a result where every single item in one list is paired with every single item in another list."
+    },
+    {
+      "term": "orphaned",
+      "definition": "A record or row of data that has lost its connection to related data in another table, like an order without a customer."
+    },
+    {
+      "term": "reconciliation",
+      "definition": "The process of comparing two sets of data to ensure they match and to identify any differences or missing pieces."
+    }
+  ],
   "overview": {
     "what": "FULL OUTER JOIN keeps every row from BOTH tables — matching rows are combined, and unmatched rows from either side get NULL-padded columns on the other side. It is the union of a LEFT JOIN and a RIGHT JOIN.\n\nCROSS JOIN produces the Cartesian product — every row from the left table paired with every row from the right table, with no ON condition. If left has M rows and right has N rows, you get M × N result rows.\n\nAgainst the shared dataset, consider a small example — joining all customers to the first 3 products via CROSS JOIN:\n\n  SELECT c.name, p.name AS product\n  FROM customers c\n  CROSS JOIN products p\n  WHERE p.id <= 3\n  ORDER BY c.name, p.name;\n\nThis returns 8 × 3 = 24 rows — every customer paired with Keyboard, Monitor, and Mouse.\n\nFULL OUTER JOIN example — suppose you want to see which customers have orders and which orders have customers (all of both):\n\n  SELECT c.name, o.id AS order_id\n  FROM customers c\n  FULL OUTER JOIN orders o ON o.customer_id = c.id\n  ORDER BY c.name, o.id;\n\nAll 8 customers appear (Greg and Hana with order_id = NULL), and all 8 orders appear matched to their customers. In this dataset every order has a valid customer_id, so no order row is orphaned — but if one were, it would show with name = NULL.\n\nMental model: FULL OUTER = 'keep everything from both sides, match what you can'. CROSS = 'pair everything with everything'.",
     "why": "FULL OUTER JOIN is the go-to tool for data reconciliation — comparing two sets to find what is in A but not B, what is in B but not A, and what overlaps. CROSS JOIN is used to generate combinations (e.g., all product–region pairs for a price matrix) or expand a calendar of dates against a list of entities.",
-    "where_used": ["data reconciliation between two systems", "generating all product-size combinations for a catalog", "calendar × entity grids for reporting"]
+    "where_used": [
+      "data reconciliation between two systems",
+      "generating all product-size combinations for a catalog",
+      "calendar × entity grids for reporting"
+    ]
   },
   "why_learning_this": [
     "FULL OUTER JOIN lets you find orphaned records on both sides of a relationship in a single query — essential for data quality audits",
@@ -72,7 +97,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT c.name, o.id AS order_id\nFROM customers c\nFULL OUTER JOIN orders o ON o.customer_id = c.id\nORDER BY c.name, o.id;",
-    "flow_stages": ["from", "join", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "join",
+      "select",
+      "order_by"
+    ],
     "visualization": "join-diagram",
     "focus": "Watch both sides preserved: Greg and Hana appear with order_id = NULL (unmatched left rows). All orders also appear because every order has a valid customer — but if an order had an invalid customer_id, it would show with name = NULL (unmatched right row)."
   },

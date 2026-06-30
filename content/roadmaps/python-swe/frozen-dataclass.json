@@ -9,14 +9,34 @@
     "estimated_minutes": 20,
     "importance": 7,
     "interview_frequency": "low",
-    "prerequisites": ["dataclasses"],
+    "prerequisites": [
+      "dataclasses"
+    ],
     "unlocks": [],
-    "project_usage": ["Configuration objects", "Value objects", "Caching/Hashing"]
+    "project_usage": [
+      "Configuration objects",
+      "Value objects",
+      "Caching/Hashing"
+    ]
   },
+  "glossary": [
+    {
+      "term": "immutable",
+      "definition": "An object whose state or data cannot be changed or modified after it is created."
+    },
+    {
+      "term": "hashable",
+      "definition": "An object that has a fixed value that never changes during its lifetime, allowing it to be used as a dictionary key or set item."
+    }
+  ],
   "overview": {
     "what": "A frozen dataclass is a dataclass where instances cannot be modified after initialization. It uses the `@dataclass(frozen=True)` decorator. It makes the class immutable, similar to a tuple, and automatically generates a `__hash__` method, allowing instances to be used as dictionary keys or stored in sets. Mental model: A frozen dataclass is a read-only container; once you lock it, any attempt to change its fields raises a FrozenInstanceError.",
     "why": "Immutability prevents accidental state changes in data passed around your application. It also makes objects hashable, meaning they can be used in mappings or sets.",
-    "where_used": ["FastAPI settings", "Domain-Driven Design (Value Objects)", "Caching keys"]
+    "where_used": [
+      "FastAPI settings",
+      "Domain-Driven Design (Value Objects)",
+      "Caching keys"
+    ]
   },
   "why_learning_this": [
     "You can safely pass data objects around without worrying about other functions mutating them.",

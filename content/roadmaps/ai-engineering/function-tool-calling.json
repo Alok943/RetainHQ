@@ -9,10 +9,32 @@
     "estimated_minutes": 18,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["structured-output-json-mode"],
-    "unlocks": ["tool-use-and-the-call-loop"],
-    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA", "RAG system design"]
+    "prerequisites": [
+      "structured-output-json-mode"
+    ],
+    "unlocks": [
+      "tool-use-and-the-call-loop"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview",
+      "LLM Engineer OA",
+      "RAG system design"
+    ]
   },
+  "glossary": [
+    {
+      "term": "job ticket",
+      "definition": "A structured request the AI creates when it needs you to run a specific tool on its behalf, rather than trying to do the work itself."
+    },
+    {
+      "term": "JSON Schema",
+      "definition": "A strict format you use to tell the AI exactly what tools are available and what specific details it must provide to use them."
+    },
+    {
+      "term": "parallel tool calling",
+      "definition": "When the AI writes multiple job tickets at the same time, allowing your program to perform several tasks simultaneously to speed things up."
+    }
+  ],
   "hook": {
     "scenario": "A user asks your chatbot: 'What's the weather in Delhi right now?' The model's training data is from 2024 — it has no idea. You want it to call your weather API. But you can't give a language model a URL to call.",
     "question": "How do you let an LLM trigger real-world actions without giving it direct access to execute code or make HTTP calls?"
@@ -31,17 +53,56 @@
       "animation": {
         "type": "cycle",
         "actors": [
-          { "id": "app", "label": "Your App" },
-          { "id": "model", "label": "LLM Model" },
-          { "id": "tool", "label": "Your Function" }
+          {
+            "id": "app",
+            "label": "Your App"
+          },
+          {
+            "id": "model",
+            "label": "LLM Model"
+          },
+          {
+            "id": "tool",
+            "label": "Your Function"
+          }
         ],
         "steps": [
-          { "from": "app", "to": "model", "label": "messages + tools[] definition", "term": "1. send request" },
-          { "from": "model", "to": "app", "label": "tool_calls JSON ticket", "term": "2. model asks to call tool" },
-          { "from": "app", "to": "tool", "label": "run get_weather('Delhi')", "term": "3. your code executes" },
-          { "from": "tool", "to": "app", "label": "{'temp': 38, 'condition': 'sunny'}", "term": "4. real result" },
-          { "from": "app", "to": "model", "label": "tool result message", "term": "5. send result back" },
-          { "from": "model", "to": "app", "label": "'It is 38°C and sunny in Delhi.'", "term": "6. final answer" }
+          {
+            "from": "app",
+            "to": "model",
+            "label": "messages + tools[] definition",
+            "term": "1. send request"
+          },
+          {
+            "from": "model",
+            "to": "app",
+            "label": "tool_calls JSON ticket",
+            "term": "2. model asks to call tool"
+          },
+          {
+            "from": "app",
+            "to": "tool",
+            "label": "run get_weather('Delhi')",
+            "term": "3. your code executes"
+          },
+          {
+            "from": "tool",
+            "to": "app",
+            "label": "{'temp': 38, 'condition': 'sunny'}",
+            "term": "4. real result"
+          },
+          {
+            "from": "app",
+            "to": "model",
+            "label": "tool result message",
+            "term": "5. send result back"
+          },
+          {
+            "from": "model",
+            "to": "app",
+            "label": "'It is 38°C and sunny in Delhi.'",
+            "term": "6. final answer"
+          }
         ]
       },
       "recap": "Six-step round-trip: model asks → your code runs → result sent back → model answers."
@@ -76,10 +137,22 @@
     }
   ],
   "key_points": [
-    { "title": "Model = planner, your code = executor", "detail": "The model NEVER runs your function. It produces a structured JSON ticket; your code executes it and returns the result." },
-    { "title": "finish_reason='tool_calls'", "detail": "The signal that the model wants to call a tool — message.content will be None or empty; read message.tool_calls instead." },
-    { "title": "Tool description = trigger policy", "detail": "The model decides WHEN to call a tool from its description. Imprecise descriptions lead to missed or incorrect calls." },
-    { "title": "Two-call minimum", "detail": "Tool use requires at least two API calls: one for the model to issue the ticket, one to get the final answer after you return the result." }
+    {
+      "title": "Model = planner, your code = executor",
+      "detail": "The model NEVER runs your function. It produces a structured JSON ticket; your code executes it and returns the result."
+    },
+    {
+      "title": "finish_reason='tool_calls'",
+      "detail": "The signal that the model wants to call a tool — message.content will be None or empty; read message.tool_calls instead."
+    },
+    {
+      "title": "Tool description = trigger policy",
+      "detail": "The model decides WHEN to call a tool from its description. Imprecise descriptions lead to missed or incorrect calls."
+    },
+    {
+      "title": "Two-call minimum",
+      "detail": "Tool use requires at least two API calls: one for the model to issue the ticket, one to get the final answer after you return the result."
+    }
   ],
   "common_mistakes": [
     {

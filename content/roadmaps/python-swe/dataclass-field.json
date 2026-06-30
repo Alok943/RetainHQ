@@ -9,14 +9,35 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["dataclass-basics", "mutable-default-argument"],
+    "prerequisites": [
+      "dataclass-basics",
+      "mutable-default-argument"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI", "Pydantic configuration", "Data processing scripts"]
+    "project_usage": [
+      "FastAPI",
+      "Pydantic configuration",
+      "Data processing scripts"
+    ]
   },
+  "glossary": [
+    {
+      "term": "callable",
+      "definition": "Any Python object that can be called like a function, such as a regular function or a class."
+    },
+    {
+      "term": "mutable",
+      "definition": "An object whose internal state or data can be changed after it is created, like a list or a dictionary."
+    }
+  ],
   "overview": {
     "what": "In Python dataclasses, the `field()` function allows you to customize individual attributes. Its most important use is `default_factory`, which takes a zero-argument callable (like `list` or `dict`) to generate a fresh default value for each new instance.\n\nThe mental model is 'factory vs. shared box': a standard default like `items = []` shares the exact same list across all instances. A `default_factory=list` calls `list()` to mint a brand-new box every time a new object is instantiated.",
     "why": "It prevents the infamous 'mutable default argument' bug in dataclasses by ensuring each instance gets its own independent mutable object.",
-    "where_used": ["Initializing lists or dicts in dataclasses", "Excluding fields from __repr__", "Generating unique IDs on creation"]
+    "where_used": [
+      "Initializing lists or dicts in dataclasses",
+      "Excluding fields from __repr__",
+      "Generating unique IDs on creation"
+    ]
   },
   "why_learning_this": [
     "You can safely use lists, dictionaries, or sets as default values in your data models.",

@@ -9,9 +9,27 @@
     "estimated_minutes": 20,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["in-place-operations"],
-    "unlocks": ["insertion-sort"]
+    "prerequisites": [
+      "in-place-operations"
+    ],
+    "unlocks": [
+      "insertion-sort"
+    ]
   },
+  "glossary": [
+    {
+      "term": "long-distance swap",
+      "definition": "Moving an element far away from its original position directly, jumping over other items."
+    },
+    {
+      "term": "write overhead",
+      "definition": "The amount of extra work the computer has to do just to save or move data in memory."
+    },
+    {
+      "term": "comparison-based sort",
+      "definition": "An organizing method that works by repeatedly asking 'is A bigger than B?'"
+    }
+  ],
   "hook": {
     "scenario": "You are writing firmware for an IoT sensor that stores calibration data on Flash memory. Flash cells physically degrade and eventually fail after a finite number of write operations.",
     "question": "How do you sort the calibration data while performing the absolute minimum number of memory writes?"
@@ -28,7 +46,13 @@
   },
   "viz": {
     "generator": "selection-sort",
-    "default_input": [5, 2, 8, 1, 9],
+    "default_input": [
+      5,
+      2,
+      8,
+      1,
+      9
+    ],
     "invariants": {
       "inv-min": "Each pass scans the unsorted suffix to find its smallest element.",
       "inv-prefix": "arr[0..i-1] holds the i smallest elements, already in final order.",
@@ -37,9 +61,18 @@
   },
   "explanation": "Selection Sort always performs exactly N*(N-1)/2 comparisons, regardless of the input data. Whether the array is already sorted, reverse-sorted, or random, the algorithm executes the same number of comparison operations. It is completely non-adaptive.\n\nHowever, it performs at most N-1 swaps. Each pass through the inner loop identifies the minimum of the unsorted portion and executes exactly one swap to place it. This makes Selection Sort the optimal choice when writes are expensive.\n\nThe loop invariant is: at the start of the i-th iteration, the subarray `arr[0..i-1]` contains the i smallest elements of the original array, in their final sorted positions. Once an element is placed, it is never touched again.\n\nCritically, Selection Sort is NOT stable. The long-distance swap can destroy relative order. Example: `[3A, 3B, 1]`. Finding min=1, we swap it with 3A: `[1, 3B, 3A]`. The relative order of the two 3s has been reversed.",
   "key_points": [
-    { "title": "Minimum Writes", "detail": "At most N-1 swaps. The lowest write overhead of any comparison-based sort." },
-    { "title": "Non-Adaptive", "detail": "Always O(N^2) comparisons regardless of input order. It has no mechanism to detect pre-existing sortedness." },
-    { "title": "Unstable", "detail": "Long-distance swaps destroy the relative order of equal elements." }
+    {
+      "title": "Minimum Writes",
+      "detail": "At most N-1 swaps. The lowest write overhead of any comparison-based sort."
+    },
+    {
+      "title": "Non-Adaptive",
+      "detail": "Always O(N^2) comparisons regardless of input order. It has no mechanism to detect pre-existing sortedness."
+    },
+    {
+      "title": "Unstable",
+      "detail": "Long-distance swaps destroy the relative order of equal elements."
+    }
   ],
   "pattern": {
     "name": "Global Minimum Search",
@@ -53,30 +86,80 @@
     "You are using Selection Sort on a nearly-sorted array. It will still perform O(N^2) comparisons because it cannot detect existing order."
   ],
   "engineering_examples": [
-    { "title": "Flash Memory / EEPROM Firmware", "problem": "Sorting data on storage with limited Program/Erase cycles.", "why_this_algorithm": "It minimizes writes to N-1, extending the physical lifespan of the hardware." },
-    { "title": "K-th Order Statistics", "problem": "Finding the top K highest-priority items in a scheduler.", "why_this_algorithm": "Run exactly K passes of Selection Sort to extract the K smallest/largest elements in O(K*N) time without wasting effort sorting the rest." }
+    {
+      "title": "Flash Memory / EEPROM Firmware",
+      "problem": "Sorting data on storage with limited Program/Erase cycles.",
+      "why_this_algorithm": "It minimizes writes to N-1, extending the physical lifespan of the hardware."
+    },
+    {
+      "title": "K-th Order Statistics",
+      "problem": "Finding the top K highest-priority items in a scheduler.",
+      "why_this_algorithm": "Run exactly K passes of Selection Sort to extract the K smallest/largest elements in O(K*N) time without wasting effort sorting the rest."
+    }
   ],
   "when_not_to_use": [
-    { "scenario": "You need a stable sort", "reason": "Selection Sort's long-distance swaps destroy relative ordering of equal elements. Use Insertion Sort or Merge Sort instead." },
-    { "scenario": "Data is nearly sorted", "reason": "Selection Sort is non-adaptive and will always perform O(N^2) comparisons. Insertion Sort handles nearly-sorted data in O(N)." }
+    {
+      "scenario": "You need a stable sort",
+      "reason": "Selection Sort's long-distance swaps destroy relative ordering of equal elements. Use Insertion Sort or Merge Sort instead."
+    },
+    {
+      "scenario": "Data is nearly sorted",
+      "reason": "Selection Sort is non-adaptive and will always perform O(N^2) comparisons. Insertion Sort handles nearly-sorted data in O(N)."
+    }
   ],
   "common_mistakes": [
-    { "title": "Confusing with Insertion Sort", "explanation": "Selection Sort finds the minimum and places it. Insertion Sort takes the next element and inserts it into the sorted partition. Selection Sort's sorted elements are in their FINAL positions; Insertion Sort's sorted elements may shift later." },
-    { "title": "Assuming it is stable", "explanation": "The long-distance swap skips over equal elements. [3A, 3B, 1] becomes [1, 3B, 3A], reversing the order of equal elements." }
+    {
+      "title": "Confusing with Insertion Sort",
+      "explanation": "Selection Sort finds the minimum and places it. Insertion Sort takes the next element and inserts it into the sorted partition. Selection Sort's sorted elements are in their FINAL positions; Insertion Sort's sorted elements may shift later."
+    },
+    {
+      "title": "Assuming it is stable",
+      "explanation": "The long-distance swap skips over equal elements. [3A, 3B, 1] becomes [1, 3B, 3A], reversing the order of equal elements."
+    }
   ],
   "recall_questions": [
-    { "q": "What makes Selection Sort uniquely suited for write-constrained hardware?", "answer": "It performs at most N-1 swaps, the mathematical minimum for a comparison-based sort, trading cheap reads for minimal writes.", "tier": "tier1" },
-    { "q": "Why is Selection Sort non-adaptive?", "answer": "It has no mechanism to detect pre-existing order. It always scans the entire unsorted partition for the minimum, regardless of input arrangement.", "tier": "tier1" },
-    { "q": "Why is Selection Sort unstable? Give an example.", "answer": "The long-distance swap can vault over equal elements. [3A, 3B, 1] -> swap(3A, 1) -> [1, 3B, 3A]. The 3s are now in reversed order.", "tier": "tier2" }
+    {
+      "q": "What makes Selection Sort uniquely suited for write-constrained hardware?",
+      "answer": "It performs at most N-1 swaps, the mathematical minimum for a comparison-based sort, trading cheap reads for minimal writes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Selection Sort non-adaptive?",
+      "answer": "It has no mechanism to detect pre-existing order. It always scans the entire unsorted partition for the minimum, regardless of input arrangement.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Selection Sort unstable? Give an example.",
+      "answer": "The long-distance swap can vault over equal elements. [3A, 3B, 1] -> swap(3A, 1) -> [1, 3B, 3A]. The 3s are now in reversed order.",
+      "tier": "tier2"
+    }
   ],
   "oa_questions": [
-    { "question": "Implement Selection Sort.", "company": "General interview", "answer": "For each i from 0 to N-2: set min_index = i. For each j from i+1 to N-1: if arr[j] < arr[min_index], update min_index. After the inner loop, swap arr[i] with arr[min_index].", "approach": "Selection Sort." },
-    { "question": "Find the K smallest elements in an unsorted array without fully sorting it.", "company": "SDE interview", "answer": "Run K passes of Selection Sort. After K passes, the first K elements of the array are the K smallest, fully sorted. Time: O(K*N).", "approach": "Partial Selection Sort." }
+    {
+      "question": "Implement Selection Sort.",
+      "company": "General interview",
+      "answer": "For each i from 0 to N-2: set min_index = i. For each j from i+1 to N-1: if arr[j] < arr[min_index], update min_index. After the inner loop, swap arr[i] with arr[min_index].",
+      "approach": "Selection Sort."
+    },
+    {
+      "question": "Find the K smallest elements in an unsorted array without fully sorting it.",
+      "company": "SDE interview",
+      "answer": "Run K passes of Selection Sort. After K passes, the first K elements of the array are the K smallest, fully sorted. Time: O(K*N).",
+      "approach": "Partial Selection Sort."
+    }
   ],
   "practice": [
-    { "title": "Sort an Array", "url": "https://leetcode.com/problems/sort-an-array/", "difficulty": "medium", "why": "Implementing Selection Sort here will TLE, reinforcing why O(N^2) non-adaptive sorts fail at scale." }
+    {
+      "title": "Sort an Array",
+      "url": "https://leetcode.com/problems/sort-an-array/",
+      "difficulty": "medium",
+      "why": "Implementing Selection Sort here will TLE, reinforcing why O(N^2) non-adaptive sorts fail at scale."
+    }
   ],
-  "related": ["bubble-sort", "insertion-sort"],
+  "related": [
+    "bubble-sort",
+    "insertion-sort"
+  ],
   "interesting_facts": [
     "Selection Sort is the basis for the Heap Sort algorithm. By replacing the linear scan for the minimum with a min-heap extraction (O(log N)), you get an O(N log N) sort with the same minimal-swap philosophy."
   ],

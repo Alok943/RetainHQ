@@ -19,6 +19,16 @@
       "Memory profiling"
     ]
   },
+  "glossary": [
+    {
+      "term": "reference counting",
+      "definition": "A method of memory management where Python keeps track of how many times an object is being used."
+    },
+    {
+      "term": "memory leaks",
+      "definition": "When a program fails to release memory that it no longer needs, eventually causing the system to run out of memory."
+    }
+  ],
   "overview": {
     "what": "Python manages memory automatically using reference counting: every object keeps a count of how many labels point to it. When the count drops to zero, the object is immediately destroyed. A 'cyclic reference' occurs when objects point to each other (e.g., node A points to B, and B points to A). Reference counting cannot clean these up because their counts never reach zero. To solve this, a background process called the 'garbage collector' periodically scans for unreachable cycles and destroys them. Think of reference counting as returning a library book as soon as you finish reading it, and the garbage collector as the librarian sweeping the building at night for abandoned books.",
     "why": "It prevents memory leaks in long-running applications without requiring developers to manually allocate and free memory.",

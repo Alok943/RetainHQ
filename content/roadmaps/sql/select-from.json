@@ -11,13 +11,38 @@
     "importance": 10,
     "interview_frequency": "high",
     "prerequisites": [],
-    "unlocks": ["where-operators", "inner-join"],
-    "project_usage": ["analytics queries", "API list endpoints", "reporting dashboards"]
+    "unlocks": [
+      "where-operators",
+      "inner-join"
+    ],
+    "project_usage": [
+      "analytics queries",
+      "API list endpoints",
+      "reporting dashboards"
+    ]
   },
+  "glossary": [
+    {
+      "term": "transformation",
+      "definition": "The process of taking an initial set of data and changing or shaping it into a new output."
+    },
+    {
+      "term": "skeleton",
+      "definition": "The basic, underlying structure of a query that everything else is built upon."
+    },
+    {
+      "term": "explicitly",
+      "definition": "Stating something clearly and directly, leaving no room for confusion or guessing."
+    }
+  ],
   "overview": {
     "what": "Every SQL query is a row-set transformation: you start with a set of rows and transform it into a new set. SELECT and FROM are the two minimum clauses that make a valid query.\n\nFROM names the source table — the initial row-set. The database loads every row of that table into a working set.\n\nSELECT names which columns to keep (or compute) in the output. Think of FROM as 'which filing cabinet?' and SELECT as 'which columns from each sheet?'\n\nSELECT * returns all columns:\n\n  SELECT *\n  FROM customers;\n\nReturns all 8 rows with columns id, name, country, signup_date.\n\nSELECT with specific columns narrows the output:\n\n  SELECT name, country\n  FROM customers\n  ORDER BY id;\n\nReturns 8 rows but only the name and country columns.\n\nYou can also create computed columns with expressions and aliases using AS:\n\n  SELECT name, price, price * 1.1 AS price_with_tax\n  FROM products\n  ORDER BY id;\n\nReturns 6 rows, each with the original price and a computed price_with_tax column.\n\nKey mental model: in the logical query flow, FROM runs first (builds the full row-set), then SELECT runs (picks/computes columns). Even though you write SELECT first in the text, the database processes FROM first.",
     "why": "SELECT and FROM are the foundation of every SQL statement. You cannot write any query — filtering, joining, aggregating — without them. Understanding that FROM runs before SELECT prevents the #1 beginner mistake: trying to use a SELECT alias in the same SELECT list or in a WHERE clause.",
-    "where_used": ["every SQL query ever written", "API list endpoints", "data exploration in psql or pgAdmin"]
+    "where_used": [
+      "every SQL query ever written",
+      "API list endpoints",
+      "data exploration in psql or pgAdmin"
+    ]
   },
   "why_learning_this": [
     "Every other SQL concept (WHERE, JOIN, GROUP BY) builds on SELECT + FROM — they are the skeleton of every query",
@@ -72,7 +97,11 @@
   ],
   "query_walkthrough": {
     "query": "SELECT name, price, price * 1.1 AS price_with_tax\nFROM products\nORDER BY name;",
-    "flow_stages": ["from", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "select",
+      "order_by"
+    ],
     "visualization": "result-table",
     "focus": "Watch how FROM loads all 6 product rows, then SELECT keeps only name and price and computes a new column price_with_tax from an expression."
   },

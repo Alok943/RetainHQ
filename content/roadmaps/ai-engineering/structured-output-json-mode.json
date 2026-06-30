@@ -9,10 +9,31 @@
     "estimated_minutes": 14,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["chat-completions-api"],
-    "unlocks": ["function-tool-calling"],
-    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+    "prerequisites": [
+      "chat-completions-api"
+    ],
+    "unlocks": [
+      "function-tool-calling"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview",
+      "LLM Engineer OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "JSON mode",
+      "definition": "A basic setting that guarantees the AI will respond with standard, parseable data code, but does not guarantee it will use the specific names or formats you want."
+    },
+    {
+      "term": "Structured outputs",
+      "definition": "An advanced feature that forces the AI to strictly obey your exact format requirements, ensuring every piece of data is exactly where you expect it."
+    },
+    {
+      "term": "constrained decoding",
+      "definition": "The underlying mechanism that physically prevents the AI from generating words or formats that break your strict rules."
+    }
+  ],
   "hook": {
     "scenario": "Your pipeline asks GPT-4o to extract structured data — name, date, amount — from invoices. It works in testing. In production, 3% of responses have prose sentences mixed with the JSON, or the JSON key is 'Date' instead of 'date', and your downstream code crashes.",
     "question": "How do you guarantee the model always returns parseable, schema-valid JSON — not just JSON-shaped text?"

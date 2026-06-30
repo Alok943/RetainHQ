@@ -11,12 +11,30 @@
     "interview_frequency": "medium",
     "prerequisites": [],
     "unlocks": [],
-    "project_usage": ["File I/O", "Database connections", "Thread locks"]
+    "project_usage": [
+      "File I/O",
+      "Database connections",
+      "Thread locks"
+    ]
   },
+  "glossary": [
+    {
+      "term": "context manager",
+      "definition": "An object that defines what needs to be set up before a block of code runs and what needs to be cleaned up after."
+    },
+    {
+      "term": "resource leaks",
+      "definition": "When a program fails to release system resources like files or memory, eventually causing the system to slow down or crash."
+    }
+  ],
   "overview": {
     "what": "The `with` statement is used to wrap the execution of a block of code within a 'context manager'. It guarantees that initialization happens before the block runs, and cleanup (like closing a file or releasing a lock) happens automatically when the block finishes, even if an exception is raised. Mental model: The `with` statement is an automated bouncer; it ensures you do the setup when you enter the club, and perfectly executes the teardown when you leave, no matter how you exit.",
     "why": "Manual resource management using `try...finally` is verbose and error-prone. The `with` statement prevents resource leaks (e.g., leaving files or database connections open).",
-    "where_used": ["Opening files (`open()`)", "Managing database transactions", "Acquiring and releasing thread/asyncio locks"]
+    "where_used": [
+      "Opening files (`open()`)",
+      "Managing database transactions",
+      "Acquiring and releasing thread/asyncio locks"
+    ]
   },
   "why_learning_this": [
     "Your applications will not crash due to 'Too many open files' errors.",

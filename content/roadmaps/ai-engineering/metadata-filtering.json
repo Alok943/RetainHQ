@@ -18,6 +18,20 @@
       "GenAI Engineer interview"
     ]
   },
+  "glossary": [
+    {
+      "term": "metadata filter",
+      "definition": "A strict rule that forces the search engine to only look at documents with specific tags, like a certain year or author."
+    },
+    {
+      "term": "Pre-filtering",
+      "definition": "The safe practice of applying strict rules before searching for meaning, guaranteeing you get enough valid results back."
+    },
+    {
+      "term": "Post-filtering",
+      "definition": "A risky practice where you search first and apply rules later, which can accidentally throw away all your good results."
+    }
+  ],
   "hook": {
     "scenario": "A user asks 'What's the status of the Acme project?'. A pure semantic search returns chunks about the *Alpha* project, simply because both projects use similar words like 'Q3 milestones' and 'budget'.",
     "question": "How do you enforce hard rules ('only Acme docs') inside a fuzzy semantic search?"
@@ -32,7 +46,7 @@
       "recap": "Semantic search cannot natively enforce strict boolean rules."
     },
     {
-      "body": "To fix this, you attach **metadata**\u2014structured tags like `author`, `date`, `category`, or `tenant_id`\u2014to each text chunk when you ingest it into the vector database.",
+      "body": "To fix this, you attach **metadata**—structured tags like `author`, `date`, `category`, or `tenant_id`—to each text chunk when you ingest it into the vector database.",
       "recap": "Store structured tags alongside every embedded chunk."
     },
     {

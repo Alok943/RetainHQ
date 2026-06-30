@@ -10,13 +10,29 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["hash-tables"],
+    "prerequisites": [
+      "hash-tables"
+    ],
     "unlocks": [],
     "project_usage": [
       "Tuning Hash Map initialization capacity to avoid expensive mid-execution memory reallocation",
       "Designing resilient backend systems that cannot be crashed by algorithmic complexity attacks"
     ]
   },
+  "glossary": [
+    {
+      "term": "Pigeonhole Principle",
+      "definition": "A mathematical rule stating that if you have more items than containers, at least one container must hold multiple items."
+    },
+    {
+      "term": "cryptographic failure",
+      "definition": "A flaw where a security algorithm is broken or manipulated by an attacker."
+    },
+    {
+      "term": "load factor threshold",
+      "definition": "A specific fullness level that triggers a data structure to resize itself."
+    }
+  ],
   "overview": {
     "what": "A hash collision occurs when two distinct keys mathematically produce the exact same array index. The Load Factor is the ratio of stored elements to total array slots (N / Capacity). As the load factor increases, collisions become highly probable.",
     "why": "Because the universe of possible keys is infinitely larger than the physical array, collisions are a mathematical certainty (the Pigeonhole Principle). How a hash table resolves these collisions dictates whether it maintains O(1) performance or degrades to a catastrophic O(N).",

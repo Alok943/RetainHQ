@@ -9,10 +9,33 @@
     "estimated_minutes": 16,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["embeddings", "chunking-strategies"],
-    "unlocks": ["reranking", "context-injection-and-prompt-assembly"],
-    "appears_in": ["GenAI / LLM Engineer interview", "RAG system design"]
+    "prerequisites": [
+      "embeddings",
+      "chunking-strategies"
+    ],
+    "unlocks": [
+      "reranking",
+      "context-injection-and-prompt-assembly"
+    ],
+    "appears_in": [
+      "GenAI / LLM Engineer interview",
+      "RAG system design"
+    ]
   },
+  "glossary": [
+    {
+      "term": "vector",
+      "definition": "A list of numbers that represents the meaning of a piece of text, allowing computers to understand what the text is actually about."
+    },
+    {
+      "term": "cosine similarity",
+      "definition": "A mathematical way to measure how closely related two pieces of text are by comparing the direction of their vectors."
+    },
+    {
+      "term": "top-k",
+      "definition": "The practice of asking the database to return only the single best, or k most relevant, pieces of information to keep the AI focused."
+    }
+  ],
   "hook": {
     "scenario": "Your support bot is asked: 'How do I reset my password?' Your docs have 4,000 paragraphs. You can't paste all of them into the prompt — that's a million tokens. You need to find the 3 or 4 paragraphs that actually answer the question, and only send those.",
     "question": "How does the system know WHICH paragraphs are relevant, without you writing a single keyword rule?"
@@ -39,11 +62,23 @@
       "animation": {
         "type": "vector-space",
         "clusters": [
-          { "label": "Password", "color": "teal" },
-          { "label": "Billing", "color": "amber" },
-          { "label": "API docs", "color": "cyan" }
+          {
+            "label": "Password",
+            "color": "teal"
+          },
+          {
+            "label": "Billing",
+            "color": "amber"
+          },
+          {
+            "label": "API docs",
+            "color": "cyan"
+          }
         ],
-        "query": { "label": "reset my password", "near": "Password" },
+        "query": {
+          "label": "reset my password",
+          "near": "Password"
+        },
         "k": 3
       },
       "recap": "Closeness = direction (cosine); the nearest k chunks become the context."
@@ -78,11 +113,26 @@
     }
   ],
   "key_points": [
-    { "title": "Same model both sides", "detail": "Embed the query with the identical model used for the chunks, or the vectors aren't comparable." },
-    { "title": "Cosine = direction, not distance", "detail": "Similarity is the angle between vectors; for normalised embeddings it's just the dot product." },
-    { "title": "k is a tradeoff", "detail": "Too small → fragile, hallucinates; too large → noisy, costly, buries the answer. Start at 4." },
-    { "title": "Nearest ≠ correct", "detail": "The store always returns k results, even from irrelevant docs. Reranking and thresholds fix the gap." },
-    { "title": "Quality is upstream", "detail": "Retrieval quality depends far more on chunking, the embedding model, and document quality than on which vector database you pick." }
+    {
+      "title": "Same model both sides",
+      "detail": "Embed the query with the identical model used for the chunks, or the vectors aren't comparable."
+    },
+    {
+      "title": "Cosine = direction, not distance",
+      "detail": "Similarity is the angle between vectors; for normalised embeddings it's just the dot product."
+    },
+    {
+      "title": "k is a tradeoff",
+      "detail": "Too small → fragile, hallucinates; too large → noisy, costly, buries the answer. Start at 4."
+    },
+    {
+      "title": "Nearest ≠ correct",
+      "detail": "The store always returns k results, even from irrelevant docs. Reranking and thresholds fix the gap."
+    },
+    {
+      "title": "Quality is upstream",
+      "detail": "Retrieval quality depends far more on chunking, the embedding model, and document quality than on which vector database you pick."
+    }
   ],
   "common_mistakes": [
     {

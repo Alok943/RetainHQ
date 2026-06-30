@@ -9,10 +9,31 @@
     "estimated_minutes": 15,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["embed-and-retrieve-top-k"],
-    "unlocks": ["evaluation-and-test-sets"],
-    "appears_in": ["RAG system design", "GenAI Engineer interview"]
+    "prerequisites": [
+      "embed-and-retrieve-top-k"
+    ],
+    "unlocks": [
+      "evaluation-and-test-sets"
+    ],
+    "appears_in": [
+      "RAG system design",
+      "GenAI Engineer interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "bi-encoders",
+      "definition": "Fast but basic AI models used for initial search that look at questions and answers separately, sometimes missing subtle connections."
+    },
+    {
+      "term": "Reranker",
+      "definition": "A specialized AI model that takes a shortlist of search results and carefully reorders them to ensure the absolute best answers are at the top."
+    },
+    {
+      "term": "cross-encoder",
+      "definition": "A precise but slow AI model that reads the user question and a document at the exact same time to truly understand how well they match."
+    }
+  ],
   "hook": {
     "scenario": "You search your docs for 'how to cancel subscription'. The vector database returns 20 chunks. The actual instructions for cancellation are at position #14. But because you only feed the top-5 chunks to the LLM (to save tokens), the model never sees the answer.",
     "question": "Why did the vector database rank the right answer so poorly, and how do we fix it?"
@@ -56,10 +77,22 @@
     }
   ],
   "key_points": [
-    { "title": "Nearest ≠ Relevant", "detail": "A vector database returns the geometrically closest points, which are not always the logically most relevant answers to a question." },
-    { "title": "Bi-encoder vs Cross-encoder", "detail": "Vector search uses bi-encoders (fast, isolated). Reranking uses cross-encoders (slow, simultaneous, accurate)." },
-    { "title": "Two-Stage Retrieval", "detail": "Always use both. Vector search filters millions down to 50. Reranking filters 50 down to the 5 you actually send to the LLM." },
-    { "title": "Cost and Latency", "detail": "Reranking adds a network hop and latency (often ~100-200ms). The accuracy boost is usually worth it." }
+    {
+      "title": "Nearest ≠ Relevant",
+      "detail": "A vector database returns the geometrically closest points, which are not always the logically most relevant answers to a question."
+    },
+    {
+      "title": "Bi-encoder vs Cross-encoder",
+      "detail": "Vector search uses bi-encoders (fast, isolated). Reranking uses cross-encoders (slow, simultaneous, accurate)."
+    },
+    {
+      "title": "Two-Stage Retrieval",
+      "detail": "Always use both. Vector search filters millions down to 50. Reranking filters 50 down to the 5 you actually send to the LLM."
+    },
+    {
+      "title": "Cost and Latency",
+      "detail": "Reranking adds a network hop and latency (often ~100-200ms). The accuracy boost is usually worth it."
+    }
   ],
   "common_mistakes": [
     {

@@ -23,9 +23,19 @@
       "closures"
     ]
   },
+  "glossary": [
+    {
+      "term": "LEGB rule",
+      "definition": "The specific order (Local, Enclosing, Global, Built-in) Python follows to look up the value of a variable."
+    },
+    {
+      "term": "enclosing function",
+      "definition": "An outer function that contains an inner, nested function within its code."
+    }
+  ],
   "overview": {
-    "what": "When Python encounters a name, it searches four scopes in order \u2014 this is the LEGB rule:\n\n  L \u2014 Local: names defined inside the current function\n  E \u2014 Enclosing: names in any surrounding (outer) function\n  G \u2014 Global: names defined at the module (file) level\n  B \u2014 Built-in: Python's built-in names like len, print, range\n\nPython uses the FIRST match it finds. Example:\n\n  x = 'global'\n\n  def outer():\n      x = 'enclosing'\n      def inner():\n          print(x)   # finds 'enclosing' \u2014 stops at E before reaching G\n      inner()\n\n  outer()   # prints 'enclosing'\n  print(x)  # prints 'global' \u2014 outer's x never touched the module-level x\n\nTo MODIFY a global variable from inside a function, declare it with global x. To modify a variable in an enclosing function's scope, use nonlocal x. Without these keywords, an assignment inside a function always creates a NEW local variable.",
-    "why": "LEGB explains every NameError and UnboundLocalError you'll encounter. It also explains why global state in a module works across functions without passing arguments \u2014 a pattern common in config objects and connection pools.",
+    "what": "When Python encounters a name, it searches four scopes in order — this is the LEGB rule:\n\n  L — Local: names defined inside the current function\n  E — Enclosing: names in any surrounding (outer) function\n  G — Global: names defined at the module (file) level\n  B — Built-in: Python's built-in names like len, print, range\n\nPython uses the FIRST match it finds. Example:\n\n  x = 'global'\n\n  def outer():\n      x = 'enclosing'\n      def inner():\n          print(x)   # finds 'enclosing' — stops at E before reaching G\n      inner()\n\n  outer()   # prints 'enclosing'\n  print(x)  # prints 'global' — outer's x never touched the module-level x\n\nTo MODIFY a global variable from inside a function, declare it with global x. To modify a variable in an enclosing function's scope, use nonlocal x. Without these keywords, an assignment inside a function always creates a NEW local variable.",
+    "why": "LEGB explains every NameError and UnboundLocalError you'll encounter. It also explains why global state in a module works across functions without passing arguments — a pattern common in config objects and connection pools.",
     "where_used": [
       "Module-level config objects accessed from route handlers",
       "Counter variables in enclosing scopes (used by closures)",
@@ -33,8 +43,8 @@
     ]
   },
   "why_learning_this": [
-    "Diagnosing UnboundLocalError \u2014 the most common scoping bug, caused by assigning to a name that Python then treats as local throughout the whole function",
-    "Understanding how closures retain enclosing-scope values \u2014 the foundation for decorators and factory functions"
+    "Diagnosing UnboundLocalError — the most common scoping bug, caused by assigning to a name that Python then treats as local throughout the whole function",
+    "Understanding how closures retain enclosing-scope values — the foundation for decorators and factory functions"
   ],
   "common_mistakes": [
     {
@@ -53,12 +63,12 @@
   "recall_questions": [
     {
       "q": "What order does Python search for a name, from innermost to outermost?",
-      "answer": "Local \u2192 Enclosing \u2192 Global \u2192 Built-in (LEGB).",
+      "answer": "Local → Enclosing → Global → Built-in (LEGB).",
       "tier": "tier1"
     },
     {
       "q": "What keyword is required to modify a module-level variable from inside a function?",
-      "answer": "global \u2014 without it, the assignment creates a new local variable and leaves the module-level variable unchanged.",
+      "answer": "global — without it, the assignment creates a new local variable and leaves the module-level variable unchanged.",
       "tier": "tier1"
     },
     {

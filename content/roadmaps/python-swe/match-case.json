@@ -9,14 +9,35 @@
     "estimated_minutes": 25,
     "importance": 6,
     "interview_frequency": "low",
-    "prerequisites": ["if-elif-else", "dictionaries"],
+    "prerequisites": [
+      "if-elif-else",
+      "dictionaries"
+    ],
     "unlocks": [],
-    "project_usage": ["FastAPI event routing", "CLI subcommand dispatch", "JSON message type handlers"]
+    "project_usage": [
+      "FastAPI event routing",
+      "CLI subcommand dispatch",
+      "JSON message type handlers"
+    ]
   },
+  "glossary": [
+    {
+      "term": "structural pattern matching",
+      "definition": "Checking data against a specific layout or structure, rather than just comparing simple values."
+    },
+    {
+      "term": "wildcard",
+      "definition": "A special symbol (like _) that acts as a catch-all, matching anything that hasn't been specifically caught by other rules."
+    }
+  ],
   "overview": {
     "what": "match-case (Python 3.10+) is structural pattern matching — it compares a subject against the STRUCTURE of each case, not just its equality. A capture pattern binds a name from inside the matched structure:\n\n  def route(event):\n      match event:\n          case {'type': 'login', 'user': user}:\n              return f'login by {user}'\n          case {'type': 'logout'}:\n              return 'logout'\n          case _:\n              return 'unknown'\n\nThe first case matches any dict that has both a 'type' key equal to 'login' AND a 'user' key; the value under 'user' is captured into the variable user. The wildcard _ is the catch-all — it matches anything and binds nothing. Like if/elif, only the FIRST matching case runs. You can also OR literal values with |: case 'GET' | 'HEAD': matches either string.",
     "why": "match-case replaces cascading isinstance checks and multi-key dict lookups when dispatching on message types or API events. Without it, routing a dozen event types requires a long if/elif chain full of repeated dict.get() calls.",
-    "where_used": ["JSON webhook event routing", "CLI subcommand dispatch", "protocol message type handlers"]
+    "where_used": [
+      "JSON webhook event routing",
+      "CLI subcommand dispatch",
+      "protocol message type handlers"
+    ]
   },
   "why_learning_this": [
     "Replacing cascading isinstance/dict-key if/elif chains with declarative structural dispatch on API payloads",

@@ -23,8 +23,18 @@
       "data pipeline transforms"
     ]
   },
+  "glossary": [
+    {
+      "term": "anonymous function",
+      "definition": "A small function that is defined without a name, typically used for short, throwaway tasks."
+    },
+    {
+      "term": "ternary form",
+      "definition": "A compact, one-line way to write an if-else statement, evaluating to one value if true and another if false."
+    }
+  ],
   "overview": {
-    "what": "A lambda creates an anonymous function \u2014 a function without a def or a name \u2014 using a single expression:\n\n  lambda parameters: expression\n\nThe expression is evaluated and returned automatically. Examples:\n\n  key_fn = lambda r: r['score']           # returns the score field\n  normalize = lambda s: s.strip().lower() # strips and lowercases\n\nLambdas are most commonly passed INLINE as the key or transform argument to built-ins:\n\n  records = [{'name': 'bob', 'score': 82}, {'name': 'alice', 'score': 91}]\n  sorted(records, key=lambda r: r['score'])     # sort by score\n  sorted(records, key=lambda r: -r['score'])    # sort descending\n\nA lambda is ONLY for single expressions \u2014 no statements, no assignments, no if/else blocks (the ternary form is allowed though: lambda x: x if x > 0 else 0). When logic gets complex, use a named def instead.\n\nThink of a lambda as a disposable, inline def that exists only in the expression it is written in.",
+    "what": "A lambda creates an anonymous function — a function without a def or a name — using a single expression:\n\n  lambda parameters: expression\n\nThe expression is evaluated and returned automatically. Examples:\n\n  key_fn = lambda r: r['score']           # returns the score field\n  normalize = lambda s: s.strip().lower() # strips and lowercases\n\nLambdas are most commonly passed INLINE as the key or transform argument to built-ins:\n\n  records = [{'name': 'bob', 'score': 82}, {'name': 'alice', 'score': 91}]\n  sorted(records, key=lambda r: r['score'])     # sort by score\n  sorted(records, key=lambda r: -r['score'])    # sort descending\n\nA lambda is ONLY for single expressions — no statements, no assignments, no if/else blocks (the ternary form is allowed though: lambda x: x if x > 0 else 0). When logic gets complex, use a named def instead.\n\nThink of a lambda as a disposable, inline def that exists only in the expression it is written in.",
     "why": "Built-ins like sorted(), min(), max(), and map() accept a key= or function argument. Lambdas let you supply a short transform inline without naming it, keeping the call site compact. When the transform is reused or complex, a named function is cleaner.",
     "where_used": [
       "sorted() and min() key arguments on lists of dicts",
@@ -47,18 +57,18 @@
     },
     {
       "title": "Late binding in a loop-created lambda",
-      "explanation": "fns = [lambda: i for i in range(3)] \u2014 all three lambdas return 2 because they capture the variable i, not its value at creation time. Fix: use a default argument: lambda i=i: i."
+      "explanation": "fns = [lambda: i for i in range(3)] — all three lambdas return 2 because they capture the variable i, not its value at creation time. Fix: use a default argument: lambda i=i: i."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the syntax of a lambda, and what does it return?",
-      "answer": "lambda parameters: expression \u2014 it implicitly returns the value of the expression.",
+      "answer": "lambda parameters: expression — it implicitly returns the value of the expression.",
       "tier": "tier1"
     },
     {
       "q": "What is the main restriction on a lambda body?",
-      "answer": "It must be a single expression \u2014 statements (print, assignment, if/else blocks) are not allowed.",
+      "answer": "It must be a single expression — statements (print, assignment, if/else blocks) are not allowed.",
       "tier": "tier1"
     },
     {
@@ -77,11 +87,11 @@
   ],
   "code_walkthrough": {
     "code": "records = [\n    {'endpoint': '/users', 'latency': 45},\n    {'endpoint': '/health', 'latency': 12},\n    {'endpoint': '/items', 'latency': 38},\n]\nsorted_records = sorted(records, key=lambda r: r['latency'])\nfor r in sorted_records:\n    print(r['endpoint'], r['latency'])",
-    "focus": "key=lambda r: r['latency'] is passed inline \u2014 sorted() calls this function on each record and orders by the returned value without needing a named function."
+    "focus": "key=lambda r: r['latency'] is passed inline — sorted() calls this function on each record and orders by the returned value without needing a named function."
   },
   "challenge": {
     "title": "Multi-key sort",
-    "prompt": "Write rank_users(users) that takes a list of user dicts with 'role' and 'score' keys and returns them sorted: admins first (role='admin'), then by score descending within each group. Use sorted() with a single lambda that returns a tuple \u2014 Python sorts tuples element-by-element.",
+    "prompt": "Write rank_users(users) that takes a list of user dicts with 'role' and 'score' keys and returns them sorted: admins first (role='admin'), then by score descending within each group. Use sorted() with a single lambda that returns a tuple — Python sorts tuples element-by-element.",
     "solution": "def rank_users(users):\n    return sorted(users, key=lambda u: (u['role'] != 'admin', -u['score']))\n\nusers = [\n    {'name': 'alice', 'role': 'member', 'score': 90},\n    {'name': 'bob', 'role': 'admin', 'score': 75},\n    {'name': 'carol', 'role': 'admin', 'score': 88},\n    {'name': 'dan', 'role': 'member', 'score': 60},\n]\nfor u in rank_users(users):\n    print(u['role'], u['score'], u['name'])"
   },
   "sources": [

@@ -24,6 +24,20 @@
       "reporting"
     ]
   },
+  "glossary": [
+    {
+      "term": "aggregate-like",
+      "definition": "Behaving similarly to functions that summarize data, but applied in a way that keeps individual row details."
+    },
+    {
+      "term": "subgroups",
+      "definition": "Smaller, distinct sets of rows created within a larger partition of data."
+    },
+    {
+      "term": "peers",
+      "definition": "Rows that share the same characteristics or belong to the same partition, like employees in the same department."
+    }
+  ],
   "overview": {
     "what": "Window functions let you perform aggregate-like calculations (like SUM or AVG) without grouping rows into a single output row. The OVER clause defines a 'window' of rows for each row to compute over, and PARTITION BY splits that window into subgroups, similar to GROUP BY, but retaining the original row-level details.",
     "why": "You often need to compare a single row against an aggregate of its peers (e.g., an employee's salary vs their department's average).",

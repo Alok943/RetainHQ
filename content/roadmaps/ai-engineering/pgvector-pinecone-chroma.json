@@ -18,6 +18,20 @@
       "GenAI Engineer interview"
     ]
   },
+  "glossary": [
+    {
+      "term": "vector database",
+      "definition": "A specialized storage engine designed specifically to store lists of numbers and quickly find the ones that are mathematically closest."
+    },
+    {
+      "term": "pgvector",
+      "definition": "A plugin that adds fast semantic search capabilities directly into Postgres, keeping your AI data next to your regular database."
+    },
+    {
+      "term": "Pinecone",
+      "definition": "A popular cloud-based vector database service that handles massive amounts of AI data so you do not have to manage the servers yourself."
+    }
+  ],
   "hook": {
     "scenario": "You have your chunks and your embedding model. But standard SQL `WHERE text = 'password'` can't search by meaning.",
     "question": "Where do you actually store arrays of 1,536 floats so you can run millisecond similarity searches over millions of rows?"
@@ -28,7 +42,7 @@
   },
   "sections": [
     {
-      "body": "Vector databases exist to solve one specific problem: storing large arrays of floats and running high-speed Approximate Nearest Neighbor (ANN) searches over them. You need one to power the Embed \u2192 Retrieve step of any RAG pipeline.",
+      "body": "Vector databases exist to solve one specific problem: storing large arrays of floats and running high-speed Approximate Nearest Neighbor (ANN) searches over them. You need one to power the Embed → Retrieve step of any RAG pipeline.",
       "recap": "Vector DBs are infrastructure optimized for fast geometry."
     },
     {
@@ -79,7 +93,7 @@
       "answer": "pgvector lives inside Postgres, meaning your vectors sit in the same rows as your relational data. You can perform standard SQL joins, ACID transactions, and exact filtering without syncing data to a separate system."
     },
     {
-      "q": "What dictates the quality (relevance) of the retrieved results\u2014the vector database you choose, or the embedding model?",
+      "q": "What dictates the quality (relevance) of the retrieved results—the vector database you choose, or the embedding model?",
       "tier": "tier1",
       "answer": "The embedding model (and your chunking strategy). The vector database just performs fast geometry; it does not understand meaning."
     },
@@ -94,7 +108,7 @@
       "question": "Your team is building a RAG feature for a multi-tenant SaaS application that already uses Postgres. A developer proposes adding a Pinecone cluster to handle the vector search. What architectural tradeoffs should you raise?",
       "company": "RAG system design",
       "answer": "Adding Pinecone introduces a distributed data problem. You must now keep document metadata, permissions, and tenant boundaries synchronized between Postgres and Pinecone. Using pgvector inside the existing Postgres database avoids this sync issue and allows applying strict `tenant_id` WHERE clauses directly in SQL.",
-      "approach": "Highlight data synchronization and architecture complexity. Vector databases aren't magic\u2014they are infrastructure."
+      "approach": "Highlight data synchronization and architecture complexity. Vector databases aren't magic—they are infrastructure."
     },
     {
       "question": "A user complains that the RAG bot is returning irrelevant answers. Your CTO suggests migrating from pgvector to Qdrant to 'improve the AI's understanding.' Is this a valid solution?",

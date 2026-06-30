@@ -21,8 +21,18 @@
       "retry decorators"
     ]
   },
+  "glossary": [
+    {
+      "term": "closure",
+      "definition": "A function that remembers and has access to variables from the environment where it was created, even after that environment is gone."
+    },
+    {
+      "term": "subclassing",
+      "definition": "The process of creating a new class based on an existing class to inherit or modify its behavior."
+    }
+  ],
   "overview": {
-    "what": "In Python, functions are objects \u2014 they can be assigned to variables, stored in collections, passed as arguments, and returned from other functions. This is called first-class function support.\n\nAssigning and passing:\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions (function factory pattern):\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function add_prefix remembers prefix from the outer scope even after make_prefixer has returned \u2014 this is a closure.",
+    "what": "In Python, functions are objects — they can be assigned to variables, stored in collections, passed as arguments, and returned from other functions. This is called first-class function support.\n\nAssigning and passing:\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions (function factory pattern):\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function add_prefix remembers prefix from the outer scope even after make_prefixer has returned — this is a closure.",
     "why": "Higher-order functions (functions that take or return functions) are the foundation of decorators, middleware pipelines, retry wrappers, and dependency injection. Without first-class functions, each of these patterns would require explicit subclassing instead of composable functions.",
     "where_used": [
       "FastAPI middleware and dependency injection (Depends receives a function)",
@@ -31,7 +41,7 @@
     ]
   },
   "why_learning_this": [
-    "Understanding how FastAPI's Depends() and decorator @app.get() work \u2014 both receive functions as arguments",
+    "Understanding how FastAPI's Depends() and decorator @app.get() work — both receive functions as arguments",
     "Writing retry wrappers and middleware that accept a handler function and return an augmented version"
   ],
   "common_mistakes": [
@@ -51,7 +61,7 @@
   "recall_questions": [
     {
       "q": "What does it mean for functions to be 'first-class' objects in Python?",
-      "answer": "Functions can be assigned to variables, passed as arguments to other functions, and returned from functions \u2014 just like any other value.",
+      "answer": "Functions can be assigned to variables, passed as arguments to other functions, and returned from functions — just like any other value.",
       "tier": "tier1"
     },
     {
@@ -96,7 +106,7 @@
   ],
   "code_walkthrough": {
     "code": "def make_prefixer(prefix):\n    def add_prefix(text):\n        return f'{prefix}: {text}'\n    return add_prefix\n\nerror = make_prefixer('ERROR')\nwarn = make_prefixer('WARN')\nprint(error('disk full'))\nprint(warn('high memory'))",
-    "focus": "make_prefixer returns a new function each time; each returned function closes over its own prefix value \u2014 two independent prefixers from one factory."
+    "focus": "make_prefixer returns a new function each time; each returned function closes over its own prefix value — two independent prefixers from one factory."
   },
   "challenge": {
     "title": "Retry wrapper",

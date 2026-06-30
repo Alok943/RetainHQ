@@ -19,6 +19,16 @@
       "Pandas"
     ]
   },
+  "glossary": [
+    {
+      "term": "Mixins",
+      "definition": "Small, focused classes designed to provide specific features to other classes, rather than standing on their own."
+    },
+    {
+      "term": "composition",
+      "definition": "A design principle where complex objects are built by combining simpler, independent parts together."
+    }
+  ],
   "overview": {
     "what": "Multiple inheritance allows a subclass to inherit from more than one parent class. Python resolves method calls using the Method Resolution Order (MRO), which follows the C3 linearization algorithm. The 'diamond problem' occurs when a subclass inherits from two classes that share a common ancestor; MRO ensures the common ancestor is visited exactly once, and only after all its descendants have been checked. Think of MRO as a priority queue: Python builds an ordered list of parent classes from left to right, depth-first, while guaranteeing that a parent is never checked before its children.",
     "why": "It enables composition-like patterns via 'Mixins', allowing classes to combine independent sets of behaviors (like logging, serialization, and authentication) without deep, rigid single-inheritance hierarchies.",

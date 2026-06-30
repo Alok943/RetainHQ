@@ -10,14 +10,40 @@
     "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "high",
-    "prerequisites": ["where-operators"],
-    "unlocks": ["aggregate-functions"],
-    "project_usage": ["conditional labels in reports", "bucketing data for analytics", "custom sort ordering"]
+    "prerequisites": [
+      "where-operators"
+    ],
+    "unlocks": [
+      "aggregate-functions"
+    ],
+    "project_usage": [
+      "conditional labels in reports",
+      "bucketing data for analytics",
+      "custom sort ordering"
+    ]
   },
+  "glossary": [
+    {
+      "term": "evaluate",
+      "definition": "To calculate or determine the value or outcome of an expression or condition."
+    },
+    {
+      "term": "branch",
+      "definition": "A specific path or option in a decision-making process, like one of the possible choices in an if/then structure."
+    },
+    {
+      "term": "alias",
+      "definition": "A temporary name given to a table or column in a query to make it easier to read or reference."
+    }
+  ],
   "overview": {
     "what": "CASE is SQL's if/then/else. It evaluates conditions top-to-bottom and returns the value of the first WHEN branch that is TRUE. If no branch matches, it returns the ELSE value (or NULL if ELSE is omitted).\n\nSearched CASE (the most common form) tests arbitrary conditions:\n\n  SELECT name, price,\n    CASE\n      WHEN price >= 100 THEN 'expensive'\n      WHEN price >= 20  THEN 'moderate'\n      ELSE 'cheap'\n    END AS price_tier\n  FROM products\n  ORDER BY price DESC;\n\nReturns 6 rows: Monitor → expensive, Desk → expensive, Chair → moderate, Keyboard → moderate, Mouse → cheap, Notebook → cheap.\n\nSimple CASE compares one expression against multiple values:\n\n  SELECT name, status,\n    CASE status\n      WHEN 'paid'      THEN 'Completed'\n      WHEN 'pending'   THEN 'Awaiting payment'\n      WHEN 'cancelled' THEN 'Cancelled'\n    END AS display_status\n  FROM orders\n  ORDER BY id;\n\nReturns 8 rows, each with a human-readable display_status.\n\nCASE works in SELECT, WHERE, ORDER BY, and even inside aggregate functions. It is an expression, not a statement — it produces a value, so you can use it anywhere a value is expected.\n\nCritical rule: CASE evaluates branches top-to-bottom and stops at the first TRUE match. Order matters! If you put WHEN price >= 20 before WHEN price >= 100, Monitor (199.99) would match 'moderate' first and never reach 'expensive'.\n\nIf no WHEN matches and there is no ELSE, CASE returns NULL:\n\n  SELECT CASE 'x' WHEN 'a' THEN 1 END;\n\nReturns NULL.",
     "why": "CASE lets you transform raw data into meaningful categories directly in SQL, without post-processing in application code. Bucketing prices, mapping status codes to labels, and conditional aggregation all depend on CASE.",
-    "where_used": ["mapping status codes to display labels in API responses", "bucketing numeric values for analytics reports", "conditional aggregation (COUNT with CASE)"]
+    "where_used": [
+      "mapping status codes to display labels in API responses",
+      "bucketing numeric values for analytics reports",
+      "conditional aggregation (COUNT with CASE)"
+    ]
   },
   "why_learning_this": [
     "Conditional aggregation (e.g., COUNT paid vs. cancelled orders in one query) requires CASE inside aggregate functions",
@@ -72,7 +98,11 @@
   ],
   "query_walkthrough": {
     "query": "SELECT name, price,\n  CASE\n    WHEN price >= 100 THEN 'expensive'\n    WHEN price >= 20  THEN 'moderate'\n    ELSE 'cheap'\n  END AS price_tier\nFROM products\nORDER BY price DESC;",
-    "flow_stages": ["from", "select", "order_by"],
+    "flow_stages": [
+      "from",
+      "select",
+      "order_by"
+    ],
     "visualization": "result-table",
     "focus": "Watch the CASE expression evaluate top-to-bottom for each row — Monitor hits >= 100 first ('expensive'), Keyboard hits >= 20 ('moderate'), Notebook falls through to ELSE ('cheap')."
   },

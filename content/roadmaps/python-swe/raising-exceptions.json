@@ -23,6 +23,16 @@
       "Service layer business rules"
     ]
   },
+  "glossary": [
+    {
+      "term": "instantiate",
+      "definition": "The process of creating a specific object from a class blueprint."
+    },
+    {
+      "term": "corrupted state",
+      "definition": "When a program's internal data becomes invalid, inconsistent, or broken, often leading to unpredictable behavior."
+    }
+  ],
   "overview": {
     "what": "The `raise` statement forces an exception to occur immediately. You use it to signal that an error condition has happened, passing the problem up to whoever called your function. You instantiate an exception (e.g. `raise ValueError('Age cannot be negative')`) to halt execution. Inside an `except` block, calling `raise` with no arguments re-raises the exact exception that was just caught, letting you log an error but still pass it up the chain.",
     "why": "Functions should rarely fail silently. If a function is asked to do something impossible (like withdraw money from an empty account, or parse a missing file), it should scream loudly by raising an exception. This forces the calling code to deal with the problem (via `try/except`) rather than continuing with corrupted state or returning confusing `None` values. Choosing the right built-in type—like `ValueError` for bad data, or `TypeError` for the wrong data type—helps callers know what went wrong.",

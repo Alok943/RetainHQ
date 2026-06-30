@@ -20,6 +20,16 @@
       "JSON payload handling"
     ]
   },
+  "glossary": [
+    {
+      "term": "Implicit conversion",
+      "definition": "When the programming language automatically changes one data type into another behind the scenes."
+    },
+    {
+      "term": "concatenating",
+      "definition": "The process of joining two strings or pieces of text together end-to-end to form a single string."
+    }
+  ],
   "overview": {
     "what": "Type conversion turns a value of one type into another. Implicit conversion happens automatically, but ONLY between numeric types — e.g. 5 + 2.0 promotes the int to a float and gives 7.0. Explicit conversion (casting) is when you call a constructor yourself: int('42') -> 42, str(42) -> '42', float('3.5') -> 3.5. Across non-numeric types Python never converts for you — 'id_' + 5 raises a TypeError. Think of implicit conversion as Python quietly widening compatible numbers, and explicit casting as you manually translating — a translation that can fail (int('abc') raises ValueError).",
     "why": "APIs hand you strings (query params, env vars), so you constantly cast '42' to 42 — and that cast can fail, so it must be guarded. Knowing implicit conversion applies only to numbers explains why concatenating a string and an int throws instead of auto-casting.",

@@ -9,10 +9,29 @@
     "estimated_minutes": 10,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["chat-completions-api"],
+    "prerequisites": [
+      "chat-completions-api"
+    ],
     "unlocks": [],
-    "appears_in": ["GenAI Engineer interview", "LLM Engineer OA"]
+    "appears_in": [
+      "GenAI Engineer interview",
+      "LLM Engineer OA"
+    ]
   },
+  "glossary": [
+    {
+      "term": "exponential backoff",
+      "definition": "A retry strategy where you wait longer and longer between each attempt after an error, preventing you from overwhelming the server."
+    },
+    {
+      "term": "jitter",
+      "definition": "A small amount of randomness added to your wait times so that multiple programs do not accidentally retry at the exact same millisecond."
+    },
+    {
+      "term": "Batch API",
+      "definition": "A cheaper, slower way to send thousands of requests to an AI provider all at once, useful for large jobs that do not need instant answers."
+    }
+  ],
   "hook": {
     "scenario": "You launch your RAG pipeline for a batch job processing 5,000 documents. Within 30 seconds you start getting 429 errors. Your naive retry loop hammers the API faster, getting more 429s, and the job grinds to a halt.",
     "question": "How do you handle rate limits without making them worse — and how do you write retry logic that actually works?"

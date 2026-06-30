@@ -9,10 +9,29 @@
     "estimated_minutes": 15,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["acid-properties"],
+    "prerequisites": [
+      "acid-properties"
+    ],
     "unlocks": [],
-    "appears_in": ["Core CS OA", "SDE interview"]
+    "appears_in": [
+      "Core CS OA",
+      "SDE interview"
+    ]
   },
+  "glossary": [
+    {
+      "term": "RAM (memory)",
+      "definition": "The super-fast, short-term memory of a computer where it holds all the data it is actively working on right now."
+    },
+    {
+      "term": "volatile",
+      "definition": "A type of computer memory that instantly forgets and loses everything it was storing the moment the power is turned off."
+    },
+    {
+      "term": "Write-Ahead Logging (WAL)",
+      "definition": "A database safety trick where the database quickly writes down a fast log of what it intends to do before it actually modifies the main data, allowing it to recover if it crashes."
+    }
+  ],
   "hook": {
     "scenario": "A database is processing a $10,000 money transfer. It deducts the money from Account A. Then, the server loses power before it can add the money to Account B.",
     "question": "When the server reboots, how does it know the money is 'missing' and how does it fix it?"
@@ -24,36 +43,105 @@
   "animation": {
     "type": "sequence",
     "actors": [
-      { "id": "t", "label": "Transaction" },
-      { "id": "w", "label": "WAL (Disk Log)" },
-      { "id": "d", "label": "Database (Disk)" }
+      {
+        "id": "t",
+        "label": "Transaction"
+      },
+      {
+        "id": "w",
+        "label": "WAL (Disk Log)"
+      },
+      {
+        "id": "d",
+        "label": "Database (Disk)"
+      }
     ],
     "steps": [
-      { "from": "t", "to": "w", "label": "Write 'START T1'", "term": "Log entry" },
-      { "from": "t", "to": "w", "label": "Write 'A=A-100'", "term": "Log entry" },
-      { "from": "t", "to": "w", "label": "Write 'COMMIT T1'", "term": "Log flush" },
-      { "from": "w", "to": "d", "label": "Apply changes to actual data pages later", "term": "Lazy write" }
+      {
+        "from": "t",
+        "to": "w",
+        "label": "Write 'START T1'",
+        "term": "Log entry"
+      },
+      {
+        "from": "t",
+        "to": "w",
+        "label": "Write 'A=A-100'",
+        "term": "Log entry"
+      },
+      {
+        "from": "t",
+        "to": "w",
+        "label": "Write 'COMMIT T1'",
+        "term": "Log flush"
+      },
+      {
+        "from": "w",
+        "to": "d",
+        "label": "Apply changes to actual data pages later",
+        "term": "Lazy write"
+      }
     ]
   },
   "explanation": "Databases live in two places at once: RAM (memory) and Disk (storage). Reading and writing directly to disk for every single operation is incredibly slow. To be fast, databases do all their work in RAM. But RAM is volatile — if the power fails, everything in RAM is gone instantly. So how does a database guarantee the 'D' in ACID (Durability) while still being fast? The answer is Write-Ahead Logging (WAL).\n\nThe golden rule of WAL is simple: before you modify the actual database files on disk, you MUST write a record of what you are about to do into a sequential log file on disk. A log file is extremely fast to write to because it's just appending data to the end of a file (sequential I/O), unlike hunting through the database to update a specific row (random I/O). When a transaction commits, the database forces the log entry to disk. Once the log is safe, the transaction is considered successful. The actual database pages are updated in the background later (lazy writing).\n\nIf the server crashes, the recovery manager takes over during reboot. It reads the WAL and performs two passes. First, the REDO pass. It rolls forward every committed transaction in the log that hadn't yet been written to the actual database files. This ensures Durability — committed data is never lost. \n\nSecond, the UNDO pass. It looks for transactions that started in the log but never logged a 'COMMIT' before the crash. These are incomplete, half-baked transactions (like the money deducted from Account A but not added to Account B). To ensure Atomicity (all or nothing), the recovery manager rolls these back, using the 'old values' stored in the log to reverse the changes.\n\nTo prevent the recovery manager from having to read the log from the very beginning of time, databases use Checkpointing. Periodically, the database halts briefly, forces all modified RAM pages to disk, and writes a 'Checkpoint' marker in the log. If a crash happens, the recovery manager only needs to read the log starting from the most recent checkpoint.",
   "key_points": [
-    { "title": "Write-Ahead Logging (WAL)", "detail": "The rule that a log record describing a change must be forced to disk BEFORE the data page itself is modified on disk." },
-    { "title": "REDO (Roll forward)", "detail": "Re-applying committed transactions from the log to the database to ensure Durability." },
-    { "title": "UNDO (Roll back)", "detail": "Reversing uncommitted transactions using the log to ensure Atomicity." },
-    { "title": "Checkpointing", "detail": "Periodically flushing all dirty pages to disk to limit how far back the recovery process needs to read the log." }
+    {
+      "title": "Write-Ahead Logging (WAL)",
+      "detail": "The rule that a log record describing a change must be forced to disk BEFORE the data page itself is modified on disk."
+    },
+    {
+      "title": "REDO (Roll forward)",
+      "detail": "Re-applying committed transactions from the log to the database to ensure Durability."
+    },
+    {
+      "title": "UNDO (Roll back)",
+      "detail": "Reversing uncommitted transactions using the log to ensure Atomicity."
+    },
+    {
+      "title": "Checkpointing",
+      "detail": "Periodically flushing all dirty pages to disk to limit how far back the recovery process needs to read the log."
+    }
   ],
   "common_mistakes": [
-    { "title": "Thinking the database writes directly to tables on commit", "explanation": "Writing directly to random tables is too slow. On commit, the DB only writes to the sequential WAL file. The tables are updated lazily later." },
-    { "title": "Confusing REDO and UNDO", "explanation": "REDO is for completed transactions that didn't make it to the main disk files yet. UNDO is for half-completed transactions that need to be wiped away." }
+    {
+      "title": "Thinking the database writes directly to tables on commit",
+      "explanation": "Writing directly to random tables is too slow. On commit, the DB only writes to the sequential WAL file. The tables are updated lazily later."
+    },
+    {
+      "title": "Confusing REDO and UNDO",
+      "explanation": "REDO is for completed transactions that didn't make it to the main disk files yet. UNDO is for half-completed transactions that need to be wiped away."
+    }
   ],
   "recall_questions": [
-    { "q": "What does WAL stand for, and what is its primary rule?", "answer": "Write-Ahead Logging. A change must be logged to disk before the actual data page is modified.", "tier": "tier1" },
-    { "q": "Which ACID property does the UNDO phase guarantee?", "answer": "Atomicity (all or nothing) - by rolling back incomplete transactions.", "tier": "tier2" },
-    { "q": "Why do databases use Checkpoints?", "answer": "To flush dirty pages to disk and limit the amount of log that needs to be scanned during crash recovery.", "tier": "tier1" }
+    {
+      "q": "What does WAL stand for, and what is its primary rule?",
+      "answer": "Write-Ahead Logging. A change must be logged to disk before the actual data page is modified.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which ACID property does the UNDO phase guarantee?",
+      "answer": "Atomicity (all or nothing) - by rolling back incomplete transactions.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why do databases use Checkpoints?",
+      "answer": "To flush dirty pages to disk and limit the amount of log that needs to be scanned during crash recovery.",
+      "tier": "tier1"
+    }
   ],
   "oa_questions": [
-    { "question": "Explain the concept of Write-Ahead Logging in databases.", "company": "Core CS OA", "answer": "WAL is a technique where all modifications are written to a sequential log on disk before they are applied to the database. It ensures atomicity and durability while allowing fast sequential writes.", "approach": "Contrast fast sequential log writes with slow random data writes." },
-    { "question": "How does a database recover from a system crash?", "company": "SDE interview", "answer": "Using the ARIES recovery algorithm (or similar): it finds the last checkpoint, REDOs all logged operations to restore the state at crash time, then UNDOs any transactions that didn't commit.", "approach": "Mention the three phases: Analysis (find checkpoint), REDO (roll forward), UNDO (roll back)." }
+    {
+      "question": "Explain the concept of Write-Ahead Logging in databases.",
+      "company": "Core CS OA",
+      "answer": "WAL is a technique where all modifications are written to a sequential log on disk before they are applied to the database. It ensures atomicity and durability while allowing fast sequential writes.",
+      "approach": "Contrast fast sequential log writes with slow random data writes."
+    },
+    {
+      "question": "How does a database recover from a system crash?",
+      "company": "SDE interview",
+      "answer": "Using the ARIES recovery algorithm (or similar): it finds the last checkpoint, REDOs all logged operations to restore the state at crash time, then UNDOs any transactions that didn't commit.",
+      "approach": "Mention the three phases: Analysis (find checkpoint), REDO (roll forward), UNDO (roll back)."
+    }
   ],
   "sources": [
     "https://en.wikipedia.org/wiki/Write-ahead_logging"

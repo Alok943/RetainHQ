@@ -21,6 +21,16 @@
       "clean API error responses"
     ]
   },
+  "glossary": [
+    {
+      "term": "traceback",
+      "definition": "A detailed report showing the sequence of function calls that led to an error in your code."
+    },
+    {
+      "term": "suppress",
+      "definition": "To intentionally prevent an error message or signal from being shown or passed further up the chain."
+    }
+  ],
   "overview": {
     "what": "Exception chaining links a new exception to the original exception that caused it using the syntax `raise NewError() from original_error`. This explicitly sets the `__cause__` attribute on the new exception. When the traceback is printed, Python shows both: 'The above exception was the direct cause of the following exception'. If you want to intentionally hide the original error (e.g., hiding database internals from a user), you use `raise NewError() from None` to suppress the chain.",
     "why": "When building professional applications, you don't want low-level errors (like `psycopg2.IntegrityError`) leaking into your high-level business logic. You catch the database error and raise a clean domain error like `DuplicateUserError`. However, if you don't chain them, you lose the original database traceback, making debugging a nightmare. `raise from` solves this by giving callers a clean domain error to catch, while preserving the full diagnostic history for the logs.",

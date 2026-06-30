@@ -17,6 +17,20 @@
       "Operating Systems"
     ]
   },
+  "glossary": [
+    {
+      "term": "Deadlock Detection and Recovery",
+      "definition": "An optimistic strategy where the operating system lets programs run freely, occasionally checks to see if any are hopelessly stuck together, and then forces one to restart if they are."
+    },
+    {
+      "term": "Resource Allocation Graph",
+      "definition": "A visual or mathematical map used by the operating system to track which programs currently hold which resources, and which programs are waiting for them."
+    },
+    {
+      "term": "resource utilization",
+      "definition": "A measure of how efficiently the computer's hardware components (like CPU, memory, and disks) are being used by running programs."
+    }
+  ],
   "hook": {
     "scenario": "Instead of building a fortress to prevent a fire, or analyzing every wire to avoid one, you install smoke alarms. When the alarm sounds, you grab a fire extinguisher and put it out."
   },
@@ -24,7 +38,7 @@
     "intuition": "Let deadlocks happen. Periodically check for them. When one is found, take drastic action to fix it.",
     "description": "Deadlock detection and recovery is an optimistic approach. The OS places no restrictions on resource requests and does no upfront simulation. Instead, it periodically runs an algorithm to search for circular wait cycles in the resource allocation graph. If a deadlock is detected, the OS recovers by preempting resources or killing processes."
   },
-  "explanation": "Preventing and avoiding deadlocks are costly. Prevention ruins resource utilization, and avoidance burns CPU cycles on continuous simulations. Modern operating systems (like Linux and Windows) often prefer a simpler, more optimistic approach: ignore the problem until it happens. This is the core philosophy behind Deadlock Detection and Recovery.\n\nUnder this approach, the OS grants resource requests freely, assuming deadlocks are rare. Behind the scenes, the OS maintains a Resource Allocation Graph\u2014a map showing which processes hold which resources and who is waiting for what. Periodically (or when a process is blocked for too long), the OS runs a detection algorithm to look for cycles in this graph. If a closed loop is found, a deadlock has occurred.\n\nOnce a deadlock is detected, the system enters the Recovery phase. The OS must break the deadlock by forcibly taking away resources, but it has to be careful about how it does it. There are two main strategies: Process Termination and Resource Preemption.\n\nProcess Termination involves killing stuck processes. The OS could ruthlessly terminate all deadlocked processes, which is fast but wastes all their computed progress. Alternatively, it can terminate them one by one, rerunning the detection algorithm after each kill until the cycle is broken. The OS usually tries to kill a 'victim' with the least accumulated CPU time or the lowest priority.\n\nResource Preemption is a more surgical approach. The OS forcibly yanks a resource away from a process and gives it to another to break the cycle. However, the process that lost its resource cannot continue normally; it must be rolled back to a previous safe state and restarted. This requires the OS to maintain checkpoints of process states, adding complexity to the system.",
+  "explanation": "Preventing and avoiding deadlocks are costly. Prevention ruins resource utilization, and avoidance burns CPU cycles on continuous simulations. Modern operating systems (like Linux and Windows) often prefer a simpler, more optimistic approach: ignore the problem until it happens. This is the core philosophy behind Deadlock Detection and Recovery.\n\nUnder this approach, the OS grants resource requests freely, assuming deadlocks are rare. Behind the scenes, the OS maintains a Resource Allocation Graph—a map showing which processes hold which resources and who is waiting for what. Periodically (or when a process is blocked for too long), the OS runs a detection algorithm to look for cycles in this graph. If a closed loop is found, a deadlock has occurred.\n\nOnce a deadlock is detected, the system enters the Recovery phase. The OS must break the deadlock by forcibly taking away resources, but it has to be careful about how it does it. There are two main strategies: Process Termination and Resource Preemption.\n\nProcess Termination involves killing stuck processes. The OS could ruthlessly terminate all deadlocked processes, which is fast but wastes all their computed progress. Alternatively, it can terminate them one by one, rerunning the detection algorithm after each kill until the cycle is broken. The OS usually tries to kill a 'victim' with the least accumulated CPU time or the lowest priority.\n\nResource Preemption is a more surgical approach. The OS forcibly yanks a resource away from a process and gives it to another to break the cycle. However, the process that lost its resource cannot continue normally; it must be rolled back to a previous safe state and restarted. This requires the OS to maintain checkpoints of process states, adding complexity to the system.",
   "key_points": [
     {
       "title": "Resource Allocation Graph (RAG)",

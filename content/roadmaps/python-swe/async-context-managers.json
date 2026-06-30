@@ -9,14 +9,34 @@
     "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "low",
-    "prerequisites": ["enter-exit-dunders", "contextmanager-decorator"],
+    "prerequisites": [
+      "enter-exit-dunders",
+      "contextmanager-decorator"
+    ],
     "unlocks": [],
-    "project_usage": ["Async database drivers", "aiohttp client sessions", "Async locks"]
+    "project_usage": [
+      "Async database drivers",
+      "aiohttp client sessions",
+      "Async locks"
+    ]
   },
+  "glossary": [
+    {
+      "term": "event loop",
+      "definition": "The core mechanism that manages and runs multiple asynchronous tasks efficiently."
+    },
+    {
+      "term": "I/O",
+      "definition": "Input/Output operations, like reading from a database or a network, which often take time to complete."
+    }
+  ],
   "overview": {
     "what": "Async context managers allow you to manage resources that require asynchronous setup or teardown (like network connections). They use `async with` instead of `with`, and are implemented via the `__aenter__` and `__aexit__` dunder methods, both of which must be `async def`. Alternatively, you can use the `@asynccontextmanager` decorator from `contextlib` on an async generator.",
     "why": "Regular context managers block the event loop if their setup/teardown performs I/O. Async context managers let you await network calls or database operations safely while ensuring cleanup.",
-    "where_used": ["Database connection pools (asyncpg)", "HTTP sessions (httpx/aiohttp)"]
+    "where_used": [
+      "Database connection pools (asyncpg)",
+      "HTTP sessions (httpx/aiohttp)"
+    ]
   },
   "why_learning_this": [
     "Prevent blocking the asyncio event loop during resource setup and teardown.",

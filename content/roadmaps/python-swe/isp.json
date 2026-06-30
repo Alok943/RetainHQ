@@ -9,14 +9,35 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["protocols"],
-    "unlocks": ["dip"],
-    "project_usage": ["FastAPI dependencies", "Protocol definitions"]
+    "prerequisites": [
+      "protocols"
+    ],
+    "unlocks": [
+      "dip"
+    ],
+    "project_usage": [
+      "FastAPI dependencies",
+      "Protocol definitions"
+    ]
   },
+  "glossary": [
+    {
+      "term": "client",
+      "definition": "In programming, a piece of code, class, or function that uses the services or methods provided by another class."
+    },
+    {
+      "term": "composable",
+      "definition": "Designing small, independent parts of code that can be easily combined together to build more complex features."
+    }
+  ],
   "overview": {
     "what": "The Interface Segregation Principle (ISP) states that no client should be forced to depend on methods it does not use. In Python, this usually means designing small, focused `Protocol`s or abstract base classes rather than massive 'god interfaces' with dozens of methods. For example, instead of a single `CloudStorage` interface that requires implementing `read`, `write`, `delete`, and `set_permissions`, you might split it into a `Reader` and a `Writer`. That way, a component that only needs to write logs can accept a `Writer` and doesn't care if the object also supports reading.",
     "why": "It prevents sprawling, fragile interfaces where changing a method breaks clients that didn't even use that method. Small interfaces make your classes easier to mock in tests and highly reusable.",
-    "where_used": ["FastAPI dependencies", "Unit testing mocks", "Domain-driven design"]
+    "where_used": [
+      "FastAPI dependencies",
+      "Unit testing mocks",
+      "Domain-driven design"
+    ]
   },
   "why_learning_this": [
     "Writing smaller, composable Protocols instead of massive base classes",

@@ -10,14 +10,41 @@
     "estimated_minutes": 20,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["select-from", "where-operators"],
-    "unlocks": ["over-partition-by"],
-    "project_usage": ["paginated API endpoints", "top-N reports", "leaderboards"]
+    "prerequisites": [
+      "select-from",
+      "where-operators"
+    ],
+    "unlocks": [
+      "over-partition-by"
+    ],
+    "project_usage": [
+      "paginated API endpoints",
+      "top-N reports",
+      "leaderboards"
+    ]
   },
+  "glossary": [
+    {
+      "term": "tiebreaker",
+      "definition": "A rule or condition used to decide the order when two items have the same value for the primary sorting criteria."
+    },
+    {
+      "term": "pagination",
+      "definition": "The process of dividing a large set of results into smaller, separate pages, like showing 10 items per page."
+    },
+    {
+      "term": "deterministic",
+      "definition": "Always producing the exact same result every time a process is run with the same inputs."
+    }
+  ],
   "overview": {
     "what": "Without ORDER BY, SQL returns rows in no guaranteed order — the same query can return rows in a different sequence each time. ORDER BY sorts the output row-set by one or more columns.\n\nASC (ascending, the default) sorts low-to-high; DESC sorts high-to-low:\n\n  SELECT name, price\n  FROM products\n  ORDER BY price DESC;\n\nReturns 6 rows: Monitor (199.99), Desk (149.99), Chair (89.99), Keyboard (49.99), Mouse (19.99), Notebook (4.99).\n\nMulti-column sorting uses the second column as a tiebreaker:\n\n  SELECT name, category, price\n  FROM products\n  ORDER BY category ASC, price DESC;\n\nSorts by category alphabetically first, then within each category sorts by price highest-first. Electronics: Monitor, Keyboard, Mouse. Furniture: Desk, Chair. Stationery: Notebook.\n\nNULL values sort last by default in ASC (first in DESC). You can override this with NULLS FIRST or NULLS LAST.\n\nLIMIT restricts how many rows are returned:\n\n  SELECT name, price\n  FROM products\n  ORDER BY price DESC\n  LIMIT 3;\n\nReturns only the 3 most expensive products: Monitor, Desk, Chair.\n\nOFFSET skips rows before returning, enabling pagination:\n\n  SELECT name, price\n  FROM products\n  ORDER BY price DESC\n  LIMIT 3 OFFSET 3;\n\nSkips the first 3 and returns the next 3: Keyboard, Mouse, Notebook.\n\nIn the logical query flow: FROM → WHERE → SELECT → ORDER BY → LIMIT/OFFSET. ORDER BY and LIMIT run last — they shape the final output after all filtering and column selection is done.",
     "why": "Every paginated API endpoint uses ORDER BY + LIMIT + OFFSET (or cursor-based equivalents). Without ORDER BY, pagination is meaningless — pages would contain random rows. Top-N queries (top 5 customers, cheapest 10 products) are impossible without ORDER BY + LIMIT.",
-    "where_used": ["paginated REST API endpoints", "top-N dashboards and reports", "leaderboard queries"]
+    "where_used": [
+      "paginated REST API endpoints",
+      "top-N dashboards and reports",
+      "leaderboard queries"
+    ]
   },
   "why_learning_this": [
     "Every paginated API list endpoint translates page/size parameters into LIMIT and OFFSET",
@@ -72,7 +99,12 @@
   ],
   "query_walkthrough": {
     "query": "SELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 3;",
-    "flow_stages": ["from", "select", "order_by", "limit"],
+    "flow_stages": [
+      "from",
+      "select",
+      "order_by",
+      "limit"
+    ],
     "visualization": "logical-query-flow",
     "focus": "Watch ORDER BY sort all 6 rows by price descending, then LIMIT chop the result to only the top 3."
   },

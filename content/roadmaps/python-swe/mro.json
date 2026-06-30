@@ -9,14 +9,35 @@
     "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
-    "prerequisites": ["class-basics"],
-    "unlocks": ["method-overriding"],
-    "project_usage": ["Django Mixins", "FastAPI Dependencies"]
+    "prerequisites": [
+      "class-basics"
+    ],
+    "unlocks": [
+      "method-overriding"
+    ],
+    "project_usage": [
+      "Django Mixins",
+      "FastAPI Dependencies"
+    ]
   },
+  "glossary": [
+    {
+      "term": "linearization algorithm",
+      "definition": "A mathematical set of rules Python uses to flatten a complex family tree of classes into a single, straightforward list."
+    },
+    {
+      "term": "diamond problem",
+      "definition": "An ambiguity that arises when a class inherits from two different classes that both share the same base class."
+    }
+  ],
   "overview": {
     "what": "Method Resolution Order (MRO) is the sequence in which Python looks for a method or attribute in a hierarchy of classes. Python uses the C3 linearization algorithm to guarantee a consistent order, ensuring that a subclass always precedes its base classes, and base classes are checked in the order they are listed. Think of MRO like a search path for documents: if a document isn't in your desk, you check the department filing cabinet, then the company archive, strictly following a designated path so everyone finds the same document.",
     "why": "It prevents ambiguity in multiple inheritance (the 'diamond problem') by defining a clear, predictable path for attribute lookup.",
-    "where_used": ["Django", "Pydantic", "FastAPI"]
+    "where_used": [
+      "Django",
+      "Pydantic",
+      "FastAPI"
+    ]
   },
   "why_learning_this": [
     "Understanding how Python resolves conflicts in multiple inheritance",

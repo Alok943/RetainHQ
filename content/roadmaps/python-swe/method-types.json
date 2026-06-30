@@ -20,6 +20,16 @@
       "Pydantic"
     ]
   },
+  "glossary": [
+    {
+      "term": "constructors",
+      "definition": "Special methods used to create and initialize a new instance of a class."
+    },
+    {
+      "term": "namespace",
+      "definition": "A conceptual space or container that holds a set of names, ensuring that all names are unique and don't conflict with each other."
+    }
+  ],
   "overview": {
     "what": "Python classes support three types of methods. Instance methods (the default) take `self` as the first argument and operate on a specific object instance. Class methods use the `@classmethod` decorator, take `cls` as their first argument, and operate on the class itself (often used for alternative constructors). Static methods use the `@staticmethod` decorator, take neither `self` nor `cls`, and act like regular functions that just happen to live inside a class's namespace for organizational purposes. The key mental model: look at the first parameter. If it needs the specific object, use `self`. If it needs the class (to create instances or read class-level data), use `cls`. If it needs neither, use `@staticmethod`.",
     "why": "They allow you to logically group related behaviors. Instead of having a bunch of disconnected functions, you can bundle utility functions (static) and alternative constructors (class methods) directly onto the class they relate to.",

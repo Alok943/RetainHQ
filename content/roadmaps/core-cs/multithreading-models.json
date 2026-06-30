@@ -17,6 +17,20 @@
       "os"
     ]
   },
+  "glossary": [
+    {
+      "term": "User-level threads",
+      "definition": "Lightweight, fast threads created entirely by a software program without the operating system's core ever knowing they exist."
+    },
+    {
+      "term": "POSIX threads",
+      "definition": "A standardized set of rules and code used by programmers (especially in Linux/Unix) to create and manage multiple threads within a program."
+    },
+    {
+      "term": "Kernel-level threads",
+      "definition": "Heavier threads that the operating system's core is completely aware of and actively schedules across the computer's physical CPU cores."
+    }
+  ],
   "hook": {
     "scenario": "When you write multithreaded code in Java or Python, you're creating 'user threads.' But the physical CPU only knows about 'kernel threads.' How do your code's threads actually get mapped to the hardware?"
   },
@@ -24,7 +38,7 @@
     "intuition": "Multithreading models determine how civilian contractors (user threads) report to military generals (kernel threads) to get physical access to resources.",
     "description": "You might have Many contractors reporting to One general (Many-to-One), One contractor per general (One-to-One), or a pool of contractors dynamically sharing a pool of generals (Many-to-Many)."
   },
-  "explanation": "To understand multithreading models, you first need to understand the two domains of threads. **User-level threads** are created and managed purely by a user-space library (like early Java threads or POSIX threads). The operating system kernel knows nothing about them; it just sees a single standard process. **Kernel-level threads**, conversely, are native threads managed directly by the OS kernel, which schedules them directly onto physical CPU cores.\n\nBecause the CPU hardware only executes kernel threads, there must be a relationship between the user threads created in your application and the kernel threads provided by the OS. This mapping dictates how your application behaves under heavy load or when blocking operations occur.\n\nThe **Many-to-One** model maps multiple user-level threads to a single kernel thread. This is incredibly fast for thread creation and switching because everything is handled by a local library in user space without ever making a system call. However, it has a fatal flaw: if one user thread makes a blocking system call (like reading a file), the OS halts the single underlying kernel thread. This freezes every other user thread in the entire process, destroying true concurrency.\n\nThe **One-to-One** model fixes this by mapping every single user thread to exactly one dedicated kernel thread. If one thread blocks on I/O, the OS simply schedules a different kernel thread, allowing true parallel execution on multicore processors. The downside is that creating a user thread requires creating a heavy kernel thread, which introduces overhead and limits the maximum number of threads you can spawn.\n\nFinally, the **Many-to-Many** model multiplexes many user threads onto a smaller or equal number of kernel threads. The user-space library decides which user thread runs on which available kernel thread. It offers the best of both worlds\u2014preventing complete blockage if one thread halts, while avoiding the overhead of a strict one-to-one ratio\u2014but it is notoriously complex to implement.",
+  "explanation": "To understand multithreading models, you first need to understand the two domains of threads. **User-level threads** are created and managed purely by a user-space library (like early Java threads or POSIX threads). The operating system kernel knows nothing about them; it just sees a single standard process. **Kernel-level threads**, conversely, are native threads managed directly by the OS kernel, which schedules them directly onto physical CPU cores.\n\nBecause the CPU hardware only executes kernel threads, there must be a relationship between the user threads created in your application and the kernel threads provided by the OS. This mapping dictates how your application behaves under heavy load or when blocking operations occur.\n\nThe **Many-to-One** model maps multiple user-level threads to a single kernel thread. This is incredibly fast for thread creation and switching because everything is handled by a local library in user space without ever making a system call. However, it has a fatal flaw: if one user thread makes a blocking system call (like reading a file), the OS halts the single underlying kernel thread. This freezes every other user thread in the entire process, destroying true concurrency.\n\nThe **One-to-One** model fixes this by mapping every single user thread to exactly one dedicated kernel thread. If one thread blocks on I/O, the OS simply schedules a different kernel thread, allowing true parallel execution on multicore processors. The downside is that creating a user thread requires creating a heavy kernel thread, which introduces overhead and limits the maximum number of threads you can spawn.\n\nFinally, the **Many-to-Many** model multiplexes many user threads onto a smaller or equal number of kernel threads. The user-space library decides which user thread runs on which available kernel thread. It offers the best of both worlds—preventing complete blockage if one thread halts, while avoiding the overhead of a strict one-to-one ratio—but it is notoriously complex to implement.",
   "key_points": [
     {
       "title": "User Threads",

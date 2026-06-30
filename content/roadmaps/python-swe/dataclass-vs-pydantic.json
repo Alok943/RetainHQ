@@ -9,14 +9,34 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["dataclasses"],
+    "prerequisites": [
+      "dataclasses"
+    ],
     "unlocks": [],
-    "project_usage": ["API Design", "Data Validation", "Configuration Management"]
+    "project_usage": [
+      "API Design",
+      "Data Validation",
+      "Configuration Management"
+    ]
   },
+  "glossary": [
+    {
+      "term": "type coercion",
+      "definition": "Automatically converting a value from one data type to another, like turning the string 5 into the integer 5."
+    },
+    {
+      "term": "overhead",
+      "definition": "The extra computing power or time required to run a specific feature, like data validation."
+    }
+  ],
   "overview": {
     "what": "Standard library `@dataclass` generates boilerplate methods (like `__init__`, `__repr__`) for storing structured data, but it does not strictly enforce types at runtime. Pydantic's `BaseModel` does data parsing, type coercion, and strict validation. Mental model: Dataclasses are lightweight 'storage boxes' trusting the developer to provide correct types; Pydantic models are 'bouncers' that actively inspect, cast, and reject invalid data coming from the outside world.",
     "why": "Choosing the right tool prevents performance overhead when validation isn't needed, and prevents bugs when dealing with untrusted I/O data (like JSON from a web request).",
-    "where_used": ["FastAPI request bodies (Pydantic)", "Internal application state (Dataclasses)", "Environment variable parsing (Pydantic)"]
+    "where_used": [
+      "FastAPI request bodies (Pydantic)",
+      "Internal application state (Dataclasses)",
+      "Environment variable parsing (Pydantic)"
+    ]
   },
   "why_learning_this": [
     "You will know when to pay the performance cost of Pydantic validation.",
