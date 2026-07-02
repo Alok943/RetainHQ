@@ -133,11 +133,24 @@ export default function LessonView() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#0891B2] border-t-transparent rounded-full animate-spin" />
-          <span className="font-sans text-sm text-[#64748B]">Loading lesson…</span>
+      <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+        <div className="skeleton h-4 w-32 mb-4" />
+        <div className="mb-6">
+          <div className="skeleton h-8 w-3/4 mb-3" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="skeleton h-6 w-16 rounded-full" />
+            <div className="skeleton h-6 w-20 rounded-full" />
+            <div className="skeleton h-6 w-14 rounded-full" />
+          </div>
         </div>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="glass-card p-5 mb-4">
+            <div className="skeleton h-3.5 w-28 mb-4" />
+            <div className="skeleton h-3 w-full mb-2" />
+            <div className="skeleton h-3 w-11/12 mb-2" />
+            <div className="skeleton h-3 w-2/3" />
+          </div>
+        ))}
       </div>
     );
   }

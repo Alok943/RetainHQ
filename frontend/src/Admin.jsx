@@ -84,7 +84,13 @@ function Admin() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[0, 1, 2, 3].map((i) => <div key={i} className="kinetic-card bg-white/50 animate-pulse h-24" />)}
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="kinetic-card bg-white p-4 flex flex-col gap-2">
+              <div className="skeleton h-3 w-20" />
+              <div className="skeleton h-7 w-14" />
+              <div className="skeleton h-3 w-24" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="kinetic-card flex items-center gap-3 text-[#ba1a1a]">

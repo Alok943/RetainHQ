@@ -215,7 +215,32 @@ function Review({ onBack }) {
   /* ---------- non-card states ---------- */
 
   if (loading) {
-    return <div className="p-8 text-center text-[#64748B] font-sans">Loading your reviews…</div>;
+    return (
+      <div className="flex flex-col h-full w-full max-w-3xl mx-auto p-4 md:p-8 bg-[#f9f9f6]">
+        <header className="flex flex-col gap-4 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="skeleton h-4 w-36" />
+            <div className="skeleton h-3.5 w-10" />
+          </div>
+          <div className="skeleton h-3 w-48" />
+          <div className="skeleton h-1 w-full rounded-full" />
+        </header>
+        <main className="flex-1 flex flex-col justify-center gap-8 mb-8">
+          <div className="kinetic-card min-h-[300px] flex flex-col px-6 md:px-10 py-10 relative shadow-sm border-[rgba(15,23,42,0.12)]">
+            <div className="skeleton h-3 w-16 mb-4" />
+            <div className="skeleton h-8 w-2/3 mb-6" />
+            <div className="skeleton h-3 w-full mb-2" />
+            <div className="skeleton h-24 w-full rounded-lg mt-2" />
+          </div>
+        </main>
+        <footer className="w-full flex justify-center pb-8">
+          <div className="w-full flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="skeleton h-12 flex-1 max-w-[180px] rounded-lg" />
+            <div className="skeleton h-12 flex-1 md:max-w-[260px] rounded-lg" />
+          </div>
+        </footer>
+      </div>
+    );
   }
 
   if (error) {

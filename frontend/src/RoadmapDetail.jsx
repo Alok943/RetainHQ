@@ -531,7 +531,49 @@ function RoadmapDetail() {
     doc.save(`${clean(meta.title).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}.pdf`);
   }, [meta, rawNodes, statusMap, pct, done, total]);
 
-  if (loading) return <div className="p-8 text-center text-[#64748B]">Loading roadmap...</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="px-4 md:px-8 pt-4 md:pt-6 pb-3 border-b border-[rgba(15,23,42,0.08)] bg-[#f9f9f6]">
+          <div className="skeleton h-4 w-36 mb-3" />
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="skeleton shrink-0 w-12 h-12 rounded-xl" />
+              <div className="min-w-0 flex flex-col gap-2">
+                <div className="skeleton h-5 w-48" />
+                <div className="skeleton h-3 w-64" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="skeleton w-40 h-2 rounded-full" />
+              <div className="skeleton h-4 w-10" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+          <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24 flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="glass-card !p-0 overflow-hidden">
+                <div className="flex items-center gap-2.5 px-4 py-3">
+                  <div className="skeleton h-4 w-40" />
+                  <div className="flex-1" />
+                  <div className="skeleton h-4 w-10 rounded-full" />
+                </div>
+                <div className="border-t border-[rgba(15,23,42,0.06)]">
+                  {[0, 1, 2].map((j) => (
+                    <div key={j} className="border-t border-[rgba(15,23,42,0.05)] flex items-center gap-3 px-4 py-2.5">
+                      <div className="skeleton w-5 h-5 rounded-full shrink-0" />
+                      <div className="skeleton h-3.5 flex-1 max-w-xs" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!meta) return <div className="p-8 text-center text-[#ba1a1a]">Roadmap not found.</div>;
 
   const { Icon: RoadmapIcon, accent } = getRoadmapStyle(meta.title);

@@ -22,7 +22,63 @@ function Profile() {
   };
 
   if (!user) {
-    return <div className="p-8 text-center text-[#64748B]">Loading profile...</div>;
+    return (
+      <div className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full pb-20 md:pb-8">
+        <header className="mb-2">
+          <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
+            <User size={24} className="text-[#0891B2]" /> Account Profile
+          </h2>
+          <p className="font-sans text-sm text-[#64748B] mt-1">Manage your identity and account settings.</p>
+        </header>
+
+        <div className="kinetic-card bg-[#131b2e] border-[#131b2e] p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border-l-4 border-l-[#0891B2]">
+          <div className="skeleton w-24 h-24 rounded-full shrink-0" />
+          <div className="flex flex-col items-center md:items-start gap-2 pt-2 w-full">
+            <div className="skeleton h-6 w-48" />
+            <div className="skeleton h-4 w-40" />
+            <div className="skeleton h-5 w-36 rounded-full mt-2" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="kinetic-card bg-white p-6">
+            <div className="skeleton h-3 w-32 mb-4" />
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center py-2 border-b border-[rgba(15,23,42,0.05)]">
+                <div className="skeleton h-3 w-24" />
+                <div className="skeleton h-4 w-28" />
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <div className="skeleton h-3 w-16" />
+                <div className="skeleton h-4 w-24" />
+              </div>
+            </div>
+          </div>
+          <div className="kinetic-card bg-white p-6 flex flex-col justify-between gap-6">
+            <div>
+              <div className="skeleton h-3 w-20 mb-3" />
+              <div className="skeleton h-3 w-full mb-1.5" />
+              <div className="skeleton h-3 w-2/3" />
+            </div>
+            <div className="skeleton h-10 w-full rounded" />
+          </div>
+        </div>
+
+        <div className="kinetic-card bg-white p-6">
+          <div className="skeleton h-3 w-24 mb-4" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="skeleton w-9 h-9 rounded-full" />
+              <div>
+                <div className="skeleton h-3.5 w-24 mb-1.5" />
+                <div className="skeleton h-3 w-32" />
+              </div>
+            </div>
+            <div className="skeleton h-7 w-12 rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const initials = user.email ? user.email.substring(0, 2).toUpperCase() : 'US';

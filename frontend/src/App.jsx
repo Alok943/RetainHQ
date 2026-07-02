@@ -192,7 +192,14 @@ function AppLayout() {
 
         {/* Content Scrollable Area */}
         <main className="flex-1 overflow-y-auto w-full relative">
-          <Suspense fallback={<div className="w-full py-24 flex items-center justify-center font-sans text-sm text-[#64748B]">Loading…</div>}>
+          <Suspense fallback={
+            <div className="max-w-4xl mx-auto w-full p-4 md:p-8 flex flex-col gap-4">
+              <div className="skeleton h-6 w-48" />
+              <div className="skeleton h-3 w-72" />
+              <div className="skeleton h-32 w-full rounded-xl mt-2" />
+              <div className="skeleton h-32 w-full rounded-xl" />
+            </div>
+          }>
           <Routes>
             <Route path="dashboard" element={<Home onStartReviews={() => navigate('/reviews')} />} />
             <Route path="reviews" element={<Review onBack={() => navigate('/dashboard')} />} />
