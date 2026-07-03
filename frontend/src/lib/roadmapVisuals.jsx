@@ -2,15 +2,9 @@ import {
   Map, Binary, Database, Server, CircuitBoard, ScatterChart,
   Layers, AppWindow, Cpu, Calculator, Handshake, CloudCog, Terminal, Network
 } from 'lucide-react';
-import { siPython, siLeetcode, siCplusplus, siGit, siLinux } from 'simple-icons';
+import { siPython, siCplusplus, siGit, siLinux } from 'simple-icons';
 
 // Custom icons for brands not in simple-icons or requiring specific viewboxes
-const siNeetcode = {
-  title: 'NeetCode',
-  viewBox: '0 0 24 24',
-  paths: ['M4 4h4.5l7 10V4h4.5v16h-4.5l-7-10v10H4V4z'] // Clean stylized N
-};
-
 const siJava = {
   title: 'Java',
   viewBox: '0 0 128 128',
@@ -71,8 +65,8 @@ const BRAND_LOGOS = [
   { match: ['python'], icon: siPython },
   { match: ['java'], icon: siJava },
   { match: ['c++'], icon: siCplusplus },
-  { match: ['neetcode'], icon: siNeetcode },
-  { match: ['leetcode'], icon: siLeetcode },
+  { match: ['neetcode'], icon: '/neetcode.png' },
+  { match: ['leetcode', 'blind', 'patterns'], icon: '/leetcode.png' },
   { match: ['git'], icon: siGit },
   { match: ['linux'], icon: siLinux },
 ];
@@ -90,6 +84,11 @@ function brandLogo(title = '') {
 export function RoadmapLogo({ title, Icon, accent, size = 22 }) {
   const logo = brandLogo(title);
   if (logo) {
+    if (typeof logo === 'string') {
+      return (
+        <img src={logo} alt={title} width={size} height={size} style={{ objectFit: 'contain', filter: `drop-shadow(0px 0px 1px ${accent})` }} />
+      );
+    }
     const vBox = logo.viewBox || "0 0 24 24";
     return (
       <svg role="img" aria-label={logo.title} viewBox={vBox}
