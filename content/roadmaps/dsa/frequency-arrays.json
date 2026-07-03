@@ -58,7 +58,26 @@
     "invariants": {
       "inv-tally": "count[c] always holds how many times character c has appeared so far.",
       "inv-signature": "The final counts are an order-independent signature — anagrams share the same counts."
-    }
+    },
+    "steps": [
+      {
+        "id": "count",
+        "label": "arr[val] += 1"
+      },
+      {
+        "id": "done",
+        "label": "tally complete"
+      }
+    ],
+    "predictions": [
+      {
+        "at_step": "count",
+        "occurrence": "first",
+        "level": "easy",
+        "prompt": "Which array index is incremented next?",
+        "derive": "next_op"
+      }
+    ]
   },
   "explanation": "To build a frequency array for lowercase letters, we initialize an array of size 26 with zeros. \n\nWhen we process the character 'c', we compute its index relative to 'a'. In ASCII, 'a' is 97 and 'c' is 99. `99 - 97 = 2`. We immediately increment `array[2]`.\n\nThis completely bypasses hashing. There are no hash functions, no collision handling, and no dynamic resizing. The array stays exactly size 26 regardless of whether the string is 5 characters or 5 billion characters.\n\nFurthermore, an array of 26 integers requires only 104 bytes of memory, fitting perfectly into a modern CPU's L1 cache line. This guarantees zero latency during processing, making it orders of magnitude faster than a Hash Map in low-level languages.",
   "key_points": [

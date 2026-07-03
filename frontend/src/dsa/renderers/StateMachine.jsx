@@ -5,9 +5,30 @@ const PTR_ORDER = ['lo', 'hi', 'i', 'j', 'write'];
 // Side panel for the execution-trace player. For recursive traces it renders the CALL STACK
 // (the "aha" bars can't show). For array-family traces (two pointers, prefix sums) there is no
 // call stack, so it falls back to a POINTERS readout of the current named indices.
+// Named-scalar readout (Kadane's running best, window sum, etc.) — rendered ABOVE whichever
+// section follows (map / stack / pointers), only when the frame carries a non-empty `vars` slice.
+function VariablesSection({ vars }) {
+  const entries = Object.entries(vars);
+  if (!entries.length) return null;
+  return (
+    <div className="mb-3">
+      <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-2">Variables</div>
+      <div className="flex flex-col gap-1.5">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between rounded-md px-3 py-2 font-mono text-[13px] border" style={{ background: 'rgba(124,58,237,0.06)', borderColor: 'rgba(15,23,42,0.10)' }}>
+            <span className="font-bold text-[#7C3AED]">{k}</span>
+            <span className="text-[#475569]">{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StateMachine({ frame }) {
   const stack = (frame?.callStack || []);
   const view = [...stack].reverse(); // top of stack first (visually on top)
+  const vars = frame?.vars;
 
   // Frequency-map traces (hashing family): the map IS the star — render key→count rows,
   // highlighting the key updated this frame.
@@ -16,6 +37,7 @@ export default function StateMachine({ frame }) {
     const entries = Object.entries(map);
     return (
       <div className="select-none">
+        <VariablesSection vars={vars} />
         <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-2">Frequency map</div>
         <div className="flex flex-col gap-1.5 min-h-[180px] justify-start">
           {entries.length === 0 ? (
@@ -48,6 +70,7 @@ export default function StateMachine({ frame }) {
       .map((k) => [k, frame.pointers[k]]);
     return (
       <div className="select-none">
+        <VariablesSection vars={vars} />
         <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-2">Pointers</div>
         <div className="flex flex-col gap-1.5 min-h-[180px] justify-center">
           {ptrs.length === 0 ? (
@@ -67,6 +90,7 @@ export default function StateMachine({ frame }) {
 
   return (
     <div className="select-none">
+      <VariablesSection vars={vars} />
       <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-2">Call stack</div>
       <div className="flex flex-col gap-1.5 min-h-[180px] justify-end">
         <AnimatePresence initial={false}>

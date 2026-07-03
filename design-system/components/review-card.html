@@ -1,0 +1,61 @@
+<!-- @dsCard group="Components" name="Review card" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Review card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f9f9f6; --surface: #ffffff; --ink: #0F172A; --muted: #64748B;
+    --hairline: rgba(15,23,42,0.10); --red: #ba1a1a; --cyan: #0891B2;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--paper); font-family: 'Inter', system-ui, sans-serif; padding: 24px; color: var(--ink); }
+  .cols { display: flex; gap: 32px; align-items: flex-start; }
+  .col { flex: 1; }
+  .label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--hairline); padding: 20px;
+  }
+  .micro {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 12px;
+  }
+  h2 { font-size: 24px; font-weight: 600; margin: 0 0 16px; color: var(--ink); }
+  .textarea {
+    border: 1px solid var(--hairline); border-radius: 4px;
+    padding: 12px 14px; font-size: 14px; color: var(--muted);
+    background: var(--paper); min-height: 56px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="cols">
+    <div class="col">
+      <div class="label">CURRENT</div>
+      <div class="card" style="border-radius: 4px;">
+        <div class="micro" style="color: var(--red);">HIGHEST PRIORITY REVIEW</div>
+        <h2>Binary search boundary conditions</h2>
+        <div class="textarea">Write your answer from memory&hellip;</div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="label">PROPOSED</div>
+      <div class="card" style="border-radius: 8px;">
+        <div class="micro" style="color: var(--cyan);">⚡ DUE TODAY</div>
+        <h2>Binary search boundary conditions</h2>
+        <div class="textarea">Write your answer from memory&hellip;</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

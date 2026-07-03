@@ -1,0 +1,90 @@
+<!-- @dsCard group="Components" name="Home: Resume lesson card" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Resume lesson card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f9f9f6; --surface: #ffffff; --ink: #0F172A; --muted: #64748B;
+    --hairline: rgba(15,23,42,0.10); --cyan: #0891B2; --cyan-end: #0E7490;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    padding: 24px;
+  }
+  .wrap { max-width: 480px; }
+  .label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .micro {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--cyan); margin: 0 0 6px;
+  }
+  .title {
+    font-size: 16px; font-weight: 600; color: var(--ink); margin: 0 0 6px;
+  }
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 500; color: var(--muted);
+  }
+  .resume-btn {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-end));
+    color: #ffffff; font-size: 13px; font-weight: 600;
+    padding: 10px 18px; border-radius: 4px; border: none;
+    white-space: nowrap;
+  }
+  .progress-track {
+    height: 3px; background: rgba(15,23,42,0.08);
+    border-radius: 999px; margin-top: 10px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 43%;
+    background: var(--cyan);
+    border-radius: 999px;
+  }
+  .caption {
+    font-size: 12px; color: var(--muted); margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="label">PROPOSED — Home: resume lesson card</div>
+
+    <div class="card">
+      <div>
+        <div class="micro">CONTINUE LEARNING</div>
+        <div class="title">Merge Sort &mdash; Divide &amp; Conquer</div>
+        <div class="meta">DSA &middot; Phase 6 &middot; lesson 3 of 7</div>
+      </div>
+      <button class="resume-btn">Resume &rarr;</button>
+    </div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+
+    <div class="caption">One click from opening the app to learning. Replaces: Learn tab &rarr; pick roadmap &rarr; find node &rarr; open lesson.</div>
+  </div>
+
+</body>
+</html>

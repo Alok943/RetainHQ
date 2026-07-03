@@ -1,0 +1,930 @@
+[
+  {
+    "slug": "stack-fundamentals",
+    "title": "Stack Fundamentals",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Fundamental CS concept, universally standardized.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Need to process items in the exact reverse order of their arrival.",
+      "naive_solution": "Using an array and shifting elements or searching for the most recent item is slow and requires manual index tracking.",
+      "better_idea": "Restrict access to only one end (the top) for O(1) push and pop, enforcing Last-In-First-Out (LIFO) order."
+    },
+    "mental_model": {
+      "intuition": "A physical stack of plates: you can only add to the top and remove from the top.",
+      "description": "Any item placed onto the stack buries the items below it. You must remove the newer items to access the older ones.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [
+      {
+        "statement": "The element removed is always the most recently added element that hasn't been removed yet.",
+        "why_violation_breaks": "Violating LIFO order means it is no longer a stack, breaking dependency chains like function returns."
+      }
+    ],
+    "complexity": {
+      "time": "O(1) push/pop/peek",
+      "space": "O(n)",
+      "note": "Space is proportional to elements currently in the stack."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Processing items fairly in arrival order",
+        "reason": "Stacks are unfair (LIFO). First-In-First-Out requires a queue."
+      },
+      {
+        "scenario": "Random access needed",
+        "reason": "Stacks do not allow accessing the middle elements without popping the top."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Popping an empty stack",
+        "explanation": "Failing to check if the stack is empty before calling pop(), causing an underflow error/exception."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "A stack must be implemented with a linked list.",
+        "reality": "Stacks can be implemented with dynamic arrays, which is often faster due to CPU cache locality.",
+        "would_be_caught_by": "Asking how a stack is represented in memory in languages like Python."
+      }
+    ],
+    "failure_signals": [
+      "You need to backtrack to previous states.",
+      "You need to match pairs that are nested (like tags or parentheses)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "The Call Stack",
+        "problem": "Tracking where to return after nested function calls.",
+        "why_this_algorithm": "Function calls nest perfectly; the last function called must be the first one to return."
+      },
+      {
+        "title": "Undo Mechanisms",
+        "problem": "Reverting the most recent user action in a text editor.",
+        "why_this_algorithm": "LIFO perfectly models undoing the last action before older actions."
+      }
+    ],
+    "pattern": {
+      "name": "LIFO Processing",
+      "recognition_cues": [
+        "reverse order processing",
+        "nested structures",
+        "backtracking",
+        "undo/redo"
+      ]
+    },
+    "related": [
+      "valid-parentheses",
+      "queue-and-deque",
+      "the-call-stack"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "arrays-and-memory"
+      ],
+      "helpful": [
+        "linked-lists"
+      ],
+      "unlocks": [
+        "valid-parentheses",
+        "min-stack",
+        "monotonic-stack"
+      ]
+    },
+    "visualization": {
+      "renderer": "stack",
+      "difficulty": "easy",
+      "key_animation": "Pushing an item onto the top, then popping it off.",
+      "interactive_inputs": [
+        {
+          "input": "push(1), push(2), pop(), push(3)",
+          "why": "Shows the fundamental LIFO behavior."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "after pushing 1, 2, 3",
+          "prompt_idea": "Which element will be removed if we call pop()?",
+          "level": "easy",
+          "misconception_caught": "Confusing LIFO with FIFO"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "Hardware architectures have a dedicated Stack Pointer (SP) register because stacks are so fundamental to CPU execution."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Underpins many interview questions and is a prerequisite for graph traversals (DFS)."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 225,
+        "title": "Implement Stack using Queues",
+        "difficulty": "easy",
+        "url": "https://leetcode.com/problems/implement-stack-using-queues/",
+        "why": "Forces deep understanding of stack semantics."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "Array vs Linked List for implementing a stack?",
+        "answer": "Array is generally faster due to cache locality, but might have occasional O(N) resize. Linked list has O(1) worst-case but more memory overhead.",
+        "approach": "Discuss memory layout and amortized vs worst-case bounds."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Any problem involving 'recently seen' or 'nested matching' strongly hints at a stack.",
+      "common_followups": [
+        "Implement it concurrently",
+        "Implement with limited memory"
+      ],
+      "beginner_mistake": "Using a list but inserting/removing at the front (O(N) in many languages) instead of the back.",
+      "experienced_mistake": "Ignoring the potential for stack overflow in recursive equivalents."
+    },
+    "author_notes": {
+      "lesson_focus": "The LIFO invariant and how it naturally handles nested dependencies.",
+      "avoid_teaching": "Don't overcomplicate array resizing details; focus on the interface and LIFO property.",
+      "student_confusion": "Students sometimes think they can access the middle of a stack. Reinforce the strict interface."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Stack_(abstract_data_type)"
+      ],
+      "secondary": [
+        "https://www.geeksforgeeks.org/stack-data-structure/"
+      ]
+    }
+  },
+  {
+    "slug": "valid-parentheses",
+    "title": "Valid Parentheses",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical LeetCode problem, heavily documented.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Checking if a string of brackets is properly nested and closed.",
+      "naive_solution": "Repeatedly finding and replacing '()', '[]', '{}' with empty strings takes O(n^2) time.",
+      "better_idea": "Use a stack to remember the most recently opened unclosed bracket. When a closing bracket arrives, it must match the top of the stack."
+    },
+    "mental_model": {
+      "intuition": "Putting bowls inside each other. You can only put a lid on the most recently placed open bowl.",
+      "description": "As you see an open bracket, you 'open a scope' by pushing it to a stack. A closing bracket 'closes a scope', which must match the most recently opened one.",
+      "repeated_decision": "If open bracket: push. If close bracket: does it match the stack's top?"
+    },
+    "invariants": [
+      {
+        "statement": "The stack contains only unclosed open brackets in the exact order they were opened.",
+        "why_violation_breaks": "If we store closing brackets, or skip an open bracket, we lose track of the current scope, allowing invalid nested structures to pass."
+      },
+      {
+        "statement": "The stack must be empty at the end.",
+        "why_violation_breaks": "If not empty, some scopes were opened but never closed."
+      }
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "note": "Space is O(n) in the worst case of all open brackets like '((((('."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Only a single type of bracket (e.g., only parentheses)",
+        "reason": "You only need an integer counter for open brackets, dropping space to O(1)."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Forgetting to check if stack is empty before popping",
+        "explanation": "A string starting with a closing bracket like ']' will cause an error."
+      },
+      {
+        "title": "Forgetting to check if stack is empty at the end",
+        "explanation": "A string like '[' will be falsely marked valid."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "You need to count the number of each type of bracket.",
+        "reality": "Counts don't enforce nesting order; '([)]' has equal counts but is invalid.",
+        "would_be_caught_by": "Testing with an improperly interleaved string like '([)]'."
+      }
+    ],
+    "failure_signals": [
+      "Trying to use counters for multiple bracket types.",
+      "Scanning back and forth through the string to find matches."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Compilers & Parsers",
+        "problem": "Syntax checking in source code.",
+        "why_this_algorithm": "AST generation requires ensuring blocks, parentheses, and braces are correctly nested."
+      },
+      {
+        "title": "HTML/XML Validation",
+        "problem": "Ensuring every opening tag has a matching closing tag.",
+        "why_this_algorithm": "Tags form a nested hierarchical structure identical to parentheses."
+      }
+    ],
+    "pattern": {
+      "name": "Stack for Nested Scopes",
+      "recognition_cues": [
+        "nested elements",
+        "matching pairs",
+        "parsing hierarchical strings"
+      ]
+    },
+    "related": [
+      "stack-fundamentals",
+      "monotonic-stack"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "stack-fundamentals"
+      ],
+      "helpful": [
+        "hash-tables"
+      ],
+      "unlocks": [
+        "evaluate-reverse-polish-notation"
+      ]
+    },
+    "visualization": {
+      "renderer": "stack",
+      "difficulty": "easy",
+      "key_animation": "Pushing open brackets, popping when a matching closing bracket is encountered.",
+      "interactive_inputs": [
+        {
+          "input": "'()[]{}'",
+          "why": "Basic sequential matching."
+        },
+        {
+          "input": "'([)]'",
+          "why": "Interleaved failure case."
+        },
+        {
+          "input": "'((('",
+          "why": "Unclosed scopes (stack not empty at end)."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "encountering the first closing bracket",
+          "prompt_idea": "What must the top of the stack be for this to be valid?",
+          "level": "easy",
+          "misconception_caught": "Using counts instead of strict LIFO order."
+        }
+      ]
+    },
+    "interesting_facts": [
+      "This problem is the classic example used to distinguish between Regular Languages and Context-Free Languages in automata theory."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Blind 75, NeetCode 150. Extremely common phone screen question."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 20,
+        "title": "Valid Parentheses",
+        "difficulty": "easy",
+        "url": "https://leetcode.com/problems/valid-parentheses/",
+        "why": "Direct implementation."
+      },
+      {
+        "platform": "LeetCode",
+        "id": 1249,
+        "title": "Minimum Remove to Make Valid Parentheses",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/minimum-remove-to-make-valid-parentheses/",
+        "why": "Extends the pattern to repairing the string."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "Can you do this in O(1) space?",
+        "answer": "No, if there are multiple bracket types, you must remember the sequence of open brackets. Yes, if there is only one type.",
+        "approach": "Differentiate between tracking count vs tracking sequence."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "'Valid expression', 'nested', 'matching pairs' -> Stack.",
+      "common_followups": [
+        "What if you have strings and operators too?",
+        "How to make the string valid by adding minimum brackets?"
+      ],
+      "beginner_mistake": "Writing a massive chain of if/else instead of a clean mapping (like a hash map of close-to-open brackets).",
+      "experienced_mistake": "Forgetting the final `return stack.isEmpty()` check."
+    },
+    "author_notes": {
+      "lesson_focus": "How LIFO naturally perfectly models 'most recently opened scope must close first'.",
+      "avoid_teaching": "Complex expression parsing (ASTs); keep it strictly to bracket matching.",
+      "student_confusion": "Students often struggle with edge cases: starting with a closing bracket, or leaving open brackets at the end."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Dyck_language"
+      ],
+      "secondary": [
+        "https://www.geeksforgeeks.org/check-for-balanced-parentheses-in-an-expression/"
+      ]
+    }
+  },
+  {
+    "slug": "min-stack",
+    "title": "Min Stack",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard interview question with a definitive O(1) solution.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Retrieving the minimum element in a stack in O(1) time.",
+      "naive_solution": "Iterating through the stack to find the minimum takes O(n) time.",
+      "better_idea": "Store the current minimum *at the time each element was pushed* alongside the element."
+    },
+    "mental_model": {
+      "intuition": "Carrying a notebook where on every page you write the value you just added AND the smallest value you've seen so far.",
+      "description": "Every element in the stack is paired with the minimum value of all elements below it, including itself.",
+      "repeated_decision": "When pushing X, the new min is min(X, current_top_min)."
+    },
+    "invariants": [
+      {
+        "statement": "The min value associated with an element never changes once it is pushed.",
+        "why_violation_breaks": "If we tried to update historical minimums dynamically, we'd lose O(1) time complexity."
+      }
+    ],
+    "complexity": {
+      "time": "O(1) all operations",
+      "space": "O(n)",
+      "note": "Requires storing an extra min value per element (or using an auxiliary stack)."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Finding min in a dynamic queue or array",
+        "reason": "This trick relies on LIFO; removing from the bottom (like a queue) invalidates the stored minimums. Use a sliding window deque or segment tree instead."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Using a single global min variable",
+        "explanation": "If the minimum element is popped, you lose track of the previous minimum."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "The min stack actively searches for the minimum.",
+        "reality": "The min stack just passively records the state of the minimum at the exact moment of insertion.",
+        "would_be_caught_by": "Asking how the stack knows the new minimum after the current minimum is popped."
+      }
+    ],
+    "failure_signals": [
+      "Attempting to rescan the stack on a pop() to find the new minimum.",
+      "Using a priority queue (heap) which gives O(log n) pop, not O(1)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "State Snapshots",
+        "problem": "Tracking minimums in a rolling undo history.",
+        "why_this_algorithm": "Because state transitions are LIFO, we can cache aggregate data (like min/max) losslessly at each step."
+      }
+    ],
+    "pattern": {
+      "name": "Augmented Data Structure",
+      "recognition_cues": [
+        "O(1) query",
+        "stack operations",
+        "historical state tracking"
+      ]
+    },
+    "related": [
+      "stack-fundamentals",
+      "monotonic-stack"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "stack-fundamentals"
+      ],
+      "helpful": [],
+      "unlocks": []
+    },
+    "visualization": {
+      "renderer": "stack",
+      "difficulty": "medium",
+      "key_animation": "Pushing a tuple (value, current_min) and seeing the current_min revert perfectly on pop.",
+      "interactive_inputs": [
+        {
+          "input": "push(5), push(2), push(7), pop()",
+          "why": "Shows min updating and reverting."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "after popping 7 and then 2",
+          "prompt_idea": "What is the min value now?",
+          "level": "easy",
+          "misconception_caught": "Global variable misconception."
+        }
+      ]
+    },
+    "interesting_facts": [
+      "You can actually implement this in O(1) extra space (rather than O(n)) using a clever mathematical encoding formula (2*val - min), though it risks integer overflow."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "NeetCode 150, Blind 75. Very common system-design-adjacent coding question."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 155,
+        "title": "Min Stack",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/min-stack/",
+        "why": "The canonical problem."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "How can you optimize the space if many elements are pushed without changing the min?",
+        "answer": "Use a secondary stack that ONLY stores the min value and its count, rather than pairing it with every single element.",
+        "approach": "Discuss Run-Length Encoding concepts for the auxiliary stack."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "'Stack' + 'O(1) min/max' -> Augment the stack node.",
+      "common_followups": [
+        "Implement max stack",
+        "Optimize space complexity (two stacks)"
+      ],
+      "beginner_mistake": "Trying to keep a sorted array alongside the stack.",
+      "experienced_mistake": "Failing to handle duplicate minimums properly when using the two-stack optimization."
+    },
+    "author_notes": {
+      "lesson_focus": "The realization that a stack's LIFO property means history is immutable until popped, making it safe to cache aggregates.",
+      "avoid_teaching": "The O(1) space math trick (2x - min) is trivia and mostly distracting; focus on the tuple/two-stack approach.",
+      "student_confusion": "Students overthink how to 'find' the previous min on pop. Visualize that the previous min is literally just sitting on the top of the stack after the pop."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Stack_(abstract_data_type)"
+      ],
+      "secondary": [
+        "https://www.geeksforgeeks.org/design-a-stack-that-supports-getmin-in-o1-time-and-o1-extra-space/"
+      ]
+    }
+  },
+  {
+    "slug": "monotonic-stack",
+    "title": "Monotonic Stack",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard pattern for 'next greater' class of problems.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Finding the 'next greater' or 'previous smaller' element for every item in an array in O(n) time.",
+      "naive_solution": "For each element, iterate through the rest of the array. Takes O(n^2).",
+      "better_idea": "Maintain a stack of elements that haven't found their 'next greater' yet. Because we process linearly, this stack naturally stays sorted (monotonic)."
+    },
+    "mental_model": {
+      "intuition": "People standing in a line. A taller person arriving blocks the view of all shorter people in front of them, resolving their 'next taller person' query.",
+      "description": "We push items onto the stack as long as they don't break the desired order (increasing or decreasing). If an incoming item breaks the order, it is the 'answer' for the items currently on the stack.",
+      "repeated_decision": "While incoming element destroys monotonicity, pop the stack (and record the incoming element as the answer for the popped item). Then push incoming."
+    },
+    "invariants": [
+      {
+        "statement": "Elements in the stack are strictly increasing (or strictly decreasing) from bottom to top.",
+        "why_violation_breaks": "If order breaks, we can't guarantee that the next incoming element will correctly resolve the queries for the elements buried deeper in the stack."
+      }
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "note": "Every element is pushed exactly once and popped at most once."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Finding the MAXIMUM element in a sliding window",
+        "reason": "A Monotonic Queue (Deque) is needed because elements expire based on index, which a stack can't handle efficiently."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Confusing strictly greater vs greater-or-equal",
+        "explanation": "Using strictly increasing vs non-decreasing changes whether duplicates are popped or kept."
+      },
+      {
+        "title": "Storing values instead of indices",
+        "explanation": "Usually, we need to calculate distance (like in Daily Temperatures), so we MUST push indices to the stack, not the values."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "The inner while loop makes it O(n^2).",
+        "reality": "Despite the nested loop, each element is pushed once and popped once. 2N operations total = O(N) amortized.",
+        "would_be_caught_by": "Asking for the time complexity and explaining amortized analysis."
+      }
+    ],
+    "failure_signals": [
+      "Nested loops looking for the 'first element that is larger/smaller'."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Financial Chart Analysis",
+        "problem": "Finding the next day a stock price was higher.",
+        "why_this_algorithm": "Efficiently processes streams of price data in O(n) without recounting."
+      },
+      {
+        "title": "UI View Rendering",
+        "problem": "Calculating visible skylines or bounding boxes.",
+        "why_this_algorithm": "Monotonic stacks quickly identify bounding boundaries for histograms and terrain."
+      }
+    ],
+    "pattern": {
+      "name": "Monotonic Stack",
+      "recognition_cues": [
+        "Next Greater Element",
+        "Previous Smaller Element",
+        "Largest Rectangle",
+        "Daily Temperatures"
+      ]
+    },
+    "related": [
+      "next-greater-element",
+      "queue-and-deque"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "stack-fundamentals"
+      ],
+      "helpful": [
+        "amortized-analysis"
+      ],
+      "unlocks": [
+        "next-greater-element",
+        "sliding-window-variable"
+      ]
+    },
+    "visualization": {
+      "renderer": "none",
+      "difficulty": "medium",
+      "key_animation": "N/A",
+      "interactive_inputs": [],
+      "prediction_checkpoints": []
+    },
+    "interesting_facts": [
+      "A monotonic stack is essentially an online algorithm for computing the Cartesian tree of an array."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Essential for many medium/hard array problems on LeetCode."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 739,
+        "title": "Daily Temperatures",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/daily-temperatures/",
+        "why": "The purest distillation of monotonic stack."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "Why is the time complexity O(N) when there is a while loop inside the for loop?",
+        "answer": "Each element is pushed once and popped at most once. The total number of stack operations is 2N.",
+        "approach": "Use amortized analysis."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Phrases like 'Next Greater', 'Next Smaller', 'Nearest larger to the left' -> Monotonic Stack.",
+      "common_followups": [
+        "What if the array is circular?"
+      ],
+      "beginner_mistake": "Trying to maintain the stack but forgetting to push the current element after the while loop.",
+      "experienced_mistake": "Off-by-one errors when dealing with duplicates (using < vs <=)."
+    },
+    "author_notes": {
+      "lesson_focus": "The amortized O(N) argument and the template (while breaks order -> pop; then push).",
+      "avoid_teaching": "Specific problem solutions (like Largest Rectangle) in the concept node; keep it to the abstract template.",
+      "student_confusion": "Students mix up when to use an increasing vs decreasing stack. Give them a robust rule of thumb: 'Next Greater' needs a decreasing stack (tall people blocking short)."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Stack_(abstract_data_type)"
+      ],
+      "secondary": [
+        "https://www.geeksforgeeks.org/introduction-to-monotonic-stack-data-structure-and-algorithm-tutorials/"
+      ]
+    }
+  },
+  {
+    "slug": "next-greater-element",
+    "title": "Next Greater Element",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "The quintessential application of monotonic stacks.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Given an array, find the first element to the right that is strictly greater, for every element.",
+      "naive_solution": "Nested loop: for each element, scan right until a larger element is found. O(n^2).",
+      "better_idea": "Use a Monotonic Decreasing Stack. Elements wait in the stack until a larger element arrives to 'pop' them."
+    },
+    "mental_model": {
+      "intuition": "Waiting in a queue. You keep waiting until someone taller than you arrives, then you can leave.",
+      "description": "We iterate left to right. The stack holds indices of elements that haven't found their 'next greater' yet. Because we haven't found a greater element, the stack is naturally decreasing.",
+      "repeated_decision": "While current element > element at stack top: we found the answer for stack top! Pop it and record current as its answer."
+    },
+    "invariants": [
+      {
+        "statement": "Elements in the stack are in strictly decreasing order.",
+        "why_violation_breaks": "If a smaller element was below a larger element in the stack, the smaller one should have already been popped by the larger one."
+      }
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "note": "Amortized O(n) because each index is pushed and popped exactly once."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Finding ALL elements greater to the right",
+        "reason": "A monotonic stack only finds the FIRST greater element."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Pushing values instead of indices",
+        "explanation": "If you push values, you don't know WHERE in the result array to store the answer when it's popped."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "A 'Next Greater' problem uses an 'Increasing' stack.",
+        "reality": "It uses a *Decreasing* stack. It holds decreasing values waiting for a greater value to arrive.",
+        "would_be_caught_by": "Tracing what happens when [5, 4, 3] arrives."
+      }
+    ],
+    "failure_signals": [
+      "Time Limit Exceeded (TLE) on O(n^2) nested loops."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Weather Data Analysis",
+        "problem": "Finding how many days until a warmer temperature.",
+        "why_this_algorithm": "Requires Next Greater Element logic over a time series."
+      }
+    ],
+    "pattern": {
+      "name": "Monotonic Decreasing Stack",
+      "recognition_cues": [
+        "Next Greater",
+        "Warmer Temperature",
+        "Stock span"
+      ]
+    },
+    "related": [
+      "monotonic-stack"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "monotonic-stack"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "largest-rectangle-in-histogram"
+      ]
+    },
+    "visualization": {
+      "renderer": "stack",
+      "difficulty": "medium",
+      "key_animation": "Incoming larger element popping multiple smaller elements off the stack.",
+      "interactive_inputs": [
+        {
+          "input": "[2, 1, 5, 6, 2, 3]",
+          "why": "Standard mixed array."
+        },
+        {
+          "input": "[5, 4, 3, 2, 1]",
+          "why": "Worst-case space; stack grows to size N, no pops until end."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "when 5 arrives after [2, 1]",
+          "prompt_idea": "Which elements are popped by 5?",
+          "level": "easy",
+          "misconception_caught": "Understanding the cascade pop."
+        }
+      ]
+    },
+    "interesting_facts": [
+      "By iterating right-to-left instead of left-to-right, you can solve this by storing the 'candidates for the next greater' in an increasing stack."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Core pattern tested repeatedly in top tech companies."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 496,
+        "title": "Next Greater Element I",
+        "difficulty": "easy",
+        "url": "https://leetcode.com/problems/next-greater-element-i/",
+        "why": "Basic application."
+      },
+      {
+        "platform": "LeetCode",
+        "id": 503,
+        "title": "Next Greater Element II",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/next-greater-element-ii/",
+        "why": "Applies the pattern to a circular array."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "How would you handle a circular array?",
+        "answer": "Loop through the array twice (length 2N) using modulo arithmetic, keeping the same stack logic.",
+        "approach": "Simulate array concatenation."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Any 'next greater' or 'nearest larger' phrasing.",
+      "common_followups": [
+        "Circular arrays",
+        "Next smaller element"
+      ],
+      "beginner_mistake": "Reverting to O(n^2) when confused.",
+      "experienced_mistake": "Not pushing indices to the stack."
+    },
+    "author_notes": {
+      "lesson_focus": "The cascade pop: one incoming element can resolve the query for multiple waiting elements.",
+      "avoid_teaching": "Don't introduce right-to-left iteration immediately; stick to left-to-right with indices to build the foundation.",
+      "student_confusion": "Storing indices vs values in the stack. Emphasize that index gives both value (array[i]) and position."
+    },
+    "sources": {
+      "primary": [
+        "https://www.geeksforgeeks.org/next-greater-element/"
+      ],
+      "secondary": []
+    }
+  },
+  {
+    "slug": "queue-and-deque",
+    "title": "Queue & Deque",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard fundamental data structures.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Need to process items in the exact order they arrived (fairness), or process from both ends efficiently.",
+      "naive_solution": "Using an array and removing from the front takes O(n) time because all other elements must shift left.",
+      "better_idea": "Use a Linked List or a Ring Buffer (circular array) to allow O(1) additions to the back and O(1) removals from the front (Queue), or both ends (Deque)."
+    },
+    "mental_model": {
+      "intuition": "Queue: A line at a grocery store (First-In, First-Out). Deque: A line where VIPs can cut to the front, and people at the back can give up and leave.",
+      "description": "A Queue enforces strict FIFO order. A Deque (Double-Ended Queue) generalizes this, allowing O(1) push and pop at both the head and the tail.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [
+      {
+        "statement": "In a queue, the element removed is always the oldest element that hasn't been removed yet.",
+        "why_violation_breaks": "Violates FIFO fairness, breaking algorithms like BFS that rely on discovering layers sequentially."
+      }
+    ],
+    "complexity": {
+      "time": "O(1) enqueue/dequeue",
+      "space": "O(n)",
+      "note": "Implementations via linked lists or circular arrays achieve true O(1)."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Need to access elements in the middle",
+        "reason": "Queues and deques do not provide efficient random access."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Using a standard array/list in Python or Java for a queue",
+        "explanation": "Calling `list.pop(0)` in Python is O(N). You must use `collections.deque`."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "A queue must be implemented with a linked list.",
+        "reality": "Circular arrays are often preferred for queues/deques to avoid memory allocation overhead and improve cache locality.",
+        "would_be_caught_by": "Asking how to implement a queue with a fixed-size array."
+      }
+    ],
+    "failure_signals": [
+      "You need to process the most recently added items first (use a Stack)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Task Scheduling",
+        "problem": "Processing background jobs in the order they were requested.",
+        "why_this_algorithm": "FIFO ensures fairness; no job starves."
+      },
+      {
+        "title": "Breadth-First Search (BFS)",
+        "problem": "Exploring a graph layer by layer.",
+        "why_this_algorithm": "FIFO guarantees nodes at distance D are processed before distance D+1."
+      }
+    ],
+    "pattern": {
+      "name": "FIFO Processing",
+      "recognition_cues": [
+        "fairness",
+        "level-by-level",
+        "sliding window bounds"
+      ]
+    },
+    "related": [
+      "stack-fundamentals",
+      "bfs-on-graphs",
+      "sliding-window-variable"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "arrays-and-memory",
+        "linked-lists"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "bfs-on-graphs",
+        "level-order-bfs"
+      ]
+    },
+    "visualization": {
+      "renderer": "none",
+      "difficulty": "easy",
+      "key_animation": "N/A",
+      "interactive_inputs": [],
+      "prediction_checkpoints": []
+    },
+    "interesting_facts": [
+      "Python's `collections.deque` is implemented as a doubly-linked list of blocks (fixed-size arrays), balancing cache locality with O(1) ends."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Crucial prerequisite for BFS and Sliding Window Maximum."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 232,
+        "title": "Implement Queue using Stacks",
+        "difficulty": "easy",
+        "url": "https://leetcode.com/problems/implement-queue-using-stacks/",
+        "why": "Forces understanding of FIFO vs LIFO mechanics."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "How does a circular array queue handle reaching the end of the array?",
+        "answer": "It uses modulo arithmetic `(tail + 1) % capacity` to wrap around to the beginning.",
+        "approach": "Explain the ring buffer concept."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "'Order of arrival', 'shortest path in unweighted graph', 'level by level' -> Queue.",
+      "common_followups": [
+        "Implement a deque using a circular array"
+      ],
+      "beginner_mistake": "Using `pop(0)` in Python and destroying time complexity.",
+      "experienced_mistake": "Overusing queues when a simple index pointer on an array would suffice."
+    },
+    "author_notes": {
+      "lesson_focus": "The strict FIFO invariant and the danger of naive array implementations (O(n) shift).",
+      "avoid_teaching": "Deep dives into doubly-linked list pointers; focus on the interface and circular array concept.",
+      "student_confusion": "Students often don't realize that standard arrays are terrible for queues. Make the O(N) shift cost visually obvious."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Queue_(abstract_data_type)",
+        "https://en.wikipedia.org/wiki/Double-ended_queue"
+      ],
+      "secondary": [
+        "https://www.geeksforgeeks.org/queue-data-structure/"
+      ]
+    }
+  }
+]

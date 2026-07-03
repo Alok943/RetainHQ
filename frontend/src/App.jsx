@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon } from 'lucide-react';
+import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -42,6 +42,8 @@ function AppLayout() {
   const [hovered, setHovered] = useState(false);
   const isCollapsed = !hovered;
 
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
   // Due-count badge on the Reviews nav item — the habit cue has to live in the
   // chrome, not just on Home. Re-fetched on route change so completing reviews
   // clears it without a hard refresh.
@@ -76,10 +78,12 @@ function AppLayout() {
   };
   
   const activeTab = getActiveTab();
+  const isMoreActive = ['paths', 'vault', 'analytics', 'admin'].includes(activeTab);
 
   const email = session?.user?.email || '';
   const initials = email ? email.substring(0, 2).toUpperCase() : '?';
   const isAdmin = email === ADMIN_EMAIL;
+
 
   return (
     <div className="relative flex h-screen w-full bg-[#f9f9f6] overflow-hidden text-[#1a1c1b] font-sans">
@@ -225,15 +229,42 @@ function AppLayout() {
             inside an h-screen/100vh container renders below the fold on mobile, where
             100vh is taller than the visible area (the classic mobile-100vh bug). Pages
             already reserve pb-20 for it. */}
-        <nav className="md:hidden fixed inset-x-0 bottom-0 glass-nav border-t flex justify-around items-center px-2 py-3 z-30 pb-safe overflow-x-auto gap-1">
-          <NavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-          <NavItem icon={<Brain size={20} />} label="Review" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
-          <NavItem icon={<PlusSquare size={20} />} label="Log" active={activeTab === 'log'} onClick={() => navigate('/log')} />
-          <NavItem icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
-          <NavItem icon={<RouteIcon size={20} />} label="Paths" active={activeTab === 'paths'} onClick={() => navigate('/paths')} />
-          <NavItem icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
-          <NavItem icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
-          {isAdmin && <NavItem icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
+        <nav className="md:hidden fixed inset-x-0 bottom-0 glass-nav border-t flex justify-around items-center px-2 py-3 z-30 pb-safe gap-1">
+          <NavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => { setShowMoreMenu(false); navigate('/dashboard'); }} />
+          <NavItem icon={<Brain size={20} />} label="Review" active={activeTab === 'review'} onClick={() => { setShowMoreMenu(false); navigate('/reviews'); }} badge={dueCount} />
+          
+          <button
+            onClick={() => { setShowMoreMenu(false); navigate('/log'); }}
+            className="flex flex-col items-center justify-center w-16 gap-1 transition-colors"
+          >
+            <div className={`h-10 w-10 flex items-center justify-center rounded-full ${activeTab === 'log' ? 'bg-[#0891B2] text-white' : 'bg-[rgba(8,145,178,0.1)] text-[#0891B2] hover:bg-[rgba(8,145,178,0.2)]'}`}>
+              <Plus size={22} strokeWidth={2.5} />
+            </div>
+            <span className={`font-sans text-[10px] font-medium ${activeTab === 'log' ? 'text-[#0891B2]' : 'text-[#64748B]'}`}>Log</span>
+          </button>
+          
+          <NavItem icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => { setShowMoreMenu(false); navigate('/roadmaps'); }} />
+          
+          <div className="relative flex flex-col items-center justify-center w-16">
+            <NavItem 
+              icon={<MoreHorizontal size={20} />} 
+              label="More" 
+              active={showMoreMenu || isMoreActive} 
+              onClick={() => setShowMoreMenu(!showMoreMenu)} 
+            />
+            {showMoreMenu && (
+              <>
+                {/* Invisible backdrop to close the menu on outside click */}
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                <div className="absolute bottom-[100%] right-0 mb-3 bg-white border border-[rgba(15,23,42,0.08)] shadow-lg rounded-xl flex flex-col w-48 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                  <MenuButton icon={<RouteIcon size={16} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => { setShowMoreMenu(false); navigate('/paths'); }} />
+                  <MenuButton icon={<Library size={16} />} label="Vault" active={activeTab === 'vault'} onClick={() => { setShowMoreMenu(false); navigate('/vault'); }} />
+                  <MenuButton icon={<TrendingUp size={16} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => { setShowMoreMenu(false); navigate('/analytics'); }} />
+                  {isAdmin && <MenuButton icon={<ShieldCheck size={16} />} label="Admin" active={activeTab === 'admin'} onClick={() => { setShowMoreMenu(false); navigate('/admin'); }} />}
+                </div>
+              </>
+            )}
+          </div>
         </nav>
 
         {/* Floating Action Button — quick-log shortcut, desktop only (mobile has the Log tab in the bottom nav) */}
@@ -296,6 +327,20 @@ function NavItem({ icon, label, active, onClick, badge = 0 }) {
         )}
       </div>
       <span className="font-sans text-[10px] font-medium">{label}</span>
+    </button>
+  );
+}
+
+function MenuButton({ icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
+        active ? 'bg-[rgba(15,23,42,0.05)] text-[#0891B2]' : 'text-[#64748B] hover:bg-[rgba(15,23,42,0.02)] hover:text-[#0F172A]'
+      }`}
+    >
+      <div className="shrink-0">{icon}</div>
+      <span className="truncate flex-1 text-left">{label}</span>
     </button>
   );
 }

@@ -13,6 +13,20 @@ docs, well-regarded engineering blogs, NeetCode/Blind-75 curricula, LeetCode) an
 structured JSON object. Be accurate and concrete; if something is uncertain or contested, say so
 rather than inventing. Do NOT copy problem statements or long source text (summarize + link).
 
+## WRITING RULES — optimize for KNOWLEDGE EXTRACTION, not textbook prose
+Your reader is an **AI lesson author**, not a student. Every rule below exists because prose
+reports lose information at extraction time:
+- **Structured bullets over paragraphs.** Never write flowing textbook chapters or section essays.
+- **Compress wording without losing information.** Density is the goal; filler is loss.
+- **Explain mechanisms, not definitions.** "The left pointer advances because the sorted order
+  guarantees no smaller pair exists" — not "the two-pointer technique is a technique using two pointers."
+- **No historical introductions, no company folklore.** Skip "the evolution of…" openers entirely.
+  Engineering examples name the *problem*, never "Company X uses it."
+- **Distinguish engineering reality from interview convention.** When the real-world answer differs
+  from the expected interview answer (e.g. Timsort vs. hand-rolled merge sort), say both, labeled.
+- **All math as plain text** — O(n log n), O(1), n/2 — NEVER LaTeX or images (they break on export
+  and the complexity claims are lost).
+
 ## THE GOAL — every node must let an author answer these FIVE questions
 1. **Why does this exist?** (the problem it solves; what was wrong with the naive way)
 2. **How do I mentally simulate it?** (the intuition/analogy + the one repeated decision)
@@ -26,7 +40,7 @@ rather than inventing. Do NOT copy problem statements or long source text (summa
   "slug": "merge-sort",
   "title": "Merge Sort",
   "kind_hint": "trace",
-  "confidence": { "overall": "high", "reason": "Canonical, well-documented algorithm." },
+  "confidence": { "overall": "high", "reason": "Canonical, well-documented algorithm.", "low_confidence_fields": [] },
   "why_it_exists": {
     "problem": "Sorting n items; we need better than O(n^2).",
     "naive_solution": "Bubble/insertion sort compare-and-swap neighbours — O(n^2), too slow at scale.",
@@ -38,8 +52,10 @@ rather than inventing. Do NOT copy problem statements or long source text (summa
     "repeated_decision": "At each merge step: which half has the smaller current front element?"
   },
   "invariants": [
-    "After merging a range, that range is fully sorted.",
-    "A single element is sorted by definition (base case)."
+    { "statement": "After merging a range, that range is fully sorted.",
+      "why_violation_breaks": "Later merges assume both halves are sorted; one out-of-order element propagates upward and the final array is unsorted." },
+    { "statement": "A single element is sorted by definition (base case).",
+      "why_violation_breaks": "Without a trivially-true base case the recursion never terminates." }
   ],
   "complexity": { "time": "O(n log n)", "space": "O(n)", "note": "log n levels, O(n) work per level; stable; not in-place." },
   "when_not_to_use": [
@@ -49,6 +65,14 @@ rather than inventing. Do NOT copy problem statements or long source text (summa
   "common_mistakes": [
     { "title": "Off-by-one in merge bounds", "explanation": "Mishandling the mid split or the leftover tail." },
     { "title": "Thinking it's in-place", "explanation": "Standard merge sort needs O(n) auxiliary space." }
+  ],
+  "misconceptions": [
+    { "false_belief": "Merging compares whole halves at once.",
+      "reality": "Merge compares only the two FRONT elements of each half, one pair at a time.",
+      "would_be_caught_by": "predicting the next written value during a merge step" },
+    { "false_belief": "Splitting does the sorting work.",
+      "reality": "Splitting is bookkeeping; ALL ordering work happens in the merge.",
+      "would_be_caught_by": "asking which phase changes the array contents" }
   ],
   "failure_signals": [
     "An O(n^2) sort is too slow on your input size.",
@@ -61,7 +85,27 @@ rather than inventing. Do NOT copy problem statements or long source text (summa
   ],
   "pattern": { "name": "Divide & Conquer", "recognition_cues": ["problem splits into independent subproblems", "results combine cheaply", "natural recurrence T(n)=2T(n/2)+O(n)"] },
   "related": ["quick-sort", "binary-search", "merge-two-sorted-lists", "recursion-tree"],
-  "visualization": { "renderer": "array", "difficulty": "medium", "key_animation": "merge two sorted halves; secondary: recursion call stack" },
+  "learning_graph": {
+    "must_know": ["recursion-tree", "the-call-stack", "iteration-and-traversal"],
+    "helpful": ["binary-search"],
+    "unlocks": ["quick-sort", "counting-sort", "merge-two-sorted-lists"]
+  },
+  "visualization": {
+    "renderer": "array",
+    "difficulty": "medium",
+    "key_animation": "merge two sorted halves; secondary: recursion call stack",
+    "interactive_inputs": [
+      { "input": "[5,2,8,1,9,3]", "why": "default — mixed order, two uneven merge patterns" },
+      { "input": "[9,8,7,6,5,4]", "why": "reverse-sorted — every comparison flips sides" },
+      { "input": "[1,2,3,4]", "why": "already sorted — shows merge still runs (no early exit)" }
+    ],
+    "prediction_checkpoints": [
+      { "at": "last merge step", "prompt_idea": "which two values are written next?", "level": "medium",
+        "misconception_caught": "merging compares whole halves at once" },
+      { "at": "first split", "prompt_idea": "does the array change during splitting?", "level": "easy",
+        "misconception_caught": "splitting does the sorting work" }
+    ]
+  },
   "interesting_facts": [
     "Quicksort is O(n^2) worst case yet often beats merge sort in practice due to cache locality and no extra array.",
     "Python's and Java's default sorts (Timsort) are merge-sort hybrids tuned for partially-ordered data."
@@ -76,7 +120,17 @@ rather than inventing. Do NOT copy problem statements or long source text (summa
     { "q": "Why is merge sort O(n log n) but quicksort can degrade to O(n^2)?", "answer": "Merge always splits in half (balanced); quicksort's split depends on the pivot and can be lopsided.", "approach": "Tie complexity to the recursion-tree balance." },
     { "q": "When would you pick merge sort over quicksort?", "answer": "When stability matters or for linked lists / external sorting; quicksort wins on in-memory arrays for cache/space.", "approach": "Contrast stability, space, and access pattern." }
   ],
-  "author_notes": { "lesson_focus": "The merge step (the repeated 'smaller front' decision) and why splitting yields log n levels.", "avoid_teaching": "Don't spend half the lesson on recursion syntax — recursion has its own phase." },
+  "interview_thinking": {
+    "recognition_strategy": "Stable O(n log n) required, linked-list sorting, or 'merge K sorted X' phrasing -> reach for merge/divide-and-conquer.",
+    "common_followups": ["make it in-place (and why that's hard)", "merge K lists instead of 2", "sort a linked list in O(1) extra space"],
+    "beginner_mistake": "Re-deriving the merge logic under pressure instead of knowing the two-front-pointers pattern cold.",
+    "experienced_mistake": "Jumping to 'use the library sort' without demonstrating they can reason about the merge invariant."
+  },
+  "author_notes": {
+    "lesson_focus": "The merge step (the repeated 'smaller front' decision) and why splitting yields log n levels — the 80/20 of this lesson.",
+    "avoid_teaching": "Don't spend half the lesson on recursion syntax — recursion has its own phase.",
+    "student_confusion": "Students conflate the split phase with sorting work; the visualization must make the merge visibly do ALL the reordering."
+  },
   "sources": {
     "primary": ["https://en.wikipedia.org/wiki/Merge_sort"],
     "secondary": ["https://www.geeksforgeeks.org/merge-sort/"]
@@ -100,12 +154,36 @@ rather than inventing. Do NOT copy problem statements or long source text (summa
   with a one-line `why`. Link only — never paste the problem text.
 - **`sources`**: 2-5 real, authoritative URLs actually consulted. No fabricated links.
 - Keep prose tight and beginner-true. Prefer the explanation that makes it *click*.
-- **`confidence`**: `{overall: high|medium|low, reason}` — flag low/medium so we know which nodes need manual review.
+- **`mental_model`**: the analogy must be **mechanism-based** — every part of the analogy maps to a
+  part of the algorithm (zipper teeth = front elements, zipping = comparing fronts). Decorative
+  analogies that only share a vibe ("it's like organizing a bookshelf") are rejected: if you can't
+  say what each analogy part corresponds to, find a better analogy.
+- **`invariants`**: `[{statement, why_violation_breaks}]` — one sentence each. The violation
+  consequence is what makes the invariant teachable (and predictable in the visualizer).
+- **`misconceptions`**: distinct from `common_mistakes` (bugs). These are FALSE BELIEFS:
+  `{false_belief, reality, would_be_caught_by}` — the last field names the observation/question
+  that would expose the belief; it directly seeds prediction-checkpoint placement.
+- **`interview_thinking`**: `{recognition_strategy, common_followups[], beginner_mistake,
+  experienced_mistake}` — how an interviewee should THINK, not just Q&A pairs (those stay in
+  `interview_questions`).
+- **`learning_graph`**: `{must_know[], helpful[], unlocks[]}` — kebab-case slugs from the topic
+  list. `must_know` = lesson assumes it; `helpful` = enriches but not blocking; `unlocks` = what
+  this enables next. Feeds the prerequisite/pattern graph — be conservative in `must_know`.
+- **`confidence`**: `{overall: high|medium|low, reason, low_confidence_fields: []}` — additionally
+  NAME the specific fields you're least sure of (typically `engineering_examples` and
+  `interview_frequency`); those get manual verification before authoring.
 - **`when_not_to_use`**: `[{scenario, reason}]` — where this is the WRONG choice. Understanding via contrast.
 - **`failure_signals`**: cues that you NEED this algorithm — "you keep recomputing the same subproblem", "you're re-scanning the array". Distinct from `common_mistakes` (bugs); these are *why-you-reach-for-it* signals.
 - **`engineering_examples`** (renamed from "real world"): production uses as `{title, problem, why_this_algorithm}`.
 - **`related`**: 2-5 kebab-case slugs of adjacent topics (powers "learn these next").
-- **`visualization`**: `{renderer: array|tree|grid|graph|state-machine|none, difficulty, key_animation}` — the author's hint for how to visualize it (`"none"` for concept nodes).
+- **`visualization`**: `{renderer: array|tree|grid|graph|stack|linked-list|number-line|board|state-machine|none,
+  difficulty, key_animation, interactive_inputs[], prediction_checkpoints[]}` (`renderer:"none"` for
+  concept nodes, then the other viz fields may be omitted).
+  - `interactive_inputs`: 2-4 inputs worth trying, each with a one-line `why` (best case, worst
+    case, edge case) — these become the lesson's default input + preset buttons.
+  - `prediction_checkpoints`: 1-3 `{at, prompt_idea, level: easy|medium|hard|expert,
+    misconception_caught?}` — WHERE to pause the animation and WHAT to ask. Tie each to a
+    misconception when possible; the best gate is one a student holding the false belief answers wrong.
 - **`interesting_facts`**: 1-3 SURPRISING truths that make memorable hooks (not trivia).
 - **`author_notes`**: `{lesson_focus, avoid_teaching}` — what to center on, and what NOT to over-explain.
 - **`sources`**: `{primary: [...], secondary: [...]}` — primary = authoritative (CLRS, official docs, Wikipedia); secondary = explainer sites (GeeksforGeeks, blogs).
@@ -133,6 +211,21 @@ chat send this to extract the structured data:
 
 (If using plain Gemini 3 Pro instead of Deep Research, the single structured prompt works directly —
 less browsing depth, but JSON out of the box.)
+
+## WHERE OUTPUT LIVES + RESCUING OLD PROSE REPORTS
+- **Extracted JSON is the artifact; the prose report is a byproduct.** Save each phase's JSON to
+  `content/research/dsa/phase-<N>.json` in the repo — research left as loose .md files in Downloads
+  is invisible to the authoring pipeline and to lesson handoff packets.
+- **Retro-extraction:** prose reports already produced (phases 3-8, Foundations) still contain the
+  knowledge — run the extraction prompt above against each report's text to recover structured JSON.
+  Two known losses to repair during extraction: (1) complexity expressions exported as broken
+  `![][imageN]` placeholders — re-derive them as plain text from context (the claims are standard);
+  (2) fields the old prompt didn't ask for (`learning_graph`, `misconceptions`,
+  `prediction_checkpoints`, `interactive_inputs`, `interview_thinking`, `why_violation_breaks`) —
+  fill them from the report where the knowledge exists, and mark them in
+  `confidence.low_confidence_fields` where it doesn't (they were not researched).
+- One JSON object **per roadmap node**, keyed by `slug` — never one blob per phase — so authoring
+  handoffs can reference exactly one node's research.
 
 ---
 

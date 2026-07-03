@@ -674,6 +674,127 @@
       "step_id": "done"
     }
   ],
+  "fast-slow-pointers": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "slow": 0,
+        "fast": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "slow and fast both start at index 0 — fast will move twice as fast as slow",
+      "invariant": "inv-two-speeds",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "slow": 1,
+        "fast": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "slow -> 1 (+1), fast -> 2 (+2) — when fast can't take a full hop, slow is at the middle",
+      "invariant": "inv-two-speeds",
+      "step_id": "advance"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "slow": 2,
+        "fast": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "slow -> 2 (+1), fast -> 4 (+2) — when fast can't take a full hop, slow is at the middle",
+      "invariant": "inv-two-speeds",
+      "step_id": "advance"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        2
+      ],
+      "pointers": {
+        "slow": 2,
+        "fast": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "fast reached the end — slow is sitting on the middle, index 2",
+      "invariant": "inv-middle",
+      "step_id": "middle"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "slow": 2,
+        "fast": 4
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "middle found at index 2 in one pass, O(1) space",
+      "invariant": "inv-middle",
+      "step_id": "done"
+    }
+  ],
   "frequency-arrays": [
     {
       "array": [
@@ -1494,6 +1615,689 @@
       "activeOp": "DONE",
       "caption": "each element was inserted into the growing sorted prefix",
       "invariant": "inv-sorted",
+      "step_id": "done"
+    }
+  ],
+  "kadane": [
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "start at index 0 — current run begins here with value 4",
+      "invariant": "inv-current",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "current run = [0..0]",
+      "invariant": "inv-current",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 4,
+        "best": 4
+      },
+      "activeOp": "VAR",
+      "caption": "current=4, best=4",
+      "invariant": "inv-current",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 4,
+        "best": 4
+      },
+      "activeOp": "POINT",
+      "caption": "current(4) + arr[1]=-2 = 2 >= -2 — extend the run",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 4,
+        "best": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "current run is now [0..1]",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 2,
+        "best": 4
+      },
+      "activeOp": "VAR",
+      "caption": "current=2, best=4",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 2,
+        "best": 4
+      },
+      "activeOp": "POINT",
+      "caption": "current(2) + arr[2]=3 = 5 >= 3 — extend the run",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 2,
+        "best": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "current run is now [0..2]",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 4
+      },
+      "activeOp": "VAR",
+      "caption": "current=5, best=4",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 5
+      },
+      "activeOp": "VAR",
+      "caption": "current(5) beats best — best is now 5, from [0..2]",
+      "invariant": "inv-best",
+      "step_id": "record"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 5
+      },
+      "activeOp": "POINT",
+      "caption": "current(5) + arr[3]=-5 = 0 >= -5 — extend the run",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 5
+      },
+      "activeOp": "WINDOW",
+      "caption": "current run is now [0..3]",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 0,
+        "best": 5
+      },
+      "activeOp": "VAR",
+      "caption": "current=0, best=5",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 0,
+        "best": 5
+      },
+      "activeOp": "POINT",
+      "caption": "current(0) + arr[4]=6 = 6 >= 6 — extend the run",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 0,
+        "best": 5
+      },
+      "activeOp": "WINDOW",
+      "caption": "current run is now [0..4]",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 6,
+        "best": 5
+      },
+      "activeOp": "VAR",
+      "caption": "current=6, best=5",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 6,
+        "best": 6
+      },
+      "activeOp": "VAR",
+      "caption": "current(6) beats best — best is now 6, from [0..4]",
+      "invariant": "inv-best",
+      "step_id": "record"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 6,
+        "best": 6
+      },
+      "activeOp": "POINT",
+      "caption": "current(6) + arr[5]=-1 = 5 >= -1 — extend the run",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 6,
+        "best": 6
+      },
+      "activeOp": "WINDOW",
+      "caption": "current run is now [0..5]",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 6
+      },
+      "activeOp": "VAR",
+      "caption": "current=5, best=6",
+      "invariant": "inv-current",
+      "step_id": "extend"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 6
+      },
+      "activeOp": "MARK",
+      "caption": "best subarray is [0..4] with sum 6",
+      "invariant": "inv-best",
+      "step_id": "done"
+    },
+    {
+      "array": [
+        4,
+        -2,
+        3,
+        -5,
+        6,
+        -1
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "current": 5,
+        "best": 6
+      },
+      "activeOp": "DONE",
+      "caption": "scanned in O(n) — one pass, no re-summing from every start",
+      "invariant": "inv-best",
       "step_id": "done"
     }
   ],
@@ -5234,6 +6038,1161 @@
       "caption": "the sorted prefix has grown to cover the whole array",
       "invariant": "inv-sorted",
       "step_id": "done"
+    }
+  ],
+  "sliding-window-fixed": [
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "first window [0..2] — sum = 7",
+      "invariant": "inv-window-sum",
+      "step_id": "init"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 7,
+        "best": 7
+      },
+      "activeOp": "VAR",
+      "caption": "sum=7, best=7",
+      "invariant": "inv-window-sum",
+      "step_id": "init"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 7,
+        "best": 7
+      },
+      "activeOp": "WINDOW",
+      "caption": "slide right — subtract leaving arr[0]=2, add entering arr[3]=5: sum = 10",
+      "invariant": "inv-window-sum",
+      "step_id": "slide"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 10,
+        "best": 10
+      },
+      "activeOp": "VAR",
+      "caption": "sum=10, best=10",
+      "invariant": "inv-window-sum",
+      "step_id": "slide"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 10,
+        "best": 10
+      },
+      "activeOp": "WINDOW",
+      "caption": "slide right — subtract leaving arr[1]=4, add entering arr[4]=3: sum = 9",
+      "invariant": "inv-window-sum",
+      "step_id": "slide"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 9,
+        "best": 10
+      },
+      "activeOp": "VAR",
+      "caption": "sum=9, best=10",
+      "invariant": "inv-window-sum",
+      "step_id": "slide"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 9,
+        "best": 10
+      },
+      "activeOp": "WINDOW",
+      "caption": "slide right — subtract leaving arr[2]=1, add entering arr[5]=6: sum = 14",
+      "invariant": "inv-window-sum",
+      "step_id": "slide"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "best": 14
+      },
+      "activeOp": "VAR",
+      "caption": "sum=14, best=14",
+      "invariant": "inv-window-sum",
+      "step_id": "slide"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "best": 14
+      },
+      "activeOp": "MARK",
+      "caption": "best window is [3..5] with sum 14",
+      "invariant": "inv-window-sum",
+      "step_id": "done"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "best": 14
+      },
+      "activeOp": "DONE",
+      "caption": "scanned in O(n) — no window re-summed from scratch",
+      "invariant": "inv-window-sum",
+      "step_id": "done"
+    }
+  ],
+  "sliding-window-variable": [
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 0,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "VAR",
+      "caption": "all values are positive — sum only grows as the window expands. Target sum = 11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 0,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "WINDOW",
+      "caption": "sum < target — expand hi to bring in arr[0]=2: sum = 2",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 2,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "VAR",
+      "caption": "sum=2, target=11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 2,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "WINDOW",
+      "caption": "sum < target — expand hi to bring in arr[1]=4: sum = 6",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 6,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "VAR",
+      "caption": "sum=6, target=11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 6,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "WINDOW",
+      "caption": "sum < target — expand hi to bring in arr[2]=1: sum = 7",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 7,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "VAR",
+      "caption": "sum=7, target=11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 7,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "WINDOW",
+      "caption": "sum < target — expand hi to bring in arr[3]=5: sum = 12",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 12,
+        "target": 11,
+        "best_len": null
+      },
+      "activeOp": "VAR",
+      "caption": "sum=12, target=11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 12,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "VAR",
+      "caption": "sum=12 >= target=11 — window [0..3] qualifies at length 4, best so far 4",
+      "invariant": "inv-shrink-safe",
+      "step_id": "record"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 12,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "removing arr[0]=2 drops sum to 10 < target — stop shrinking, go back to expanding",
+      "invariant": "inv-shrink-safe",
+      "step_id": "shrink"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 12,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "sum < target — expand hi to bring in arr[4]=3: sum = 13",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 13,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "VAR",
+      "caption": "sum=13, target=11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 13,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "VAR",
+      "caption": "sum=13 >= target=11 — window [1..4] qualifies at length 4, best so far 4",
+      "invariant": "inv-shrink-safe",
+      "step_id": "record"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 13,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "removing arr[1]=4 drops sum to 9 < target — stop shrinking, go back to expanding",
+      "invariant": "inv-shrink-safe",
+      "step_id": "shrink"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 13,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "sum < target — expand hi to bring in arr[5]=6: sum = 15",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 15,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "VAR",
+      "caption": "sum=15, target=11",
+      "invariant": "inv-monotone-sum",
+      "step_id": "expand"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 15,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "VAR",
+      "caption": "sum=15 >= target=11 — window [2..5] qualifies at length 4, best so far 4",
+      "invariant": "inv-shrink-safe",
+      "step_id": "record"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 15,
+        "target": 11,
+        "best_len": 4
+      },
+      "activeOp": "WINDOW",
+      "caption": "still >= target after removing arr[2]=1 — shrink lo further: sum = 14",
+      "invariant": "inv-shrink-safe",
+      "step_id": "shrink"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "target": 11,
+        "best_len": 3
+      },
+      "activeOp": "VAR",
+      "caption": "sum=14 >= target=11 — window [3..5] qualifies at length 3, best so far 3",
+      "invariant": "inv-shrink-safe",
+      "step_id": "record"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "target": 11,
+        "best_len": 3
+      },
+      "activeOp": "WINDOW",
+      "caption": "removing arr[3]=5 drops sum to 9 < target — stop shrinking, go back to expanding",
+      "invariant": "inv-shrink-safe",
+      "step_id": "shrink"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "target": 11,
+        "best_len": 3
+      },
+      "activeOp": "MARK",
+      "caption": "shortest qualifying window is [3..5], length 3",
+      "invariant": "inv-shrink-safe",
+      "step_id": "done"
+    },
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3,
+        6
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "vars": {
+        "sum": 14,
+        "target": 11,
+        "best_len": 3
+      },
+      "activeOp": "DONE",
+      "caption": "scanned in O(n) — lo and hi each move forward only, never backward",
+      "invariant": "inv-monotone-sum",
+      "step_id": "done"
+    }
+  ],
+  "two-pointers": [
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "sorted array — lo and hi start at the ends, looking for a pair that sums to 9",
+      "invariant": "inv-sorted-halves",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0]=1 + arr[5]=9 = 10 vs target 9",
+      "invariant": "inv-sorted-halves",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "10 > 9 — everything right of hi paired with lo is too big, move hi backward",
+      "invariant": "inv-converge",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0]=1 + arr[4]=7 = 8 vs target 9",
+      "invariant": "inv-sorted-halves",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 1,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "8 < 9 — everything left of lo paired with hi is too small, move lo forward",
+      "invariant": "inv-converge",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 1,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[1]=2 + arr[4]=7 = 9 vs target 9",
+      "invariant": "inv-sorted-halves",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        1,
+        4
+      ],
+      "pointers": {
+        "lo": 1,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "sum == 9 — found the pair at (1, 4)",
+      "invariant": "inv-found",
+      "step_id": "found"
     }
   ],
   "two-pointers-on-strings": [

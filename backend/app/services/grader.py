@@ -190,7 +190,9 @@ _QGEN_SYSTEM_PROMPT = (
     "an application) so the set tests real understanding, not one fact restated.\n"
     "3. Each question is ONE sentence, open-ended short-answer — NOT yes/no and NOT "
     "multiple choice.\n"
-    "4. Keep them plain and direct; no preamble.\n"
+    "4. Force SPECIFIC retrieval (e.g. 'Why does X...', 'What happens when Y...') rather "
+    "than generic padding like 'What are the main points...'. Make them pointed.\n"
+    "5. Keep them plain and direct; no preamble.\n"
     'Respond ONLY as JSON: {"questions": ["...", "..."]}'
 )
 
@@ -220,7 +222,8 @@ async def generate_questions(
 
 _QGRADE_SYSTEM_PROMPT = (
     "You grade a student's short answers to recall questions. The KEY MEMORY is the "
-    "ground truth — judge each answer ONLY against it, ignoring your own outside "
+    "general ground truth, but if a specific REFERENCE ANSWER is provided for a question, "
+    "judge the student's answer against THAT reference answer primarily, ignoring outside "
     "knowledge.\n"
     "Rules:\n"
     "1. Be lenient on WORDING but strict on CORRECTNESS. Grade what the student actually "
@@ -309,7 +312,9 @@ async def grade_question_set(
     for i, pair in enumerate(qa_pairs, 1):
         q = (pair.get("question") or "").strip()
         a = (pair.get("answer") or "").strip() or "(no answer)"
-        lines.append(f"Q{i}: {q}\nA{i}: {a}")
+        ref = (pair.get("reference_answer") or "").strip()
+        ref_block = f"\nREFERENCE ANSWER for Q{i}: {ref}" if ref else ""
+        lines.append(f"Q{i}: {q}{ref_block}\nA{i}: {a}")
     qa_block = "\n\n".join(lines)
     user_msg = (
         f"TOPIC: {topic}\n\nKEY MEMORY (ground truth):\n{key_memory}\n\n"

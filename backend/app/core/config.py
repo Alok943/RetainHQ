@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
@@ -21,6 +22,9 @@ class Settings(BaseSettings):
     # (Railway). When True, get_current_user returns the DEV_USER_EMAIL account
     # (resolved from auth.users, falling back to ADMIN_EMAIL) without verifying
     # any JWT. Set DEV_USER_ID to skip the email->id lookup.
+    # Guarded: requires DEBUG=true or the app refuses to start (see the
+    # model_validator below) — a stray flag in prod crashes the deploy loudly
+    # instead of silently handing admin access to every anonymous request.
     DEV_AUTH_BYPASS: bool = False
     DEV_USER_EMAIL: str = ""
     DEV_USER_ID: str = ""
@@ -47,5 +51,20 @@ class Settings(BaseSettings):
     APP_BASE_URL: str = "https://retainhq.app"  # used to build the one-tap review link
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @model_validator(mode="after")
+    def _refuse_auth_bypass_outside_dev(self) -> "Settings":
+        # DEV_AUTH_BYPASS makes EVERY request the dev account (which defaults to
+        # ADMIN_EMAIL) with no JWT — one stray env var in prod would hand admin
+        # access to anyone. Fail the boot loudly instead of trusting a comment:
+        # the bypass only works when DEBUG is also on (a combo prod never has).
+        if self.DEV_AUTH_BYPASS and not self.DEBUG:
+            raise RuntimeError(
+                "DEV_AUTH_BYPASS=true requires DEBUG=true. This flag disables all "
+                "authentication and impersonates the admin — it must never be set "
+                "in production. Set DEBUG=true in your local .env, or remove "
+                "DEV_AUTH_BYPASS."
+            )
+        return self
 
 settings = Settings()

@@ -27,6 +27,30 @@ function Login() {
     </button>
   );
 
+  // Hero primary CTA — a guest-accessible showcase lesson, subject-neutral entry
+  // point into the "show, don't tell" mechanism.
+  const TryALesson = ({ className = '' }) => (
+    <button
+      onClick={() => { track(EVENTS.LANDING_CTA, { action: 'try_a_lesson' }); navigate('/roadmaps/dsa/learn/merge-sort'); }}
+      className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold px-7 py-3.5 text-white bg-gradient-to-r from-[#0891B2] to-[#06B6D4] shadow-lg shadow-[#0891B2]/25 hover:-translate-y-0.5 hover:shadow-[#0891B2]/40 transition-all ${className}`}
+    >
+      Try a lesson <ArrowRight size={17} />
+    </button>
+  );
+
+  // Hero secondary CTA — ghost/outline, defers to the existing Get Started action.
+  const GetStartedGhost = ({ className = '' }) => (
+    <button
+      onClick={() => { track(EVENTS.LANDING_CTA, { action: 'get_started' }); navigate('/dashboard'); }}
+      className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold px-7 py-3.5 text-white border border-white/20 hover:border-[#0891B2]/60 hover:bg-white/5 transition-all ${className}`}
+    >
+      Get Started
+    </button>
+  );
+
+  // Subject-neutral breadth chip row — quiet proof the method isn't code-only.
+  const subjects = ['DSA', 'Aptitude', 'Core CS', 'SQL', 'System Design', 'Python'];
+
   // FSRS cadence (illustrative): first recall at +1d, then spacing widens as the
   // model's predicted recall stays high. Exact days adapt to how well you recall.
   const timeline = [
@@ -91,28 +115,29 @@ function Login() {
         <section className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center pt-8 md:pt-12 pb-10">
           {/* Left */}
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 mb-6">
-              <Sparkles size={13} className="text-[#22D3EE]" />
-              <span className="font-sans text-xs text-[#9aa3b8]">Visual code lessons &amp; spaced repetition</span>
-            </div>
-
             <h1 className="font-sans text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.08] mb-5">
               Learn it visually.{' '}
               <span className="text-[#22D3EE]">Remember it forever.</span>
             </h1>
             <p className="font-sans text-[#9aa3b8] text-lg leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
-              RetainHQ teaches you to actually read and debug code — step through every line as it runs, and guess the output before the reveal. Then spaced repetition locks it in, so what you learn still sticks weeks later.
+              Lessons that show instead of tell, recall that happens before the answer is revealed, and reviews that return right before you'd forget.
             </p>
 
-            <div className="flex mb-6 justify-center lg:justify-start">
-              <GetStarted className="w-full sm:w-auto" />
+            <div className="flex flex-col sm:flex-row gap-3 mb-6 justify-center lg:justify-start">
+              <TryALesson className="w-full sm:w-auto" />
+              <GetStartedGhost className="w-full sm:w-auto" />
             </div>
 
-            {/* Honest mechanism strip (no invented stats, no claim of an "optimal" curve) */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center lg:justify-start font-mono text-[11px] text-[#7c839b]">
-              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Step through real code</span>
-              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Predict before the reveal</span>
-              <span className="flex items-center gap-1.5"><Check size={12} className="text-[#0891B2]" /> Reviewed before you forget</span>
+            {/* Subject-neutral breadth row — the method, not a single subject */}
+            <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">
+              {subjects.map((s) => (
+                <span
+                  key={s}
+                  className="font-mono text-[11px] text-[#9aa3b8] border border-white/[0.12] rounded-full px-[10px] py-[3px]"
+                >
+                  {s}
+                </span>
+              ))}
             </div>
           </div>
 

@@ -4,14 +4,22 @@ import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { track, EVENTS } from './lib/analytics';
 import Hint from './Hint';
+import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
+
+const slugifyTitle = (t) => (t || '').toLowerCase().replace(/&/g, 'and').replace(/\//g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+function lessonSlugForNode(slugByTitle, title) {
+  if (slugByTitle[title]) return slugByTitle[title];
+  const s = slugifyTitle(title);
+  return Object.values(slugByTitle).includes(s) ? s : null;
+}
 
 // Each post-reveal choice carries BOTH signals at once:
 //   recalled = objective (did they reconstruct it?)   rating = subjective (how hard it felt)
 const OUTCOMES = [
-  { key: 'missed', label: 'Missed it', rating: 'hard',   recalled: false, color: '#B91C1C' },
-  { key: 'hard',   label: 'Hard',      rating: 'hard',   recalled: true,  color: '#B45309' },
-  { key: 'good',   label: 'Good',      rating: 'medium', recalled: true,  color: '#0891B2' },
-  { key: 'easy',   label: 'Easy',      rating: 'easy',   recalled: true,  color: '#0F766E' },
+  { key: 'missed', label: 'Missed it', desc: "Couldn't recall it", rating: 'hard',   recalled: false, color: '#334155', border: 'rgba(15,23,42,0.2)' },
+  { key: 'hard',   label: 'Hard',      desc: "Took serious effort", rating: 'hard',   recalled: true,  color: '#B45309' },
+  { key: 'good',   label: 'Good',      desc: "Recalled with minor effort", rating: 'medium', recalled: true,  color: '#0891B2' },
+  { key: 'easy',   label: 'Easy',      desc: "Instantly knew it", rating: 'easy',   recalled: true,  color: '#0F766E' },
 ];
 
 // Map the AI grader's verdict to a suggested outcome chip. Advisory only —
@@ -44,6 +52,7 @@ function Review({ onBack }) {
   // when /questions returns; otherwise we stay on the single free-recall box.
   const [questions, setQuestions] = useState(null);    // string[] | null
   const [qAnswers, setQAnswers] = useState([]);        // parallel to questions
+  const [canonicalAnswers, setCanonicalAnswers] = useState([]); // parallel to questions, for grounded grading
   const [qResult, setQResult] = useState(null);        // grade-questions response | null
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionModeOff, setQuestionModeOff] = useState(false); // session: grader disabled
@@ -79,6 +88,7 @@ function Review({ onBack }) {
     setGrading(false);
     setQuestions(null);
     setQAnswers([]);
+    setCanonicalAnswers([]);
     setQResult(null);
     setLoadingQuestions(false);
   };
@@ -91,22 +101,61 @@ function Review({ onBack }) {
     if (!current || questionModeOff || revealed) return;
     let cancelled = false;
     setLoadingQuestions(true);
-    apiFetch(`/api/reviews/${current.id}/questions`, { method: 'POST' })
-      .then((res) => {
+
+    const loadQuestions = async () => {
+      try {
+        if (current.activity.source_type === 'lesson' && current.roadmap_slug && current.node_title) {
+          const contentKey = current.roadmap_slug || CONTENT_KEY_BY_TITLE[current.roadmap_slug];
+          const manifestRes = await fetch('/content/manifest.json');
+          if (!manifestRes.ok) throw new Error('manifest fail');
+          const manifest = await manifestRes.json();
+          const slugByTitle = manifest[contentKey] || {};
+          const lessonSlug = lessonSlugForNode(slugByTitle, current.node_title);
+          
+          if (lessonSlug) {
+            const lessonRes = await fetch(`/content/roadmaps/${contentKey}/${lessonSlug}.json`);
+            if (!lessonRes.ok) throw new Error('lesson fail');
+            const lesson = await lessonRes.json();
+            
+            if (lesson.recall_questions) {
+               // Use tier1 if available, otherwise fallback
+               const questionsPool = lesson.recall_questions.tier1 || lesson.recall_questions;
+               const qs = Array.isArray(questionsPool) ? questionsPool : [];
+               
+               if (qs.length > 0) {
+                 if (cancelled) return;
+                 // Slice to 3 max to match LLM output length
+                 const limited = qs.slice(0, 3);
+                 setQuestions(limited.map(x => x.q));
+                 setQAnswers(limited.map(() => ''));
+                 setCanonicalAnswers(limited.map(x => x.a));
+                 setLoadingQuestions(false);
+                 return;
+               }
+            }
+          }
+        }
+        
+        // Fallback to LLM questions if not a lesson or fetching failed
+        const res = await apiFetch(`/api/reviews/${current.id}/questions`, { method: 'POST' });
         if (cancelled) return;
         const qs = res?.questions ?? [];
         if (qs.length) {
           setQuestions(qs);
           setQAnswers(qs.map(() => ''));
+          setCanonicalAnswers([]); // reset
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
         if (typeof err?.message === 'string' && err.message.includes('disabled')) {
-          setQuestionModeOff(true); // grader off → don't retry this session
+          setQuestionModeOff(true);
         }
-      })
-      .finally(() => { if (!cancelled) setLoadingQuestions(false); });
+      } finally {
+        if (!cancelled) setLoadingQuestions(false);
+      }
+    };
+    
+    loadQuestions();
     return () => { cancelled = true; };
   }, [current?.id]);
 
@@ -124,7 +173,11 @@ function Review({ onBack }) {
 
     // Question mode: grade the whole answer set in one call. Advisory only.
     if (questionMode) {
-      const pairs = questions.map((q, i) => ({ question: q, answer: (qAnswers[i] || '').trim() }));
+      const pairs = questions.map((q, i) => ({ 
+        question: q, 
+        answer: (qAnswers[i] || '').trim(),
+        reference_answer: canonicalAnswers[i] || null
+      }));
       if (pairs.some((p) => p.answer) && current) {
         setGrading(true);
         apiFetch(`/api/reviews/${current.id}/grade-questions`, {
@@ -393,7 +446,7 @@ function Review({ onBack }) {
                           <span className="font-mono text-xs text-[#0891B2] mt-0.5">{i + 1}.</span>
                           <span className="flex-1">{q}</span>
                           {item && (
-                            <span className={`shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.correct ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-[#B91C1C]/10 text-[#B91C1C]'}`}>
+                            <span className={`shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.correct ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-[rgba(15,23,42,0.08)] text-[#334155]'}`}>
                               {item.correct ? 'Got it' : 'Missed'}
                             </span>
                           )}
@@ -425,8 +478,8 @@ function Review({ onBack }) {
               </div>
 
               {activity.mistake && (
-                <div className="bg-[#ba1a1a]/5 border border-[#ba1a1a]/20 rounded p-4">
-                  <div className="font-sans text-[11px] font-bold text-[#ba1a1a] uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                <div className="bg-[rgba(180,83,9,0.06)] border border-[#B45309]/20 rounded p-4">
+                  <div className="font-sans text-[11px] font-bold text-[#B45309] uppercase tracking-widest mb-1.5 flex items-center gap-1">
                     <AlertTriangle size={12} /> Previous Mistake
                   </div>
                   <p className="font-sans text-sm text-[#0F172A] italic">"{activity.mistake}"</p>
@@ -459,15 +512,17 @@ function Review({ onBack }) {
           </div>
         ) : (
           <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {/* AI grade proposal — advisory; user still picks below. Highlighted
-                (accent border + tint + shadow) so it doesn't get lost in the page. */}
+            {/* AI grade proposal — instantly reserves space with a minimum height. */}
             {(grading || aiResult || qResult) && (
-              <div className="w-full mb-4 rounded-xl border border-[#0891B2]/30 border-l-4 border-l-[#0891B2] bg-[#0891B2]/[0.07] p-4 shadow-sm">
+              <div className="w-full mb-4 rounded-xl border border-[#0891B2]/30 border-l-4 border-l-[#0891B2] bg-[#0891B2]/[0.07] p-4 shadow-sm min-h-[96px]">
                 <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
                   <Sparkles size={12} /> AI feedback
                 </div>
                 {grading ? (
-                  <p className="font-sans text-sm text-[#64748B] italic">Grading your recall…</p>
+                  <div className="flex flex-col gap-2.5 mt-3">
+                    <div className="skeleton h-3 w-4/5" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
                 ) : questionMode && qResult ? (
                   <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{qResult.feedback}</p>
                 ) : aiResult ? (
@@ -488,10 +543,77 @@ function Review({ onBack }) {
               </div>
             )}
 
+            <div className="w-full mb-4 mt-2">
+              <Hint id="review_honest_rating">
+                Easy = you won't see this for weeks · Good = normal spacing · Hard = comes back soon · Missed = back tomorrow.
+              </Hint>
+            </div>
+            
+            <h3 className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest mb-4">How did it go?</h3>
+            <div className="flex flex-col md:flex-row gap-4 w-full mb-6">
+              <div className="flex-1 flex flex-col md:border-r border-[rgba(15,23,42,0.08)] md:pr-4">
+                {(() => {
+                  const o = OUTCOMES[0]; // Missed it
+                  const isSuggested = o.key === suggestedKey;
+                  return (
+                    <button
+                      key={o.key}
+                      onClick={() => handleOutcome(o)}
+                      disabled={submitting}
+                      title="Press 1"
+                      style={{ borderColor: o.border ?? o.color, color: o.color }}
+                      className={`kinetic-btn relative bg-white border p-3 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; e.currentTarget.querySelector('p').style.color = 'rgba(255,255,255,0.8)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; e.currentTarget.querySelector('p').style.color = '#64748B'; }}
+                    >
+                      {isSuggested && (
+                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#0891B2] text-white font-sans text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full whitespace-nowrap animate-in fade-in zoom-in duration-300">
+                          Suggested
+                        </span>
+                      )}
+                      <div className="font-semibold text-sm flex items-center gap-1.5 mb-0.5">
+                        <span className="hidden md:inline font-mono text-[10px] opacity-50">1</span>
+                        {o.label}
+                      </div>
+                      <p className="font-sans text-[10px] font-medium text-[#64748B] transition-colors">{o.desc}</p>
+                    </button>
+                  );
+                })()}
+              </div>
+              <div className="flex-[3] grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {OUTCOMES.slice(1).map((o, i) => {
+                  const isSuggested = o.key === suggestedKey;
+                  return (
+                    <button
+                      key={o.key}
+                      onClick={() => handleOutcome(o)}
+                      disabled={submitting}
+                      title={`Press ${i + 2}`}
+                      style={{ borderColor: o.border ?? o.color, color: o.color }}
+                      className={`kinetic-btn relative bg-white border p-3 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; e.currentTarget.querySelector('p').style.color = 'rgba(255,255,255,0.8)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; e.currentTarget.querySelector('p').style.color = '#64748B'; }}
+                    >
+                      {isSuggested && (
+                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#0891B2] text-white font-sans text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full whitespace-nowrap animate-in fade-in zoom-in duration-300">
+                          Suggested
+                        </span>
+                      )}
+                      <div className="font-semibold text-sm flex items-center gap-1.5 mb-0.5">
+                        <span className="hidden md:inline font-mono text-[10px] opacity-50">{i + 2}</span>
+                        {o.label}
+                      </div>
+                      <p className="font-sans text-[10px] font-medium text-[#64748B] transition-colors">{o.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Suggested adjacent topics — distinct accent so they stand out from the
                 feedback above. A nudge to capture these next, never part of the grade. */}
             {relatedSubtopics.length > 0 && (
-              <div className="w-full mb-5 rounded-xl border border-[#8B5CF6]/30 border-l-4 border-l-[#8B5CF6] bg-[#8B5CF6]/[0.06] p-4">
+              <div className="w-full rounded-xl border border-[#8B5CF6]/30 border-l-4 border-l-[#8B5CF6] bg-[#8B5CF6]/[0.06] p-4 mt-2">
                 <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#8B5CF6] uppercase tracking-widest mb-2.5">
                   <Lightbulb size={12} /> Worth exploring next
                 </div>
@@ -507,39 +629,6 @@ function Review({ onBack }) {
                 </div>
               </div>
             )}
-
-            <div className="w-full mb-4">
-              <Hint id="review_honest_rating">
-                Your pick decides when this comes back — "Easy" pushes it out weeks,
-                "Missed it" brings it back tomorrow. Honest beats optimistic.
-              </Hint>
-            </div>
-            <h3 className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest mb-4">How did it go?</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-              {OUTCOMES.map((o, i) => {
-                const isSuggested = o.key === suggestedKey;
-                return (
-                  <button
-                    key={o.key}
-                    onClick={() => handleOutcome(o)}
-                    disabled={submitting}
-                    title={`Press ${i + 1}`}
-                    style={{ borderColor: o.color, color: o.color }}
-                    className={`kinetic-btn relative bg-white border py-3 font-semibold text-sm transition-colors disabled:opacity-50 ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; }}
-                  >
-                    {isSuggested && (
-                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#0891B2] text-white font-sans text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        Suggested
-                      </span>
-                    )}
-                    <span className="hidden md:inline font-mono text-[10px] opacity-50 mr-1.5">{i + 1}</span>
-                    {o.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         )}
       </footer>

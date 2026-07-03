@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from typing import List
+from sqlalchemy.exc import IntegrityError
+from typing import List, Optional
 import uuid
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
@@ -51,6 +52,31 @@ async def suggest_key_points_endpoint(
     return KeyPointsResponse(points=result.points)
 
 
+async def _find_lesson_card(
+    db: AsyncSession, user_id: uuid.UUID, node_id: uuid.UUID
+) -> Optional[Activity]:
+    """The user's existing card for this lesson node, if any. Oldest-first so a
+    pre-index duplicate pair resolves deterministically instead of erroring."""
+    return (
+        await db.execute(
+            select(Activity)
+            .where(Activity.user_id == user_id, Activity.node_id == node_id)
+            .order_by(Activity.created_at)
+            .limit(1)
+        )
+    ).scalars().first()
+
+
+def _existing_card_response(existing: Activity) -> ActivityResponse:
+    return ActivityResponse(
+        id=existing.id, user_id=existing.user_id, track_id=existing.track_id,
+        roadmap_id=existing.roadmap_id, topic=existing.topic, notes=existing.notes,
+        difficulty=existing.difficulty, needed_hint=existing.needed_hint,
+        key_memory=existing.key_memory, mistake=existing.mistake,
+        created_at=existing.created_at, reviews_scheduled=0, review_due_now=False,
+    )
+
+
 @router.post("/", response_model=ActivityResponse)
 async def log_activity(
     activity_in: ActivityCreate,
@@ -61,24 +87,13 @@ async def log_activity(
 
     # Lesson-cards are idempotent: one card per (user, node). If this lesson is
     # already in the user's reviews, return that card rather than duplicating it
-    # (the "Add to reviews" button can be tapped more than once).
+    # (the "Add to reviews" button can be tapped more than once). The DB-level
+    # guard is the uq_activities_user_node partial unique index; this SELECT is
+    # just the fast path.
     if activity_in.source_type == "lesson" and activity_in.node_id is not None:
-        existing = (
-            await db.execute(
-                select(Activity).where(
-                    Activity.user_id == user_id,
-                    Activity.node_id == activity_in.node_id,
-                )
-            )
-        ).scalar_one_or_none()
+        existing = await _find_lesson_card(db, user_id, activity_in.node_id)
         if existing:
-            return ActivityResponse(
-                id=existing.id, user_id=existing.user_id, track_id=existing.track_id,
-                roadmap_id=existing.roadmap_id, topic=existing.topic, notes=existing.notes,
-                difficulty=existing.difficulty, needed_hint=existing.needed_hint,
-                key_memory=existing.key_memory, mistake=existing.mistake,
-                created_at=existing.created_at, reviews_scheduled=0, review_due_now=False,
-            )
+            return _existing_card_response(existing)
 
     # Is this the user's first-ever activity? If so it gets a one-time demo review
     # due now (instant proof of the recall loop); every later activity's first
@@ -104,9 +119,19 @@ async def log_activity(
         node_id=activity_in.node_id,
     )
     db.add(activity)
-    
-    # Flush to generate activity.id without committing the transaction
-    await db.flush()
+
+    # Flush to generate activity.id without committing the transaction. For
+    # lesson cards the uq_activities_user_node index closes the SELECT-then-INSERT
+    # race: if a concurrent tap won, return their card instead of erroring.
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        if activity_in.source_type == "lesson" and activity_in.node_id is not None:
+            existing = await _find_lesson_card(db, user_id, activity_in.node_id)
+            if existing:
+                return _existing_card_response(existing)
+        raise
     await db.refresh(activity)
 
     # Every activity enters the SM-2 rotation: initialize its memory state and

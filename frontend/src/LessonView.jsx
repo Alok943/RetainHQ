@@ -900,7 +900,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
 
       {/* The execution trace — predict, then watch it run step by step (lazy-loaded). */}
       {viz?.generator && (
-        <Section icon={<Sparkles size={16} />} title="Watch it execute" accent="#7C3AED">
+        <Section icon={<Sparkles size={16} />} title="Trace the execution" accent="#7C3AED">
           <Suspense fallback={<div className="rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-8 text-center font-sans text-sm text-[#64748B]">Loading visualizer…</div>}>
             <DsaPlayer
               generatorKey={viz.generator}
@@ -909,6 +909,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
               inputMode={viz.input_mode || 'number'}
               predictions={viz.predictions || []}
               repeatedDecision={mm.repeated_decision || ''}
+              steps={viz.steps || []}
             />
           </Suspense>
         </Section>

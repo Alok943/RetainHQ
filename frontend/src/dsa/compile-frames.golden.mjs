@@ -26,6 +26,11 @@ const INPUTS = {
   'insertion-sort': [5, 2, 8, 1, 9],
   'linear-search': [4, 2, 7, 1, 9, 3],
   'binary-search': [1, 3, 5, 7, 9, 11, 13],
+  'two-pointers': [4, 1, 7, 3, 9, 2],
+  'fast-slow-pointers': [5, 2, 8, 1, 9, 3],
+  'sliding-window-fixed': [2, 4, 1, 5, 3, 6],
+  'sliding-window-variable': [2, 4, 1, 5, 3, 6],
+  'kadane': [4, -2, 3, -5, 6, -1],
 };
 
 function build() {

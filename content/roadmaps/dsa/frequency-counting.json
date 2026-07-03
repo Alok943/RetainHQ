@@ -55,7 +55,26 @@
     "invariants": {
       "inv-tally": "map[x] always holds exactly how many times x has appeared so far in the scan.",
       "inv-signature": "After one pass the map is the collection's order-independent signature — any two anagrams produce the identical map."
-    }
+    },
+    "steps": [
+      {
+        "id": "count",
+        "label": "freq[val] += 1"
+      },
+      {
+        "id": "done",
+        "label": "tally complete"
+      }
+    ],
+    "predictions": [
+      {
+        "at_step": "count",
+        "occurrence": "first",
+        "level": "easy",
+        "prompt": "Which element's frequency count is updated next?",
+        "derive": "next_op"
+      }
+    ]
   },
   "explanation": "Frequency counting is the definitive pattern for problems involving permutations, anagrams, or occurrences.\n\nTo check if 'cinema' and 'iceman' are anagrams, we initialize an empty Hash Map. We iterate over 'cinema'. For 'c', we set its count to 1. For 'i', 1. By the end, our map is: `{'c': 1, 'i': 1, 'n': 1, 'e': 1, 'm': 1, 'a': 1}`.\n\nNext, we iterate over the second string, 'iceman'. For every character, we look it up in the map and decrement its count. 'i' goes from 1 to 0. 'c' goes from 1 to 0. \n\nIf we ever try to decrement a character that isn't in the map, or if a count drops below zero, the strings are not anagrams. Finally, if the strings were of equal length and we never dipped below zero, we know with mathematical certainty that they are exact anagrams.\n\nThis exact same pattern solves problems like finding the majority element, finding the first non-repeating character, or checking if one string can be constructed from a magazine cutout (Ransom Note).",
   "key_points": [

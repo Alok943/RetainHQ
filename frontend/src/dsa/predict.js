@@ -89,6 +89,32 @@ const DERIVES = {
     const answer = next.lo > cur.lo ? 'right' : next.hi < cur.hi ? 'left' : 'found';
     return { type: 'choice', answer, display: answer, choices: ['left', 'right'] };
   },
+
+  // the step_id of the very next event — used for gates like Kadane's "extend or restart?" where
+  // the decision itself IS the step_id (anchor the gate at_op:'POINT', the answer is what the
+  // generator emits next: 'extend' | 'restart' | 'record' | 'done').
+  next_step_id(events, i) {
+    const e = events[i + 1];
+    if (!e || !e.step_id) return null;
+    return { type: 'value', answer: e.step_id, display: e.step_id };
+  },
+
+  // whether a sliding window next EXPANDS (hi grows) or SHRINKS (lo grows). Reads the current
+  // WINDOW at/before the gate and the next WINDOW after it — mirrors branch_binary's shape for the
+  // window family. sliding-window-variable (and any future variable-window generator).
+  branch_window(events, i) {
+    const windowAt = (from, dir) => {
+      for (let k = from; dir > 0 ? k < events.length : k >= 0; k += dir) {
+        if (events[k].op === 'WINDOW') return events[k].args;
+      }
+      return null;
+    };
+    const cur = windowAt(i, -1);
+    const next = windowAt(i + 1, +1);
+    if (!cur || !next) return null;
+    const answer = next.hi > cur.hi ? 'expand' : next.lo > cur.lo ? 'shrink' : 'done';
+    return { type: 'choice', answer, display: answer, choices: ['expand', 'shrink'] };
+  },
 };
 
 // Parse "next_n_writes(2)" -> { name:'next_n_writes', args:[2] }.

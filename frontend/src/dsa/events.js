@@ -9,6 +9,7 @@ export const OP_FAMILIES = {
   stack:     ['PUSH', 'POP', 'ENQUEUE', 'DEQUEUE'],
   graph:     ['VISIT', 'MARK_VISITED', 'RELAX', 'ENQUEUE_NODE'],
   dp:        ['MEMO_WRITE', 'MEMO_HIT', 'FILL_CELL'],
+  scalar:    ['VAR'],
 };
 
 const OP_TO_FAMILY = Object.fromEntries(

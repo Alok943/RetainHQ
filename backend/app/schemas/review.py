@@ -20,6 +20,10 @@ class ReviewResponse(BaseModel):
     ai_recalled: Optional[bool] = None
     ai_feedback: Optional[str] = None
     created_at: datetime
+    
+    # Attached fields for lesson card resolution
+    roadmap_slug: Optional[str] = None
+    node_title: Optional[str] = None
 
     activity: ActivityResponse
 
@@ -55,6 +59,7 @@ class ReviewQuestionsResponse(BaseModel):
 class QAPair(BaseModel):
     question: str = Field(max_length=600)
     answer: str = Field(default="", max_length=2000)
+    reference_answer: Optional[str] = None
 
 class ReviewGradeQuestionsRequest(BaseModel):
     answers: list[QAPair] = Field(max_length=5)

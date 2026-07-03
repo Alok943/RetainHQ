@@ -1,0 +1,320 @@
+<!-- @dsCard group="Layouts" name="Home: visual-first, minimal text" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Home: visual-first, minimal text</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f9f9f6; --surface: #ffffff; --ink: #0F172A; --muted: #64748B;
+    --hairline: rgba(15,23,42,0.08); --cyan: #0891B2; --cyan-end: #0E7490;
+    --red: #ba1a1a; --teal: #0F766E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    color: var(--ink);
+    padding: 24px;
+  }
+  .label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px;
+  }
+  .micro {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; margin: 0 0 8px;
+  }
+  .artboard {
+    width: 900px;
+    background: var(--paper);
+  }
+  .layout {
+    display: flex;
+    gap: 24px;
+  }
+  .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+  .rail-col { width: 280px; flex-shrink: 0; }
+
+  /* ---- row 1: due session card ---- */
+  .due-card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .ring-wrap { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--ink);
+  }
+  .due-mid { flex: 1; min-width: 0; }
+  .due-micro { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--red); margin: 0 0 4px; }
+  .due-topic { font-size: 18px; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  .due-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .start-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-end));
+    color: #fff; font-size: 13px; font-weight: 600;
+    padding: 10px 22px; border-radius: 4px; border: none;
+  }
+
+  /* ---- row 2: resume lesson card (reused structure) ---- */
+  .resume-card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .resume-micro { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--cyan); margin: 0 0 4px; }
+  .resume-title { font-size: 15px; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  .resume-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .resume-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-end));
+    color: #ffffff; font-size: 13px; font-weight: 600;
+    padding: 9px 16px; border-radius: 4px; border: none; white-space: nowrap;
+  }
+
+  /* ---- row 3: heatmap ---- */
+  .heatmap-card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  .heat-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 10px);
+    grid-auto-rows: 10px;
+    gap: 3px;
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+  .heat-cell { width: 10px; height: 10px; border-radius: 2px; background: rgba(15,23,42,0.05); }
+  .heat-1 { background: rgba(8,145,178,0.30); }
+  .heat-2 { background: rgba(8,145,178,0.60); }
+  .heat-3 { background: var(--cyan); }
+  .heat-caption {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ---- row 4: roadmap tiles ---- */
+  .roadmap-row { display: flex; gap: 12px; }
+  .roadmap-tile {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rtile-title { font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rtile-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+  /* ---- rail: stat strip ---- */
+  .rail-card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .stat-strip { display: flex; flex-direction: column; }
+  .stat-row {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-row:first-child { padding-top: 0; }
+  .stat-value { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
+  .stat-label { font-size: 12px; color: var(--muted); }
+
+  .recent-entry {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .recent-entry:last-child { border-bottom: none; padding-bottom: 0; }
+  .recent-title {
+    font-size: 13px; color: var(--ink); flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .recent-date {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); flex-shrink: 0;
+  }
+
+  .caption {
+    font-size: 12px; color: var(--muted); margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="label">PROPOSED — Home: visual-first, minimal text</div>
+
+  <div class="artboard">
+    <div class="layout">
+
+      <!-- MAIN COLUMN -->
+      <div class="main-col">
+
+        <!-- row 1: due session card -->
+        <div class="due-card">
+          <div class="ring-wrap">
+            <svg width="48" height="48" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(15,23,42,0.08)" stroke-width="5"/>
+              <circle cx="24" cy="24" r="20" fill="none" stroke="#0891B2" stroke-width="5"
+                stroke-dasharray="125.6" stroke-dashoffset="125.6" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-center">0/6</div>
+          </div>
+          <div class="due-mid">
+            <div class="due-micro">DUE TODAY</div>
+            <div class="due-topic">Binary search boundary conditions</div>
+            <div class="due-meta">~4 min</div>
+          </div>
+          <button class="start-btn">Start</button>
+        </div>
+
+        <!-- row 2: resume lesson card -->
+        <div class="resume-card">
+          <div>
+            <div class="resume-micro">CONTINUE LEARNING</div>
+            <div class="resume-title">Merge Sort &mdash; Divide &amp; Conquer</div>
+            <div class="resume-meta">DSA &middot; Phase 6 &middot; lesson 3 of 7</div>
+          </div>
+          <button class="resume-btn">Resume &rarr;</button>
+        </div>
+
+        <!-- row 3: heatmap -->
+        <div class="heatmap-card">
+          <div class="heat-grid" id="heatGrid"></div>
+          <div class="heat-caption">Mar &mdash; Jun</div>
+        </div>
+
+        <!-- row 4: roadmap tiles -->
+        <div>
+          <div class="micro" style="color: var(--muted);">ROADMAPS</div>
+          <div class="roadmap-row">
+            <div class="roadmap-tile">
+              <svg width="28" height="28" viewBox="0 0 28 28" style="transform: rotate(-90deg); flex-shrink:0;">
+                <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(15,23,42,0.08)" stroke-width="3.5"/>
+                <circle cx="14" cy="14" r="11" fill="none" stroke="#0891B2" stroke-width="3.5"
+                  stroke-dasharray="69.1" stroke-dashoffset="24.2" stroke-linecap="round"/>
+              </svg>
+              <div class="rtile-title">DSA</div>
+              <div class="rtile-pct">65%</div>
+            </div>
+            <div class="roadmap-tile">
+              <svg width="28" height="28" viewBox="0 0 28 28" style="transform: rotate(-90deg); flex-shrink:0;">
+                <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(15,23,42,0.08)" stroke-width="3.5"/>
+                <circle cx="14" cy="14" r="11" fill="none" stroke="#0891B2" stroke-width="3.5"
+                  stroke-dasharray="69.1" stroke-dashoffset="52.4" stroke-linecap="round"/>
+              </svg>
+              <div class="rtile-title">Python SWE</div>
+              <div class="rtile-pct">24%</div>
+            </div>
+            <div class="roadmap-tile">
+              <svg width="28" height="28" viewBox="0 0 28 28" style="transform: rotate(-90deg); flex-shrink:0;">
+                <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(15,23,42,0.08)" stroke-width="3.5"/>
+                <circle cx="14" cy="14" r="11" fill="none" stroke="#0891B2" stroke-width="3.5"
+                  stroke-dasharray="69.1" stroke-dashoffset="9.7" stroke-linecap="round"/>
+              </svg>
+              <div class="rtile-title">SQL</div>
+              <div class="rtile-pct">86%</div>
+            </div>
+            <div class="roadmap-tile">
+              <svg width="28" height="28" viewBox="0 0 28 28" style="transform: rotate(-90deg); flex-shrink:0;">
+                <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(15,23,42,0.08)" stroke-width="3.5"/>
+                <circle cx="14" cy="14" r="11" fill="none" stroke="#0891B2" stroke-width="3.5"
+                  stroke-dasharray="69.1" stroke-dashoffset="62.2" stroke-linecap="round"/>
+              </svg>
+              <div class="rtile-title">Aptitude</div>
+              <div class="rtile-pct">10%</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT RAIL -->
+      <div class="rail-col">
+        <div class="rail-card">
+          <div class="stat-strip">
+            <div class="stat-row">
+              <div class="stat-value" style="color: var(--red);">2/8 done</div>
+              <div class="stat-label">Reviews today</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-value">5/7d</div>
+              <div class="stat-label">Consistency</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-value">12 captured</div>
+              <div class="stat-label">Key memories</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rail-card">
+          <div class="micro" style="color: var(--muted);">RECENT</div>
+          <div>
+            <div class="recent-entry">
+              <div class="recent-title">Two-pointer window sizing on strings</div>
+              <div class="recent-date">Jun 30</div>
+            </div>
+            <div class="recent-entry">
+              <div class="recent-title">SQL window functions vs GROUP BY</div>
+              <div class="recent-date">Jun 29</div>
+            </div>
+            <div class="recent-entry">
+              <div class="recent-title">Prefix sums for range queries</div>
+              <div class="recent-date">Jun 27</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="caption">Every section conveys by number, ring, or grid &mdash; text only labels.</div>
+
+<script>
+  (function () {
+    var grid = document.getElementById('heatGrid');
+    var total = 7 * 16;
+    var cyanIdx = new Set();
+    // scatter ~26 cyan cells across 3 intensities, deterministic-ish pattern
+    var seedPositions = [3,9,14,20,27,33,38,44,51,57,62,68,75,81,86,92,99,105,2,18,41,63,79,96,110,15];
+    seedPositions.forEach(function (i) { cyanIdx.add(i % total); });
+    var classes = ['heat-1','heat-2','heat-3'];
+    for (var i = 0; i < total; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'heat-cell';
+      if (cyanIdx.has(i)) {
+        cell.className += ' ' + classes[i % 3];
+      }
+      grid.appendChild(cell);
+    }
+  })();
+</script>
+
+</body>
+</html>

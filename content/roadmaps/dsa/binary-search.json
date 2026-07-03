@@ -61,7 +61,42 @@
       "inv-window": "If the target exists, it always lies inside the current [lo, hi] window.",
       "inv-halve": "Each probe discards half the remaining range — so it finishes in ~log₂n steps.",
       "inv-found": "arr[mid] == target means we've located it."
-    }
+    },
+    "steps": [
+      {
+        "id": "start",
+        "label": "lo = 0, hi = end"
+      },
+      {
+        "id": "window",
+        "label": "while lo <= hi"
+      },
+      {
+        "id": "probe",
+        "label": "mid = (lo+hi)/2"
+      },
+      {
+        "id": "found",
+        "label": "if arr[mid] == target: return"
+      },
+      {
+        "id": "discard",
+        "label": "discard left or right half"
+      },
+      {
+        "id": "done",
+        "label": "return -1"
+      }
+    ],
+    "predictions": [
+      {
+        "at_op": "WINDOW",
+        "occurrence": "first",
+        "level": "medium",
+        "prompt": "Does the search go left or right?",
+        "derive": "branch_binary"
+      }
+    ]
   },
   "explanation": "Binary search is the quintessential O(log N) algorithm. Every comparison halves the search space. Searching a billion records requires at most ~30 comparisons.\n\nThe loop invariant is rigid: if the target value exists anywhere within the original array, its index is strictly bounded within the inclusive interval `[low, high]`.\n\nA critical engineering detail is the calculation of the midpoint. The mathematical formula `mid = (low + high) / 2` is flawed. In languages with fixed-size integers (C++, Java), if `low` and `high` are near the 32-bit limit, their sum overflows, wrapping around to a negative number and causing a segmentation fault. The overflow-safe formula is `mid = low + (high - low) / 2`.\n\nBinary search is foundational to highly scaled systems. Databases perform binary search on disk-based SSTables. Network routers use hardware-optimized binary searches on routing tables for Longest Prefix Match (LPM) IP lookups.",
   "key_points": [

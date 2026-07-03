@@ -57,7 +57,42 @@
       "inv-min": "Each pass scans the unsorted suffix to find its smallest element.",
       "inv-prefix": "arr[0..i-1] holds the i smallest elements, already in final order.",
       "inv-sorted": "When the sorted prefix covers the array, it's sorted — in ≤ N-1 swaps."
-    }
+    },
+    "steps": [
+      {
+        "id": "scan",
+        "label": "find min in remaining"
+      },
+      {
+        "id": "compare",
+        "label": "if arr[curr] < arr[min]"
+      },
+      {
+        "id": "newmin",
+        "label": "min = curr"
+      },
+      {
+        "id": "swap",
+        "label": "swap(arr[first], arr[min])"
+      },
+      {
+        "id": "placed",
+        "label": "minimum element placed"
+      },
+      {
+        "id": "done",
+        "label": "array sorted"
+      }
+    ],
+    "predictions": [
+      {
+        "at_step": "swap",
+        "occurrence": "first",
+        "level": "medium",
+        "prompt": "The first pass is ending. Which two elements swap next?",
+        "derive": "next_swap_pair"
+      }
+    ]
   },
   "explanation": "Selection Sort always performs exactly N*(N-1)/2 comparisons, regardless of the input data. Whether the array is already sorted, reverse-sorted, or random, the algorithm executes the same number of comparison operations. It is completely non-adaptive.\n\nHowever, it performs at most N-1 swaps. Each pass through the inner loop identifies the minimum of the unsorted portion and executes exactly one swap to place it. This makes Selection Sort the optimal choice when writes are expensive.\n\nThe loop invariant is: at the start of the i-th iteration, the subarray `arr[0..i-1]` contains the i smallest elements of the original array, in their final sorted positions. Once an element is placed, it is never touched again.\n\nCritically, Selection Sort is NOT stable. The long-distance swap can destroy relative order. Example: `[3A, 3B, 1]`. Finding min=1, we swap it with 3A: `[1, 3B, 3A]`. The relative order of the two 3s has been reversed.",
   "key_points": [

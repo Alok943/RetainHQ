@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Play, AlertCircle, Clock, CheckCircle2, Key, PlusSquare, ArrowRight, CalendarDays, GraduationCap } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import FirstCapture from './FirstCapture';
 import { useAuth } from './lib/AuthContext';
 import ReviewHeatmap from './ReviewHeatmap';
-import RoadmapMini from './RoadmapMini';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 
 // Mirrors RoadmapDetail.jsx's node->lesson slug matching: lesson files are named
@@ -25,13 +24,36 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// Honest due-state label (SM-2 intervals are adaptive — the old fixed Day 3/7/14/30
-// ladder no longer applies). Reviews returned by /api/reviews/due are always due now
-// or overdue.
-function getDueLabel(scheduledFor) {
-  const days = Math.floor((new Date() - new Date(scheduledFor)) / (1000 * 60 * 60 * 24));
-  if (days <= 0) return 'Due now';
-  return `Overdue ${days} day${days === 1 ? '' : 's'}`;
+function formatUpcoming(iso) {
+  const d = new Date(iso);
+  const days = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  if (days < 7) return `in ${days}d`;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+// SVG progress ring — used at 48px (due card) and 28px (roadmap tiles).
+function ProgressRing({ size, stroke, pct, color = '#0891B2', trackColor = 'rgba(15,23,42,0.08)', children }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.max(0, Math.min(100, pct)) / 100) * c;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
+        />
+      </svg>
+      {children && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {children}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Home({ onStartReviews }) {
@@ -81,75 +103,93 @@ function Home({ onStartReviews }) {
       .catch(() => {});
   }, []);
 
-  // "Resume lesson" card: top in-progress roadmap -> its first not-done node that
-  // has lesson content available. Fails silent (stays null) on any missing piece —
-  // no roadmap in progress, no manifest entry, no content file, network error, etc.
+  const [contentManifest, setContentManifest] = useState(null);
+  const [entryCard, setEntryCard] = useState(null);
+  const [loadingEntry, setLoadingEntry] = useState(true);
+
   useEffect(() => {
-    if (roadmaps.length === 0) return;
-    const topInProgress = roadmaps
-      .filter((r) => (r.progress_pct ?? 0) > 0)
-      .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0))[0];
-    if (!topInProgress) return;
+    fetch('/content/manifest.json')
+      .then((r) => r.ok ? r.json() : {})
+      .then(setContentManifest)
+      .catch(() => setContentManifest({}));
+  }, []);
 
-    let cancelled = false;
-    async function load() {
-      try {
-        const contentKey = topInProgress.slug || CONTENT_KEY_BY_TITLE[topInProgress.title];
-        if (!contentKey) return;
-
-        const [detail, manifest] = await Promise.all([
-          apiFetch(`/api/roadmaps/${topInProgress.slug || topInProgress.id}`, { optionalAuth: true }),
-          fetch('/content/manifest.json').then((r) => (r.ok ? r.json() : {})),
-        ]);
-        if (cancelled) return;
-
-        const slugByTitle = manifest[contentKey] || {};
-        if (Object.keys(slugByTitle).length === 0) return;
-
-        const nodes = (detail.nodes || []).filter((n) => !n.parent_id);
-        // Content-bearing nodes, in roadmap order (phase order of appearance, then order_index).
-        const phaseOrder = [];
-        nodes.forEach((n) => { if (!phaseOrder.includes(n.phase)) phaseOrder.push(n.phase); });
-        const ordered = [...nodes].sort((a, b) => {
-          const pd = phaseOrder.indexOf(a.phase) - phaseOrder.indexOf(b.phase);
-          return pd !== 0 ? pd : a.order_index - b.order_index;
-        });
-        const withContent = ordered
-          .map((n) => ({ node: n, lessonSlug: lessonSlugForNode(slugByTitle, n.title) }))
-          .filter((x) => x.lessonSlug);
-        if (withContent.length === 0) return;
-
-        const nextIdx = withContent.findIndex((x) => x.node.status !== 'done');
-        if (nextIdx === -1) return; // every content-bearing node already done
-
-        const next = withContent[nextIdx];
-        if (cancelled) return;
-        setResumeLesson({
-          roadmapSlug: topInProgress.slug || topInProgress.id,
-          roadmapTitle: topInProgress.title,
-          lessonSlug: next.lessonSlug,
-          lessonTitle: next.node.title,
-          phase: next.node.phase,
-          contentKey,
-          index: nextIdx + 1,
-          total: withContent.length,
-        });
-      } catch {
-        // fail silent — no clutter if anything in the chain is missing
-      }
+  // Compute entry card ("Continue learning" or "Start learning")
+  useEffect(() => {
+    if (roadmaps.length === 0 || !contentManifest) {
+      if (roadmaps.length === 0 && !loadingDashboard) setLoadingEntry(false);
+      return;
     }
-    load();
-    return () => { cancelled = true; };
-  }, [roadmaps]);
 
-  // In-progress roadmaps first; fall back to a few starters so the section is
-  // never empty for a new user.
+    const inProgress = roadmaps.filter((r) => (r.progress_pct ?? 0) > 0 && (r.progress_pct ?? 0) < 100)
+      .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
+
+    if (inProgress.length > 0) {
+      const topRM = inProgress[0];
+      const contentKey = topRM.slug || CONTENT_KEY_BY_TITLE[topRM.title];
+      
+      apiFetch(`/api/roadmaps/${topRM.slug || topRM.id}`, { optionalAuth: true })
+        .then(detail => {
+          const slugByTitle = contentManifest[contentKey] || {};
+          const nodes = (detail.nodes || []).filter((n) => !n.parent_id);
+          const phaseOrder = [];
+          nodes.forEach((n) => { if (!phaseOrder.includes(n.phase)) phaseOrder.push(n.phase); });
+          const ordered = [...nodes].sort((a, b) => {
+            const pd = phaseOrder.indexOf(a.phase) - phaseOrder.indexOf(b.phase);
+            return pd !== 0 ? pd : a.order_index - b.order_index;
+          });
+          const withContent = ordered
+            .map((n) => ({ node: n, lessonSlug: lessonSlugForNode(slugByTitle, n.title) }))
+            .filter((x) => x.lessonSlug);
+            
+          const nextIdx = withContent.findIndex((x) => x.node.status !== 'done');
+          if (nextIdx !== -1) {
+            const next = withContent[nextIdx];
+            setEntryCard({
+              type: 'continue_lesson',
+              roadmapSlug: topRM.slug || topRM.id,
+              roadmapTitle: topRM.title,
+              lessonSlug: next.lessonSlug,
+              lessonTitle: next.node.title,
+              phase: next.node.phase,
+              contentKey,
+              index: nextIdx + 1,
+              total: withContent.length,
+            });
+          } else {
+            setEntryCard({ type: 'continue_roadmap', roadmap: topRM });
+          }
+        })
+        .catch(() => {
+           setEntryCard({ type: 'continue_roadmap', roadmap: topRM });
+        })
+        .finally(() => setLoadingEntry(false));
+    } else {
+      // No roadmap in progress (either 0% or all 100%)
+      const contentRoadmaps = roadmaps.filter(rm => {
+        const key = rm.slug || CONTENT_KEY_BY_TITLE[rm.title];
+        return contentManifest[key] && Object.keys(contentManifest[key]).length > 0;
+      });
+      if (contentRoadmaps.length > 0) {
+        setEntryCard({ type: 'start_learning', roadmaps: contentRoadmaps });
+      }
+      setLoadingEntry(false);
+    }
+  }, [roadmaps, contentManifest]);
+
+  // In-progress roadmaps first; fall back to a few starters (0% rings, "EXPLORE")
+  // so the section is never empty for a new user.
   const inProgress = roadmaps.filter((r) => (r.progress_pct ?? 0) > 0)
     .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
-  const continueRoadmaps = (inProgress.length > 0 ? inProgress : roadmaps).slice(0, 4);
-  const continueHeading = inProgress.length > 0 ? 'Continue learning' : 'Start a roadmap';
+  const roadmapTiles = (inProgress.length > 0 ? inProgress : roadmaps).slice(0, 4);
+  const roadmapsHeading = inProgress.length > 0 ? 'ROADMAPS' : 'EXPLORE';
 
   const topReview = dueReviews[0] ?? null;
+  const dueCount = dashboard?.due_count ?? 0;
+  const doneToday = dashboard?.daily_progress ?? 0;
+  const consistency = dashboard?.consistency_window ?? 0;
+  const totalActivities = dashboard?.total_activities ?? 0;
+  const nextReviewAt = dashboard?.next_review_at ?? null;
 
   // First-run gate: a signed-in user with zero activities gets the full-screen
   // first-capture flow instead of an empty dashboard — that's where our funnel
@@ -169,212 +209,207 @@ function Home({ onStartReviews }) {
     );
   }
 
+  // Guests (no session at all) and any signed-in user with zero activities: brand-new state.
+  const isBrandNew = !session || (!loadingActivities && activities.length === 0);
+
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-4 md:p-8 max-w-7xl mx-auto w-full pb-20 md:pb-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pb-20 md:pb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 lg:gap-6 items-start">
 
-      {/* --- CENTER COLUMN (Main Content) --- */}
-      <div className="flex-1 flex flex-col gap-8 min-w-0">
+        {/* --- MAIN COLUMN --- */}
+        <div className="flex flex-col gap-5 min-w-0">
 
-        {/* Stats (mobile/tablet only — desktop shows them in the right rail) */}
-        <div className="lg:hidden">
-          <QuickStats dashboard={dashboard} loading={loadingDashboard} />
+          {/* Due-session card */}
+          <section>
+            {loadingReviews || loadingDashboard ? (
+              <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4">
+                <div className="skeleton w-12 h-12 rounded-full shrink-0" />
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="skeleton h-2.5 w-20" />
+                  <div className="skeleton h-4 w-2/3" />
+                  <div className="skeleton h-2.5 w-16" />
+                </div>
+                <div className="skeleton h-10 w-24 rounded shrink-0" />
+              </div>
+            ) : fetchError ? (
+              <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4 text-[#ba1a1a]">
+                <span className="font-sans text-sm">Failed to load reviews: {fetchError}</span>
+              </div>
+            ) : (
+              <DueSessionCard
+                isBrandNew={isBrandNew}
+                topReview={topReview}
+                doneToday={doneToday}
+                dueCount={dueCount}
+                nextReviewAt={nextReviewAt}
+                onStart={() => requireAuth(onStartReviews)}
+                onLog={() => requireAuth(() => navigate('/log'))}
+              />
+            )}
+          </section>
+
+          {/* Entry card — Resume lesson or Start learning */}
+          {entryCard && (
+            <section>
+              {entryCard.type === 'continue_lesson' && (
+                <ResumeLessonCard
+                  lesson={entryCard}
+                  onClick={() => navigate(
+                    `/roadmaps/${entryCard.roadmapSlug}/learn/${entryCard.lessonSlug}`,
+                    { state: { contentKey: entryCard.contentKey } }
+                  )}
+                />
+              )}
+              {entryCard.type === 'continue_roadmap' && (
+                <ContinueRoadmapCard 
+                  roadmap={entryCard.roadmap} 
+                  onClick={() => navigate(`/roadmaps/${entryCard.roadmap.slug || entryCard.roadmap.id}`)} 
+                />
+              )}
+              {entryCard.type === 'start_learning' && (
+                <StartLearningCard 
+                  roadmaps={entryCard.roadmaps} 
+                  onClickRoadmap={(slug) => navigate(`/roadmaps/${slug}`)} 
+                />
+              )}
+            </section>
+          )}
+
+          {/* Review heatmap — primary, full-width */}
+          <section>
+            <ReviewHeatmap />
+          </section>
+
+          {/* Roadmaps grid */}
+          <section>
+            <div className="micro-label text-[#64748B] text-[11px] font-bold uppercase tracking-widest mb-3">
+              {roadmapsHeading}
+            </div>
+            {roadmaps.length === 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-3 flex items-center gap-2.5">
+                    <div className="skeleton w-7 h-7 rounded-full shrink-0" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="skeleton h-3 w-full" />
+                      <div className="skeleton h-2.5 w-8" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {roadmapTiles.map((rm) => (
+                  <RoadmapTile key={rm.id} rm={rm} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+                ))}
+              </div>
+            )}
+          </section>
+
         </div>
 
-        {/* Reviews Due Section */}
-        <section>
-          {loadingReviews ? (
-            <div className="kinetic-card flex flex-col gap-3">
-              <div className="skeleton h-3 w-32" />
-              <div className="skeleton h-6 w-2/3" />
-              <div className="skeleton h-3 w-40" />
-              <div className="skeleton h-11 w-44 mt-3 rounded-lg" />
-            </div>
-          ) : fetchError ? (
-            <div className="kinetic-card flex items-center gap-4 text-[#ba1a1a]">
-              <AlertCircle size={20} />
-              <p className="font-sans text-sm">Failed to load reviews: {fetchError}</p>
-            </div>
-          ) : !topReview && !loadingActivities && activities.length === 0 ? (
-            // Brand-new user: no reviews because nothing's been logged yet.
-            // "All caught up" is the wrong message here — point them at the first action.
-            <div className="kinetic-card flex flex-col sm:flex-row sm:items-center gap-5">
-              <div className="flex-1">
-                <p className="font-sans font-semibold text-[#0F172A] text-lg">Capture your first thing to remember</p>
-                <p className="font-sans text-sm text-[#64748B] mt-1">Log one thing you've learned — we'll bring it back tomorrow for your first recall, then space out the reviews so it sticks.</p>
-              </div>
-              <button
-                onClick={() => requireAuth(() => navigate('/log'))}
-                className="kinetic-btn kinetic-accent-gradient w-full sm:w-auto px-6 py-3.5 shrink-0"
-              >
-                <PlusSquare size={16} /> Log your first activity
-              </button>
-            </div>
-          ) : !topReview ? (
-            <div className="kinetic-card flex items-center gap-4">
-              <CheckCircle2 size={24} className="text-[#166534] shrink-0" />
-              <div>
-                <p className="font-sans font-semibold text-[#0F172A]">You're all caught up!</p>
-                <p className="font-sans text-sm text-[#64748B]">No reviews due right now. Keep learning to build momentum.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="kinetic-card flex flex-col xl:flex-row gap-6 xl:items-stretch">
-              {/* Left Action Area */}
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="font-sans text-[11px] font-bold text-[#ba1a1a] uppercase tracking-widest mb-1">
-                    Highest Priority Review
-                  </div>
-                  <h3 className="font-sans text-xl md:text-2xl font-semibold text-[#0F172A] leading-tight mb-2">
-                    {topReview.activity.topic}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
-                    <p className="font-mono text-xs text-[#64748B] flex items-center gap-1.5">
-                      {getDueLabel(topReview.scheduled_for)}
-                      <span className="w-1 h-1 rounded-full bg-[#cbd5e1]"></span>
-                      <Clock size={12} /> Spaced Review
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => requireAuth(onStartReviews)}
-                  className="kinetic-btn kinetic-accent-gradient w-full md:w-48 py-3.5 mt-auto"
-                >
-                  <Play size={16} fill="currentColor" /> Start Reviews
-                </button>
-              </div>
-
-              {/* Right Key Memory Area (Desktop Only) */}
-              <div className="hidden xl:flex w-[280px] border-l border-[rgba(15,23,42,0.08)] pl-6 flex-col justify-center">
-                <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-2 flex items-center gap-1">
-                  <Key size={12} /> Key Memory
-                </div>
-                <p className="font-sans text-sm text-[#0F172A] italic leading-relaxed bg-[rgba(15,23,42,0.02)] p-3 rounded border border-[rgba(15,23,42,0.05)]">
-                  "{topReview.activity.key_memory}"
-                </p>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Resume lesson — one click from opening the app to learning */}
-        {resumeLesson && (
-          <section>
-            <ResumeLessonCard
-              lesson={resumeLesson}
-              onClick={() => navigate(
-                `/roadmaps/${resumeLesson.roadmapSlug}/learn/${resumeLesson.lessonSlug}`,
-                { state: { contentKey: resumeLesson.contentKey } }
-              )}
-            />
-          </section>
-        )}
-
-        {/* Continue learning — in-progress roadmaps (or starters for new users) */}
-        {continueRoadmaps.length > 0 && (
-          <section>
-            <div className="flex justify-between items-end mb-4">
-              <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] flex items-center gap-1.5">
-                <GraduationCap size={15} className="text-[#0891B2]" /> {continueHeading}
-              </h2>
-              <button
-                onClick={() => navigate('/roadmaps')}
-                className="font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
-              >
-                All roadmaps →
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {continueRoadmaps.map((rm) => (
-                <RoadmapMini key={rm.id} rm={rm} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Review calendar — the activity heatmap, surfaced on Home */}
-        <section>
-          <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] flex items-center gap-1.5 mb-4">
-            <CalendarDays size={15} className="text-[#0891B2]" /> Review calendar
-          </h2>
-          <ReviewHeatmap />
-        </section>
-
-        {/* Recent Captures — a naked list (no card) so the due-review card stays
-            the only elevated element on the page. */}
-        <section>
-          <div className="flex justify-between items-end mb-4">
-            <h2 className="font-sans text-sm font-semibold text-[#1a1c1b]">Recent captures</h2>
-            {activities.length > 0 && (
-              <button
-                onClick={() => navigate('/vault')}
-                className="font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
-              >
-                View all →
-              </button>
-            )}
-          </div>
-
-          {loadingActivities ? (
-            <div className="flex flex-col gap-5">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <div className="skeleton w-6 h-6 rounded-full shrink-0" />
-                  <div className="flex-1 flex flex-col gap-2">
-                    <div className="skeleton h-3.5 w-1/2" />
-                    <div className="skeleton h-3 w-3/4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : activities.length > 0 ? (
-            <div className="flex flex-col gap-0 relative">
-              <div className="absolute left-[11px] top-4 bottom-4 w-px bg-slate-200"></div>
-              {activities.slice(0, 4).map((activity, i) => (
-                <TimelineItem
-                  key={activity.id}
-                  icon={<Key size={12} className="text-[#0891B2]" />}
-                  title={activity.topic}
-                  time={formatDate(activity.created_at)}
-                  detail={activity.key_memory}
-                  isLast={i === Math.min(activities.length, 4) - 1}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="font-sans text-sm text-[#64748B]">
-              Nothing captured yet — log an activity to start your vault.
-            </p>
-          )}
-
-          <p className="font-sans text-sm text-[#64748B] mt-6">
-            Want something structured to study?{' '}
-            <button
-              onClick={() => navigate('/roadmaps')}
-              className="font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
-            >
-              Explore the roadmaps →
-            </button>
-          </p>
-        </section>
-
-        {/* Feedback Link */}
-        <section className="mt-4 pt-4 flex justify-center">
-          <button 
-            onClick={() => setShowFeedback(true)}
-            className="text-sm font-medium text-[#64748B] hover:text-[#0F172A] underline underline-offset-4 transition-colors"
-          >
-            Want to suggest a change? Tell us.
-          </button>
-        </section>
+        {/* --- RIGHT RAIL --- */}
+        <aside className="flex flex-col gap-4 min-w-0">
+          <StatStrip
+            loading={loadingDashboard}
+            dueCount={dueCount}
+            doneToday={doneToday}
+            consistency={consistency}
+            totalActivities={totalActivities}
+          />
+          <RecentRail
+            loading={loadingActivities}
+            activities={activities}
+            onNavigate={() => navigate('/vault')}
+          />
+        </aside>
       </div>
 
-      {/* --- RIGHT RAIL (Visible only on Desktop lg+) --- */}
-      <aside className="hidden lg:flex flex-col w-[280px] shrink-0">
-        <QuickStats dashboard={dashboard} loading={loadingDashboard} />
-      </aside>
+      {/* Feedback link — small and muted, bottom of page */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="text-xs font-medium text-[#64748B] hover:text-[#0F172A] underline underline-offset-4 transition-colors"
+        >
+          Suggest a change
+        </button>
+      </div>
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+    </div>
+  );
+}
+
+// Due-session card — the single visual element that tells the user what to do next.
+// Three states: brand-new (no activities), all-clear (no due reviews), and due (N due).
+function DueSessionCard({ isBrandNew, topReview, doneToday, dueCount, nextReviewAt, onStart, onLog }) {
+  if (isBrandNew) {
+    return (
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4">
+        <ProgressRing size={48} stroke={5} pct={0} color="#0891B2">
+          <span className="font-mono text-[10px] font-semibold text-[#0F172A]">0</span>
+        </ProgressRing>
+        <div className="flex-1 min-w-0">
+          <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1">
+            Get started
+          </div>
+          <h3 className="font-sans text-lg font-semibold text-[#0F172A] truncate">
+            Log your first activity
+          </h3>
+        </div>
+        <button
+          onClick={onLog}
+          className="kinetic-btn kinetic-accent-gradient px-5 py-2.5 shrink-0"
+        >
+          Log it
+        </button>
+      </div>
+    );
+  }
+
+  if (!topReview) {
+    // All clear — full teal ring, no button.
+    return (
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4">
+        <ProgressRing size={48} stroke={5} pct={100} color="#0F766E">
+          <span className="font-mono text-[13px] font-semibold text-[#0F766E]">✓</span>
+        </ProgressRing>
+        <div className="flex-1 min-w-0">
+          <div className="font-sans text-[11px] font-bold text-[#0F766E] uppercase tracking-widest mb-1">
+            All clear
+          </div>
+          <div className="font-mono text-sm text-[#64748B] truncate">
+            {nextReviewAt ? `Next review ${formatUpcoming(nextReviewAt)}` : 'Nothing scheduled'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const total = doneToday + dueCount;
+  const pct = total > 0 ? (doneToday / total) * 100 : 0;
+  const minutes = Math.max(1, Math.round(dueCount * 0.7));
+
+  return (
+    <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4">
+      <ProgressRing size={48} stroke={5} pct={pct} color="#0891B2">
+        <span className="font-mono text-[10px] font-semibold text-[#0F172A]">{doneToday}/{total}</span>
+      </ProgressRing>
+      <div className="flex-1 min-w-0">
+        <div className="font-sans text-[11px] font-bold text-[#ba1a1a] uppercase tracking-widest mb-1">
+          Due today
+        </div>
+        <h3 className="font-sans text-lg font-semibold text-[#0F172A] truncate">
+          {topReview.activity.topic}
+        </h3>
+        <div className="font-mono text-[11px] text-[#64748B] mt-0.5">~{minutes} min</div>
+      </div>
+      <button
+        onClick={onStart}
+        className="kinetic-btn kinetic-accent-gradient px-5 py-2.5 shrink-0"
+      >
+        {doneToday > 0 ? 'Continue' : 'Start'}
+      </button>
     </div>
   );
 }
@@ -409,64 +444,143 @@ function ResumeLessonCard({ lesson, onClick }) {
   );
 }
 
-function TimelineItem({ icon, title, time, detail, isLast }) {
+function ContinueRoadmapCard({ roadmap, onClick }) {
+  const pct = roadmap.progress_pct ?? 0;
   return (
-    <div className={`flex gap-4 relative ${isLast ? '' : 'pb-6'}`}>
-      <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 z-10 mt-0.5">
-        {icon}
-      </div>
-      <div>
-        <div className="flex items-baseline gap-2 mb-0.5">
-          <span className="font-sans text-sm font-semibold text-[#0F172A]">{title}</span>
-          <span className="font-mono text-[10px] text-[#64748B]">{time}</span>
+    <button onClick={onClick} className="w-full text-left group">
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center justify-between gap-4 hover:-translate-y-0.5 transition-transform">
+        <div className="min-w-0">
+          <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
+            Continue learning
+          </div>
+          <h3 className="font-sans text-base font-semibold text-[#0F172A] truncate mb-1.5">
+            {roadmap.title}
+          </h3>
+          <p className="font-mono text-[11px] font-medium text-[#64748B]">
+            {pct}% complete
+          </p>
         </div>
-        <p className="font-sans text-xs text-[#64748B]">{detail}</p>
+        <span className="kinetic-btn kinetic-accent-gradient shrink-0 px-4 py-2.5 text-sm">
+          Resume <ArrowRight size={14} />
+        </span>
+      </div>
+      <div className="h-[3px] rounded-full bg-[rgba(15,23,42,0.08)] mt-2.5 overflow-hidden">
+        <div className="h-full rounded-full bg-[#0891B2] transition-all duration-700" style={{ width: `${pct}%` }} />
+      </div>
+    </button>
+  );
+}
+
+function StartLearningCard({ roadmaps, onClickRoadmap }) {
+  return (
+    <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
+      <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-3">
+        Start learning
+      </div>
+      <div className="flex flex-col gap-3">
+        {roadmaps.map(rm => (
+          <button 
+            key={rm.id} 
+            onClick={() => onClickRoadmap(rm.slug || rm.id)}
+            className="flex items-center justify-between text-left p-3 rounded-lg border border-[rgba(15,23,42,0.06)] hover:border-[#0891B2] hover:shadow-[0_2px_8px_-2px_rgba(8,145,178,0.2)] bg-white transition-all group"
+          >
+            <div className="min-w-0 pr-4">
+              <div className="font-sans text-sm font-semibold text-[#0F172A] mb-1">{rm.title}</div>
+              <div className="font-sans text-xs text-[#64748B] line-clamp-2">{rm.description}</div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-[rgba(8,145,178,0.1)] flex items-center justify-center shrink-0 group-hover:bg-[#0891B2] transition-colors">
+              <ArrowRight size={14} className="text-[#0891B2] group-hover:text-white transition-colors" />
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );
 }
 
-function formatUpcoming(iso) {
-  const d = new Date(iso);
-  const days = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
-  if (days <= 0) return 'today';
-  if (days === 1) return 'tomorrow';
-  if (days < 7) return `in ${days}d`;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+// Compact roadmap tile: small progress ring + title + pct. No description text.
+function RoadmapTile({ rm, onClick }) {
+  const pct = rm.progress_pct ?? 0;
+  return (
+    <button
+      onClick={onClick}
+      className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-3 flex items-center gap-2.5 text-left hover:-translate-y-0.5 transition-transform"
+    >
+      <ProgressRing size={28} stroke={3.5} pct={pct} color="#0891B2">
+        <span className="font-mono text-[8px] font-semibold text-[#0F172A]">{pct}</span>
+      </ProgressRing>
+      <div className="flex-1 min-w-0">
+        <div className="font-sans text-[13px] font-medium text-[#0F172A] truncate">{rm.title}</div>
+        <div className="font-mono text-[11px] text-[#64748B]">{pct}%</div>
+      </div>
+    </button>
+  );
 }
 
-// Flat stat strip — number + label pairs separated by dividers, no per-stat cards.
-// The due-review card is the only elevated element on Home; stats stay quiet.
-function QuickStats({ dashboard, loading }) {
-  const dueCount = dashboard?.due_count ?? 0;
-  const consistency = dashboard?.consistency_window ?? 0;
-  const dailyProgress = dashboard?.daily_progress ?? 0;
-  const nextReviewAt = dashboard?.next_review_at ?? null;
-
-  const dueValue = loading
-    ? '…'
-    : dueCount > 0
-      ? `${dailyProgress}/${dailyProgress + dueCount} done`
-      : nextReviewAt
-        ? formatUpcoming(nextReviewAt)
-        : 'All clear';
-
+// Right-rail vertical stat strip — three stats separated by hairline dividers.
+function StatStrip({ loading, dueCount, doneToday, consistency, totalActivities }) {
+  const total = doneToday + dueCount;
+  const reviewsValue = loading ? '…' : dueCount > 0 ? `${doneToday}/${total} done` : 'All clear';
   return (
-    <div className="flex items-stretch divide-x divide-[rgba(15,23,42,0.08)] border-y border-[rgba(15,23,42,0.08)] py-4">
-      <Stat label="Reviews" value={dueValue} emphasis={dueCount > 0} />
-      <Stat label="Consistency" value={loading ? '…' : `${consistency}/7d`} />
-      <Stat label="Today" value={loading ? '…' : `${dailyProgress}`} />
+    <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
+      <div className="flex flex-col">
+        <StatRow
+          value={reviewsValue}
+          label="Reviews today"
+          emphasis={!loading && dueCount > 0}
+          mono={!loading}
+        />
+        <StatRow value={loading ? '…' : `${consistency}/7d`} label="Consistency" mono />
+        <StatRow value={loading ? '…' : `${totalActivities}`} label="Total captured" mono />
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value, emphasis }) {
+function StatRow({ value, label, emphasis, mono, isLast }) {
   return (
-    <div className="flex-1 px-4 first:pl-0 last:pr-0 flex flex-col gap-1">
-      <span className={`font-sans text-lg font-semibold leading-none ${emphasis ? 'text-[#ba1a1a]' : 'text-[#0F172A]'}`}>
+    <div className={`py-3 first:pt-0 last:pb-0 last:border-b-0 border-b border-[rgba(15,23,42,0.08)]`}>
+      <div className={`text-[20px] font-semibold leading-none mb-0.5 ${mono ? 'font-mono' : 'font-sans'} ${emphasis ? 'text-[#ba1a1a]' : 'text-[#0F172A]'}`}>
         {value}
-      </span>
-      <span className="font-sans text-xs text-[#64748B]">{label}</span>
+      </div>
+      <div className="font-sans text-xs text-[#64748B]">{label}</div>
+    </div>
+  );
+}
+
+// Right-rail recent captures — up to 3 single-line entries linking to the Vault.
+function RecentRail({ loading, activities, onNavigate }) {
+  const recent = activities.slice(0, 3);
+  return (
+    <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
+      <div className="text-[11px] font-bold uppercase tracking-widest text-[#64748B] mb-2.5">
+        Recent
+      </div>
+      {loading ? (
+        <div className="flex flex-col gap-2.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex justify-between gap-2">
+              <div className="skeleton h-3 w-3/5" />
+              <div className="skeleton h-3 w-10" />
+            </div>
+          ))}
+        </div>
+      ) : recent.length === 0 ? (
+        <div className="font-sans text-xs text-[#64748B]">No captures yet</div>
+      ) : (
+        <div className="flex flex-col">
+          {recent.map((a, i) => (
+            <button
+              key={a.id}
+              onClick={onNavigate}
+              className={`flex items-baseline gap-2 py-2 first:pt-0 last:pb-0 last:border-b-0 border-b border-[rgba(15,23,42,0.08)] text-left w-full ${i === recent.length - 1 ? 'border-b-0' : ''}`}
+            >
+              <span className="font-sans text-[13px] text-[#0F172A] truncate flex-1 min-w-0">{a.topic}</span>
+              <span className="font-mono text-[10px] text-[#64748B] shrink-0">{formatDate(a.created_at)}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -502,19 +616,18 @@ function FeedbackModal({ onClose }) {
         <div className="p-4 bg-white flex flex-col gap-4">
           {done ? (
             <div className="text-center py-8 text-[#166534] font-medium flex flex-col items-center gap-2">
-              <CheckCircle2 size={32} />
               Thanks for your feedback!
             </div>
           ) : (
             <>
-              <textarea 
+              <textarea
                 className="w-full border border-[rgba(15,23,42,0.12)] rounded p-3 text-sm focus:outline-none focus:border-[#0891B2] focus:ring-1 focus:ring-[#0891B2] min-h-[120px] resize-y font-sans text-[#0F172A]"
                 placeholder="What needs to be changed or added?"
                 value={msg}
                 onChange={e => setMsg(e.target.value)}
                 autoFocus
               />
-              <button 
+              <button
                 onClick={send}
                 disabled={sending || !msg.trim()}
                 className="kinetic-btn kinetic-accent-gradient w-full py-2.5 disabled:opacity-50 flex items-center justify-center font-semibold"

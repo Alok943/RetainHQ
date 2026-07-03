@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, HelpCircle, Lock } from 'lucide-react';
+import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Lock } from 'lucide-react';
 import { getGenerator } from './registry.js';
 import { compile } from './compile.js';
 import { evaluateCheckpoint, gradeAnswer } from './predict.js';
@@ -17,12 +17,51 @@ import StateMachine from './renderers/StateMachine.jsx';
 // answer or taps "show me"; stepping onward IS the reveal (the real trace). Scrubbing consumes
 // gates silently (never re-gates); editing the input or Replay re-arms every gate.
 //
-// Explain-this-frame (M1): derived client-side from the frame + lesson model — what happened (op +
-// caption), why it's correct (invariant), why this choice (repeated_decision), what's next (next
-// frame's caption). The "next" row is HIDDEN while a gate is unanswered (no-future-leak: it would
-// answer the open prediction). Auto-opens after a missed prediction — the best teaching moment.
+// Explain-this-frame (M1): ALWAYS visible inline (never behind a toggle — the teacher dominates,
+// not opt-in), derived client-side from the frame + lesson model — what happened (op + caption),
+// why it's correct (invariant), why this choice (repeated_decision), what's next (next frame's
+// caption). The "next" row is HIDDEN while a gate is unanswered (no-future-leak: it would answer
+// the open prediction). After a missed prediction, the panel flashes a brief highlight — the best
+// teaching moment — rather than needing to be opened.
 const READ_DELAY = 1400; // ms to read the comment before the animation plays
 const DWELL = 950;       // ms to watch the animation before auto-advancing
+
+// Pseudocode panel — sits above StateMachine in the right column. Uses the lesson's authored
+// `steps` ({id, label}) when given; otherwise derives a fallback from the compiled frames (unique
+// step_ids in order of first appearance, id-as-label) so untouched lessons still show something.
+// Highlights the row matching the CURRENT COMMENTARY frame's step_id (capFrame — the teaching
+// voice leads, not the lagged visual).
+function PseudoSteps({ steps, frames, activeStepId }) {
+  const rows = steps.length ? steps : (() => {
+    const seen = new Set();
+    const out = [];
+    for (const f of frames) {
+      if (f.step_id && !seen.has(f.step_id)) { seen.add(f.step_id); out.push({ id: f.step_id, label: f.step_id }); }
+    }
+    return out;
+  })();
+  if (!rows.length) return null;
+  return (
+    <div className="select-none">
+      <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-2">Pseudocode</div>
+      <div className="flex flex-col gap-1.5">
+        {rows.map((s) => {
+          const active = s.id === activeStepId;
+          return (
+            <div key={s.id} className="rounded-md px-2.5 py-1.5 font-mono text-[11.5px] border leading-snug" style={{
+              background: active ? 'rgba(124,58,237,0.10)' : 'rgba(15,23,42,0.03)',
+              borderColor: active ? '#7C3AED' : 'rgba(15,23,42,0.10)',
+              color: active ? '#7C3AED' : '#475569',
+              fontWeight: active ? 700 : 500,
+            }}>
+              {s.label}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Player({
   generatorKey,
@@ -31,6 +70,7 @@ export default function Player({
   inputMode = 'number',
   predictions = [],
   repeatedDecision = '',
+  steps = [],
 }) {
   const generator = getGenerator(generatorKey);
   const isString = inputMode === 'string';
@@ -60,7 +100,6 @@ export default function Player({
   const [fired, setFired] = useState(() => new Set()); // gateIndexes answered/shown/consumed
   const [gateResult, setGateResult] = useState(null);  // { gate, correct|null, given? } for the just-resolved gate
   const [answerDraft, setAnswerDraft] = useState('');
-  const [explainOpen, setExplainOpen] = useState(false);
 
   const last = frames.length - 1;
   const capFrame = frames[Math.min(step, last)] || null;          // commentary = current step (immediate)
@@ -103,14 +142,14 @@ export default function Player({
     setStep(v); setAnimatedStep(v);
   };
   const nav = (v) => { setPlaying(false); setStep(Math.max(0, Math.min(last, v))); }; // prev/next = read pause applies
-  const replay = () => { setFired(new Set()); setGateResult(null); setExplainOpen(false); setStep(0); setAnimatedStep(0); setPlaying(true); }; // re-arms all gates
+  const replay = () => { setFired(new Set()); setGateResult(null); setStep(0); setAnimatedStep(0); setPlaying(true); }; // re-arms all gates
   const applyInput = () => {
     const vals = isString
       ? draft.replace(/\s+/g, '').split('').slice(0, 14)
       : draft.split(/[\s,]+/).map((x) => parseInt(x, 10)).filter((x) => Number.isFinite(x)).slice(0, 12);
     if (vals.length) {
       setInput(vals); setStep(0); setAnimatedStep(0); setPlaying(false);
-      setFired(new Set()); setGateResult(null); setExplainOpen(false); // new trace -> gates re-arm + re-derive
+      setFired(new Set()); setGateResult(null); // new trace -> gates re-arm + re-derive
     }
   };
 
@@ -119,7 +158,6 @@ export default function Player({
     const correct = gradeAnswer(activeGate.type, activeGate.answer, given);
     setGateResult({ gate: activeGate, correct, given });
     setFired((prev) => new Set(prev).add(activeGate.gateIndex));
-    if (!correct) setExplainOpen(true); // post-miss is the highest-value teaching moment
   };
   const commitTyped = () => {
     if (!answerDraft.trim()) return;
@@ -133,9 +171,6 @@ export default function Player({
   };
 
   const btn = 'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-semibold border border-[rgba(15,23,42,0.12)] bg-white hover:bg-[#f1f5f9] disabled:opacity-40 transition-colors';
-  const legend = [
-    ['#0891B2', 'left'], ['#B45309', 'right'], ['#7C3AED', 'writing'], ['#0F766E', 'sorted'],
-  ];
   const invariantText = capFrame?.invariant ? (invariants[capFrame.invariant] || capFrame.invariant) : null;
   // no-future-leak: never reveal upcoming information while a prediction is open
   const gateOpen = !!activeGate && !gateResult;
@@ -197,24 +232,18 @@ export default function Player({
           : gateResult.correct === false ? 'bg-[#B91C1C]/[0.06] border-[#B91C1C]/20 text-[#B91C1C]'
           : 'bg-[#f9f9f6] border-[rgba(15,23,42,0.08)] text-[#475569]'}`}>
           {gateResult.correct === true && <>Correct — the trace shows: {gateResult.gate.display}. Step through to watch it happen.</>}
-          {gateResult.correct === false && <>Not quite — the trace shows: {gateResult.gate.display}. See “Why?” below, then step through it.</>}
+          {gateResult.correct === false && <>Not quite — the trace shows: {gateResult.gate.display}. See the explanation below, then step through it.</>}
           {gateResult.correct === null && <>The trace shows: {gateResult.gate.display}. Step through to watch it happen.</>}
         </div>
       )}
 
       {/* VISUALIZATION — lags the comment by READ_DELAY */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4 p-5">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_240px] gap-4 p-5">
         <div><ArrayViz frame={visFrame} /></div>
-        <div className="md:border-l md:pl-4 border-[rgba(15,23,42,0.08)]"><StateMachine frame={visFrame} /></div>
-      </div>
-
-      {/* legend */}
-      <div className="px-5 pb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-        {legend.map(([c, l]) => (
-          <span key={l} className="inline-flex items-center gap-1.5 font-sans text-[11px] text-[#64748B]">
-            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: c }} /> {l}
-          </span>
-        ))}
+        <div className="md:border-l md:pl-4 border-[rgba(15,23,42,0.08)]">
+          <PseudoSteps steps={steps} frames={frames} activeStepId={capFrame?.step_id} />
+          <div className="border-t border-[rgba(15,23,42,0.08)] mt-3 pt-3"><StateMachine frame={visFrame} /></div>
+        </div>
       </div>
 
       {/* controls */}
@@ -224,13 +253,14 @@ export default function Player({
           ? <button className={btn} onClick={replay}><RotateCcw size={15} /> Replay</button>
           : <button className={btn} onClick={() => setPlaying((p) => !p)} disabled={gateOpen}>{playing ? <><Pause size={15} /> Pause</> : <><Play size={15} /> Play</>}</button>}
         <button className={btn} onClick={() => nav(step + 1)} disabled={step >= last || gateOpen} title={gateOpen ? 'Commit your prediction first' : undefined}>Next <ChevronRight size={15} /></button>
-        <button className={`${btn} ${explainOpen ? 'bg-[#f1f5f9]' : ''}`} onClick={() => setExplainOpen((o) => !o)}><HelpCircle size={15} /> Why?</button>
         <input type="range" min={0} max={Math.max(0, last)} value={Math.min(step, last)} onChange={(e) => seek(Number(e.target.value))} className="flex-1 min-w-[120px] accent-[#7C3AED]" />
       </div>
 
-      {/* EXPLAIN THIS FRAME — derived from the frame + lesson model; nothing authored per-frame. */}
-      {explainOpen && capFrame && (
-        <div className="px-5 py-3.5 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6] flex flex-col gap-2">
+      {/* EXPLAIN THIS FRAME — always inline, derived from the frame + lesson model; nothing authored
+          per-frame. Post-miss: a brief ring flash draws the eye instead of needing to be opened. */}
+      {capFrame && (
+        <div className={`px-5 py-3.5 border-t bg-[#f9f9f6] flex flex-col gap-2 transition-shadow ${
+          gateResult?.correct === false ? 'border-[#B45309]/30 ring-1 ring-inset ring-[#B45309]/40' : 'border-[rgba(15,23,42,0.06)]'}`}>
           <div className="flex items-start gap-2.5">
             <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0891B2] shrink-0 mt-0.5 w-24">What happened</span>
             <span className="font-sans text-[13px] text-[#0F172A] leading-snug"><span className="font-mono text-[11px] font-bold text-[#7C3AED]">{capFrame.activeOp}</span> — {capFrame.caption}</span>

@@ -17,6 +17,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent / "roadmaps"
 SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
+# Prediction derive registry (frontend/src/dsa/predict.js). A lesson's viz.predictions[].derive
+# must name a function that actually exists there — parsed from the source so the two can't drift.
+_PREDICT_JS = Path(__file__).resolve().parent.parent / "frontend" / "src" / "dsa" / "predict.js"
+try:
+    _m = re.search(r"const DERIVES = \{(.*?)\n\};", _PREDICT_JS.read_text(encoding="utf-8"), re.S)
+    DERIVE_NAMES = set(re.findall(r"^  (\w+)\(events", _m.group(1), re.M)) if _m else set()
+except OSError:
+    DERIVE_NAMES = set()
+PREDICTION_LEVELS = {"easy", "medium", "hard", "expert"}
+
 KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
@@ -518,6 +528,40 @@ def main():
             viz = d.get("viz")
             if viz is not None and (not isinstance(viz, dict) or not viz.get("generator")):
                 err(rel, "viz, if present, needs a 'generator' (a key registered in frontend/src/dsa/registry.js)")
+            if isinstance(viz, dict):
+                # explain-this-frame needs the lesson's repeated decision — required on viz lessons
+                if not (isinstance(mm, dict) and mm.get("repeated_decision")):
+                    err(rel, "viz lessons require mental_model.repeated_decision (powers explain-this-frame)")
+                preds = viz.get("predictions")
+                if preds is not None:
+                    if not isinstance(preds, list) or not preds:
+                        err(rel, "viz.predictions, if present, must be a non-empty list of checkpoints")
+                    else:
+                        for i, p in enumerate(preds):
+                            if not isinstance(p, dict):
+                                err(rel, f"viz.predictions[{i}] must be an object"); continue
+                            if not p.get("prompt"):
+                                err(rel, f"viz.predictions[{i}] needs a non-empty 'prompt'")
+                            if not p.get("at_op") and not p.get("at_step"):
+                                err(rel, f"viz.predictions[{i}] must anchor via 'at_op' and/or 'at_step'")
+                            occ = p.get("occurrence", "first")
+                            if occ not in ("first", "last") and not (isinstance(occ, int) and occ >= 1):
+                                err(rel, f"viz.predictions[{i}].occurrence must be 'first', 'last', or a 1-based integer")
+                            lvl = p.get("level", "medium")
+                            if lvl not in PREDICTION_LEVELS:
+                                err(rel, f"viz.predictions[{i}].level must be one of {sorted(PREDICTION_LEVELS)}")
+                            dv = str(p.get("derive") or "")
+                            name = dv.split("(")[0].strip()
+                            if DERIVE_NAMES and name not in DERIVE_NAMES:
+                                err(rel, f"viz.predictions[{i}].derive '{dv}' is not a registered derive fn in frontend/src/dsa/predict.js ({sorted(DERIVE_NAMES)})")
+                vsteps = viz.get("steps")
+                if vsteps is not None:
+                    if not isinstance(vsteps, list) or not vsteps:
+                        err(rel, "viz.steps, if present, must be a non-empty list of {id, label}")
+                    else:
+                        for i, s in enumerate(vsteps):
+                            if not isinstance(s, dict) or not s.get("id") or not s.get("label"):
+                                err(rel, f"viz.steps[{i}] needs non-empty 'id' and 'label'")
             hk = d.get("hook")
             if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
                 err(rel, "hook, if present, needs a non-empty 'scenario'")

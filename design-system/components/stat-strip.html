@@ -1,0 +1,74 @@
+<!-- @dsCard group="Components" name="Stat strip" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stat strip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f9f9f6; --ink: #0F172A; --muted: #64748B;
+    --hairline: rgba(15,23,42,0.10); --red: #ba1a1a; --cyan: #0891B2;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--paper); font-family: 'Inter', system-ui, sans-serif; padding: 24px; color: var(--ink); }
+  .label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px;
+  }
+  .strip {
+    display: flex;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: 28px;
+  }
+  .stat {
+    flex: 1; padding: 16px 20px;
+    border-right: 1px solid var(--hairline);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-value { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .stat-value .unit { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; }
+  .stat-label {
+    font-size: 12px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+  <div class="label">CURRENT — due count in red</div>
+  <div class="strip">
+    <div class="stat">
+      <div class="stat-value" style="color: var(--red);">6 <span class="unit">due</span></div>
+      <div class="stat-label">Reviews waiting</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">5<span class="unit">/7d</span></div>
+      <div class="stat-label">Consistency</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Roadmaps active</div>
+    </div>
+  </div>
+
+  <div class="label">PROPOSED — due count in cyan</div>
+  <div class="strip">
+    <div class="stat">
+      <div class="stat-value" style="color: var(--cyan);">6 <span class="unit">due</span></div>
+      <div class="stat-label">Reviews waiting</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">5<span class="unit">/7d</span></div>
+      <div class="stat-label">Consistency</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Roadmaps active</div>
+    </div>
+  </div>
+
+</body>
+</html>

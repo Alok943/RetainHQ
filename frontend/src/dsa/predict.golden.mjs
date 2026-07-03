@@ -5,6 +5,8 @@
 import { mergeSortEvents } from './generators/merge-sort.js';
 import { bubbleSortEvents } from './generators/bubble-sort.js';
 import { binarySearchEvents } from './generators/binary-search.js';
+import { kadaneEvents } from './generators/kadane.js';
+import { slidingWindowVariableEvents } from './generators/sliding-window-variable.js';
 import { resolveGate, evaluateCheckpoint, parseDerive, gradeAnswer, isKnownDerive } from './predict.js';
 
 let failures = 0;
@@ -65,6 +67,73 @@ function firstMergeWrites(input, n) {
   ok(r === null || r.type === 'choice', 'branch_binary: choice type or clean skip');
   if (r) ok(['left', 'right', 'found'].includes(r.answer), `branch_binary: valid answer (${r.answer})`);
   void input;
+}
+
+// --- next_step_id: Kadane's "extend or restart?" gate — answer must equal the ACTUAL next
+// step_id, and cross different inputs to show it isn't hardcoded (one all-extend-friendly input,
+// one that forces at least one restart). ---
+{
+  const cpFor = (events) => {
+    const cp = { at_op: 'POINT', occurrence: 2, derive: 'next_step_id', level: 'medium', prompt: 'extend or restart?' };
+    return evaluateCheckpoint(events, cp);
+  };
+
+  // input chosen to force an early restart: [-5, 3, ...] — after index 0 (-5), index 1 (3) restarts.
+  const { events: eRestart } = kadaneEvents([-5, 3, -1, 8, -2]);
+  const rRestart = cpFor(eRestart);
+  const gateRestart = resolveGate(eRestart, { at_op: 'POINT', occurrence: 2 });
+  ok(rRestart && ['extend', 'restart', 'record', 'done'].includes(rRestart.answer),
+    `next_step_id (kadane, forced restart): answer '${rRestart && rRestart.answer}' is a real step_id`);
+  ok(rRestart && eRestart[gateRestart + 1].step_id === rRestart.answer,
+    'next_step_id: matches the actual next event step_id (restart case)');
+
+  // input chosen to keep extending: all positive, no restart ever fires after the first extend.
+  const { events: eExtend } = kadaneEvents([1, 2, 3, 4, 5]);
+  const rExtend = cpFor(eExtend);
+  const gateExtend = resolveGate(eExtend, { at_op: 'POINT', occurrence: 2 });
+  ok(rExtend && ['extend', 'restart', 'record', 'done'].includes(rExtend.answer),
+    `next_step_id (kadane, all-positive): answer '${rExtend && rExtend.answer}' is a real step_id`);
+  ok(rExtend && eExtend[gateExtend + 1].step_id === rExtend.answer,
+    'next_step_id: matches the actual next event step_id (extend case)');
+
+  // not hardcoded: the forced-restart input and the all-positive input diverge at this gate
+  // (restart vs extend) — proves the answer is read off the live trace, not a fixed string.
+  ok(rRestart && rExtend && rRestart.answer !== rExtend.answer,
+    `next_step_id: NOT hardcoded — restart input gives '${rRestart && rRestart.answer}', extend input gives '${rExtend && rExtend.answer}'`);
+}
+
+// --- branch_window: sliding-window-variable's expand/shrink decision must match the actual window
+// movement, cross-checked on two different (input, occurrence) pairs that genuinely diverge
+// (expand vs shrink) — proves the answer isn't hardcoded. ---
+{
+  const checkAgainstTrace = (events, cp, label) => {
+    const r = evaluateCheckpoint(events, cp);
+    ok(r === null || r.type === 'choice', `branch_window: choice type or clean skip (${label})`);
+    if (r) {
+      const gate = resolveGate(events, cp);
+      const windowAt = (from, dir) => {
+        for (let k = from; dir > 0 ? k < events.length : k >= 0; k += dir) {
+          if (events[k].op === 'WINDOW') return events[k].args;
+        }
+        return null;
+      };
+      const cur = windowAt(gate, -1);
+      const next = windowAt(gate + 1, +1);
+      const expected = next.hi > cur.hi ? 'expand' : next.lo > cur.lo ? 'shrink' : 'done';
+      ok(r.answer === expected, `branch_window (${label}): matches actual window movement (got ${r.answer} want ${expected})`);
+    }
+    return r;
+  };
+
+  const { events: e1 } = slidingWindowVariableEvents([2, 4, 1, 5, 3, 6]);
+  const rExpand = checkAgainstTrace(e1, { at_op: 'WINDOW', occurrence: 'first', derive: 'branch_window', level: 'hard', prompt: 'x' }, 'first window, expand case');
+
+  // occurrence 3 on this input is a genuine shrink (verified independently against the trace above)
+  const { events: e2 } = slidingWindowVariableEvents([9, 1, 1, 1, 1, 9]);
+  const rShrink = checkAgainstTrace(e2, { at_op: 'WINDOW', occurrence: 3, derive: 'branch_window', level: 'hard', prompt: 'x' }, 'third window, shrink case');
+
+  ok(!!rExpand && !!rShrink && rExpand.answer !== rShrink.answer,
+    `branch_window: NOT hardcoded — different (input, occurrence) pairs give different answers (${rExpand && rExpand.answer} vs ${rShrink && rShrink.answer})`);
 }
 
 // --- graceful skip: empty input yields no gate ---

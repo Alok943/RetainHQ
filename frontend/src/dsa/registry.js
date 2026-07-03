@@ -12,6 +12,11 @@ import { selectionSortEvents } from './generators/selection-sort.js';
 import { insertionSortEvents } from './generators/insertion-sort.js';
 import { linearSearchEvents } from './generators/linear-search.js';
 import { binarySearchEvents } from './generators/binary-search.js';
+import { twoPointersEvents } from './generators/two-pointers.js';
+import { fastSlowPointersEvents } from './generators/fast-slow-pointers.js';
+import { slidingWindowFixedEvents } from './generators/sliding-window-fixed.js';
+import { slidingWindowVariableEvents } from './generators/sliding-window-variable.js';
+import { kadaneEvents } from './generators/kadane.js';
 
 export const GENERATORS = {
   'merge-sort': mergeSortEvents,
@@ -26,6 +31,11 @@ export const GENERATORS = {
   'insertion-sort': insertionSortEvents,
   'linear-search': linearSearchEvents,
   'binary-search': binarySearchEvents,
+  'two-pointers': twoPointersEvents,
+  'fast-slow-pointers': fastSlowPointersEvents,
+  'sliding-window-fixed': slidingWindowFixedEvents,
+  'sliding-window-variable': slidingWindowVariableEvents,
+  'kadane': kadaneEvents,
 };
 
 export function getGenerator(key) {

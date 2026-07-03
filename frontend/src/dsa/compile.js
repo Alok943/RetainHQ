@@ -97,7 +97,18 @@ function hashingReducer(state, op, args) {
   }
 }
 
-const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer];
+// --- scalar family: named running variables (Kadane's current/best, window sum, etc.) ---
+function scalarReducer(state, op, args) {
+  switch (op) {
+    case 'VAR': // merge named scalars into persistent state.vars (e.g. { current, best })
+      state.vars = { ...state.vars, ...args };
+      return { pointers: { ...state.ptrs } };
+    default:
+      return null;
+  }
+}
+
+const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer];
 
 export function compile(input, events) {
   const state = {
@@ -107,6 +118,7 @@ export function compile(input, events) {
     sorted: new Set(),       // indices known sorted/finalized (MERGE_DONE / DONE / SET / MARK)
     ptrs: {},                // persistent named pointers for array-family traces (lo/hi/i/j)
     freq: null,              // frequency map for COUNT traces; null until first COUNT
+    vars: {},                // persistent named scalars for VAR traces (Kadane's current/best, etc.)
   };
   const frames = [];
 
@@ -128,6 +140,7 @@ export function compile(input, events) {
       pointers: result.pointers || {},
       map: state.freq ? { ...state.freq } : undefined,
       mapActive: result.mapActive ?? null,
+      vars: Object.keys(state.vars).length ? { ...state.vars } : undefined,
       activeOp: op,
       caption: note || op,
       invariant,

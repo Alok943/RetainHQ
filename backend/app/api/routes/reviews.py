@@ -9,7 +9,7 @@ from typing import List
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.models.models import Review, Activity
+from app.models.models import Review, Activity, RoadmapNode, Roadmap
 from app.schemas.review import (
     ReviewResponse,
     ReviewComplete,
@@ -46,7 +46,10 @@ async def get_due_reviews(
     # Cap the session (oldest-first) so a long-overdue backlog surfaces as a bounded,
     # finishable set — the rest stay 'due' and roll forward to the next session.
     stmt = (
-        select(Review)
+        select(Review, Roadmap.slug.label("roadmap_slug"), RoadmapNode.title.label("node_title"))
+        .join(Activity, Review.activity_id == Activity.id)
+        .outerjoin(RoadmapNode, Activity.node_id == RoadmapNode.id)
+        .outerjoin(Roadmap, RoadmapNode.roadmap_id == Roadmap.id)
         .where(
             Review.user_id == user_id,
             Review.status == "due",
@@ -58,7 +61,15 @@ async def get_due_reviews(
     )
     
     result = await db.execute(stmt)
-    reviews = result.scalars().all()
+    rows = result.all()
+    
+    reviews = []
+    for row in rows:
+        r = row.Review
+        r.roadmap_slug = row.roadmap_slug
+        r.node_title = row.node_title
+        reviews.append(r)
+        
     return reviews
 
 @router.post("/{review_id}/complete", response_model=ReviewResponse)
