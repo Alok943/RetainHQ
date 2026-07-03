@@ -42,7 +42,7 @@
   "mental_model": {
     "intuition": "It's like the odometer on a car. If the odometer reads 10,000 miles on Tuesday and 10,300 miles on Friday, you know you drove 300 miles in that window. You just subtracted the 'running totals'.",
     "description": "A prefix sum array simply keeps a running total. `prefix[i]` holds the sum of the original array elements from index 0 to index i. To find the sum of any slice [i..j], you take the running total up to j, and chop off the running total up to the part just before i (i-1). This reduces a loop over the array into a single O(1) subtraction.",
-    "repeated_decision": "During precomputation: `prefix[i] = prefix[i-1] + arr[i]`.\nDuring querying: `sum(i, j) = prefix[j] - prefix[i-1]`."
+    "repeated_decision": "What is the running total up to this index? (previous prefix + current value)"
   },
   "viz": {
     "generator": "prefix-sums",

@@ -42,7 +42,7 @@
   "mental_model": {
     "intuition": "Imagine lining up students by height. Instead of shuffling everyone around, you scan the whole unsorted line with your eyes (reads), find the shortest person, and walk them directly to the front (one swap). Repeat for the remaining line.",
     "description": "The array is divided into a sorted left partition and an unsorted right partition. In each pass, the algorithm scans the entire unsorted partition to locate the absolute minimum element. It then swaps this minimum with the first element of the unsorted partition, growing the sorted partition by one.",
-    "repeated_decision": "Is `arr[j] < arr[min_index]`? If yes, update `min_index = j`. After the inner loop, swap `arr[i]` with `arr[min_index]`."
+    "repeated_decision": "Is this element smaller than the smallest seen so far in the unsorted part?"
   },
   "viz": {
     "generator": "selection-sort",
@@ -89,7 +89,7 @@
         "at_step": "swap",
         "occurrence": "first",
         "level": "medium",
-        "prompt": "The first pass is ending. Which two elements swap next?",
+        "prompt": "Which two elements swap to place the current minimum?",
         "derive": "next_swap_pair"
       }
     ]

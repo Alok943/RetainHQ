@@ -42,7 +42,7 @@
   "mental_model": {
     "intuition": "Imagine a physical row of 26 mailboxes. You don't need a complex filing system (Hash Map) to find mailbox 'C'; you inherently know it's the 3rd one from the left. You just drop the letter right into it.",
     "description": "A frequency array is a direct-address table. Because characters have underlying integer representations (ASCII/Unicode), you can map them directly to array indices via simple subtraction, achieving O(1) lookups with zero collisions.",
-    "repeated_decision": "For each character, calculate its array index `offset = ord(char) - ord('a')`, and then increment the array at that index: `arr[offset] += 1`."
+    "repeated_decision": "Have we seen this character before? Compute its array index offset, then increment the count at that index."
   },
   "viz": {
     "generator": "frequency-arrays",
@@ -67,15 +67,6 @@
       {
         "id": "done",
         "label": "tally complete"
-      }
-    ],
-    "predictions": [
-      {
-        "at_step": "count",
-        "occurrence": "first",
-        "level": "easy",
-        "prompt": "Which array index is incremented next?",
-        "derive": "next_op"
       }
     ]
   },

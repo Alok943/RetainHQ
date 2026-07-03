@@ -40,7 +40,7 @@
   "mental_model": {
     "intuition": "Imagine folding a piece of paper in half. For the text to be a palindrome, every letter on the left side must perfectly overlap with the corresponding letter on the right side.",
     "description": "Validating a palindrome uses converging two-pointers checking for equality. Finding the longest palindromic substring requires the inverse: placing pointers at a 'center' and expanding outward until symmetry breaks.",
-    "repeated_decision": "During validation: `if string[left] != string[right]`, it's not a palindrome. During expansion: `if string[left] == string[right]`, expand the bounds."
+    "repeated_decision": "Do the characters at the two ends match? If yes, move inward; if no, it's not a palindrome."
   },
   "viz": {
     "generator": "palindromes",
@@ -86,8 +86,8 @@
         "at_step": "match",
         "occurrence": "first",
         "level": "easy",
-        "prompt": "Do the two outer characters match, or is this not a palindrome?",
-        "derive": "next_op"
+        "prompt": "Do the two outer characters match, or mismatch?",
+        "derive": "next_step_id"
       }
     ]
   },

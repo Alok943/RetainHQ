@@ -40,7 +40,7 @@
   "mental_model": {
     "intuition": "Imagine comparing two bags of marbles. Instead of lining them all up by size (sorting), you just make a tally sheet: '3 red, 2 blue'. Then you pull marbles from the second bag and cross off the tallies. If you cross everything off perfectly, the bags match.",
     "description": "Frequency counting leverages a Hash Map to record occurrences of discrete elements. The keys are the elements themselves, and the values are integer counters. This transforms a sequence of data into a canonical signature (a histogram) that represents its exact makeup, ignoring order.",
-    "repeated_decision": "During the build phase: `map[item] = map.get(item, 0) + 1`. During the validation phase: `map[item] -= 1`."
+    "repeated_decision": "Have we seen this element before? If yes, increment its count; if no, add it to the map with count 1."
   },
   "viz": {
     "generator": "frequency-counting",
@@ -64,15 +64,6 @@
       {
         "id": "done",
         "label": "tally complete"
-      }
-    ],
-    "predictions": [
-      {
-        "at_step": "count",
-        "occurrence": "first",
-        "level": "easy",
-        "prompt": "Which element's frequency count is updated next?",
-        "derive": "next_op"
       }
     ]
   },
