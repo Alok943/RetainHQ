@@ -85,7 +85,7 @@ function RoadmapCard({ rm, index, onClick }) {
     <article
       onClick={onClick}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-      className="glass-card !rounded-3xl p-5 cursor-pointer group flex flex-col min-h-[210px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
+      className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl shadow-sm p-5 cursor-pointer group flex flex-col min-h-[210px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
     >
       {/* Top: logo tile + percent */}
       <div className="flex items-start justify-between mb-4">
@@ -217,12 +217,6 @@ function Roadmaps() {
 
   return (
     <div className="relative max-w-5xl mx-auto w-full p-4 md:p-8 pb-20 md:pb-8 animate-in fade-in duration-300">
-      {/* Aurora backdrop — gives the glass cards something colorful to frost.
-          Wrapped in overflow-hidden so the blur bleed never adds horizontal scroll. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="aurora" />
-      </div>
-
       <div className="relative z-10 flex flex-col gap-8">
 
       <header className="mb-2">
@@ -288,7 +282,7 @@ function Roadmaps() {
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="glass-card !rounded-3xl p-5 flex flex-col min-h-[210px]">
+              <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl shadow-sm p-5 flex flex-col min-h-[210px]">
                 <div className="skeleton w-12 h-12 rounded-2xl mb-4" />
                 <div className="flex-1 space-y-2">
                   <div className="skeleton h-4 w-2/3" />

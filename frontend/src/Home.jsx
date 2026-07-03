@@ -6,6 +6,16 @@ import FirstCapture from './FirstCapture';
 import { useAuth } from './lib/AuthContext';
 import ReviewHeatmap from './ReviewHeatmap';
 import RoadmapMini from './RoadmapMini';
+import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
+
+// Mirrors RoadmapDetail.jsx's node->lesson slug matching: lesson files are named
+// slugify(node title), with exact-title lookup in the manifest as the primary path.
+const slugifyTitle = (t) => (t || '').toLowerCase().replace(/&/g, 'and').replace(/\//g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+function lessonSlugForNode(slugByTitle, title) {
+  if (slugByTitle[title]) return slugByTitle[title];
+  const s = slugifyTitle(title);
+  return Object.values(slugByTitle).includes(s) ? s : null;
+}
 
 // Per-session opt-out: if a new user clicks "I'll look around first", don't re-gate
 // them on every Home visit this session (cleared on tab close).
@@ -41,6 +51,7 @@ function Home({ onStartReviews }) {
   const [skipFirstCapture, setSkipFirstCapture] = useState(
     () => sessionStorage.getItem(SKIP_FIRST_CAPTURE_KEY) === 'true'
   );
+  const [resumeLesson, setResumeLesson] = useState(null);
 
   useEffect(() => {
     if (!session) {
@@ -69,6 +80,67 @@ function Home({ onStartReviews }) {
       .then((data) => setRoadmaps(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
+
+  // "Resume lesson" card: top in-progress roadmap -> its first not-done node that
+  // has lesson content available. Fails silent (stays null) on any missing piece —
+  // no roadmap in progress, no manifest entry, no content file, network error, etc.
+  useEffect(() => {
+    if (roadmaps.length === 0) return;
+    const topInProgress = roadmaps
+      .filter((r) => (r.progress_pct ?? 0) > 0)
+      .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0))[0];
+    if (!topInProgress) return;
+
+    let cancelled = false;
+    async function load() {
+      try {
+        const contentKey = topInProgress.slug || CONTENT_KEY_BY_TITLE[topInProgress.title];
+        if (!contentKey) return;
+
+        const [detail, manifest] = await Promise.all([
+          apiFetch(`/api/roadmaps/${topInProgress.slug || topInProgress.id}`, { optionalAuth: true }),
+          fetch('/content/manifest.json').then((r) => (r.ok ? r.json() : {})),
+        ]);
+        if (cancelled) return;
+
+        const slugByTitle = manifest[contentKey] || {};
+        if (Object.keys(slugByTitle).length === 0) return;
+
+        const nodes = (detail.nodes || []).filter((n) => !n.parent_id);
+        // Content-bearing nodes, in roadmap order (phase order of appearance, then order_index).
+        const phaseOrder = [];
+        nodes.forEach((n) => { if (!phaseOrder.includes(n.phase)) phaseOrder.push(n.phase); });
+        const ordered = [...nodes].sort((a, b) => {
+          const pd = phaseOrder.indexOf(a.phase) - phaseOrder.indexOf(b.phase);
+          return pd !== 0 ? pd : a.order_index - b.order_index;
+        });
+        const withContent = ordered
+          .map((n) => ({ node: n, lessonSlug: lessonSlugForNode(slugByTitle, n.title) }))
+          .filter((x) => x.lessonSlug);
+        if (withContent.length === 0) return;
+
+        const nextIdx = withContent.findIndex((x) => x.node.status !== 'done');
+        if (nextIdx === -1) return; // every content-bearing node already done
+
+        const next = withContent[nextIdx];
+        if (cancelled) return;
+        setResumeLesson({
+          roadmapSlug: topInProgress.slug || topInProgress.id,
+          roadmapTitle: topInProgress.title,
+          lessonSlug: next.lessonSlug,
+          lessonTitle: next.node.title,
+          phase: next.node.phase,
+          contentKey,
+          index: nextIdx + 1,
+          total: withContent.length,
+        });
+      } catch {
+        // fail silent — no clutter if anything in the chain is missing
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [roadmaps]);
 
   // In-progress roadmaps first; fall back to a few starters so the section is
   // never empty for a new user.
@@ -185,6 +257,19 @@ function Home({ onStartReviews }) {
           )}
         </section>
 
+        {/* Resume lesson — one click from opening the app to learning */}
+        {resumeLesson && (
+          <section>
+            <ResumeLessonCard
+              lesson={resumeLesson}
+              onClick={() => navigate(
+                `/roadmaps/${resumeLesson.roadmapSlug}/learn/${resumeLesson.lessonSlug}`,
+                { state: { contentKey: resumeLesson.contentKey } }
+              )}
+            />
+          </section>
+        )}
+
         {/* Continue learning — in-progress roadmaps (or starters for new users) */}
         {continueRoadmaps.length > 0 && (
           <section>
@@ -294,6 +379,36 @@ function Home({ onStartReviews }) {
   );
 }
 
+// "Continue learning" resume card — see design-system/components/resume-lesson.html.
+// One click from Home straight into the next unread lesson in the user's furthest-
+// along roadmap; progress bar reflects position among that roadmap's lesson-bearing nodes.
+function ResumeLessonCard({ lesson, onClick }) {
+  const pct = lesson.total > 0 ? Math.round(((lesson.index - 1) / lesson.total) * 100) : 0;
+  return (
+    <button onClick={onClick} className="w-full text-left group">
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center justify-between gap-4 hover:-translate-y-0.5 transition-transform">
+        <div className="min-w-0">
+          <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
+            Continue learning
+          </div>
+          <h3 className="font-sans text-base font-semibold text-[#0F172A] truncate mb-1.5">
+            {lesson.lessonTitle}
+          </h3>
+          <p className="font-mono text-[11px] font-medium text-[#64748B]">
+            {lesson.roadmapTitle} · {lesson.phase} · lesson {lesson.index} of {lesson.total}
+          </p>
+        </div>
+        <span className="kinetic-btn kinetic-accent-gradient shrink-0 px-4 py-2.5 text-sm">
+          Resume <ArrowRight size={14} />
+        </span>
+      </div>
+      <div className="h-[3px] rounded-full bg-[rgba(15,23,42,0.08)] mt-2.5 overflow-hidden">
+        <div className="h-full rounded-full bg-[#0891B2] transition-all duration-700" style={{ width: `${pct}%` }} />
+      </div>
+    </button>
+  );
+}
+
 function TimelineItem({ icon, title, time, detail, isLast }) {
   return (
     <div className={`flex gap-4 relative ${isLast ? '' : 'pb-6'}`}>
@@ -331,7 +446,7 @@ function QuickStats({ dashboard, loading }) {
   const dueValue = loading
     ? '…'
     : dueCount > 0
-      ? `${dueCount} due`
+      ? `${dailyProgress}/${dailyProgress + dueCount} done`
       : nextReviewAt
         ? formatUpcoming(nextReviewAt)
         : 'All clear';

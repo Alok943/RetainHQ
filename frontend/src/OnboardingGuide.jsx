@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     icon: PenLine,
-    accentColor: '#8B5CF6',
+    accentColor: '#0891B2',
     title: '1. Capture what you learn',
     subtitle: 'Log Activity',
     description:

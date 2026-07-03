@@ -10,7 +10,7 @@ function FunnelStat({ label, value, sub, accent }) {
   return (
     <div className="kinetic-card bg-white p-4 flex flex-col gap-1">
       <span className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest">{label}</span>
-      <span className="font-mono text-2xl font-semibold" style={{ color: accent || '#0F172A' }}>{value}</span>
+      <span className={`font-mono text-2xl font-semibold ${accent ? '' : 'text-[#0F172A]'}`} style={accent ? { color: accent } : undefined}>{value}</span>
       {sub && <span className="font-mono text-[11px] text-[#64748B]">{sub}</span>}
     </div>
   );

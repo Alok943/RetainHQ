@@ -133,7 +133,7 @@ export default function LessonView() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+      <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
         <div className="skeleton h-4 w-32 mb-4" />
         <div className="mb-6">
           <div className="skeleton h-8 w-3/4 mb-3" />
@@ -144,7 +144,7 @@ export default function LessonView() {
           </div>
         </div>
         {[0, 1, 2].map((i) => (
-          <div key={i} className="glass-card p-5 mb-4">
+          <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm p-5 mb-4">
             <div className="skeleton h-3.5 w-28 mb-4" />
             <div className="skeleton h-3 w-full mb-2" />
             <div className="skeleton h-3 w-11/12 mb-2" />
@@ -157,8 +157,8 @@ export default function LessonView() {
 
   if (error || !lesson) {
     return (
-      <div className="max-w-3xl mx-auto px-4 md:px-8 py-12 text-center">
-        <div className="glass-card p-8 flex flex-col items-center gap-4">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 text-center">
+        <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm p-8 flex flex-col items-center gap-4">
           <BookOpen size={32} className="text-[#94a3b8]" />
           <h2 className="font-sans text-lg font-semibold text-[#0F172A]">Lesson not available yet</h2>
           <p className="font-sans text-sm text-[#64748B]">We haven't published content for this topic yet. Check back soon!</p>
@@ -231,7 +231,7 @@ export default function LessonView() {
   // render early before the python/sql overview path.
   if (lesson.kind === 'dsa') {
     return (
-      <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+      <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
         {header}
         <DsaBody
           lesson={lesson}
@@ -250,7 +250,7 @@ export default function LessonView() {
   // return early, before the overview/walkthrough code that assumes those fields.
   if (lesson.kind === 'aptitude' || lesson.kind === 'reasoning' || lesson.kind === 'theory' || lesson.kind === 'engineering') {
     return (
-      <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+      <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
         {header}
         <AptitudeReasoningBody
           lesson={lesson}
@@ -267,7 +267,7 @@ export default function LessonView() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+    <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
       {header}
 
       {/* --- §1 Overview --- */}
@@ -794,7 +794,7 @@ function LessonSections({ sections, glossary, used }) {
   return (
     <div className="mb-4 flex flex-col gap-4">
       {sections.map((s, i) => (
-        <div key={i} className="glass-card p-5">
+        <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm p-5">
           {s.body && <RichText text={s.body} glossary={glossary} used={used} />}
           {s.image?.asset && <div className="mt-3"><LessonImage image={s.image} /></div>}
           {s.animation && (
@@ -907,6 +907,8 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
               defaultInput={viz.default_input || undefined}
               invariants={viz.invariants || {}}
               inputMode={viz.input_mode || 'number'}
+              predictions={viz.predictions || []}
+              repeatedDecision={mm.repeated_decision || ''}
             />
           </Suspense>
         </Section>
@@ -1380,7 +1382,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
 function Section({ icon, title, accent, children }) {
   const color = accent || '#0891B2';
   return (
-    <section className="glass-card mb-4 p-5">
+    <section className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm mb-4 p-5">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[rgba(15,23,42,0.06)]">
         <span style={{ color }}>{icon}</span>
         <h2 className="font-sans text-sm font-bold text-[#0F172A] uppercase tracking-wider">{title}</h2>

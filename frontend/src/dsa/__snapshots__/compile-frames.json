@@ -1,0 +1,5422 @@
+{
+  "binary-search": [
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "sorted array — searching for 11 in the whole range",
+      "invariant": "inv-window",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer, if any, lies in [0..6]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 6,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[3]=7 vs 11",
+      "invariant": "inv-halve",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 6,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[3] < 11 — discard the left half, go right",
+      "invariant": "inv-halve",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 6,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer, if any, lies in [4..6]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 6,
+        "mid": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[5]=11 vs 11",
+      "invariant": "inv-halve",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        5
+      ],
+      "pointers": {
+        "lo": 4,
+        "hi": 6,
+        "mid": 5
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "arr[5] == 11 — found in ~log₂n steps",
+      "invariant": "inv-found",
+      "step_id": "found"
+    }
+  ],
+  "bubble-sort": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[0]=5 and arr[1]=2",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "out of order — swap them",
+      "invariant": "inv-bubble",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[1]=5 and arr[2]=8",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[2]=8 and arr[3]=1",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "out of order — swap them",
+      "invariant": "inv-bubble",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[3]=8 and arr[4]=9",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "largest of the unsorted part has bubbled to index 4 — locked in",
+      "invariant": "inv-largest",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[0]=2 and arr[1]=5",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[1]=5 and arr[2]=1",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        1,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "out of order — swap them",
+      "invariant": "inv-bubble",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        2,
+        1,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[2]=5 and arr[3]=8",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        1,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "largest of the unsorted part has bubbled to index 3 — locked in",
+      "invariant": "inv-largest",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        2,
+        1,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[0]=2 and arr[1]=1",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "out of order — swap them",
+      "invariant": "inv-bubble",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[1]=2 and arr[2]=5",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "largest of the unsorted part has bubbled to index 2 — locked in",
+      "invariant": "inv-largest",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare arr[0]=1 and arr[1]=2",
+      "invariant": "inv-bubble",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "largest of the unsorted part has bubbled to index 1 — locked in",
+      "invariant": "inv-largest",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "index 0 is now sorted too",
+      "invariant": "inv-largest",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "every pass placed one element — the array is sorted",
+      "invariant": "inv-sorted",
+      "step_id": "done"
+    }
+  ],
+  "frequency-arrays": [
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "map": {
+        "l": 1
+      },
+      "mapActive": "l",
+      "activeOp": "COUNT",
+      "caption": "'l' → count['l'] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "map": {
+        "l": 1,
+        "i": 1
+      },
+      "mapActive": "i",
+      "activeOp": "COUNT",
+      "caption": "'i' → count['i'] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "map": {
+        "l": 1,
+        "i": 1,
+        "s": 1
+      },
+      "mapActive": "s",
+      "activeOp": "COUNT",
+      "caption": "'s' → count['s'] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "map": {
+        "l": 1,
+        "i": 1,
+        "s": 1,
+        "t": 1
+      },
+      "mapActive": "t",
+      "activeOp": "COUNT",
+      "caption": "'t' → count['t'] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "map": {
+        "l": 1,
+        "i": 1,
+        "s": 1,
+        "t": 1,
+        "e": 1
+      },
+      "mapActive": "e",
+      "activeOp": "COUNT",
+      "caption": "'e' → count['e'] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "map": {
+        "l": 1,
+        "i": 1,
+        "s": 1,
+        "t": 1,
+        "e": 1,
+        "n": 1
+      },
+      "mapActive": "n",
+      "activeOp": "COUNT",
+      "caption": "'n' → count['n'] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        "l",
+        "i",
+        "s",
+        "t",
+        "e",
+        "n"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "map": {
+        "l": 1,
+        "i": 1,
+        "s": 1,
+        "t": 1,
+        "e": 1,
+        "n": 1
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "this count signature is order-independent — two anagrams produce the identical counts",
+      "invariant": "inv-signature",
+      "step_id": "done"
+    }
+  ],
+  "frequency-counting": [
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "map": {
+        "2": 1
+      },
+      "mapActive": 2,
+      "activeOp": "COUNT",
+      "caption": "see 2 → count[2] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "map": {
+        "2": 1,
+        "3": 1
+      },
+      "mapActive": 3,
+      "activeOp": "COUNT",
+      "caption": "see 3 → count[3] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "map": {
+        "2": 2,
+        "3": 1
+      },
+      "mapActive": 2,
+      "activeOp": "COUNT",
+      "caption": "see 2 → count[2] = 1 + 1 = 2",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "map": {
+        "1": 1,
+        "2": 2,
+        "3": 1
+      },
+      "mapActive": 1,
+      "activeOp": "COUNT",
+      "caption": "see 1 → count[1] = 0 + 1 = 1",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "map": {
+        "1": 1,
+        "2": 2,
+        "3": 2
+      },
+      "mapActive": 3,
+      "activeOp": "COUNT",
+      "caption": "see 3 → count[3] = 1 + 1 = 2",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "map": {
+        "1": 1,
+        "2": 3,
+        "3": 2
+      },
+      "mapActive": 2,
+      "activeOp": "COUNT",
+      "caption": "see 2 → count[2] = 2 + 1 = 3",
+      "invariant": "inv-tally",
+      "step_id": "count"
+    },
+    {
+      "array": [
+        2,
+        3,
+        2,
+        1,
+        3,
+        2
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "map": {
+        "1": 1,
+        "2": 3,
+        "3": 2
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "one O(n) pass builds the full map — an order-independent signature (anagrams match here)",
+      "invariant": "inv-signature",
+      "step_id": "done"
+    }
+  ],
+  "in-place-operations": [
+    {
+      "array": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "start two pointers: lo=0 (front), hi=4 (back)",
+      "invariant": "inv-bounds",
+      "step_id": "init"
+    },
+    {
+      "array": [
+        5,
+        2,
+        3,
+        4,
+        1
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 4,
+        "i": 0,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap arr[0]=1 with arr[4]=5",
+      "invariant": "inv-swapped",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        5,
+        2,
+        3,
+        4,
+        1
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 1,
+        "hi": 3,
+        "i": 0,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "step both inward: lo=1, hi=3 — everything outside is already reversed",
+      "invariant": "inv-bounds",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 1,
+        "hi": 3,
+        "i": 1,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap arr[1]=2 with arr[3]=4",
+      "invariant": "inv-swapped",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "lo": 1,
+        "hi": 3,
+        "i": 1,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "pointers met — array fully reversed using O(1) extra space",
+      "invariant": "inv-reversed",
+      "step_id": "done"
+    }
+  ],
+  "insertion-sort": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0..0] is sorted; insert arr[1]=2 into it",
+      "invariant": "inv-prefix",
+      "step_id": "pick"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0]=5 > arr[1]=2 — shift it right",
+      "invariant": "inv-shift",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap to slide the value left",
+      "invariant": "inv-shift",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0..1] is sorted; insert arr[2]=8 into it",
+      "invariant": "inv-prefix",
+      "step_id": "pick"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[2] is already ≥ its left neighbour — stays put",
+      "invariant": "inv-prefix",
+      "step_id": "inplace"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0..2] is sorted; insert arr[3]=1 into it",
+      "invariant": "inv-prefix",
+      "step_id": "pick"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[2]=8 > arr[3]=1 — shift it right",
+      "invariant": "inv-shift",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap to slide the value left",
+      "invariant": "inv-shift",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        2,
+        5,
+        1,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[1]=5 > arr[2]=1 — shift it right",
+      "invariant": "inv-shift",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        2,
+        1,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap to slide the value left",
+      "invariant": "inv-shift",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        2,
+        1,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0]=2 > arr[1]=1 — shift it right",
+      "invariant": "inv-shift",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap to slide the value left",
+      "invariant": "inv-shift",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[0..3] is sorted; insert arr[4]=9 into it",
+      "invariant": "inv-prefix",
+      "step_id": "pick"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[4] is already ≥ its left neighbour — stays put",
+      "invariant": "inv-prefix",
+      "step_id": "inplace"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 4,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "each element was inserted into the growing sorted prefix",
+      "invariant": "inv-sorted",
+      "step_id": "done"
+    }
+  ],
+  "linear-search": [
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "searching for 9 — check every element in order",
+      "invariant": "inv-scan",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[0]=4 == 9?",
+      "invariant": "inv-scan",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[1]=2 == 9?",
+      "invariant": "inv-scan",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[2]=7 == 9?",
+      "invariant": "inv-scan",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[3]=1 == 9?",
+      "invariant": "inv-scan",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[4]=9 == 9?",
+      "invariant": "inv-scan",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        4,
+        2,
+        7,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "match at index 4 — found in 5 checks",
+      "invariant": "inv-found",
+      "step_id": "found"
+    }
+  ],
+  "merge-sort": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([0..5])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "left"
+        },
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "right"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "SPLIT",
+      "caption": "split into [0..2] and [3..5]",
+      "invariant": "inv-divide",
+      "step_id": "split"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([0..2])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "left"
+        },
+        {
+          "lo": 2,
+          "hi": 2,
+          "label": "right"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "SPLIT",
+      "caption": "split into [0..1] and [2..2]",
+      "invariant": "inv-divide",
+      "step_id": "split"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([0..1])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "left"
+        },
+        {
+          "lo": 1,
+          "hi": 1,
+          "label": "right"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "SPLIT",
+      "caption": "split into [0..0] and [1..1]",
+      "invariant": "inv-divide",
+      "step_id": "split"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        },
+        {
+          "lo": 0,
+          "hi": 0
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([0..0])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        },
+        {
+          "lo": 0,
+          "hi": 0
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "[0] is one element — already sorted",
+      "invariant": "inv-sorted",
+      "step_id": "base"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 0,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "return",
+      "invariant": null,
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        },
+        {
+          "lo": 1,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 1,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([1..1])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        },
+        {
+          "lo": 1,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 1,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "[1] is one element — already sorted",
+      "invariant": "inv-sorted",
+      "step_id": "base"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 1,
+          "hi": 1,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "return",
+      "invariant": null,
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 5 (left) vs 2 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 2 → position 0",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "write": 1
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "drain left 5 → position 1",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 0,
+          "hi": 1
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "merged [0..1]",
+      "invariant": "inv-sorted",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 1,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "[0..1] now sorted",
+      "invariant": "inv-sorted",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 2,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 2,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([2..2])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        },
+        {
+          "lo": 2,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 2,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "[2] is one element — already sorted",
+      "invariant": "inv-sorted",
+      "step_id": "base"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 2,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "return",
+      "invariant": null,
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 2 (left) vs 8 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 2 → position 0",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "write": 1
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 5 (left) vs 8 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "write": 1
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 5 → position 1",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "write": 2
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "drain right 8 → position 2",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 0,
+          "hi": 2
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "merged [0..2]",
+      "invariant": "inv-sorted",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 2,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "[0..2] now sorted",
+      "invariant": "inv-sorted",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([3..5])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "left"
+        },
+        {
+          "lo": 5,
+          "hi": 5,
+          "label": "right"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "SPLIT",
+      "caption": "split into [3..4] and [5..5]",
+      "invariant": "inv-divide",
+      "step_id": "split"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([3..4])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 3,
+          "label": "left"
+        },
+        {
+          "lo": 4,
+          "hi": 4,
+          "label": "right"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "SPLIT",
+      "caption": "split into [3..3] and [4..4]",
+      "invariant": "inv-divide",
+      "step_id": "split"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        },
+        {
+          "lo": 3,
+          "hi": 3
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 3,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([3..3])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        },
+        {
+          "lo": 3,
+          "hi": 3
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 3,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "[3] is one element — already sorted",
+      "invariant": "inv-sorted",
+      "step_id": "base"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 3,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "return",
+      "invariant": null,
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        },
+        {
+          "lo": 4,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 4,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([4..4])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        },
+        {
+          "lo": 4,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 4,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "[4] is one element — already sorted",
+      "invariant": "inv-sorted",
+      "step_id": "base"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 4,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "return",
+      "invariant": null,
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 1 (left) vs 9 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 1 → position 3",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "write": 4
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "drain right 9 → position 4",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 4
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "merged [3..4]",
+      "invariant": "inv-sorted",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 4,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "[3..4] now sorted",
+      "invariant": "inv-sorted",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 5,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 5,
+          "hi": 5,
+          "label": "sorting"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "CALL",
+      "caption": "mergeSort([5..5])",
+      "invariant": "inv-subarray",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        },
+        {
+          "lo": 5,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 5,
+          "hi": 5,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "[5] is one element — already sorted",
+      "invariant": "inv-sorted",
+      "step_id": "base"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 5,
+          "hi": 5,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "return",
+      "invariant": null,
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 1 (left) vs 3 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 1 → position 3",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 4
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 9 (left) vs 3 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        3,
+        3
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 4
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 3 → position 4",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 5
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "drain left 9 → position 5",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        },
+        {
+          "lo": 3,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "merged [3..5]",
+      "invariant": "inv-sorted",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 3,
+          "hi": 5,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "[3..5] now sorted",
+      "invariant": "inv-sorted",
+      "step_id": "recurse"
+    },
+    {
+      "array": [
+        2,
+        5,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 2 (left) vs 1 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        5,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 1 → position 0",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        5,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 1
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 2 (left) vs 3 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 1
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 2 → position 1",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 2
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 5 (left) vs 3 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 2
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 3 → position 2",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        1,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 5 (left) vs 9 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        5,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 5 → position 3",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        5,
+        3,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 4
+      },
+      "mapActive": null,
+      "activeOp": "COMPARE",
+      "caption": "compare 8 (left) vs 9 (right)",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 4
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "write 8 → position 4",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "write": 5
+      },
+      "mapActive": null,
+      "activeOp": "WRITE",
+      "caption": "drain right 9 → position 5",
+      "invariant": "inv-merge",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        9
+      ],
+      "callStack": [
+        {
+          "lo": 0,
+          "hi": 5
+        }
+      ],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "MERGE_DONE",
+      "caption": "merged [0..5]",
+      "invariant": "inv-sorted",
+      "step_id": "merge"
+    },
+    {
+      "array": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 5,
+          "label": "sorted"
+        }
+      ],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "RETURN",
+      "caption": "[0..5] now sorted",
+      "invariant": "inv-sorted",
+      "step_id": "recurse"
+    }
+  ],
+  "palindromes": [
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 6
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "compare the ends: 'r' vs 'r'",
+      "invariant": "inv-bounds",
+      "step_id": "init"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        6
+      ],
+      "pointers": {
+        "lo": 0,
+        "hi": 6
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "'r' == 'r' — outer pair matches",
+      "invariant": "inv-match",
+      "step_id": "match"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        6
+      ],
+      "pointers": {
+        "lo": 1,
+        "hi": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "move inward: 'a' vs 'a'",
+      "invariant": "inv-bounds",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        5,
+        6
+      ],
+      "pointers": {
+        "lo": 1,
+        "hi": 5
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "'a' == 'a' — outer pair matches",
+      "invariant": "inv-match",
+      "step_id": "match"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        5,
+        6
+      ],
+      "pointers": {
+        "lo": 2,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "move inward: 'c' vs 'c'",
+      "invariant": "inv-bounds",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6
+      ],
+      "pointers": {
+        "lo": 2,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "'c' == 'c' — outer pair matches",
+      "invariant": "inv-match",
+      "step_id": "match"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "pointers": {
+        "lo": 2,
+        "hi": 4
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "every pair matched — it IS a palindrome",
+      "invariant": "inv-palindrome",
+      "step_id": "done"
+    }
+  ],
+  "prefix-sums": [
+    {
+      "array": [
+        2,
+        4,
+        1,
+        5,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0
+      ],
+      "pointers": {
+        "write": 0
+      },
+      "mapActive": null,
+      "activeOp": "SET",
+      "caption": "prefix[0] = arr[0] = 2",
+      "invariant": "inv-prefix",
+      "step_id": "build"
+    },
+    {
+      "array": [
+        2,
+        6,
+        1,
+        5,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "write": 1
+      },
+      "mapActive": null,
+      "activeOp": "SET",
+      "caption": "prefix[1] = prefix[0] + arr[1] = 2 + 4 = 6",
+      "invariant": "inv-prefix",
+      "step_id": "build"
+    },
+    {
+      "array": [
+        2,
+        6,
+        7,
+        5,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "write": 2
+      },
+      "mapActive": null,
+      "activeOp": "SET",
+      "caption": "prefix[2] = prefix[1] + arr[2] = 6 + 1 = 7",
+      "invariant": "inv-prefix",
+      "step_id": "build"
+    },
+    {
+      "array": [
+        2,
+        6,
+        7,
+        12,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {
+        "write": 3
+      },
+      "mapActive": null,
+      "activeOp": "SET",
+      "caption": "prefix[3] = prefix[2] + arr[3] = 7 + 5 = 12",
+      "invariant": "inv-prefix",
+      "step_id": "build"
+    },
+    {
+      "array": [
+        2,
+        6,
+        7,
+        12,
+        15
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "write": 4
+      },
+      "mapActive": null,
+      "activeOp": "SET",
+      "caption": "prefix[4] = prefix[3] + arr[4] = 12 + 3 = 15",
+      "invariant": "inv-prefix",
+      "step_id": "build"
+    },
+    {
+      "array": [
+        2,
+        6,
+        7,
+        12,
+        15
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "built in O(n). Now any range sum is prefix[j] − prefix[i−1] in O(1) — no re-looping.",
+      "invariant": "inv-query",
+      "step_id": "query"
+    }
+  ],
+  "selection-sort": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "find the smallest from index 0 onward (min so far: arr[0]=5)",
+      "invariant": "inv-min",
+      "step_id": "scan"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[1]=2 < current min arr[0]=5?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1,
+        "j": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "new minimum: arr[1]=2",
+      "invariant": "inv-min",
+      "step_id": "newmin"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[2]=8 < current min arr[1]=2?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[3]=1 < current min arr[1]=2?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "new minimum: arr[3]=1",
+      "invariant": "inv-min",
+      "step_id": "newmin"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[4]=9 < current min arr[3]=1?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap the minimum into position 0",
+      "invariant": "inv-min",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0
+      ],
+      "pointers": {
+        "i": 0,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "index 0 now holds its final value",
+      "invariant": "inv-prefix",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "find the smallest from index 1 onward (min so far: arr[1]=2)",
+      "invariant": "inv-min",
+      "step_id": "scan"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[2]=8 < current min arr[1]=2?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[3]=5 < current min arr[1]=2?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[4]=9 < current min arr[1]=2?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 1,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "index 1 now holds its final value",
+      "invariant": "inv-prefix",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 2,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "find the smallest from index 2 onward (min so far: arr[2]=8)",
+      "invariant": "inv-min",
+      "step_id": "scan"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[3]=5 < current min arr[2]=8?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "new minimum: arr[3]=5",
+      "invariant": "inv-min",
+      "step_id": "newmin"
+    },
+    {
+      "array": [
+        1,
+        2,
+        8,
+        5,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[4]=9 < current min arr[3]=5?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap the minimum into position 2",
+      "invariant": "inv-min",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "i": 2,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "index 2 now holds its final value",
+      "invariant": "inv-prefix",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "find the smallest from index 3 onward (min so far: arr[3]=8)",
+      "invariant": "inv-min",
+      "step_id": "scan"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "is arr[4]=9 < current min arr[3]=8?",
+      "invariant": "inv-min",
+      "step_id": "compare"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "index 3 now holds its final value",
+      "invariant": "inv-prefix",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "the last element is sorted by elimination",
+      "invariant": "inv-prefix",
+      "step_id": "placed"
+    },
+    {
+      "array": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "pointers": {
+        "i": 3,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "the sorted prefix has grown to cover the whole array",
+      "invariant": "inv-sorted",
+      "step_id": "done"
+    }
+  ],
+  "two-pointers-on-strings": [
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 6
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "two pointers at the ends: 'r' and 'r'",
+      "invariant": "inv-bounds",
+      "step_id": "init"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 6,
+        "i": 0,
+        "j": 6
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap 'r' and 'r'",
+      "invariant": "inv-swap",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 1,
+        "hi": 5,
+        "i": 0,
+        "j": 6
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "step inward: 'a' and 'a'",
+      "invariant": "inv-bounds",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 1,
+        "hi": 5,
+        "i": 1,
+        "j": 5
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap 'a' and 'a'",
+      "invariant": "inv-swap",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 2,
+        "hi": 4,
+        "i": 1,
+        "j": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "step inward: 'c' and 'c'",
+      "invariant": "inv-bounds",
+      "step_id": "move"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "lo": 2,
+        "hi": 4,
+        "i": 2,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "SWAP",
+      "caption": "swap 'c' and 'c'",
+      "invariant": "inv-swap",
+      "step_id": "swap"
+    },
+    {
+      "array": [
+        "r",
+        "a",
+        "c",
+        "e",
+        "c",
+        "a",
+        "r"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "pointers": {
+        "lo": 2,
+        "hi": 4,
+        "i": 2,
+        "j": 4
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "pointers met — string reversed using O(1) extra space",
+      "invariant": "inv-reversed",
+      "step_id": "done"
+    }
+  ]
+}

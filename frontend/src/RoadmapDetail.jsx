@@ -553,7 +553,7 @@ function RoadmapDetail() {
         <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
           <div className="max-w-3xl mx-auto w-full px-4 md:px-8 py-6 pb-24 flex flex-col gap-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="glass-card !p-0 overflow-hidden">
+              <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm overflow-hidden">
                 <div className="flex items-center gap-2.5 px-4 py-3">
                   <div className="skeleton h-4 w-40" />
                   <div className="flex-1" />
@@ -592,7 +592,7 @@ function RoadmapDetail() {
           <div className="flex items-center gap-3 min-w-0">
             {/* Official logo / themed glyph — matches the roadmap list card identity */}
             <div
-              className="glass-card shrink-0 w-12 h-12 flex items-center justify-center !rounded-xl"
+              className="bg-white border border-[rgba(15,23,42,0.08)] rounded-xl shadow-sm shrink-0 w-12 h-12 flex items-center justify-center"
               style={{ borderBottomColor: accent, borderBottomWidth: '2px' }}
             >
               <RoadmapLogo title={meta.title} Icon={RoadmapIcon} accent={accent} size={24} />
@@ -860,7 +860,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
         const showSectionHeaders = sections.length > 1 || (sections[0] && sections[0] !== phase);
 
         return (
-          <section key={phase} className="glass-card !p-0 overflow-hidden">
+          <section key={phase} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm overflow-hidden">
             <button
               onClick={() => onTogglePhase(phase)}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-left hover:bg-[rgba(15,23,42,0.02)] transition-colors"

@@ -17,7 +17,7 @@ export const useAuth = () => useContext(AuthContext);
 // this is dead-code-eliminated from any deployed bundle — it cannot ship.
 const DEV_AUTH_BYPASS =
   import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
-const DEV_SESSION = { access_token: 'dev-bypass', user: { id: 'dev', email: 'dev@localhost' } };
+const DEV_SESSION = { access_token: 'dev-bypass', user: { id: 'dev', email: 'aloksingh98541@gmail.com' } };
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(DEV_AUTH_BYPASS ? DEV_SESSION : null);

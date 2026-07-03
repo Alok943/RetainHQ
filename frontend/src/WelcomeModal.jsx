@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     icon: PenLine,
-    accent: '#8B5CF6',
+    accent: '#0891B2',
     image: '/welcome/capture.png',
     eyebrow: 'Step 1 · Capture',
     title: 'Log what you learn in seconds',

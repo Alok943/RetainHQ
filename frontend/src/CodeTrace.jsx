@@ -45,8 +45,8 @@ export default function CodeTrace({ code, focus }) {
         )}
       </div>
 
-      <div className="grid md:grid-cols-2">
-        {/* code with active-line highlight */}
+      <div className="grid md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {/* code with active-line highlight — gets the larger share so long lines don't crowd */}
         <pre className="m-0 p-3 text-[12.5px] leading-relaxed font-mono overflow-x-auto bg-[#0b1220] text-[#e2e8f0] min-w-0 max-w-full">
           {lines.map((ln, i) => {
             const active = cur && cur.line === i + 1;

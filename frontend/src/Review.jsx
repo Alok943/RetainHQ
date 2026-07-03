@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, PartyPopper, Sparkles, Lightbulb } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { track, EVENTS } from './lib/analytics';
@@ -260,7 +260,7 @@ function Review({ onBack }) {
     const done = total > 0;
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center animate-in fade-in duration-300">
-        {done ? <PartyPopper size={32} className="text-[#0F766E]" /> : <CheckCircle2 size={32} className="text-[#0F766E]" />}
+        <CheckCircle2 size={32} className="text-[#0F766E]" />
         <h2 className="font-sans text-xl font-semibold text-[#0F172A]">
           {done ? 'Reviews complete' : "You're all caught up"}
         </h2>
@@ -303,9 +303,9 @@ function Review({ onBack }) {
             {index + 1} / {total}
           </div>
         </div>
-        {/* Frame the queue as one short, finishable session — not an open-ended pile. */}
+        {/* Frame the queue as progress underway, not a debt count (Zeigarnik). */}
         <p className="font-sans text-xs text-[#64748B]">
-          Today's review · {total} card{total > 1 ? 's' : ''} · ~{Math.max(1, Math.round(total * 0.7))} min
+          Today's review · {index} of {total} done · ~{Math.max(1, Math.round((total - index) * 0.7))} min
         </p>
         <div className="w-full h-1 bg-[rgba(15,23,42,0.08)] rounded-full overflow-hidden">
           {/* Counts the revealed card as progress so the bar reaches 100% on the
