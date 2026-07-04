@@ -65,11 +65,13 @@ async def get_due_reviews(
     
     reviews = []
     for row in rows:
-        r = row.Review
-        r.roadmap_slug = row.roadmap_slug
-        r.node_title = row.node_title
-        reviews.append(r)
-        
+        # Review (SQLModel, table=True) has no roadmap_slug/node_title fields —
+        # attach them on the response schema instead of the ORM row.
+        review = ReviewResponse.model_validate(row.Review)
+        review.roadmap_slug = row.roadmap_slug
+        review.node_title = row.node_title
+        reviews.append(review)
+
     return reviews
 
 @router.post("/{review_id}/complete", response_model=ReviewResponse)
