@@ -1,0 +1,94 @@
+{
+  "slug": "auto-range-for-structured-bindings",
+  "title": "auto, range-for & structured bindings (C++17)",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "references-vs-pointers",
+      "const-correctness"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You write a clean range-based for loop `for (auto row : matrix)` to iterate over a 2D grid. The code is readable, but it unexpectedly runs much slower than a messy `for(int i=0...` loop.",
+    "question": "Why did `auto` silently destroy your performance?"
+  },
+  "mental_model": {
+    "intuition": "`auto` determines the base type but it purposefully strips away references and const qualifiers. If you ask for `auto`, you are asking for a brand new, independent copy of the object.",
+    "description": "Modern C++ (11 and 17) introduced features to reduce boilerplate. `auto` deduces types, range-based `for` simplifies iteration, and structured bindings (`auto [x, y] = point`) make unpacking tuples/pairs trivial. However, `auto` defaults to passing by value. If you iterate over a container of large objects (like a vector of strings or a 2D vector) using just `auto`, you create a deep copy of every single element. You must explicitly use `auto&` to mutate or `const auto&` to read efficiently."
+  },
+  "explanation": "When you use `auto x = y;`, the compiler looks at `y` to figure out the type of `x`. But `auto` behaves exactly like template type deduction: it strips away top-level `const` and `&` (references).\n\nIf you have `const std::string& ref = myString;` and you write `auto copy = ref;`, `copy` becomes a plain `std::string` that is a full, expensive deep copy of `myString`.\n\nThis bites hardest in range-based for loops:\n- `for (auto item : vec)`: Makes a **copy** of every item. Use only for primitives (int, float).\n- `for (auto& item : vec)`: Takes a **reference**. Use this if you need to mutate the items.\n- `for (const auto& item : vec)`: Takes a **const reference**. Use this to read large objects efficiently.\n\nC++17 Structured Bindings allow you to unpack pairs, tuples, and structs instantly. The same `auto` rules apply: `auto [key, val] = map_element` copies the key and value. Use `const auto& [key, val]` instead when iterating over a `std::map`.",
+  "code_snippets": [
+    {
+      "title": "The bug: Accidental deep copies in range-for",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> words = {\"Hello\", \"World\", \"C++\"};\n    \n    // Bug 1: Performance loss. Makes a copy of each string.\n    for (auto w : words) {\n        // ...\n    }\n    \n    // Bug 2: Fails to mutate.\n    for (auto w : words) {\n        w = \"Changed\"; // Only modifies the local copy, not the vector\n    }\n    return 0;\n}",
+      "explanation": "Just like pass-by-value in function parameters, `auto w` creates a local variable `w` that is a copy of the element in the vector. Modifying it doesn't affect the vector, and copying large strings is slow."
+    },
+    {
+      "title": "The fix: Using references with auto and structured bindings",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <string>\n#include <map>\n#include <iostream>\n\nint main() {\n    std::vector<std::string> words = {\"Hello\", \"World\", \"C++\"};\n    std::map<int, std::string> dict = {{1, \"One\"}, {2, \"Two\"}};\n    \n    // Fast, read-only iteration\n    for (const auto& w : words) {\n        std::cout << w << ' ';\n    }\n    \n    // Fast mutation\n    for (auto& w : words) {\n        w += \"!\"; // Modifies the actual elements in the vector\n    }\n    \n    // C++17 Structured Bindings (efficient read-only)\n    for (const auto& [key, value] : dict) {\n        std::cout << key << \": \" << value << '\\n';\n    }\n    \n    return 0;\n}",
+      "explanation": "Adding `const auto&` makes the loop variable an alias to the element, preventing copies. Structured bindings `[key, value]` unpack the `std::pair` from the map directly into named variables."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using auto for map iteration copies",
+      "explanation": "Iterating over a map with `for (auto pair : dict)` copies the `std::pair<const K, V>` on every step. Always use `for (const auto& pair : dict)` or structured bindings."
+    },
+    {
+      "title": "Thinking auto preserves const",
+      "explanation": "If `x` is `const int`, `auto y = x` makes `y` a mutable `int`. The `const` is stripped unless you explicitly write `const auto`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you use `for (auto item : container)` on a vector of strings?",
+      "answer": "It makes a deep copy of every string in the container, which is slow and prevents you from modifying the original elements.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How should you declare the loop variable to efficiently read elements from a container without modifying them?",
+      "answer": "Use `const auto&`, which avoids copying and ensures the elements cannot be accidentally mutated.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What feature allows you to unpack a map element directly into key and value variables?",
+      "answer": "C++17 Structured Bindings, e.g., `for (const auto& [key, value] : map)`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A code review shows this loop: `for (auto row : grid) { for (auto cell : row) { sum += cell; } }`. The grid is a `std::vector<std::vector<int>>`. Why is this slow?",
+      "answer": "The outer loop `auto row` makes a complete copy of every `std::vector<int>` (an O(N) copy per row). It should be `const auto& row` to iterate by reference.",
+      "approach": "Recognize that `auto` defaults to value semantics and copies the object."
+    },
+    {
+      "question": "A candidate uses `for (auto element : my_map)` to iterate over a map. What is the type of `element`?",
+      "answer": "The type is `std::pair<const Key, Value>`. Since they used `auto` instead of `const auto&`, it makes a copy of the pair on every iteration.",
+      "approach": "Recognize that map elements are pairs, and `auto` creates copies."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "auto strips references",
+      "detail": "`auto` creates a new value. You must add `&` to get a reference."
+    },
+    {
+      "title": "Default to const auto&",
+      "detail": "For containers of objects, default your loops to `const auto&` unless you are iterating over primitives."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es71-prefer-a-range-for-statement-to-a-for-statement-when-there-is-a-choice",
+    "https://en.cppreference.com/w/cpp/language/structured_binding"
+  ]
+}

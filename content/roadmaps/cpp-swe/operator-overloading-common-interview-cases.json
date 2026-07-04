@@ -1,0 +1,88 @@
+{
+  "slug": "operator-overloading-common-interview-cases",
+  "title": "Operator overloading \u2014 common interview cases",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "classes-constructors-destructors-and-this"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You overload `operator+` as a member function of your `Vector2D` class. While `vec + 5` works perfectly, writing `5 + vec` throws a compiler error.",
+    "question": "Why does addition suddenly care about left-to-right order?"
+  },
+  "mental_model": {
+    "intuition": "When an operator is a member function, the left side of the operator IS the object making the call (`vec.operator+(5)`). If the left side is an integer (`5.operator+(vec)`), it fails because integers don't have your class's methods.",
+    "description": "Operator overloading allows custom classes to use standard operators like `+`, `==`, or `<<`. The primary pitfall is choosing whether to overload them as member functions or free (non-member) functions. For symmetric operators (like `+` or `*`), you should use non-member `friend` functions so that both the left and right operands are treated equally and can undergo implicit conversions."
+  },
+  "explanation": "C++ allows you to overload operators to make custom classes behave like primitives. However, don't overload them to be 'cute' (e.g., using `+` to add an item to a database)\u2014operators should stick to their conventional mathematical or logical meanings.\n\n**Member vs. Non-Member Overloads:**\nIf you define `operator+` inside a class, the object on the left side of the `+` is the `this` object. This creates an asymmetry: `myObject + 5` is evaluated as `myObject.operator+(5)`, which works. But `5 + myObject` fails because `5` is a primitive and cannot invoke `operator+` on your class.\n\nTo achieve mathematical symmetry, binary operators (`+`, `-`, `*`, `==`) must be defined as free (non-member) functions. If they need to access private data, you declare them as `friend` functions inside the class. They take both operands as parameters (usually by `const&`), meaning `5 + myObject` perfectly matches `operator+(5, myObject)`.\n\n**Return Types:**\nOperators like `+` create a entirely new object without modifying the originals, so they must return by value. Operators like `+=` modify the existing object and return `*this` by reference (`Type&`).",
+  "code_snippets": [
+    {
+      "title": "The bug: Asymmetric member operator",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Vector2D {\n    double x, y;\npublic:\n    Vector2D(double x, double y) : x(x), y(y) {}\n    \n    // Member operator+\n    Vector2D operator+(double scalar) const {\n        return Vector2D(x + scalar, y + scalar);\n    }\n};\n\nint main() {\n    Vector2D v(1.0, 2.0);\n    Vector2D v1 = v + 5.0; // OK: v.operator+(5.0)\n    // Vector2D v2 = 5.0 + v; // ERROR: 5.0 is not a Vector2D!\n    return 0;\n}",
+      "explanation": "The member operator ties the addition strictly to the `Vector2D` object being on the left side. Commutative math breaks down."
+    },
+    {
+      "title": "The fix: Symmetric friend function",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Vector2D {\n    double x, y;\npublic:\n    Vector2D(double x, double y) : x(x), y(y) {}\n    \n    // Friend free function: defined inside class for convenience, but acts as a global function\n    friend Vector2D operator+(const Vector2D& lhs, double scalar) {\n        return Vector2D(lhs.x + scalar, lhs.y + scalar);\n    }\n    \n    // Reverse order overload ensures perfect symmetry\n    friend Vector2D operator+(double scalar, const Vector2D& rhs) {\n        return Vector2D(rhs.x + scalar, rhs.y + scalar);\n    }\n};\n\nint main() {\n    Vector2D v(1.0, 2.0);\n    Vector2D v1 = v + 5.0; // OK: operator+(v, 5.0)\n    Vector2D v2 = 5.0 + v; // OK: operator+(5.0, v)\n    return 0;\n}",
+      "explanation": "By using `friend` free functions, we decouple the operator from the `this` pointer. We provide both orderings so that primitive types can safely sit on either side of the `+` operator."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning a reference from operator+",
+      "explanation": "Writing `Vector2D& operator+(...)` means you are returning a reference to a local temporary object created during addition. This causes a dangling reference and immediate Undefined Behaviour. Always return by value for `operator+`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why should binary operators like operator+ be implemented as non-member (free) functions?",
+      "answer": "To ensure symmetry. If it is a member function, the left operand must be an instance of the class, preventing expressions like `5 + object`. Free functions treat both operands equally.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the purpose of the friend keyword in operator overloading?",
+      "answer": "It allows a non-member function to access the private and protected member variables of the class.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must operator+ return by value instead of by reference?",
+      "answer": "Because it creates a brand new object representing the mathematical sum. Returning a reference to this local temporary object would result in a dangling reference.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate implements `operator==` as a member function of their `String` class. When they write `if (\"hello\" == myString)`, the code fails to compile. Why?",
+      "answer": "The left side is a `const char*`. Since `operator==` is a member function, the compiler tries to call `(\"hello\").operator==(myString)`, which doesn't exist. It should be a free function `bool operator==(const char* lhs, const String& rhs)`.",
+      "approach": "Identify the asymmetry of member operators."
+    },
+    {
+      "question": "How does `operator+=` differ from `operator+` in terms of its return type?",
+      "answer": "`operator+=` modifies the existing object in place and should return `*this` by reference (e.g., `Class&`). `operator+` creates a new object and must return it by value.",
+      "approach": "Understand the difference between mutating and non-mutating operators."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Symmetry needs free functions",
+      "detail": "If an operator treats both operands equally (like `+` or `==`), use a non-member `friend` function."
+    },
+    {
+      "title": "Return types matter",
+      "detail": "`+` returns by value. `+=` returns by reference."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#c161-use-non-member-functions-for-symmetric-operators"
+  ]
+}

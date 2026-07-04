@@ -1,0 +1,94 @@
+{
+  "slug": "data-types-io-fast-io-tricks",
+  "title": "Data types, I/O (cin/cout) & fast I/O tricks",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "references-vs-pointers"
+    ]
+  },
+  "hook": {
+    "scenario": "You write a competitive programming solution that is mathematically optimal (O(N)), but it gets Time Limit Exceeded (TLE) anyway.",
+    "question": "Why did a linear-time algorithm fail?"
+  },
+  "mental_model": {
+    "intuition": "Standard I/O in C++ is tied to C's stdio for safety, and endl flushes the output buffer every single time. It's like driving a truck to the post office for every single letter instead of filling the truck first.",
+    "description": "C++ I/O streams (cin, cout) are synchronized with C's stdio (printf, scanf) by default so you can mix them safely. This synchronization adds massive overhead. Furthermore, std::endl does two things: it inserts a newline, AND it flushes the output buffer to the console. When printing thousands of lines, flushing every line causes severe performance degradation. The fix is to untie the streams and use '\\n'."
+  },
+  "explanation": "In performance-critical scenarios, especially competitive programming, I/O speed can be the bottleneck. By default, `std::cin` and `std::cout` are tied together (reading from `cin` automatically flushes `cout`) and synchronized with C's underlying I/O buffers. This guarantees that if you mix `printf` and `cout`, the output appears in the correct order. But this thread-safe synchronization is slow.\n\nWe can disable it using `std::ios_base::sync_with_stdio(false);`. Once you do this, you must NOT mix C and C++ I/O functions. Additionally, `std::cin.tie(nullptr);` prevents `cin` from flushing `cout` before every read, which is safe when you don't need interactive prompts.\n\nThe second major trap is `std::endl`. It writes a newline character and forces a flush of the output buffer. Flushing is a heavy system call. When you only need a newline, use the character `'\\n'`. The buffer will still flush automatically when it's full or when the program terminates, which is far more efficient.",
+  "code_snippets": [
+    {
+      "title": "The bug: slow I/O and excessive flushing",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    for (int i = 0; i < n; ++i) {\n        int x;\n        std::cin >> x;\n        // std::endl flushes the buffer on every iteration\n        std::cout << (x * 2) << std::endl;\n    }\n    return 0;\n}",
+      "explanation": "If `n` is 10^5, this program makes 100,000 system calls to flush the output. Additionally, `cin` and `cout` are synchronized with C's `stdio`, adding overhead to every single read and write."
+    },
+    {
+      "title": "The fix: fast I/O template and '\\n'",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nint main() {\n    // Untie C and C++ streams. Do not mix printf/scanf with cin/cout after this!\n    std::ios_base::sync_with_stdio(false);\n    \n    // Prevent cin from automatically flushing cout before every read.\n    std::cin.tie(nullptr);\n\n    int n;\n    std::cin >> n;\n    for (int i = 0; i < n; ++i) {\n        int x;\n        std::cin >> x;\n        // '\\n' just appends a newline to the buffer; flush happens only when full.\n        std::cout << (x * 2) << '\\n';\n    }\n    return 0;\n}",
+      "explanation": "Adding the two fast I/O lines and replacing `std::endl` with `'\\n'` can speed up I/O by orders of magnitude. This is the standard boilerplate for any C++ competitive programming template."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Mixing C and C++ I/O after untying",
+      "explanation": "If you call `sync_with_stdio(false)` and then use both `std::cout` and `printf`, your output might appear out of order because they are now using separate, unsynchronized buffers."
+    },
+    {
+      "title": "Using std::endl when debugging a crash",
+      "explanation": "While `\\n` is better for performance, `std::endl` is exactly what you want when debugging via print statements before a crash. If you use `\\n`, the program might crash before the buffer flushes, and you won't see your debug output."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two things does std::endl do?",
+      "answer": "It inserts a newline character ('\\n') and flushes the output buffer to the console or file.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is std::ios_base::sync_with_stdio(false) used in competitive programming?",
+      "answer": "It disables the synchronization between C++ streams (cin/cout) and C streams (scanf/printf), making C++ I/O significantly faster.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the danger of using sync_with_stdio(false)?",
+      "answer": "Once synchronization is disabled, mixing C and C++ I/O functions (like printf and cout) can result in garbled or out-of-order output.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate writes a C++ solution that times out, but an equivalent Java solution passes. They are using `std::cin` and `std::cout` with `std::endl`. How would you review their code?",
+      "answer": "I would point out that `std::endl` forces a buffer flush on every line, and C++ streams sync with C streams by default. I'd advise replacing `std::endl` with `'\\n'` and adding `std::ios_base::sync_with_stdio(false); std::cin.tie(nullptr);` to the start of `main`.",
+      "approach": "Identify the flush overhead of `endl` and the synchronization overhead of C++ streams as the hidden constant factors causing the TLE.",
+      "company": "Competitive Programming"
+    },
+    {
+      "question": "When building an interactive command-line tool, should you use `std::cin.tie(nullptr)`?",
+      "answer": "No. `cin` is tied to `cout` by default so that any pending output (like a prompt saying 'Enter your name:') is flushed before the program blocks to wait for input. Untying them might cause the program to wait for input before the prompt is actually printed.",
+      "approach": "Understand that untying `cin` and `cout` removes the automatic flush before reading, which breaks interactive prompts."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Always use '\\n' instead of std::endl",
+      "detail": "Unless you explicitly need to flush the buffer (like in an interactive prompt or right before an expected crash), use `'\\n'`."
+    },
+    {
+      "title": "Fast I/O boilerplate",
+      "detail": "Use `std::ios_base::sync_with_stdio(false); std::cin.tie(nullptr);` in competitive programming to avoid TLE."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/io/ios_base/sync_with_stdio",
+    "https://en.cppreference.com/w/cpp/io/manip/endl"
+  ]
+}

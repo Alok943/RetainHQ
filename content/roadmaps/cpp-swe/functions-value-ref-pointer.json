@@ -1,0 +1,85 @@
+{
+  "slug": "functions-value-ref-pointer",
+  "title": "Functions \u2014 pass by value, reference & pointer",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "const-correctness"
+    ],
+    "unlocks": [
+      "arrays-c-style-vs-std-string"
+    ]
+  },
+  "hook": {
+    "scenario": "You write a function to modify a user's account balance. The function runs successfully, but back in main(), the balance hasn't changed.",
+    "question": "Why did the function's modifications disappear?"
+  },
+  "mental_model": {
+    "intuition": "Pass-by-value is photocopying a document and giving it to someone; they can scribble on it, but your original is safe. Pass-by-reference is giving them the original document.",
+    "description": "In C++, the default parameter passing mechanism is 'pass-by-value'\u2014making a full copy of the argument. This is fast for small types like `int` but disastrously slow for large containers like `std::vector`. To allow modification, you pass by reference (`&`) or pointer (`*`). To avoid copying large objects without allowing modification, you pass by const reference (`const&`)."
+  },
+  "explanation": "When declaring function parameters, you have three main choices:\n\n1. **By Value (`Type x`)**: The function gets a complete, independent copy. Any changes made inside the function do not affect the original. This is the default in C++. Use it for primitive types (`int`, `double`) and small structs.\n2. **By Reference (`Type& x`)**: The function receives an alias to the original object. No copy is made. Changes inside the function directly mutate the original object. Use it when you explicitly want the function to modify the caller's variable (an 'out' parameter).\n3. **By Const Reference (`const Type& x`)**: No copy is made, but the function is forbidden from modifying the object. Use this for large objects (like `std::string`, `std::vector`, or custom classes) that you only need to read.\n\nPassing by pointer (`Type* x`) works similarly to references (it avoids a copy and allows modification), but requires explicit dereferencing and can be null. Modern C++ strongly prefers references for parameters unless null is an expected, valid input.",
+  "code_snippets": [
+    {
+      "title": "Pass by value vs reference",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n\n// Pass by value: makes a full copy of the vector. VERY SLOW for large inputs.\nvoid badSum(std::vector<int> v) {\n    v[0] = 99; // Modifies the copy, original is untouched\n}\n\n// Pass by const reference: no copy, fast, read-only.\nvoid goodSum(const std::vector<int>& v) {\n    // v[0] = 99; // Would not compile! (Read-only)\n    std::cout << v[0] << '\\n';\n}\n\n// Pass by reference: no copy, mutates original.\nvoid modify(std::vector<int>& v) {\n    v[0] = 99; // Modifies the original vector\n}\n\nint main() {\n    std::vector<int> data = {1, 2, 3};\n    badSum(data);\n    std::cout << data[0] << '\\n'; // Prints 1\n    \n    modify(data);\n    std::cout << data[0] << '\\n'; // Prints 99\n    return 0;\n}",
+      "explanation": "`badSum` accidentally creates an O(N) copy of the entire vector on every call. `goodSum` and `modify` are O(1) in overhead because they use references."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Passing containers by value",
+      "explanation": "Accidentally omitting the `&` when passing a `std::vector` or `std::string` causes the entire structure to be deeply copied. In a recursive function or a loop, this turns an O(N) algorithm into O(N^2)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the default parameter passing method in C++?",
+      "answer": "Pass-by-value. It makes an independent copy of the argument.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How should you pass a large std::vector to a function if you only need to read its elements?",
+      "answer": "By const reference (e.g., const std::vector<int>&) to avoid the overhead of copying while preventing unintended modifications.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is pass-by-reference preferred over pass-by-pointer in modern C++?",
+      "answer": "References cannot be null and don't require explicit dereferencing syntax, making the code safer and cleaner.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate implements a recursive DFS (Depth First Search) for a graph. Their logic is correct, but it fails with a Time Limit Exceeded (TLE) error. The signature is `void dfs(int node, std::vector<bool> visited)`. What is the issue?",
+      "answer": "The `visited` array is being passed by value. Every recursive call creates a complete copy of the array, turning an O(V + E) algorithm into an O(V * (V + E)) algorithm. It must be passed by reference `std::vector<bool>& visited`.",
+      "approach": "Recognize the performance impact of missing `&` on container parameters.",
+      "company": "Standard OA"
+    },
+    {
+      "question": "If you pass an object by value to a function, does it call the copy constructor or the assignment operator?",
+      "answer": "It calls the copy constructor. Passing by value involves initializing a new local variable with the provided argument.",
+      "approach": "Identify the mechanism of pass-by-value as object initialization, not assignment."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Primitives by value",
+      "detail": "Pass small types like `int`, `bool`, and `char` by value."
+    },
+    {
+      "title": "Objects by const&",
+      "detail": "Pass classes and containers by `const&` unless you need to mutate them."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f16-for-in-parameters-pass-cheaply-copied-types-by-value-and-others-by-reference-to-const"
+  ]
+}

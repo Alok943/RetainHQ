@@ -1,0 +1,93 @@
+{
+  "slug": "abstract-classes-and-pure-virtual-functions",
+  "title": "Abstract classes & pure virtual functions",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "inheritance-and-virtual-functions-vtable"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You properly use polymorphism to manage a list of `Animal*` pointers. At the end of the program, you call `delete` on each pointer. Later, your memory profiler reveals that the destructors for `Dog` and `Cat` never ran, causing massive memory leaks.",
+    "question": "Why did deleting a base pointer fail to clean up the derived object?"
+  },
+  "mental_model": {
+    "intuition": "Deleting a base pointer is like throwing out a box labelled 'Animal'. If the destructor isn't `virtual`, the compiler doesn't check the vtable to see it's actually a `Dog`, so it only cleans up the generic Animal parts.",
+    "description": "An abstract class is a class that defines an interface but cannot be instantiated directly. This is achieved by creating at least one 'pure virtual' function (`= 0`). The most critical rule of C++ inheritance is that if a class has ANY virtual functions (or is meant to be deleted through a base pointer), it absolutely MUST have a `virtual` destructor, otherwise destroying a derived object via a base pointer causes undefined behaviour (usually memory leaks)."
+  },
+  "explanation": "Sometimes a base class represents a concept that shouldn't exist on its own. For example, you can have a `Dog` or a `Cat`, but you shouldn't be able to instantiate a raw, generic `Animal`. In C++, you prevent instantiation by making the class 'abstract'.\n\nYou do this by adding `= 0` to a virtual function declaration: `virtual void makeSound() = 0;`. This is called a 'pure virtual function'. It forces any derived class to implement the function. If they don't, they also become abstract and cannot be instantiated. This is how C++ implements Interfaces.\n\n**The Virtual Destructor Trap:**\nWhen you use `new Dog()` but store it in an `Animal*`, calling `delete` on that pointer looks at the `Animal` class. If `~Animal()` is not virtual, the compiler uses static binding. It destroys the `Animal` part of the object and completely ignores the `Dog` part (so `Dog`'s specific memory is leaked).\n\n**The Golden Rule:** If a class has at least one virtual function, its destructor MUST be virtual. Period.\n\nNote that while `= 0` forces derived classes to override the function, you *can* still provide a default implementation for a pure virtual function outside the base class body, which derived classes can explicitly call if needed.",
+  "code_snippets": [
+    {
+      "title": "The bug: Missing virtual destructor causes leaks",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Animal {\npublic:\n    // Pure virtual function makes Animal an Abstract Class\n    virtual void makeSound() const = 0;\n    \n    // BUG: Non-virtual destructor\n    ~Animal() { std::cout << \"Animal destroyed\\n\"; }\n};\n\nclass Dog : public Animal {\n    int* bones;\npublic:\n    Dog() : bones(new int[100]) {}\n    void makeSound() const override { std::cout << \"Bark\\n\"; }\n    \n    ~Dog() {\n        delete[] bones;\n        std::cout << \"Dog destroyed\\n\";\n    }\n};\n\nint main() {\n    Animal* a = new Dog();\n    a->makeSound();\n    \n    // UB: Deleting through a base pointer with a non-virtual destructor.\n    // Only ~Animal() runs. ~Dog() is skipped. Memory leaks!\n    delete a; \n    return 0;\n}",
+      "explanation": "Because `~Animal()` is not virtual, the compiler does not look up the vtable when `delete a;` happens. The `Dog` destructor is entirely bypassed, and the 100 integers are leaked."
+    },
+    {
+      "title": "The fix: virtual destructor",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Animal {\npublic:\n    virtual void makeSound() const = 0;\n    \n    // FIX: Virtual destructor ensures dynamic dispatch on delete\n    virtual ~Animal() { std::cout << \"Animal destroyed\\n\"; }\n};\n\nclass Dog : public Animal {\n    int* bones;\npublic:\n    Dog() : bones(new int[100]) {}\n    void makeSound() const override { std::cout << \"Bark\\n\"; }\n    \n    ~Dog() override {\n        delete[] bones;\n        std::cout << \"Dog destroyed\\n\";\n    }\n};\n\nint main() {\n    Animal* a = new Dog();\n    a->makeSound();\n    \n    // Correctly routes to ~Dog(), which then automatically calls ~Animal()\n    delete a; \n    return 0;\n}",
+      "explanation": "Now, `delete a` consults the vtable, discovers the object is a `Dog`, and calls `~Dog()`. Once `~Dog()` finishes, it automatically chains up to `~Animal()`, cleanly destroying the entire object."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Providing an implementation for a pure virtual function inside the class body",
+      "explanation": "Writing `virtual void func() = 0 { ... }` is illegal syntax. (You can provide a default implementation outside the class body, but it's rare and usually means the function shouldn't have been pure virtual)."
+    },
+    {
+      "title": "Forgetting that pure virtual functions make a class abstract",
+      "explanation": "If a derived class forgets to `override` a single pure virtual function from its parent, the derived class silently remains abstract, resulting in confusing compiler errors when you try to instantiate it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What syntax is used to declare a pure virtual function in C++?",
+      "answer": "Append `= 0` to the end of the virtual function declaration (e.g., `virtual void func() = 0;`).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when you try to instantiate a class that contains a pure virtual function?",
+      "answer": "The compiler throws an error. Classes with pure virtual functions are abstract and cannot be directly instantiated.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why MUST a base class with virtual functions have a virtual destructor?",
+      "answer": "To ensure that when a derived object is deleted through a base class pointer, the derived class's destructor is called via the vtable, preventing memory leaks and undefined behaviour.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate implements an interface class with several `= 0` methods but provides an empty standard destructor `~IReader() {}`. What feedback would you give?",
+      "answer": "The destructor must be declared `virtual`. If the interface is used to hold polymorphic objects via `IReader*`, calling `delete` on that pointer will cause undefined behaviour because it lacks dynamic dispatch for cleanup.",
+      "approach": "Connect interface design directly to the virtual destructor requirement."
+    },
+    {
+      "question": "Can you declare a pure virtual function but still provide an implementation for it?",
+      "answer": "Yes, you can provide an implementation outside the class definition (e.g., `void Animal::makeSound() { ... }`). Derived classes are still forced to override it, but they can explicitly call the base implementation if needed.",
+      "approach": "Know the obscure but valid edge case of pure virtual implementations."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Virtual functions demand virtual destructors",
+      "detail": "If your class has `virtual` anywhere, add a `virtual ~Class() = default;`."
+    },
+    {
+      "title": "Interfaces = Pure Virtual",
+      "detail": "C++ models interfaces entirely through classes composed of pure virtual functions."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#c35-a-base-class-destructor-should-be-either-public-and-virtual-or-protected-and-non-virtual",
+    "https://en.cppreference.com/w/cpp/language/abstract_class"
+  ]
+}

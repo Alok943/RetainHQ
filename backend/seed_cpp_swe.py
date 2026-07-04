@@ -16,6 +16,7 @@ NODES = [
     # ---------------- Step 1: Core Language ----------------
     ("Step 1: Core Language", "Basics", "Data types, I/O (cin/cout) & fast I/O tricks", "easy"),
     ("Step 1: Core Language", "Basics", "References vs pointers — syntax & mental model", "medium"),
+    ("Step 1: Core Language", "Basics", "const correctness — const refs, const methods & when to use", "medium"),
     ("Step 1: Core Language", "Basics", "Functions — pass by value, reference & pointer", "easy"),
     ("Step 1: Core Language", "Basics", "Arrays, strings & C-style vs std::string", "easy"),
     ("Step 1: Core Language", "Basics", "Preprocessor macros & #define for CP", "easy"),
@@ -37,6 +38,7 @@ NODES = [
     # ---------------- Step 4: STL ----------------
     ("Step 4: STL", "Sequence Containers", "vector — internals, push_back amortization", "easy"),
     ("Step 4: STL", "Sequence Containers", "deque, list & array", "easy"),
+    ("Step 4: STL", "Sequence Containers", "Iterator invalidation — when containers reshuffle under you", "hard"),
     ("Step 4: STL", "Associative Containers", "map & set — red-black tree, O(log n) ops", "medium"),
     ("Step 4: STL", "Associative Containers", "unordered_map & unordered_set — hash internals", "medium"),
     ("Step 4: STL", "Associative Containers", "multimap, multiset & priority_queue", "medium"),
@@ -81,8 +83,8 @@ async def main():
             text("DELETE FROM roadmaps WHERE id = :rid"), {"rid": str(ROADMAP_ID)}
         )
         await conn.execute(
-            text("INSERT INTO roadmaps (id, title, description, created_at) VALUES (:id, :title, :desc, now())"),
-            {"id": str(ROADMAP_ID), "title": TITLE, "desc": DESCRIPTION},
+            text("INSERT INTO roadmaps (id, slug, title, description, created_at) VALUES (:id, :slug, :title, :desc, now())"),
+            {"id": str(ROADMAP_ID), "slug": "cpp-swe", "title": TITLE, "desc": DESCRIPTION},
         )
         for i, (phase, section, title, tier) in enumerate(NODES):
             await conn.execute(

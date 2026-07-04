@@ -1,0 +1,96 @@
+{
+  "slug": "references-vs-pointers",
+  "title": "References vs pointers \u2014 syntax & mental model",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "data-types-io-fast-io-tricks"
+    ],
+    "unlocks": [
+      "const-correctness",
+      "functions-value-ref-pointer"
+    ]
+  },
+  "hook": {
+    "scenario": "You pass a variable to a function intending to modify it, but the original variable remains unchanged. Or worse, you return a reference to a local variable and your program segfaults.",
+    "question": "How do you safely give a function access to modify your data without copying it?"
+  },
+  "mental_model": {
+    "intuition": "A pointer is a variable that holds a memory address. It can point to nothing (null) or change what it points to. A reference is just a permanent alias (a second name) for an existing object. It cannot be null and cannot be reassigned.",
+    "description": "In C++, references (`&`) and pointers (`*`) both allow you to refer to an object indirectly, avoiding expensive copies. However, a reference is an alias bound at initialization\u2014it acts exactly like the original object. A pointer is a distinct object holding an address. Because references cannot be null and cannot be reseated (rebound to another object), they are safer and preferred for function parameters. Pointers are necessary for dynamic memory, arrays, and situations where 'no object' (nullptr) is a valid state."
+  },
+  "explanation": "A pointer is a memory address. Because it's a distinct variable, you can reassign it to point somewhere else, and you can set it to `nullptr` to indicate it points nowhere. You must explicitly dereference it with `*` or `->` to access the value.\n\nA reference is an alias. It must be initialized when it is declared, and it cannot be made to alias a different object later. Any operation on the reference is an operation on the aliased object. Under the hood, compilers often implement references using pointers, but the language hides the indirection, making the syntax cleaner (using `.` instead of `->`).\n\nThe most dangerous pitfall with both is dangling: referring to memory that has been freed or has gone out of scope. Never return a reference or a pointer to a local variable allocated on the stack, because the variable is destroyed when the function returns, leaving the reference pointing to invalid memory (Undefined Behaviour).",
+  "code_snippets": [
+    {
+      "title": "Syntax comparison and reassignment",
+      "language": "cpp",
+      "code": "int a = 10;\nint b = 20;\n\n// Pointer\nint* ptr = &a;      // ptr holds the address of a\n*ptr = 11;          // a is now 11\nptr = &b;           // ptr now points to b\nptr = nullptr;      // ptr points to nothing\n\n// Reference\nint& ref = a;       // ref is an alias for a\nref = 12;           // a is now 12\nref = b;            // This DOES NOT rebind ref. It assigns the value of b (20) to a.",
+      "explanation": "Notice that `ref = b` assigns the *value* of `b` into the variable `a` because `ref` is permanently aliased to `a`. You cannot change which object a reference aliases after initialization."
+    },
+    {
+      "title": "The bug: Returning a reference to a local variable",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nint& getBadReference() {\n    int local_val = 42;\n    return local_val;  // ERROR: returning reference to local variable\n}\n\nint main() {\n    int& ref = getBadReference();\n    std::cout << ref << '\\n'; // Undefined behaviour! The memory for local_val is gone.\n    return 0;\n}",
+      "explanation": "When `getBadReference` returns, its stack frame is destroyed. `local_val` no longer exists. `ref` in `main` is now a 'dangling reference'. Accessing it is undefined behaviour."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking references can be reseated",
+      "explanation": "Assigning to a reference does not change what it points to; it overwrites the value of the object it already aliases."
+    },
+    {
+      "title": "Checking if a reference is null",
+      "explanation": "References cannot be null by definition. (If you manage to create a null reference through pointer casting magic, your program is already in Undefined Behaviour)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Can a reference be reassigned to alias a different object?",
+      "answer": "No. Once a reference is initialized to an object, it cannot be reseated. Assigning to it changes the value of the aliased object.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is returning a reference to a local variable dangerous?",
+      "answer": "Local variables are destroyed when the function exits. The returned reference will point to destroyed memory, leading to undefined behaviour.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When should you use a pointer instead of a reference?",
+      "answer": "Use a pointer when you need the ability to reassign it, or when 'pointing to nothing' (nullptr) is a valid and necessary state.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In a C++ code review, you see a function signature `void processNode(Node* n)`. The function body immediately accesses `n->value`. What is the issue?",
+      "answer": "Since it takes a pointer, `n` could be `nullptr`. The code dereferences it without checking, risking a segmentation fault. It should either check for `nullptr` first, or be changed to take a reference `void processNode(Node& n)` to guarantee a valid object is passed.",
+      "approach": "Identify that pointers allow nulls (requiring safety checks), whereas references guarantee validity."
+    },
+    {
+      "question": "A candidate claims that references are just syntactic sugar and are implemented exactly like pointers under the hood, so they have the same performance and memory characteristics. Is this true?",
+      "answer": "Yes, compilers typically implement references as pointers. They have the same performance and memory layout. The difference is purely at the language level: references enforce initialization and prevent reseating and null values.",
+      "approach": "Distinguish between language semantics (safety rules) and compiler implementation (underlying memory)."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "References are permanent aliases",
+      "detail": "Must be initialized upon declaration and cannot be reseated or null."
+    },
+    {
+      "title": "Never return local references",
+      "detail": "Variables on the stack are destroyed when the function returns, resulting in dangling references."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f58-return-a-t-or-a-t-when-no-value-is-returned",
+    "https://en.cppreference.com/w/cpp/language/reference"
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "slug": "classes-constructors-destructors-and-this",
+  "title": "Classes, constructors, destructors & this",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "rule-of-3-5-0-copy-move-destructor",
+      "operator-overloading-common-interview-cases"
+    ]
+  },
+  "hook": {
+    "scenario": "You initialize a member variable based on another member variable inside the constructor's init list, but when you run the program, one of the variables holds random garbage data.",
+    "question": "Why did the compiler ignore the order of your initialization list?"
+  },
+  "mental_model": {
+    "intuition": "Think of the class definition (the header) as a blueprint. The compiler builds the walls of the house strictly in the order they appear on the blueprint. The constructor's initializer list just provides the materials; it does NOT dictate the building order.",
+    "description": "In C++, member variables are initialized in the exact order they are declared in the class definition, regardless of the order in the constructor's member initialization list. Relying on initialization order when one member depends on another is a classic trap. Furthermore, the initialization list is used to construct objects directly, rather than default-constructing them and then reassigning them inside the constructor body."
+  },
+  "explanation": "Constructors set up your object's initial state, and destructors (`~ClassName()`) clean it up. When setting member variables, C++ provides a 'member initializer list' (`: mem1(val1), mem2(val2)`). You should ALWAYS use this instead of assigning values inside the constructor body `{ mem1 = val1; }`. \n\nWhy? If you assign in the body, the compiler first default-constructs the member, and then you overwrite it with an assignment. For complex objects (like `std::string` or `std::vector`), this is a double-work performance penalty. For `const` members or reference members, assignment in the body is outright illegal\u2014they must be initialized in the list.\n\nThe most dangerous pitfall is the initialization order. Members are initialized in **declaration order** (top-to-bottom in the `class {}` block). If `y` is declared before `x`, but you write `: x(10), y(x)` in the init list, `y` is initialized first, using the uninitialized garbage value of `x`.\n\nThe `this` pointer is a hidden parameter passed to all non-static member functions, pointing to the instance the method was called on. It is mainly used to disambiguate member variables from parameters with the same name (e.g., `this->value = value;`).",
+  "code_snippets": [
+    {
+      "title": "The bug: Initialization order relies on the init-list",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Buffer {\n    int size;\n    int max_size;\npublic:\n    // BUG: 'size' is declared before 'max_size' in the class.\n    // Therefore, 'size' is initialized FIRST, using 'max_size' (which is still garbage).\n    // Then 'max_size' is initialized.\n    Buffer(int cap) : max_size(cap), size(max_size) {}\n    \n    void printSize() { std::cout << size << '\\n'; }\n};\n\nint main() {\n    Buffer b(10);\n    b.printSize(); // Prints a random garbage number, not 10!\n    return 0;\n}",
+      "explanation": "Because `size` appears before `max_size` in the class body, the compiler initializes `size` first. It uses `max_size`, which hasn't been initialized yet! `size` receives a garbage value."
+    },
+    {
+      "title": "The fix: Match declaration order and init-list order",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Buffer {\n    // Declare in the logical order of initialization\n    int max_size;\n    int size;\npublic:\n    // Init list order matches declaration order.\n    // 'max_size' initializes safely, then 'size' initializes.\n    Buffer(int cap) : max_size(cap), size(cap) {}\n    \n    // Using 'this' to resolve naming collisions\n    void resize(int size) {\n        this->size = size;\n    }\n};\n\nint main() {\n    Buffer b(10);\n    b.resize(20);\n    return 0;\n}",
+      "explanation": "By declaring `max_size` first, we can safely initialize both. Modern compilers will emit a warning (like `-Wreorder`) if your init list order doesn't match your declaration order."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assigning in the constructor body",
+      "explanation": "Writing `MyClass(std::string s) { name = s; }` forces the compiler to default-construct `name` (an empty string), and then call the string assignment operator. `MyClass(std::string s) : name(s) {}` calls the copy constructor once."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In what order are member variables initialized when a constructor is called?",
+      "answer": "They are initialized in the exact order they are declared in the class definition, regardless of their order in the initializer list.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it better to use a member initializer list rather than assigning values inside the constructor body?",
+      "answer": "Assigning in the body first default-constructs the object and then assigns to it (double work). The initializer list directly constructs the object with the desired value.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you try to assign a value to a const member variable inside the constructor body?",
+      "answer": "It causes a compilation error. Const variables cannot be assigned to after they are created; they MUST be initialized in the member initializer list.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A code review flags the constructor `Entity(int id, int health) : health(health), id(id) {}` where the class declares `int id; int health;`. Is this a bug?",
+      "answer": "While it is not strictly a bug (the compiler will still initialize `id` then `health`), it triggers compiler warnings (`-Wreorder`) because the init-list order is misleading. If `health` depended on `id`, it would be a critical bug. The list should match the declaration order.",
+      "approach": "Understand that the init list order is a visual lie if it doesn't match declaration order."
+    },
+    {
+      "question": "A candidate writes `std::string str;` in a class, and in the constructor they write `this->str = \"Hello\";`. How can this be optimized?",
+      "answer": "It should be moved to the initialization list: `ClassName() : str(\"Hello\") {}`. This prevents the string from being default-constructed (allocating an empty string) and immediately overwritten.",
+      "approach": "Identify the performance penalty of assignment vs initialization."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Init list is mandatory for const/refs",
+      "detail": "If your class has a `const` member or a reference member, you must initialize it in the list."
+    },
+    {
+      "title": "Declaration order is king",
+      "detail": "Always declare members in the order they logically depend on each other, and match your init list to that order."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#c47-initialize-members-in-the-order-they-appear-in-the-class",
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#c49-prefer-initialization-to-assignment-in-constructors"
+  ]
+}

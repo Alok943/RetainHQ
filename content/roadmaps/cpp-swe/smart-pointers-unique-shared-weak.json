@@ -1,0 +1,89 @@
+{
+  "slug": "smart-pointers-unique-shared-weak",
+  "title": "Smart pointers: unique, shared, weak",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "classes-constructors-destructors-and-this"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You create a `Node` class for a doubly-linked list using `std::shared_ptr` for both `next` and `prev` pointers. When the list goes out of scope, none of the Node destructors run, and the entire list leaks.",
+    "question": "If smart pointers manage memory automatically, how did they cause a massive memory leak?"
+  },
+  "mental_model": {
+    "intuition": "`unique_ptr` is exclusive ownership (you own a car; when you die, the car is scrapped). `shared_ptr` is shared ownership via a sign-out sheet (when the last person signs out, the car is scrapped). If A signs out B, and B signs out A, the sheet never hits zero, and the car is never scrapped (a cyclic leak). `weak_ptr` is observing without signing the sheet.",
+    "description": "Smart pointers (C++11) automate memory management via RAII, drastically reducing memory leaks. `std::unique_ptr` has exactly one owner and zero overhead. `std::shared_ptr` uses an atomic reference count to track multiple owners, which has a performance cost. `std::weak_ptr` breaks circular references in shared ownership graphs."
+  },
+  "explanation": "In modern C++, you should almost never use raw `new` and `delete`.\n\n**1. `std::unique_ptr` (Default choice)**\nIt guarantees exclusive ownership. It cannot be copied (the compiler explicitly `=delete`s its copy constructor to enforce this), only moved (transferring ownership). When it goes out of scope, it automatically calls `delete`. It has literally zero performance overhead compared to a raw pointer.\n\n**2. `std::shared_ptr`**\nIt maintains a \"control block\" with a reference count. When you copy it, the count increments. When one goes out of scope, it decrements. When the count hits zero, it deletes the object. Because the count must be thread-safe, modifying it uses atomic operations, making it noticeably slower than `unique_ptr`. Note that while the reference count itself is thread-safe, the actual underlying object being pointed to is NOT thread-safe; reading or writing the payload across threads still requires a mutex. Only use `shared_ptr` when ownership *must* be shared.\n\n**3. `std::weak_ptr`**\nThe trap of `shared_ptr` is the circular reference. If object A holds a `shared_ptr` to B, and B holds a `shared_ptr` to A, their ref-counts are both 1. When the main program drops them, their counts never hit 0, causing a memory leak. `std::weak_ptr` solves this: it points to a `shared_ptr` object but *does not* increase the reference count. It allows you to safely check if the object still exists (`lock()`) without forcing it to stay alive.",
+  "code_snippets": [
+    {
+      "title": "The bug: Circular reference leak",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <memory>\n\nstruct Node {\n    std::shared_ptr<Node> peer;\n    ~Node() { std::cout << \"Destroyed\\n\"; }\n};\n\nint main() {\n    auto a = std::make_shared<Node>();\n    auto b = std::make_shared<Node>();\n    \n    // Create a cycle: A owns B, B owns A.\n    a->peer = b;\n    b->peer = a;\n    \n    // Main scope ends. A drops B, B drops A? No.\n    // A's count is 2 (main + b). B's count is 2 (main + a).\n    // They drop to 1. Neither reaches 0. Memory leaks!\n    return 0;\n}",
+      "explanation": "Because both objects hold a strong reference to each other, the reference count will never reach zero. The destructors are completely bypassed."
+    },
+    {
+      "title": "The fix: std::weak_ptr",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <memory>\n\nstruct Node {\n    // weak_ptr observes, but does not increase the reference count\n    std::weak_ptr<Node> peer;\n    ~Node() { std::cout << \"Destroyed\\n\"; }\n};\n\nint main() {\n    auto a = std::make_shared<Node>();\n    auto b = std::make_shared<Node>();\n    \n    a->peer = b;\n    b->peer = a;\n    \n    // A's count is 1. B's count is 1.\n    // Scope ends, counts hit 0. Destructors run perfectly.\n    return 0;\n}",
+      "explanation": "By changing the back-reference to a `weak_ptr`, we break the cycle. When the program needs to use the `peer`, it temporarily converts it to a `shared_ptr` using `peer.lock()`."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using new inside the smart pointer constructor",
+      "explanation": "Writing `std::shared_ptr<int> p(new int(5))` requires two separate memory allocations (one for the integer, one for the control block). Always use `std::make_shared<int>(5)` and `std::make_unique<int>(5)`, which combine allocations for better performance and exception safety."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why should std::unique_ptr be preferred over std::shared_ptr whenever possible?",
+      "answer": "std::unique_ptr has zero memory and performance overhead compared to a raw pointer. std::shared_ptr incurs overhead from allocating and atomically modifying a reference count.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you try to pass a std::unique_ptr to a function by value?",
+      "answer": "The code will not compile. std::unique_ptr explicitly deletes its copy constructor to enforce exclusive ownership. It must be passed by reference, or its ownership must be transferred using std::move.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does std::weak_ptr solve the circular reference problem?",
+      "answer": "It provides a way to observe and access a std::shared_ptr object without incrementing its reference count, allowing the count to naturally drop to zero.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate writes `std::unique_ptr<int> p1 = std::make_unique<int>(10); std::unique_ptr<int> p2 = p1;`. What is the compiler error, and what is the fix?",
+      "answer": "The compiler errors because `unique_ptr` cannot be copied. If they want both pointers to read the value, they should pass a raw pointer or reference. If they want to transfer ownership, they must use `std::move(p1)`.",
+      "approach": "Understand that `unique_ptr` copy operations are `=delete`d."
+    },
+    {
+      "question": "In a multithreaded environment, is `std::shared_ptr` thread-safe?",
+      "answer": "The reference count mechanism itself is thread-safe (it uses atomic operations), so you can safely copy/destroy the pointers across threads. However, reading/writing the actual underlying object is NOT thread-safe and requires a mutex.",
+      "approach": "Differentiate between the safety of the control block vs the payload."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "unique_ptr by default",
+      "detail": "Always reach for `std::unique_ptr` first. Upgrade to `shared_ptr` only if absolutely necessary."
+    },
+    {
+      "title": "Use make_* functions",
+      "detail": "Always construct using `std::make_unique` or `std::make_shared` instead of raw `new`."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#r21-prefer-unique_ptr-over-shared_ptr-unless-you-need-to-share-ownership",
+    "https://en.cppreference.com/w/cpp/memory/shared_ptr"
+  ]
+}

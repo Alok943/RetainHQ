@@ -1,0 +1,106 @@
+{
+  "slug": "rule-of-3-5-0-copy-move-destructor",
+  "title": "Rule of 3 / 5 / 0 \u00e2\u20ac\u201d copy, move, destructor",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "classes-constructors-destructors-and-this"
+    ],
+    "unlocks": [
+      "move-semantics-and-rvalue-references"
+    ]
+  },
+  "hook": {
+    "scenario": "You write a class that holds a raw pointer, copy one object into another, and both destructors run at scope end. Your program crashes with 'double free'.",
+    "question": "You never called delete twice \u2014 so who did?"
+  },
+  "mental_model": {
+    "intuition": "The compiler silently writes a copy-constructor for you, and its copy is SHALLOW: it duplicates the pointer, not what it points to. Now two objects own the same memory \u2014 and both will free it.",
+    "description": "If your class manages a raw resource (heap memory, a file handle, a socket), the compiler-generated copy operations do the wrong thing. The Rule of 3 says: if you need a custom destructor, you almost certainly need a custom copy-constructor and copy-assignment too. C++11 adds move-constructor and move-assignment (Rule of 5). The Rule of 0 is the escape hatch: own nothing raw (use std::vector / std::unique_ptr) and you need to write NONE of them."
+  },
+  "explanation": "A class that owns a raw pointer is a trap, because C++ gives every class a free copy-constructor and copy-assignment operator \u2014 and they copy member-by-member. For a pointer member that means copying the ADDRESS, so the original and the copy point at the same heap block. When both objects go out of scope, both destructors call delete on that one block: undefined behaviour, usually a crash.\n\nThe Rule of 3 (pre-C++11): if you define any one of destructor, copy-constructor, or copy-assignment, you need all three, because their presence signals you're managing a resource the defaults can't handle.\n\nC++11 adds move operations, making it the Rule of 5: destructor, copy-ctor, copy-assign, move-ctor, move-assign. A move transfers ownership (steal the pointer, null out the source) instead of duplicating \u2014 cheap, and correct for temporaries.\n\nThe modern answer is the Rule of 0: don't manage raw resources at all. Hold a std::vector or std::unique_ptr, whose own copy/move semantics are already correct, and let the compiler-generated special members just work. Reach for Rule of 5 only when you're writing the resource-owning wrapper itself.\n\nWhen writing a move-constructor, you should almost always mark it `noexcept`. Standard library containers like `std::vector` will only use your move-constructor during reallocation if they are guaranteed it won't throw exceptions; otherwise, they fall back to the slower copy-constructor.",
+  "code_snippets": [
+    {
+      "title": "The bug: shallow copy \u2192 double free",
+      "language": "cpp",
+      "code": "struct Buf {\n  int* data;\n  Buf(int n) : data(new int[n]) {}\n  ~Buf() { delete[] data; }   // custom dtor, but NO custom copy\n};\n\nint main() {\n  Buf a(10);\n  Buf b = a;   // shallow copy: b.data == a.data\n}                // both dtors run -> delete[] the SAME pointer twice -> crash",
+      "explanation": "Buf defines a destructor but relies on the compiler's shallow copy-constructor. `b = a` copies the pointer value, so a.data and b.data alias the same block. At the closing brace both are destroyed and delete[] is called twice on one address \u2014 a double free."
+    },
+    {
+      "title": "The fix: Rule of 5 (deep copy + move)",
+      "language": "cpp",
+      "code": "struct Buf {\n  int* data; int n;\n  Buf(int n) : data(new int[n]), n(n) {}\n  ~Buf() { delete[] data; }\n  Buf(const Buf& o) : data(new int[o.n]), n(o.n) {      // copy: allocate + duplicate\n    std::copy(o.data, o.data + o.n, data);\n  }\n  Buf& operator=(Buf o) { std::swap(data, o.data); std::swap(n, o.n); return *this; } // copy-and-swap\n  Buf(Buf&& o) noexcept : data(o.data), n(o.n) { o.data = nullptr; o.n = 0; } // move: steal\n};",
+      "explanation": "The copy-constructor allocates its OWN block and duplicates the contents (deep copy), so each object frees a distinct pointer. The move-constructor steals the pointer and nulls the source, so the moved-from object's delete[] is a harmless delete[] nullptr. The copy-and-swap assignment handles both cleanly and is self-assignment-safe."
+    },
+    {
+      "title": "The best fix: Rule of 0",
+      "language": "cpp",
+      "code": "struct Buf {\n  std::vector<int> data;   // owns nothing raw\n  Buf(int n) : data(n) {}\n  // no dtor, no copy, no move \u2014 the compiler's defaults are already correct\n};",
+      "explanation": "By delegating ownership to std::vector (whose copy/move are correct), Buf needs none of the five special members. This is the idiom to reach for by default \u2014 write the Rule of 5 only inside the resource wrapper itself."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Defining a destructor but not the copy operations",
+      "explanation": "The most common source of double-free: a custom ~T() with the compiler's shallow copy still active. Either define all of Rule of 3/5, or =delete the copies, or use Rule of 0."
+    },
+    {
+      "title": "Forgetting noexcept on the move constructor",
+      "explanation": "std::vector only uses your move-ctor during reallocation if it's noexcept; otherwise it falls back to copying for exception safety. A non-noexcept move silently pessimizes performance."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a class with a raw owning pointer and only a custom destructor crash on copy?",
+      "answer": "The compiler-generated copy is shallow: it duplicates the pointer, so two objects own one block and both destructors delete it \u2014 a double free.",
+      "tier": "tier1"
+    },
+    {
+      "q": "State the Rule of 3 and what C++11 added to make it the Rule of 5.",
+      "answer": "Rule of 3: if you need a custom destructor, copy-constructor, or copy-assignment, you need all three. C++11 adds move-constructor and move-assignment (Rule of 5).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the Rule of 0 and why prefer it?",
+      "answer": "Own no raw resources \u2014 hold types like std::vector/std::unique_ptr whose special members are already correct \u2014 so you write none of the five. It's the least error-prone default.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate's String class double-frees on copy. What's missing and how do you fix it three ways?",
+      "answer": "It has a destructor but relies on the shallow default copy. Fix: (1) define a deep copy-ctor + copy-assign (Rule of 3), (2) add move ops (Rule of 5), or (3) replace the raw char* with std::string (Rule of 0).",
+      "approach": "Recognize the destructor-without-copy signature as the tell.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "A candidate implements a move constructor for their class but forgets the `noexcept` keyword. Why might this cause a performance drop when using `std::vector`?",
+      "answer": "When `std::vector` resizes, it needs to move elements to a new memory block. If the move constructor is not marked `noexcept`, `std::vector` will fall back to using the copy constructor to ensure strong exception safety (so it doesn't lose data if an exception is thrown mid-resize). This silently pessimizes performance.",
+      "approach": "Understand the interaction between move semantics, exception safety, and standard library containers."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "The tell",
+      "detail": "A custom destructor with the default (shallow) copy still enabled = latent double-free."
+    },
+    {
+      "title": "Rule of 5",
+      "detail": "dtor + copy-ctor + copy-assign + move-ctor + move-assign, as a set."
+    },
+    {
+      "title": "Default to Rule of 0",
+      "detail": "Own resources through std::vector/unique_ptr; write the five only in the wrapper itself."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/language/rule_of_three",
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rc-five"
+  ]
+}

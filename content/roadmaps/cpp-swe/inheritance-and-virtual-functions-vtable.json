@@ -1,0 +1,95 @@
+{
+  "slug": "inheritance-and-virtual-functions-vtable",
+  "title": "Inheritance & virtual functions / vtable",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "classes-constructors-destructors-and-this"
+    ],
+    "unlocks": [
+      "abstract-classes-and-pure-virtual-functions"
+    ]
+  },
+  "hook": {
+    "scenario": "You create a `Dog` object and pass it by reference to a function expecting an `Animal&`. When the function calls `makeSound()`, it prints generic animal noises instead of a bark.",
+    "question": "Why did the compiler ignore the fact that the object was actually a Dog?"
+  },
+  "mental_model": {
+    "intuition": "By default, C++ only looks at the label on the box (the pointer's type) to decide what function to call, because reading labels is fast. The `virtual` keyword tells the compiler: 'Stop, open the box, check what's actually inside at runtime, and call the correct function.'",
+    "description": "In C++, method binding happens at compile-time (static binding) by default. If you call a method through a base class pointer or reference, the compiler rigidly calls the base class's version. To enable polymorphism (dynamic binding), you must mark the base class method as `virtual`. This instructs the compiler to use a hidden table (the vtable) at runtime to route the call to the derived class's implementation."
+  },
+  "explanation": "Inheritance allows a class (`Dog`) to absorb the data and behavior of a base class (`Animal`). But the entire point of OOP is polymorphism: writing code that works with `Animal*` but executes the specific logic of `Dog` or `Cat`.\n\nWithout the `virtual` keyword, C++ uses 'early binding'. The compiler sees `Animal* a` and says, 'I will compile a hardcoded jump to `Animal::makeSound()`.' It doesn't care that the pointer might actually point to a `Dog` at runtime.\n\nWhen you add `virtual` to the base class method, you enable 'late binding'. Under the hood, the compiler gives the class a hidden pointer (the `vptr`) pointing to a Virtual Method Table (the `vtable`). At runtime, when `a->makeSound()` is called, the program looks up the `vptr`, follows it to the `Dog` vtable, and executes `Dog::makeSound()`. This costs a tiny amount of performance (an extra memory indirection) but enables true polymorphism.\n\nWhen overriding a virtual function in a derived class, always use the `override` keyword (C++11). It forces the compiler to check that you actually matched the base class signature perfectly. Without it, a slight typo in the signature creates a brand new function instead of overriding the base one.\n\nCrucially, polymorphism strictly requires passing objects by pointer (`*`) or reference (`&`). If you pass an object by value (`void playSound(Animal a)`), the derived object (`Dog`) is 'sliced' down to just its base `Animal` parts, and dynamic dispatch will not occur.",
+  "code_snippets": [
+    {
+      "title": "The bug: Static binding misses the override",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Animal {\npublic:\n    void makeSound() const {\n        std::cout << \"Generic animal sound\\n\";\n    }\n};\n\nclass Dog : public Animal {\npublic:\n    void makeSound() const {\n        std::cout << \"Bark!\\n\";\n    }\n};\n\nvoid playSound(const Animal& a) {\n    a.makeSound(); // Compiler sees 'Animal&', binds to Animal::makeSound()\n}\n\nint main() {\n    Dog myDog;\n    playSound(myDog); // Prints \"Generic animal sound\"\n    return 0;\n}",
+      "explanation": "Because `makeSound` is not `virtual`, the decision of which function to call is made at compile-time based purely on the reference type `Animal&`. The `Dog` implementation is ignored."
+    },
+    {
+      "title": "The fix: virtual and override",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nclass Animal {\npublic:\n    // 'virtual' enables dynamic dispatch via the vtable\n    virtual void makeSound() const {\n        std::cout << \"Generic animal sound\\n\";\n    }\n};\n\nclass Dog : public Animal {\npublic:\n    // 'override' ensures we exactly match the virtual signature\n    void makeSound() const override {\n        std::cout << \"Bark!\\n\";\n    }\n};\n\nvoid playSound(const Animal& a) {\n    a.makeSound(); // Runtime lookup finds Dog::makeSound()\n}\n\nint main() {\n    Dog myDog;\n    playSound(myDog); // Prints \"Bark!\"\n    return 0;\n}",
+      "explanation": "The `virtual` keyword creates the vtable. At runtime, the program detects that `a` actually references a `Dog` and dynamically routes the call to the correct override."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the override keyword",
+      "explanation": "If the base class has `virtual void print() const;` and the derived class writes `void print();` (missing the const), C++ treats this as a completely different function, hiding the base function instead of overriding it. The `override` keyword turns this silent mistake into a loud compiler error."
+    },
+    {
+      "title": "Slicing by passing by value",
+      "explanation": "If you write `void playSound(Animal a)`, passing a `Dog` will 'slice' the object, throwing away all the `Dog` data and making a pure `Animal` copy. Virtual functions only work through pointers and references."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you call a non-virtual function on a derived object through a base class pointer?",
+      "answer": "The base class version of the function is executed. C++ uses static binding by default, relying only on the pointer's type.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does C++ achieve dynamic dispatch at runtime?",
+      "answer": "It uses a Virtual Method Table (vtable). Objects of classes with virtual functions contain a hidden pointer (vptr) to this table, which is used at runtime to resolve the correct function address.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the purpose of the override keyword?",
+      "answer": "It explicitly tells the compiler that the function is meant to override a base class virtual function. The compiler will throw an error if the signatures do not match perfectly, preventing silent bugs.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate's code passes a `Dog` to a function `void process(Animal a)`. The `makeSound` method is correctly marked `virtual`. What will happen when `a.makeSound()` is called?",
+      "answer": "The object is passed by value, which causes 'object slicing'. The `Dog` is sliced down into a pure `Animal` copy. `Animal::makeSound()` will be called. Polymorphism only works via pointers (`*`) or references (`&`).",
+      "approach": "Identify object slicing and the requirement of pointers/references for dynamic dispatch."
+    },
+    {
+      "question": "Does adding a virtual function to a class increase the size of its objects?",
+      "answer": "Yes. The compiler adds a hidden pointer (the vptr) to every object of the class to point to the class's vtable. On a 64-bit system, this typically increases the object's size by 8 bytes.",
+      "approach": "Understand the memory overhead associated with the vtable implementation."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "virtual enables runtime lookup",
+      "detail": "Use `virtual` in the base class to allow derived classes to override behavior."
+    },
+    {
+      "title": "Polymorphism needs indirection",
+      "detail": "Virtual functions only work when calling through pointers (`*`) or references (`&`)."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rh-override",
+    "https://en.cppreference.com/w/cpp/language/virtual"
+  ]
+}

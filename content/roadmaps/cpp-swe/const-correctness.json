@@ -1,0 +1,90 @@
+{
+  "slug": "const-correctness",
+  "title": "const correctness \u2014 const refs, const methods & when to use",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "references-vs-pointers"
+    ],
+    "unlocks": [
+      "functions-value-ref-pointer"
+    ]
+  },
+  "hook": {
+    "scenario": "You pass a large std::string to a function by reference to avoid copying it. Another developer calls your function with a string literal, but the compiler throws an error saying 'cannot bind non-const lvalue reference'.",
+    "question": "How do you promise the compiler that you're just looking at the data, not changing it?"
+  },
+  "mental_model": {
+    "intuition": "const is a legally binding contract with the compiler. It means 'I promise not to mutate this.' If you try to break the promise, the code refuses to compile.",
+    "description": "const correctness is the practice of using the `const` keyword proactively to prevent unintended state changes. Passing a large object by `const std::string&` avoids a copy AND promises not to change it. A `const` method (e.g., `int getSize() const`) promises not to modify any member variables of the class. This creates a chain of trust: const objects can only call const methods."
+  },
+  "explanation": "When you pass a large object to a function by value, C++ copies it. To avoid the copy, you pass it by reference. However, a plain reference (`&`) allows the function to modify the object, and crucially, you cannot bind a plain reference to a temporary object (like a string literal or a function return value).\n\nThe fix is `const Type&`. It gives you the performance of a reference with the safety of a copy. It also allows binding to temporary values.\n\nInside a class, putting `const` at the end of a method signature (e.g., `void print() const;`) marks the method itself as constant. This tells the compiler that calling this method won't change the object's state. If you have a `const` object, you can ONLY call `const` methods on it. This is why getters should always be marked `const`.\n\nWhen combining `const` with pointers, read the declaration from right to left to understand what is constant. For example, `const int* ptr` (or `int const* ptr`) means 'pointer to an integer that is constant'—you can change where the pointer points, but you cannot modify the integer it points to. Conversely, `int* const ptr` means 'constant pointer to an integer'—you can modify the integer, but you cannot change where the pointer points. `const int* const ptr` combines both: a constant pointer to a constant integer.",
+  "code_snippets": [
+    {
+      "title": "The bug: Missing const in parameters and methods",
+      "language": "cpp",
+      "code": "#include <string>\n#include <iostream>\n\nclass User {\n    std::string name;\npublic:\n    User(std::string n) : name(n) {}\n    // Missing const!\n    std::string getName() { return name; }\n};\n\n// Takes a plain reference\nvoid printName(User& u) {\n    std::cout << u.getName() << '\\n';\n}\n\nint main() {\n    // This fails to compile! A temporary User cannot bind to a non-const reference.\n    printName(User(\"Alice\")); \n    return 0;\n}",
+      "explanation": "`User(\"Alice\")` is a temporary object (an rvalue). Plain lvalue references (`User&`) cannot bind to temporaries because modifying a temporary makes no sense. The code is broken."
+    },
+    {
+      "title": "The fix: const correctness",
+      "language": "cpp",
+      "code": "#include <string>\n#include <iostream>\n\nclass User {\n    std::string name;\npublic:\n    User(std::string n) : name(n) {}\n    // Marked const: promises not to modify members\n    std::string getName() const { return name; }\n};\n\n// Takes a const reference: binds to temporaries and avoids copying\nvoid printName(const User& u) {\n    std::cout << u.getName() << '\\n'; // Allowed because getName() is const\n}\n\nint main() {\n    printName(User(\"Alice\")); // Works perfectly!\n    return 0;\n}",
+      "explanation": "By changing the parameter to `const User&`, we can pass temporaries. However, inside `printName`, `u` is `const`. The compiler will only let us call `u.getName()` if `getName()` is explicitly marked `const`."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting const on getter methods",
+      "explanation": "If a getter isn't marked `const`, you won't be able to call it when the object is passed into a function as a `const&`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is pass-by-const-reference preferred for large objects over pass-by-value?",
+      "answer": "It avoids the performance overhead of copying the object while still protecting the original object from being modified.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does placing 'const' at the end of a class method declaration mean?",
+      "answer": "It marks the method as a const method, meaning it promises not to modify any member variables of the object.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must you use const& if you want to pass a temporary object (like a string literal) by reference?",
+      "answer": "A non-const lvalue reference cannot bind to a temporary object (rvalue). The compiler requires a const reference to bind a temporary to prevent meaningless modifications.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A C++ program has a `const std::vector<int>& data` parameter. Inside the function, the programmer tries to sort the vector. What happens and why?",
+      "answer": "The code will not compile. The `const` keyword acts as a contract that the object cannot be mutated. `std::sort` requires modifying the container's elements, which violates the `const` qualifier.",
+      "approach": "Understand that const is enforced at compile time, rejecting any mutating operations."
+    },
+    {
+      "question": "In an interview, you see `const int* const ptr`. What does this mean?",
+      "answer": "It means a constant pointer to a constant integer. The integer cannot be modified through the pointer, and the pointer itself cannot be reassigned to point to another integer.",
+      "approach": "Read declarations from right to left: 'const pointer to const int'."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Const as a contract",
+      "detail": "Use const proactively. If a variable shouldn't change, mark it const. If a parameter is read-only, use const&."
+    },
+    {
+      "title": "Const methods",
+      "detail": "If a method doesn't modify state, mark it const so it can be called on const instances."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#con-constants-and-immutability"
+  ]
+}

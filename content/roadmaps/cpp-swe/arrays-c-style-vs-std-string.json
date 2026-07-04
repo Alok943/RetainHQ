@@ -1,0 +1,91 @@
+{
+  "slug": "arrays-c-style-vs-std-string",
+  "title": "Arrays, strings & C-style vs std::string",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "functions-value-ref-pointer"
+    ],
+    "unlocks": [
+      "preprocessor-macros-define"
+    ]
+  },
+  "hook": {
+    "scenario": "You try to concatenate two strings using the '+' operator. It works perfectly for std::string, but when you try it with \"Hello\" + \"World\", it fails to compile.",
+    "question": "Why doesn't C++ treat string literals the same way it treats std::string?"
+  },
+  "mental_model": {
+    "intuition": "A C-style string is just a raw sequence of characters in memory that ends when it hits a 0. It's like reading until you hit a blank page. A std::string is a smart book that knows exactly how many pages it has and can dynamically bind more pages if needed.",
+    "description": "C++ inherited C-style strings, which are simply arrays of characters ending with a null-terminator (`'\\0'`). They have no bounds checking, don't know their own size, and cannot be compared or concatenated with normal operators. `std::string` is a modern C++ class that manages its own memory, knows its size in O(1) time, and supports intuitive operators like `+` and `==`."
+  },
+  "explanation": "In C, strings are represented as arrays of `char`. Because arrays degrade to pointers when passed to functions, a C-style string loses its size information. The only way to know where it ends is the null-terminator (`'\\0'`). Finding the length takes O(N) time (`strlen`). You cannot concatenate them with `+`; you must use `strcat` and manually manage buffer sizes, which is a massive source of buffer overflow vulnerabilities.\n\n`std::string` is a C++ Standard Library class that acts as a wrapper around character data. It stores the length explicitly (O(1) `.length()`), automatically handles memory allocation/resizing, and overloads operators so `a == b` compares the contents (unlike C-strings, where `a == b` compares memory addresses).\n\nString literals like `\"Hello\"` are statically allocated C-style arrays (`const char[6]`). To force a literal to be a `std::string`, use the `s` suffix (C++14): `\"Hello\"s`. You can also implicitly convert a C-string to a `std::string` by assignment.",
+  "code_snippets": [
+    {
+      "title": "The nightmare of C-style strings",
+      "language": "cpp",
+      "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    const char* a = \"Hello\";\n    const char* b = \"Hello\";\n    \n    // WRONG: Compares pointer addresses, not string contents!\n    if (a == b) { }\n    \n    // CORRECT but tedious:\n    if (std::strcmp(a, b) == 0) { }\n    \n    char buffer[20] = \"Hello \";\n    // Manual length checking needed to prevent buffer overflows\n    std::strcat(buffer, \"World\"); \n    return 0;\n}",
+      "explanation": "C-style strings are raw pointers. Operator `==` compares the addresses in memory. To compare contents, you must use `strcmp`. Modifying them requires manual buffer sizing."
+    },
+    {
+      "title": "The simplicity of std::string",
+      "language": "cpp",
+      "code": "#include <string>\n#include <iostream>\n\nint main() {\n    std::string a = \"Hello\";\n    std::string b = \"Hello\";\n    \n    // Works intuitively: compares contents.\n    if (a == b) { \n        std::cout << \"Equal\\n\";\n    }\n    \n    // Dynamically resizes, no buffer overflow risk.\n    std::string c = a + \" World\";\n    \n    // O(1) length lookup\n    std::cout << \"Length: \" << c.length() << '\\n';\n    return 0;\n}",
+      "explanation": "`std::string` overloads operators to behave like primitive types. It abstracts away the memory management entirely."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Concatenating two string literals",
+      "explanation": "Writing `\"Hello\" + \" World\"` tries to add two `const char*` pointers together, which is illegal. At least one operand must be a `std::string` (e.g., `std::string(\"Hello\") + \" World\"`)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does a C-style string indicate where it ends?",
+      "answer": "It uses a null-terminator character ('\\0') at the end of the character sequence.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you use the == operator on two C-style strings?",
+      "answer": "It compares their memory addresses (pointers), not the actual character contents.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is std::string.length() an O(1) operation, while strlen() on a C-string is O(N)?",
+      "answer": "std::string explicitly stores its size internally, while strlen() must iterate through the C-string character by character until it finds the null-terminator.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If you need to return a substring from a function, why should you return a `std::string` instead of a `char*`?",
+      "answer": "Returning a `char*` usually means either returning a pointer to a local buffer (which goes out of scope and causes undefined behaviour) or returning dynamically allocated memory (forcing the caller to manually `delete[]` it). `std::string` handles its own memory lifecycle automatically via RAII.",
+      "approach": "Connect string management to memory lifecycle and dangling pointers."
+    },
+    {
+      "question": "A candidate uses `sizeof(str)` on a C-style string `char str[] = \"Hello\";` to find its length. What is wrong with this?",
+      "answer": "`sizeof(str)` returns the total allocated size of the array, which includes the null-terminator (so it returns 6, not 5). Furthermore, if `str` decays to a pointer, `sizeof(str)` returns the size of the pointer (usually 8 bytes), not the string length. `strlen()` or `std::string` should be used instead.",
+      "approach": "Understand the difference between array sizes and string lengths, and the decay to pointer."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Literals are C-style",
+      "detail": "String literals in quotes (`\"text\"`) are C-strings under the hood."
+    },
+    {
+      "title": "Default to std::string",
+      "detail": "Never use C-strings in modern C++ unless interfacing with legacy C APIs."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/string/basic_string",
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#slstr1-use-stdstring-to-own-character-sequences"
+  ]
+}

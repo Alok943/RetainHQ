@@ -1,0 +1,89 @@
+{
+  "slug": "move-semantics-and-rvalue-references",
+  "title": "Move semantics & rvalue references",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "rule-of-3-5-0-copy-move-destructor"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You hear that `std::move` makes code faster. You change `return my_local_vector;` to `return std::move(my_local_vector);`. When you benchmark the code, it has actually gotten slower.",
+    "question": "Why did explicitly telling the compiler to move the object make the code slower?"
+  },
+  "mental_model": {
+    "intuition": "`std::move` is terribly named. It does not move anything. It is just a cast that whispers to the compiler: 'I am done with this variable, you can strip it for parts.'",
+    "description": "Move semantics (C++11) allow transferring ownership of resources from temporary objects (rvalues) instead of doing expensive deep copies. The trap is thinking `std::move` is a magic speed button. Overusing it\u2014specifically on local variables being returned from a function\u2014disables the compiler's Native Return Value Optimization (NRVO), forcing a move where the compiler would have done literally zero work."
+  },
+  "explanation": "Before C++11, returning a massive `std::vector` by value meant the compiler had to make a full deep copy. Move semantics introduced 'rvalue references' (`&&`). If the compiler knows an object is about to be destroyed (like a temporary return value), it binds it to an rvalue reference. This triggers the Move Constructor, which simply steals the pointers from the temporary object instead of copying the data.\n\n**What does std::move actually do?**\n`std::move` does absolutely no work. It is purely a `static_cast` to an rvalue reference (`T&&`). It flags a variable saying, 'I don't need this anymore, treat it as a temporary.' This allows you to forcefully transfer ownership of variables (e.g., passing a `std::unique_ptr` into a vector).\n\n**The NRVO Trap:**\nModern C++ compilers use Return Value Optimization (RVO/NRVO). When you write `return local_vector;`, the compiler is so smart it actually constructs `local_vector` directly in the caller's memory space. Zero copies, zero moves. It is pure teleportation.\n\nIf you write `return std::move(local_vector);`, you force the variable to be cast to an rvalue reference. This breaks the compiler's ability to teleport it. Instead, it is forced to run the move constructor. You just turned zero work into non-zero work.",
+  "code_snippets": [
+    {
+      "title": "The bug: Pessimizing moves",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n\nstd::vector<int> generateData() {\n    std::vector<int> data = {1, 2, 3, 4, 5};\n    \n    // BUG: Trying to be smart. This disables NRVO.\n    // The compiler is forced to move 'data' into the return slot.\n    return std::move(data); \n}\n\nint main() {\n    std::vector<int> result = generateData();\n    return 0;\n}",
+      "explanation": "The explicit `std::move` prevents the compiler from constructing `data` directly in `result`'s memory. It creates `data` locally, and then invokes the move constructor to transfer it."
+    },
+    {
+      "title": "The fix: Trust the compiler (NRVO)",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n\nstd::vector<int> generateData() {\n    std::vector<int> data = {1, 2, 3, 4, 5};\n    \n    // FIX: Just return it by value.\n    // NRVO kicks in: 'data' is constructed exactly where 'result' lives.\n    // ZERO copies, ZERO moves.\n    return data; \n}\n\nint main() {\n    std::vector<int> result = generateData();\n    return 0;\n}",
+      "explanation": "By returning a local variable directly, modern compilers employ copy elision. It is mathematically the fastest possible way to return an object by value."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using an object after std::move",
+      "explanation": "After you `std::move(x)`, `x` is in a 'valid but unspecified state'. Its pointers are likely null. Accessing it (e.g., `x.size()`) is technically not undefined behavior, but it will almost certainly yield garbage or crash."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does std::move actually do at runtime?",
+      "answer": "Absolutely nothing. It is purely a compile-time cast to an rvalue reference (T&&), signaling to the compiler that the object's resources can be safely stolen.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is an rvalue reference (&&)?",
+      "answer": "It is a reference that exclusively binds to temporary objects (rvalues) or objects explicitly cast with std::move. It indicates that the object is about to be destroyed and can have its resources stolen.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is it a bad idea to use std::move on a local variable being returned by value?",
+      "answer": "It disables Named Return Value Optimization (NRVO). The compiler natively elides the copy entirely (zero overhead). Forcing a move creates unnecessary move-constructor overhead.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate writes `std::vector<int> v1 = {1, 2, 3}; std::vector<int> v2 = std::move(v1); std::cout << v1[0];`. What happens?",
+      "answer": "The program will likely crash (Segfault). `v1` has been moved from, meaning `v2`'s move constructor stole its heap pointer and left `v1`'s internal pointer as `nullptr`. Attempting to dereference `v1[0]` accesses null memory.",
+      "approach": "Understand that 'moved-from' objects are hollowed out."
+    },
+    {
+      "question": "How do you transfer a `std::unique_ptr` into a function `void process(std::unique_ptr<Data> ptr)`?",
+      "answer": "You must use `process(std::move(my_ptr));`. Because `unique_ptr` cannot be copied, you must explicitly cast it to an rvalue to invoke its move constructor and transfer ownership into the function.",
+      "approach": "Recognize when `std::move` is strictly required to pass uncopyable types."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "std::move is just a cast",
+      "detail": "It doesn't move anything; it just enables the move constructor."
+    },
+    {
+      "title": "Don't return std::move",
+      "detail": "Return local variables by value naturally to allow NRVO to perform zero-overhead teleportation."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f48-dont-return-stdmovelocal",
+    "https://en.cppreference.com/w/cpp/utility/move"
+  ]
+}

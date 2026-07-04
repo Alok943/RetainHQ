@@ -1,0 +1,95 @@
+{
+  "slug": "preprocessor-macros-define",
+  "title": "Preprocessor macros & #define for CP",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "arrays-c-style-vs-std-string"
+    ],
+    "unlocks": [
+      "auto-range-for-structured-bindings"
+    ]
+  },
+  "hook": {
+    "scenario": "You define a macro to square a number: `#define SQ(x) x * x`. When you calculate `SQ(3 + 2)`, you expect 25, but your program outputs 11.",
+    "question": "Why did a simple arithmetic macro give the wrong answer?"
+  },
+  "mental_model": {
+    "intuition": "The preprocessor is like a mindless find-and-replace tool running in Microsoft Word before your code even reaches the compiler. It knows nothing about C++ syntax, types, or order of operations.",
+    "description": "Macros (`#define`) are processed before compilation. They perform naive text substitution. If you write `#define SQ(x) x * x` and call `SQ(3 + 2)`, the preprocessor replaces it literally with `3 + 2 * 3 + 2`. Due to operator precedence, this evaluates to `3 + 6 + 2 = 11`. To fix this, you must aggressively parenthesize macro arguments. Better yet, in modern C++, avoid macros and use `constexpr` or `inline` functions instead."
+  },
+  "explanation": "In Competitive Programming (CP), macros are heavily used to save typing (e.g., `#define pb push_back` or `#define rep(i, a, b) for(int i=a; i<b; ++i)`). However, they are inherently dangerous because they don't obey C++ scoping rules or type checking.\n\nWhen you use macros for expressions, you must wrap every argument in parentheses, and the entire expression in parentheses: `#define SQ(x) ((x) * (x))`. Without this, operator precedence will ruin expressions like `SQ(a+b)` or `100 / SQ(5)`.\n\nFurthermore, macros can cause 'double-evaluation' bugs. If you call `SQ(i++)`, it expands to `((i++) * (i++))`, incrementing `i` twice and invoking undefined behaviour.\n\nIn modern software engineering (SWE), macros are strongly discouraged except for conditional compilation (`#ifdef`). You should use `constexpr` functions (which are typed, scoped, and evaluated at compile-time if possible) or `const` variables instead.",
+  "code_snippets": [
+    {
+      "title": "The bug: Naive text substitution",
+      "language": "cpp",
+      "code": "#include <iostream>\n\n#define BAD_SQ(x) x * x\n#define BAD_DOUBLE(x) x + x\n\nint main() {\n    int a = 3;\n    int b = 2;\n    \n    // Expands to: 3 + 2 * 3 + 2 == 11. Expected 25.\n    std::cout << BAD_SQ(a + b) << '\\n';\n    \n    // Expands to: 10 * 3 + 3 == 33. Expected 60.\n    std::cout << 10 * BAD_DOUBLE(a) << '\\n';\n    \n    return 0;\n}",
+      "explanation": "Because the preprocessor just blindly pastes text, the C++ compiler receives an expression with standard operator precedence. Multiplication happens before addition, destroying the intended logic."
+    },
+    {
+      "title": "The fix: Parentheses or constexpr",
+      "language": "cpp",
+      "code": "#include <iostream>\n\n// Safe macro: wrap arguments AND the whole expression\n#define SQ(x) ((x) * (x))\n\n// Better: modern C++ constexpr function\nconstexpr int sq_func(int x) {\n    return x * x;\n}\n\nint main() {\n    int a = 3, b = 2;\n    \n    // Expands to: ((3 + 2) * (3 + 2)) == 25\n    std::cout << SQ(a + b) << '\\n';\n    \n    // Clean, type-safe, evaluates at compile time if inputs are constant\n    std::cout << sq_func(a + b) << '\\n';\n    \n    // Danger! SQ(a++) is still a bug: ((a++) * (a++))\n    // sq_func(a++) works perfectly.\n    return 0;\n}",
+      "explanation": "Aggressive parentheses fix the precedence issues, but macros still suffer from double-evaluation if you pass an expression with side effects. `constexpr` functions solve all these problems by acting as real, type-safe C++ functions."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the outer parentheses",
+      "explanation": "Writing `#define ADD(a, b) (a) + (b)` fails if you do `10 * ADD(2, 3)`. It expands to `10 * (2) + (3) == 23`, not 50. You need `#define ADD(a, b) ((a) + (b))`."
+    },
+    {
+      "title": "Passing increments to macros",
+      "explanation": "Never pass `i++` or `++i` to a macro like `MAX(a, b)` because the macro might expand it multiple times, e.g., `((a++) > (b) ? (a++) : (b))`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does #define SQ(x) x * x fail for SQ(3 + 2)?",
+      "answer": "Macros perform literal text replacement before compilation. It expands to 3 + 2 * 3 + 2, which evaluates to 11 due to operator precedence, instead of the expected 25.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you properly write a macro that evaluates an expression?",
+      "answer": "You must wrap every instance of the arguments in parentheses, and wrap the entire macro definition in parentheses, e.g., #define SQ(x) ((x) * (x)).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the modern C++ alternative to macro functions and why is it better?",
+      "answer": "constexpr or inline functions. They are type-safe, obey scope rules, avoid double-evaluation bugs (like passing i++), and can still be evaluated at compile time.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate's code contains `#define MAX(a, b) a > b ? a : b`. They use it as `int ans = MAX(x, y) + 5;`. Why is this a bug and how do you fix it?",
+      "answer": "It expands to `x > y ? x : y + 5`. Because `+` has higher precedence than `? :`, it evaluates as `x > y ? x : (y + 5)`. The fix is `#define MAX(a, b) ((a) > (b) ? (a) : (b))`.",
+      "approach": "Identify the lack of outer parentheses and the precedence of the ternary operator."
+    },
+    {
+      "question": "Why is `#define PI 3.14159` considered bad practice in modern C++?",
+      "answer": "Macros do not respect scope (they leak everywhere) and have no type. The modern, type-safe alternative is `constexpr double PI = 3.14159;` inside a namespace.",
+      "approach": "Compare macros to modern compile-time constants."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Parenthesize everything",
+      "detail": "If you must write a macro, wrap every argument and the whole expression in `()`."
+    },
+    {
+      "title": "Prefer constexpr",
+      "detail": "In SWE, replace macro constants with `constexpr int` and macro functions with `constexpr` functions."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es31-dont-use-macros-for-constants-or-functions",
+    "https://en.cppreference.com/w/cpp/preprocessor/replace"
+  ]
+}
