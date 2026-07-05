@@ -1,0 +1,82 @@
+{
+  "slug": "constexpr-compile-time-computation",
+  "title": "constexpr & compile-time computation",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "templates-function-class-templates"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "Your game needs a massive lookup table of sine waves. You write a loop to calculate it, but it adds 2 seconds to the game's startup time on the user's machine.",
+    "question": "How can you force your own compiler to do the math so the user's CPU doesn't have to?"
+  },
+  "mental_model": {
+    "intuition": "`constexpr` is like a chef prepping ingredients before the restaurant opens. Instead of chopping onions while the customer waits (runtime), the chef does it beforehand (compile-time) so the dish is instantly ready.",
+    "description": "`constexpr` (constant expression) is a keyword that specifies the value of a variable or function *can* be evaluated strictly at compile-time. If all inputs are known at compile-time, the compiler will execute the C++ code itself, and hardcode the final resulting value directly into the executable binary."
+  },
+  "explanation": "**constexpr Variables:**\nA `constexpr` variable must be initialized with a compile-time constant. It is inherently `const`, but strictly stronger. \n`const int x = get_random();` is valid (runtime constant).\n`constexpr int y = get_random();` is a compile error (cannot evaluate random at compile-time).\n\n**constexpr Functions:**\nA `constexpr` function *can* be evaluated at compile-time. If you pass it compile-time constants, the compiler runs it and bakes the answer into the binary. If you pass it runtime variables (like user input), it behaves like a normal, fast runtime function.\n\n**The C++ Compile-Time Revolution:**\nSince C++14, `constexpr` functions can contain loops, `if` statements, and local variables. Since C++20, you can even use `std::vector` and `std::string` inside `constexpr` functions (they are cleaned up before compilation finishes). \n\n**Real-world Engineering:**\nEmbedded systems developers use `constexpr` obsessively. It allows them to write clean, readable math functions to generate lookup tables, bitmasks, or hardware register configurations, and guarantee that the embedded chip spends zero CPU cycles calculating them at runtime. It replaces C-style `#define` macros because unlike blind text-replacement macros, `constexpr` provides strict type safety, respects scoping rules (namespaces/classes), and can be debugged.\n\n**The 'No Side-Effects' Rule:**\nBecause the compiler executes `constexpr` functions in isolation, they are strictly forbidden from having side-effects. You cannot perform File I/O, make network requests, or depend on external runtime state (like the OS).",
+  "code_snippets": [
+    {
+      "title": "Compile-time calculation",
+      "language": "cpp",
+      "code": "#include <iostream>\n\n// A constexpr function can be evaluated by the compiler\nconstexpr int fibonacci(int n) {\n    if (n <= 1) return n;\n    int a = 0, b = 1, c = 0;\n    for (int i = 2; i <= n; ++i) {\n        c = a + b;\n        a = b;\n        b = c;\n    }\n    return c;\n}\n\nint main() {\n    // Because 10 is known at compile time, the compiler runs the loop.\n    // The binary just contains the equivalent of: int result = 55;\n    constexpr int result = fibonacci(10);\n    \n    std::cout << result << '\\n';\n    \n    int runtime_val;\n    std::cin >> runtime_val;\n    // Degrades gracefully to a normal runtime function\n    int runtime_result = fibonacci(runtime_val); \n    \n    return 0;\n}",
+      "explanation": "By checking the assembly output of this program, you will literally see the number `55` hardcoded into the CPU instructions. The `for` loop does not exist in the final binary for the `constexpr` call."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing const and constexpr",
+      "explanation": "`const` means \"I promise not to change this value once it is initialized (which might happen at runtime)\". `constexpr` means \"This value is known exactly at compile-time.\" All `constexpr` variables are `const`, but not all `const` variables are `constexpr`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when you pass runtime variables (like user input) into a `constexpr` function?",
+      "answer": "The function simply degrades into a standard runtime function and executes normally on the CPU. It only executes at compile-time if all inputs are compile-time constants.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between a `const` variable and a `constexpr` variable?",
+      "answer": "A `const` variable can be initialized at runtime (e.g., from user input), but cannot be mutated thereafter. A `constexpr` variable MUST be initialized with a value known entirely at compile-time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `constexpr` preferred over preprocessor `#define` macros for constants?",
+      "answer": "`constexpr` provides strict type safety, respects scoping rules (namespaces/classes), and can be stepped through with a debugger, whereas `#define` is a blind text-replacement.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer marks a function `constexpr` and tries to open a file inside it using `std::ifstream`. The compiler throws an error. Why?",
+      "answer": "File I/O is fundamentally a runtime operation depending on the operating system and disk state. `constexpr` functions cannot contain operations that have side effects or depend on runtime state outside the compiler.",
+      "approach": "Identify the limitations of compile-time execution (no I/O, no network, no dynamic memory that leaks to runtime)."
+    },
+    {
+      "question": "If you mark a function as `constexpr`, are you guaranteed that it will always execute at compile-time?",
+      "answer": "No. The `constexpr` keyword only means the function *can* be evaluated at compile time if all its inputs are compile-time constants. If you pass it a runtime variable, it will gracefully degrade into a normal runtime function execution.",
+      "approach": "Understand the dual-nature of constexpr functions (compile-time vs runtime fallback)."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Shift work to the compiler",
+      "detail": "`constexpr` forces the compiler to do the heavy lifting, saving CPU cycles for the end-user."
+    },
+    {
+      "title": "Graceful degradation",
+      "detail": "`constexpr` functions automatically act as normal runtime functions if given runtime data."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#con5-use-constexpr-for-values-that-can-be-computed-at-compile-time"
+  ]
+}

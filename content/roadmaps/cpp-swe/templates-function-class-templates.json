@@ -1,0 +1,82 @@
+{
+  "slug": "templates-function-class-templates",
+  "title": "Templates \u2014 function & class templates",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "classes-constructors-destructors-and-this"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You write a math library with an `add(int, int)` function. Then users ask for float support, so you write `add(float, float)`. Then they ask for `double`. You now have 10 identical functions with different types.",
+    "question": "How can you write the logic once and let the compiler generate the 10 variations automatically?"
+  },
+  "mental_model": {
+    "intuition": "A template is a cookie cutter. A cookie cutter is not a cookie; you cannot eat it. It only becomes a cookie when you press it into dough (instantiate it with a concrete type like `int`).",
+    "description": "Templates allow you to write Generic Code. Instead of specifying concrete types, you use a placeholder `T`. The compiler acts as a code generator: whenever it sees you call the function with a new type, it literally copy-pastes your template, replaces `T` with that type, and compiles the newly generated code."
+  },
+  "explanation": "**Function Templates:**\nDefined using `template <typename T>`. When you call `add(5, 10)`, the compiler deduces `T` is `int` and generates `int add(int, int)`. If you call `add(5.5, 2.0)`, it generates a separate `double add(double, double)` function.\n\n**Class Templates:**\nUsed for generic data structures (like `std::vector<T>`). Unlike functions, class templates usually require you to explicitly specify the type when instantiating: `Box<int> b;`.\n\n**The Template Compilation Model:**\nBecause the compiler needs to generate the concrete code *at the exact moment* you instantiate the template, **the entire template definition must be visible in the header file**. You cannot put the implementation of a template in a `.cpp` file (unless you explicitly instantiate every type you plan to use, which defeats the purpose). If you try, you will get notorious \"Undefined Reference\" Linker Errors.\n\n**Real-world Engineering:**\nTemplates are the foundation of the STL (Standard Template Library). They provide zero-overhead abstractions because the generated code is completely type-safe and perfectly optimized for that specific type, unlike Java generics which use type erasure at runtime (C# preserves them, but with a different mechanism).\n\n**Template Type Deduction:**\nWhen calling a template function, the compiler deduces the type based on the arguments. This deduction is strict. If you call `add(5.0, 10)` (a `double` and an `int`), the compiler fails to deduce a single `T` and throws an error. You must either cast one argument, or explicitly specify the type: `add<double>(5.0, 10)`.",
+  "code_snippets": [
+    {
+      "title": "Function and Class Templates",
+      "language": "cpp",
+      "code": "#include <iostream>\n\n// Function Template\ntemplate <typename T>\nT add(T a, T b) {\n    return a + b;\n}\n\n// Class Template\ntemplate <typename T>\nclass Box {\nprivate:\n    T contents;\npublic:\n    Box(T val) : contents(val) {}\n    T get() { return contents; }\n};\n\nint main() {\n    // Compiler generates int version\n    std::cout << add(5, 10) << '\\n'; \n    \n    // Compiler generates double version\n    std::cout << add(5.5, 2.2) << '\\n';\n    \n    // Explicitly instantiating a class template\n    Box<std::string> stringBox(\"Hello Template\");\n    std::cout << stringBox.get() << '\\n';\n    \n    return 0;\n}",
+      "explanation": "The source code only contains one `add` function, but the compiled binary will contain two distinct functions."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Putting template implementations in .cpp files",
+      "explanation": "This is the #1 mistake beginners make. They declare a template class in a `.h` file and define the methods in a `.cpp` file. The compiler processes the `.cpp` file, sees a template, but since it isn't instantiated there, it generates *nothing*. Later, when `main.cpp` tries to use `Box<int>`, the linker throws an Undefined Reference error because the `Box<int>` code was never generated. Always put template implementations entirely in the `.h` header file."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens under the hood when you call a template function with a new type for the first time?",
+      "answer": "The compiler performs template instantiation: it generates a brand new, concrete version of the function replacing the generic parameter `T` with the specific type.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must template implementations typically be placed in header files?",
+      "answer": "Because the compiler needs to see the full implementation at the exact point of instantiation in order to generate the concrete code. If it's hidden in a `.cpp` file, the compiler generates nothing, resulting in Linker errors.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the performance overhead of using C++ templates compared to manual function overloading?",
+      "answer": "Zero runtime overhead. Templates are entirely resolved at compile-time, generating the exact same machine code as if you had manually written the overloaded functions yourself.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes `template <typename T> T max(T a, T b) { return a > b ? a : b; }`. They call it with `max(5.0, 10)`. The compiler throws an error. Why?",
+      "answer": "Template Type Deduction failure. The first argument is a `double`, and the second is an `int`. The compiler cannot deduce a single type for `T`. You must either explicitly cast one argument, or explicitly specify the type: `max<double>(5.0, 10)`.",
+      "approach": "Understand how strict template type deduction is compared to normal implicit conversions."
+    },
+    {
+      "question": "You write a template class in `MyContainer.h` and implement its methods in `MyContainer.cpp`. When you try to use `MyContainer<int>` in `main.cpp`, you get Linker errors (Undefined Reference). What went wrong?",
+      "answer": "The compiler compiles `.cpp` files individually. When it compiled `MyContainer.cpp`, it didn't know you needed an `<int>` version, so it generated nothing. When linking `main.cpp`, the `<int>` version didn't exist. Template implementations must be placed in the header file.",
+      "approach": "Identify the root cause of the most common compilation error in C++ templates."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Templates are blueprints",
+      "detail": "Templates don't exist in the binary until they are instantiated with a concrete type."
+    },
+    {
+      "title": "Headers only",
+      "detail": "Always put the full implementation of template classes and functions in the `.h` file."
+    }
+  ],
+  "sources": [
+    "https://isocpp.org/wiki/faq/templates"
+  ]
+}

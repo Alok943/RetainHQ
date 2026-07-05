@@ -1,0 +1,82 @@
+{
+  "slug": "std-optional-variant-any",
+  "title": "std::optional, std::variant & std::any",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "templates-function-class-templates"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You write a function `User findUser(int id)`. If the user isn't found in the database, what do you return? You can't return `nullptr` because it's returning by value. Returning a dummy `User` is dangerous.",
+    "question": "How do you safely represent \"a value that might not exist\" without resorting to raw pointers?"
+  },
+  "mental_model": {
+    "intuition": "`std::optional` is a cardboard box that is either completely empty, or contains exactly one item. `std::variant` is a multi-tool that can be exactly one of several specific tools at any given time. `std::any` is a magical bag that can hold literally anything, but you have to guess what's inside to take it out.",
+    "description": "Modern C++ (C++17) introduced these three vocabulary types to safely handle uncertainty and dynamic typing, completely replacing older, unsafe C-style paradigms like returning magic numbers (-1), using raw `union`s, or casting `void*` pointers."
+  },
+  "explanation": "**1. std::optional<T>**\nRepresents a value that may or may not be present. It is the modern replacement for returning `nullptr` or magic error codes. You check if it has a value using `if (opt.has_value())` or simply `if (opt)`. You extract the value using `opt.value()` (which throws an exception if empty) or `*opt`. \n\n**2. std::variant<T1, T2...>**\nIt is a type-safe union. It holds exactly one of the listed types. Unlike a C-style `union`, it knows exactly which type is currently active. You access it using `std::get<T>(var)` (which throws if you ask for the wrong type) or by using the visitor pattern with `std::visit`.\n\n**3. std::any**\nIt can hold a single value of *any* type. It is the C++ equivalent of Python's dynamic typing or C's `void*`. You extract data using `std::any_cast<T>(my_any)`. It involves dynamic memory allocation and type-checking overhead, so it should be used sparingly.\n\n**Real-world Engineering:**\n`std::optional` is heavily used in API design to signify that a query might not yield a result. `std::variant` is the cornerstone of writing Abstract Syntax Trees (ASTs) in compilers, or handling JSON objects where a node might be a String, an Array, or an Integer. Avoid `std::any` unless you are building a highly dynamic system like an event bus where payloads are completely unknown.",
+  "code_snippets": [
+    {
+      "title": "Using std::optional",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <optional>\n#include <string>\n\nstd::optional<std::string> getNickname(bool isFriend) {\n    if (isFriend) return \"Buddy\";\n    return std::nullopt; // Represents 'empty'\n}\n\nint main() {\n    auto nickname = getNickname(true);\n    \n    // Safely check if it exists\n    if (nickname.has_value()) {\n        std::cout << nickname.value() << '\\n';\n    }\n    \n    // Provide a fallback if empty\n    auto badNick = getNickname(false);\n    std::cout << badNick.value_or(\"Stranger\") << '\\n';\n    \n    return 0;\n}",
+      "explanation": "`value_or` is an incredibly useful method that unwraps the value or returns a default fallback, completely eliminating branching `if` statements."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Dereferencing an empty optional",
+      "explanation": "If you use the pointer syntax `*opt` on an empty `std::optional`, it results in Undefined Behavior (usually a crash). If you use `opt.value()`, it safely throws a `std::bad_optional_access` exception. Prefer `.value()` unless performance is ultra-critical."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between `std::variant` and a standard C-style `union`?",
+      "answer": "A C-style union only tracks memory, so you can accidentally read the wrong type and get garbage data (Undefined Behavior). `std::variant` is type-safe: it tracks exactly which type is currently active and throws an exception if you request the wrong one.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you represent an empty state for a `std::optional` return value?",
+      "answer": "You return the special constant `std::nullopt`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `std::any` generally discouraged compared to `std::variant`?",
+      "answer": "`std::any` circumvents static typing, incurs dynamic memory allocation overhead, and requires dangerous runtime type casts, whereas `std::variant` enforces a strict, known set of types at compile-time.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A function returns a `std::optional<int>`. A developer extracts the value using `.value()`. During execution, the program abruptly terminates with an unhandled exception. What exception was thrown and why?",
+      "answer": "It threw `std::bad_optional_access` because the optional was empty (`std::nullopt`) when `.value()` was called. They should have checked `.has_value()` first, or used `.value_or(default_val)`.",
+      "approach": "Understand the error-handling semantics of C++17 vocabulary types."
+    },
+    {
+      "question": "You are parsing a config file where a setting's value could be an Integer, a Float, or a String. Which modern C++ type should you use to store the value?",
+      "answer": "`std::variant<int, float, std::string>`. This perfectly captures the finite set of possible types in a type-safe manner without the overhead of `std::any`.",
+      "approach": "Map domain constraints to the correct vocabulary wrapper."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Optional replaces nullptr",
+      "detail": "Never return pointers or magic values just to signal 'not found'. Use `std::optional`."
+    },
+    {
+      "title": "Variant is a safe union",
+      "detail": "Use `std::variant` when an object must be exactly one of a specific, known set of types."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/utility/optional"
+  ]
+}

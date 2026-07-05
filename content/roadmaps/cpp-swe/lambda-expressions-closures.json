@@ -1,0 +1,82 @@
+{
+  "slug": "lambda-expressions-closures",
+  "title": "Lambda expressions & closures",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "custom-comparators-with-lambda-for-sort-pq"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to pass a callback function to a UI button click handler. The callback needs to access a local `userId` variable, but a standard C++ function pointer cannot hold external state.",
+    "question": "How do you pass a function that 'remembers' the local variables from where it was created?"
+  },
+  "mental_model": {
+    "intuition": "A lambda is not magic. Under the hood, the compiler literally writes a custom `class` for you, puts your captured variables in it as member variables, and overloads `operator()` to run your code. A 'Closure' is simply an instance of that invisible class.",
+    "description": "Lambdas allow you to write inline, anonymous functions. Their superpower is the Capture Clause `[]`, which allows them to capture local variables from the surrounding scope by value or by reference. This allows them to act as closures (functions bound to state) without the boilerplate of writing custom structs."
+  },
+  "explanation": "**The Capture Clause `[]`:**\n- `[]`: Captures nothing (can be converted to a raw function pointer).\n- `[x, &y]`: Captures `x` by value (makes a copy) and `y` by reference.\n- `[=]`: Implicitly captures everything used in the body by value.\n- `[&]`: Implicitly captures everything used in the body by reference.\n\n**Mutable Lambdas:**\nBy default, variables captured by value (`[x]`) are `const` inside the lambda body. You cannot modify them. If you need to modify the copied state across multiple calls (e.g., a stateful counter), you must add the `mutable` keyword: `[x]() mutable { x++; }`.\n\n**Real-world Engineering:**\nLambdas are the backbone of modern C++ multithreading (passing tasks to threads or thread pools), UI programming (event callbacks), and functional STL algorithms. Be extremely careful with `[&]` captures in asynchronous code: if the lambda outlives the scope where it was created, the references will dangle and crash the program. When passing a lambda to a thread, always capture by value (`[=]`) or explicitly capture specific variables by value.",
+  "code_snippets": [
+    {
+      "title": "Stateful Callbacks",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int threshold = 10;\n    std::vector<int> numbers = {5, 15, 8, 20};\n    \n    // Captures 'threshold' by value.\n    auto is_above_threshold = [threshold](int n) {\n        return n > threshold;\n    };\n    \n    int count = std::count_if(numbers.begin(), numbers.end(), is_above_threshold);\n    std::cout << \"Count: \" << count << '\\n'; // Prints 2\n    \n    // Stateful lambda using 'mutable'\n    int counter = 0;\n    auto generate_id = [counter]() mutable {\n        return ++counter;\n    };\n    std::cout << generate_id() << generate_id(); // Prints 12\n    return 0;\n}",
+      "explanation": "The first lambda safely captures the threshold by value. The second lambda modifies its own internal copy of `counter` across successive calls."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Dangling reference captures",
+      "explanation": "If a lambda captures a local variable by reference (`[&x]`), and that lambda is stored (e.g., returned from a function or passed to a detached thread), the local variable will be destroyed when the scope ends, leaving the lambda with a dangling reference. Use `[=]` for async tasks."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between `[=]` and `[&]` in a lambda capture clause?",
+      "answer": "`[=]` implicitly captures all used local variables by value (makes a copy). `[&]` implicitly captures all used local variables by reference.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you need the `mutable` keyword in a lambda?",
+      "answer": "By default, variables captured by value are `const` inside the lambda body. The `mutable` keyword allows the lambda to modify its own internal copies of those captured variables.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the C++ compiler implement lambdas under the hood?",
+      "answer": "It generates an unnamed struct (or class) with member variables for the captured data, and overloads the `operator()` to contain the lambda's body.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A junior engineer passes a lambda to a new background thread: `std::thread t([&]() { doWork(local_buffer); }); t.detach();`. What is the critical bug here?",
+      "answer": "The lambda captures `local_buffer` by reference using `[&]`. Because the thread is detached, the current function will likely finish and destroy `local_buffer` before the thread finishes executing, causing a Use-After-Free crash. They should have captured by value `[=]` or `[local_buffer]`.",
+      "approach": "Recognize the intersection of reference lifetimes and asynchronous execution."
+    },
+    {
+      "question": "A developer writes a lambda `[=](){ return counter++; };` but the compiler throws an error saying `counter` is read-only. Why does this happen and how do you fix it?",
+      "answer": "When a lambda captures by value (like `[=]`), the generated `operator()` is marked `const` by default, meaning you cannot modify the copied state. You fix it by adding the `mutable` keyword: `[=]() mutable { return counter++; };`",
+      "approach": "Recall the strict `const` defaults of value-captured closures."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Lambdas are just structs",
+      "detail": "A closure is simply an instance of an invisible struct with an overloaded `operator()`."
+    },
+    {
+      "title": "Beware dangling references",
+      "detail": "Never capture by reference `[&]` if the lambda will outlive the current scope."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f52-prefer-capturing-by-reference-in-lambdas-that-will-be-used-locally-including-passed-to-algorithms"
+  ]
+}
