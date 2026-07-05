@@ -1,0 +1,82 @@
+{
+  "slug": "map-set-red-black-tree-o-log-n-ops",
+  "title": "map & set \u2014 red-black tree, O(log n) ops",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "vector-internals-push-back-amortization"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to keep track of a live leaderboard and constantly query the current lowest score while new players are simultaneously joining. If you use a vector, you have to re-sort it (O(N log N)) on every single insert, which completely kills your performance.",
+    "question": "Is there a container that keeps everything sorted for you automatically?"
+  },
+  "mental_model": {
+    "intuition": "`std::map` is a self-organizing filing cabinet. Every time you insert a folder, it automatically places it exactly where it belongs alphabetically. It takes a little longer to file something (O(log N)), but it's always perfectly sorted.",
+    "description": "Unlike Java or Python where the default map/dictionary is a Hash Table, C++'s `std::map` and `std::set` are implemented as Self-Balancing Binary Search Trees (specifically, Red-Black Trees). They do not use hashing. They guarantee that elements are always sorted by key, making insertions, deletions, and lookups O(log N)."
+  },
+  "explanation": "**The internal structure:**\nWhen you insert into a `std::set` (just keys) or `std::map` (key-value pairs), the container navigates down a binary search tree, comparing the new key to existing nodes using `operator<`. Once it finds the correct spot, it inserts the node and automatically rebalances the tree to ensure the maximum depth is logarithmic. \n\n**When to use them:**\nBecause Hash Tables (`unordered_map`) are O(1), you should almost always prefer them for simple lookups. However, `std::map` and `std::set` shine when:\n1. **You need ordered data:** If you need to print elements alphabetically or numerically, iterating a `std::map` guarantees an ascending ordered traversal. Additionally, because the tree is always sorted, finding the absolute minimum or maximum element is an O(1) operation simply by checking `*begin()` or `*rbegin()`.\n2. **You need range queries:** Finding the \"closest number greater than X\" is impossible in O(log N) with a hash table, but trivial in a `set` using `set.lower_bound(X)`.\n3. **You lack a hash function:** If your key is a complex custom struct (like `std::pair`), `unordered_map` requires you to write a custom, complex hash function. `std::map` only requires a simple `operator<` to establish order.\n\n**Real-world Engineering:** O(log N) ordered operations are mandatory for maintaining a live leaderboard, implementing a sweep-line algorithm in computational geometry, or building a financial trading order book where you must instantly match the highest bid with the lowest ask.",
+  "code_snippets": [
+    {
+      "title": "Ordered traversal and Range queries",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <set>\n\nint main() {\n    // Elements are automatically sorted as they are inserted\n    std::set<int> mySet = {50, 10, 30, 20, 40};\n    \n    // This will print: 10 20 30 40 50\n    for (int x : mySet) {\n        std::cout << x << \" \";\n    }\n    std::cout << '\\n';\n    \n    // Range Query: Find the first element >= 25\n    // Because it's a BST, lower_bound runs in O(log N).\n    auto it = mySet.lower_bound(25);\n    if (it != mySet.end()) {\n        std::cout << \"First element >= 25 is: \" << *it << '\\n'; // Prints 30\n    }\n    \n    return 0;\n}",
+      "explanation": "The self-balancing tree inherently maintains order. Methods like `lower_bound` leverage the tree structure to perform binary searches natively."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using map for pure lookup performance",
+      "explanation": "Beginners often use `std::map` for frequency counting in LeetCode problems, not realizing it incurs an O(log N) overhead per insertion. This turns an O(N) algorithm into O(N log N). Always default to `std::unordered_map`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the underlying data structure of `std::map` and `std::set`?",
+      "answer": "A self-balancing Binary Search Tree, most commonly implemented as a Red-Black Tree.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity for insertions and lookups in a `std::map`?",
+      "answer": "O(log N), because every operation requires traversing the height of the balanced binary search tree.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does the `lower_bound(key)` function do in a `std::set`?",
+      "answer": "It returns an iterator pointing to the first element that is greater than or equal to the specified key.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate is asked to design a system that continuously receives timestamps and must frequently query the smallest timestamp received so far. They use a `std::unordered_set`. What is the flaw?",
+      "answer": "An `unordered_set` (hash table) scrambles data, meaning finding the minimum timestamp requires an O(N) linear scan. They should use a `std::set` (BST), which keeps elements ordered, allowing them to retrieve the smallest element in O(1) by simply checking `*set.begin()`.",
+      "approach": "Identify when maintaining strict order is necessary for algorithmic efficiency."
+    },
+    {
+      "question": "Why might a `std::map` be preferred over `std::unordered_map` when using a custom struct as a key?",
+      "answer": "`unordered_map` requires defining a custom hashing struct (like `std::hash`), which is often complex and error-prone. `std::map` only requires defining an `operator<` (less than) for the struct to allow the binary tree to sort it.",
+      "approach": "Understand the interface requirements (Hashing vs Comparison) of associative containers."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "map = BST",
+      "detail": "`std::map` and `set` are Binary Search Trees. They are O(log N), not O(1)."
+    },
+    {
+      "title": "Automatic sorting",
+      "detail": "Use them when you need to iterate data in a guaranteed sorted order, or need to perform fast range/proximity queries."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/container/map"
+  ]
+}

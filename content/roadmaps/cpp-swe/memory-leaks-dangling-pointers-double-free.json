@@ -1,0 +1,85 @@
+{
+  "slug": "memory-leaks-dangling-pointers-double-free",
+  "title": "Memory leaks, dangling pointers & double free",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "stack-vs-heap-new-delete-memory-layout"
+    ],
+    "unlocks": [
+      "raii-resource-acquisition-is-initialization"
+    ]
+  },
+  "hook": {
+    "scenario": "Your server application processes thousands of requests per second. It runs perfectly for 3 hours, then abruptly crashes with an 'Out of Memory' (OOM) kill signal from the operating system.",
+    "question": "If your program logic never changed, why did it suddenly run out of memory?"
+  },
+  "mental_model": {
+    "intuition": "A Dangling Pointer is having a map to a house that was already demolished. A Memory Leak is losing your map to a house you own, so you can never sell it. A Double Free is hiring a demolition crew to demolish an empty lot that was already demolished yesterday.",
+    "description": "Manual memory management in C++ forces the programmer to be a perfect accountant. Failing to balance the books results in three classic bugs: Memory Leaks (failing to free memory), Dangling Pointers (accessing memory after it was freed), and Double Free (freeing memory twice)."
+  },
+  "explanation": "When working with the Heap, the compiler does not help you clean up. You are entirely responsible for the lifecycle of the memory.\n\n**1. Memory Leaks**\nIf you allocate memory using `new`, but the pointer holding the address goes out of scope before you call `delete`, that memory is lost forever. It is 'leaked'. The OS marks it as in-use, but your program has no way to access it. Over time, leaks accumulate until the OS kills your program.\n\n**2. Dangling Pointers**\nWhen you call `delete ptr;`, the memory on the heap is returned to the OS. However, the variable `ptr` itself still holds the old memory address. If you try to dereference `ptr` later (`*ptr = 5`), you are writing to memory you no longer own. This causes data corruption, security vulnerabilities, or segmentation faults.\n\n**3. Double Free**\nIf you delete the same pointer twice, you corrupt the heap manager's internal bookkeeping. The program will almost always crash immediately.",
+  "code_snippets": [
+    {
+      "title": "The Big Three Memory Bugs",
+      "language": "cpp",
+      "code": "void memoryBugs() {\n    // 1. MEMORY LEAK\n    int* leakPtr = new int(10);\n    // We reassign the pointer, losing the only reference to '10'\n    leakPtr = new int(20); \n    \n    // 2. DANGLING POINTER\n    int* danglingPtr = new int(30);\n    delete danglingPtr; // Memory is returned to the OS\n    // BUG: The pointer still holds the address. Dereferencing is UB.\n    // *danglingPtr = 40; \n    \n    // 3. DOUBLE FREE\n    int* dfPtr = new int(50);\n    delete dfPtr;\n    // BUG: Deleting again corrupts the heap manager.\n    // delete dfPtr;\n}",
+      "explanation": "These bugs often happen across complex codebases where ownership isn't clear. To mitigate dangling pointers, a common practice in legacy code is setting the pointer to `nullptr` immediately after deletion, as deleting a `nullptr` is a safe no-op."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming modern OS cleanup excuses leaks",
+      "explanation": "While modern operating systems will reclaim all memory when a program fully exits, long-running processes (like game engines or web servers) cannot rely on this. A leak inside a server request loop will crash the server in hours."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it safe to call `delete` on a `nullptr`?",
+      "answer": "The C++ standard explicitly defines `delete nullptr` as a safe operation that does absolutely nothing. This is why setting a pointer to `nullptr` after deletion is a common defensive programming pattern.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can a dangling pointer lead to a security vulnerability?",
+      "answer": "If memory is freed but a pointer still points to it (Use-After-Free), the OS might reallocate that memory for a different object. An attacker could exploit the dangling pointer to execute arbitrary code by manipulating the new object.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you never call `delete` on a pointer allocated with `new`?",
+      "answer": "The memory becomes unreachable (a memory leak), slowly consuming the system's RAM until the process runs out of memory or terminates.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A C++ program uses a tree structure. The developer writes a manual `cleanupTree(Node* root)` function that calls `delete` on the left and right children recursively. However, multiple nodes can share the same child in this specific graph. What bug will occur?",
+      "answer": "A Double Free (or Multiple Free). When the first parent is cleaned up, it deletes the shared child. When the second parent is cleaned up, it attempts to `delete` the exact same child pointer again, corrupting the heap and crashing.",
+      "approach": "Recognize that shared ownership with raw `delete` inevitably leads to double frees."
+    },
+    {
+      "question": "A developer returns a pointer to a local variable `int x = 5;`. When the caller tries to print it, it outputs garbage data. Why?",
+      "answer": "The local variable `x` was allocated on the stack and destroyed when the function returned. The returned pointer is a dangling pointer pointing to dead memory that has likely been overwritten.",
+      "approach": "Identify dangling pointers to stack memory."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Nullify after delete",
+      "detail": "If forced to use raw pointers, set them to `nullptr` immediately after deletion to avoid dangling pointer usage."
+    },
+    {
+      "title": "Use smart pointers",
+      "detail": "Modern C++ solves all three of these bugs fundamentally by using RAII and Smart Pointers (`std::unique_ptr`)."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es47-use-nullptr-rather-than-0-or-null",
+    "https://cwe.mitre.org/data/definitions/416.html"
+  ]
+}

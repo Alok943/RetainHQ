@@ -1,0 +1,83 @@
+{
+  "slug": "deque-list-array",
+  "title": "deque, list & array",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "vector-internals-push-back-amortization"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to frequently insert elements at the very front of your sequence. Knowing `std::vector::insert` at the front is O(N), you switch to `std::list` for O(1) front insertions. Your benchmark shows the code is actually running 5x slower than the vector.",
+    "question": "If linked list insertions are theoretically O(1) and vector insertions are O(N), why did the vector win?"
+  },
+  "mental_model": {
+    "intuition": "`std::array` is a fixed, immovable box (C-array with a seatbelt). `std::list` is a scavenger hunt across the heap (linked list). `std::deque` is a collection of `std::vector`s linked together, balancing fast growth at both ends with decent cache locality.",
+    "description": "While `std::vector` is the default, C++ offers other sequence containers. `std::array` provides zero-overhead fixed-size arrays. `std::list` provides doubly-linked lists. `std::deque` provides a double-ended queue. The most critical lesson is understanding why `std::list` performs terribly in practice due to CPU caching."
+  },
+  "explanation": "**1. std::array (Fixed Size)**\n`std::array<int, 5>` is a thin wrapper around a raw C-array (`int arr[5]`). It allocates exactly where it is declared (usually the stack). It cannot grow or shrink. Use it when the size is known at compile time. It provides bounds checking (`.at()`) and knows its own size (`.size()`), making it much safer than raw C-arrays. Crucially, unlike raw C-arrays, `std::array` does not automatically decay into a pointer when passed to a function.\n\n**2. std::list (Doubly-Linked List)**\nEvery element is allocated separately on the heap with pointers to the next and previous nodes. While inserting in the middle is O(1) *theoretically*, traversing to find the insertion point is O(N). More importantly, because nodes are scattered across the heap, iterating a `std::list` causes constant CPU cache misses. In modern hardware, cache locality beats algorithmic complexity for small to medium N. Avoid `std::list` unless you are storing massive objects where copying is prohibitively expensive.\n\n**3. std::deque (Double-Ended Queue)**\nErasing or inserting at the front of a `std::vector` is O(N) because it must shift all subsequent elements left to close the gap. A `std::deque` solves this, allowing O(1) insertions and deletions at both the front and the back. Unlike a vector, it is not one massive contiguous block. It is typically an array of pointers to fixed-size arrays (chunks). When the front is full, it just allocates a new chunk. It gives you the O(1) `push_front` of a list, but maintains the cache-friendliness of a vector. If you need a queue, `std::deque` is the answer.\n\n**Real-world Engineering:** `std::deque` is strictly superior to a vector when implementing a task scheduler queue or a sliding window algorithm where you constantly push to the back and pop from the front. `std::list` is useful when implementing an LRU cache where you must pluck nodes from the middle and move them to the front without invalidating references to them.",
+  "code_snippets": [
+    {
+      "title": "Using std::array vs std::deque",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <array>\n#include <deque>\n\nint main() {\n    // std::array: Size must be a compile-time constant.\n    // Lives on the stack. Ultra-fast, zero heap allocations.\n    std::array<int, 3> arr = {1, 2, 3};\n    std::cout << arr.size() << '\\n'; // Safe size checking\n    \n    // std::deque: Grows at both ends.\n    std::deque<int> dq;\n    dq.push_back(10);   // O(1)\n    dq.push_front(20);  // O(1) - Impossible to do efficiently with vector\n    \n    // Elements are accessible via index, just like vector\n    std::cout << \"Front: \" << dq[0] << '\\n'; // Prints 20\n    \n    return 0;\n}",
+      "explanation": "`std::array` replaces raw C-arrays for fixed data. `std::deque` replaces `std::vector` when you specifically need to insert/remove from the front frequently."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Defaulting to std::list for middle insertions",
+      "explanation": "Developers often use `std::list` to avoid the O(N) shifting cost of inserting into the middle of a vector. However, a vector's `memmove` shifts are so optimized by the CPU that a vector easily outperforms a list for insertions unless the list has thousands of massive objects."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is `std::list` generally much slower to iterate over than `std::vector`?",
+      "answer": "Because `std::list` allocates nodes dynamically across the heap. This scattered memory layout causes CPU cache misses on almost every step. `std::vector` is contiguous in memory, allowing the CPU to prefetch data efficiently.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How is `std::deque` structured internally to allow O(1) insertions at both ends?",
+      "answer": "It is typically implemented as an array of pointers to fixed-size memory chunks (blocks). When a block fills up at either the front or back, a new block is allocated and linked, avoiding the need to shift existing elements.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the primary advantage of `std::array` over a raw C-style array (`int arr[]`)?",
+      "answer": "It does not decay to a pointer when passed to a function, meaning it retains its size information (`.size()`). It also supports STL iterators and bounds-checked access (`.at()`).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate needs to implement a First-In-First-Out (FIFO) queue for a breadth-first search (BFS). They use a `std::vector` and call `vec.erase(vec.begin())` to remove the front element. Why is this a critical mistake?",
+      "answer": "Erasing the first element of a vector forces the CPU to shift every single subsequent element left by one position. This makes the dequeue operation O(N), turning a BFS into O(V * E). The correct container is `std::deque` (or `std::queue`), which provides O(1) `pop_front()`.",
+      "approach": "Understand the performance characteristics of front-removal in different sequence containers."
+    },
+    {
+      "question": "When would you actually choose `std::list` over `std::vector`?",
+      "answer": "When the elements are extremely large/expensive to copy (meaning shifting them in a vector is a bottleneck), AND you need to perform frequent insertions/deletions in the middle of the container using existing iterators without invalidating them.",
+      "approach": "Identify the rare edge cases where linked lists outperform contiguous arrays."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Avoid std::list",
+      "detail": "Unless you have a hyper-specific reason (iterator stability + massive objects), `std::list` is a performance trap due to cache misses."
+    },
+    {
+      "title": "Deque for Queues",
+      "detail": "Use `std::deque` when you need O(1) pushes and pops at both the front and the back."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#slcon2-prefer-using-stl-vector-by-default",
+    "https://en.cppreference.com/w/cpp/container/deque"
+  ]
+}

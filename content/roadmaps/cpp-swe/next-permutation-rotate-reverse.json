@@ -1,0 +1,88 @@
+{
+  "slug": "next-permutation-rotate-reverse",
+  "title": "next_permutation, rotate & reverse",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "sort-binary-search-lower-bound-upper-bound"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "An interviewer asks you to write a function that takes an array like `[1, 2, 3, 4, 5]` and shifts it left by 2 spaces, resulting in `[3, 4, 5, 1, 2]`. You start writing a temporary array, a loop, and some complex modulo math.",
+    "question": "Is there a single STL function that does this in-place with zero extra memory?"
+  },
+  "mental_model": {
+    "intuition": "The `<algorithm>` header is a Swiss Army Knife. Instead of writing custom loops to flip, shift, or permute data, you just pull out the exact specialized tool for the job. It's faster, bug-free, and instantly communicates your intent to other engineers.",
+    "description": "C++ provides highly optimized in-place algorithms for sequence manipulation. `std::reverse` flips a sequence. `std::rotate` shifts elements circularly. `std::next_permutation` is a \"magic\" algorithm that rearranges elements into their next lexicographically greater permutation, making brute-force combinatorics trivial."
+  },
+  "explanation": "**1. std::reverse**\n`std::reverse(begin, end)` flips the elements in the range in O(N) time. Simple, but incredibly useful when combined with other algorithms (like sorting in descending order, though `rbegin` is better for that).\n\n**2. std::rotate**\n`std::rotate(first, new_first, last)` performs a circular shift. The element at `new_first` becomes the new beginning of the sequence. It works in-place (O(1) auxiliary space) and takes O(N) time. It's notoriously tricky to implement manually without bugs, so always use the STL version.\n\n**3. std::next_permutation**\n`std::next_permutation(begin, end)` modifies the array into the next lexicographical permutation and returns `true`. If the array is sorted in descending order (the absolute last permutation), it wraps around to ascending order and returns `false`. This allows you to generate all possible permutations with a simple `do { ... } while(next_permutation(...))` loop.\n\n**Real-world Engineering:**\nThese tools replace hundreds of lines of boilerplate. `std::rotate` is used in text editors to shift blocks of text or in UI carousels. `std::next_permutation` is widely used in competitive programming and operations research to brute-force small Traveling Salesperson variations without writing complex recursive backtracking.",
+  "code_snippets": [
+    {
+      "title": "Generating all permutations",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> vec = {1, 2, 3};\n    \n    // vec MUST be sorted initially to guarantee we hit all permutations\n    std::sort(vec.begin(), vec.end());\n    \n    int count = 0;\n    do {\n        count++;\n        // The vector is modified in-place to the next permutation\n    } while (std::next_permutation(vec.begin(), vec.end()));\n    \n    std::cout << \"Total permutations: \" << count << '\\n'; // Prints 6\n    return 0;\n}",
+      "explanation": "This loop generates all 3! (6) permutations without any recursion, manual swapping, or extra memory allocation."
+    },
+    {
+      "title": "Left Rotation",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> v = {1, 2, 3, 4, 5};\n    \n    // We want the element at index 2 (the '3') to become the new front.\n    // v.begin() + 2 is the 'new_first' iterator.\n    std::rotate(v.begin(), v.begin() + 2, v.end());\n    \n    // v is now {3, 4, 5, 1, 2}\n    return 0;\n}",
+      "explanation": "`std::rotate` handles the complex block-swapping logic internally, ensuring O(N) speed with zero dynamic memory allocation."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using next_permutation on an unsorted array",
+      "explanation": "`next_permutation` only generates permutations *lexicographically greater* than the current one. If you pass it `[3, 2, 1]`, it instantly returns false because that is the highest possible permutation. You must always `std::sort` the array first if you want to generate *all* permutations."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the `new_first` parameter (the middle argument) in `std::rotate` specify?",
+      "answer": "It specifies the iterator pointing to the element that should become the new first element of the rotated sequence.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the return value of `std::next_permutation` and when does it return false?",
+      "answer": "It returns a boolean. It returns `true` if it successfully generated the next lexicographical permutation. It returns `false` when the sequence reaches the final, highest permutation (fully descending order).",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the time complexity of `std::reverse`?",
+      "answer": "O(N). It simply swaps elements from the outside in, taking exactly N/2 swaps.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes a `while(std::next_permutation(...))` loop to test all possible combinations of a 5-element array. The array starts as `[5, 1, 4, 2, 3]`. Will the loop test all 120 (5!) permutations? Why?",
+      "answer": "No. The loop will only test the permutations lexicographically greater than `[5, 1, 4, 2, 3]`. Because it wasn't sorted ascending first, a large chunk of permutations (anything starting with 1, 2, 3, or 4) will be completely skipped.",
+      "approach": "Understand the lexicographical prerequisite for permutation generation."
+    },
+    {
+      "question": "How can you use `std::rotate` to move the first element of a vector to the very end while shifting everything else left?",
+      "answer": "You call `std::rotate(vec.begin(), vec.begin() + 1, vec.end())`. The element at `vec.begin() + 1` becomes the new first element, which effectively shifts the old first element to the back.",
+      "approach": "Understand the iterator boundaries required to perform basic shifts."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "No raw loops",
+      "detail": "If you are writing a `for` loop to shift or flip an array, stop and use `<algorithm>`. It is faster and safer."
+    },
+    {
+      "title": "Sort before permuting",
+      "detail": "Always `std::sort` your container before throwing it into a `do-while` loop with `next_permutation`."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/algorithm/next_permutation"
+  ]
+}

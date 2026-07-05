@@ -1,0 +1,82 @@
+{
+  "slug": "accumulate-transform-common-algorithm-patterns",
+  "title": "accumulate, transform & common <algorithm> patterns",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "custom-comparators-with-lambda-for-sort-pq"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to multiply every number in a vector by 2, and then sum them up. You write a standard `for` loop with a running total. A senior engineer comments on your PR: \"This is imperative. Make it declarative using `<numeric>`.\"",
+    "question": "What is the difference between \"imperative\" loops and \"declarative\" algorithms?"
+  },
+  "mental_model": {
+    "intuition": "Raw `for` loops are imperative: you describe *how* to do the work step-by-step. STL algorithms are declarative: you tell the compiler *what* you want done, and it figures out the fastest way to do it.",
+    "description": "Beyond sorting and searching, the `<algorithm>` and `<numeric>` headers provide functional programming paradigms. `std::accumulate` folds/reduces an array into a single value. `std::transform` applies a function (like a map) to every element. Using these instead of raw loops makes code more expressive, safer, and open to compiler optimizations."
+  },
+  "explanation": "**1. std::accumulate (The Reducer)**\nFound in `<numeric>`, it sums up a range. `std::accumulate(vec.begin(), vec.end(), 0)` returns the sum of the vector. The `0` is critical: it sets the initial value AND the return type. If you accumulate floats but pass `0` (an integer) as the start, the result will be truncated to an integer! Pass `0.0` or `0.0f`.\n\n**2. std::transform (The Mapper)**\nIt iterates through a range, applies a function (usually a lambda) to each element, and writes the result to an output iterator. **Crucial detail:** the destination must either already have enough pre-allocated size, OR you must use `std::back_inserter(dest_vec)` as the output iterator, which safely `.push_back()`s the new items. It's the C++ equivalent of JavaScript's `map()`. \n\n**3. Common Queries**\n- `std::count_if`: Counts elements matching a condition.\n- `std::any_of` / `std::all_of`: Returns boolean if any/all elements match a condition.\n- `std::find_if`: Returns an iterator to the first element matching a condition.\n\n**Real-world Engineering:**\nReplacing raw `for` loops with named algorithms is a major tenet of modern C++ (popularized by Sean Parent's \"No Raw Loops\" talk). A raw `for` loop forces the reader to parse every line of logic to understand the intent. Seeing `std::any_of` instantly communicates: \"This block evaluates to a boolean based on a condition.\"",
+  "code_snippets": [
+    {
+      "title": "Functional paradigms in C++",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <numeric>\n#include <algorithm>\n#include <iostream>\n\nint main() {\n    std::vector<int> vec = {1, 2, 3, 4, 5};\n    \n    // 1. Accumulate (Sum)\n    // The '0' indicates the starting value is an int.\n    int sum = std::accumulate(vec.begin(), vec.end(), 0);\n    \n    // 2. Count If\n    // Count how many numbers are even using a lambda\n    int evens = std::count_if(vec.begin(), vec.end(), [](int x) {\n        return x % 2 == 0;\n    });\n    \n    // 3. Any Of\n    bool hasNegative = std::any_of(vec.begin(), vec.end(), [](int x) {\n        return x < 0;\n    });\n    \n    return 0;\n}",
+      "explanation": "These one-liners replace bulky loops and state variables, vastly reducing the surface area for logic errors (like off-by-one indices)."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Type truncation in std::accumulate",
+      "explanation": "If you have a `std::vector<double> v = {1.5, 2.5};` and you call `std::accumulate(v.begin(), v.end(), 0)`, the result will be `3` (an int), not `4.0`. The type of the initial value parameter determines the type of the accumulator. You must use `0.0`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the purpose of the third argument (the starting value) in `std::accumulate`?",
+      "answer": "It provides the initial value for the sum, and crucially, it dictates the data type of the result (e.g., using `0` yields an integer sum, `0.0` yields a double).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does `std::transform` do?",
+      "answer": "It applies a given function or lambda to every element in an input range, and stores the results in an output range.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is using STL algorithms generally preferred over writing raw `for` loops?",
+      "answer": "Algorithms explicitly declare the programmer's intent (declarative code), are less prone to index or boundary bugs, and often benefit from heavy compiler optimization.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An interviewer asks you to check if an array of strings contains any empty strings. How would you do this in one line using an STL algorithm?",
+      "answer": "Using `std::any_of`: `bool hasEmpty = std::any_of(vec.begin(), vec.end(), [](const string& s){ return s.empty(); });`",
+      "approach": "Identify the correct algorithm to replace a search/boolean loop."
+    },
+    {
+      "question": "You are reviewing code that uses a manual `for` loop to convert an entire `std::vector<int>` into a `std::vector<string>` containing the string representations of the numbers. Which `<algorithm>` should they use instead?",
+      "answer": "They should use `std::transform`. They can pass the source begin/end iterators, a `std::back_inserter` to the destination string vector, and a lambda (or `std::to_string`) as the transformation function.",
+      "approach": "Recognize when `transform` (the map operation) is the right tool to convert data types between collections."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "No raw loops",
+      "detail": "Elevate your code from imperative to declarative. Tell the compiler *what* to do using `<algorithm>`."
+    },
+    {
+      "title": "Watch the accumulator type",
+      "detail": "Always ensure the initial value passed to `accumulate` matches the exact type you expect the sum to be."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es71-prefer-a-range-for-statement-to-a-for-statement-when-there-is-a-choice"
+  ]
+}

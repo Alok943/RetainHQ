@@ -1,0 +1,89 @@
+{
+  "slug": "iterator-invalidation-when-containers-reshuffle-under-you",
+  "title": "Iterator invalidation \u2014 when containers reshuffle under you",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "vector-internals-push-back-amortization"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You iterate through a vector to remove all negative numbers: `for (auto it = vec.begin(); it != vec.end(); ++it) { if (*it < 0) vec.erase(it); }`. The program immediately crashes with a segmentation fault.",
+    "question": "Why does erasing an element inside a loop crash the program?"
+  },
+  "mental_model": {
+    "intuition": "An iterator is a bookmark. If you rip a page out of the book (`erase`), all the pages shift. Your bookmark is now pointing to the wrong page, or worse, hanging off the edge of the book.",
+    "description": "Iterator invalidation is one of the most common and dangerous bugs in C++. When a container's internal memory layout changes (due to resizing or shifting elements), any iterators, pointers, or references pointing to the old memory locations become invalid."
+  },
+  "explanation": "Iterators are glorified pointers used to traverse containers. \n\n**The Vector Erase Trap:**\nWhen you call `vec.erase(it)`, the vector removes the element and shifts all subsequent elements to the left to close the gap. The iterator `it` is now pointing to the *next* element naturally, but the `for` loop will execute `++it` anyway. You end up skipping elements! Worse, if you erased the *last* element, `it` becomes invalid. Calling `++it` on an invalid iterator causes Undefined Behavior (usually a crash).\n\n**The Fix:**\n`erase()` always returns a brand new, valid iterator pointing to the element immediately following the erased one. You must update your iterator using this return value: `it = vec.erase(it);` and *only* increment it if you did *not* erase anything.\n\n**Global Invalidation (Reallocation):**\nAs learned previously, if `push_back()` triggers a vector to expand its capacity, it moves to a completely new heap allocation. **Every single iterator** for that vector is instantly invalidated. Similarly, adding elements to an `unordered_map` can trigger a **rehash** (rebuilding the entire hash table to maintain O(1) lookups), which destroys all active iterators for the map. `std::list`, on the other hand, never shifts or reallocates nodes, so inserting or erasing only invalidates iterators pointing to the specific node being erased.\n\n**Real-world Engineering:** Iterating while erasing is mandatory in scenarios like cleaning up dead entities in a game loop, or filtering out expired network connections from a server's active connection list. Mastering the `it = erase(it)` pattern is essential to avoid crashes.",
+  "code_snippets": [
+    {
+      "title": "The bug: Erasing inside a loop",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <iostream>\n\nint main() {\n    std::vector<int> vec = {1, -2, 3, -4, 5};\n    \n    // BUG: This will crash or skip elements.\n    for (auto it = vec.begin(); it != vec.end(); ++it) {\n        if (*it < 0) {\n            vec.erase(it); \n            // 'it' is now invalid or pointing to the shifted next element.\n            // The loop will still run ++it, skipping an element or crashing.\n        }\n    }\n    return 0;\n}",
+      "explanation": "Modifying the structure of a sequence container while traversing it using standard `for` loop mechanics corrupts the traversal state."
+    },
+    {
+      "title": "The fix: Update the iterator",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <iostream>\n\nint main() {\n    std::vector<int> vec = {1, -2, 3, -4, 5};\n    \n    auto it = vec.begin();\n    while (it != vec.end()) {\n        if (*it < 0) {\n            // erase() returns a valid iterator to the NEXT element.\n            it = vec.erase(it); \n        } else {\n            // Only increment if we didn't erase anything.\n            ++it;\n        }\n    }\n    \n    // Alternatively, in modern C++20:\n    // std::erase_if(vec, [](int x){ return x < 0; });\n    \n    return 0;\n}",
+      "explanation": "By manually controlling the iterator advancement, we ensure we always possess a valid 'bookmark' into the container."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using range-based for loops to erase",
+      "explanation": "Writing `for (int x : vec) { if (x < 0) vec.erase(...) }` is extremely dangerous. Range-based loops hide the iterator management. If you modify the container's size inside a range-based for loop, you will silently invoke Undefined Behavior."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `std::vector::erase(it)` return?",
+      "answer": "It returns a valid iterator pointing to the element immediately following the one that was erased (or `end()` if the last element was erased).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does `push_back` on a vector sometimes invalidate all existing iterators?",
+      "answer": "If `push_back` causes the vector's size to exceed its capacity, the vector reallocates its internal array to a new heap location. All old iterators point to the freed memory and become invalid.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why doesn't erasing an element from a `std::list` invalidate iterators pointing to other elements?",
+      "answer": "Because `std::list` is a linked list. Erasing a node simply updates the adjacent pointers. The physical memory addresses of all other nodes remain completely unchanged.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A function iterates through an `unordered_map` and inserts new key-value pairs based on existing data. The program occasionally enters an infinite loop or crashes. Why?",
+      "answer": "Inserting elements into an `unordered_map` can trigger a rehash if the load factor gets too high. A rehash rebuilds the entire hash table, completely invalidating all current iterators and corrupting the active loop.",
+      "approach": "Understand global iterator invalidation events across different container types."
+    },
+    {
+      "question": "How do you safely remove all even numbers from a `std::vector` in pre-C++20?",
+      "answer": "You use an iterator and a `while` loop, assigning the iterator to the result of `vec.erase(it)` if the number is even, and manually calling `++it` otherwise. (Or, you use the Erase-Remove idiom: `vec.erase(std::remove_if(...), vec.end());`).",
+      "approach": "Identify safe traversal patterns for mutating vectors."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Catch erase returns",
+      "detail": "Always assign the result of `.erase()` back to your iterator to keep it valid."
+    },
+    {
+      "title": "Beware reallocation",
+      "detail": "Adding elements to `vector` or `unordered_map` can trigger global reallocation, destroying all active iterators."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es65-dont-dereference-an-invalid-pointer",
+    "https://en.cppreference.com/w/cpp/container/vector/erase"
+  ]
+}

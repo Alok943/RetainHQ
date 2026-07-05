@@ -1,0 +1,91 @@
+{
+  "slug": "raii-resource-acquisition-is-initialization",
+  "title": "RAII \u2014 resource acquisition is initialization",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "classes-constructors-destructors-and-this",
+      "memory-leaks-dangling-pointers-double-free"
+    ],
+    "unlocks": [
+      "unique-ptr-shared-ptr-weak-ptr"
+    ]
+  },
+  "hook": {
+    "scenario": "You lock a mutex, write to a file, and unlock the mutex. During the file write, an unexpected `std::runtime_error` is thrown. The function aborts, the mutex is never unlocked, and your entire application deadlocks.",
+    "question": "How can you guarantee the mutex unlocks even if the function is violently aborted by an exception?"
+  },
+  "mental_model": {
+    "intuition": "RAII is like having an automated clean-up crew physically handcuffed to your variable. The moment the variable dies (goes out of scope), the clean-up crew is violently yanked down with it, forcing them to do their job on the way out.",
+    "description": "RAII (Resource Acquisition Is Initialization) is the defining idiom of C++. It binds the life cycle of a resource (heap memory, open files, network sockets, mutex locks) to the lifespan of a stack-allocated local variable. When the variable goes out of scope, its destructor is guaranteed to run, automatically cleaning up the resource."
+  },
+  "explanation": "In languages like Java or C#, you use `finally` blocks or Garbage Collection to clean up resources. C++ does not have a garbage collector, and it doesn't need a `finally` block because of RAII.\n\n**How it works:**\n1. **Acquisition:** You wrap the raw resource inside a class. The constructor acquires the resource (e.g., opens a file, locks a mutex).\n2. **Initialization:** You instantiate this class as a local, stack-allocated variable.\n3. **Destruction:** The C++ language guarantees that when a stack variable goes out of scope\u2014whether by hitting a `return` statement, reaching the end of the block, or being violently interrupted by an `throw`\u2014its destructor will run. The destructor releases the resource (e.g., closes the file, unlocks the mutex).\n\nThis is why `std::unique_ptr`, `std::vector`, and `std::lock_guard` exist. They are all RAII wrappers. `std::vector` owns a raw heap pointer, and its destructor calls `delete[]` so you never have to.",
+  "code_snippets": [
+    {
+      "title": "The bug: Manual resource management",
+      "language": "cpp",
+      "code": "#include <mutex>\n\nstd::mutex mtx;\n\nvoid riskyFunction() {\n    mtx.lock();\n    \n    // If this throws, the function aborts immediately.\n    // mtx.unlock() is NEVER reached. The program deadlocks.\n    processData(); \n    \n    mtx.unlock(); \n}",
+      "explanation": "Managing resources manually requires perfect discipline. Any early return or thrown exception breaks the cleanup flow."
+    },
+    {
+      "title": "The fix: RAII (std::lock_guard)",
+      "language": "cpp",
+      "code": "#include <mutex>\n\nstd::mutex mtx;\n\nvoid safeFunction() {\n    // Acquisition is Initialization:\n    // The constructor of lock_guard locks the mutex.\n    std::lock_guard<std::mutex> guard(mtx);\n    \n    // If this throws, 'guard' goes out of scope as the stack unwinds.\n    // Its destructor fires, automatically unlocking the mutex.\n    processData();\n    \n    // Destructor runs here naturally as well.\n}",
+      "explanation": "Because `guard` is a local stack variable, C++ guarantees its destructor runs no matter how the function exits. The lock is tied to the scope itself."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using raw pointers as class members without RAII",
+      "explanation": "If a class owns a raw pointer, you must implement the Rule of 3/5 to manage it. Instead, follow the 'Rule of Zero': use `std::unique_ptr` (an RAII wrapper) as the member variable, and the compiler will automatically write safe copy/move/destroy logic for your class."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why doesn't C++ need `finally` blocks like Java or C# to clean up resources after exceptions?",
+      "answer": "Because C++ uses RAII. Stack unwinding during an exception guarantees that the destructors of all local stack variables are executed, making `finally` blocks redundant.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the 'Rule of Zero' in modern C++?",
+      "answer": "The Rule of Zero states that classes should avoid defining custom destructors, copy/move constructors, or assignment operators. Instead, they should rely on RAII types (like std::vector or std::unique_ptr) as member variables, which handle their own cleanup automatically.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is `std::vector` considered an RAII wrapper?",
+      "answer": "Because its constructor acquires heap memory for the array, and its destructor is guaranteed to free that heap memory when the `std::vector` object goes out of scope.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes a custom RAII `FileHandler` class. They instantiate it using `FileHandler* fh = new FileHandler(\"data.txt\");`. When the function returns, the file remains open. Why?",
+      "answer": "Because `fh` is a raw pointer on the stack, not an RAII object on the stack. When the function returns, the pointer is destroyed, but the actual `FileHandler` object on the heap is not destroyed, so its destructor never runs. RAII objects must be stack-allocated.",
+      "approach": "Understand that RAII relies entirely on deterministic stack-variable destruction."
+    },
+    {
+      "question": "If you throw an exception inside a function, how does C++ ensure a `std::lock_guard` releases its lock?",
+      "answer": "C++ performs 'stack unwinding' when an exception is thrown, which calls the destructors of all local stack variables (including the `lock_guard`) before propagating the exception up the call stack.",
+      "approach": "Understand how stack unwinding guarantees RAII destruction."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Tie resources to scope",
+      "detail": "Wrap every raw resource (memory, files, sockets, locks) in an object whose destructor releases the resource."
+    },
+    {
+      "title": "Stack destruction is guaranteed",
+      "detail": "Even during an exception, the compiler guarantees destructors will run. Leverage this."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#r1-manage-resources-automatically-using-resource-handles-and-raii-raii"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "slug": "unordered-map-unordered-set-hash-internals",
+  "title": "unordered_map & unordered_set \u2014 hash internals",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "vector-internals-push-back-amortization"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You write a blazing fast O(1) hash map solution. It passes 99% of the test cases. On the last test case, it times out. You realize the system specifically fed your map keys that all evaluated to the same hash.",
+    "question": "How can an O(1) hash map suddenly degrade to O(N) performance?"
+  },
+  "mental_model": {
+    "intuition": "A Hash Table is like a mailroom with 100 buckets. A hash function looks at an envelope's name and assigns it a bucket number. If the hash function is good, mail is spread evenly (O(1) to find it). If the hash function is terrible and puts every envelope in Bucket #7, you have to dig through Bucket #7 one by one (O(N)).",
+    "description": "`std::unordered_map` and `std::unordered_set` are implemented as Hash Tables. They provide O(1) average time complexity for lookups, insertions, and deletions. However, understanding how they resolve collisions via \"chaining\" is critical for avoiding Worst-Case O(N) scenarios."
+  },
+  "explanation": "**How it works:**\nWhen you insert a key, `std::hash` runs on the key to produce an integer. This integer is modulo'd by the number of \"buckets\" in the table to determine where the data lives. \n\n**Collisions & Chaining:**\nBecause there are infinite possible keys but a finite number of buckets, two different keys will inevitably hash to the same bucket. C++ resolves this using *chaining*: each bucket is actually a linked list. If a bucket has 5 items in it, the map must traverse that linked list to find the exact key. If all your keys collide into the same bucket, the map degenerates into a single linked list, resulting in O(N) performance.\n\n**Rehashing:**\nAs the map grows, the \"Load Factor\" (number of elements / number of buckets) increases. When the load factor exceeds a threshold (typically 1.0), the map automatically allocates a much larger bucket array and recalculates the bucket index for every single element. This \"rehash\" is an expensive O(N) operation and invalidates all iterators.\n\n**Custom Keys:**\nTo use a custom struct as a key, you must provide two things: an `operator==` (so the map can check if two colliding items in a bucket are actually identical) and a custom hash function injected into `std::hash`. Note that C++ does **not** provide default `std::hash` specializations for common containers like `std::vector` or `std::pair`, meaning they cannot be used as keys out-of-the-box without writing your own hash function.\n\n**Real-world Engineering:** Custom hash functions are commonly needed when caching expensive computations (Memoization), such as caching 2D grid pathfinding results where the key is a `std::pair<int, int>` coordinate.",
+  "code_snippets": [
+    {
+      "title": "Custom Hash Functions",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <unordered_set>\n\nstruct Point {\n    int x, y;\n    // 1. Must define equality so the map can resolve collisions\n    bool operator==(const Point& other) const {\n        return x == other.x && y == other.y;\n    }\n};\n\n// 2. Must define a custom hash function in the std namespace\nnamespace std {\n    template <>\n    struct hash<Point> {\n        size_t operator()(const Point& p) const {\n            // Combine the hashes of x and y.\n            // Using bitwise XOR (^) is a simple way to combine hashes.\n            return hash<int>()(p.x) ^ (hash<int>()(p.y) << 1);\n        }\n    };\n}\n\nint main() {\n    std::unordered_set<Point> points;\n    points.insert({1, 2});\n    points.insert({3, 4});\n    return 0;\n}",
+      "explanation": "Because C++ does not automatically know how to hash a `Point`, you must explicitly tell it how to combine the hashes of its fundamental components."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming unordered_map is always strictly O(1)",
+      "explanation": "In competitive programming (like Codeforces), malicious test cases are designed specifically to cause hash collisions in C++'s default `std::hash`, forcing your `unordered_map` into worst-case O(N) performance and causing a Time Limit Exceeded (TLE) error. CPers often write custom, randomized hash functions to prevent this."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when two different keys in an `unordered_map` hash to the same bucket?",
+      "answer": "A collision occurs. C++ resolves this using chaining: the bucket stores a linked list of elements, and the map iterates through the list comparing keys via `operator==` to find the exact match.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What two things are required to use a custom class/struct as a key in an `unordered_map`?",
+      "answer": "1) A custom hash function (specializing `std::hash`) to assign the object to a bucket. 2) An equality operator (`operator==`) to resolve collisions within a bucket.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What triggers an `unordered_map` to rehash all its elements?",
+      "answer": "Rehashing is triggered when the load factor (number of elements divided by number of buckets) exceeds the container's maximum load factor (default is usually 1.0).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes an `unordered_map` where the hash function simply returns `1` for every single key. The equality operator `==` works perfectly. What is the time complexity of a lookup?",
+      "answer": "O(N). Because every key returns the hash `1`, every element is placed into the exact same bucket. The map degrades into a single linked list, forcing a linear scan for every lookup.",
+      "approach": "Understand the consequences of hash collisions on time complexity."
+    },
+    {
+      "question": "A team decides to use a `std::unordered_map<std::vector<int>, int>` to memoize the results of a complex graph traversal. The code refuses to compile. Why, and how can it be fixed?",
+      "answer": "It fails to compile because C++ does not provide a default `std::hash` specialization for `std::vector` (unlike Python's tuples). You must either write a custom hash function that hashes and combines the elements of the vector, or use a `std::map` instead, which only requires the `operator<` (which `std::vector` already provides).",
+      "approach": "Recognize that STL containers don't have default hash functions in C++."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "O(1) Average, O(N) Worst",
+      "detail": "Hash tables are lightning fast, but bad hashes or malicious inputs can degrade them to linear time."
+    },
+    {
+      "title": "Rehashing invalidates iterators",
+      "detail": "Like vectors, unordered maps reallocate memory (for buckets) as they grow, completely invalidating existing iterators."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/container/unordered_map"
+  ]
+}

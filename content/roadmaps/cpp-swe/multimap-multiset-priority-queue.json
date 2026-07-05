@@ -1,0 +1,83 @@
+{
+  "slug": "multimap-multiset-priority-queue",
+  "title": "multimap, multiset & priority_queue",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "map-set-red-black-tree-o-log-n-ops",
+      "unordered-map-unordered-set-hash-internals"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You are building a task scheduler. Multiple tasks can have the exact same priority level (e.g., priority 10). You store them in a `std::set<int>`, but you notice half your tasks are instantly deleted.",
+    "question": "Why did the container silently delete your tasks, and what should you use instead?"
+  },
+  "mental_model": {
+    "intuition": "`multiset` and `multimap` are filing cabinets that allow identical folders. `priority_queue` is a pyramid structure (Heap) where the most important person always bubbles to the very top, but you aren't allowed to see anyone else.",
+    "description": "Standard `map` and `set` strictly enforce unique keys; inserting a duplicate is ignored. The `multi` variants permit duplicates. Meanwhile, `std::priority_queue` (a Heap) is an adapter that provides O(log N) insertion and O(1) access strictly to the maximum (or minimum) element, making it the perfect tool for scheduling and Greedy algorithms."
+  },
+  "explanation": "**1. multiset and multimap**\nThese are implemented as Red-Black trees just like their unique counterparts, guaranteeing O(log N) operations. When you insert a duplicate key, it is placed adjacent to the existing identical keys. You can use `.equal_range(key)` to get an iterator to the beginning and end of all identical elements. \n\n**2. priority_queue (Heap)**\nUnlike trees which keep *everything* perfectly sorted, a `priority_queue` is usually implemented using a `std::vector` arranged as a Binary Heap. It guarantees that the largest element (or smallest, if configured) is always at the `.top()`. \n- **Push/Pop:** O(log N) (bubbling up or down the heap).\n- **Top:** O(1) (it's just the first element of the vector).\n- **Limitation:** You cannot iterate through a priority queue or search for elements inside it. You can only view or extract the top element. Iterators are completely disabled because allowing you to modify internal elements in-place would silently break the heap's mathematical invariants.\n\n**Real-world Engineering:**\n`std::priority_queue` is the backbone of pathfinding algorithms (like A* or Dijkstra's) and event-driven simulations. `multimap` is frequently used in systems where a single key maps to multiple values, such as a DNS server mapping one hostname to multiple IP addresses.\n\n**Performance Note:** While both `multiset` and `priority_queue` offer O(log N) insertions, `multiset` allocates individual nodes scattered on the heap (causing cache misses), whereas `priority_queue` is backed by a contiguous `std::vector`. This makes `priority_queue` significantly faster in practice due to CPU caching.",
+  "code_snippets": [
+    {
+      "title": "Using a Priority Queue (Max-Heap by default)",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <queue>\n\nint main() {\n    // By default, std::priority_queue is a Max-Heap (largest at top)\n    std::priority_queue<int> pq;\n    \n    pq.push(10); // O(log N)\n    pq.push(50); // O(log N)\n    pq.push(20); // O(log N)\n    \n    std::cout << \"Top: \" << pq.top() << '\\n'; // Prints 50. O(1)\n    \n    pq.pop(); // Removes 50. O(log N) to rebalance the heap\n    std::cout << \"New Top: \" << pq.top() << '\\n'; // Prints 20.\n    \n    return 0;\n}",
+      "explanation": "Notice you cannot do `pq[1]` or use a range-based `for` loop. The interface strictly limits you to `push`, `pop`, and `top`."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming priority_queue is fully sorted",
+      "explanation": "A priority queue guarantees the largest element is at the top, but the underlying vector is *not* fully sorted. The heap property only guarantees that parents are larger than their children, not that siblings are sorted. If you need a fully sorted sequence, use `std::sort` on a vector or use a `std::set`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you insert a duplicate key into a `std::set` versus a `std::multiset`?",
+      "answer": "In a `std::set`, the insertion is ignored and the size remains the same. In a `std::multiset`, the duplicate is inserted and stored alongside the original.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of finding the maximum element in a `std::priority_queue`?",
+      "answer": "O(1), because the maximum element is always maintained at the root of the heap (accessible via `.top()`).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can't you iterate through a `std::priority_queue`?",
+      "answer": "Because it is designed as a strict abstract data type (an adapter). Its purpose is to encapsulate the heap logic, and exposing iterators would allow users to modify internal elements, breaking the heap invariant.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate uses a `std::multiset` to repeatedly find and extract the largest number in a stream of integers. The code works, but the interviewer asks them to optimize it. What container should they switch to and why?",
+      "answer": "They should switch to a `std::priority_queue`. While both offer O(log N) insertions and O(1) max-lookups, `multiset` allocates individual nodes on the heap (cache misses), while `priority_queue` is backed by a contiguous `std::vector`, making it significantly faster in practice due to CPU caching.",
+      "approach": "Recognize when the full sorting power of a BST is unnecessary overkill compared to a Heap."
+    },
+    {
+      "question": "How do you retrieve all values associated with the key \"apple\" in a `std::multimap<string, string>`?",
+      "answer": "You use `auto range = map.equal_range(\"apple\");` and then iterate from `range.first` to `range.second`. This provides an O(log N) lookup that yields the boundary iterators for all identical keys.",
+      "approach": "Understand how to extract contiguous ranges from multi-associative containers."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Multi allows duplicates",
+      "detail": "`multiset` and `multimap` are identical to their unique counterparts, but allow multiple identical keys."
+    },
+    {
+      "title": "PQ for Greedy algorithms",
+      "detail": "`priority_queue` is highly optimized for constantly extracting the Min or Max value, making it perfect for scheduling."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/container/priority_queue"
+  ]
+}

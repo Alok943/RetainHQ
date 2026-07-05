@@ -1,0 +1,84 @@
+{
+  "slug": "stack-vs-heap-new-delete-memory-layout",
+  "title": "Stack vs heap \u2014 new/delete & memory layout",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "functions-value-ref-pointer"
+    ],
+    "unlocks": [
+      "memory-leaks-dangling-pointers-double-free"
+    ]
+  },
+  "hook": {
+    "scenario": "You declare `int data[1000000];` inside a function to hold some calculations. You compile the code, but when you run it, the program instantly crashes with a 'Segmentation fault' before executing a single line of your logic.",
+    "question": "Why did simply declaring an array cause an immediate crash?"
+  },
+  "mental_model": {
+    "intuition": "The Stack is a fast, tiny notepad on your desk; you use it for quick, temporary math, and you tear off the page when you're done. The Heap is a giant warehouse; you have to explicitly call a manager (`new`) to reserve space, and call them again (`delete`) to free it up.",
+    "description": "Understanding where memory lives is the core of C++. The Stack is managed automatically by the compiler; it is extremely fast, cache-friendly, but very limited in size (often just a few megabytes). The Heap (dynamic memory) is massive, but allocating and deallocating memory is manual, slower, and prone to fragmentation."
+  },
+  "explanation": "When a C++ program runs, memory is divided into segments. The most important for developers are the Stack and the Heap.\n\n**The Stack (Automatic Memory):**\nEvery time a function is called, a 'stack frame' is pushed onto the Stack. It holds all local variables and the return address. When the function finishes, the frame is popped, instantly destroying all local variables. Allocation is simply moving a pointer, making it incredibly fast. However, if you declare an array too large (e.g., a million ints), it exceeds the OS-imposed stack limit, causing a Stack Overflow crash.\n\n**The Heap (Dynamic Memory):**\nWhen you need large amounts of data, or data that must outlive the function that created it, you use the Heap. You request memory using the `new` keyword, which returns a pointer to the allocated space. This memory stays reserved until you explicitly release it using `delete` (or `delete[]` for arrays). Because the OS must search for continuous free blocks in the warehouse, heap allocations are much slower than stack allocations.",
+  "code_snippets": [
+    {
+      "title": "Stack vs Heap Allocation",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nvoid processData() {\n    // STACK: Fast, automatic, but size is fixed at compile time.\n    // Destroyed automatically when processData() ends.\n    int localArray[10]; \n    \n    // HEAP: Slower allocation, but can be massive and dynamic.\n    // We explicitly request memory using 'new'.\n    int size = 1000000;\n    int* dynamicArray = new int[size];\n    \n    // Do work...\n    \n    // We MUST explicitly free heap memory when done, or it leaks.\n    // Notice the [] because we allocated an array.\n    delete[] dynamicArray;\n}\n\nint main() {\n    processData();\n    return 0;\n}",
+      "explanation": "The pointer `dynamicArray` itself lives on the stack, but the 1 million integers it points to live on the heap. When the function ends, the pointer is destroyed, but the heap memory remains unless explicitly deleted."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning a pointer to a stack variable",
+      "explanation": "Writing `int* getInt() { int x = 5; return &x; }` is a catastrophic bug. `x` lives on the stack and is destroyed the moment the function returns. The caller receives a pointer to dead memory."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you allocate memory with `new[]` but free it with `delete` instead of `delete[]`?",
+      "answer": "It results in undefined behavior. Typically, only the first element's destructor is called, leading to memory leaks or heap corruption.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is stack allocation significantly faster than heap allocation?",
+      "answer": "Stack allocation simply involves moving the stack pointer (a single arithmetic operation). Heap allocation requires the memory allocator to search for a free block of the requested size, which involves complex bookkeeping and OS overhead.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is memory fragmentation and why does it occur on the heap but not the stack?",
+      "answer": "Fragmentation happens when free memory on the heap is broken into small, non-contiguous blocks after multiple allocations and deallocations. The stack avoids this because it strictly pushes and pops in order, never leaving 'holes'.",
+      "tier": "tier3"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate writes a recursive depth-first search (DFS) for a graph with 10 million nodes, storing the visited array locally in the recursive function. It crashes in production. Why?",
+      "answer": "Every recursive call pushes a new frame onto the stack. At 10 million depth, this exhausts the thread's stack space, causing a Stack Overflow. The fix is to use an iterative DFS with a manually allocated stack on the heap (using `new`) to hold the nodes to visit, completely bypassing the OS stack limits.",
+      "approach": "Recognize recursion depth limits and stack memory constraints."
+    },
+    {
+      "question": "A function creates a large lookup table using `int* table = new int[1000];` and returns the pointer. What happens if the caller loses the pointer before calling `delete[]`?",
+      "answer": "The memory is permanently leaked. The heap memory remains reserved but completely inaccessible until the program terminates.",
+      "approach": "Understand the manual lifecycle of heap allocations."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Stack is default",
+      "detail": "Always prefer stack allocation (local variables) unless the object is too large or needs to outlive the function scope."
+    },
+    {
+      "title": "new requires delete",
+      "detail": "Every call to `new` must be matched by a corresponding `delete` to prevent resource leaks."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#r11-avoid-calling-new-and-delete-explicitly"
+  ]
+}

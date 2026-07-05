@@ -1,0 +1,92 @@
+{
+  "slug": "vector-internals-push-back-amortization",
+  "title": "vector \u2014 internals, push_back amortization",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "stack-vs-heap-new-delete-memory-layout"
+    ],
+    "unlocks": [
+      "iterator-invalidation-when-containers-reshuffle-under-you",
+      "deque-list-array"
+    ]
+  },
+  "hook": {
+    "scenario": "You store a pointer to the first element of your `std::vector`. You then call `push_back()` a few times. When you try to read your pointer, the program crashes with a segmentation fault.",
+    "question": "If you never deleted the vector, why did the pointer to its data become invalid?"
+  },
+  "mental_model": {
+    "intuition": "`std::vector` is a dynamic array. When it runs out of space, it doesn't just expand\u2014it buys a bigger house, copies all the furniture over, and burns down the old house.",
+    "description": "`std::vector` is the default sequence container in C++. It manages a contiguous block of memory on the heap. When that memory fills up, the vector must reallocate a larger block (usually double the size) and move all existing elements. This reallocation makes `push_back` an 'amortized O(1)' operation."
+  },
+  "explanation": "Under the hood, a `std::vector` maintains three pointers: `begin` (start of data), `end` (end of active data), and `capacity` (end of allocated memory). The **size** is the number of active elements, while the **capacity** is the total number of elements it can hold before it must allocate more memory.\n\n**Amortized O(1) Growth:**\nWhen you call `push_back()` and `size == capacity`, the vector is full. It cannot just grow in place, because the adjacent memory might be owned by something else. Instead, it:\n1. Allocates a completely new, larger array (usually 2x the current capacity).\n2. Moves/copies all elements to the new array.\n3. Deletes the old array.\n\nWhile this reallocation is O(N), it happens so rarely that the *average* time per `push_back` remains O(1). This is called 'amortized' O(1).\n\n**The Reallocation Trap:**\nBecause reallocation deletes the old array, **any pointers or references** pointing to elements inside the vector immediately become invalid (dangling). To prevent unnecessary reallocations and invalidation, always use `vec.reserve(N)` if you know roughly how many elements you will insert.\n\n**Real-world Engineering:** If you must store references to elements but expect the vector to grow, **store integer indices** instead of pointers. Indices remain valid regardless of reallocation. A classic bug in game development is storing pointers to game entities inside a vector; when a new entity spawns and triggers a reallocation, all existing pointers danglingly crash the game. Use indices, or `reserve()` the max capacity upfront.",
+  "code_snippets": [
+    {
+      "title": "Reallocation and Invalidation",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> vec = {1, 2, 3};\n    \n    // Get a reference to the first element\n    int& firstElement = vec[0];\n    \n    // Force a reallocation by exceeding capacity\n    for (int i = 0; i < 100; ++i) {\n        vec.push_back(i);\n    }\n    \n    // BUG: firstElement is now a dangling reference!\n    // The original array was deleted during reallocation.\n    // std::cout << firstElement; // Undefined Behavior\n    \n    return 0;\n}",
+      "explanation": "The moment `push_back` triggers a capacity increase, the vector moves all its data to a new heap location. The reference `firstElement` is left pointing to freed memory."
+    },
+    {
+      "title": "Using reserve() for performance",
+      "language": "cpp",
+      "code": "#include <vector>\n\nint main() {\n    std::vector<int> vec;\n    \n    // Pre-allocate space for 1,000 elements.\n    // Size is still 0, but Capacity is 1000.\n    vec.reserve(1000);\n    \n    // These 1,000 push_backs are guaranteed to be true O(1).\n    // Zero reallocations will occur.\n    for (int i = 0; i < 1000; ++i) {\n        vec.push_back(i);\n    }\n    \n    return 0;\n}",
+      "explanation": "`reserve(N)` allocates memory ahead of time without changing the logical size of the vector. This prevents both performance hiccups and iterator/reference invalidation."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing reserve() with resize()",
+      "explanation": "`reserve(N)` only changes capacity (allocates memory). `resize(N)` changes both capacity AND size, actually instantiating `N` default objects (e.g., zeros). If you `resize(10)` and then `push_back(5)`, the `5` will be inserted at index 10, not index 0."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between a vector's `size` and its `capacity`?",
+      "answer": "`size` is the number of valid elements currently in the vector. `capacity` is the total number of elements the vector's current memory block can hold before needing to reallocate.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `push_back` considered amortized O(1) rather than strict O(1)?",
+      "answer": "Most of the time, `push_back` simply writes to the next available slot (strict O(1)). However, when capacity is reached, it must allocate a new array and copy all elements over (O(N)). Because it typically doubles the capacity, this O(N) cost is spread out over many O(1) operations, averaging to O(1).",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does `std::vector::reserve(N)` do?",
+      "answer": "It allocates enough contiguous memory to hold at least `N` elements, increasing the capacity without changing the logical size of the vector. This prevents reallocations while adding up to `N` elements.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate reads 1 million integers from a file into a `std::vector` using a `while` loop and `push_back()`. The profiler shows the code spends 30% of its time allocating memory. How do you optimize this?",
+      "answer": "If the file size or the number of elements is known beforehand, call `vec.reserve(1000000)` before the loop. This ensures exactly one memory allocation occurs, completely eliminating the reallocation overhead.",
+      "approach": "Recognize the performance impact of repeated vector reallocations."
+    },
+    {
+      "question": "Is it safe to store pointers to elements of a `std::vector` inside another data structure?",
+      "answer": "Generally, no. If the vector ever grows beyond its capacity, it will reallocate, invalidating every single stored pointer. If you must do this, either `reserve()` enough space so it never grows, or store indices (which remain valid) instead of pointers.",
+      "approach": "Identify reference invalidation risks with dynamic arrays."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Contiguous memory is king",
+      "detail": "`std::vector` is the fastest container because it is cache-friendly. It should be your default choice."
+    },
+    {
+      "title": "Beware reallocation",
+      "detail": "Growth means moving data. Reallocation invalidates all pointers, references, and iterators to the vector's elements."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#slcon2-prefer-using-stl-vector-by-default",
+    "https://en.cppreference.com/w/cpp/container/vector/reserve"
+  ]
+}

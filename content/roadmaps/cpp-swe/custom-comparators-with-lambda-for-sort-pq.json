@@ -1,0 +1,88 @@
+{
+  "slug": "custom-comparators-with-lambda-for-sort-pq",
+  "title": "Custom comparators with lambda for sort/PQ",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "sort-binary-search-lower-bound-upper-bound"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have a `std::vector<Player>` where `Player` is a struct containing a name and a score. You call `std::sort(players.begin(), players.end())`. The compiler outputs 200 lines of incomprehensible template error garbage.",
+    "question": "How do you teach `std::sort` how to compare two custom objects?"
+  },
+  "mental_model": {
+    "intuition": "A Lambda is a disposable, nameless function you write directly inline. A custom comparator is like handing the sorting robot a rulebook: 'When looking at A and B, return true if A should strictly be placed before B.'",
+    "description": "STL algorithms and containers rely on the `<` operator by default to sort elements. If your object doesn't have an `operator<`, or if you want to sort by a different rule (e.g., descending order, or sorting by string length), you must provide a Custom Comparator. In modern C++, this is almost exclusively done using Lambda Expressions."
+  },
+  "explanation": "**Lambda Basics:**\nA lambda expression is an anonymous function defined inline. \nSyntax: `[captures] (parameters) { body }`\n- **[ ]** (Capture clause): Defines what outside variables the lambda can access.\n- **( )** (Parameters): The inputs to the lambda.\n- **{ }** (Body): The logic.\n\n**Customizing std::sort:**\n`std::sort` takes a 3rd argument: a callable object that takes two arguments (A and B) and returns `true` if A should be placed **strictly before** B.\nFor example, to sort descending: `std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });`\nTo handle tie-breakers (multi-level sorting), you simply add conditional logic: `if (a.score != b.score) return a.score > b.score; return a.name < b.name;`.\n\n**Customizing std::priority_queue:**\nPriority Queues are trickier because the comparator is part of the *type signature*. By default, it's a Max-Heap (uses `std::less`). To make a Min-Heap (smallest at top), you use the built-in `std::greater`. If you need a custom struct PQ, you typically pass a `decltype` of your lambda as the template argument, and pass the lambda itself into the constructor.\n\n**Real-world Engineering:**\nLambdas revolutionized C++. They replaced writing dozens of one-off, polluting structs just to satisfy a sorting requirement. You will use lambdas constantly when filtering vectors (`std::erase_if`), sorting API responses by various JSON fields, or configuring priority queues for A* pathfinding.",
+  "code_snippets": [
+    {
+      "title": "Sorting with Lambdas",
+      "language": "cpp",
+      "code": "#include <vector>\n#include <algorithm>\n#include <string>\n\nstruct Player {\n    std::string name;\n    int score;\n};\n\nint main() {\n    std::vector<Player> players = {{\"Alice\", 50}, {\"Bob\", 90}, {\"Charlie\", 10}};\n    \n    // Sort descending by score using a lambda.\n    // Returns true if 'a' should come BEFORE 'b'.\n    std::sort(players.begin(), players.end(), [](const Player& a, const Player& b) {\n        return a.score > b.score; \n    });\n    \n    // players is now: Bob (90), Alice (50), Charlie (10)\n    return 0;\n}",
+      "explanation": "Passing `const Player&` avoids expensive copies. Returning `a.score > b.score` tells the sort algorithm to put higher scores first."
+    },
+    {
+      "title": "Min-Heap Priority Queue",
+      "language": "cpp",
+      "code": "#include <queue>\n#include <vector>\n\nint main() {\n    // Standard PQ is a Max-Heap.\n    // To make a Min-Heap, we must specify the container (vector)\n    // and provide the std::greater comparator.\n    std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;\n    \n    minHeap.push(10);\n    minHeap.push(2);\n    minHeap.push(50);\n    \n    // Top is now 2, not 50.\n    \n    return 0;\n}",
+      "explanation": "`std::greater` is a built-in functor that reverses the default `<` comparison, turning the Max-Heap into a Min-Heap."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning true for equal elements (Strict Weak Ordering)",
+      "explanation": "A comparator must return `true` ONLY if `a` is strictly placed before `b`. If `a` and `b` are equal, it MUST return `false`. If you write `return a >= b;`, `std::sort` will invoke Undefined Behavior (often crashing with a segmentation fault) because it violates the mathematical rules of \"Strict Weak Ordering\"."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does a custom comparator function need to return for `std::sort`?",
+      "answer": "It must return a boolean: `true` if the first argument should be placed strictly before the second argument, and `false` otherwise.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the three parts of a basic C++ lambda expression signature?",
+      "answer": "The capture clause `[]`, the parameter list `()`, and the body `{}`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if your custom comparator returns `true` when the two elements are exactly equal?",
+      "answer": "It violates the Strict Weak Ordering requirement of STL algorithms, leading to Undefined Behavior (usually causing `std::sort` to crash or infinite loop).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An interviewer asks you to sort an array of strings by their length (shortest to longest). How do you do this using `std::sort`?",
+      "answer": "You provide a lambda comparator: `std::sort(vec.begin(), vec.end(), [](const string& a, const string& b) { return a.length() < b.length(); });`",
+      "approach": "Apply lambdas to override default sorting behavior (which would sort strings alphabetically)."
+    },
+    {
+      "question": "A team member wants to sort a vector of `std::pair<int, int>` such that the first elements are ascending, but if they are equal, the second elements are descending. How would you write the lambda?",
+      "answer": "```cpp\n[](const std::pair<int, int>& a, const std::pair<int, int>& b) {\n    if (a.first != b.first) return a.first < b.first;\n    return a.second > b.second;\n}\n```\nThis handles the primary and secondary sort conditions while maintaining strict weak ordering.",
+      "approach": "Demonstrate how to write multi-level sorting logic in a lambda."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Lambdas are inline rules",
+      "detail": "Use `[](const Type& a, const Type& b) { return ...; }` to inject custom logic into STL algorithms."
+    },
+    {
+      "title": "Never return true for equality",
+      "detail": "Comparators must use strict inequalities (`<` or `>`). Never use `<=` or `>=`."
+    }
+  ],
+  "sources": [
+    "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f50-use-a-lambda-when-a-function-wont-do-to-capture-local-variables-or-to-write-a-local-function"
+  ]
+}

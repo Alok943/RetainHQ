@@ -1,0 +1,82 @@
+{
+  "slug": "sort-binary-search-lower-bound-upper-bound",
+  "title": "sort, binary_search, lower_bound & upper_bound",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "vector-internals-push-back-amortization"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to find the closest value to X in a massive sorted array. You write a custom binary search with `while (left <= right)`. After 30 minutes of debugging infinite loops and off-by-one errors, your interviewer tells you C++ has a 1-line function for this.",
+    "question": "Which STL algorithm instantly solves the \"closest value\" binary search problem?"
+  },
+  "mental_model": {
+    "intuition": "`std::sort` is a highly optimized robot that organizes your bookshelf. `std::binary_search` just tells you \"Yes\" or \"No\" if a book exists. `std::lower_bound` is a librarian who walks you to the exact spot where a book is, or where it *should* be inserted if it's missing.",
+    "description": "The `<algorithm>` header provides robust, heavily optimized implementations of common algorithms. `std::sort` is an O(N log N) hybrid sorting algorithm. For sorted ranges, the binary search family (`binary_search`, `lower_bound`, `upper_bound`) provides O(log N) lookups without writing manual loops."
+  },
+  "explanation": "**1. std::sort**\n`std::sort(vec.begin(), vec.end())` sorts elements in ascending order. It uses *IntroSort*: it starts with QuickSort, but if the recursion depth gets too deep, it switches to HeapSort to guarantee O(N log N) worst-case. For tiny sub-arrays, it switches to InsertionSort. You should *never* write your own sorting algorithm in production.\n\n**2. The Binary Search Family**\nThese algorithms **require** the range to already be sorted. If it's not sorted, the result is undefined garbage.\n- `std::binary_search`: Returns a simple `bool` (true if found, false if not).\n- `std::lower_bound`: Returns an iterator to the **first element that is >=** the target.\n- `std::upper_bound`: Returns an iterator to the **first element that is strictly >** the target.\nIf no such element exists in the container (i.e. the target is greater than all elements), both bounds safely return the `.end()` iterator.\n\n**Real-world Engineering:**\n`lower_bound` is incredibly powerful. It is used in databases to find insertion points for indexing, in game physics to find the nearest collision frame in a timeline, and in interviews to solve almost any \"find the closest number\" problem without writing manual `while` loops.",
+  "code_snippets": [
+    {
+      "title": "Using lower_bound and upper_bound",
+      "language": "cpp",
+      "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> vec = {10, 20, 20, 20, 30, 40};\n    \n    // Find the first element >= 20\n    auto lb = std::lower_bound(vec.begin(), vec.end(), 20);\n    std::cout << \"Lower bound index: \" << (lb - vec.begin()) << '\\n'; // Prints 1\n    \n    // Find the first element strictly > 20\n    auto ub = std::upper_bound(vec.begin(), vec.end(), 20);\n    std::cout << \"Upper bound index: \" << (ub - vec.begin()) << '\\n'; // Prints 4\n    \n    // The number of 20s in the vector is simply the distance between them:\n    std::cout << \"Count of 20s: \" << (ub - lb) << '\\n'; // Prints 3\n    \n    return 0;\n}",
+      "explanation": "Subtracting `vec.begin()` from the resulting iterator gives you the exact integer index. The range `[lb, ub)` perfectly encapsulates all instances of the target."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using std::lower_bound on a std::set",
+      "explanation": "`std::lower_bound(set.begin(), set.end(), val)` is a catastrophic performance bug. Because `set` iterators are not random-access, this generic algorithm will run in O(N) time. You MUST use the member function `set.lower_bound(val)`, which uses the tree structure to run in O(log N)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What sorting algorithm does `std::sort` use under the hood?",
+      "answer": "It uses IntroSort, which is a hybrid algorithm that starts with QuickSort, switches to HeapSort if the recursion gets too deep (to guarantee O(N log N) worst-case), and uses InsertionSort for small chunks.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the exact difference between `lower_bound` and `upper_bound`?",
+      "answer": "`lower_bound` returns an iterator to the first element greater than or **equal** to the target. `upper_bound` returns the first element **strictly greater** than the target.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you run `std::binary_search` on an unsorted vector?",
+      "answer": "It results in Undefined Behavior. It will likely return the wrong answer silently, as binary search algorithms fundamentally rely on the data being pre-sorted.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate is asked to find the first number greater than or equal to `X` in a sorted vector. They write `std::lower_bound(vec.begin(), vec.end(), X)`. What happens if all elements in the vector are strictly less than `X`?",
+      "answer": "The function will return the `vec.end()` iterator. This is why you must always check `if (it != vec.end())` before dereferencing the result of `lower_bound`.",
+      "approach": "Identify the boundary conditions and return values of standard search algorithms."
+    },
+    {
+      "question": "How can you use `lower_bound` and `upper_bound` to efficiently count the occurrences of a number in a sorted array?",
+      "answer": "You find the `lower_bound` (start of the duplicates) and the `upper_bound` (end of the duplicates). Subtracting the two iterators (`std::distance(lb, ub)`) gives the exact count in O(log N) time.",
+      "approach": "Combine boundary algorithms to extract ranges."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "lower_bound is >= ",
+      "detail": "`lower_bound` is the most powerful search algorithm. It tells you exactly where an element is, or where it should be inserted to maintain order."
+    },
+    {
+      "title": "Use member functions for trees",
+      "detail": "Always use `set.lower_bound()` or `map.lower_bound()` instead of the generic `<algorithm>` version to ensure O(log N) performance."
+    }
+  ],
+  "sources": [
+    "https://en.cppreference.com/w/cpp/algorithm/lower_bound"
+  ]
+}
