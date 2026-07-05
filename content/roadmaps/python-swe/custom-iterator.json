@@ -86,7 +86,7 @@
       "question": "This custom iterator is supposed to yield numbers 1, 2, 3 but it causes a crash. Why?",
       "code": "class MyIter:\n    def __init__(self): self.val = 0\n    def __iter__(self): pass\n    def __next__(self):\n        self.val += 1\n        if self.val > 3: raise StopIteration\n        return self.val\n\nfor i in MyIter(): print(i)",
       "answer": "The `__iter__` method is missing `return self`.",
-      "why": "A standard `for` loop first calls `iter()` on the object, which invokes `__iter__()`. Because `__iter__` implicitly returns `None`, the loop tries to get the next item from `None`, raising a `TypeError`."
+      "why": "A standard `for` loop first calls `iter()` on the object, which invokes `__iter__()`. `iter()` expects an iterator object (one with a `__next__` method) to be returned. Because `__iter__` implicitly returns `None`, `iter()` immediately rejects it and raises a `TypeError`."
     }
   ],
   "practice_tasks": [

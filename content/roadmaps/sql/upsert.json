@@ -36,7 +36,7 @@
     }
   ],
   "overview": {
-    "what": "UPSERT is a combination of 'update' and 'insert'. In Postgres, it's written as INSERT ... ON CONFLICT. If a row with the same unique key already exists, instead of throwing an error, the database can either DO NOTHING or DO UPDATE to modify the existing row.",
+    "what": "UPSERT is a combination of 'update' and 'insert'. In Postgres, it's written as INSERT ... ON CONFLICT. If a row with the same unique key already exists, instead of throwing an error, the database can either DO NOTHING or DO UPDATE to modify the existing row. When using DO UPDATE, you use the special `EXCLUDED` keyword to reference the values that were proposed for insertion.",
     "why": "It safely handles race conditions where multiple requests might try to create the same record simultaneously, and it simplifies application logic by merging check-and-create into a single database operation.",
     "where_used": [
       "incrementing page views",
@@ -69,14 +69,14 @@
     {
       "type": "predict-result",
       "query": "INSERT INTO customers (id, name, country) VALUES (1, 'Alice V2', 'US') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name RETURNING id, name;",
-      "question": "What rows does this query return (assuming 'id' is a primary key)?",
+      "question": "Assume a customer with id = 1 already exists. What rows does this query return (assuming 'id' is a primary key)?",
       "answer": "id: 1, name: 'Alice V2'",
       "why": "Customer id 1 already exists, causing a conflict. The DO UPDATE clause triggers, updating the name to 'Alice V2'."
     },
     {
       "type": "predict-result",
       "query": "INSERT INTO products (id, name, category, price) VALUES (1, 'Keyboard', 'Electronics', 49.99) ON CONFLICT (id) DO NOTHING RETURNING id;",
-      "question": "What rows does this query return?",
+      "question": "Assume a product with id = 1 already exists. What rows does this query return?",
       "answer": "(No rows)",
       "why": "Product id 1 exists. DO NOTHING silently ignores the insert, and since no row was inserted or updated, RETURNING yields nothing."
     }

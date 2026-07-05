@@ -74,7 +74,7 @@
     "focus": "The second print outputs False because integers above 256 are not guaranteed to be interned."
   },
   "aha_moment": {
-    "code": "retry_count_1 = 256\nretry_count_2 = 256\nprint(retry_count_1 is retry_count_2)\n\nerror_code_1 = 257\nerror_code_2 = 257\nprint(error_code_1 is error_code_2)\n",
+    "code": "retry_count_1 = int('256')\nretry_count_2 = int('256')\nprint(retry_count_1 is retry_count_2)\n\nerror_code_1 = int('257')\nerror_code_2 = int('257')\nprint(error_code_1 is error_code_2)\n",
     "prediction": "What will the two print statements output?",
     "common_guess": "True, True",
     "why": "Python only caches integers up to 256. For 257, it creates two separate objects in memory, so `is` evaluates to False because they point to different memory locations."
@@ -92,7 +92,7 @@
     {
       "type": "predict-output",
       "question": "What will this code print?",
-      "code": "a = 256\nb = 256\nprint(a is b)\n\nx = 257\ny = 257\nprint(x is y)",
+      "code": "a = int('256')\nb = int('256')\nprint(a is b)\n\nx = int('257')\ny = int('257')\nprint(x is y)",
       "answer": "True\nFalse",
       "why": "Python caches small integers from -5 to 256. Variables assigned to 256 will point to the exact same memory address. For 257, Python creates new separate objects."
     },

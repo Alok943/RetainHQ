@@ -58,7 +58,7 @@ export const CAREER_PATHS = [
     roadmaps: [
       { match: 'dsa', label: 'DSA', note: 'the interview gate' },
       { match: 'python for', label: 'Python' },
-      { match: '__ml__', label: 'ML Fundamentals' },
+      { match: 'machine learning', label: 'ML Fundamentals' },
     ],
   },
   {
@@ -70,7 +70,7 @@ export const CAREER_PATHS = [
     roadmaps: [
       { match: 'sql', label: 'SQL', note: 'the #1 DE filter' },
       { match: 'backend', label: 'Python Backend' },
-      { match: '__de__', label: 'Data Engineering' },
+      { match: 'data engineering', label: 'Data Engineering' },
     ],
   },
   {
@@ -82,7 +82,7 @@ export const CAREER_PATHS = [
     roadmaps: [
       { match: 'sql', label: 'SQL' },
       { match: 'python for', label: 'Python' },
-      { match: '__ml__', label: 'ML Fundamentals' },
+      { match: 'machine learning', label: 'ML Fundamentals' },
     ],
   },
   {
@@ -94,7 +94,7 @@ export const CAREER_PATHS = [
     roadmaps: [
       { match: 'backend', label: 'Python Backend' },
       { match: 'system design', label: 'System Design' },
-      { match: '__mlops__', label: 'MLOps' },
+      { match: 'mlops', label: 'MLOps' },
     ],
   },
   {
@@ -115,7 +115,7 @@ export const CAREER_PATHS = [
     skillDelta: ['ML theory (supervised/unsupervised)', 'Statistics / probability', 'Feature engineering', 'Model training loops', 'ML project portfolio'],
     roadmaps: [
       { match: 'dsa', label: 'DSA', note: 'the interview gate' },
-      { match: '__ml__', label: 'ML Fundamentals' },
+      { match: 'machine learning', label: 'ML Fundamentals' },
     ],
   },
   {
@@ -125,7 +125,7 @@ export const CAREER_PATHS = [
     blocker: "DE's engineering-certainty mindset vs DS's research/ambiguity culture; DS roles under more market pressure than MLE.",
     skillDelta: ['ML fundamentals', 'Statistics depth', 'Feature engineering', 'Business framing of prediction problems', 'Ambiguity tolerance'],
     roadmaps: [
-      { match: '__ml__', label: 'ML Fundamentals' },
+      { match: 'machine learning', label: 'ML Fundamentals' },
     ],
   },
 ];

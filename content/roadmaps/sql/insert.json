@@ -33,8 +33,8 @@
     }
   ],
   "overview": {
-    "what": "INSERT adds new rows to a table. By using the RETURNING clause, you can immediately get back the data that was inserted, which is incredibly useful for retrieving auto-generated IDs or default values without needing a second SELECT query. This acts as a single-step row addition and retrieval.",
-    "why": "Every application needs to create data. Using RETURNING prevents race conditions and saves a database round-trip when you need the newly created record's details.",
+    "what": "INSERT adds new rows to a table. The basic syntax is `INSERT INTO table (col1, col2) VALUES (val1, val2);`. By appending the `RETURNING` clause (e.g., `RETURNING id, name` or `RETURNING *` for all columns), you can immediately get back the data that was inserted, which is incredibly useful for retrieving auto-generated IDs or default values without needing a second SELECT query. Think of RETURNING as an INSERT and a SELECT merged into one step. Note: `RETURNING` is specific to PostgreSQL and SQLite (SQL Server uses `OUTPUT` instead).",
+    "why": "Every application needs to create data. Using RETURNING prevents race conditions and saves a database round-trip when you need the newly created record's details for retrieval.",
     "where_used": [
       "user registration",
       "checkout systems",

@@ -109,8 +109,8 @@
     {
       "question": "Your financial analysis bot makes arithmetic errors on multi-step compound-interest calculations. You're already using gpt-4o. What prompt change would you try first before switching models?",
       "company": "GenAI Engineer interview",
-      "answer": "Add chain-of-thought prompting: instruct the model to 'show your calculation step by step' and provide a few-shot example of a similar compound-interest problem with explicit reasoning steps. Written intermediate calculations become context that prevents the model from shortcutting to a wrong answer. If CoT doesn't fix it, consider using Python function calling to delegate the arithmetic to a calculator tool.",
-      "approach": "Two-step answer: CoT first (cheap), then tool calling for arithmetic (robust). Explain WHY CoT helps: intermediate tokens as working memory."
+      "answer": "Add chain-of-thought prompting: instruct the model to 'show your calculation step by step' and provide a few-shot example of a similar compound-interest problem with explicit reasoning steps. Written intermediate calculations become context that prevents the model from shortcutting to a wrong answer.",
+      "approach": "Explain WHY CoT helps: intermediate tokens as working memory."
     },
     {
       "question": "In a production pipeline that processes 500k queries/day, your team wants to add CoT to improve accuracy from 91% to 95%. A colleague says 'just prepend the trigger phrase to everything'. Why is this a bad idea at scale?",

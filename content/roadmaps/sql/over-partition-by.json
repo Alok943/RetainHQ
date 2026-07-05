@@ -39,7 +39,7 @@
     }
   ],
   "overview": {
-    "what": "Window functions let you perform aggregate-like calculations (like SUM or AVG) without grouping rows into a single output row. The OVER clause defines a 'window' of rows for each row to compute over, and PARTITION BY splits that window into subgroups, similar to GROUP BY, but retaining the original row-level details.",
+    "what": "Window functions let you perform aggregate-like calculations (like SUM or AVG) without grouping rows into a single output row. The OVER clause defines a 'window' of rows for each row to compute over, and PARTITION BY splits that window into subgroups. Adding an `ORDER BY` inside the `OVER()` clause changes the window frame to compute running totals (e.g., `SUM(amount) OVER (ORDER BY date)` calculates a cumulative sum up to the current row).",
     "why": "You often need to compare a single row against an aggregate of its peers (e.g., an employee's salary vs their department's average).",
     "where_used": [
       "analytics dashboards",

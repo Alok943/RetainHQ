@@ -31,6 +31,13 @@ const INPUTS = {
   'sliding-window-fixed': [2, 4, 1, 5, 3, 6],
   'sliding-window-variable': [2, 4, 1, 5, 3, 6],
   'kadane': [4, -2, 3, -5, 6, -1],
+  'lower-bound': [1, 3, 5, 7, 9, 11, 13],
+  'upper-bound': [1, 3, 5, 7, 9, 11, 13],
+  'stack-fundamentals': [5, 2, 8, 1, 9, 3],
+  'valid-parentheses': ['(', '[', ']', '{', '}', ')'],
+  'min-stack': [5, 2, 8, 1, 9, 3],
+  'next-greater-element': [5, 2, 8, 1, 9, 3],
+  'queue-deque': [5, 2, 8, 1, 9, 3],
 };
 
 function build() {

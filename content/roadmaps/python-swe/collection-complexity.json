@@ -136,10 +136,10 @@
     },
     {
       "type": "predict-output",
-      "code": "data = [1, 2, 3]\nmy_set = set(data)\nprint(-1 in data == -1 in my_set)",
+      "code": "data = [1, 2, 3]\nmy_set = set(data)\nprint((-1 in data) == (-1 in my_set))",
       "question": "What does this code print?",
       "answer": "True",
-      "why": "Both membership tests correctly evaluate to False (so False == False is True). However, the list scan is O(n) while the set check is O(1)."
+      "why": "Both membership tests correctly evaluate to False (so False == False is True). We use parentheses to avoid Python's comparison chaining rules. The list scan is O(n) while the set check is O(1)."
     }
   ]
 }

@@ -30,7 +30,7 @@
     }
   ],
   "overview": {
-    "what": "Constraints enforce rules on data at the database level. `NOT NULL` prevents missing values, `CHECK` validates conditions (e.g. `price > 0`), and `DEFAULT` provides a fallback value if none is inserted.",
+    "what": "Constraints enforce rules on data at the database level. `NOT NULL` prevents missing values, `CHECK` validates conditions (e.g. `price > 0`), and `DEFAULT` provides a fallback value if none is inserted.\n\n```sql\nCREATE TABLE products (\n  id INT PRIMARY KEY,\n  name VARCHAR NOT NULL,\n  price NUMERIC CHECK (price > 0),\n  status VARCHAR DEFAULT 'pending'\n);\n```",
     "why": "Application code can have bugs and allow invalid data. Database constraints act as the final, unbreakable line of defense for data integrity.",
     "where_used": [
       "schema definitions",
@@ -83,7 +83,7 @@
   "practice_tasks": [
     {
       "title": "Filter Valid Data",
-      "prompt": "Given this query, change it to only select employees who have a manager (filtering out those where manager_id is NULL, enforcing a relationship constraint at query time).",
+      "prompt": "Given this query, change it to only select employees who have a manager (filtering out those where manager_id is NULL) as an auditing step before adding a NOT NULL constraint.",
       "starter_code": "SELECT name FROM employees WHERE id = 1;",
       "solution": "SELECT name FROM employees WHERE manager_id IS NOT NULL ORDER BY name;"
     }

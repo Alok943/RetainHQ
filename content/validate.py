@@ -562,6 +562,34 @@ def main():
                         for i, s in enumerate(vsteps):
                             if not isinstance(s, dict) or not s.get("id") or not s.get("label"):
                                 err(rel, f"viz.steps[{i}] needs non-empty 'id' and 'label'")
+                # Code panel (M2 / D7, OPTIONAL). Schema:
+                #   viz.code = { "python": { "src": "<multiline string>", "lineMap": { "<step_id>": [1,2], ... } }, "java": {...}, ... }
+                # `lineMap` keys are canonical step_ids (must be one of viz.steps[].id when steps is
+                # authored); values are 1-based line numbers into that language's `src`. Not required.
+                vcode = viz.get("code")
+                if vcode is not None:
+                    if not isinstance(vcode, dict) or not vcode:
+                        err(rel, "viz.code, if present, must be a non-empty object of {lang: {src, lineMap}}")
+                    else:
+                        step_ids = None
+                        if isinstance(vsteps, list) and vsteps:
+                            step_ids = {s.get("id") for s in vsteps if isinstance(s, dict) and s.get("id")}
+                        for lang, entry in vcode.items():
+                            if not isinstance(entry, dict) or not isinstance(entry.get("src"), str) or not entry.get("src").strip():
+                                err(rel, f"viz.code['{lang}'] needs a non-empty string 'src'")
+                                continue
+                            line_map = entry.get("lineMap")
+                            if not isinstance(line_map, dict):
+                                err(rel, f"viz.code['{lang}'] needs a dict 'lineMap'")
+                                continue
+                            n_lines = len(entry["src"].split("\n"))
+                            for step_id, line_nos in line_map.items():
+                                if step_ids is not None and step_id not in step_ids:
+                                    err(rel, f"viz.code['{lang}'].lineMap key '{step_id}' is not one of viz.steps[].id")
+                                if not isinstance(line_nos, list) or not line_nos or not all(
+                                    isinstance(n, int) and 1 <= n <= n_lines for n in line_nos
+                                ):
+                                    err(rel, f"viz.code['{lang}'].lineMap['{step_id}'] must be a list of ints in [1, {n_lines}]")
             hk = d.get("hook")
             if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
                 err(rel, "hook, if present, needs a non-empty 'scenario'")

@@ -1,11 +1,19 @@
 """
 Seed script: MLOps roadmap.
 
-Sub-tracks (phase = step spine): Foundations · Reproducibility · Model Serving ·
-Containers & Orchestration · CI/CD for ML · Cloud ML Platforms · Monitoring & Retraining · LLMOps.
+Sub-tracks (phase = step spine): Foundations · Serving & Features · Deploy & Optimize ·
+Monitoring & Rollout.
 
-The DS→MLE transition path (JD research run 3): the gap is pure engineering depth —
-packaged code, Docker/K8s, CI/CD for models, serving at scale, monitoring.
+Node list = the validated node-derivation research run (Gemini Deep Research, 2026-07-04;
+ML Engineer / MLOps Engineer, India metros, 0-4yr incl. DS->production). Audit trail + excluded
+list + mock-interview validation in content/research/mlops/nodes.md. Evidence-driven and modern:
+covers LLM-serving (prefix caching, dynamic batching, quantization), feature stores, drift
+monitoring, and canary/shadow/blue-green deploys — the DS->MLE engineering-depth gate (Career
+Paths ds-mle). Replaced the earlier hand-drafted MLOps node list.
+
+Tier mix intentionally spans easy->hard (10 hard nodes: feature time-travel, serverless inference,
+quantization, compilation, prefix caching, dynamic batching, covariate/concept drift, cold-start,
+PII scrubbing) — NOT beginner-only.
 
 Idempotent. Run: ./.venv/Scripts/python.exe seed_mlops.py
 """
@@ -17,61 +25,58 @@ from app.core.database import engine
 ROADMAP_ID = uuid.UUID("70707070-7070-7070-7070-707070707070")
 SLUG = "mlops"  # content folder key + URL id; matches content/roadmaps/mlops/
 TITLE = "MLOps — Models in Production"
-DESCRIPTION = "Everything after the notebook: reproducible training, model serving, Docker/Kubernetes, CI/CD for models, cloud ML platforms, and monitoring/retraining loops."
+DESCRIPTION = "Everything after the notebook: reproducible artifacts, containerized serving, feature stores, cloud deployment, inference optimization (incl. LLMs), drift monitoring and safe rollouts — interview-scoped for 0-4yr roles."
 
+# (phase, section, title, tier, description)
 NODES = [
-    # ---------------- Foundations ----------------
-    ("Foundations", "Landscape", "What MLOps actually is", "easy", "DevOps applied to the model lifecycle: train → ship → monitor → retrain."),
-    ("Foundations", "Landscape", "Why notebooks don't ship", "easy", "Hidden state, no tests, no versioning — the gap MLOps closes."),
-    ("Foundations", "Lifecycle", "The ML lifecycle & its failure points", "medium", "Data drift, training/serving skew, silent degradation."),
-    ("Foundations", "Code", "Production Python: packaging & structure", "medium", "src layout, pyproject, entry points — models are libraries."),
-    ("Foundations", "Code", "Testing ML code", "medium", "Unit-test transforms, smoke-test training, assert on model contracts."),
+    # ---- Foundations ----
+    ("Foundations", "Data Processing", "Row- vs column-major storage", "easy", "Columnar stores prune data at scan time to minimize I/O overhead for offline feature aggregations."),
+    ("Foundations", "Data Processing", "Stratified sampling", "easy", "Stratified splitting preserves minority class ratios across datasets to prevent distribution mismatch."),
+    ("Foundations", "Data Processing", "Class imbalance mitigation", "medium", "Synthetic minority oversampling generates data points in feature space to balance class distributions."),
+    ("Foundations", "Data Processing", "Data leakage prevention", "medium", "Splitting datasets before applying feature scaling prevents future variance from leaking into training."),
+    ("Foundations", "Model Basics", "Model signatures", "medium", "Schema definitions enforce validation at model load time to reject mismatched inference input structures."),
+    ("Foundations", "Model Basics", "Artifacts vs parameters", "easy", "Parameters represent scalar configurations logged to databases while artifacts are serialized binaries."),
+    ("Foundations", "Model Basics", "Immutable registry stages", "easy", "Model registries transition models through immutable stages to separate testing and production runs."),
+    ("Foundations", "Containerization", "Docker multi-stage builds", "medium", "Multi-stage builds copy binaries from build environments into slim runtimes to reduce final image size."),
+    ("Foundations", "Containerization", "Layer caching strategies", "easy", "Ordering copy instructions after dependency installation leverages caching to speed up image builds."),
+    ("Foundations", "Containerization", "Non-root container security", "medium", "User directives specify non-root execution inside containers to mitigate host file system breaches."),
 
-    # ---------------- Reproducibility ----------------
-    ("Reproducibility", "Versioning", "Versioning data & models (DVC / registries)", "medium", "Code in git isn't enough — pin data + weights too."),
-    ("Reproducibility", "Tracking", "Experiment tracking (MLflow / W&B)", "medium", "Params, metrics, artifacts — every run reconstructable."),
-    ("Reproducibility", "Environment", "Environment pinning & seeds", "medium", "Lockfiles, random seeds, CUDA versions — determinism limits."),
-    ("Reproducibility", "Pipelines", "Training pipelines as code", "hard", "One command retrains end-to-end; no manual steps."),
-    ("Reproducibility", "Features", "Feature stores (concept)", "medium", "Same feature computation at train and serve time kills skew."),
+    # ---- Mechanism ----
+    ("Serving & Features", "Offline System Design", "Train-serving skew", "medium", "Mismatch between offline feature computation and online parsing degrades downstream production accuracy."),
+    ("Serving & Features", "Offline System Design", "Offline vs online evaluation", "medium", "Offline metrics validate statistical performance while A/B tests measure actual business KPI impact."),
+    ("Serving & Features", "Offline System Design", "Dataset version hashing", "easy", "Version control tracks data via hashes stored in Git to guarantee exact dataset replication states."),
+    ("Serving & Features", "Serving Architecture", "Batch vs real-time serving", "medium", "Batch serving trades off fresh predictions for throughput while online serving optimizes latency."),
+    ("Serving & Features", "Serving Architecture", "CPU vs GPU footprint", "easy", "Processors handle high-concurrency small requests efficiently while GPUs maximize large tensor outputs."),
+    ("Serving & Features", "Serving Architecture", "Binary protocol serialization", "medium", "Binary serialization via gRPC bypasses JSON parsing bottlenecks to accelerate network throughput."),
+    ("Serving & Features", "Feature Stores", "Online vs offline stores", "medium", "Dual databases serve low-latency online reads and high-throughput offline batch queries seamlessly."),
+    ("Serving & Features", "Feature Stores", "Feature time travel", "hard", "Point-in-time joins use historical timestamps to merge feature sets and eliminate temporal data leakage."),
+    ("Serving & Features", "Feature Stores", "Entity key modeling", "easy", "Entity keys join distinct feature tables to guarantee consistent feature values across serving pools."),
+    ("Serving & Features", "Feature Stores", "Low-latency caching", "medium", "In-memory stores act as the online feature layer to provide sub-millisecond retrieval speeds for APIs."),
 
-    # ---------------- Model Serving ----------------
-    ("Model Serving", "Patterns", "Batch vs online vs streaming inference", "medium", "Latency requirement decides the architecture."),
-    ("Model Serving", "API", "Model behind a REST API (FastAPI)", "medium", "Load once at startup, validate inputs, version the endpoint."),
-    ("Model Serving", "Performance", "Latency, batching & throughput", "hard", "Dynamic batching, model warm-up, p99 not average."),
-    ("Model Serving", "Formats", "Model formats: pickle, ONNX, TorchScript", "medium", "Portability + the pickle security problem."),
-    ("Model Serving", "Servers", "Dedicated servers (Triton / TorchServe)", "hard", "When a FastAPI wrapper stops being enough."),
+    # ---- Applied ----
+    ("Deploy & Optimize", "Cloud Platforms", "Multi-model endpoints", "medium", "Shared containers load multiple models in memory to cut infrastructure costs for long-tail predictions."),
+    ("Deploy & Optimize", "Cloud Platforms", "Serverless inference", "hard", "Serverless endpoints auto-scale to zero during idle periods to eliminate standby compute charges."),
+    ("Deploy & Optimize", "Cloud Platforms", "Local mock deployments", "easy", "Local API mocks run within Docker to debug model serving behavior prior to cloud infrastructure setup."),
+    ("Deploy & Optimize", "Pipeline Orchestration", "Task retries & backoffs", "easy", "Exponential backoffs handle transient network errors in pipeline runs to prevent cascading failures."),
+    ("Deploy & Optimize", "Pipeline Orchestration", "Dynamic configurations", "medium", "Environment variables injected at runtime decouple pipeline parameters from static source code bases."),
+    ("Deploy & Optimize", "Pipeline Orchestration", "Data validation checks", "medium", "Schema assertions validate data constraints at runtime to block corrupted inputs from retraining jobs."),
+    ("Deploy & Optimize", "Inference Optimization", "Quantization trade-offs", "hard", "Post-training quantization reduces FP32 weights to integer formats to decrease memory footprints."),
+    ("Deploy & Optimize", "Inference Optimization", "Model compilation", "hard", "Hardware compilers optimize tensor operations for target devices to accelerate raw execution speeds."),
+    ("Deploy & Optimize", "Inference Optimization", "Prompt prefix caching", "hard", "Inference engines cache key-value pairs of matching prompt prefixes to reduce time-to-first-token."),
+    ("Deploy & Optimize", "Inference Optimization", "Dynamic request batching", "hard", "Server-level request batching groups multiple inference queries concurrently to maximize GPU usage."),
 
-    # ---------------- Containers & Orchestration ----------------
-    ("Containers & Orchestration", "Docker", "Dockerizing a model service", "medium", "Slim images, layer caching, GPU base images."),
-    ("Containers & Orchestration", "Docker", "Image size & build hygiene", "medium", "Multi-stage builds; don't ship the training stack."),
-    ("Containers & Orchestration", "Kubernetes", "K8s core: pods, deployments, services", "hard", "Just enough K8s to deploy and scale a model."),
-    ("Containers & Orchestration", "Kubernetes", "Autoscaling & resource limits", "hard", "HPA on custom metrics; GPU scheduling basics."),
-    ("Containers & Orchestration", "Release", "Rollouts: blue-green & canary for models", "hard", "Ship the new model to 5% first; instant rollback."),
-
-    # ---------------- CI/CD for ML ----------------
-    ("CI/CD for ML", "CI", "CI for ML repos", "medium", "Lint, tests, small-data training smoke test on every PR."),
-    ("CI/CD for ML", "CD", "Continuous delivery of models", "hard", "Registry promotion: staging → prod with human or metric gates."),
-    ("CI/CD for ML", "Validation", "Pre-deployment model validation", "hard", "Eval-set thresholds, bias checks, behavioral tests before promote."),
-    ("CI/CD for ML", "Automation", "Retraining triggers", "medium", "Schedule vs drift-triggered vs data-arrival retrains."),
-
-    # ---------------- Cloud ML Platforms ----------------
-    ("Cloud ML Platforms", "Platforms", "One platform deep: SageMaker / Vertex", "medium", "Managed train + deploy + registry; the JD keyword."),
-    ("Cloud ML Platforms", "Training", "Managed training jobs & spot instances", "medium", "Off-box training; checkpointing survives preemption."),
-    ("Cloud ML Platforms", "Endpoints", "Managed endpoints & serverless inference", "medium", "Autoscaling endpoints vs pay-per-request trade-offs."),
-    ("Cloud ML Platforms", "Cost", "GPU cost control", "medium", "Right-size instances, quantize, batch — the bill is a metric."),
-
-    # ---------------- Monitoring & Retraining ----------------
-    ("Monitoring & Retraining", "Observability", "Service monitoring: latency, errors, saturation", "medium", "The model service is a service first — standard SRE signals."),
-    ("Monitoring & Retraining", "Drift", "Data drift & concept drift", "hard", "Input distribution shifts vs the world changing; detection stats."),
-    ("Monitoring & Retraining", "Quality", "Online model-quality monitoring", "hard", "Delayed labels, proxy metrics, shadow evaluation."),
-    ("Monitoring & Retraining", "Loop", "The retraining loop end-to-end", "hard", "Detect → retrain → validate → promote, without a human bottleneck."),
-    ("Monitoring & Retraining", "Safety", "Rollback & incident playbooks", "medium", "Bad model in prod: detect fast, revert faster."),
-
-    # ---------------- LLMOps ----------------
-    ("LLMOps", "Delta", "How LLMOps differs from MLOps", "medium", "Prompts + retrieval versioned like models; evals replace test sets."),
-    ("LLMOps", "Evals", "Prompt/output evaluation in CI", "hard", "Golden sets, LLM-as-judge, regression gates on prompt changes."),
-    ("LLMOps", "Observability", "Tracing LLM apps (tokens, cost, latency)", "medium", "Per-request traces; cost is a first-class metric."),
-    ("LLMOps", "Serving", "Self-hosted LLM serving (vLLM)", "hard", "Continuous batching, KV cache; when APIs stop making sense."),
+    # ---- Production/Ops ----
+    ("Monitoring & Rollout", "Model Monitoring", "Covariate drift", "hard", "Statistical shifts in input feature distributions degrade predictions without alerting system health."),
+    ("Monitoring & Rollout", "Model Monitoring", "Concept drift", "hard", "Underlying shifts in target relationships render historical training patterns obsolete over time."),
+    ("Monitoring & Rollout", "Model Monitoring", "Asynchronous logging", "medium", "Message queues decouple prediction logging from the main execution thread to avoid latency overhead."),
+    ("Monitoring & Rollout", "Model Monitoring", "Automated alerting", "easy", "Threshold monitors trigger immediate alerts or model fallback pipelines when metric baselines drop."),
+    ("Monitoring & Rollout", "Deployment Strategies", "Canary routing", "medium", "Traffic splitters direct a small percentage of requests to new models to limit sudden blast radiuses."),
+    ("Monitoring & Rollout", "Deployment Strategies", "Shadow deployment", "medium", "Traffic mirrors clone live requests to candidate models without returning outputs to the end user."),
+    ("Monitoring & Rollout", "Deployment Strategies", "Instant rollback mechanics", "medium", "Blue-green load balancers switch targets to instantly rollback traffic if the green deployment fails."),
+    ("Monitoring & Rollout", "Deployment Strategies", "Cold start mitigation", "hard", "Provisioned concurrency pre-warms containers to eliminate cold starts during sudden traffic spikes."),
+    ("Monitoring & Rollout", "Security & Guardrails", "Readiness probes", "easy", "Readiness endpoints prevent Kubernetes from routing traffic to containers before model weights load."),
+    ("Monitoring & Rollout", "Security & Guardrails", "Input guardrails", "medium", "Validation layers sanitize text against safety rules prior to model invocation to block injections."),
+    ("Monitoring & Rollout", "Security & Guardrails", "PII payload scrubbing", "hard", "Regular expressions scrub sensitive fields from prediction requests before writing to public logs."),
 ]
 
 

@@ -1,10 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Lock } from 'lucide-react';
+import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Lock, ChevronDown } from 'lucide-react';
 import { getGenerator } from './registry.js';
 import { compile } from './compile.js';
 import { evaluateCheckpoint, gradeAnswer } from './predict.js';
 import ArrayViz from './renderers/ArrayViz.jsx';
 import StateMachine from './renderers/StateMachine.jsx';
+import StackQueueViz from './renderers/StackQueueViz.jsx';
 
 // The DSA player shell: computes frames once from the generator (events -> compile), then drives
 // step state with controls + scrub. Teaching pacing: the COMMENTARY (on top) updates immediately on
@@ -63,6 +64,79 @@ function PseudoSteps({ steps, frames, activeStepId }) {
   );
 }
 
+// Code panel (M2 / D7) — collapsed-by-default, full-width block below the controls row.
+// Schema (lesson `viz.code`, optional):
+//   viz.code = { "python": { "src": "<multiline string>", "lineMap": { "<step_id>": [1,2], ... } }, "java": {...}, ... }
+// `src` is a full-language snippet; `lineMap` keys are canonical step_ids (§9.4) and values are
+// 1-based source line numbers implementing that step. The panel highlights whatever lines
+// `code[lang].lineMap[capFrame.step_id]` lists, synced across whichever language tab is active —
+// scrubbing/stepping moves the highlight for free because it just reads the current step_id.
+// Pure presentation: never derives step state, guards every lookup (missing step_id/lang -> no
+// highlight, never a crash). Renders nothing when `code` is null/empty (no header at all).
+function CodePanel({ code, activeStepId }) {
+  const langs = code ? Object.keys(code) : [];
+  const [open, setOpen] = useState(false);
+  const [lang, setLang] = useState(langs[0] || '');
+  useEffect(() => { if (langs.length && !langs.includes(lang)) setLang(langs[0]); }, [langs.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!code || !langs.length) return null;
+
+  const entry = code[lang] || code[langs[0]];
+  const src = entry?.src || '';
+  const lines = src.split('\n');
+  const highlighted = new Set(
+    Array.isArray(entry?.lineMap?.[activeStepId]) ? entry.lineMap[activeStepId] : [],
+  );
+
+  return (
+    <div className="border-t border-[rgba(15,23,42,0.06)]">
+      <button
+        className="w-full flex items-center gap-2 px-5 py-3 text-left hover:bg-[#f9f9f6] transition-colors"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? <ChevronDown size={15} className="text-[#64748B] shrink-0" /> : <ChevronRight size={15} className="text-[#64748B] shrink-0" />}
+        <span className="font-sans text-[13px] font-semibold text-[#475569]">Code</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-4">
+          <div className="flex items-center gap-1.5 mb-2">
+            {langs.map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`font-mono text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border transition-colors ${
+                  l === lang
+                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    : 'bg-white text-[#64748B] border-[rgba(15,23,42,0.12)] hover:bg-[#f1f5f9]'
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="rounded-lg overflow-hidden border border-[rgba(15,23,42,0.08)] bg-[#0b1220]">
+            <pre className="overflow-x-auto text-[12.5px] leading-[1.6] py-2">
+              {lines.map((line, i) => {
+                const lineNo = i + 1;
+                const isActive = highlighted.has(lineNo);
+                return (
+                  <div
+                    key={lineNo}
+                    className={`px-3 flex gap-3 ${isActive ? 'bg-[#0891B2]/30' : ''}`}
+                  >
+                    <span className="select-none text-[#475569] w-6 text-right shrink-0">{lineNo}</span>
+                    <code className="font-mono text-[#e2e8f0] whitespace-pre">{line || ' '}</code>
+                  </div>
+                );
+              })}
+            </pre>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Player({
   generatorKey,
   defaultInput = [5, 2, 8, 1, 9, 3],
@@ -71,6 +145,7 @@ export default function Player({
   predictions = [],
   repeatedDecision = '',
   steps = [],
+  code = null,
 }) {
   const generator = getGenerator(generatorKey);
   const isString = inputMode === 'string';
@@ -242,6 +317,11 @@ export default function Player({
         <div><ArrayViz frame={visFrame} /></div>
         <div className="md:border-l md:pl-4 border-[rgba(15,23,42,0.08)]">
           <PseudoSteps steps={steps} frames={frames} activeStepId={capFrame?.step_id} />
+          {visFrame && (visFrame.stack || visFrame.queue) && (
+            <div className="border-t border-[rgba(15,23,42,0.08)] mt-3 pt-3">
+              <StackQueueViz frame={visFrame} />
+            </div>
+          )}
           <div className="border-t border-[rgba(15,23,42,0.08)] mt-3 pt-3"><StateMachine frame={visFrame} /></div>
         </div>
       </div>
@@ -255,6 +335,10 @@ export default function Player({
         <button className={btn} onClick={() => nav(step + 1)} disabled={step >= last || gateOpen} title={gateOpen ? 'Commit your prediction first' : undefined}>Next <ChevronRight size={15} /></button>
         <input type="range" min={0} max={Math.max(0, last)} value={Math.min(step, last)} onChange={(e) => seek(Number(e.target.value))} className="flex-1 min-w-[120px] accent-[#7C3AED]" />
       </div>
+
+      {/* CODE PANEL (M2 / D7) — collapsed by default, full-width, below controls. Line highlight
+          syncs to capFrame.step_id (the commentary-leading step), not the lagged visual step. */}
+      <CodePanel code={code} activeStepId={capFrame?.step_id} />
 
       {/* EXPLAIN THIS FRAME — always inline, derived from the frame + lesson model; nothing authored
           per-frame. Post-miss: a brief ring flash draws the eye instead of needing to be opened. */}

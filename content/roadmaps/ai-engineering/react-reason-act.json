@@ -72,54 +72,29 @@
   ],
   "common_mistakes": [
     {
-      "mistake": "Thinking modern models don't need ReAct.",
-      "correction": "While native tool-calling replaced the need to parse raw text 'Action' strings, models still benefit massively from generating reasoning tokens before they act. Adding a 'thought' field to JSON schemas is the modern ReAct.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
+      "title": "Thinking modern models don't need ReAct.",
+      "explanation": "While native tool-calling replaced the need to parse raw text 'Action' strings, models still benefit massively from generating reasoning tokens before they act. Adding a 'thought' field to JSON schemas is the modern ReAct."
     },
     {
-      "mistake": "Hiding the thought process from the context window.",
-      "correction": "If you don't append the model's 'Thought' to the message history, it forgets its own reasoning on the next loop iteration. The scratchpad must persist.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
+      "title": "Hiding the thought process from the context window.",
+      "explanation": "If you don't append the model's 'Thought' to the message history, it forgets its own reasoning on the next loop iteration. The scratchpad must persist."
     }
   ],
   "recall_questions": [
     {
-      "question": "Why does the ReAct pattern improve an LLM's ability to use tools?",
-      "options": [
-        "It generates intermediate tokens that allow the model to plan before committing to an action.",
-        "It updates the model's internal weights via backpropagation during the loop.",
-        "It allows the model to run Python code directly in its context window.",
-        "It increases the context window size automatically."
-      ],
-      "correct_answer": "It generates intermediate tokens that allow the model to plan before committing to an action.",
       "q": "Why does the ReAct pattern improve an LLM's ability to use tools?",
-      "answer": "Placeholder answer"
+      "answer": "It generates intermediate tokens that allow the model to plan before committing to an action.",
+      "tier": "tier1"
     },
     {
-      "question": "What are the three core steps in a single ReAct loop iteration?",
-      "options": [
-        "Thought, Action, Observation",
-        "Prompt, Generate, Parse",
-        "System, User, Assistant",
-        "Plan, Compile, Execute"
-      ],
-      "correct_answer": "Thought, Action, Observation",
       "q": "What are the three core steps in a single ReAct loop iteration?",
-      "answer": "Placeholder answer"
+      "answer": "Thought, Action, Observation",
+      "tier": "tier1"
     },
     {
-      "question": "How is ReAct most reliably implemented with modern (2024+) function-calling models?",
-      "options": [
-        "By adding a required 'thought' or 'reasoning' property to the tool's JSON schema.",
-        "By parsing raw text using complex Regular Expressions.",
-        "By fine-tuning a custom model to only output thoughts.",
-        "By forcing the user to type their thoughts first."
-      ],
-      "correct_answer": "By adding a required 'thought' or 'reasoning' property to the tool's JSON schema.",
       "q": "How is ReAct most reliably implemented with modern (2024+) function-calling models?",
-      "answer": "Placeholder answer"
+      "answer": "By adding a required 'thought' or 'reasoning' property to the tool's JSON schema.",
+      "tier": "tier2"
     }
   ],
   "oa_questions": [
@@ -127,7 +102,7 @@
       "question": "Explain the ReAct framework and why it is superior to a simple Action-Only agent.",
       "company": "AI Agent Design Interview",
       "answer": "ReAct interleaves reasoning (thinking out loud) and acting (tool use). An action-only agent must decide the perfect tool and arguments immediately based on the prompt. ReAct forces the model to generate 'thought' tokens first, giving it a scratchpad to plan, deduce missing information, and handle errors from previous observations.",
-      "approach": "Mention 'tokens as computation'. By forcing the model to write out its logic, it uses the auto-regressive generation process to 'think', leading to much higher success rates on complex tasks."
+      "approach": "By forcing the model to write out its logic, it uses the generated tokens to plan its next steps, leading to much higher success rates on complex tasks."
     },
     {
       "question": "Your agent keeps passing incorrect, hallucinated IDs to the database lookup tool instead of finding the ID first. How do you fix this without changing the model?",

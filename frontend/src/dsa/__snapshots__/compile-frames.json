@@ -2452,6 +2452,364 @@
       "step_id": "found"
     }
   ],
+  "lower-bound": [
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "sorted array — finding the first index >= 7",
+      "invariant": "inv-window",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer index lies in [0..7]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 7,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[3]=7 vs target 7",
+      "invariant": "inv-lower",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 3,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[3] >= 7 — this could still be the answer, keep it in range and search left",
+      "invariant": "inv-lower",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 3,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer index lies in [0..3]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 3,
+        "mid": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[1]=3 vs target 7",
+      "invariant": "inv-lower",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 2,
+        "hi": 3,
+        "mid": 1
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[1] < 7 — everything left of 2 is strictly less than 7, discard it",
+      "invariant": "inv-lower",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 2,
+        "hi": 3,
+        "mid": 1
+      },
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer index lies in [2..3]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 2,
+        "hi": 3,
+        "mid": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[2]=5 vs target 7",
+      "invariant": "inv-lower",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 3,
+        "hi": 3,
+        "mid": 2
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[2] < 7 — everything left of 3 is strictly less than 7, discard it",
+      "invariant": "inv-lower",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        3
+      ],
+      "pointers": {
+        "lo": 3,
+        "hi": 3,
+        "mid": 2
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "lands at index 3: arr[3]=7 is the FIRST value >= 7 (it lands here even without an equality check — that's the lower-bound rule)",
+      "invariant": "inv-land",
+      "step_id": "land"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 2,
+          "hi": 3,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        3
+      ],
+      "pointers": {
+        "lo": 3,
+        "hi": 3,
+        "mid": 2
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "search finished at index 3",
+      "invariant": "inv-window",
+      "step_id": "done"
+    }
+  ],
   "merge-sort": [
     {
       "array": [
@@ -5117,6 +5475,1256 @@
       "step_id": "recurse"
     }
   ],
+  "min-stack": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "Reading 5",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "stack": [
+        5
+      ],
+      "structActive": 0,
+      "activeOp": "PUSH",
+      "caption": "Pushed 5.",
+      "invariant": "inv-min-tracks",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 5
+      },
+      "stack": [
+        5
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is now 5.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 5
+      },
+      "stack": [
+        5
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 2",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 5
+      },
+      "stack": [
+        5,
+        2
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushed 2.",
+      "invariant": "inv-min-tracks",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 2
+      },
+      "stack": [
+        5,
+        2
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is now 2.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 2
+      },
+      "stack": [
+        5,
+        2
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 8",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 2
+      },
+      "stack": [
+        5,
+        2,
+        8
+      ],
+      "structActive": 2,
+      "activeOp": "PUSH",
+      "caption": "Pushed 8.",
+      "invariant": "inv-min-tracks",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 2
+      },
+      "stack": [
+        5,
+        2,
+        8
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is now 2.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 2
+      },
+      "stack": [
+        5,
+        2,
+        8
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 1",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 2
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "structActive": 3,
+      "activeOp": "PUSH",
+      "caption": "Pushed 1.",
+      "invariant": "inv-min-tracks",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is now 1.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 9",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "structActive": 4,
+      "activeOp": "PUSH",
+      "caption": "Pushed 9.",
+      "invariant": "inv-min-tracks",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is now 1.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 3",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "structActive": 5,
+      "activeOp": "PUSH",
+      "caption": "Pushed 3.",
+      "invariant": "inv-min-tracks",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is now 1.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped top element.",
+      "invariant": "inv-min-tracks",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is restored to 1.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped top element.",
+      "invariant": "inv-min-tracks",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "activeOp": "VAR",
+      "caption": "Running min is restored to 1.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "vars": {
+        "min": 1
+      },
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "activeOp": "DONE",
+      "caption": "Finished.",
+      "invariant": "inv-min-tracks",
+      "step_id": "done"
+    }
+  ],
+  "next-greater-element": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "Reading element 5 at index 0",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "stack": [
+        0
+      ],
+      "structActive": 0,
+      "activeOp": "PUSH",
+      "caption": "Pushed index 0.",
+      "invariant": "inv-monotonic",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "stack": [
+        0
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 2 at index 1",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "stack": [
+        0,
+        1
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushed index 1.",
+      "invariant": "inv-monotonic",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        0,
+        1
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 8 at index 2",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        0
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped index 1 (value 2). Next greater is 8.",
+      "invariant": "inv-monotonic",
+      "step_id": "resolve"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        1
+      ],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        0
+      ],
+      "activeOp": "MARK",
+      "caption": "Index 1 resolved.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        1
+      ],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped index 0 (value 5). Next greater is 8.",
+      "invariant": "inv-monotonic",
+      "step_id": "resolve"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "Index 0 resolved.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        2
+      ],
+      "structActive": 0,
+      "activeOp": "PUSH",
+      "caption": "Pushed index 2.",
+      "invariant": "inv-monotonic",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "stack": [
+        2
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 1 at index 3",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "stack": [
+        2,
+        3
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushed index 3.",
+      "invariant": "inv-monotonic",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        2,
+        3
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 9 at index 4",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        2
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped index 3 (value 1). Next greater is 9.",
+      "invariant": "inv-monotonic",
+      "step_id": "resolve"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        3
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        2
+      ],
+      "activeOp": "MARK",
+      "caption": "Index 3 resolved.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        3
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped index 2 (value 8). Next greater is 9.",
+      "invariant": "inv-monotonic",
+      "step_id": "resolve"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "Index 2 resolved.",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        4
+      ],
+      "structActive": 0,
+      "activeOp": "PUSH",
+      "caption": "Pushed index 4.",
+      "invariant": "inv-monotonic",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        4
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 3 at index 5",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        4,
+        5
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushed index 5.",
+      "invariant": "inv-monotonic",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        4,
+        5
+      ],
+      "activeOp": "DONE",
+      "caption": "All elements processed.",
+      "invariant": "inv-monotonic",
+      "step_id": "done"
+    }
+  ],
   "palindromes": [
     {
       "array": [
@@ -5455,6 +7063,441 @@
       "caption": "built in O(n). Now any range sum is prefix[j] − prefix[i−1] in O(1) — no re-looping.",
       "invariant": "inv-query",
       "step_id": "query"
+    }
+  ],
+  "queue-deque": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "Reading 5",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "queue": [
+        5
+      ],
+      "structActive": 0,
+      "activeOp": "ENQUEUE",
+      "caption": "Enqueued 5.",
+      "invariant": "inv-fifo",
+      "step_id": "enqueue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "queue": [
+        5
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 2",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2
+      ],
+      "structActive": 1,
+      "activeOp": "ENQUEUE",
+      "caption": "Enqueued 2.",
+      "invariant": "inv-fifo",
+      "step_id": "enqueue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 8",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8
+      ],
+      "structActive": 2,
+      "activeOp": "ENQUEUE",
+      "caption": "Enqueued 8.",
+      "invariant": "inv-fifo",
+      "step_id": "enqueue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 1",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "structActive": 3,
+      "activeOp": "ENQUEUE",
+      "caption": "Enqueued 1.",
+      "invariant": "inv-fifo",
+      "step_id": "enqueue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 9",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "structActive": 4,
+      "activeOp": "ENQUEUE",
+      "caption": "Enqueued 9.",
+      "invariant": "inv-fifo",
+      "step_id": "enqueue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading 3",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "queue": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "structActive": 5,
+      "activeOp": "ENQUEUE",
+      "caption": "Enqueued 3.",
+      "invariant": "inv-fifo",
+      "step_id": "enqueue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "queue": [
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "structActive": "shift",
+      "activeOp": "DEQUEUE",
+      "caption": "Dequeued 5. Notice the FIFO order.",
+      "invariant": "inv-fifo",
+      "step_id": "dequeue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "queue": [
+        8,
+        1,
+        9,
+        3
+      ],
+      "structActive": "shift",
+      "activeOp": "DEQUEUE",
+      "caption": "Dequeued 2. Notice the FIFO order.",
+      "invariant": "inv-fifo",
+      "step_id": "dequeue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "queue": [
+        1,
+        9,
+        3
+      ],
+      "structActive": "shift",
+      "activeOp": "DEQUEUE",
+      "caption": "Dequeued 8. Notice the FIFO order.",
+      "invariant": "inv-fifo",
+      "step_id": "dequeue"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "queue": [
+        1,
+        9,
+        3
+      ],
+      "activeOp": "DONE",
+      "caption": "Finished.",
+      "invariant": "inv-fifo",
+      "step_id": "done"
     }
   ],
   "selection-sort": [
@@ -7036,6 +9079,509 @@
       "step_id": "done"
     }
   ],
+  "stack-fundamentals": [
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "Reading element 5",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "stack": [
+        5
+      ],
+      "structActive": 0,
+      "activeOp": "PUSH",
+      "caption": "Pushing 5 onto the stack.",
+      "invariant": "inv-lifo",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "stack": [
+        5
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 2",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushing 2 onto the stack.",
+      "invariant": "inv-lifo",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 8",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8
+      ],
+      "structActive": 2,
+      "activeOp": "PUSH",
+      "caption": "Pushing 8 onto the stack.",
+      "invariant": "inv-lifo",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 1",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "structActive": 3,
+      "activeOp": "PUSH",
+      "caption": "Pushing 1 onto the stack.",
+      "invariant": "inv-lifo",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 9",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "structActive": 4,
+      "activeOp": "PUSH",
+      "caption": "Pushing 9 onto the stack.",
+      "invariant": "inv-lifo",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading element 3",
+      "invariant": null,
+      "step_id": null
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "structActive": 5,
+      "activeOp": "PUSH",
+      "caption": "Pushing 3 onto the stack.",
+      "invariant": "inv-lifo",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1,
+        9
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped 3 from the top. Notice the LIFO order.",
+      "invariant": "inv-lifo",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8,
+        1
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped 9 from the top. Notice the LIFO order.",
+      "invariant": "inv-lifo",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2,
+        8
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped 1 from the top. Notice the LIFO order.",
+      "invariant": "inv-lifo",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5,
+        2
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped 8 from the top. Notice the LIFO order.",
+      "invariant": "inv-lifo",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        5
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped 2 from the top. Notice the LIFO order.",
+      "invariant": "inv-lifo",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Popped 5 from the top. Notice the LIFO order.",
+      "invariant": "inv-lifo",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        5,
+        2,
+        8,
+        1,
+        9,
+        3
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "All elements processed.",
+      "invariant": "inv-lifo",
+      "step_id": "done"
+    }
+  ],
   "two-pointers": [
     {
       "array": [
@@ -7375,6 +9921,686 @@
       "activeOp": "DONE",
       "caption": "pointers met — string reversed using O(1) extra space",
       "invariant": "inv-reversed",
+      "step_id": "done"
+    }
+  ],
+  "upper-bound": [
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "sorted array — finding the first index > 7",
+      "invariant": "inv-window",
+      "step_id": "start"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {},
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer index lies in [0..7]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 0,
+        "hi": 7,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[3]=7 vs target 7",
+      "invariant": "inv-upper",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 0,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 7,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[3] <= 7 — everything left of 4 is <= 7 (equal values get pushed left too), discard it",
+      "invariant": "inv-upper",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 7,
+        "mid": 3
+      },
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer index lies in [4..7]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 7,
+        "mid": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[5]=11 vs target 7",
+      "invariant": "inv-upper",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 6,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 5,
+        "mid": 5
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[5] > 7 — this could still be the answer, keep it in range and search left",
+      "invariant": "inv-upper",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 5,
+        "mid": 5
+      },
+      "mapActive": null,
+      "activeOp": "WINDOW",
+      "caption": "the answer index lies in [4..5]",
+      "invariant": "inv-window",
+      "step_id": "window"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 5,
+        "mid": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "check the middle: arr[4]=9 vs target 7",
+      "invariant": "inv-upper",
+      "step_id": "probe"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [],
+      "pointers": {
+        "lo": 4,
+        "hi": 4,
+        "mid": 4
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "arr[4] > 7 — this could still be the answer, keep it in range and search left",
+      "invariant": "inv-upper",
+      "step_id": "discard"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "lo": 4,
+        "hi": 4,
+        "mid": 4
+      },
+      "mapActive": null,
+      "activeOp": "MARK",
+      "caption": "lands at index 4: arr[4]=9 is the FIRST value strictly > 7 — notice it lands AFTER any run of 7s, unlike lower-bound which lands ON the first one",
+      "invariant": "inv-land",
+      "step_id": "land"
+    },
+    {
+      "array": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "callStack": [],
+      "regions": [
+        {
+          "lo": 4,
+          "hi": 5,
+          "label": "merging"
+        }
+      ],
+      "sorted": [
+        4
+      ],
+      "pointers": {
+        "lo": 4,
+        "hi": 4,
+        "mid": 4
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "search finished at index 4",
+      "invariant": "inv-window",
+      "step_id": "done"
+    }
+  ],
+  "valid-parentheses": [
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "activeOp": "POINT",
+      "caption": "Reading '('.",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 0
+      },
+      "mapActive": null,
+      "stack": [
+        "("
+      ],
+      "structActive": 0,
+      "activeOp": "PUSH",
+      "caption": "Pushed opener '('.",
+      "invariant": "inv-match",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "stack": [
+        "("
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading '['.",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 1
+      },
+      "mapActive": null,
+      "stack": [
+        "(",
+        "["
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushed opener '['.",
+      "invariant": "inv-match",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        "(",
+        "["
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading ']'.",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 2
+      },
+      "mapActive": null,
+      "stack": [
+        "("
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Matched ']' with top '['. Popping it.",
+      "invariant": "inv-match",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "stack": [
+        "("
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading '{'.",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 3
+      },
+      "mapActive": null,
+      "stack": [
+        "(",
+        "{"
+      ],
+      "structActive": 1,
+      "activeOp": "PUSH",
+      "caption": "Pushed opener '{'.",
+      "invariant": "inv-match",
+      "step_id": "push"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        "(",
+        "{"
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading '}'.",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 4
+      },
+      "mapActive": null,
+      "stack": [
+        "("
+      ],
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Matched '}' with top '{'. Popping it.",
+      "invariant": "inv-match",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "stack": [
+        "("
+      ],
+      "activeOp": "POINT",
+      "caption": "Reading ')'.",
+      "invariant": null,
+      "step_id": "read"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "structActive": "pop",
+      "activeOp": "POP",
+      "caption": "Matched ')' with top '('. Popping it.",
+      "invariant": "inv-match",
+      "step_id": "pop"
+    },
+    {
+      "array": [
+        "(",
+        "[",
+        "]",
+        "{",
+        "}",
+        ")"
+      ],
+      "callStack": [],
+      "regions": [],
+      "sorted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "pointers": {
+        "i": 5
+      },
+      "mapActive": null,
+      "activeOp": "DONE",
+      "caption": "String is valid.",
+      "invariant": "inv-valid",
       "step_id": "done"
     }
   ]

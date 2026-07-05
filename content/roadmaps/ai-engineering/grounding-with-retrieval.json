@@ -178,13 +178,13 @@
     {
       "question": "A team built a RAG chatbot. Users complain it still hallucinates when asked about features that don't exist. How would you debug and fix this?",
       "company": "GenAI Engineer interview",
-      "answer": "The prompt likely lacks strict grounding instructions. First, ensure the prompt explicitly says 'Answer ONLY using the provided context. If the answer is not present, say \"I don't know.\"' Second, verify that the retrieval system is returning low-relevance chunks for the non-existent feature, rather than random unrelated text.",
-      "approach": "Identify that the model is falling back to its internal knowledge because it hasn't been strictly commanded to stop. The fix is prompt instructions, not more docs."
+      "answer": "The prompt likely lacks strict grounding instructions. First, ensure the prompt explicitly says 'Answer ONLY using the provided context. If the answer is not present, say \"I don't know.\"' Second, implement a minimum similarity threshold in the retrieval step, so if the user asks about a non-existent feature, the retriever returns exactly zero chunks, forcing the model into its fallback state.",
+      "approach": "Identify that the model is falling back to its internal knowledge. The fix is prompt instructions (grounding) AND returning zero chunks on a miss (via a similarity threshold) to safely trigger the 'I don't know' logic."
     },
     {
       "question": "You have a large corpus of documents and want to build a Q&A bot. Should you fine-tune the model on the documents or use RAG?",
       "company": "LLM Engineer OA",
-      "answer": "Use RAG. Fine-tuning is for teaching a model a new format, style, or task, but it is very poor at memorizing new facts. RAG is cheaper, allows you to easily update or delete documents without retraining, and provides citations to the source text.",
+      "answer": "Use RAG. Fine-tuning is for teaching a model a new format, style, or task, but it is very poor at memorizing new facts. RAG is cheaper, allows you to easily update or delete documents without retraining, prevents hallucination through grounding, and provides citations to the source text.",
       "approach": "Contrast fact retrieval (RAG) vs behavior modification (fine-tuning). Emphasize that RAG prevents hallucination via grounding and is easier to maintain."
     }
   ],

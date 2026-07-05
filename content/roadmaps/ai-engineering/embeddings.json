@@ -134,7 +134,7 @@
   "common_mistakes": [
     {
       "title": "Using different embedding models for chunks vs queries",
-      "explanation": "Vectors from different models are in different coordinate spaces. Cosine similarity between them produces plausible-looking numbers that mean nothing — retrieval silently returns garbage, with no error thrown."
+      "explanation": "Vectors from different models are in different coordinate spaces. If the models share the same dimensionality (e.g., ada-002 and 3-small), retrieval silently returns garbage. If dimensions differ, it throws a database error."
     },
     {
       "title": "Embedding one chunk per API call",
@@ -171,14 +171,14 @@
     {
       "question": "You built a RAG system last year using text-embedding-3-small. Now you want to upgrade to text-embedding-3-large for better quality. What must you do beyond changing the query call?",
       "company": "RAG system design",
-      "answer": "Re-embed the ENTIRE document corpus with text-embedding-3-large and rebuild the vector index. Vectors from 3-small and 3-large are in different spaces — querying with a 3-large vector against a 3-small index silently returns garbage. There is no shortcut: mixing models breaks the 'same model both sides' invariant.",
+      "answer": "Re-embed the ENTIRE document corpus with text-embedding-3-large and rebuild the vector index. Vectors from 3-small and 3-large are in different spaces — querying a 1536-dim index (3-small) with a 3072-dim vector (3-large) throws a hard dimension mismatch error. There is no shortcut: mixing models breaks the 'same model both sides' invariant.",
       "approach": "Emphasise the same-model invariant. The migration cost (re-embedding the whole corpus) is the correct answer — not 'just change the query model'."
     },
     {
       "question": "A user complains the support bot can't find answers that clearly exist in the docs. You check the vector similarity scores — the best match for the user's query is 0.71. What are two likely root causes?",
       "company": "GenAI Engineer interview",
-      "answer": "1) Chunking mismatch: chunks are too large (averaging over diverse content, diluting the signal for any specific topic) or too small (missing context). 2) Embedding model quality: text-embedding-3-small may underperform on domain-specific vocabulary not well-represented in its training data. Secondary causes: wrong embedding model used (model mismatch), or the docs simply don't contain the answer.",
-      "approach": "Low similarity scores point upstream — to chunking or the embedding model — not to the vector search itself. Name the two knobs (chunk size, model choice) and the model-mismatch bug."
+      "answer": "1) Model mismatch: the query was embedded with a different model than the chunks, so vectors are in different spaces. 2) Embedding model quality: text-embedding-3-small may underperform on domain-specific vocabulary not well-represented in its training data. Secondary causes: the docs simply don't contain the answer, or you need to upgrade to text-embedding-3-large.",
+      "approach": "Low similarity scores point upstream — to the embedding model — not to the vector search itself. Name the model choice and the model-mismatch bug."
     }
   ],
   "sources": [

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import FirstCapture from './FirstCapture';
 import { useAuth } from './lib/AuthContext';
+import { useToast } from './lib/ToastContext';
 import ReviewHeatmap from './ReviewHeatmap';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 
@@ -34,7 +35,7 @@ function formatUpcoming(iso) {
 }
 
 // SVG progress ring — used at 48px (due card) and 28px (roadmap tiles).
-function ProgressRing({ size, stroke, pct, color = '#0891B2', trackColor = 'rgba(15,23,42,0.08)', children }) {
+function ProgressRing({ size, stroke, pct, color = '#0891B2', trackColor = 'var(--color-slate-light)', children }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const offset = c - (Math.max(0, Math.min(100, pct)) / 100) * c;
@@ -589,6 +590,7 @@ function FeedbackModal({ onClose }) {
   const [msg, setMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  const toast = useToast();
 
   const send = async () => {
     if (!msg.trim()) return;
@@ -601,7 +603,7 @@ function FeedbackModal({ onClose }) {
       setDone(true);
       setTimeout(onClose, 2000);
     } catch (e) {
-      alert("Failed to send feedback: " + e.message);
+      toast.error(`Couldn't send feedback: ${e.message}`);
       setSending(false);
     }
   };

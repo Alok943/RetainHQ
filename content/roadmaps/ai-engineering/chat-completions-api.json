@@ -51,7 +51,7 @@
       "recap": "Request: model + messages[]. Stateless — full history re-sent every call."
     },
     {
-      "body": "The response object has a predictable shape. choices[0].message.content is the text you want. choices[0].finish_reason tells you why generation stopped: 'stop' means the model finished naturally; 'length' means you hit max_tokens; 'tool_calls' means the model wants to call a tool. usage.total_tokens is what you were billed. Ignore everything else for 90% of use cases.",
+      "body": "The response object has a predictable shape. choices[0].message.content is the text you want. choices[0].finish_reason tells you why generation stopped: 'stop' means the model finished naturally; 'length' means you hit max_tokens; 'tool_calls' means the model wants to call a tool (and message.content will be None). usage.total_tokens is what you were billed. Ignore everything else for 90% of use cases.",
       "recap": "Response: choices[0].message.content = text. finish_reason + usage.total_tokens are the two other useful fields."
     },
     {
@@ -122,9 +122,9 @@
       "approach": "Two classic None sources: wrong field name (text vs message.content) and tool_calls finish_reason. Check finish_reason defensively."
     },
     {
-      "question": "Your pipeline's average response time doubles overnight. Token usage looks the same. What API parameter might explain this?",
+      "question": "Your pipeline's average response time doubles overnight. Token usage spiked alongside latency. What API parameter might explain this?",
       "company": "LLM Engineer OA",
-      "answer": "max_tokens was likely removed or increased dramatically. Without a cap, the model can generate very long responses on some inputs — even if the average token count looks normal, a few long-tail responses inflate latency. Check max_tokens is set and appropriate for the task.",
+      "answer": "max_tokens was likely removed or increased dramatically. Without a cap, the model can generate very long responses on some inputs, inflating both average token usage and latency. Check max_tokens is set and appropriate for the task to guard against runaway generations.",
       "approach": "Latency for LLMs scales with output tokens, not just input. Missing max_tokens is the most common cause of sudden latency spikes on text generation tasks."
     }
   ],

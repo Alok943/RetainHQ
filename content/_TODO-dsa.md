@@ -78,11 +78,11 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [ ] Queue & deque  · D · `queue-and-deque`
 
 ## 10. Linked Lists  (all `D`)
-- [ ] Traversal & reversal  · D · `traversal-and-reversal`
-- [ ] Find the middle  · D · `find-the-middle`
-- [ ] Floyd's cycle detection  · D · `floyd-s-cycle-detection`
-- [ ] Merge two sorted lists  · D · `merge-two-sorted-lists`
-- [ ] Reverse in k-groups  · D · `reverse-in-k-groups`
+- [x] Traversal & reversal  · D · `traversal-and-reversal`
+- [x] Find the middle  · D · `find-the-middle`
+- [x] Floyd's cycle detection  · D · `floyd-s-cycle-detection`
+- [x] Merge two sorted lists  · D · `merge-two-sorted-lists`
+- [x] Reverse in k-groups  · D · `reverse-in-k-groups`
 
 ## 11. Recursion  (all `C` — mostly concept)
 - [ ] Base case  · C · `base-case`

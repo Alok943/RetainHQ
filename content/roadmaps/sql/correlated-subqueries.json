@@ -59,6 +59,10 @@
     {
       "title": "Performance surprise: correlated subqueries run per-row",
       "explanation": "Because the inner query executes for each outer row, performance can degrade on large tables. Modern Postgres often rewrites them as joins internally, but if a query is slow, consider rewriting as an explicit JOIN or CTE."
+    },
+    {
+      "title": "The NOT IN with NULLs trap",
+      "explanation": "If a subquery returns any NULL values, `NOT IN` will evaluate to UNKNOWN for every row, dropping all results. `NOT EXISTS` safely checks for the absence of rows without failing on NULLs, making it generally safer."
     }
   ],
   "recall_questions": [

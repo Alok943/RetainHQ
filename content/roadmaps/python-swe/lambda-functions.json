@@ -49,7 +49,7 @@
   "common_mistakes": [
     {
       "title": "Assigning a lambda to a name",
-      "explanation": "fn = lambda x: x*2 is semantically identical to def fn(x): return x*2, but the lambda loses the __name__ attribute, making debugging harder. Use def when you need a reusable named function."
+      "explanation": "fn = lambda x: x*2 is semantically identical to def fn(x): return x*2, but a lambda's __name__ is simply '<lambda>' (not a descriptive name), so stack traces are harder to read. Use def when you need a reusable named function."
     },
     {
       "title": "Putting statements inside a lambda",

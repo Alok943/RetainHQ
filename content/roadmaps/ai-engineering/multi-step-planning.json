@@ -82,54 +82,29 @@
   ],
   "common_mistakes": [
     {
-      "mistake": "Trying to do planning and execution in a single massive prompt.",
-      "correction": "Asking the model to 'plan the steps and also do the first step' confuses it and stretches its attention. Separation of concerns (one call to plan, separate calls to execute) is much more robust.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
+      "title": "Trying to do planning and execution in a single massive prompt.",
+      "explanation": "Asking the model to 'plan the steps and also do the first step' confuses it and stretches its attention. Separation of concerns (one call to plan, separate calls to execute) is much more robust."
     },
     {
-      "mistake": "Making the plan totally rigid.",
-      "correction": "In the real world, step 1 might reveal that step 2 is impossible. Advanced architectures allow the Executor to fail and return an error to the Planner, which then generates a revised plan.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
+      "title": "Making the plan totally rigid.",
+      "explanation": "In the real world, step 1 might reveal that step 2 is impossible. Advanced architectures allow the Executor to fail and return an error to the Planner, which then generates a revised plan."
     }
   ],
   "recall_questions": [
     {
-      "question": "What is the primary advantage of a multi-step planning architecture over a basic ReAct loop?",
-      "options": [
-        "It prevents the agent from losing track of long-term goals by separating the itinerary generation from the execution.",
-        "It reduces the token cost by skipping the 'Thought' step entirely.",
-        "It allows the model to run faster by executing all tools in parallel.",
-        "It eliminates the need for tool-calling."
-      ],
-      "correct_answer": "It prevents the agent from losing track of long-term goals by separating the itinerary generation from the execution.",
       "q": "What is the primary advantage of a multi-step planning architecture over a basic ReAct loop?",
-      "answer": "Placeholder answer"
+      "answer": "It prevents the agent from losing track of long-term goals by separating the itinerary generation from the execution.",
+      "tier": "tier1"
     },
     {
-      "question": "In a Plan-and-Execute system, what does the Executor agent focus on?",
-      "options": [
-        "Completing one specific sub-task using the context of previous steps.",
-        "Rewriting the system prompt for the entire application.",
-        "Breaking the user's goal into smaller pieces.",
-        "Storing data into the long-term vector database."
-      ],
-      "correct_answer": "Completing one specific sub-task using the context of previous steps.",
       "q": "In a Plan-and-Execute system, what does the Executor agent focus on?",
-      "answer": "Placeholder answer"
+      "answer": "Completing one specific sub-task using the context of previous steps.",
+      "tier": "tier1"
     },
     {
-      "question": "Why is JSON mode or structured output particularly useful in the Planning phase?",
-      "options": [
-        "It ensures the plan is returned as an array or list that your application code can cleanly iterate over.",
-        "It prevents prompt injection attacks.",
-        "It encrypts the plan so the user cannot see it.",
-        "It makes the LLM run Python code natively."
-      ],
-      "correct_answer": "It ensures the plan is returned as an array or list that your application code can cleanly iterate over.",
       "q": "Why is JSON mode or structured output particularly useful in the Planning phase?",
-      "answer": "Placeholder answer"
+      "answer": "It ensures the plan is returned as an array or list that your application code can cleanly iterate over.",
+      "tier": "tier2"
     }
   ],
   "oa_questions": [
@@ -174,6 +149,6 @@
     }
   ],
   "sources": [
-    "https://example.com/agents"
+    "https://langchain-ai.github.io/langgraph/"
   ]
 }

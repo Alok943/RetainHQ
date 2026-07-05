@@ -2,9 +2,10 @@
   "slug": "tool-use-and-the-call-loop",
   "title": "Tool Use & The Call Loop",
   "kind": "engineering",
-  "prerequisites": [
-    "function-tool-calling"
-  ],
+  "hook": {
+    "scenario": "You give an LLM a 'get_weather' tool. It outputs a JSON request to use it. But nothing happens.",
+    "question": "How does the model actually get the weather data back so it can answer the user?"
+  },
   "mental_model": {
     "intuition": "An agent is a worker with a toolbox who keeps asking 'am I done yet?'",
     "description": "Giving an LLM tools doesn't automatically make it do things. The model just generates a JSON request to use a tool. Your code must intercept that request, run the actual tool, and feed the result back into the model in a continuous loop until the model decides the job is finished."
@@ -66,54 +67,29 @@
   ],
   "common_mistakes": [
     {
-      "mistake": "Thinking the model executes the code.",
-      "correction": "The model lives on an isolated server and only outputs text (JSON). Your application is what actually connects to databases, runs scripts, or hits APIs.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
+      "title": "Thinking the model executes the code.",
+      "explanation": "The model lives on an isolated server and only outputs text (JSON). Your application is what actually connects to databases, runs scripts, or hits APIs."
     },
     {
-      "mistake": "Forgetting to append the tool response to the history.",
-      "correction": "If you don't feed the tool's output back into `messages` and call the model again, the model will just hang or repeat its tool request. It needs the observation to continue.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
+      "title": "Forgetting to append the tool response to the history.",
+      "explanation": "If you don't feed the tool's output back into `messages` and call the model again, the model will just hang or repeat its tool request. It needs the observation to continue."
     }
   ],
   "recall_questions": [
     {
-      "question": "What happens immediately after the LLM decides to use a tool?",
-      "options": [
-        "The model's generation pauses and returns a tool request to your application.",
-        "The model automatically executes the associated Python function.",
-        "The model waits for a human user to approve the JSON.",
-        "The model writes the tool output into its own context window."
-      ],
-      "correct_answer": "The model's generation pauses and returns a tool request to your application.",
       "q": "What happens immediately after the LLM decides to use a tool?",
-      "answer": "Placeholder answer"
+      "answer": "The model's generation pauses and returns a tool request to your application.",
+      "tier": "tier1"
     },
     {
-      "question": "How does the model know the result of a tool execution?",
-      "options": [
-        "Your app appends a new message with the 'tool' role containing the result and calls the model again.",
-        "The model has a built-in webhook that listens for HTTP responses.",
-        "The function executes securely within the model's sandbox environment.",
-        "The model guesses the result based on the tool's description."
-      ],
-      "correct_answer": "Your app appends a new message with the 'tool' role containing the result and calls the model again.",
       "q": "How does the model know the result of a tool execution?",
-      "answer": "Placeholder answer"
+      "answer": "Your app appends a new message with the 'tool' role containing the result and calls the model again.",
+      "tier": "tier1"
     },
     {
-      "question": "What condition breaks the tool-call while loop?",
-      "options": [
-        "The model returns a standard text response without any tool requests.",
-        "The model hits the maximum token limit.",
-        "The app executes exactly one tool.",
-        "The user interrupts the process."
-      ],
-      "correct_answer": "The model returns a standard text response without any tool requests.",
       "q": "What condition breaks the tool-call while loop?",
-      "answer": "Placeholder answer"
+      "answer": "The model returns a standard text response without any tool requests.",
+      "tier": "tier1"
     }
   ],
   "oa_questions": [
@@ -158,6 +134,6 @@
     }
   ],
   "sources": [
-    "https://example.com/agents"
+    "https://platform.openai.com/docs/guides/function-calling"
   ]
 }

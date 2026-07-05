@@ -131,8 +131,8 @@
     {
       "question": "A user manages to break out of your XML delimiters by including `</text>` in their input. How do you mitigate this specific delimiter-escape attack?",
       "company": "Security / AI Red Teaming",
-      "answer": "You can randomly generate the delimiter tags for every request (e.g., `<text_9f8b>`) so the attacker cannot guess the closing tag. Alternatively, strip or sanitize XML-like syntax from the user input before injecting it into the prompt.",
-      "approach": "Acknowledge that static delimiters can be escaped. Propose dynamic delimiters or input sanitization as the fix."
+      "answer": "The most robust defense is to pass the user's input through an LLM Firewall (a fast classifier like GPT-4o-mini) BEFORE injecting it into the main prompt. If the firewall detects injection or delimiter-escape attempts, it rejects the request entirely.",
+      "approach": "Acknowledge that static delimiters can be escaped. Propose the LLM Firewall as the defense."
     },
     {
       "question": "Your agent needs to query a private database. To authenticate, you put the database API key in the system prompt. Is this safe if you have prompt injection defenses in place?",

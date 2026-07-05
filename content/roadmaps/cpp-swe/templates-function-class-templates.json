@@ -27,7 +27,7 @@
     {
       "title": "Function and Class Templates",
       "language": "cpp",
-      "code": "#include <iostream>\n\n// Function Template\ntemplate <typename T>\nT add(T a, T b) {\n    return a + b;\n}\n\n// Class Template\ntemplate <typename T>\nclass Box {\nprivate:\n    T contents;\npublic:\n    Box(T val) : contents(val) {}\n    T get() { return contents; }\n};\n\nint main() {\n    // Compiler generates int version\n    std::cout << add(5, 10) << '\\n'; \n    \n    // Compiler generates double version\n    std::cout << add(5.5, 2.2) << '\\n';\n    \n    // Explicitly instantiating a class template\n    Box<std::string> stringBox(\"Hello Template\");\n    std::cout << stringBox.get() << '\\n';\n    \n    return 0;\n}",
+      "code": "#include <iostream>\n#include <string>\n\n// Function Template\ntemplate <typename T>\nT add(T a, T b) {\n    return a + b;\n}\n\n// Class Template\ntemplate <typename T>\nclass Box {\nprivate:\n    T contents;\npublic:\n    Box(T val) : contents(val) {}\n    T get() { return contents; }\n};\n\nint main() {\n    // Compiler generates int version\n    std::cout << add(5, 10) << '\\n'; \n    \n    // Compiler generates double version\n    std::cout << add(5.5, 2.2) << '\\n';\n    \n    // Explicitly instantiating a class template\n    Box<std::string> stringBox(\"Hello Template\");\n    std::cout << stringBox.get() << '\\n';\n    \n    return 0;\n}",
       "explanation": "The source code only contains one `add` function, but the compiled binary will contain two distinct functions."
     }
   ],

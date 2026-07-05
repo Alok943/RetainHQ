@@ -4,6 +4,7 @@ import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare,
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
+import { ToastProvider } from './lib/ToastContext';
 import { apiFetch } from './lib/api';
 import { pageview } from './lib/analytics';
 
@@ -371,9 +372,11 @@ function Root() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Root />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <Root />
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 

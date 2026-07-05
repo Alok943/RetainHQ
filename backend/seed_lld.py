@@ -8,7 +8,9 @@ import uuid
 from sqlalchemy import text
 from app.core.database import engine
 
-ROADMAP_ID = uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")
+# NOTE: was dddddddd-… which COLLIDED with seed_dsa.py — running this would have
+# deleted the DSA — Algorithms Visualized roadmap and all its lesson-anchored nodes.
+ROADMAP_ID = uuid.UUID("80808080-8080-8080-8080-808080808080")
 TITLE = "Low-Level Design (LLD / OOD)"
 DESCRIPTION = "From OOP fundamentals through SOLID, design patterns, and classic interview LLD problems (Parking Lot, Splitwise, Chess). Pairs with the System Design (HLD) roadmap."
 

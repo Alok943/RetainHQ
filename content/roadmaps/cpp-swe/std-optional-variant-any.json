@@ -15,14 +15,14 @@
     "unlocks": []
   },
   "hook": {
-    "scenario": "You write a function `User findUser(int id)`. If the user isn't found in the database, what do you return? You can't return `nullptr` because it's returning by value. Returning a dummy `User` is dangerous.",
+    "scenario": "You want to return a user if found, or 'nothing' (but returning `nullptr` is unsafe). Alternatively, you're parsing a JSON config where a node could be an integer, a float, or a string.",
     "question": "How do you safely represent \"a value that might not exist\" without resorting to raw pointers?"
   },
   "mental_model": {
     "intuition": "`std::optional` is a cardboard box that is either completely empty, or contains exactly one item. `std::variant` is a multi-tool that can be exactly one of several specific tools at any given time. `std::any` is a magical bag that can hold literally anything, but you have to guess what's inside to take it out.",
     "description": "Modern C++ (C++17) introduced these three vocabulary types to safely handle uncertainty and dynamic typing, completely replacing older, unsafe C-style paradigms like returning magic numbers (-1), using raw `union`s, or casting `void*` pointers."
   },
-  "explanation": "**1. std::optional<T>**\nRepresents a value that may or may not be present. It is the modern replacement for returning `nullptr` or magic error codes. You check if it has a value using `if (opt.has_value())` or simply `if (opt)`. You extract the value using `opt.value()` (which throws an exception if empty) or `*opt`. \n\n**2. std::variant<T1, T2...>**\nIt is a type-safe union. It holds exactly one of the listed types. Unlike a C-style `union`, it knows exactly which type is currently active. You access it using `std::get<T>(var)` (which throws if you ask for the wrong type) or by using the visitor pattern with `std::visit`.\n\n**3. std::any**\nIt can hold a single value of *any* type. It is the C++ equivalent of Python's dynamic typing or C's `void*`. You extract data using `std::any_cast<T>(my_any)`. It involves dynamic memory allocation and type-checking overhead, so it should be used sparingly.\n\n**Real-world Engineering:**\n`std::optional` is heavily used in API design to signify that a query might not yield a result. `std::variant` is the cornerstone of writing Abstract Syntax Trees (ASTs) in compilers, or handling JSON objects where a node might be a String, an Array, or an Integer. Avoid `std::any` unless you are building a highly dynamic system like an event bus where payloads are completely unknown.",
+  "explanation": "**1. std::optional<T>**\nRepresents a value that may or may not be present. It is the modern replacement for returning `nullptr` or magic error codes. You check if it has a value using `if (opt.has_value())` or simply `if (opt)`. You extract the value using `opt.value()` (which throws an exception if empty) or `*opt`. \n\n**2. std::variant<T1, T2...>**\nIt is a type-safe union. It holds exactly one of the listed types. Unlike a C-style `union`, it knows exactly which type is currently active. You access it using `std::get<T>(var)` (which throws if you ask for the wrong type) or by using the visitor pattern with `std::visit` (a safe way to run a function that matches whatever type is currently active).\n\n**3. std::any**\nIt can hold a single value of *any* type. It is the C++ equivalent of Python's dynamic typing or C's `void*`. You extract data using `std::any_cast<T>(my_any)`. It can involve dynamic memory allocation (though implementations use small-object optimization for small types) and type-checking overhead, so it should be used sparingly.\n\n**Real-world Engineering:**\n`std::optional` is heavily used in API design to signify that a query might not yield a result. `std::variant` is the cornerstone of writing Abstract Syntax Trees (ASTs) in compilers, or handling JSON objects where a node might be a String, an Array, or an Integer. Avoid `std::any` unless you are building a highly dynamic system like an event bus where payloads are completely unknown.",
   "code_snippets": [
     {
       "title": "Using std::optional",
@@ -78,5 +78,6 @@
   ],
   "sources": [
     "https://en.cppreference.com/w/cpp/utility/optional"
-  ]
+  ],
+  "why_it_exists": "C++ traditionally lacked safe vocabulary types for missing values or heterogeneous data. Developers relied on dangerous C-style memory tricks (like returning NULL pointers, using magic error numbers like -1, or raw `union`s). C++17 introduced these three types to provide memory-safe, standardized ways to represent optional, alternative, or dynamic values."
 }

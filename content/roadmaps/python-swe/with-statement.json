@@ -70,7 +70,7 @@
   "understanding_checks": [
     {
       "type": "predict-output",
-      "code": "import tempfile\n\npath = tempfile.mktemp()\nwith open(path, 'w') as f:\n    f.write('hello')\n    \ntry:\n    f.write('world')\n    print('Success')\nexcept ValueError as e:\n    print('ValueError')",
+      "code": "with open('test.txt', 'w') as f:\n    f.write('hello')\n    \ntry:\n    f.write('world')\n    print('Success')\nexcept ValueError as e:\n    print('ValueError')",
       "question": "What is printed when this code is executed?",
       "answer": "ValueError",
       "why": "Once the `with` block exits, the file `f` is automatically closed. Attempting to write to a closed file raises a `ValueError: I/O operation on closed file`."
@@ -83,11 +83,11 @@
     }
   ],
   "code_walkthrough": {
-    "code": "import tempfile\npath = tempfile.mktemp()\n\nwith open(path, 'w') as f:\n    f.write('Data')\n\nprint(f.closed)",
+    "code": "with open('test.txt', 'w') as f:\n    f.write('Data')\n\nprint(f.closed)",
     "focus": "print(f.closed) outputs True because exiting the indentation level automatically closes the file."
   },
   "aha_moment": {
-    "code": "import tempfile\npath = tempfile.mktemp()\n\ntry:\n    with open(path, 'w') as f:\n        raise RuntimeError('Crash!')\nexcept RuntimeError:\n    pass\n\nprint(f.closed)",
+    "code": "try:\n    with open('test.txt', 'w') as f:\n        raise RuntimeError('Crash!')\nexcept RuntimeError:\n    pass\n\nprint(f.closed)",
     "prediction": "Will the file be closed (True) or left open (False) because of the crash?",
     "common_guess": "False, because the program crashed before it could reach the end of the block.",
     "why": "It prints True. The context manager intercepts the exception, immediately closes the file, and then lets the exception continue bubbling up. The cleanup is guaranteed."
@@ -96,8 +96,8 @@
     {
       "title": "Convert to Context Manager",
       "prompt": "Given this manual file writing code, modify it to use a `with` statement so that the file is safely closed automatically.",
-      "starter_code": "import tempfile\npath = tempfile.mktemp()\n\nf = open(path, 'w')\nf.write('Hello World')\nf.close()",
-      "solution": "import tempfile\npath = tempfile.mktemp()\n\nwith open(path, 'w') as f:\n    f.write('Hello World')"
+      "starter_code": "f = open('test.txt', 'w')\nf.write('Hello World')\nf.close()",
+      "solution": "with open('test.txt', 'w') as f:\n    f.write('Hello World')"
     }
   ],
   "challenge": {

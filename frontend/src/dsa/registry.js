@@ -17,6 +17,13 @@ import { fastSlowPointersEvents } from './generators/fast-slow-pointers.js';
 import { slidingWindowFixedEvents } from './generators/sliding-window-fixed.js';
 import { slidingWindowVariableEvents } from './generators/sliding-window-variable.js';
 import { kadaneEvents } from './generators/kadane.js';
+import { lowerBoundEvents } from './generators/lower-bound.js';
+import { upperBoundEvents } from './generators/upper-bound.js';
+import { stackFundamentalsEvents } from './generators/stack-fundamentals.js';
+import { validParenthesesEvents } from './generators/valid-parentheses.js';
+import { minStackEvents } from './generators/min-stack.js';
+import { nextGreaterElementEvents } from './generators/next-greater-element.js';
+import { queueDequeEvents } from './generators/queue-deque.js';
 
 export const GENERATORS = {
   'merge-sort': mergeSortEvents,
@@ -36,6 +43,13 @@ export const GENERATORS = {
   'sliding-window-fixed': slidingWindowFixedEvents,
   'sliding-window-variable': slidingWindowVariableEvents,
   'kadane': kadaneEvents,
+  'lower-bound': lowerBoundEvents,
+  'upper-bound': upperBoundEvents,
+  'stack-fundamentals': stackFundamentalsEvents,
+  'valid-parentheses': validParenthesesEvents,
+  'min-stack': minStackEvents,
+  'next-greater-element': nextGreaterElementEvents,
+  'queue-deque': queueDequeEvents,
 };
 
 export function getGenerator(key) {

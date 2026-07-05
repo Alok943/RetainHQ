@@ -108,7 +108,28 @@ function scalarReducer(state, op, args) {
   }
 }
 
-const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer];
+
+// --- stack/queue family ---
+function stackQueueReducer(state, op, args) {
+  switch (op) {
+    case 'PUSH':
+      state.stack.push(args.value);
+      return { pointers: { ...state.ptrs }, structActive: state.stack.length - 1 };
+    case 'POP':
+      state.stack.pop();
+      return { pointers: { ...state.ptrs }, structActive: 'pop' };
+    case 'ENQUEUE':
+      state.queue.push(args.value);
+      return { pointers: { ...state.ptrs }, structActive: state.queue.length - 1 };
+    case 'DEQUEUE':
+      state.queue.shift();
+      return { pointers: { ...state.ptrs }, structActive: 'shift' };
+    default:
+      return null;
+  }
+}
+
+const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer, stackQueueReducer];
 
 export function compile(input, events) {
   const state = {
@@ -119,6 +140,10 @@ export function compile(input, events) {
     ptrs: {},                // persistent named pointers for array-family traces (lo/hi/i/j)
     freq: null,              // frequency map for COUNT traces; null until first COUNT
     vars: {},                // persistent named scalars for VAR traces (Kadane's current/best, etc.)
+    stack: [],
+    queue: [],
+    stackTop: null,
+    queueEnd: null,
   };
   const frames = [];
 
@@ -141,6 +166,9 @@ export function compile(input, events) {
       map: state.freq ? { ...state.freq } : undefined,
       mapActive: result.mapActive ?? null,
       vars: Object.keys(state.vars).length ? { ...state.vars } : undefined,
+      stack: state.stack && state.stack.length ? [...state.stack] : undefined,
+      queue: state.queue && state.queue.length ? [...state.queue] : undefined,
+      structActive: result.structActive !== undefined && result.structActive !== null ? result.structActive : undefined,
       activeOp: op,
       caption: note || op,
       invariant,

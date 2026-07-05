@@ -69,8 +69,8 @@
   },
   "challenge": {
     "title": "API Response Normalizer",
-    "prompt": "Build a webhook receiver helper normalize_webhook_data(data) that inspects the dynamic type of data. If it is a str, return it converted to int (assume a valid numeric string). If it is already an int, return it as-is. If it is a float, return it cast to int. Otherwise return 0. Use type(data) here to practice strict runtime type checking.",
-    "solution": "def normalize_webhook_data(data):\n    data_type = type(data)\n    if data_type is str:\n        return int(data)\n    elif data_type is int:\n        return data\n    elif data_type is float:\n        return int(data)\n    else:\n        return 0"
+    "prompt": "Build a webhook receiver helper normalize_webhook_data(data) that inspects the dynamic type of data. If it is a str, return it converted to int (assume a valid numeric string). If it is already an int, return it as-is. If it is a float, return it cast to int. Otherwise return 0. Use isinstance() here to practice safe runtime type checking.",
+    "solution": "def normalize_webhook_data(data):\n    if isinstance(data, str):\n        return int(data)\n    elif isinstance(data, int):\n        return data\n    elif isinstance(data, float):\n        return int(data)\n    else:\n        return 0"
   },
   "sources": [
     "https://docs.python.org/3/reference/datamodel.html",

@@ -34,8 +34,8 @@
     }
   ],
   "overview": {
-    "what": "Query pitfalls are common mistakes that return incorrect row-sets or cause severe performance issues. Examples include accidental cross-joins, using SELECT * unnecessarily, or applying functions on indexed columns which forces full table scans.",
-    "why": "Writing SQL that 'works' on small datasets often masks underlying anti-patterns. Knowing these pitfalls prevents production outages when data scales.",
+    "what": "Query pitfalls are common mistakes that return incorrect row-sets or cause severe performance issues. Examples include accidental cross-joins, using SELECT * unnecessarily (which wastes network/memory and breaks applications if columns are added/removed), or applying functions on indexed columns which forces full table scans.",
+    "why": "Writing SQL that 'works' on small datasets often masks underlying anti-patterns. Knowing these pitfalls prevents a production outage when data scales.",
     "where_used": [
       "database optimization",
       "peer code review"
@@ -49,6 +49,10 @@
     {
       "title": "Missing JOIN conditions",
       "explanation": "Forgetting an ON clause or WHERE condition in a join creates a Cartesian product (cross join), returning every combination of rows. Fix: Always explicitly define how tables relate."
+    },
+    {
+      "title": "Applying functions on indexed columns",
+      "explanation": "Wrapping an indexed column in a function (like `WHERE YEAR(date) = 2023`) breaks the index because the database has to run the function on every row (breaking SARGability). Use `WHERE date >= '2023-01-01' AND date < '2024-01-01'` instead."
     }
   ],
   "recall_questions": [

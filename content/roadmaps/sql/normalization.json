@@ -34,7 +34,7 @@
     }
   ],
   "overview": {
-    "what": "Normalization is the process of organizing data to minimize redundancy and prevent inconsistencies. 1NF ensures atomic values (no lists in a column). 2NF removes partial dependencies (attributes must depend on the whole primary key). 3NF removes transitive dependencies (attributes must depend strictly on the primary key, not other attributes).",
+    "what": "Normalization is the process of organizing data to minimize redundancy and prevent inconsistencies. 1NF ensures atomic values (no lists in a column). 2NF removes partial dependencies (e.g., if a primary key is OrderID+ProductID, the ProductName shouldn't be in this table because it only depends on ProductID). 3NF removes transitive dependencies (e.g., City depends on ZipCode, so it shouldn't be stored directly under UserID).",
     "why": "If data isn't normalized, updating a customer's address might require changing 50 order records. Normalization ensures you update it in exactly one place.",
     "where_used": [
       "schema design",
@@ -57,6 +57,16 @@
       "q": "What is the core principle of First Normal Form (1NF)?",
       "answer": "Every column must hold atomic (indivisible) values, and there are no repeating groups or arrays in a single column.",
       "tier": "tier1"
+    },
+    {
+      "q": "What does Second Normal Form (2NF) ensure?",
+      "answer": "It removes partial dependencies, meaning every non-key column must depend on the entire primary key, not just a part of it.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does Third Normal Form (3NF) prevent?",
+      "answer": "It removes transitive dependencies, meaning non-key columns must depend strictly on the primary key, not on other non-key columns.",
+      "tier": "tier2"
     }
   ],
   "understanding_checks": [

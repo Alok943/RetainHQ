@@ -33,7 +33,7 @@
     }
   ],
   "overview": {
-    "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page — to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple can safely be a dict key while a list cannot.",
+    "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page — to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple (as long as it contains only immutable elements) can safely be a dict key while a list cannot.",
     "why": "Mutability decides whether an operation edits an object in place or returns a new one. Getting this wrong causes two classic bugs: assuming a string method changed the string (it didn't), and two names sharing one mutable object so an edit through one is unexpectedly seen through the other.",
     "where_used": [
       "Pydantic models",
@@ -68,7 +68,7 @@
     },
     {
       "q": "Why can a string or tuple be used as a dict key but a list cannot?",
-      "answer": "Strings and tuples are immutable so they can safely be keys; a list is mutable and cannot be a dict key.",
+      "answer": "Strings and tuples (as long as they contain only immutable elements) are immutable so they can safely be keys; a list is mutable and cannot be a dict key.",
       "tier": "tier2"
     }
   ],

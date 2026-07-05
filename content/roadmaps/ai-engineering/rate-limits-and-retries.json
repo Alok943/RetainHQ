@@ -42,7 +42,7 @@
   },
   "sections": [
     {
-      "body": "Two limits apply simultaneously: RPM (max requests per minute) and TPM (max tokens per minute, counting prompt + completion). Your tier on the OpenAI platform determines both. A 429 error tells you which limit you hit in the error body. Tokens-per-minute is the more common hit in RAG systems with large contexts — not raw request count.",
+      "body": "Two limits apply simultaneously: RPM (max requests per minute) and TPM (max tokens per minute, counting prompt + completion). These limits are tracked server-side per API key or organization, not by your local client instance. Your tier on the OpenAI platform determines both. A 429 error tells you which limit you hit in the error body. Tokens-per-minute is the more common hit in RAG systems with large contexts — not raw request count.",
       "recap": "Two limits: RPM and TPM. RAG systems usually hit TPM first due to large prompt contexts."
     },
     {

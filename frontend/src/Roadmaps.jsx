@@ -8,43 +8,15 @@ import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
 import { useSeo } from './lib/useSeo';
+import { DOMAINS, getRoadmapMeta } from './lib/roadmapDomains';
+import { CAREER_PATHS } from './lib/careerPaths';
+import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 
 // Trade-wise grouping (JD Research Run 3): roadmaps organized by the career track
 // they build toward, ordered by the SDE → Backend → GenAI pathway + foundations.
 // Each group carries the run-3 insight for that trade. Order matters: first match wins,
 // so trade-specific patterns (backend/sql/ai) sit ABOVE the catch-all "python" foundation.
-const GROUPS = [
-  {
-    label: 'DSA & Problem Solving',
-    blurb: 'The Round-1 gate for every role — SDE, Backend, even GenAI (JD Run 3).',
-    match: (t) => /dsa|neetcode|striver|algorithm|data structure|blind|lld|low.level/.test(t),
-  },
-  {
-    label: 'GenAI & AI Engineering',
-    blurb: 'Backend → GenAI is the single highest-ROI transition in 2026 (Zinnov, JD Run 3).',
-    match: (t) => /ai eng|machine learning|deep learning|genai|llm/.test(t),
-  },
-  {
-    label: 'Backend & Data',
-    blurb: 'SDE → Backend is near friction-free; these production skills launch the GenAI pathway. SQL is also the #1 Data-Engineer filter.',
-    match: (t) => /backend|system design|sql|api|database|data eng/.test(t),
-  },
-  {
-    label: 'Web Development',
-    blurb: 'Full-stack foundations for product and web-engineering roles.',
-    match: (t) => /web|frontend|react|javascript|typescript/.test(t),
-  },
-  {
-    label: 'CS Fundamentals',
-    blurb: 'OS, DBMS, networks + core Python — the shared base under every engineering track.',
-    match: (t) => /core cs|operating system|dbms|network|python|java|c\+\+/.test(t),
-  },
-  {
-    label: 'Aptitude & Reasoning',
-    blurb: 'Often cleared before the coding round at campus & mass recruiters.',
-    match: (t) => /aptitude|quant|reasoning|verbal/.test(t),
-  },
-];
+
 
 const SORT_OPTIONS = [
   { value: 'title-asc',     label: 'A → Z' },
@@ -53,13 +25,7 @@ const SORT_OPTIONS = [
   { value: 'progress-asc',  label: 'Progress ↓' },
 ];
 
-function getGroup(title = '') {
-  const t = title.toLowerCase();
-  for (const g of GROUPS) {
-    if (g.match(t)) return g.label;
-  }
-  return 'Other';
-}
+
 
 function useCountUp(target, duration = 800) {
   const [val, setVal] = useState(0);
@@ -77,7 +43,7 @@ function useCountUp(target, duration = 800) {
   return val;
 }
 
-function RoadmapCard({ rm, index, onClick }) {
+function RoadmapCard({ rm, index, onClick, meta }) {
   const { Icon, accent } = getRoadmapStyle(rm.title);
   const pct = useCountUp(rm.progress_pct ?? 0);
 
@@ -87,7 +53,6 @@ function RoadmapCard({ rm, index, onClick }) {
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
       className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl shadow-sm p-5 cursor-pointer group flex flex-col min-h-[210px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
     >
-      {/* Top: logo tile + percent */}
       <div className="flex items-start justify-between mb-4">
         <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
@@ -98,17 +63,31 @@ function RoadmapCard({ rm, index, onClick }) {
         <span className="font-mono text-sm font-semibold" style={{ color: accent }}>{pct}%</span>
       </div>
 
-      {/* Middle: title + description (grows to fill the tall card) */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col">
         <h3 className="font-sans text-base md:text-lg font-semibold text-[#0F172A] leading-snug line-clamp-2 mb-1.5">
           {rm.title}
         </h3>
-        <p className="font-sans text-xs text-[#64748B] leading-relaxed line-clamp-3">
+        <p className="font-sans text-xs text-[#64748B] leading-relaxed line-clamp-3 mb-3">
           {rm.description}
         </p>
+        
+        {meta && (
+          <div className="flex flex-wrap gap-2 mt-auto">
+            <span className="bg-[rgba(15,23,42,0.04)] text-[#64748B] px-2 py-1 rounded text-[10px] font-mono font-medium">
+              {meta.lessonCount} lessons
+            </span>
+            <span className="bg-[rgba(15,23,42,0.04)] text-[#64748B] px-2 py-1 rounded text-[10px] font-mono font-medium">
+              ~{meta.hours} hrs
+            </span>
+            {meta.pathsCount > 0 && (
+              <span className="bg-[#0891B2]/10 text-[#0891B2] px-2 py-1 rounded text-[10px] font-mono font-medium">
+                builds {meta.pathsCount} path{meta.pathsCount !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Bottom: progress bar + topic count */}
       <div className="mt-4">
         <div className="w-full h-1.5 rounded-full bg-[rgba(15,23,42,0.06)] overflow-hidden mb-2.5">
           <div
@@ -155,7 +134,7 @@ function CollapsibleGroup({ label, blurb, items, navigate }) {
       {open && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((rm, i) => (
-            <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+            <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
           ))}
         </div>
       )}
@@ -170,6 +149,26 @@ function Roadmaps() {
   const [viewMode, setViewMode] = useState('grouped'); // 'grouped' | 'list'
   const [sortBy, setSortBy] = useState('title-asc');
   const { session } = useAuth();
+  const [contentManifest, setContentManifest] = useState(null);
+
+  useEffect(() => {
+    fetch('/content/manifest.json')
+      .then((r) => r.ok ? r.json() : {})
+      .then(setContentManifest)
+      .catch(() => setContentManifest({}));
+  }, []);
+
+  const roadmapsWithMeta = useMemo(() => {
+    return roadmaps.map(rm => {
+      const contentKey = rm.slug || CONTENT_KEY_BY_TITLE[rm.title];
+      const lessonCount = contentManifest && contentManifest[contentKey] ? Object.keys(contentManifest[contentKey]).length : 0;
+      const hours = Math.max(1, Math.round((lessonCount * 15) / 60));
+      
+      const pathsCount = CAREER_PATHS.filter(p => p.roadmaps.some(r => r.match && rm.title.toLowerCase().includes(r.match.toLowerCase()))).length;
+      
+      return { ...rm, meta: { lessonCount, hours, pathsCount } };
+    });
+  }, [roadmaps, contentManifest]);
 
   useSeo(
     'Learning Roadmaps · DSA, System Design, Python & SQL | RetainHQ',
@@ -191,33 +190,58 @@ function Roadmaps() {
   }, []);
 
   const sorted = useMemo(() => {
-    const copy = [...roadmaps];
+    const copy = [...roadmapsWithMeta];
     if (sortBy === 'title-asc')     return copy.sort((a, b) => a.title.localeCompare(b.title));
     if (sortBy === 'title-desc')    return copy.sort((a, b) => b.title.localeCompare(a.title));
     if (sortBy === 'progress-desc') return copy.sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
     if (sortBy === 'progress-asc')  return copy.sort((a, b) => (a.progress_pct ?? 0) - (b.progress_pct ?? 0));
     return copy;
-  }, [roadmaps, sortBy]);
+  }, [roadmapsWithMeta, sortBy]);
 
   const grouped = useMemo(() => {
     const map = {};
-    for (const rm of roadmaps) {
-      const g = getGroup(rm.title);
-      if (!map[g]) map[g] = [];
-      map[g].push(rm);
+    for (const rm of roadmapsWithMeta) {
+      const meta = getRoadmapMeta(rm.slug || rm.id);
+      const domain = meta.domain;
+      if (!map[domain]) map[domain] = [];
+      map[domain].push(rm);
     }
-    // Return in GROUPS order, then 'Other' last
+    
     const result = [];
-    for (const { label, blurb } of GROUPS) {
-      if (map[label]?.length) result.push({ label, blurb, items: map[label] });
+    for (const [slug, dInfo] of Object.entries(DOMAINS)) {
+      if (map[slug]?.length) {
+        const items = map[slug].sort((a, b) => {
+          const aMeta = getRoadmapMeta(a.slug || a.id);
+          const bMeta = getRoadmapMeta(b.slug || b.id);
+          const aLive = aMeta.flagship && a.meta.lessonCount > 0 ? 1 : 0;
+          const bLive = bMeta.flagship && b.meta.lessonCount > 0 ? 1 : 0;
+          
+          if (aLive !== bLive) return bLive - aLive;
+          if ((b.progress_pct || 0) !== (a.progress_pct || 0)) return (b.progress_pct || 0) - (a.progress_pct || 0);
+          return a.title.localeCompare(b.title);
+        });
+        
+        result.push({
+          label: `${dInfo.emoji} ${dInfo.title}`,
+          blurb: dInfo.blurb,
+          items
+        });
+      }
     }
-    if (map['Other']?.length) result.push({ label: 'Other', items: map['Other'] });
     return result;
-  }, [roadmaps]);
+  }, [roadmapsWithMeta]);
+
+  const flagships = useMemo(() => {
+    return roadmapsWithMeta.filter(rm => {
+      const meta = getRoadmapMeta(rm.slug || rm.id);
+      return meta.flagship && rm.meta.lessonCount > 0;
+    });
+  }, [roadmapsWithMeta]);
 
   return (
     <div className="relative max-w-5xl mx-auto w-full p-4 md:p-8 pb-20 md:pb-8 animate-in fade-in duration-300">
       <div className="relative z-10 flex flex-col gap-8">
+
 
       <header className="mb-2">
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
@@ -225,6 +249,32 @@ function Roadmaps() {
         </h2>
         <p className="font-sans text-sm text-[#64748B] mt-1">Structured roadmaps and step-through lessons, tracked by spaced repetition so what you study sticks.</p>
       </header>
+      
+      {flagships.length > 0 && viewMode === 'grouped' && (
+        <section className="mb-4">
+          <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5 mb-3">
+            Flagships
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {flagships.map((rm) => (
+              <button
+                key={rm.id}
+                onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)}
+                className="bg-white border border-[rgba(15,23,42,0.08)] rounded-xl p-3 flex items-center gap-3 text-left hover:-translate-y-0.5 hover:shadow-md transition-all group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[rgba(15,23,42,0.03)] flex items-center justify-center shrink-0 border border-[rgba(15,23,42,0.05)]">
+                   <RoadmapLogo title={rm.title} Icon={getRoadmapStyle(rm.title).Icon} accent={getRoadmapStyle(rm.title).accent} size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-sans text-sm font-semibold text-[#0F172A] truncate">{rm.title}</div>
+                  <div className="font-sans text-[10px] text-[#0891B2] font-semibold mt-0.5">{rm.meta.lessonCount} lessons</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       <section>
         {/* Controls bar */}
@@ -304,7 +354,7 @@ function Roadmaps() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {sorted.map((rm, i) => (
-              <RoadmapCard key={rm.id} rm={rm} index={i} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+              <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
             ))}
           </div>
         )}

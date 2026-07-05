@@ -48,7 +48,7 @@
   "common_mistakes": [
     {
       "title": "Forgetting the nonlocal keyword",
-      "explanation": "If you try to rebind an immutable enclosed variable without `nonlocal`, Python treats it as a new local variable assignment, causing an `UnboundLocalError`. You must explicitly declare `nonlocal var_name` to modify the trapped state."
+      "explanation": "If you try to read and update an enclosed variable (like `count += 1`) without `nonlocal`, Python marks it as a local variable due to the assignment, causing an `UnboundLocalError` when it tries to read the uninitialized local. You must explicitly declare `nonlocal var_name` to modify the trapped state."
     },
     {
       "title": "Accidental shared state",

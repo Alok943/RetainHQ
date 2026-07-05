@@ -27,7 +27,7 @@
     {
       "title": "Stateful Callbacks",
       "language": "cpp",
-      "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int threshold = 10;\n    std::vector<int> numbers = {5, 15, 8, 20};\n    \n    // Captures 'threshold' by value.\n    auto is_above_threshold = [threshold](int n) {\n        return n > threshold;\n    };\n    \n    int count = std::count_if(numbers.begin(), numbers.end(), is_above_threshold);\n    std::cout << \"Count: \" << count << '\\n'; // Prints 2\n    \n    // Stateful lambda using 'mutable'\n    int counter = 0;\n    auto generate_id = [counter]() mutable {\n        return ++counter;\n    };\n    std::cout << generate_id() << generate_id(); // Prints 12\n    return 0;\n}",
+      "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int threshold = 10;\n    std::vector<int> numbers = {5, 15, 8, 20};\n    \n    // Captures 'threshold' by value.\n    auto is_above_threshold = [threshold](int n) {\n        return n > threshold;\n    };\n    \n    int count = std::count_if(numbers.begin(), numbers.end(), is_above_threshold);\n    std::cout << \"Count: \" << count << '\\n'; // Prints 2\n    \n    // Stateful lambda using 'mutable'\n    int counter = 0;\n    auto generate_id = [counter]() mutable {\n        return ++counter;\n    };\n    std::cout << generate_id(); // Prints 1\n    std::cout << generate_id(); // Prints 2\n    return 0;\n}",
       "explanation": "The first lambda safely captures the threshold by value. The second lambda modifies its own internal copy of `counter` across successive calls."
     }
   ],
@@ -78,5 +78,6 @@
   ],
   "sources": [
     "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f52-prefer-capturing-by-reference-in-lambdas-that-will-be-used-locally-including-passed-to-algorithms"
-  ]
+  ],
+  "why_it_exists": "Before C++11, if you wanted to pass a stateful callback to a function (e.g. an event handler that needs access to a local variable), you had to write a verbose custom 'functor' class with member variables and an overloaded `operator()`. Lambdas were introduced to eliminate this boilerplate, allowing you to define the function and its state inline."
 }

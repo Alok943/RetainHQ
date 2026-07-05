@@ -52,6 +52,15 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [isModalOpen, pendingAction]);
 
+  // A 401 mid-session means the JWT expired or was revoked — sign out so the
+  // stale session doesn't keep silently failing every request behind it.
+  useEffect(() => {
+    if (DEV_AUTH_BYPASS) return;
+    const onUnauthorized = () => supabase.auth.signOut();
+    window.addEventListener('retainhq:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('retainhq:unauthorized', onUnauthorized);
+  }, []);
+
   // Tie the PostHog person to the (pseudonymous) user id; reset on sign-out.
   useEffect(() => {
     if (session?.user?.id) identifyUser(session.user.id);

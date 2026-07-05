@@ -54,7 +54,7 @@
       "recap": "Embeddings capture meaning, so retrieval finds matches keyword search can't."
     },
     {
-      "body": "The dots come from an embedding model: feed it text, get back a vector positioned so similar meanings sit close. Two phases: at INGEST you chunk the docs, embed each chunk, and store every (vector, text) pair. At QUERY time you embed the question — with the EXACT SAME model — to get one query vector. Mix models and nothing errors; retrieval just silently returns junk.",
+      "body": "The dots come from an embedding model: feed it text, get back a vector positioned so similar meanings sit close. Two phases: at INGEST you chunk the docs, embed each chunk, and store every (vector, text) pair. At QUERY time you embed the question — with the EXACT SAME model — to get one query vector. If you mix models with the SAME dimensionality (like ada-002 and 3-small), retrieval silently returns garbage. If dimensions differ, it hard-crashes.",
       "recap": "Same embedding model on both sides, or the vectors aren't comparable."
     },
     {
@@ -178,7 +178,7 @@
       "approach": "Name the root cause: 'nearest ≠ relevant.' The store can't return empty by default. The fix is a threshold/guardrail on the retrieval score, not a bigger k."
     },
     {
-      "question": "Your retrieval quality is poor: relevant chunks exist but aren't being returned. The chunks were embedded with text-embedding-3-large; the query is embedded with text-embedding-3-small. What's the bug?",
+      "question": "Your retrieval quality is poor: relevant chunks exist but aren't being returned. The chunks were embedded with text-embedding-ada-002; the query is embedded with text-embedding-3-small. What's the bug?",
       "company": "RAG system design",
       "answer": "Model mismatch. Chunks and query are in different embedding spaces, so cosine similarity between them is meaningless and the true matches don't surface. Re-embed the query (or the chunks) so both sides use the same model.",
       "approach": "Spot the two different model names. Same-model-both-sides is the first invariant to check when retrieval 'silently' fails."

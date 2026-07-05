@@ -45,7 +45,7 @@
   "common_mistakes": [
     {
       "title": "Forgetting the decorator",
-      "explanation": "If you forget `@classmethod`, Python will treat it as an instance method and pass the instance as the first argument, causing a TypeError when called on the class."
+      "explanation": "If you forget `@classmethod`, the method is just a plain instance method. Calling it on the class raises a TypeError because there's no instance to fill `self`, and calling it on an instance passes the instance instead of the class."
     },
     {
       "title": "Using staticmethod when classmethod is needed",

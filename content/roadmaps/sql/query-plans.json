@@ -36,7 +36,7 @@
     }
   ],
   "overview": {
-    "what": "EXPLAIN ANALYZE executes your query and returns a detailed execution plan showing exactly how the database retrieved the rows. It reveals whether it used an 'Index Scan', 'Seq Scan', or a specific JOIN algorithm.",
+    "what": "EXPLAIN ANALYZE executes your query and returns a detailed execution plan showing exactly how the database retrieved the rows. It reveals whether it used an 'Index Scan' (using a B-Tree index to find rows instantly), a 'Seq Scan' (scanning the entire table row-by-row), or a specific JOIN algorithm.",
     "why": "It is the primary diagnostic tool for SQL. Without it, tuning a query is just guesswork.",
     "where_used": [
       "troubleshooting production database latency",
@@ -63,17 +63,17 @@
   "understanding_checks": [
     {
       "type": "predict-result",
-      "query": "SELECT count(*) FROM orders WHERE status = 'cancelled';",
-      "question": "What rows does this return?",
-      "answer": "1",
-      "why": "There is only one cancelled order (id 5, Diana). EXPLAIN ANALYZE on this query would show how many rows were scanned to find it."
+      "query": "EXPLAIN SELECT name FROM customers WHERE id = 1;",
+      "question": "If `id` is a primary key, what scan type will likely appear in the EXPLAIN output?",
+      "answer": "Index Scan",
+      "why": "Because `id` has a primary key index, the database can perform an Index Scan instead of scanning the whole table."
     },
     {
       "type": "predict-result",
-      "query": "SELECT customer_id FROM orders WHERE order_date = '2023-04-02' ORDER BY id;",
-      "question": "What rows does this return?",
-      "answer": "2",
-      "why": "Order 3 is by Bob (id 2) on that date. The execution plan would reveal if it scanned all 8 orders or used an index on order_date."
+      "query": "EXPLAIN SELECT * FROM orders WHERE status = 'cancelled';",
+      "question": "If there is no index on `status`, what scan type will appear?",
+      "answer": "Seq Scan",
+      "why": "Without an index on the `status` column, the database must scan the table row-by-row to find matching rows."
     }
   ],
   "query_walkthrough": {

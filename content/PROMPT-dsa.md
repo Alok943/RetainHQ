@@ -206,6 +206,15 @@ The Gemini research object maps almost 1:1. Synthesize, don't copy:
 3. Are `recall_questions` what an **interviewer** actually asks — and answerable from the lesson?
 4. For `dsa` nodes: is `why_it_exists` a real *naive-was-slow → better-idea* story, not a restatement?
 5. No `viz`, no `animation`, no `image` anywhere. (Claude's layer.)
+6. **SELF-CONTAINMENT (hard rule — the #1 failure caught in review):** EVERY `recall_questions`
+   AND `oa_questions` answer must be derivable from the lesson BODY (`why_it_exists` / `mental_model`
+   / `explanation` / `key_points`). If an oa question tests a technique (e.g. the histogram
+   increasing-stack, the monotonic-deque window, a differential-encoding decode), that technique
+   MUST be taught in the body — not sprung only in the answer key. If it doesn't fit the lesson,
+   move the question to a lesson that teaches it; don't leave it untaught.
+7. **NO UNEXPLAINED JARGON IN ANSWERS:** any term an answer relies on (amortized, cache locality,
+   pushdown automaton, differential encoding, "hybrid linked list of blocks") must be *explained*
+   in the body — a beginner should be able to derive it, not just parrot the word.
 
 ## RUN
 ```

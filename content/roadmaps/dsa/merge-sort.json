@@ -78,6 +78,17 @@
       { "id": "split", "label": "mid = (lo+hi)/2 → sort left, sort right" },
       { "id": "merge", "label": "merge: take the smaller front, write it, advance" }
     ],
+    "code": {
+      "python": {
+        "src": "def merge_sort(arr, lo, hi):\n    if lo >= hi:\n        return                       # base case: one element is sorted\n\n    mid = (lo + hi) // 2\n    merge_sort(arr, lo, mid)         # sort left half\n    merge_sort(arr, mid + 1, hi)     # sort right half\n\n    left = arr[lo:mid + 1]\n    right = arr[mid + 1:hi + 1]\n    i = j = k = 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            arr[lo + k] = left[i]; i += 1\n        else:\n            arr[lo + k] = right[j]; j += 1\n        k += 1\n    while i < len(left):\n        arr[lo + k] = left[i]; i += 1; k += 1\n    while j < len(right):\n        arr[lo + k] = right[j]; j += 1; k += 1",
+        "lineMap": {
+          "recurse": [1],
+          "base": [2, 3],
+          "split": [5, 6, 7],
+          "merge": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+        }
+      }
+    },
     "predictions": [
       {
         "at_op": "COMPARE",

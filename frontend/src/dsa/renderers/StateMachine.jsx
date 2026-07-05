@@ -8,7 +8,7 @@ const PTR_ORDER = ['lo', 'hi', 'i', 'j', 'write'];
 // Named-scalar readout (Kadane's running best, window sum, etc.) — rendered ABOVE whichever
 // section follows (map / stack / pointers), only when the frame carries a non-empty `vars` slice.
 function VariablesSection({ vars }) {
-  const entries = Object.entries(vars);
+  const entries = Object.entries(vars || {});
   if (!entries.length) return null;
   return (
     <div className="mb-3">

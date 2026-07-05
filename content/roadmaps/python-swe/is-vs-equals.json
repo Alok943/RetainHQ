@@ -95,10 +95,10 @@
     "focus": "print(a is b)"
   },
   "aha_moment": {
-    "code": "a = 256\nb = 256\nprint(a is b)\n\nx = 257\ny = 257\nprint(x is y)",
+    "code": "a = [1, 2, 3]\nb = [1, 2, 3]\nprint(a == b)\n\nx = [1, 2, 3]\ny = [1, 2, 3]\nprint(x is y)",
     "prediction": "What will these two prints output?",
     "common_guess": "True, True",
-    "why": "Python pre-caches (interns) small integers (-5 to 256) for performance. So `256` reuses the same memory object (True), but `257` creates a new object in memory each time, so `is` returns False. This is why you must never use `is` for value comparison."
+    "why": "Even though `a` and `b` have identical contents (so `a == b` is True), lists are mutable objects. Python creates a brand new list in memory every time `[1, 2, 3]` is evaluated. Therefore `x` and `y` point to different memory addresses, and `x is y` is False."
   },
   "challenge": {
     "title": "Safe None Checking",

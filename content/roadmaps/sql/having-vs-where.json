@@ -38,7 +38,7 @@
     }
   ],
   "overview": {
-    "what": "WHERE and HAVING both filter rows, but they operate at different stages of the logical query flow:\n\n- WHERE filters INDIVIDUAL rows BEFORE grouping. It cannot reference aggregate functions.\n- HAVING filters GROUPS AFTER GROUP BY. It CAN reference aggregate functions.\n\nAgainst the shared dataset:\n\n  SELECT customer_id, COUNT(*) AS order_count\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n  HAVING COUNT(*) >= 2\n  ORDER BY customer_id;\n\nStep by step: WHERE keeps only paid orders (6 rows). GROUP BY collapses them by customer_id. HAVING keeps only groups with 2 or more paid orders. Result: customer_id 1 (2 paid orders).\n\nThink of it this way: WHERE is a bouncer at the door (filters rows before they enter the GROUP BY room). HAVING is a judge inside the room (evaluates each group after they've formed).",
+    "what": "WHERE and HAVING both filter rows, but they operate at different stages of the logical query flow:\n\n- WHERE filters INDIVIDUAL rows BEFORE grouping. It cannot reference aggregate functions.\n- HAVING filters GROUPS AFTER GROUP BY. It CAN reference aggregate functions.\n\nAgainst the shared dataset:\n\n  SELECT customer_id, COUNT(*) AS order_count\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n  HAVING COUNT(*) >= 2\n  ORDER BY customer_id;\n\nStep by step: WHERE keeps only paid orders (6 rows). GROUP BY collapses them by customer_id. HAVING keeps only groups with 2 or more paid orders. Result: customer_id 1 (2 paid orders).\n\nThink of it this way: WHERE is a bouncer at the door (filters rows before they enter the GROUP BY room). HAVING is a judge inside the room (will evaluate each group after they've formed).",
     "why": "Filtering before vs after grouping produces fundamentally different results. Putting an aggregate condition in WHERE causes a syntax error; putting a row-level filter in HAVING is legal but wastes work — it groups rows only to discard them. Knowing which clause to use is a common interview question and a daily practical need.",
     "where_used": [
       "finding high-value customer segments",
@@ -57,7 +57,7 @@
     },
     {
       "title": "Using HAVING for row-level filters",
-      "explanation": "HAVING status = 'paid' is legal but inefficient — it lets all rows through GROUP BY, forms groups, then discards them. Filtering with WHERE status = 'paid' is faster because it reduces rows before grouping."
+      "explanation": "HAVING status = 'paid' is a syntax error in Postgres because 'status' is not in GROUP BY. If the column IS in the GROUP BY clause, it's legal but inefficient compared to WHERE — it lets all rows through GROUP BY, forms groups, then discards them."
     },
     {
       "title": "Confusing the logical order",
@@ -77,7 +77,7 @@
     },
     {
       "q": "Is it valid to use HAVING with a non-aggregate condition? Is it a good idea?",
-      "answer": "It is valid SQL, but it is inefficient. A non-aggregate condition should go in WHERE to filter rows before they are grouped, reducing work.",
+      "answer": "It is only valid if the column is explicitly in the GROUP BY clause. Even then, it is inefficient compared to WHERE. A non-aggregate condition should go in WHERE to filter rows before they are grouped, reducing work.",
       "tier": "tier2"
     }
   ],
@@ -113,7 +113,7 @@
   "practice_tasks": [
     {
       "title": "Move the filter to the right clause",
-      "prompt": "This query incorrectly puts a row-level filter in HAVING. Move the status condition to WHERE (where it belongs) and keep the aggregate filter in HAVING.",
+      "prompt": "This query contains a syntax error because it puts a row-level filter on an ungrouped column (`status`) in the HAVING clause. Move the `status` condition to WHERE (where it belongs) and keep the aggregate filter in HAVING.",
       "starter_code": "SELECT customer_id, COUNT(*) AS n\nFROM orders\nGROUP BY customer_id\nHAVING status = 'paid' AND COUNT(*) >= 2\nORDER BY customer_id;",
       "solution": "SELECT customer_id, COUNT(*) AS n\nFROM orders\nWHERE status = 'paid'\nGROUP BY customer_id\nHAVING COUNT(*) >= 2\nORDER BY customer_id;"
     }

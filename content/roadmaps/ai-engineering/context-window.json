@@ -54,7 +54,7 @@
       "recap": "Budget: window = system + history + retrieved context + user message + output headroom."
     },
     {
-      "body": "When you overflow, behavior depends on the API. Most modern APIs hard-error with a 400 (context_length_exceeded). Some older setups silently truncate from the left — cutting the oldest messages first — which is how chatbots 'forget'. The safe pattern: count tokens before sending (with tiktoken), and evict the oldest messages when you approach the limit.",
+      "body": "When you overflow, the API throws a hard 400 error. To prevent this, your application must implement a sliding window — silently truncating the oldest messages before calling the API. This application-level truncation is why chatbots forget. The safe pattern: count tokens before sending (with tiktoken), and evict the oldest messages when you approach the limit.",
       "recap": "Overflow either errors or silently truncates. Always count tokens before sending."
     },
     {
@@ -111,7 +111,7 @@
     {
       "question": "A chatbot works perfectly for the first 10 turns but starts giving inconsistent answers by turn 20. You haven't changed the system prompt or the model. What is the most likely cause and how do you fix it?",
       "company": "GenAI Engineer interview",
-      "answer": "Context overflow: the conversation history is exceeding the window, causing silent truncation of earlier messages. The model 'forgot' what was established early. Fix: implement a sliding-window or summarization strategy — evict the oldest messages when approaching the token limit, or compress old turns into a running summary.",
+      "answer": "Context overflow: the application's naive sliding-window logic is evicting the early context to avoid a 400 error, causing the bot to seem like it forgot what was established early. Fix: instead of just dropping messages, add a summarization step to compress old turns into a running summary.",
       "approach": "Name context overflow as the root cause. Distinguish silent truncation (model seems dumb) from a 400 error (call fails). Propose sliding window + token counting as the fix."
     },
     {

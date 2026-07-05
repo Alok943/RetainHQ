@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
 import { useAuth } from './lib/AuthContext';
+import { useToast } from './lib/ToastContext';
 
 const SOURCE_LABELS = {
   problem: 'Problem', lecture: 'Lecture', video: 'Video', book: 'Book',
@@ -174,6 +175,7 @@ function FeedbackModal({ onClose }) {
   const [msg, setMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  const toast = useToast();
 
   const send = async () => {
     if (!msg.trim()) return;
@@ -186,7 +188,7 @@ function FeedbackModal({ onClose }) {
       setDone(true);
       setTimeout(onClose, 2000);
     } catch (e) {
-      alert("Failed to send feedback: " + e.message);
+      toast.error(`Couldn't send feedback: ${e.message}`);
       setSending(false);
     }
   };

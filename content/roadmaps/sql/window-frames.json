@@ -35,7 +35,7 @@
     }
   ],
   "overview": {
-    "what": "Window frames let you narrow down the window of rows for each calculation. By adding a clause like ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW, you can compute running totals (cumulative sums) or moving averages over an ordered set.",
+    "what": "Window frames let you narrow down the window of rows for each calculation. You define the frame boundaries using keywords like `UNBOUNDED PRECEDING` (start of partition), `N PRECEDING` (N rows back), `CURRENT ROW`, and `N FOLLOWING`. By adding a clause like ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW, you can compute running totals (cumulative sums), or use ROWS BETWEEN 1 PRECEDING AND CURRENT ROW for moving averages over an ordered set.",
     "why": "They allow for calculating metrics that accumulate over time (e.g., total sales up to the current day) or smooth out fluctuations (e.g., a 7-day moving average).",
     "where_used": [
       "revenue growth tracking",
@@ -49,7 +49,7 @@
   "common_mistakes": [
     {
       "title": "Default frame with ORDER BY",
-      "explanation": "If you use an ORDER BY in your OVER clause but don't specify a frame, the default is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. This can cause unexpected behavior with tied values."
+      "explanation": "If you use an ORDER BY in your OVER clause but don't specify a frame, the default is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. RANGE groups tied values together and evaluates them as a single block, whereas ROWS strictly evaluates row-by-row. This can cause unexpected behavior with tied values if you meant to use ROWS."
     }
   ],
   "recall_questions": [

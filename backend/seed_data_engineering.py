@@ -1,11 +1,18 @@
 """
 Seed script: Data Engineering roadmap.
 
-Sub-tracks (phase = step spine): Foundations · SQL Depth · Python ETL ·
-Data Warehousing · Orchestration · Big Data · Streaming · Cloud Platforms · Data Quality & Ops.
+Sub-tracks (phase = step spine): SQL Fundamentals · Python for Data · Data Modeling ·
+Big Data & Storage · Distributed Compute · Transformation & Analytics · Orchestration ·
+Streaming & Messaging · Production DataOps.
 
-The DA→DE transition path (JD research run 3): 230k+ open roles, SQL is the #1 filter,
-Airflow/Docker gate the technical screen.
+Node list = the validated node-derivation research run (Gemini Deep Research, 2026-07-04;
+Data Engineer / Analytics Engineer, India metros, 0-4yr). Audit trail + excluded list +
+mock-interview validation in content/research/data-engineering/nodes.md. Evidence-driven: nodes
+map to real Deloitte/EY interview questions + real production incidents, not a textbook TOC.
+
+The DA->DE transition path (JD research run 3): SQL is the #1 filter; Airflow/Spark gate the
+technical screen. Tier mix intentionally spans easy->hard (Spark optimization + idempotency +
+offsets are the differentiator round), NOT beginner-only.
 
 Idempotent. Run: ./.venv/Scripts/python.exe seed_data_engineering.py
 """
@@ -17,73 +24,67 @@ from app.core.database import engine
 ROADMAP_ID = uuid.UUID("60606060-6060-6060-6060-606060606060")
 SLUG = "data-engineering"  # content folder key + URL id; matches content/roadmaps/data-engineering/
 TITLE = "Data Engineering"
-DESCRIPTION = "Pipelines that move and shape data reliably: deep SQL, Python ETL, warehouse modeling, Airflow orchestration, Spark, streaming and one cloud done properly."
+DESCRIPTION = "Reliable pipelines end to end: analytical SQL, Python ingestion, warehouse modeling, Spark at scale, dbt, Airflow orchestration, Kafka, and production DataOps — interview-scoped for 0-4yr roles."
 
+# (phase, section, title, tier, description)
 NODES = [
-    # ---------------- Foundations ----------------
-    ("Foundations", "Landscape", "What a data engineer owns", "easy", "Ingest → store → transform → serve; DE vs DA vs DS."),
-    ("Foundations", "Landscape", "OLTP vs OLAP", "easy", "Row-store transactional DBs vs column-store analytical warehouses."),
-    ("Foundations", "Landscape", "Batch vs streaming", "easy", "Scheduled bulk loads vs continuous event processing."),
-    ("Foundations", "Storage", "File formats: CSV, JSON, Parquet, Avro", "medium", "Columnar (Parquet) wins for analytics; schema evolution matters."),
-    ("Foundations", "Storage", "Data lake vs warehouse vs lakehouse", "medium", "Raw object storage vs modeled warehouse vs Delta/Iceberg hybrid."),
-    ("Foundations", "Contracts", "Schema-on-read vs schema-on-write", "medium", "Where structure is enforced decides where failures surface."),
+    # ---- SQL Fundamentals ----
+    ("SQL Fundamentals", "Query Logic", "NULL join behavior", "easy", "NULL join keys evaluate to unknown; INNER JOIN drops them while LEFT JOIN preserves the left side with empty targets."),
+    ("SQL Fundamentals", "Query Logic", "WHERE vs HAVING", "easy", "WHERE filters source rows before grouping; HAVING filters aggregated results after GROUP BY executes."),
+    ("SQL Fundamentals", "Query Logic", "Three-valued logic", "easy", "SQL uses true, false, and unknown; comparisons with NULL require IS NULL rather than standard equality operators."),
+    ("SQL Fundamentals", "Advanced SQL", "Common Table Expressions", "easy", "CTEs create modular, readable subqueries that avoid nested logic and allow recursive hierarchical data traversal."),
+    ("SQL Fundamentals", "Advanced SQL", "Window functions", "medium", "Window functions compute running totals and rankings over partitions without condensing rows like GROUP BY does."),
 
-    # ---------------- SQL Depth ----------------
-    ("SQL Depth", "Core", "Window functions in anger", "medium", "ROW_NUMBER, LAG/LEAD, running totals — the DE interview staple."),
-    ("SQL Depth", "Core", "CTEs & query decomposition", "easy", "Break 200-line production queries into readable steps."),
-    ("SQL Depth", "Performance", "Explain plans & indexes", "hard", "Read the plan; know why a query is slow before touching it."),
-    ("SQL Depth", "Performance", "Partitioning & clustering", "hard", "Prune data at scan time; the #1 warehouse cost lever."),
-    ("SQL Depth", "Patterns", "Slowly changing dimensions in SQL", "hard", "Type 1 vs Type 2 history tracking."),
-    ("SQL Depth", "Patterns", "Deduplication & late-arriving data", "medium", "QUALIFY/ROW_NUMBER dedupe; idempotent re-loads."),
+    # ---- Python for Data ----
+    ("Python for Data", "Data Structures", "Hash map time complexity", "easy", "Dictionary lookups run in O(1) via hashing, scaling far better than O(N) linear list scans for joins/lookups."),
+    ("Python for Data", "Memory Management", "Generator streams", "medium", "Generators yield items sequentially via lazy evaluation, preventing memory exhaustion when reading massive datasets."),
+    ("Python for Data", "API Integration", "API pagination & backoff", "medium", "Ingesting REST APIs requires offset or cursor looping with exponential backoff retries to prevent rate-limit bans."),
 
-    # ---------------- Python ETL ----------------
-    ("Python ETL", "Core", "Extract-transform-load anatomy", "easy", "Pull, reshape, land — each step restartable."),
-    ("Python ETL", "Core", "pandas for pipeline work", "medium", "Chunked reads, dtype control, merge pitfalls."),
-    ("Python ETL", "Reliability", "Idempotent pipeline design", "hard", "Re-running must not duplicate or corrupt — upserts, staging tables."),
-    ("Python ETL", "Reliability", "Error handling & retries", "medium", "Fail loudly, retry transient errors with backoff."),
-    ("Python ETL", "Production", "Config, secrets & environments", "medium", "Env vars, no hardcoded creds, dev/staging/prod parity."),
-    ("Python ETL", "Production", "Packaging & testing pipelines", "medium", "pytest on transforms; pipelines are code, not scripts."),
+    # ---- Data Modeling ----
+    ("Data Modeling", "Database Concepts", "OLTP vs OLAP", "easy", "OLTP systems optimize for fast row-based transactions; OLAP systems use columnar storage for analytical aggregations."),
+    ("Data Modeling", "Database Concepts", "ACID properties", "easy", "ACID guarantees transactional integrity; failures trigger rollbacks preventing partial, corrupted data states."),
+    ("Data Modeling", "Schema Design", "Normalization vs denormalization", "medium", "Normalization reduces write anomalies by splitting tables; denormalization groups data to speed up analytical reads."),
+    ("Data Modeling", "Schema Design", "Star vs snowflake schema", "easy", "Star schemas use single, denormalized dimension tables; snowflake normalizes dimensions into multiple related tables."),
+    ("Data Modeling", "Schema Design", "Slowly Changing Dimensions", "medium", "SCD Type 1 overwrites history; Type 2 adds rows with start/end dates to track historical changes over time."),
 
-    # ---------------- Data Warehousing ----------------
-    ("Data Warehousing", "Modeling", "Star schema: facts & dimensions", "medium", "The canonical analytics model — grain first."),
-    ("Data Warehousing", "Modeling", "Snowflake schema & normalization trade-offs", "medium", "Normalized dims: less redundancy, more joins."),
-    ("Data Warehousing", "Modeling", "Choosing the grain", "hard", "One row means what? Wrong grain breaks every metric downstream."),
-    ("Data Warehousing", "dbt", "dbt models & refs", "medium", "SQL transforms as versioned, dependency-aware models."),
-    ("Data Warehousing", "dbt", "dbt tests & documentation", "medium", "not_null/unique/relationships tests as CI for data."),
-    ("Data Warehousing", "Loads", "Incremental vs full-refresh loads", "medium", "Merge strategies; when incremental lies to you."),
+    # ---- Big Data & Storage ----
+    ("Big Data & Storage", "Warehousing", "Columnar storage (Parquet)", "medium", "Columnar formats use dictionary encoding and compression to minimize disk IO and enable aggressive column pruning."),
+    ("Big Data & Storage", "Warehousing", "Partitioning & clustering", "medium", "Partitioning prunes data scans by dividing physical storage directories, drastically slashing cloud compute costs."),
+    ("Big Data & Storage", "Warehousing", "Decoupled storage & compute", "medium", "Separating compute from storage lets cloud warehouses scale processing power independently without paying for storage."),
 
-    # ---------------- Orchestration ----------------
-    ("Orchestration", "Airflow", "DAGs, tasks & operators", "medium", "Pipelines as dependency graphs on a schedule."),
-    ("Orchestration", "Airflow", "Scheduling, catchup & backfills", "hard", "Execution dates, data intervals, replaying history."),
-    ("Orchestration", "Airflow", "Sensors & cross-DAG dependencies", "medium", "Wait-for-upstream patterns without deadlocks."),
-    ("Orchestration", "Airflow", "Idempotency & retries in DAGs", "hard", "Task-level retries only help if tasks are safe to re-run."),
-    ("Orchestration", "Alternatives", "Dagster / Prefect at a glance", "easy", "Asset-oriented orchestration; know the landscape."),
+    # ---- Distributed Compute ----
+    ("Distributed Compute", "Spark Core", "RDD vs DataFrame", "easy", "DataFrames provide structured schemas and Catalyst optimization, outperforming low-level unstructured RDD processing."),
+    ("Distributed Compute", "Spark Core", "Lazy evaluation", "medium", "Spark delays execution until an action is called, building a logical plan that optimizes operators before computing."),
+    ("Distributed Compute", "Spark Core", "Wide transformations & shuffling", "medium", "Operations like joins or group-bys trigger wide transformations, moving data across the network and bottlenecking IO."),
+    ("Distributed Compute", "Spark Core", "Cache vs persist", "medium", "Cache stores dataframes in default memory; persist allows specific storage levels like disk-only to prevent OOM errors."),
+    ("Distributed Compute", "Spark Optimization", "Broadcast hash joins", "hard", "Broadcasting small tables to all worker nodes eliminates heavy network shuffles during distributed join operations."),
+    ("Distributed Compute", "Spark Optimization", "Data skew management", "hard", "Salting skewed join keys distributes hot partitions across executors, preventing a single worker node from choking."),
+    ("Distributed Compute", "Spark Optimization", "OOM debugging", "hard", "Driver OOMs result from collecting huge datasets to the master; executor OOMs require tuning overhead or partitions."),
 
-    # ---------------- Big Data ----------------
-    ("Big Data", "Spark", "Why Spark: distributed dataframes", "medium", "When data outgrows one machine; lazy evaluation."),
-    ("Big Data", "Spark", "Transformations vs actions", "medium", "Nothing runs until an action; the DAG behind the API."),
-    ("Big Data", "Spark", "Shuffles, partitions & skew", "hard", "The performance model — wide ops are the expensive ones."),
-    ("Big Data", "Spark", "Joins at scale (broadcast vs sort-merge)", "hard", "Pick the join strategy or Spark picks a slow one."),
-    ("Big Data", "Tables", "Delta Lake / Iceberg table formats", "medium", "ACID on object storage; time travel, compaction."),
+    # ---- Transformation & Analytics ----
+    ("Transformation & Analytics", "Architecture", "ETL vs ELT", "easy", "ETL transforms data before loading to save storage; ELT loads raw data first, using warehouse compute to transform."),
+    ("Transformation & Analytics", "dbt Fundamentals", "Modular models & ref", "easy", "The ref() macro generates dynamic schemas and automatically builds a dependency DAG, ensuring models run in sequence."),
+    ("Transformation & Analytics", "dbt Fundamentals", "dbt tests", "medium", "Generic tests run automated assertion queries checking for nulls and primary key uniqueness on every pipeline run."),
+    ("Transformation & Analytics", "dbt Incremental", "Incremental materialization", "medium", "Incremental models cut compute by selectively processing only new or updated records instead of full-table rebuilds."),
+    ("Transformation & Analytics", "dbt Incremental", "Merge vs append strategies", "medium", "Append blindly adds records; merge uses unique keys to update existing rows and insert new ones, avoiding duplicates."),
+    ("Transformation & Analytics", "dbt Incremental", "Schema change management", "hard", "Setting on_schema_change to sync_all_columns handles upstream column additions without breaking incremental models."),
 
-    # ---------------- Streaming ----------------
-    ("Streaming", "Kafka", "Topics, partitions & consumer groups", "medium", "The distributed log; ordering per partition only."),
-    ("Streaming", "Kafka", "Delivery semantics", "hard", "At-least-once vs exactly-once; where duplicates come from."),
-    ("Streaming", "Processing", "Windowing & watermarks", "hard", "Event time vs processing time; handling lateness."),
-    ("Streaming", "Design", "When streaming is worth it", "medium", "Most 'real-time' asks are micro-batch in disguise."),
+    # ---- Orchestration ----
+    ("Orchestration", "Airflow Core", "DAG topology", "easy", "Directed Acyclic Graphs define task execution order and dependencies, ensuring cycles never create infinite loops."),
+    ("Orchestration", "Airflow Core", "Logical vs execution date", "medium", "Logical date refers to the start of the data interval being processed, not the physical time the pipeline runs."),
+    ("Orchestration", "Airflow Core", "Catchup & backfilling", "medium", "Setting catchup=False stops Airflow from blindly scheduling historical runs for periods when the DAG was paused."),
+    ("Orchestration", "Airflow Core", "XCom state limitations", "medium", "XComs pass small metadata between tasks via the metastore; large dataframes must use object storage to avoid crashing."),
+    ("Orchestration", "Airflow Core", "Sensor reschedule mode", "hard", "Reschedule mode releases worker slots while waiting on external events, preventing idle tasks from exhausting threads."),
 
-    # ---------------- Cloud Platforms ----------------
-    ("Cloud Platforms", "Storage", "Object storage (S3/GCS) as the substrate", "easy", "Cheap, durable, slow-listing; layout & lifecycle rules."),
-    ("Cloud Platforms", "Warehouse", "One warehouse deep: BigQuery/Redshift/Snowflake", "medium", "Slots/RPUs/credits — the cost model IS the skill."),
-    ("Cloud Platforms", "Compute", "Docker for data workloads", "medium", "Reproducible pipeline images; the screen-gate skill."),
-    ("Cloud Platforms", "Movement", "Managed ingestion (Fivetran/Airbyte)", "easy", "Buy vs build for connectors."),
-    ("Cloud Platforms", "Cost", "Cost control & query hygiene", "medium", "Partition pruning, clustering, kill SELECT *."),
+    # ---- Streaming & Messaging ----
+    ("Streaming & Messaging", "Architecture", "Batch vs streaming", "easy", "Batch processes bounded data at intervals; streaming processes continuous, unbounded event data in real time."),
+    ("Streaming & Messaging", "Kafka", "Topics & partitions", "medium", "Kafka topics are split into partitions, allowing horizontal scalability as consumer groups process segments in parallel."),
+    ("Streaming & Messaging", "Kafka", "Offsets & at-least-once", "hard", "Consumers track read progress via offsets; committing offsets after processing guarantees at-least-once delivery."),
 
-    # ---------------- Data Quality & Ops ----------------
-    ("Data Quality & Ops", "Quality", "Data quality checks & contracts", "medium", "Freshness, volume, schema, nulls — checked in-pipeline."),
-    ("Data Quality & Ops", "Quality", "Data lineage & observability", "medium", "Trace a bad number back to its source."),
-    ("Data Quality & Ops", "Ops", "Incident response for pipelines", "medium", "Backfill playbooks; communicate blast radius."),
-    ("Data Quality & Ops", "Governance", "PII handling & access control", "medium", "Masking, least privilege, retention."),
+    # ---- Production DataOps ----
+    ("Production DataOps", "Architecture", "Medallion architecture", "easy", "Bronze stores raw data, Silver deduplicates and cleanses, and Gold structures business-level aggregates for reporting."),
+    ("Production DataOps", "Reliability", "Idempotent pipelines", "hard", "Idempotent pipelines produce identical outputs regardless of run frequency, preventing duplicate data on re-execution."),
+    ("Production DataOps", "Reliability", "Schema drift validation", "hard", "Data contracts block unexpected upstream schema changes, protecting downstream BI tables from silent corruption."),
 ]
 
 

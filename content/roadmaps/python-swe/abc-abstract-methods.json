@@ -23,7 +23,7 @@
     ]
   },
   "overview": {
-    "what": "The `abc` module provides the `ABC` class and `@abstractmethod` decorator to define Abstract Base Classes. These classes cannot be instantiated directly and force child classes to implement specific methods before they can be instantiated. Think of it like a strict contract or a blueprint: a 'Vehicle' blueprint says you must build an 'engine', but you can't drive the blueprint itself. In Python, if a child class inherits from `ABC` but forgets to override an `@abstractmethod`, Python raises an error at instantiation time, not when the method is called.",
+    "what": "The `abc` module provides the `ABC` class and `@abstractmethod` decorator to define Abstract Base Classes. These classes cannot be instantiated directly and force child classes to implement specific methods before they can be instantiated. Think of it like a strict contract or a blueprint: a 'Vehicle' blueprint says you must build an 'engine', but you can't drive the blueprint itself. In Python, if a child class inherits from `ABC` but forgets to override an `@abstractmethod`, Python raises an error at instantiation time, not when the method is called. A subclass cannot be instantiated until it implements EVERY `@abstractmethod` -- an ABC is an enforced interface contract.",
     "why": "It prevents developers from accidentally creating incomplete subclasses, enforcing a strict API contract across a codebase and catching bugs early.",
     "where_used": [
       "Django BaseCommand",

@@ -84,9 +84,9 @@
   "practice_tasks": [
     {
       "name": "Add Configuration to a Decorator",
-      "description": "We have a basic `@retry` decorator that retries a function 3 times. Modify it into a decorator factory `retry(max_retries)` so we can configure the number of retries per function.",
-      "starter_code": "import functools\n\ndef retry(func): # TODO: Change to a factory taking `max_retries`\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        for _ in range(3): # TODO: Use max_retries\n            result = func(*args, **kwargs)\n        return result\n    return wrapper\n\n# TODO: Update this to @retry(max_retries=2)\n@retry\ndef fetch():\n    return 'data'",
-      "solution_code": "import functools\n\ndef retry(max_retries):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for _ in range(max_retries):\n                result = func(*args, **kwargs)\n            return result\n        return wrapper\n    return decorator\n\n@retry(max_retries=2)\ndef fetch():\n    return 'data'"
+      "description": "We have a basic `@repeat` decorator that repeats a function 3 times. Modify it into a decorator factory `repeat(times)` so we can configure the number of repeats per function.",
+      "starter_code": "import functools\n\ndef repeat(func): # TODO: Change to a factory taking `times`\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        for _ in range(3): # TODO: Use times\n            result = func(*args, **kwargs)\n        return result\n    return wrapper\n\n# TODO: Update this to @repeat(times=2)\n@repeat\ndef fetch():\n    return 'data'",
+      "solution_code": "import functools\n\ndef repeat(times):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for _ in range(times):\n                result = func(*args, **kwargs)\n            return result\n        return wrapper\n    return decorator\n\n@repeat(times=2)\ndef fetch():\n    return 'data'"
     }
   ],
   "code_walkthrough": {

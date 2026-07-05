@@ -910,6 +910,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
               predictions={viz.predictions || []}
               repeatedDecision={mm.repeated_decision || ''}
               steps={viz.steps || []}
+              code={viz.code || null}
             />
           </Suspense>
         </Section>
