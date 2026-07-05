@@ -1,0 +1,83 @@
+{
+  "slug": "vtable-vptr-dynamic-dispatch-overhead",
+  "title": "vtable, vptr & dynamic dispatch overhead",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "inheritance-and-virtual-functions-vtable"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You are writing a High-Frequency Trading (HFT) matching engine. You use a clean OOP design with a base `Order` class and virtual `execute()` methods. Profiling reveals your application is running 20% slower than expected.",
+    "question": "Why does using the `virtual` keyword silently tank performance in ultra-low-latency systems?"
+  },
+  "mental_model": {
+    "intuition": "Standard function calls are like a direct flight\u2014the CPU knows exactly where to go. Virtual function calls are like a connecting flight with a layover. You first have to fly to a lookup table (vtable) to figure out where your final destination is. That extra stop takes time.",
+    "description": "Dynamic dispatch in C++ is implemented using a Virtual Table (vtable) and a hidden Virtual Pointer (vptr) in every object. This introduces memory overhead (the vptr), an extra pointer dereference at runtime, and inhibits compiler optimizations like inlining, causing cache misses and branch mispredictions."
+  },
+  "explanation": "**1. Memory Overhead (vptr):**\nWhen a class contains even one `virtual` function, the compiler silently inserts a hidden pointer (the `vptr`) into every instance of that class. This pointer points to the class's `vtable`. If you create an array of 1,000,000 objects, that's an extra 8 Megabytes of RAM consumed just by hidden pointers.\n\n**2. The Double Dereference (vtable):**\nThe `vtable` is a static array of function pointers created once per class. When you call `obj->virtual_func()`, the CPU must:\n1. Dereference `obj` to find the `vptr`.\n2. Dereference the `vptr` to find the `vtable`.\n3. Look up the correct function pointer in the `vtable`.\n4. Jump to that function's address.\nThis indirection takes more CPU cycles than a direct `CALL` instruction.\n\n**3. Cache Misses & Branch Prediction:**\nThe biggest hidden cost is not the dereference itself, but memory latency. The `vtable` might not be in the L1 CPU cache. Fetching it from main memory causes a massive pipeline stall. Furthermore, because the destination address is unknown until runtime, the CPU's branch predictor often fails, requiring the CPU to flush its pipeline.\n\n**4. Loss of Inlining:**\nCompilers speed up code by 'inlining' small functions (copy-pasting the function body directly into the caller to avoid function call overhead). Because the compiler doesn't know which virtual function will be called until runtime, it usually *cannot* inline virtual functions. **Devirtualization** is the exception: if the compiler can statically prove the exact type at compile time (e.g., if you call the virtual function on a concrete, stack-allocated object rather than a base pointer), it bypasses the vtable and inlines the call.",
+  "code_snippets": [
+    {
+      "title": "The Hidden Costs of Virtual Functions",
+      "language": "cpp",
+      "code": "struct NonVirtual {\n    void doWork() {} // Direct call, can be inlined\n};\n\nstruct Virtual {\n    virtual void doWork() {} // Requires vptr and vtable\n};\n\nint main() {\n    NonVirtual n;\n    Virtual v;\n    \n    // sizeof(n) is 1 byte (empty structs are 1 byte in C++)\n    // sizeof(v) is 8 bytes (because it contains a hidden 64-bit vptr)\n}",
+      "explanation": "Adding a virtual function silently increases the size of every object. In tight data-oriented designs (like ECS in game engines or order books in HFT), this ruins cache density."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Making everything virtual 'just in case'",
+      "explanation": "Developers coming from Java or C# (where methods are virtually dispatched by default) often apply the `virtual` keyword to every C++ method out of habit. In C++, you only pay for what you use. Making functions virtual by default introduces widespread, unnecessary performance penalties."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two internal mechanisms does a C++ compiler use to implement dynamic dispatch?",
+      "answer": "A per-class static array of function pointers called the Virtual Table (vtable), and a hidden per-object pointer called the Virtual Pointer (vptr) that points to the vtable.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do virtual functions prevent compiler inlining?",
+      "answer": "Inlining requires the compiler to know exactly which function will be executed at compile time. Virtual functions are resolved dynamically at runtime, so the compiler cannot replace the call with the function body.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does adding a virtual function affect the `sizeof()` an object?",
+      "answer": "It increases the size of every instance of the class by the size of a pointer (e.g., 8 bytes on a 64-bit system) to store the hidden `vptr`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A game engine loop iterates over 10,000 `GameObject` pointers, calling a virtual `update()` method on each. Profiling shows intense CPU stalling. Why?",
+      "answer": "Because the objects are scattered in memory, iterating over pointers causes continuous L1 cache misses. Each virtual call then requires fetching a `vtable` (another potential cache miss) and executing an indirect branch, which breaks CPU pipeline prediction.",
+      "approach": "Understand the interaction between virtual dispatch and CPU caches/branch prediction."
+    },
+    {
+      "question": "An interviewer asks: 'Can a C++ compiler ever inline a virtual function call?'",
+      "answer": "Yes, but only through 'Devirtualization'. If the compiler can statically prove the exact type of the object at compile time (e.g., if you call the virtual function on a concrete stack-allocated object rather than a base pointer/reference), it bypasses the vtable and can inline the call.",
+      "approach": "Recognize edge cases where the compiler can optimize away dynamic dispatch."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Double memory lookup",
+      "detail": "Virtual calls require dereferencing the vptr, then looking up the function in the vtable."
+    },
+    {
+      "title": "Cache and pipeline killer",
+      "detail": "Virtual calls prevent inlining, cause instruction cache misses, and hinder branch prediction."
+    }
+  ],
+  "why_it_exists": "While dynamic polymorphism (OOP) is a powerful design pattern for decoupling code, C++ is designed for zero-overhead abstractions. C++ exposes the exact costs of the vtable so systems engineers can choose when to pay the price for polymorphism, and when to stick to static dispatch (like compile-time templates) for maximum performance.",
+  "sources": [
+    "https://preshing.com/20140317/what-is-a-vtable/"
+  ]
+}

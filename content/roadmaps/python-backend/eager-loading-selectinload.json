@@ -1,0 +1,110 @@
+{
+  "slug": "eager-loading-selectinload",
+  "title": "Eager Loading with selectinload",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "sessions-and-expire-on-commit"
+    ],
+    "unlocks": [
+      "n-plus-1-queries"
+    ],
+    "project_usage": [
+      "Fetching relationships",
+      "Optimizing queries"
+    ]
+  },
+  "hook": {
+    "scenario": "You fetch a list of 50 users and return it. Then you add their 'team' name to the Pydantic response model. Suddenly your simple endpoint is throwing a MissingGreenlet crash, or making 51 database queries and taking 2 seconds to load."
+  },
+  "mental_model": {
+    "intuition": "Lazy loading is sending the intern to the basement archives 50 times to fetch one file each. Eager loading is giving them a list of 50 files upfront and having them bring the whole box up at once.",
+    "description": "Instead of waiting for the code to ask for related data one-by-one (lazy loading), eager loading instructs the ORM to fetch the parent rows AND all their related child rows in one cohesive database operation."
+  },
+  "sections": [
+    {
+      "body": "By default, SQLAlchemy handles relationships (like User.team or Post.comments) lazily. When you query a User, it does NOT fetch the Team. It waits until you actually type user.team.name in your code, and then it fires a new SELECT query.",
+      "recap": "Relationships are ignored by the database until explicitly requested."
+    },
+    {
+      "body": "In synchronous code, lazy loading inside a loop causes the N+1 queries performance issue. In async code, it is fatal: it crashes with MissingGreenlet because it tries to perform network I/O without an await statement.",
+      "recap": "Lazy loading crashes async SQLAlchemy applications."
+    },
+    {
+      "body": "The solution is eager loading: telling SQLAlchemy upfront to fetch the related data at the same time it fetches the parent. The modern, highly optimized way to do this in SQLAlchemy is using the selectinload strategy.",
+      "recap": "Eager loading grabs related data in the initial database trip."
+    },
+    {
+      "body": "selectinload works by emitting the main query (fetching Users), collecting all their IDs, and then emitting exactly ONE more query (fetching Teams WHERE id IN (...)). It then stitches them together in Python memory.",
+      "recap": "selectinload emits exactly 2 queries, avoiding expensive Cartesian product JOINs."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The MissingGreenlet relationship crash",
+      "language": "python",
+      "code": "async def get_users(session: AsyncSession):\n    result = await session.execute(select(User))\n    users = result.scalars().all()\n    \n    # CRASH: user.team is not loaded, triggers sync lazy-load\n    return [{\"name\": u.name, \"team\": u.team.name} for u in users]",
+      "explanation": "Because team wasn't loaded in the initial query, accessing u.team attempts to fire a synchronous query, causing a MissingGreenlet exception in the async engine."
+    },
+    {
+      "title": "The fix: selectinload",
+      "language": "python",
+      "code": "from sqlalchemy.orm import selectinload\n\nasync def get_users_eager(session: AsyncSession):\n    # Tell SQLAlchemy to fetch the 'team' relationship upfront\n    stmt = select(User).options(selectinload(User.team))\n    \n    result = await session.execute(stmt)\n    users = result.scalars().all()\n    \n    # Works instantly in memory. Total queries = 2.\n    return [{\"name\": u.name, \"team\": u.team.name} for u in users]",
+      "explanation": "Using .options(selectinload(...)) instructs SQLAlchemy to fetch all related teams in a single batch query right after fetching the users."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "selectinload is the default choice",
+      "detail": "It emits exactly 2 queries regardless of row count, safely loading one-to-many collections."
+    },
+    {
+      "title": "joinedload vs selectinload",
+      "detail": "joinedload uses a SQL JOIN (1 query). selectinload uses an IN clause (2 queries). selectinload is generally safer because joinedload duplicates parent row data for every child row."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to eager load in async",
+      "explanation": "In sync Python, forgetting to eager load just makes your app slow (N+1). In async Python, it hard-crashes your app (MissingGreenlet)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does selectinload do under the hood?",
+      "answer": "It executes a second query using an IN clause to fetch all related records for the primary objects, then populates the relationship attributes in memory.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is lazy-loading relationships fatal in async SQLAlchemy?",
+      "answer": "It triggers an implicit, synchronous network call without an await, which the asyncio event loop forbids, raising a MissingGreenlet error.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How many queries does selectinload execute to fetch 100 users and their teams?",
+      "answer": "Exactly 2. One for the users, and one for the teams (WHERE team_id IN ...).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You're reviewing an async FastAPI endpoint that fetches a list of orders. The code loops through the orders and accesses `order.customer.email`. The author complains it's throwing MissingGreenlet. How do you fix it?",
+      "answer": "The customer relationship is being lazy-loaded inside the loop. Fix it by modifying the initial query to include .options(selectinload(Order.customer)) so the data is eagerly loaded into memory upfront.",
+      "company": "Backend Engineer Interview"
+    },
+    {
+      "question": "When would you prefer selectinload over joinedload for eager loading?",
+      "answer": "When loading one-to-many or many-to-many collections. joinedload creates a Cartesian product (duplicating parent rows for every child row), which inflates memory usage over the network. selectinload cleanly separates them into two queries.",
+      "company": "System Design Interview"
+    }
+  ],
+  "sources": [
+    "https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html#selectinload"
+  ]
+}

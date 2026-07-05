@@ -1,0 +1,114 @@
+{
+  "slug": "transactions-and-atomicity",
+  "title": "Transactions and Atomicity",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "alembic-migrations"
+    ],
+    "unlocks": [
+      "connection-pooling"
+    ],
+    "project_usage": [
+      "Ensuring data integrity",
+      "Financial transactions"
+    ]
+  },
+  "hook": {
+    "scenario": "Your e-commerce app charges the user's Stripe card successfully, but then the database crashes before creating the Order record. The user was charged, but has no receipt and no item is shipped."
+  },
+  "mental_model": {
+    "intuition": "A transaction is an all-or-nothing wrapper. If you're buying a house, the money transfer and the deed transfer are a transaction. If one fails, the other is reversed. You never end up without money AND without a house.",
+    "description": "Atomicity ensures that a sequence of database operations is treated as a single indivisible unit. If any operation in the sequence fails, the entire sequence is rolled back, leaving the database exactly as it was before."
+  },
+  "sections": [
+    {
+      "body": "Atomicity (the 'A' in ACID) means a series of database operations either completely succeed or completely fail. In SQLAlchemy, a Session represents an ongoing transaction.",
+      "recap": "A Session is a transaction manager."
+    },
+    {
+      "body": "When you add objects to a session, nothing is permanently written to the database yet. You must call session.commit() to finalize the transaction. If something goes wrong before the commit, or if you explicitly call session.rollback(), all changes are discarded.",
+      "recap": "Changes are staged until commit(). rollback() discards them."
+    },
+    {
+      "body": "In FastAPI, it's a best practice to manage the session lifecycle using a dependency (using yield). If the endpoint completes successfully, you commit. If an exception is raised anywhere in the endpoint, the dependency catches it and rolls back the transaction.",
+      "recap": "FastAPI dependencies can automatically commit on success and rollback on error."
+    },
+    {
+      "body": "This guarantees that partial data is never saved. For example, if you deduct inventory and then fail to create the invoice, the inventory deduction is rolled back, preventing corrupted state.",
+      "recap": "Atomicity prevents inconsistent, corrupted database states."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Transactional Dependency",
+      "language": "python",
+      "code": "async def get_db():\n    async with async_session() as session:\n        try:\n            yield session\n            await session.commit()  # Success: save everything\n        except Exception:\n            await session.rollback() # Error: undo everything\n            raise",
+      "explanation": "This FastAPI dependency ensures every HTTP request runs inside a single database transaction. If the code throws an exception, the database automatically reverts any partial changes made during that request."
+    },
+    {
+      "title": "All-or-Nothing execution",
+      "language": "python",
+      "code": "@app.post(\"/transfer\")\nasync def transfer_money(from_id: int, to_id: int, db: AsyncSession = Depends(get_db)):\n    sender = await db.get(Account, from_id)\n    receiver = await db.get(Account, to_id)\n    \n    sender.balance -= 100\n    db.add(sender)\n    \n    # If the app crashes HERE, the commit is never reached.\n    # The get_db dependency triggers a rollback.\n    # The sender doesn't lose their 100.\n    \n    receiver.balance += 100\n    db.add(receiver)\n    # get_db will commit both changes atomically",
+      "explanation": "Because both add operations share the same session, they are committed together. The system can never end up in an inconsistent state where money is destroyed."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "ACID properties",
+      "detail": "Atomicity guarantees all-or-nothing execution, protecting against crashes midway through a process."
+    },
+    {
+      "title": "Session = Transaction",
+      "detail": "In SQLAlchemy, the Session acts as the transaction manager. Changes are staged until commit()."
+    },
+    {
+      "title": "Rollback on error",
+      "detail": "Always ensure session.rollback() is called if an exception occurs to clean up the session state."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Committing too early",
+      "explanation": "Calling commit() multiple times inside a single endpoint breaks atomicity. If step 1 commits, and step 2 fails, step 1 cannot be rolled back."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does atomicity mean in the context of databases?",
+      "answer": "It means a group of operations is treated as a single, indivisible unit that either completely succeeds or completely fails.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you discard pending changes in a SQLAlchemy session?",
+      "answer": "By calling session.rollback().",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it recommended to use a FastAPI dependency (yield) to manage session commits?",
+      "answer": "Because the dependency can wrap the endpoint execution in a try/except block, automatically committing on success and rolling back if any exception is raised.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In our billing service, we deduct funds from a user's wallet, and then call a third-party API to issue a gift card. If the API times out, the user loses their money but gets no card. How do we fix this?",
+      "answer": "Wrap the database deduction and the API call in a single transaction block. If the API call fails or times out, raise an exception which triggers a database rollback, restoring the user's funds.",
+      "company": "Backend Engineer Interview"
+    },
+    {
+      "question": "Why is it dangerous to call session.commit() inside a loop?",
+      "answer": "It breaks atomicity. If the loop crashes halfway through, the items processed before the crash are permanently saved, while the rest are lost, leaving the system in an inconsistent state.",
+      "company": "System Design Interview"
+    }
+  ],
+  "sources": [
+    "https://docs.sqlalchemy.org/en/20/orm/session_basics.html"
+  ]
+}

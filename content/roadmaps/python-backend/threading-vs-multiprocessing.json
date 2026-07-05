@@ -1,0 +1,86 @@
+{
+  "slug": "threading-vs-multiprocessing",
+  "title": "Threading vs Multiprocessing",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "the-gil"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to scale a Python script. Should you use `threading` or `multiprocessing`? Pick wrong, and your script might crash your server with out-of-memory errors, or run slower than it did on one core."
+  },
+  "mental_model": {
+    "intuition": "Threads are workers sharing the same desk and tools. Processes are workers in completely separate rooms, each with their own copy of the tools.",
+    "description": "Threads run in the same memory space, making them lightweight and easy to share data, but they are limited by the GIL. Processes spawn an entirely new Python interpreter with its own memory space and its own GIL, allowing true parallelism across CPU cores."
+  },
+  "sections": [
+    {
+      "body": "Threading is lightweight. Because all threads share the same memory, starting a thread is fast, and they can easily read the same variables. The massive downside is the GIL: only one thread can execute Python code at a time. This makes threads perfect for I/O-bound tasks (waiting on the network or DB), because they drop the GIL while waiting.",
+      "recap": "Threading: Shared memory, blocked by the GIL, perfect for I/O-bound work."
+    },
+    {
+      "body": "Multiprocessing bypasses the GIL entirely. It spawns a brand new OS process, which gets its own memory and its own Python interpreter (meaning its own GIL). If you have 4 cores, 4 processes can run Python code at the exact same time. The downside is heavy overhead: creating processes is slow, they use 4x the RAM, and sharing data between them requires serialising it (Pickle) and sending it over pipes/queues.",
+      "recap": "Multiprocessing: Separate memory, bypasses the GIL, required for CPU-bound work."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Threading (I/O-Bound)",
+      "language": "python",
+      "code": "import threading\nimport requests\n\ndef fetch_url(url):\n    # Drops the GIL while waiting for the network\n    response = requests.get(url)\n    print(f\"Fetched {url}\")\n\nurls = [\"https://example.com\"] * 10\nthreads = []\n\nfor url in urls:\n    t = threading.Thread(target=fetch_url, args=(url,))\n    threads.append(t)\n    t.start()\n\nfor t in threads:\n    t.join()",
+      "explanation": "Since `requests.get` is I/O-bound, the GIL is released. All 10 threads can wait for their HTTP responses concurrently in the same memory space. Fast and memory-efficient."
+    },
+    {
+      "title": "Multiprocessing (CPU-Bound)",
+      "language": "python",
+      "code": "from multiprocessing import Pool\nimport math\n\ndef heavy_computation(num):\n    # CPU-bound: pure math\n    return math.factorial(num)\n\nif __name__ == '__main__':\n    numbers = [50000, 50001, 50002, 50003]\n    \n    # Spawns 4 separate Python processes, utilising 4 CPU cores\n    with Pool(processes=4) as pool:\n        results = pool.map(heavy_computation, numbers)\n        \n    print(\"Done\")",
+      "explanation": "If we used threads here, the GIL would force them to run sequentially. By using a Process Pool, the OS distributes the 4 isolated processes across 4 physical cores, achieving true parallelism."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Sharing complex objects in multiprocessing",
+      "explanation": "In threads, modifying a global list is easy (though you need locks to prevent race conditions). In multiprocessing, variables aren't shared. If Process A modifies a list, Process B won't see the change. You must use `multiprocessing.Queue` or shared memory arrays to communicate between processes, which has serialization overhead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which approach (threading or multiprocessing) shares the same memory space?",
+      "answer": "Threading. Multiprocessing spawns entirely separate memory spaces."
+    },
+    {
+      "q": "Which approach is required to bypass the GIL in Python?",
+      "answer": "Multiprocessing. Each process gets its own GIL, allowing true parallelism."
+    },
+    {
+      "q": "Why shouldn't you use multiprocessing for a simple script that downloads 100 images?",
+      "answer": "Downloading images is I/O-bound. Multiprocessing adds massive memory and startup overhead. Threading (or asyncio) can handle I/O concurrently within a single process much more efficiently."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Threading vs multiprocessing \u2014 which for CPU-bound work?",
+      "company": "Backend Engineer interview",
+      "answer": "Multiprocessing. CPU-bound work (like data processing or image resizing) requires the CPU to constantly execute instructions. In Python, the GIL prevents threads from running in parallel, meaning threads would just fight for execution time and run slower. Multiprocessing bypasses the GIL by creating isolated processes, allowing true parallel execution across multiple cores.",
+      "approach": "Always link CPU-bound to Multiprocessing, and explicitly mention the GIL as the reason why Threading fails for this use case."
+    },
+    {
+      "question": "Why is threading often preferred for web scraping or making thousands of API calls?",
+      "company": "System Design",
+      "answer": "Web scraping is heavily I/O-bound. The script spends 99% of its time waiting for the network to respond. Threads drop the GIL during I/O, allowing concurrent execution. Since threads share memory, they are much lighter to spawn and use vastly less RAM than spawning thousands of full OS processes.",
+      "approach": "Contrast the low memory footprint of threads with the heavy footprint of processes, and explain that the GIL isn't a bottleneck for I/O."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/multiprocessing.html",
+    "https://docs.python.org/3/library/threading.html"
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "slug": "middleware-and-cors",
+  "title": "Middleware & CORS",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "routers-and-app-structure"
+    ],
+    "unlocks": [
+      "pydantic-settings"
+    ],
+    "appears_in": [
+      "Backend API design",
+      "Production debugging"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "middleware",
+      "definition": "Code that runs before every request hits your route handler, and after every response leaves it."
+    },
+    {
+      "term": "CORS",
+      "definition": "Cross-Origin Resource Sharing. A browser security mechanism that restricts web pages from making requests to a different domain than the one that served the web page."
+    },
+    {
+      "term": "preflight request",
+      "definition": "An HTTP OPTIONS request sent by the browser before the actual request, to check if the server permits the cross-origin request."
+    }
+  ],
+  "hook": {
+    "scenario": "Your frontend is on `app.example.com` and your backend is on `api.example.com`. You test the API in Postman—it works perfectly. You deploy the frontend, open the browser, and see a massive red 'Blocked by CORS policy' error. Your backend logs show the request never even reached your code.",
+    "question": "Why did the browser block the request, and how do you configure your server to allow it without opening a massive security hole?"
+  },
+  "mental_model": {
+    "intuition": "Middleware is the bouncer at the club door. CORS is the VIP guest list the bouncer checks.",
+    "description": "Middleware sits perfectly between the internet and your route handlers. Every request passes through it on the way in, and every response passes through it on the way out. CORS (Cross-Origin Resource Sharing) is a specific built-in middleware. When a browser tries to call your API from a different domain, it first asks for permission. The CORS middleware checks an allow-list and adds specific HTTP headers to the response telling the browser, 'Yes, this frontend is allowed to talk to me.'"
+  },
+  "sections": [
+    {
+      "body": "Middleware wraps the entire request/response lifecycle. You write a function that takes a request, does something (like logging or timing), hands the request to the rest of the application (the `call_next` step), and then gets the response back to modify before sending it to the user.",
+      "recap": "Middleware executes both before and after your route handler runs."
+    },
+    {
+      "body": "The most critical middleware you'll configure is CORS. By default, browsers enforce the Same-Origin Policy: a script on `example.com` cannot fetch data from `api.com`. If it tries, the browser blocks it to prevent malicious sites from stealing user data. CORS is how your API relaxes this rule.",
+      "recap": "CORS is a browser security feature, not a backend security feature. Your API must explicitly opt-in."
+    },
+    {
+      "body": "When making complex requests (like sending JSON or using auth headers), the browser first sends an `OPTIONS` request called a 'preflight'. It asks the server, 'Are you okay with a POST from this domain?' If your CORS middleware isn't configured, the server rejects the preflight, and the actual POST never happens.",
+      "recap": "Browsers send an OPTIONS preflight request to check CORS permissions before the real request."
+    },
+    {
+      "body": "In FastAPI, you add `CORSMiddleware` to your app. The golden rule for production: never use `allow_origins=['*']` if you are dealing with authenticated users. The CORS specification strictly forbids combining wildcard origins with `allow_credentials=True`. You must maintain an explicit allow-list of your frontend domains.",
+      "recap": "Never use a wildcard `*` for CORS origins if your API accepts credentials (cookies, auth headers)."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "A custom timing middleware",
+      "language": "python",
+      "code": "import time\nfrom fastapi import FastAPI, Request\n\napp = FastAPI()\n\n@app.middleware(\"http\")\nasync def add_process_time_header(request: Request, call_next):\n    start_time = time.time()\n    \n    # 1. Pass request down the chain to the router/handler\n    response = await call_next(request)\n    \n    # 2. Modify the response on the way out\n    process_time = time.time() - start_time\n    response.headers[\"X-Process-Time\"] = str(process_time)\n    return response",
+      "explanation": "Middleware forms an onion around your app. Code before `call_next` runs on the incoming request; code after runs on the outgoing response. The handler inside is totally unaware."
+    },
+    {
+      "title": "The dangerous/invalid CORS setup",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\n\napp = FastAPI()\n\n# ❌ DO NOT DO THIS\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],           # Wildcard origin\n    allow_credentials=True,        # + Credentials = ERROR\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)",
+      "explanation": "If `allow_credentials=True`, the CORS spec prohibits `allow_origins=[\"*\"]`. Browsers will reject this setup, and FastAPI will often throw a startup error. You cannot blindly trust every domain with user credentials."
+    },
+    {
+      "title": "Production CORS setup (explicit allow-list)",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\n\napp = FastAPI()\n\n# ✅ Read from environment/settings in production\nALLOWED_ORIGINS = [\n    \"https://app.example.com\",\n    \"https://staging.example.com\",\n    \"http://localhost:3000\",  # For local frontend dev\n]\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=ALLOWED_ORIGINS,\n    allow_credentials=True,\n    allow_methods=[\"GET\", \"POST\", \"PUT\", \"DELETE\"],\n    allow_headers=[\"Authorization\", \"Content-Type\"],\n)",
+      "explanation": "An explicit allow-list ensures only your verified frontends can make credentialed requests to your API. Always load these origins from environment variables via Pydantic settings so they can change per environment."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a wildcard '*' with credentials",
+      "explanation": "Setting `allow_origins=[\"*\"]` while `allow_credentials=True` is a security violation. The browser will block the response because the server is recklessly allowing any domain to send user cookies or tokens."
+    },
+    {
+      "title": "Forgetting the trailing slash difference",
+      "explanation": "CORS origins must match exactly. `https://example.com` is not the same as `https://example.com/`. Browsers send the origin without the trailing slash, so your allow-list should omit it too."
+    },
+    {
+      "title": "Testing CORS in Postman and assuming it works",
+      "explanation": "Postman is not a browser. It ignores the Same-Origin Policy and doesn't send preflight `OPTIONS` requests. An API that works perfectly in Postman will still fail in Chrome if the CORS middleware is missing."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary purpose of HTTP middleware?",
+      "answer": "To intercept and process requests before they reach the route handler, and modify responses before they are returned to the client (e.g., logging, CORS, timing).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is a CORS preflight request?",
+      "answer": "An HTTP OPTIONS request sent automatically by the browser to check if the server permits the actual cross-origin request. If the server doesn't respond with the correct CORS headers, the real request is blocked.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it invalid to combine `allow_origins=[\"*\"]` with `allow_credentials=True`?",
+      "answer": "It's a security risk. If a server accepts credentials (like session cookies or auth headers), it must explicitly declare exactly which origins are allowed to make those requests, rather than trusting the entire internet.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does an API request work in Postman but fail with a CORS error in the browser?",
+      "answer": "CORS is enforced by the browser, not the server. Postman doesn't enforce the Same-Origin Policy, so it simply makes the request directly without checking CORS headers.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your API is deployed. The frontend on a different domain makes a POST request with an Authorization header. The browser console shows a CORS error. How do you resolve this in FastAPI?",
+      "company": "Backend debugging scenario",
+      "answer": "Add `CORSMiddleware` to the FastAPI app. Configure `allow_origins` to explicitly include the frontend's domain URL (no trailing slash). Set `allow_credentials=True`, and ensure `allow_methods` and `allow_headers` include 'POST' and 'Authorization'.",
+      "approach": "Identify that the browser blocked the cross-origin request because the server didn't supply the right headers. The fix is explicitly configuring the backend CORS middleware to authorize that specific origin."
+    },
+    {
+      "question": "How would you implement a system to measure the exact processing time of every API request and log it?",
+      "company": "API Design interview",
+      "answer": "Use a middleware function. Record the start time before calling `call_next(request)`, wait for the response, record the end time, calculate the difference, log it, and optionally add it as a custom header to the outgoing response.",
+      "approach": "Middleware is the perfect pattern for cross-cutting concerns like logging or timing, as it wraps the entire request lifecycle centrally without touching individual route handlers."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/cors/",
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS"
+  ]
+}

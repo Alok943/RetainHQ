@@ -1,0 +1,120 @@
+{
+  "slug": "routers-and-app-structure",
+  "title": "Routers & App Structure",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "request-body-and-response-model"
+    ],
+    "unlocks": [
+      "async-vs-def-endpoints"
+    ]
+  },
+  "hook": {
+    "scenario": "Your FastAPI app started as a sleek 50-line `main.py`. Six months later, it's a 4,000-line monster. Every time someone adds a route, you get Git merge conflicts. Finding the logic for updating a user profile involves scrolling past 50 unrelated endpoints.",
+    "question": "How do you split a FastAPI application across multiple files without breaking the routing?"
+  },
+  "mental_model": {
+    "intuition": "A router is a specialized department in a store. `main.py` is just the store's front door.",
+    "description": "Think of `main.py` as the store directory at the entrance. It doesn't stock the shelves; it just says 'Groceries are down Aisle 1, Electronics are down Aisle 2'. In FastAPI, an `APIRouter` acts as a 'mini-FastAPI' app for a specific department (like users or items). You define routes on the router, and then the main app simply 'includes' the router, pointing traffic to it."
+  },
+  "sections": [
+    {
+      "body": "When building an API, grouping related endpoints (like all `/users` operations or all `/orders` operations) is crucial for maintainability. If you put everything in one file, it becomes unreadable and causes merge conflicts on a team.",
+      "recap": "Single-file APIs do not scale to team development."
+    },
+    {
+      "body": "FastAPI provides `APIRouter`, which works exactly like the main `FastAPI` app instance but is designed to be modular. You create an `APIRouter` in a separate file, attach routes to it using `@router.get()` or `@router.post()`, and export it.",
+      "recap": "An APIRouter is a 'mini-app' that holds a group of related endpoints."
+    },
+    {
+      "body": "In your `main.py`, you wire these modules together using `app.include_router()`. When you include a router, you can assign a common `prefix` (like `/users`) and `tags` (for the OpenAPI docs). This saves you from typing `/users` on every single route in the router file.",
+      "recap": "The main app imports and includes routers, often applying a common prefix."
+    },
+    {
+      "body": "Because you can apply prefixes at the `include_router` level, the paths inside the router file should be relative to that prefix. If your prefix is `/users`, a route for `/users/{id}` should just be defined as `/{id}` in the router.",
+      "recap": "Router paths combine with the include prefix to form the final URL."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "1. The Router File (routers/users.py)",
+      "language": "python",
+      "code": "from fastapi import APIRouter\n\n# Create a router specifically for user-related endpoints\nrouter = APIRouter()\n\n# Note the path is just \"/\", because we will prefix it with \"/users\" in main.py\n@router.get(\"/\")\ndef get_users():\n    return [{\"username\": \"alice\"}, {\"username\": \"bob\"}]\n\n@router.get(\"/{user_id}\")\ndef get_user(user_id: int):\n    return {\"user_id\": user_id, \"username\": \"alice\"}",
+      "explanation": "We use `APIRouter` instead of `FastAPI`. The paths here (`/` and `/{user_id}`) are intentionally missing the `/users` prefix, making the code more DRY (Don't Repeat Yourself)."
+    },
+    {
+      "title": "2. The Main App (main.py)",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nfrom routers import users  # Import the module containing your router\n\napp = FastAPI()\n\n# Wire the router into the main app, applying the prefix here\napp.include_router(\n    users.router,\n    prefix=\"/users\",\n    tags=[\"Users\"]\n)\n\n@app.get(\"/\")\ndef root():\n    return {\"message\": \"Welcome to the API\"}",
+      "explanation": "The main app acts as a registry. By passing `prefix=\"/users\"`, FastAPI automatically prepends it to every route inside `users.router`. The final URLs become `/users/` and `/users/{user_id}`."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Modularity",
+      "detail": "Use APIRouter to break large applications into smaller, manageable files grouped by resource."
+    },
+    {
+      "title": "Prefixing",
+      "detail": "Apply URL prefixes in `include_router` to avoid repeating them on every route definition."
+    },
+    {
+      "title": "OpenAPI Tags",
+      "detail": "Passing `tags` to `include_router` automatically groups all those endpoints together in the /docs UI."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Double prefixing the URL path",
+      "explanation": "Setting `prefix=\"/users\"` in `include_router`, but then defining the route as `@router.get(\"/users/{id}\")` inside the router. This results in the URL `/users/users/{id}`."
+    },
+    {
+      "title": "Forgetting to include the router",
+      "explanation": "Creating a beautiful router file with 20 endpoints, but forgetting to call `app.include_router()` in `main.py`. The app will run, but requesting any of those endpoints returns a 404 Not Found."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What FastAPI class is used to create a modular group of routes in a separate file?",
+      "answer": "`APIRouter`",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you connect an `APIRouter` to the main FastAPI application?",
+      "answer": "By calling `app.include_router(my_router)` in the main application file.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you call `app.include_router(items.router, prefix=\"/items\")` and the router has a route `@router.get(\"/{id}\")`, what is the final URL?",
+      "answer": "`/items/{id}`",
+      "tier": "tier2"
+    },
+    {
+      "q": "You wrote a new router file, but all its endpoints are returning 404 Not Found. What is the most likely oversight?",
+      "answer": "Forgetting to import the router and call `app.include_router()` in `main.py`.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you structure a large FastAPI application to prevent `main.py` from becoming an unmaintainable monolith?",
+      "answer": "Split endpoints by resource into separate files using `APIRouter`. Each file acts as a mini-app (e.g., `users.py`, `orders.py`). Then, import these routers into `main.py` and register them using `app.include_router()`, often applying a common prefix like `/users` to the entire group.",
+      "company": "Backend Engineer interview"
+    },
+    {
+      "question": "A developer adds a router to a FastAPI app with `app.include_router(users_router, prefix=\"/api/users\")`. Inside the router, they define a route as `@router.get(\"/api/users/profile\")`. What bug does this introduce?",
+      "answer": "Double prefixing. The final URL generated by FastAPI will concatenate them, resulting in `/api/users/api/users/profile`. The route inside the router should just be `@router.get(\"/profile\")`.",
+      "company": "API Design screen"
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/bigger-applications/"
+  ]
+}

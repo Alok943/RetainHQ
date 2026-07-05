@@ -1,0 +1,85 @@
+{
+  "slug": "uvicorn-gunicorn-workers",
+  "title": "Uvicorn, Gunicorn, and Workers",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "wsgi-vs-asgi"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Production deployment",
+      "Performance tuning"
+    ]
+  },
+  "hook": {
+    "scenario": "You deploy your blazing-fast async FastAPI app using `uvicorn app.main:app`. Under load, it maxes out exactly 1 CPU core at 100%, while the other 7 cores sit completely idle."
+  },
+  "mental_model": {
+    "intuition": "Uvicorn is a chef working on a single stove (one process, one event loop). No matter how fast they juggle orders asynchronously, they only have two hands. Gunicorn is a restaurant manager that hires N chefs (worker processes) so you can utilize the whole kitchen."
+  },
+  "sections": [
+    {
+      "body": "Because of Python's Global Interpreter Lock (GIL), a single Python process can only execute on one CPU core at a time, regardless of how many async tasks or threads it spins up."
+    },
+    {
+      "body": "Uvicorn is an ASGI server. It runs an event loop in a single process. It handles concurrent I/O brilliantly, but it cannot utilize multiple CPU cores."
+    },
+    {
+      "body": "To scale across cores, we use Gunicorn as a process manager. Gunicorn forks the application into multiple independent worker processes, each running an instance of Uvicorn. This bypasses the GIL entirely."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Development Server (Single Core)",
+      "language": "bash",
+      "code": "uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      "explanation": "This runs one process. Fine for development, but in production, it will bottleneck on a single CPU core."
+    },
+    {
+      "title": "Production Server (Ground Truth)",
+      "language": "bash",
+      "code": "gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000",
+      "explanation": "Gunicorn acts as the master process. `-w 4` creates 4 separate Python processes. `-k` tells them to use the Uvicorn ASGI worker class. 4 event loops, 4 CPU cores utilized."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming async bypasses the GIL",
+      "explanation": "`asyncio` allows concurrency for I/O bounds, but it does NOT bypass the GIL. CPU-bound work (like JSON parsing or image processing) in an async endpoint will block the event loop. Multi-processing (workers) is the only way to scale CPU in Python."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a raw `uvicorn` deployment only utilize one CPU core?",
+      "answer": "Because it runs as a single Python process, which is constrained to one core by the Global Interpreter Lock (GIL)."
+    },
+    {
+      "q": "What role does Gunicorn play when deployed with FastAPI?",
+      "answer": "It acts as a process manager, spawning multiple independent Uvicorn worker processes to utilize multiple CPU cores."
+    },
+    {
+      "q": "How do multiple worker processes bypass the GIL?",
+      "answer": "The GIL is per-process. By creating entirely separate Python processes, each has its own GIL and can execute simultaneously on different cores."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If you have N Gunicorn workers, how does memory usage scale?",
+      "answer": "Memory scales linearly (N \u00d7 memory). Since they are independent processes, they do not share memory space. Every worker loads the entire application and its dependencies into RAM."
+    },
+    {
+      "question": "A request taking 2 seconds of heavy CPU calculation brings your entire API to a halt. You are using Gunicorn with 4 workers. Why did it halt, and how do you fix it?",
+      "answer": "CPU-bound work blocks the asyncio event loop. With 4 workers, if 4 users make that request, all 4 event loops are blocked. The fix is to offload the CPU-bound task to a background queue (like Celery/Redis) rather than doing it in the API request lifecycle."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/deployment/server-workers/"
+  ]
+}

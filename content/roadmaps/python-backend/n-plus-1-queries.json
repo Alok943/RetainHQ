@@ -1,0 +1,114 @@
+{
+  "slug": "n-plus-1-queries",
+  "title": "The N+1 Queries Problem",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "eager-loading-selectinload"
+    ],
+    "unlocks": [
+      "alembic-migrations"
+    ],
+    "project_usage": [
+      "Performance debugging",
+      "Database optimization"
+    ]
+  },
+  "hook": {
+    "scenario": "Your staging environment runs lightning fast. But in production, the 'All Posts' dashboard takes 6 seconds to load. You check the database logs and see 501 identical SELECT queries executed in the span of one HTTP request."
+  },
+  "mental_model": {
+    "intuition": "N+1 is asking the librarian for a book, walking back to your desk, realizing you need the author's biography, walking back to the librarian, and repeating this for all 100 books on your desk instead of bringing a trolley once.",
+    "description": "The N+1 problem occurs when an application executes one database query to retrieve a list of N records, and then executes an additional query for each of those N records to fetch related data."
+  },
+  "sections": [
+    {
+      "body": "The N+1 query problem is the most common performance killer in ORM-backed applications. It occurs when your code executes one query (1) to retrieve a list of N parent records, and then loops through them, executing a new query (N) for each parent to fetch its children.",
+      "recap": "1 query for the list + N queries for the children = N+1 total queries."
+    },
+    {
+      "body": "ORMs make this incredibly easy to do by accident. Because relationships look like simple object attributes (e.g., post.author.name), developers forget that accessing that attribute traverses a network boundary to the database if the data isn't already loaded.",
+      "recap": "ORMs abstract away the network, making expensive queries look like cheap memory accesses."
+    },
+    {
+      "body": "In local development, the database is on your machine (0ms latency), so 500 queries take 10ms. In production, the database is on another server (e.g., 2ms latency). 501 queries × 2ms = a full second of pure network waiting, completely locking up the web worker.",
+      "recap": "N+1 is a network latency multiplier, which is why it hides in local dev."
+    },
+    {
+      "body": "To detect this, you should enable SQL statement logging in your development environment (in SQLAlchemy, echo=True). The fix is always eager loading—instructing the ORM to fetch the related records in the initial query using a JOIN or an IN clause.",
+      "recap": "Detect with SQL logs, fix with eager loading."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Silent Killer (Sync Python example)",
+      "language": "python",
+      "code": "# 1 query to fetch N posts\nposts = session.query(Post).limit(50).all()\n\nresults = []\nfor p in posts:\n    # N queries: one for every post to fetch the user!\n    author_name = p.author.name \n    results.append({\"title\": p.title, \"author\": author_name})",
+      "explanation": "The code looks innocent because p.author is just an attribute access. But behind the scenes, the ORM pauses execution and sends a `SELECT * FROM users WHERE id = ?` to the database 50 times."
+    },
+    {
+      "title": "The SQL Log Signature",
+      "language": "sql",
+      "code": "SELECT * FROM posts LIMIT 50;\nSELECT * FROM users WHERE id = 1;\nSELECT * FROM users WHERE id = 2;\nSELECT * FROM users WHERE id = 3;\n-- ... repeats 47 more times",
+      "explanation": "This is what N+1 looks like in your console when ORM logging is enabled (echo=True). It is highly recognizable by the rapid-fire, identical queries varying only by ID."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Latency multiplies",
+      "detail": "N+1 is a network latency problem, not a database CPU problem. Sequential round-trips kill performance."
+    },
+    {
+      "title": "ORMs hide the network",
+      "detail": "Because ORMs map tables to objects, they abstract away the network cost of attribute access."
+    },
+    {
+      "title": "Detection via echo=True",
+      "detail": "Always run your local development database engine with SQL logging enabled so you can literally see N+1s scrolling by."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Testing with 5 rows",
+      "explanation": "N+1 hides in development because tables are small and the DB is local. It explodes in production when N grows to 100 or 1,000 and network latency is introduced."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What do the '1' and the 'N' stand for in 'N+1 queries'?",
+      "answer": "The '1' is the initial query to fetch a list of parent records. The 'N' is the number of subsequent queries executed in a loop to fetch related data for each of the N parents.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the N+1 problem much worse in production than in local development?",
+      "answer": "Because of network latency. A local database has near-zero latency, while a production database server adds a few milliseconds to every single query, which multiplies drastically in a loop.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you visually detect N+1 queries during development in SQLAlchemy?",
+      "answer": "By setting echo=True on the database engine, which prints all generated SQL to the console, revealing the repetitive queries.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An endpoint that lists a user's 20 recent transactions is slow. You look at Datadog and see the endpoint spends 90% of its time waiting on the database, but the database CPU is at 2%. What is likely happening?",
+      "answer": "This is the classic signature of an N+1 query problem. The application is doing many sequential round-trips to the database. The database is idle most of the time because it executes the tiny queries instantly, but the network latency between the app and the DB adds up.",
+      "company": "Backend Engineer Interview"
+    },
+    {
+      "question": "How does an ORM's architecture make the N+1 problem easy to introduce?",
+      "answer": "By using lazy-loading relationships. Traversing an unloaded relationship (like order.items) looks like a simple memory access in Python, but it implicitly blocks and emits a SQL query over the network.",
+      "company": "System Design Interview"
+    }
+  ],
+  "sources": [
+    "https://docs.sqlalchemy.org/en/20/glossary.html#term-N-plus-one-problem"
+  ]
+}

@@ -25,11 +25,11 @@
   "glossary": [
     {
       "term": "encapsulate",
-      "definition": "To bundle data and the methods that operate on that data into a single, enclosed unit, keeping it safe from outside interference. A closure encapsulates its `count` variable so callers cannot access it directly: `counter = make_counter()`."
+      "definition": "To bundle data and the methods that operate on that data into a single, enclosed unit, keeping it safe from outside interference. Example: `counter = make_counter()`."
     },
     {
       "term": "functional code",
-      "definition": "A style of programming that emphasizes using functions as the primary building blocks, avoiding shared state or side effects. For example, `total = sum(map(double, numbers))` is written in a functional style."
+      "definition": "A style of programming that emphasizes using functions as the primary building blocks, avoiding shared state or side effects. Example: `total = sum(map(double, numbers))`."
     }
   ],
   "overview": {
@@ -48,7 +48,7 @@
   "common_mistakes": [
     {
       "title": "Forgetting the nonlocal keyword",
-      "explanation": "If you try to read and update an enclosed variable (like `count += 1`) without `nonlocal`, Python marks it as a local variable due to the assignment, causing an `UnboundLocalError` when it tries to read the uninitialized local. You must explicitly declare `nonlocal var_name` to modify the trapped state."
+      "explanation": "If you try to read and update an enclosed variable, Python marks it as a local variable, causing an `UnboundLocalError`. You must explicitly declare `nonlocal var_name` to modify the trapped state."
     },
     {
       "title": "Accidental shared state",

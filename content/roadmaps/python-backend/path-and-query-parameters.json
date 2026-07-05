@@ -1,0 +1,145 @@
+{
+  "slug": "path-and-query-parameters",
+  "title": "Path & Query Parameters",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "runtime": "python",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["wsgi-vs-asgi"],
+    "unlocks": ["request-body-and-response-model"],
+    "project_usage": ["Building REST APIs", "Filtering collections", "Fetching specific resources"]
+  },
+  "overview": {
+    "what": "Path parameters identify a specific resource in a URL, while query parameters provide optional instructions like filtering or sorting.",
+    "why": "They are the standard way HTTP clients send scalar data. Frameworks like FastAPI map these directly to Python function arguments and validate them automatically.",
+    "where_used": [
+      "RESTful resource lookups (e.g., `/users/123`).",
+      "Pagination (e.g., `?limit=10&offset=20`).",
+      "Filtering lists (e.g., `?status=active`)."
+    ]
+  },
+  "why_learning_this": [
+    "It's the fundamental way you route requests to the right data.",
+    "Understanding the difference dictates good API design.",
+    "FastAPI's auto-validation catches 90% of bad client requests automatically."
+  ],
+  "hook": {
+    "scenario": "Ever seen a route for `/users/me` return a 422 validation error saying 'me' is not a valid integer? That happens when dynamic path parameters swallow requests meant for static routes."
+  },
+  "mental_model": {
+    "intuition": "Path parameters are the 'address' of a specific house (required to find it). Query parameters are the 'instructions' you leave in the mailbox (optional modifiers)."
+  },
+  "sections": [
+    {
+      "title": "Path Parameters: Identifying Resources",
+      "body": "Path parameters are variables embedded in the URL path. In FastAPI, you define them in the route decorator using curly braces `{}` and match the name in the function signature. Because HTTP paths are strings, type hints (like `int`) tell FastAPI to automatically convert and validate the incoming data."
+    },
+    {
+      "title": "Query Parameters: Filtering and Options",
+      "body": "Any function parameter that is NOT explicitly part of the path template becomes a query parameter. They appear after the `?` in the URL as key-value pairs (`?skip=0&limit=10`). They are typically used for optional settings like pagination or filters."
+    },
+    {
+      "title": "The Routing Order Trap",
+      "body": "Frameworks evaluate routes top-to-bottom. If you have a dynamic path like `/users/{user_id}` defined *before* a static path like `/users/me`, the framework will try to parse 'me' as a `user_id`. Always declare static, specific routes before dynamic ones."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Routing Bug",
+      "language": "python",
+      "code": "from fastapi import FastAPI\n\napp = FastAPI()\n\n# ❌ BUG: Dynamic route defined before static route\n@app.get(\"/users/{user_id}\")\ndef get_user(user_id: int):\n    return {\"user_id\": user_id}\n\n@app.get(\"/users/me\")\ndef get_current_user():\n    return {\"user_id\": \"current_user\"}",
+      "explanation": "If a client requests `/users/me`, it hits the first route. FastAPI tries to convert 'me' to an `int` and throws a 422 Validation Error."
+    },
+    {
+      "title": "The Fix",
+      "language": "python",
+      "code": "from fastapi import FastAPI\n\napp = FastAPI()\n\n# ✅ FIX: Static routes must precede dynamic ones\n@app.get(\"/users/me\")\ndef get_current_user():\n    return {\"user_id\": \"current_user\"}\n\n@app.get(\"/users/{user_id}\")\ndef get_user(user_id: int):\n    return {\"user_id\": user_id}",
+      "explanation": "Now, `/users/me` matches first. Any other `/users/123` falls through to the dynamic path parameter route."
+    },
+    {
+      "title": "Combining Path and Query Parameters",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nfrom typing import Optional\n\napp = FastAPI()\n\n@app.get(\"/items/{item_id}\")\ndef read_item(\n    item_id: int,           # Path parameter (required)\n    q: Optional[str] = None, # Query parameter (optional)\n    limit: int = 10         # Query parameter (optional, defaults to 10)\n):\n    return {\"item_id\": item_id, \"q\": q, \"limit\": limit}",
+      "explanation": "Because `q` and `limit` aren't in the path `/items/{item_id}`, FastAPI knows they are query parameters. A request to `/items/42?q=test` automatically populates the variables."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Shadowing static routes with dynamic path parameters",
+      "explanation": "Placing `/items/{item_id}` before `/items/recent`. The router matches top-down, so it treats 'recent' as the ID, often crashing on type validation if ID expects an integer."
+    },
+    {
+      "title": "Forgetting default values for optional query parameters",
+      "explanation": "Defining a function argument like `search_term: str` without a default value means FastAPI will reject requests that don't include `?search_term=...`. Use `search_term: str | None = None` to make it optional."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does FastAPI distinguish between a path parameter and a query parameter?",
+      "answer": "If the parameter name is declared in the route path template (e.g., `{item_id}`), it's a path parameter. Any other function arguments are automatically treated as query parameters.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why will requesting `/users/admin` return a 422 error if the only route defined is `@app.get('/users/{user_id}')` where `user_id: int`?",
+      "answer": "FastAPI intercepts the string 'admin', attempts to cast it to the type hint `int`, fails, and automatically returns a 422 Unprocessable Entity error.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you make a query parameter optional in FastAPI?",
+      "answer": "Assign it a default value in the function signature, typically `None` (e.g., `q: str | None = None`).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "company": "Startup",
+      "question": "How do you define optional query parameters in FastAPI, and how does validation work?",
+      "answer": "You define them as function arguments with a default value, usually `None`. FastAPI validates their types based on the Python type hints and automatically returns a 422 error if the types are incorrect.",
+      "approach": "Explain that parameters not in the path template are query parameters by default. Emphasize that providing a default value makes them optional, and that type hints power the auto-validation and OpenAPI schema generation."
+    },
+    {
+      "company": "Mid-tier",
+      "question": "What happens if you have a dynamic route like `/users/{id}` defined before a static route like `/users/me`?",
+      "answer": "FastAPI evaluates routes sequentially. The dynamic route `/users/{id}` will match the request for `/users/me`. If `id` is typed as an integer, it will fail with a 422 error because 'me' cannot be parsed as an integer. Static routes must always be defined before dynamic routes.",
+      "approach": "Identify the routing order issue immediately. Explain the top-down matching mechanism of the router and state the best practice of placing specific (static) routes above generic (dynamic) ones."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "If a client sends a GET request to `/files/report?format=pdf`, what will this endpoint return?",
+      "code": "@app.get(\"/files/{file_name}\")\ndef get_file(file_name: str, format: str = \"csv\"):\n    return {\"file\": file_name, \"fmt\": format}",
+      "answer": "`{\"file\": \"report\", \"fmt\": \"pdf\"}`",
+      "why": "`file_name` is extracted from the path ('report'), and `format` is extracted from the query string, overriding the default 'csv' with 'pdf'."
+    },
+    {
+      "type": "find-bug",
+      "question": "This API has two endpoints for fetching posts. Why is the 'latest' endpoint failing with validation errors?",
+      "code": "@app.get(\"/posts/{post_id}\")\ndef get_post(post_id: int):\n    return {\"id\": post_id}\n\n@app.get(\"/posts/latest\")\ndef get_latest_post():\n    return {\"id\": 999}",
+      "answer": "The dynamic path `/posts/{post_id}` is defined *before* the static path `/posts/latest`.",
+      "why": "FastAPI evaluates routes in the order they are defined. The router sees `/posts/latest`, matches it to `/posts/{post_id}`, and fails trying to convert the string 'latest' into an integer `post_id`."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Add Pagination",
+      "prompt": "Modify the endpoint to support pagination using query parameters `skip` and `limit`. Make `skip` default to 0 and `limit` default to 10.",
+      "starter_code": "from fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/users\")\ndef get_users():\n    return {\"message\": \"Return users here\"}",
+      "solution": "from fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/users\")\ndef get_users(skip: int = 0, limit: int = 10):\n    return {\"skip\": skip, \"limit\": limit}"
+    }
+  ],
+  "challenge": {
+    "title": "Combined Parameters",
+    "prompt": "Create an endpoint at `/departments/{dept_id}/employees` that takes the `dept_id` as an integer path parameter, and an optional string query parameter `role` (defaulting to `None`). It should return a dictionary with both values.",
+    "solution": "from fastapi import FastAPI\nfrom typing import Optional\n\napp = FastAPI()\n\n@app.get(\"/departments/{dept_id}/employees\")\ndef get_employees(dept_id: int, role: Optional[str] = None):\n    return {\"dept_id\": dept_id, \"role\": role}"
+  },
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/path-params/",
+    "https://fastapi.tiangolo.com/tutorial/query-params/"
+  ]
+}

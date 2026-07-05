@@ -1,0 +1,85 @@
+{
+  "slug": "structured-logging-prod",
+  "title": "Structured Logging in Prod",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "middleware-and-cors"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Production observability",
+      "Debugging distributed systems"
+    ]
+  },
+  "hook": {
+    "scenario": "A user complains that checkout failed at 3:14 PM. You search your text logs, but hundreds of concurrent requests are intermixed. You can't figure out which log lines belong to their request."
+  },
+  "mental_model": {
+    "intuition": "Standard logs are strings designed for human eyes. Structured logs are JSON objects designed for machines (like Datadog or Splunk). By attaching a unique `request_id` to every log emitted during a request, you can instantly filter and trace a single user's journey."
+  },
+  "sections": [
+    {
+      "body": "In production, `print()` and standard Python `logging` text strings are insufficient. They cannot be easily queried or filtered in centralized log aggregators."
+    },
+    {
+      "body": "Structured logging outputs a JSON object for every log line. Each object contains standard fields: timestamp, severity level, module, and a context payload."
+    },
+    {
+      "body": "A critical backend pattern is injecting a correlation ID (`request_id`). A middleware generates a UUID when the request starts, stores it in context variables (`contextvars`), and the logger automatically appends it to every log emitted during that request lifecycle."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Bad: Text logging",
+      "language": "python",
+      "code": "import logging\n\nlogging.info(f\"User {user_id} bought item {item_id}\")\n# Output: 2026-05-12 12:00:00 INFO User 42 bought item 99",
+      "explanation": "If you want to find all purchases of item 99, you have to write a brittle regex parser."
+    },
+    {
+      "title": "Good: Structured logging with context",
+      "language": "python",
+      "code": "import structlog\nfrom contextvars import ContextVar\n\nrequest_id_var = ContextVar(\"request_id\")\nlogger = structlog.get_logger()\n\n# In a FastAPI Middleware:\nrequest_id_var.set(\"uuid-1234\")\n\n# Anywhere in the app:\nlogger.info(\"item_purchased\", user_id=42, item_id=99)\n\n# Output: {\"event\": \"item_purchased\", \"user_id\": 42, \"item_id\": 99, \"request_id\": \"uuid-1234\"}",
+      "explanation": "The output is JSON. Log aggregators automatically parse it, allowing you to instantly search `request_id=uuid-1234` and see everything that happened."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Leaking context across requests",
+      "explanation": "If you use global variables or thread locals for the `request_id` in an async app, requests will overwrite each other's IDs. You MUST use Python's `contextvars`, which are natively async-safe."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is JSON preferred over plain text for production logging?",
+      "answer": "JSON can be automatically parsed, indexed, and queried by log management systems like Datadog or ELK."
+    },
+    {
+      "q": "What is a correlation ID or request ID?",
+      "answer": "A unique identifier generated at the start of a request and attached to all log messages related to that request, allowing you to trace the flow."
+    },
+    {
+      "q": "Which Python module must be used to store request context safely in `async` applications?",
+      "answer": "`contextvars`."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How would you trace a request that starts in a FastAPI service, calls a microservice, and then updates a database?",
+      "answer": "I would generate a `request_id` in the API gateway/middleware. I'd include it in structured logs locally, and inject it into the HTTP headers when calling the microservice so the downstream service logs with the exact same ID."
+    },
+    {
+      "question": "Why shouldn't you use standard Python threading locals for context in FastAPI?",
+      "answer": "FastAPI uses `asyncio`. Multiple concurrent requests share the same thread (the event loop). Thread locals would leak state between requests; `contextvars` natively handle async task separation."
+    }
+  ],
+  "sources": [
+    "https://www.structlog.org/en/stable/"
+  ]
+}

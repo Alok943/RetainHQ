@@ -1,0 +1,83 @@
+{
+  "slug": "hardening-health-rate-limit-jwt",
+  "title": "Hardening, Health, and Rate Limits",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": [
+      "Securing APIs",
+      "Production readiness"
+    ]
+  },
+  "hook": {
+    "scenario": "A malicious user writes a script to hit your login endpoint 10,000 times a second. Your database gets overwhelmed, and the entire platform goes down for everyone."
+  },
+  "mental_model": {
+    "intuition": "Hardening an API is like building a castle. CORS is the drawbridge (who can enter from a browser). Rate limiting is the turnstile (how fast they can enter). Health checks are the flag on the tower signaling the castle is functional."
+  },
+  "sections": [
+    {
+      "body": "Before going to production, an API needs protective boundaries."
+    },
+    {
+      "body": "A Health Check is a simple `/health` endpoint that returns a 200 OK. Load balancers (like AWS ALB or Kubernetes) ping this constantly to know if the container is alive or needs to be restarted."
+    },
+    {
+      "body": "Rate Limiting prevents abuse (DDoS or scraping). It tracks the number of requests per IP or user over a time window and returns a `429 Too Many Requests` if the limit is exceeded."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Bad: Global CORS with Credentials",
+      "language": "python",
+      "code": "from fastapi.middleware.cors import CORSMiddleware\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n)",
+      "explanation": "This is a massive security flaw. Allowing credentials (cookies/auth) with a wildcard origin allows any malicious website to impersonate users via CSRF."
+    },
+    {
+      "title": "Good: Specific CORS and Health Check",
+      "language": "python",
+      "code": "app.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"https://myapp.com\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n)\n\n@app.get(\"/health\")\ndef health_check():\n    # Optionally verify DB connection here\n    return {\"status\": \"ok\"}",
+      "explanation": "CORS is strictly limited to the frontend domain. The health check allows the load balancer to monitor the service."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Doing heavy work in a health check",
+      "explanation": "If your `/health` endpoint queries 5 external services, a failure in one non-critical service might cause the load balancer to kill the container, taking the whole app down. Keep health checks lightweight."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What HTTP status code is returned when a client exceeds a rate limit?",
+      "answer": "429 Too Many Requests."
+    },
+    {
+      "q": "Why must `allow_origins` not be `[\"*\"]` when `allow_credentials=True`?",
+      "answer": "It creates a Cross-Site Request Forgery (CSRF) vulnerability, allowing any website to make authenticated requests on behalf of the user."
+    },
+    {
+      "q": "What is the purpose of a `/health` endpoint?",
+      "answer": "To provide a lightweight ping for load balancers or orchestrators (like Kubernetes) to verify the service is running and ready to accept traffic."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you implement rate limiting in a distributed system with multiple worker processes?",
+      "answer": "You must use a centralized in-memory store like Redis. If you use local memory, each worker or container will have its own counter, allowing the user to bypass the limit."
+    },
+    {
+      "question": "What is the difference between Authentication and Rate Limiting, and which happens first?",
+      "answer": "Rate limiting (often per IP) usually happens first to prevent volumetric attacks before the server spends CPU verifying passwords or JWTs. Authentication proves identity; rate limiting restricts volume."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/cors/"
+  ]
+}

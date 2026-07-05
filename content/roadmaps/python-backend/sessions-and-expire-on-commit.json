@@ -1,0 +1,114 @@
+{
+  "slug": "sessions-and-expire-on-commit",
+  "title": "Sessions and expire_on_commit",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "sqlalchemy-sqlmodel-async"
+    ],
+    "unlocks": [
+      "eager-loading-selectinload"
+    ],
+    "project_usage": [
+      "FastAPI database dependencies",
+      "Querying related data"
+    ]
+  },
+  "hook": {
+    "scenario": "You query a User from the database and return it from your FastAPI endpoint. It works locally. But when the frontend requests the User's posts, your app crashes with a MissingGreenlet exception."
+  },
+  "mental_model": {
+    "intuition": "A database session is like a shopping cart. Calling commit() is checking out. By default, SQLAlchemy empties the cart (expires objects) after checkout, meaning any further look at the items requires a new trip to the store.",
+    "description": "When a transaction ends, SQLAlchemy expires the objects associated with it. Reading an attribute on an expired object triggers an automatic background query to fetch fresh data. In asynchronous code, this invisible query crashes because it isn't awaited."
+  },
+  "sections": [
+    {
+      "body": "The AsyncSession is your workspace. You fetch objects, modify them, and call commit(). By default, SQLAlchemy sets expire_on_commit=True. This means after a commit, all objects in the session are marked as 'expired'.",
+      "recap": "Committing a session expires its objects by default."
+    },
+    {
+      "body": "If you try to read an attribute on an expired object, SQLAlchemy normally triggers a lazy-load (a new SELECT query) behind the scenes to refresh it. In synchronous code, this just runs a query. But in async code, you cannot run network I/O implicitly during a simple attribute access like user.name.",
+      "recap": "Attribute access is synchronous. You cannot await user.name."
+    },
+    {
+      "body": "Because an attribute access isn't awaited, SQLAlchemy's async engine throws a MissingGreenlet error when it tries and fails to fetch the data. The event loop cannot pause for a magic, invisible network call.",
+      "recap": "Unawaited background queries in async contexts throw MissingGreenlet."
+    },
+    {
+      "body": "The fix is two-part: First, set expire_on_commit=False when creating your async_sessionmaker. This tells SQLAlchemy to let you keep reading the object's data in memory after the commit, without triggering a refresh. Second, for relationships, you must explicitly load them at query time.",
+      "recap": "Disable expire_on_commit so objects remain readable in memory."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The MissingGreenlet crash",
+      "language": "python",
+      "code": "async def get_user(session: AsyncSession, user_id: int):\n    user = await session.get(User, user_id)\n    await session.commit()  # object is expired here!\n    \n    # Crash! user.name tries to lazy-load synchronously\n    return {\"name\": user.name}",
+      "explanation": "Because the session committed with expire_on_commit=True (the default), user.name attempts a database trip. Since it's not awaited, the async engine crashes with MissingGreenlet."
+    },
+    {
+      "title": "The fix: expire_on_commit=False",
+      "language": "python",
+      "code": "from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine\n\nengine = create_async_engine(\"postgresql+asyncpg://...\")\n# Fix: Disable expiry so objects remain readable after commit\nasync_session = async_sessionmaker(\n    engine, \n    expire_on_commit=False\n)\n\nasync def get_user_fixed(session: AsyncSession, user_id: int):\n    user = await session.get(User, user_id)\n    await session.commit() \n    return {\"name\": user.name}  # Works, reads from memory",
+      "explanation": "By configuring the session maker with expire_on_commit=False, objects retain their state in memory after the transaction closes, preventing implicit I/O."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "No implicit I/O in async",
+      "detail": "You cannot do network calls during standard attribute access (like user.name)."
+    },
+    {
+      "title": "MissingGreenlet = unawaited DB call",
+      "detail": "This error almost always means SQLAlchemy tried to lazy-load data in an async context."
+    },
+    {
+      "title": "expire_on_commit=False",
+      "detail": "The standard best practice configuration for async SQLAlchemy sessions."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Leaving expire_on_commit=True in async apps",
+      "explanation": "This forces you to return raw dicts instead of ORM objects from your DB layer, or crashes your app when serialization libraries (like Pydantic) touch the object's attributes to build a JSON response."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does expire_on_commit=True do in SQLAlchemy?",
+      "answer": "It marks all objects in the session as expired after a commit, forcing a new database query if their attributes are accessed again.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does lazy-loading crash async SQLAlchemy with a MissingGreenlet error?",
+      "answer": "Lazy-loading triggers a network query implicitly during an attribute access (like obj.name). Because it isn't awaited, the async engine cannot yield to the event loop, causing a crash.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you configure a SQLAlchemy async session to prevent attribute-access crashes after a commit?",
+      "answer": "Pass expire_on_commit=False to the async_sessionmaker.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your FastAPI endpoint queries a record, updates a view counter, commits the session, and then returns the record. It throws a MissingGreenlet exception when Pydantic tries to serialize the response. Why?",
+      "answer": "The commit expired the object. When Pydantic reads its attributes to serialize the response, SQLAlchemy tries to lazy-load the data synchronously, which is illegal in async code. Set expire_on_commit=False on the session.",
+      "company": "Backend Engineer Interview"
+    },
+    {
+      "question": "Can we just await the attribute access, like `await user.name`, to fix MissingGreenlet?",
+      "answer": "No, Python properties and attribute access cannot be awaited natively. The data must be loaded into memory before the attribute is accessed.",
+      "company": "Python Backend Interview"
+    }
+  ],
+  "sources": [
+    "https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#preventing-implicit-io-when-using-asyncio"
+  ]
+}

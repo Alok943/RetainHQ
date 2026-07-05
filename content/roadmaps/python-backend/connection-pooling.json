@@ -1,0 +1,112 @@
+{
+  "slug": "connection-pooling",
+  "title": "Database Connection Pooling",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "transactions-and-atomicity"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Scaling the database layer",
+      "Handling high traffic"
+    ]
+  },
+  "hook": {
+    "scenario": "Your app goes viral. You get 5,000 concurrent users. Suddenly, Postgres refuses all connections with `FATAL: sorry, too many clients already`. Your app is entirely offline."
+  },
+  "mental_model": {
+    "intuition": "A connection pool is like a taxi rank at an airport. Instead of buying a new car every time a passenger arrives (expensive and slow), passengers take an available taxi, use it, and return it to the rank for the next person.",
+    "description": "Connection pooling maintains a fixed number of open database connections. The application borrows a connection, executes a query, and returns the connection to the pool rather than closing it. This eliminates the massive overhead of TCP and authentication handshakes on every request."
+  },
+  "sections": [
+    {
+      "body": "Opening a TCP connection to a database is extremely slow and expensive. It requires TCP handshakes, TLS negotiation, and authentication. If every HTTP request opened a new connection, your API latency would be terrible.",
+      "recap": "Opening database connections is slow."
+    },
+    {
+      "body": "Databases also have strict limits on concurrent connections (e.g., Postgres defaults to 100). If you have 200 web workers all trying to connect at once, the database will reject the excess connections and crash your application.",
+      "recap": "Databases limit the total number of simultaneous connections."
+    },
+    {
+      "body": "A Connection Pool solves this. When your application starts, it creates a 'pool' of a fixed number of open database connections (e.g., 20). When a request comes in, it borrows a connection from the pool, uses it, and returns it.",
+      "recap": "Pools reuse a small number of connections to serve thousands of requests."
+    },
+    {
+      "body": "SQLAlchemy provides connection pooling out of the box via the Engine. You configure pool_size (number of persistent connections) and max_overflow (how many extra it can create under heavy load). If the pool is empty, requests will wait in a queue until a connection is returned.",
+      "recap": "SQLAlchemy's Engine manages the pool automatically."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Configuring the SQLAlchemy Pool",
+      "language": "python",
+      "code": "from sqlalchemy.ext.asyncio import create_async_engine\n\n# Create an engine with a connection pool\nengine = create_async_engine(\n    \"postgresql+asyncpg://...\",\n    pool_size=20,       # Keep 20 connections open\n    max_overflow=10,    # Allow up to 10 extra during spikes (30 total)\n    pool_timeout=30     # Wait up to 30s for a free connection before crashing\n)",
+      "explanation": "The engine manages the pool. When an AsyncSession is created, it checks out a connection from this pool. When the session closes, the connection is returned to the pool, not destroyed."
+    },
+    {
+      "title": "Leaking a connection (The Bug)",
+      "language": "python",
+      "code": "@app.get(\"/data\")\nasync def get_data():\n    session = async_sessionmaker()\n    # BUG: If we don't close() or use a context manager/dependency,\n    # the connection is never returned to the pool.\n    # After 20 requests, the entire application will hang forever.\n    result = await session.execute(select(User))\n    return result.scalars().all()",
+      "explanation": "This is why we strictly use FastAPI dependencies (`yield session`) to manage sessions. They guarantee that session.close() is called (which returns the connection to the pool) even if the request crashes."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Connection pooling is mandatory",
+      "detail": "Never create a raw connection per request. It destroys database performance."
+    },
+    {
+      "title": "Return your connections",
+      "detail": "If you don't close the session, the connection is 'leaked'. The pool will quickly empty and the app will freeze."
+    },
+    {
+      "title": "PgBouncer",
+      "detail": "For massive scale, an external pooler like PgBouncer sits in front of Postgres to multiplex thousands of app connections onto a few dozen real database connections."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Setting pool_size too high",
+      "explanation": "More connections do not equal more speed. If you have 8 CPU cores on your database, a pool size of 500 will cause context-switching thrashing. A smaller pool (e.g., 20) with a queue is significantly faster."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is opening a new database connection per HTTP request a bad idea?",
+      "answer": "It adds massive latency due to TCP/TLS handshakes, and quickly exhausts the database's maximum connection limit.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does pool_size=20 mean in SQLAlchemy?",
+      "answer": "It means SQLAlchemy will maintain exactly 20 persistent, open connections to the database to be shared among incoming requests.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a request asks for a connection, but the pool is empty?",
+      "answer": "The request will pause and wait in a queue for a connection to be returned, up to the pool_timeout limit, after which it throws an error.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Our FastAPI app works fine for 5 minutes after deployment, but then completely freezes. Database CPU is at 0%. What is the most likely cause?",
+      "answer": "Connection leaking. The application is checking out connections from the pool but failing to close/return them. After 5 minutes, the pool is empty, and all new requests are stuck waiting indefinitely for a connection to become available.",
+      "company": "Backend Engineer Interview"
+    },
+    {
+      "question": "We have 50 Kubernetes pods, each running 4 Gunicorn workers. Each worker has a SQLAlchemy pool_size of 20. Our Postgres max_connections is 100. What will happen?",
+      "answer": "50 pods × 4 workers × 20 connections = 4,000 potential connections. Postgres will instantly reject them with a 'too many clients' error. You need to lower the pool size or use an external multiplexer like PgBouncer.",
+      "company": "System Design Interview"
+    }
+  ],
+  "sources": [
+    "https://docs.sqlalchemy.org/en/20/core/pooling.html"
+  ]
+}

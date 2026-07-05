@@ -1,0 +1,82 @@
+{
+  "slug": "parametrized-tests",
+  "title": "Parametrized Tests",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "pytest-basics-and-fixtures"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Testing edge cases",
+      "Reducing boilerplate"
+    ]
+  },
+  "hook": {
+    "scenario": "You need to test an email validator with 10 different valid emails and 10 invalid ones. You copy-paste the test 20 times."
+  },
+  "mental_model": {
+    "intuition": "Parametrization is a loop for your tests. Instead of writing one test per scenario, you write the test logic once and feed it a table of inputs and expected outputs."
+  },
+  "sections": [
+    {
+      "body": "Pytest's `@pytest.mark.parametrize` decorator allows you to define multiple sets of arguments for a single test function."
+    },
+    {
+      "body": "When pytest runs, it treats each parameter set as an independent, standalone test. If one input fails, the others will still run."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Repetitive testing",
+      "language": "python",
+      "code": "def test_is_valid_email_1():\n    assert is_valid('test@example.com') is True\n\ndef test_is_valid_email_2():\n    assert is_valid('invalid') is False",
+      "explanation": "This approach scales poorly as the number of test cases increases."
+    },
+    {
+      "title": "Parametrized test",
+      "language": "python",
+      "code": "import pytest\n\n@pytest.mark.parametrize(\"email, expected\", [\n    ('test@example.com', True),\n    ('invalid', False),\n    ('user@sub.domain.com', True),\n])\ndef test_is_valid_email(email, expected):\n    assert is_valid(email) == expected",
+      "explanation": "The decorator unpacks each tuple into the test function arguments. Pytest reports this as 3 separate test cases."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Looping inside a test",
+      "explanation": "If you write a `for` loop inside a single test, the test halts on the first failure, so you won't know if the remaining inputs in the loop would have passed."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is `@pytest.mark.parametrize` better than a `for` loop inside a test?",
+      "answer": "Parametrize creates independent test cases. A failure in one parameter set doesn't stop pytest from testing the others, whereas a loop stops at the first `assert` failure."
+    },
+    {
+      "q": "How do you specify the argument names for a parametrized test?",
+      "answer": "They are provided as a comma-separated string in the first argument to the decorator, e.g. `@pytest.mark.parametrize('input,expected', [...])`."
+    },
+    {
+      "q": "Can you parametrize over fixtures?",
+      "answer": "You cannot directly pass fixture results into the parametrize decorator's data, but you can use `indirect=True` or use fixture parametrization via the `params` argument in `@pytest.fixture`."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How would you test an API endpoint that filters by status, ensuring it works for 'active', 'pending', and 'archived'?",
+      "answer": "I would write a single test function that makes a request to the endpoint, decorated with `@pytest.mark.parametrize('status', ['active', 'pending', 'archived'])`."
+    },
+    {
+      "question": "What happens if we stack two `@pytest.mark.parametrize` decorators on a single test?",
+      "answer": "Pytest will generate the cartesian product (all combinations) of both parameter sets."
+    }
+  ],
+  "sources": [
+    "https://docs.pytest.org/en/7.1.x/how-to/parametrize.html"
+  ]
+}

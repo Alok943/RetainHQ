@@ -129,12 +129,189 @@ function stackQueueReducer(state, op, args) {
   }
 }
 
-function treeReducer(state, op, args) { return null; }
-function gridReducer(state, op, args) { return null; }
-function graphReducer(state, op, args) { return null; }
-function listReducer(state, op, args) { return null; }
-function intervalsReducer(state, op, args) { return null; }
-function bitsReducer(state, op, args) { return null; }
+function treeReducer(state, op, args) {
+  switch (op) {
+    case 'TREE_INIT': {
+      // layout once: in-order positioning
+      const { nodes, root } = args;
+      const nodeMap = new Map();
+      nodes.forEach(n => nodeMap.set(n.id, { ...n }));
+      
+      let index = 0;
+      const traverse = (id, depth) => {
+        if (id == null || !nodeMap.has(id)) return;
+        const node = nodeMap.get(id);
+        traverse(node.left, depth + 1);
+        node.x = index * 40; // pitch
+        node.y = depth * 50; // levelHeight
+        index++;
+        traverse(node.right, depth + 1);
+      };
+      traverse(root, 0);
+      
+      // Center the layout
+      if (index > 0) {
+        const offset = ((index - 1) * 40) / 2;
+        for (const n of nodeMap.values()) {
+          n.x -= offset;
+        }
+      }
+      
+      state.tree = { nodes: nodeMap, root };
+      state.nodeTags = {};
+      state.nodeReturns = {};
+      state.cursor = null;
+      return { view: 'tree' };
+    }
+    case 'VISIT_NODE':
+      state.cursor = args.id;
+      return { view: 'tree' };
+    case 'MARK_NODE':
+      state.nodeTags[args.id] = args.tag;
+      return { view: 'tree' };
+    case 'COMPARE_NODE':
+      // could use tags or a specific compare overlay
+      return { view: 'tree' };
+    case 'SET_EDGE':
+      // optional, if edges need coloring
+      return { view: 'tree' };
+    case 'RETURN_NODE':
+      if (args.value !== undefined) state.nodeReturns[args.id] = args.value;
+      return { view: 'tree' };
+    default:
+      if (state.tree) return { view: 'tree' };
+      return null;
+  }
+}
+function gridReducer(state, op, args) {
+  switch (op) {
+    case 'GRID_INIT':
+      state.grid = {
+        rows: args.rows, cols: args.cols,
+        cells: args.values ? args.values.map(r => [...r]) : Array.from({length: args.rows}, () => Array(args.cols).fill(null)),
+        labels: args.labels || null,
+      };
+      state.cellTags = {};
+      return { view: 'grid' };
+    case 'FILL_CELL':
+      if (state.grid) state.grid.cells[args.r][args.c] = args.value;
+      return { view: 'grid' };
+    case 'READ_CELL':
+      return { view: 'grid', readCells: new Set([{ r: args.r, c: args.c }]) }; // in practice, might receive multiple
+    case 'MARK_CELL':
+      state.cellTags[`${args.r},${args.c}`] = args.tag;
+      return { view: 'grid' };
+    case 'PLACE':
+      if (state.grid) state.grid.cells[args.r][args.c] = 'Q'; // Example for N-Queens
+      return { view: 'grid' };
+    case 'REMOVE':
+      if (state.grid) state.grid.cells[args.r][args.c] = null;
+      return { view: 'grid' };
+    default:
+      if (state.grid) return { view: 'grid' };
+      return null;
+  }
+}
+
+function graphReducer(state, op, args) {
+  switch (op) {
+    case 'GRAPH_INIT':
+      // Basic circular layout if x,y not provided
+      const nodes = args.nodes.map((n, i) => {
+        if (n.x != null && n.y != null) return { ...n };
+        const angle = (i / args.nodes.length) * Math.PI * 2;
+        return { ...n, x: Math.cos(angle) * 100, y: Math.sin(angle) * 100 };
+      });
+      state.graph = { nodes, edges: args.edges.map(e => ({ ...e })) };
+      state.graphNodeTags = {};
+      state.graphEdgeTags = {};
+      state.graphCursor = null;
+      return { view: 'graph' };
+    case 'VISIT':
+      state.graphCursor = args.id;
+      return { view: 'graph' };
+    case 'MARK_VISITED':
+      state.graphNodeTags[args.id] = args.tag || 'visited';
+      return { view: 'graph' };
+    case 'RELAX':
+      const node = state.graph.nodes.find(n => n.id === args.u); // or v, depending on convention
+      if (node) node.dist = args.dist;
+      return { view: 'graph' };
+    case 'ENQUEUE_NODE':
+      // often relies on stackQueueReducer for the queue panel, but can also color the node
+      state.graphNodeTags[args.id] = 'enqueued';
+      return { view: 'graph' };
+    case 'SET_EDGE':
+      state.graphEdgeTags[`${args.u},${args.v}`] = args.tag;
+      return { view: 'graph' };
+    case 'UNION':
+      // merge visual component logic
+      return { view: 'graph' };
+    default:
+      if (state.graph) return { view: 'graph' };
+      return null;
+  }
+}
+function listReducer(state, op, args) {
+  switch (op) {
+    case 'LIST_INIT':
+      state.list = { nodes: args.nodes.map(n => ({ ...n })), head: args.head };
+      state.listPtrs = {};
+      state.listNodeTags = {};
+      return { view: 'list' };
+    case 'POINT_NODE':
+      state.listPtrs[args.name] = args.id;
+      return { view: 'list' };
+    case 'SET_NEXT':
+      const node = state.list.nodes.find(n => n.id === args.from);
+      if (node) node.next = args.to;
+      return { view: 'list' };
+    case 'MARK_NODE':
+      state.listNodeTags[args.id] = args.tag;
+      return { view: 'list' };
+    default:
+      if (state.list) return { view: 'list' };
+      return null;
+  }
+}
+
+function intervalsReducer(state, op, args) {
+  switch (op) {
+    case 'INTERVAL_INIT':
+      state.intervals = args.intervals ? args.intervals.map(i => ({ ...i })) : [];
+      return { view: 'intervals' };
+    case 'SELECT':
+    case 'SKIP':
+    case 'MERGE_INTERVAL':
+      // Simplified: Just pass args through or mark specific intervals
+      if (args.id != null) {
+        const intv = state.intervals.find(i => i.id === args.id);
+        if (intv) intv.state = op === 'SELECT' ? 'selected' : (op === 'SKIP' ? 'skipped' : 'merged');
+      }
+      return { view: 'intervals' };
+    default:
+      if (state.intervals) return { view: 'intervals' };
+      return null;
+  }
+}
+
+function bitsReducer(state, op, args) {
+  switch (op) {
+    case 'BITS_INIT':
+      state.bits = { numbers: args.numbers || [] };
+      state.bitsActiveCol = null;
+      return { view: 'bits' };
+    case 'XOR_STEP':
+      state.bitsActiveCol = args.col;
+      return { view: 'bits' };
+    case 'SET_BIT':
+      // modify bits if needed
+      return { view: 'bits' };
+    default:
+      if (state.bits) return { view: 'bits' };
+      return null;
+  }
+}
 
 const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer, stackQueueReducer, treeReducer, gridReducer, graphReducer, listReducer, intervalsReducer, bitsReducer];
 
@@ -151,6 +328,29 @@ export function compile(input, events) {
     queue: [],
     stackTop: null,
     queueEnd: null,
+    
+    // Extensible state for new structures
+    tree: null,
+    nodeTags: {},
+    nodeReturns: {},
+    cursor: null,
+    
+    grid: null,
+    cellTags: {},
+    
+    graph: null,
+    graphNodeTags: {},
+    graphEdgeTags: {},
+    graphCursor: null,
+    
+    list: null,
+    listPtrs: {},
+    listNodeTags: {},
+    
+    intervals: null,
+    
+    bits: null,
+    bitsActiveCol: null,
   };
   const frames = [];
 
@@ -176,6 +376,29 @@ export function compile(input, events) {
       stack: state.stack && state.stack.length ? [...state.stack] : undefined,
       queue: state.queue && state.queue.length ? [...state.queue] : undefined,
       structActive: result.structActive !== undefined && result.structActive !== null ? result.structActive : undefined,
+      tree: state.tree ? { nodes: new Map(state.tree.nodes), root: state.tree.root } : undefined,
+      nodeTags: state.tree ? { ...state.nodeTags } : undefined,
+      nodeReturns: state.tree ? { ...state.nodeReturns } : undefined,
+      cursor: state.tree ? state.cursor : undefined,
+      
+      grid: state.grid ? { ...state.grid, cells: state.grid.cells.map(r => [...r]) } : undefined,
+      cellTags: state.grid ? { ...state.cellTags } : undefined,
+      readCells: result.readCells || undefined,
+      
+      graph: state.graph ? { nodes: state.graph.nodes.map(n => ({...n})), edges: state.graph.edges.map(e => ({...e})) } : undefined,
+      graphNodeTags: state.graph ? { ...state.graphNodeTags } : undefined,
+      graphEdgeTags: state.graph ? { ...state.graphEdgeTags } : undefined,
+      graphCursor: state.graph ? state.graphCursor : undefined,
+      
+      list: state.list ? { nodes: state.list.nodes.map(n => ({...n})), head: state.list.head } : undefined,
+      listPtrs: state.list ? { ...state.listPtrs } : undefined,
+      listNodeTags: state.list ? { ...state.listNodeTags } : undefined,
+      
+      intervals: state.intervals ? state.intervals.map(i => ({...i})) : undefined,
+      
+      bits: state.bits ? { ...state.bits } : undefined,
+      bitsActiveCol: state.bits ? state.bitsActiveCol : undefined,
+      
       view: result.view || 'array',
       activeOp: op,
       caption: note || op,

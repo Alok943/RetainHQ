@@ -1,0 +1,83 @@
+{
+  "slug": "implement-vector-stack-lru-cache-from-scratch",
+  "title": "Implement vector, stack & LRU cache from scratch",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "stl-containers-vector-deque-map-unordered-map"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You are in a systems engineering interview at a top tech company. You breeze through a LeetCode problem using `std::vector` and `std::unordered_map`. The interviewer smiles and says, 'Great. Now implement them yourself using raw pointers.'",
+    "question": "Do you know exactly how the standard library manages memory under the hood?"
+  },
+  "mental_model": {
+    "intuition": "Standard library containers are just intelligent wrappers around dumb memory. A vector is just a raw C-array that knows how to buy a bigger house and move its belongings when it runs out of space. An LRU Cache is just a queue (tracking age) duct-taped to a dictionary (tracking location).",
+    "description": "A Vector handles its own capacity geometrically, dodging O(N) copies by doubling its living space. An LRU Cache solves the O(N) list-search problem by giving the hash map direct pointer access to the list nodes, turning an extraction and front-insertion into a pure O(1) pointer-rewiring exercise."
+  },
+  "explanation": "**1. Vector (Dynamic Array):**\nA vector is backed by a dynamically allocated raw array. It tracks `size` (current elements) and `capacity` (allocated slots). \nWhen `size == capacity` during a `push_back`, the vector must:\n1. Allocate a new raw array of size `capacity * 2`.\n2. Copy/move all elements to the new array.\n3. Delete the old array.\n4. Update the internal pointer and capacity.\nThis doubling (geometric expansion) ensures `push_back` remains an *amortized* O(1) operation. Because the capacity scales exponentially, reallocations become exponentially rare. If you instead grew by a fixed amount like `capacity += 100` (arithmetic expansion), you would copy elements constantly, resulting in O(N) amortized time.\n\n**2. Stack:**\nA stack is a trivial 'Adapter' data structure. You don't build it from scratch; you wrap a Vector or a Linked List and expose only `push`, `pop`, and `top` methods, enforcing LIFO (Last-In-First-Out) access.\n\n**3. LRU Cache (Least Recently Used):**\nThis is the most famous systems interview question. You need `get(key)` and `put(key, val)` in O(1) time while evicting the oldest element when full. \n*The Solution:* Combine two structures.\n- **Doubly Linked List:** Stores the actual keys and values. The most recently used item is moved to the head. The least recently used item naturally falls to the tail.\n- **Hash Map (`unordered_map`):** Maps a `key` directly to the *node pointer* in the linked list.\n*Execution:* When you `get(key)`, the map gives you the pointer instantly (O(1)). You extract the node and move it to the head of the list (O(1) pointer rewiring). When you `put(key, val)` and hit capacity, you pop the tail of the list and erase its key from the map.",
+  "code_snippets": [
+    {
+      "title": "Minimal Vector Implementation",
+      "language": "cpp",
+      "code": "template <typename T>\nclass MyVector {\nprivate:\n    T* data;\n    size_t sz;\n    size_t cap;\n\npublic:\n    MyVector() : data(nullptr), sz(0), cap(0) {}\n    \n    ~MyVector() { delete[] data; }\n\n    void push_back(const T& val) {\n        if (sz == cap) {\n            cap = (cap == 0) ? 1 : cap * 2;\n            T* new_data = new T[cap];\n            for (size_t i = 0; i < sz; i++) {\n                new_data[i] = std::move(data[i]);\n            }\n            delete[] data;\n            data = new_data;\n        }\n        data[sz++] = val;\n    }\n    \n    T& operator[](size_t index) { return data[index]; }\n};",
+      "explanation": "Notice the use of `delete[]` to prevent memory leaks, and `std::move` to transfer elements efficiently during reallocation. *(Note: This naive implementation uses `new T[cap]`, which default-constructs objects. A true production vector allocates raw, uninitialized memory via `::operator new` and constructs objects in-place using placement new).* "
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a Singly Linked List for LRU Cache",
+      "explanation": "If you use a singly linked list for the LRU Cache, moving a middle node to the front takes O(N) time because you have to traverse the list to find the node's *parent* to rewire the pointers. A Doubly Linked List gives the node immediate access to its `prev` pointer, allowing O(1) extraction."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two internal fields must a dynamic array (Vector) track alongside its raw data pointer?",
+      "answer": "`size` (the number of elements currently stored) and `capacity` (the total number of allocated memory slots).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do dynamic arrays typically multiply their capacity by 2 when reallocating?",
+      "answer": "Geometric expansion (like doubling) ensures that the expensive reallocation step happens less frequently as the array grows, achieving an amortized `O(1)` time complexity for `push_back`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What two data structures are combined to create an O(1) LRU Cache?",
+      "answer": "A Hash Map (to provide O(1) key lookups) and a Doubly Linked List (to provide O(1) reordering and eviction based on age).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "In an LRU Cache interview, a candidate successfully writes the doubly linked list and hash map. However, when evicting the tail node, they remove the node from the list but forget to erase the key from the hash map. What happens?",
+      "answer": "The hash map now holds a dangling pointer. If the user queries that evicted key again, the map will return the pointer to the deleted node, leading to a Segfault or Undefined Behavior when accessed.",
+      "approach": "Understand the tight coupling required when managing multi-structure states manually."
+    },
+    {
+      "question": "A developer writes a custom vector and implements reallocation by increasing the capacity by 100 elements each time (`capacity += 100`). Why will this fail an interview?",
+      "answer": "Arithmetic expansion results in O(N) amortized complexity for insertion, rather than O(1). Reallocating every 100 elements means copying elements quadratically often as the array grows to massive sizes, causing severe performance degradation.",
+      "approach": "Differentiate between geometric (multiplicative) and arithmetic (additive) memory scaling."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Vector growth is geometric",
+      "detail": "Always multiply capacity by 2 (or 1.5) to maintain amortized O(1) insertions."
+    },
+    {
+      "title": "LRU is Map + Doubly Linked List",
+      "detail": "The Map stores pointers to the List's nodes. The List maintains the recency order."
+    }
+  ],
+  "why_it_exists": "While the standard library provides robust implementations of these structures, systems and embedded engineers frequently work in environments where exceptions or standard allocations are banned (e.g., aerospace, kernel development). Re-implementing them from scratch proves you understand raw memory lifecycles, cache efficiency, and algorithmic bounds well enough to build safe software without a safety net.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cache_replacement_policies#LRU"
+  ]
+}

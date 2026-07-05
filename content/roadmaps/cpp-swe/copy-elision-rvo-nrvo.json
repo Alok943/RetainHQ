@@ -1,0 +1,83 @@
+{
+  "slug": "copy-elision-rvo-nrvo",
+  "title": "Copy elision & RVO/NRVO",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "rule-of-3-5-0-copy-move-destructor"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You write a function that returns a massive 1-Gigabyte `Matrix` object by value. A colleague warns you that this will trigger an expensive copy constructor, halting the program for seconds. You run it, and it executes instantly.",
+    "question": "Why didn't C++ copy the massive object when you returned it by value?"
+  },
+  "mental_model": {
+    "intuition": "Imagine you are building a Lego castle on a small tray, and you plan to move it to a larger display table when finished. Copy elision is like building the castle directly on the display table from the start, skipping the risky, time-consuming move completely.",
+    "description": "Copy Elision is a compiler optimization where unnecessary copying or moving of objects is omitted. Return Value Optimization (RVO) and Named Return Value Optimization (NRVO) allow a function to construct its return value directly in the memory space of the caller, completely bypassing the copy and move constructors."
+  },
+  "explanation": "**1. Return Value Optimization (RVO):**\nWhen you return a temporary, unnamed object from a function (`return Matrix();`), the compiler doesn't construct it locally and then copy/move it to the caller. Instead, the caller reserves memory, passes a hidden pointer to the function, and the function constructs the object directly in the caller's memory. In C++17, this is **mandatory**; it is guaranteed to happen, even if the copy constructor is deleted. (Note: Before C++17, because RVO was merely an optional optimization, the language strictly required a valid copy or move constructor to exist just in case the optimization failed).\n\n**2. Named Return Value Optimization (NRVO):**\nIf you create a named local variable (`Matrix m; m.populate(); return m;`), the compiler attempts to do the same thing. Because the variable is named and manipulated before returning, this optimization is **optional** but performed by almost all modern compilers. \n\n**3. Why `std::move` on return is an anti-pattern:**\nA common mistake is writing `return std::move(m);`. \nThis forces the compiler to treat the return as an rvalue reference, triggering the move constructor. By doing this, you actively **disable NRVO**. While a move is cheap, NRVO is completely free (zero operations). Never use `std::move` on a returned local variable.\n\n**4. Pass-by-Value and Copy Elision:**\nIf you pass a temporary object to a function taking an argument by value (`func(Matrix());`), the compiler elides the copy and constructs the temporary directly into the function's parameter memory.",
+  "code_snippets": [
+    {
+      "title": "RVO, NRVO, and the Move Anti-Pattern",
+      "language": "cpp",
+      "code": "struct Heavy {\n    Heavy() { cout << \"Constructed\\n\"; }\n    Heavy(const Heavy&) { cout << \"Copied\\n\"; }\n    Heavy(Heavy&&) { cout << \"Moved\\n\"; }\n};\n\n// RVO: Mandatory in C++17. Constructs directly in caller's memory.\nHeavy getHeavyRVO() {\n    return Heavy();\n}\n\n// NRVO: Optional but standard. 'h' is built in the caller's memory.\nHeavy getHeavyNRVO() {\n    Heavy h;\n    // ... do work on h ...\n    return h;\n}\n\n// ANTI-PATTERN: std::move prevents NRVO!\nHeavy getHeavyBad() {\n    Heavy h;\n    return std::move(h); // Forces \"Moved\" constructor. Slower than NRVO!\n}",
+      "explanation": "If you call `Heavy obj = getHeavyRVO();`, you will only see \"Constructed\" printed once. There is no copy and no move."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning std::move(local_variable)",
+      "explanation": "Many developers think `return std::move(x);` is the ultimate optimization. It is not. The compiler's NRVO is a 'zero-copy, zero-move' optimization. Using `std::move` downgrades a zero-cost operation into a move operation. Let the compiler do its job."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between RVO and NRVO?",
+      "answer": "RVO applies to returning unnamed temporary objects (`return Object();`) and is mandatory in C++17. NRVO applies to returning named local variables (`Object x; return x;`) and is an optional, but highly common, compiler optimization.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `return std::move(local_var);` considered an anti-pattern?",
+      "answer": "It actively prevents the compiler from applying Named Return Value Optimization (NRVO). It forces the execution of the move constructor, which is fast, but strictly slower than NRVO (which completely omits both copying and moving).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If RVO occurs, how many times is the object's copy or move constructor called?",
+      "answer": "Zero times. The object is constructed exactly once, directly in the memory space of the caller.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You write a class where you explicitly delete the copy and move constructors (`Heavy(const Heavy&) = delete;`). A function returns `Heavy()` by value. In C++11, this code fails to compile. In C++17, it compiles and runs perfectly. Why?",
+      "answer": "In C++11, copy elision was an optional optimization; the language still required a valid copy/move constructor to exist just in case. In C++17, RVO became mandatory (Guaranteed Copy Elision). Because the copy/move will strictly never happen, the compiler no longer requires those constructors to exist.",
+      "approach": "Understand the shift from 'optional optimization' to 'language guarantee' in modern C++."
+    },
+    {
+      "question": "A developer tries to rely on NRVO in a function with multiple return paths: `if(flag) return a; else return b;`. They notice the move constructor is suddenly being called instead of elided. Why?",
+      "answer": "NRVO requires the compiler to know exactly which local variable will become the return value so it can construct it in the caller's memory from the start. With multiple conditional returns returning different variables, the compiler cannot predict which one to construct in the return slot, forcing it to fall back to a move operation.",
+      "approach": "Identify the structural limits of compiler static analysis for optimizations."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Return by value is safe",
+      "detail": "Because of RVO/NRVO, returning heavy objects (like `std::vector` or `std::string`) by value is the modern, idiomatic C++ standard."
+    },
+    {
+      "title": "Never return std::move",
+      "detail": "Returning a local variable using `std::move` pessimizes the code by disabling NRVO."
+    }
+  ],
+  "why_it_exists": "Historically in C and early C++, returning large structs by value was forbidden because it caused massive memory copies. Developers relied on passing output pointers (`void getResult(Matrix* out)`), which made APIs clunky. Copy Elision allows developers to write clean, mathematical syntax (`Matrix m = getResult();`) while enjoying zero-overhead, bare-metal performance.",
+  "sources": [
+    "https://en.cppreference.com/w/cpp/language/copy_elision"
+  ]
+}

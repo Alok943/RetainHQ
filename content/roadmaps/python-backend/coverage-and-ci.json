@@ -1,0 +1,82 @@
+{
+  "slug": "coverage-and-ci",
+  "title": "Coverage and CI",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "pytest-basics-and-fixtures"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Setting up GitHub Actions",
+      "Enforcing code quality"
+    ]
+  },
+  "hook": {
+    "scenario": "A developer pushes a PR that passes all tests, but it completely missed a new `except` block. In production, that block executes and crashes due to a typo."
+  },
+  "mental_model": {
+    "intuition": "Coverage is a highlighter. It runs your tests while watching which lines of your source code actually execute. CI (Continuous Integration) is the bouncer that rejects PRs if the highlighted lines fall below a certain percentage."
+  },
+  "sections": [
+    {
+      "body": "`pytest-cov` is a pytest plugin that measures code coverage. It generates reports showing exactly which lines of code were executed and which were missed by your test suite."
+    },
+    {
+      "body": "Continuous Integration (like GitHub Actions) runs these tests automatically on every push. You can configure it to fail the build if the total coverage drops below a threshold."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Running tests with coverage",
+      "language": "bash",
+      "code": "pytest --cov=app --cov-report=term-missing --cov-fail-under=90",
+      "explanation": "This tells pytest to measure coverage for the `app` package, print the exact lines missed, and exit with an error code if coverage is below 90%."
+    },
+    {
+      "title": "GitHub Actions CI Workflow",
+      "language": "yaml",
+      "code": "name: CI\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-python@v4\n        with:\n          python-version: '3.11'\n      - run: pip install -r requirements.txt pytest pytest-cov\n      - run: pytest --cov=app --cov-fail-under=90",
+      "explanation": "This standard CI pipeline ensures that no un-tested or poorly-tested code is merged into the main branch."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Chasing 100% coverage blindly",
+      "explanation": "100% line coverage means every line ran, not that every logical state was verified. Focus on testing edge cases and business logic rather than writing trivial tests just to hit 100%."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What command line flag makes `pytest-cov` exit with an error if coverage is too low?",
+      "answer": "`--cov-fail-under=<percentage>`."
+    },
+    {
+      "q": "What does `--cov-report=term-missing` do?",
+      "answer": "It prints a terminal report that includes the specific line numbers that were not executed during the tests."
+    },
+    {
+      "q": "Why run coverage checks in a CI pipeline?",
+      "answer": "To automatically prevent code from being merged if it doesn't meet the project's testing standards."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If a line of code is covered by tests, does it mean the code is bug-free?",
+      "answer": "No, it just means the line executed. The test might not have asserted the correct outcome, or it might have missed specific data permutations that cause a bug."
+    },
+    {
+      "question": "How do you exclude certain files (like database migrations) from the coverage report?",
+      "answer": "You can configure an `.coveragerc` file and use the `omit` directive to ignore specific directories or files."
+    }
+  ],
+  "sources": [
+    "https://pytest-cov.readthedocs.io/en/latest/"
+  ]
+}

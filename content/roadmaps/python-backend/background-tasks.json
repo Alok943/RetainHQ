@@ -1,0 +1,133 @@
+{
+  "slug": "background-tasks",
+  "title": "Background Tasks",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "async-vs-def-endpoints",
+      "dependency-injection-depends"
+    ],
+    "unlocks": [
+      "uvicorn-gunicorn-workers"
+    ],
+    "project_usage": [
+      "Sending welcome emails after signup",
+      "Generating reports or invoices",
+      "Invalidating caches asynchronously"
+    ]
+  },
+  "hook": {
+    "scenario": "A user submits a signup form. Your API hits the database, then calls a third-party email service to send a welcome email. The email API takes 2.5 seconds to respond. The user's browser spins for 3 seconds before showing 'Welcome!', and they click 'Submit' twice in frustration.",
+    "question": "How do you return the HTTP response immediately while the server finishes the work?"
+  },
+  "mental_model": {
+    "intuition": "It's like paying at a drive-thru window. The cashier takes your money, gives you a receipt, and tells you to pull forward. The transaction is finished, but your food is still being made in the background.",
+    "description": "A background task is a function executed after the HTTP response has been sent to the client. In FastAPI, you declare it by injecting BackgroundTasks into your endpoint. FastAPI accepts the task, instantly returns the response, and then runs the task on the same event loop (or threadpool) behind the scenes. This decouples slow, non-critical work from the user's waiting time."
+  },
+  "sections": [
+    {
+      "body": "If your endpoint does work that the client doesn't need to wait for—like sending a notification, syncing data to a CRM, or compressing an image—doing it before returning the response slows down your API. Every second the client waits is a second a worker is tied up.",
+      "recap": "Synchronous processing blocks the client and ties up the worker process."
+    },
+    {
+      "body": "FastAPI provides a built-in `BackgroundTasks` class. You inject it into your endpoint, then call `.add_task(func, *args, **kwargs)`. The framework remembers the task, returns the JSON response to the user immediately, and then invokes your function.",
+      "recap": "BackgroundTasks defers execution until after the HTTP response is sent."
+    },
+    {
+      "body": "Because the task runs in the same memory space and same worker process, it's lightweight and requires zero extra infrastructure. No Redis, no Celery, no separate worker containers. If it's an `async def` function, it runs on the event loop; if it's a regular `def`, FastAPI runs it in a threadpool so it doesn't block the loop.",
+      "recap": "Built-in tasks need zero infrastructure and handle both async and sync safely."
+    },
+    {
+      "body": "The catch: background tasks are ephemeral. If the uvicorn worker crashes, restarts, or runs out of memory before the task finishes, the task is gone forever. There is no retry mechanism and no persistence. For 'must-happen' tasks like processing payments, you need a real message queue.",
+      "recap": "FastAPI tasks are not durable. Use a durable message queue like Celery for critical work."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The slow, blocking way (User waits)",
+      "language": "python",
+      "code": "from fastapi import APIRouter\nimport time\n\nrouter = APIRouter()\n\ndef send_email(email: str, message: str):\n    time.sleep(3)  # simulates slow third-party API\n    print(f\"Sent to {email}: {message}\")\n\n@router.post(\"/signup\")\ndef signup(email: str):\n    # The client waits 3 seconds for this to finish!\n    send_email(email, \"Welcome to our app!\")\n    return {\"message\": \"User created\"}",
+      "explanation": "The endpoint doesn't return until `send_email` completes. The user stares at a loading spinner, degrading UX and wasting server connection capacity."
+    },
+    {
+      "title": "The FastAPI BackgroundTasks way (Instant response)",
+      "language": "python",
+      "code": "from fastapi import APIRouter, BackgroundTasks\nimport time\n\nrouter = APIRouter()\n\ndef send_email(email: str, message: str):\n    time.sleep(3)  # Safe: runs in a threadpool because it's a `def`\n    print(f\"Sent to {email}: {message}\")\n\n@router.post(\"/signup\")\ndef signup(email: str, background_tasks: BackgroundTasks):\n    # Queue the task, don't wait for it\n    background_tasks.add_task(send_email, email, \"Welcome to our app!\")\n    \n    # Returns instantly!\n    return {\"message\": \"User created, email sending in background\"}",
+      "explanation": "Injecting `BackgroundTasks` lets us defer the work. FastAPI returns the JSON immediately, then passes the task to a threadpool (since `send_email` is a sync function) so it doesn't block the main event loop."
+    },
+    {
+      "title": "When NOT to use FastAPI BackgroundTasks",
+      "language": "python",
+      "code": "@router.post(\"/process-payment\")\nasync def process_payment(order_id: str, background_tasks: BackgroundTasks):\n    # DANGEROUS! If the pod restarts, this task is lost forever.\n    # The user was charged, but the order is never fulfilled.\n    background_tasks.add_task(fulfill_order, order_id)\n    \n    return {\"status\": \"processing\"}\n\n# Instead, for critical tasks, push to a durable queue:\n# await redis.lpush(\"fulfillment_queue\", order_id)",
+      "explanation": "Built-in background tasks have no persistence or retry logic. If the server crashes or the deploy restarts the worker while a task is running, it's silently dropped."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Runs after the response",
+      "detail": "The HTTP response is sent to the client before the background task begins executing."
+    },
+    {
+      "title": "Zero infrastructure",
+      "detail": "Runs in the same worker process. You don't need Redis or a separate worker deployment."
+    },
+    {
+      "title": "Sync vs Async safe",
+      "detail": "FastAPI handles `def` functions in a threadpool and `async def` on the event loop automatically."
+    },
+    {
+      "title": "Not durable",
+      "detail": "If the server process dies, queued and running tasks are lost completely. No built-in retries."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using BackgroundTasks for mission-critical operations",
+      "explanation": "Putting payment processing or critical data syncing in a FastAPI background task. If the uvicorn worker crashes, the task is lost. You must use a durable queue (Celery, ARQ, SQS) for tasks that cannot be dropped."
+    },
+    {
+      "title": "Passing database sessions that close early",
+      "explanation": "If you pass a SQLAlchemy session from a FastAPI dependency into a background task, the dependency will close the session when the HTTP response returns. The background task then tries to use a closed session and crashes."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "When does a FastAPI BackgroundTask actually start executing?",
+      "answer": "Immediately after the HTTP response has been sent to the client.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you add a standard `def` (sync) function to a background task, does it freeze the async event loop?",
+      "answer": "No. Just like sync endpoints, FastAPI automatically runs sync background tasks in a separate threadpool to keep the event loop unblocked.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why shouldn't you use FastAPI's built-in background tasks for processing payments?",
+      "answer": "They lack persistence and retry logic. If the worker process restarts or crashes before the task finishes, the payment task is lost forever.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You need to send an analytics event to a third-party service every time a user logs in. How would you implement this in FastAPI to ensure login remains fast?",
+      "company": "Backend API interview",
+      "answer": "I would use FastAPI's `BackgroundTasks` injected into the login endpoint. I'd add the analytics tracking function to it so it executes after the login response is returned. Since analytics aren't mission-critical, losing an event on a rare server crash is an acceptable tradeoff for not needing a full message queue infrastructure.",
+      "approach": "Match the tool to the constraint. BackgroundTasks are perfect for 'fire-and-forget' tasks where low overhead is more important than absolute durability."
+    },
+    {
+      "question": "Your FastAPI background task needs to write to the database using SQLAlchemy, but it keeps throwing a 'Session closed' error. What is causing this?",
+      "company": "FastAPI Production Debugging",
+      "answer": "The database session was likely injected into the endpoint via `Depends()` and passed into the background task. Dependencies are torn down (closing the session) immediately after the HTTP response is sent. By the time the background task runs, the session is already closed. The fix is to create a new, separate session inside the background task itself.",
+      "approach": "Identify the lifecycle mismatch. Endpoints live until the response; background tasks live *after* the response. Therefore, they cannot share resources that are tied to the endpoint's lifecycle."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/background-tasks/"
+  ]
+}

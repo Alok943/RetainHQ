@@ -1,0 +1,129 @@
+{
+  "slug": "wsgi-vs-asgi",
+  "title": "WSGI vs ASGI",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "coroutines-async-await",
+      "the-event-loop"
+    ],
+    "unlocks": [
+      "async-vs-def-endpoints",
+      "uvicorn-gunicorn-workers"
+    ],
+    "project_usage": [
+      "Deploying FastAPI applications",
+      "Choosing the right web server"
+    ]
+  },
+  "hook": {
+    "scenario": "Your Flask app handles 10 requests per second just fine. You launch a marketing campaign, traffic spikes to 100 requests per second, and suddenly the server stops responding entirely. CPU usage is nearly zero. The database is just slow, and your WSGI workers are sitting there completely blocked, unable to accept new connections."
+  },
+  "mental_model": {
+    "intuition": "WSGI is a bank with one teller per customer; if a customer is filling out a form, the teller just waits. ASGI is a restaurant with one waiter for the whole floor; while one table reads the menu (waiting on I/O), the waiter takes orders from another table.",
+    "description": "WSGI is strictly synchronous. It assigns a worker to a request and that worker is trapped until the request is completely finished, even if it's just waiting for a database. ASGI is built around Python's asyncio event loop, allowing a single worker to juggle thousands of requests by yielding control during I/O."
+  },
+  "sections": [
+    {
+      "body": "For decades, Python web apps (like Flask or Django) communicated with web servers using WSGI (Web Server Gateway Interface). It is purely synchronous. Every time a request comes in, a worker (a thread or process) is assigned to it. That worker is trapped until it returns a response.",
+      "recap": "WSGI assigns one dedicated worker per request from start to finish."
+    },
+    {
+      "body": "The WSGI model breaks under heavy I/O. If your app asks the database for information and the query takes 2 seconds, that WSGI worker is frozen for 2 seconds doing absolutely nothing. If you have 4 workers, 4 slow requests will completely block your server from accepting a 5th request.",
+      "recap": "I/O bound operations freeze WSGI workers, killing concurrency."
+    },
+    {
+      "body": "ASGI (Asynchronous Server Gateway Interface) was created to solve this. It's built around Python's `asyncio` event loop. When an ASGI app hits an I/O boundary (like a slow database query), it `await`s the result. The event loop instantly pauses that request and assigns the worker to handle the next incoming request.",
+      "recap": "ASGI uses `await` to yield control during I/O, allowing one worker to juggle thousands of requests."
+    },
+    {
+      "body": "This is why modern async frameworks like FastAPI require an ASGI server (like Uvicorn) to run. If you try to run FastAPI on a pure WSGI server, it either crashes or requires a compatibility wrapper that defeats the purpose of async.",
+      "recap": "FastAPI is an ASGI framework and requires an ASGI server."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "A minimal WSGI application",
+      "language": "python",
+      "code": "def wsgi_app(environ, start_response):\n    # Synchronous: blocks until complete\n    status = '200 OK'\n    headers = [('Content-type', 'text/plain')]\n    start_response(status, headers)\n    return [b\"Hello World\"]\n\n# Run with: gunicorn app:wsgi_app",
+      "explanation": "WSGI apps are simple callables that take the environment and a callback. They return an iterable of bytes. There is no way to yield control here if the code needs to wait for a network call."
+    },
+    {
+      "title": "A minimal ASGI application",
+      "language": "python",
+      "code": "async def asgi_app(scope, receive, send):\n    # Asynchronous: can await I/O\n    assert scope['type'] == 'http'\n    \n    await send({\n        'type': 'http.response.start',\n        'status': 200,\n        'headers': [\n            [b'content-type', b'text/plain'],\n        ],\n    })\n    \n    await send({\n        'type': 'http.response.body',\n        'body': b'Hello World',\n    })\n\n# Run with: uvicorn app:asgi_app",
+      "explanation": "ASGI apps are async callables. They receive a `scope` (the request details) and two async functions (`receive` and `send`). Because it is an `async def`, you can `await` database calls in the middle of it."
+    },
+    {
+      "title": "The practical result: FastAPI",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nimport asyncio\n\napp = FastAPI()  # This creates an ASGI application under the hood\n\n@app.get(\"/\")\nasync def read_root():\n    # The event loop can serve other requests while this sleeps\n    await asyncio.sleep(2) \n    return {\"message\": \"Hello World\"}",
+      "explanation": "You rarely write raw ASGI code. Frameworks like FastAPI abstract the `scope/receive/send` boilerplate. When you run this with Uvicorn, the async sleep proves the single thread is not blocked."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "WSGI = Synchronous",
+      "detail": "1 request equals 1 thread or process. Blocking I/O freezes the worker."
+    },
+    {
+      "title": "ASGI = Asynchronous",
+      "detail": "Many requests run concurrently on a single thread's event loop."
+    },
+    {
+      "title": "Servers must match",
+      "detail": "WSGI apps (Flask, Django) run on WSGI servers (Gunicorn). ASGI apps (FastAPI) run on ASGI servers (Uvicorn)."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Running an ASGI app with a pure WSGI server",
+      "explanation": "If you try to run FastAPI using `gunicorn app:app` without specifying a worker class, it will crash because Gunicorn expects a WSGI callable, not an async ASGI callable."
+    },
+    {
+      "title": "Thinking ASGI makes CPU-bound code faster",
+      "explanation": "ASGI only helps with I/O bound concurrency (waiting for databases or APIs). If you write a heavy `for` loop that crunches numbers, the event loop is blocked, and ASGI will freeze just like WSGI."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a slow database query hurt a WSGI server's concurrency more than an ASGI server's?",
+      "answer": "In WSGI, the worker thread is completely blocked waiting for the database, preventing it from accepting new requests. In ASGI, the worker `await`s the query, yielding the event loop to handle other requests.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which server is commonly used to run modern ASGI applications like FastAPI?",
+      "answer": "Uvicorn (often managed by Gunicorn using an ASGI worker class in production).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Can ASGI speed up a CPU-bound task like image processing?",
+      "answer": "No. ASGI concurrency relies on the event loop pausing during I/O. CPU-bound tasks block the thread entirely, which freezes the event loop.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "WSGI vs ASGI / why is FastAPI async?",
+      "company": "Backend Engineer interview",
+      "answer": "WSGI is synchronous (one request blocks one worker). ASGI is asynchronous (one worker can handle many requests by awaiting I/O). FastAPI is built on ASGI to support `async/await`, allowing it to handle massive concurrent I/O loads (like database queries) without needing a huge threadpool.",
+      "approach": "Contrast the execution models (blocking vs event loop). Emphasize that ASGI allows yielding control during I/O, which is the secret to FastAPI's high concurrency."
+    },
+    {
+      "question": "You deployed a FastAPI app using standard Gunicorn, but it crashes on startup with an error about the callable not returning an iterable. What went wrong?",
+      "company": "SRE / Backend interview",
+      "answer": "Gunicorn is a WSGI server by default and expects a synchronous callable (like a Flask app). FastAPI is an ASGI app. You must tell Gunicorn to use an ASGI worker class (like `uvicorn.workers.UvicornWorker`) to bridge the gap.",
+      "approach": "Recognize the mismatch between a WSGI server and an ASGI application. The fix is configuring the worker class."
+    }
+  ],
+  "sources": [
+    "https://asgi.readthedocs.io/en/latest/",
+    "https://fastapi.tiangolo.com/deployment/server-workers/"
+  ]
+}

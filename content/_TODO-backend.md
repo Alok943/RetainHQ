@@ -39,13 +39,13 @@ __hash__ gap acceptable) · str-vs-repr · inheritance-super · duck-typing · d
 ## Phase 4 · Concurrency, Memory & Performance (9) — 2 reuse, 7 new
 | Node | Slug | Kind |
 |---|---|---|
-| Concurrency vs parallelism | concurrency-vs-parallelism | **engineering (NEW)** |
-| The GIL | the-gil | **engineering (NEW)** |
-| Threading vs multiprocessing | threading-vs-multiprocessing | **engineering (NEW)** |
+| [x] Concurrency vs parallelism | concurrency-vs-parallelism | **engineering (NEW)** |
+| [x] The GIL | the-gil | **engineering (NEW)** |
+| [x] Threading vs multiprocessing | threading-vs-multiprocessing | **engineering (NEW)** |
 | Coroutines, async/await | coroutines-async-await | **concept (NEW)** — async runs in Pyodide |
 | The event loop | the-event-loop | **concept (NEW)** |
 | Tasks & gather | tasks-and-gather | **concept (NEW)** |
-| Blocking calls in async code | blocking-calls-in-async | **engineering (NEW)** — timing demo won't trace well |
+| [x] Blocking calls in async code | blocking-calls-in-async | **engineering (NEW)** — timing demo won't trace well |
 | Reference counting & GC | reference-counting | REUSE |
 | Shallow vs deep copy | shallow-vs-deep-copy | REUSE |
 
@@ -59,13 +59,13 @@ sqlalchemy-sqlmodel-async · sessions-and-expire-on-commit · eager-loading-sele
 alembic-migrations · transactions-and-atomicity · connection-pooling
 
 ## Phase 7 · Testing (6) — all engineering (NEW)
-pytest-basics-and-fixtures · parametrized-tests · mocking-and-patching · async-tests ·
-api-tests-httpx-testclient · coverage-and-ci
+[x] pytest-basics-and-fixtures · [x] parametrized-tests · [x] mocking-and-patching · [x] async-tests ·
+[x] api-tests-httpx-testclient · [x] coverage-and-ci
 
 ## Phase 8 · Production & Deployment (6) — all engineering (NEW)
-env-vars-and-secrets · structured-logging-prod (python-swe has `structured-logging`; backend version is
-JSON-logs-in-request-context — distinct skill, keep separate) · httpexception-and-error-shape ·
-dockerfile-multi-stage · uvicorn-gunicorn-workers · hardening-health-rate-limit-jwt
+[x] env-vars-and-secrets · [x] structured-logging-prod (python-swe has `structured-logging`; backend version is
+JSON-logs-in-request-context — distinct skill, keep separate) · [x] httpexception-and-error-shape ·
+[x] dockerfile-multi-stage · [x] uvicorn-gunicorn-workers · [x] hardening-health-rate-limit-jwt
 
 ## Totals
 - REUSE: 29 (Antigravity skips)

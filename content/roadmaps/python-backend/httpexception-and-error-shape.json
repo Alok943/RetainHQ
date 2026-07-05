@@ -1,0 +1,85 @@
+{
+  "slug": "httpexception-and-error-shape",
+  "title": "HTTPException and Error Shape",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "status-codes-and-openapi"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "API Design",
+      "Error handling"
+    ]
+  },
+  "hook": {
+    "scenario": "Your frontend app receives a `500 Internal Server Error` with an HTML traceback instead of JSON. The frontend crashes trying to parse `response.json()`."
+  },
+  "mental_model": {
+    "intuition": "Exceptions in Python crash the program. In a web API, you don't want to crash the server; you want to intercept the crash and return a neatly formatted JSON apology (the Error Shape) to the client."
+  },
+  "sections": [
+    {
+      "body": "When a client requests a resource that doesn't exist, or lacks permissions, you should raise an `HTTPException`."
+    },
+    {
+      "body": "FastAPI catches `HTTPException` globally and converts it into a JSON response. The default shape is `{\"detail\": \"Error message\"}`."
+    },
+    {
+      "body": "For robust APIs, you should override the global exception handlers to standardize a strict 'Error Shape'. Every error (validation errors, 404s, 500s) should follow the exact same JSON structure so frontend clients can parse them predictably."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Standard HTTPException",
+      "language": "python",
+      "code": "from fastapi import HTTPException, status\n\ndef get_user(user_id: int):\n    user = db.query(User).get(user_id)\n    if not user:\n        # Halts execution and returns 404 JSON\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=\"User not found\"\n        )\n    return user",
+      "explanation": "You don't `return` an error response. You `raise` it. FastAPI catches it and converts it to `{'detail': 'User not found'}`."
+    },
+    {
+      "title": "Custom Error Shape (Exception Handler)",
+      "language": "python",
+      "code": "from fastapi import FastAPI, Request\nfrom fastapi.responses import JSONResponse\n\napp = FastAPI()\n\nclass CustomError(Exception):\n    def __init__(self, message: str, code: str):\n        self.message = message\n        self.code = code\n\n@app.exception_handler(CustomError)\nasync def custom_error_handler(request: Request, exc: CustomError):\n    return JSONResponse(\n        status_code=400,\n        content={\"error\": {\"code\": exc.code, \"message\": exc.message}},\n    )",
+      "explanation": "This guarantees the frontend always gets `{'error': {'code': '...', 'message': '...'}}` regardless of where `CustomError` was raised."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Leaking stack traces in production",
+      "explanation": "If an unhandled exception occurs (e.g., `ZeroDivisionError`), it becomes a 500. Never expose the raw stack trace in the JSON payload in production, as it leaks internal system paths and logic."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when you `raise HTTPException(...)` in FastAPI?",
+      "answer": "FastAPI intercepts the exception and automatically transforms it into a JSON response with the specified status code."
+    },
+    {
+      "q": "What is the default JSON shape of a FastAPI `HTTPException`?",
+      "answer": "`{\"detail\": \"Your message here\"}`."
+    },
+    {
+      "q": "How do you catch custom domain exceptions and convert them to standard JSON errors?",
+      "answer": "By registering a global exception handler using the `@app.exception_handler(MyException)` decorator."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Why is it better to raise exceptions for missing resources rather than returning `None` up to the router?",
+      "answer": "Raising an exception halts the flow immediately (Fail Fast). If you return `None`, every function up the call stack has to check `if result is None:` and handle it, creating massive boilerplate."
+    },
+    {
+      "question": "How do you ensure the frontend doesn't crash when your API hits a 500 Internal Server Error?",
+      "answer": "I register a global exception handler for the base `Exception` class. It logs the full traceback internally, but returns a clean, standardized JSON response (e.g. `{'error': 'Internal Server Error'}`) with a 500 status code."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/handling-errors/"
+  ]
+}

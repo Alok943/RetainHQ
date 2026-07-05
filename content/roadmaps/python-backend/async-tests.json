@@ -1,0 +1,86 @@
+{
+  "slug": "async-tests",
+  "title": "Async Tests",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "pytest-basics-and-fixtures"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Testing async endpoints",
+      "Async database tests"
+    ]
+  },
+  "hook": {
+    "scenario": "You write an `async def test_my_func():` and pytest skips it, or gives a warning about an un-awaited coroutine."
+  },
+  "mental_model": {
+    "intuition": "Pytest is a synchronous runner by default. If a test is a coroutine (`async def`), pytest just calls it (which returns a coroutine object) and immediately moves on without running it on an event loop. You need a plugin to provide the event loop."
+  },
+  "sections": [
+    {
+      "body": "To test `async` functions, you must install `pytest-asyncio`. This plugin automatically provisions an event loop for your tests."
+    },
+    {
+      "body": "Any test defined as `async def` must be decorated with `@pytest.mark.asyncio`, or you must set `asyncio_mode = auto` in your `pytest.ini` so it detects them automatically."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Failing: un-awaited coroutine",
+      "language": "python",
+      "code": "async def test_fetch_data():\n    data = await fetch_data()\n    assert data is not None\n# Pytest will warn: coroutine 'test_fetch_data' was never awaited",
+      "explanation": "Standard pytest doesn't know how to run an event loop to execute the coroutine."
+    },
+    {
+      "title": "Working Async Test",
+      "language": "python",
+      "code": "import pytest\n\n@pytest.mark.asyncio\nasync def test_fetch_data():\n    data = await fetch_data()\n    assert data['status'] == 'ok'",
+      "explanation": "With `pytest-asyncio`, the decorator tells pytest to spin up an event loop, run the coroutine to completion, and tear down the loop."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Mixing sync test client with async code",
+      "explanation": "If your application relies heavily on async features, testing it with the synchronous `TestClient` can mask async blocking bugs. Use `httpx.AsyncClient` instead."
+    },
+    {
+      "title": "Async fixtures without pytest-asyncio",
+      "explanation": "Just like tests, if you define an `async def` fixture, `pytest-asyncio` is required to evaluate it properly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a standard pytest run fail to execute `async def` tests?",
+      "answer": "Because it calls the function, which returns a coroutine object, but it does not run it on an asyncio event loop."
+    },
+    {
+      "q": "What plugin is standard for running async tests in pytest?",
+      "answer": "`pytest-asyncio`."
+    },
+    {
+      "q": "How can you avoid decorating every async test with `@pytest.mark.asyncio`?",
+      "answer": "By configuring `pytest.ini` with `asyncio_mode = auto`."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If you have an `async` database driver, how must you write your test fixture to provide a session?",
+      "answer": "The fixture must be an `async def` function, yielding the async session. The tests consuming it must also be `async def` and marked with `@pytest.mark.asyncio`."
+    },
+    {
+      "question": "What happens if an `async` test hangs indefinitely?",
+      "answer": "Usually it means a task was left awaiting a lock or a network call that never resolved, or there is a sync blocking call starving the test's event loop."
+    }
+  ],
+  "sources": [
+    "https://pytest-asyncio.readthedocs.io/en/latest/"
+  ]
+}

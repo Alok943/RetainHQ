@@ -1,0 +1,83 @@
+{
+  "slug": "api-tests-httpx-testclient",
+  "title": "API Tests: TestClient vs HTTPX",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "async-tests",
+      "pytest-basics-and-fixtures"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "End-to-end API testing",
+      "Integration testing"
+    ]
+  },
+  "hook": {
+    "scenario": "You're testing a FastAPI app using `TestClient`. The test passes, but in production, the exact same endpoint raises a `RuntimeError: Timeout context manager should be used inside a task`."
+  },
+  "mental_model": {
+    "intuition": "Testing a server requires a client. `TestClient` is a synchronous caller that bypasses the network. `httpx.AsyncClient` + ASGI transport actually executes the request in a true asynchronous event loop, perfectly mimicking production."
+  },
+  "sections": [
+    {
+      "body": "FastAPI's `TestClient` (built on `requests` and `starlette`) is synchronous. It's great for simple apps, but it runs your async endpoints in a simulated synchronous thread pool."
+    },
+    {
+      "body": "If your app uses `asyncio` deeply (like async database drivers or HTTP clients), `TestClient` can hide concurrency bugs. In these cases, you must use `httpx.AsyncClient` with an `ASGITransport` to test asynchronously."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Sync TestClient",
+      "language": "python",
+      "code": "from fastapi.testclient import TestClient\nfrom app.main import app\n\nclient = TestClient(app)\n\ndef test_read_main():\n    response = client.get(\"/\")\n    assert response.status_code == 200",
+      "explanation": "This is simple but entirely synchronous. If the endpoint `await`s something that relies on a specific event loop state, it might behave differently here than in prod."
+    },
+    {
+      "title": "AsyncClient (Ground Truth)",
+      "language": "python",
+      "code": "import pytest\nfrom httpx import AsyncClient, ASGITransport\nfrom app.main import app\n\n@pytest.mark.asyncio\nasync def test_async_endpoint():\n    transport = ASGITransport(app=app)\n    async with AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        response = await client.get(\"/\")\n        assert response.status_code == 200",
+      "explanation": "This runs the FastAPI app entirely asynchronously, ensuring the event loop behavior matches the real `uvicorn` production server."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using TestClient for fully async apps",
+      "explanation": "If your app uses `asyncpg` or `httpx` internally, `TestClient` can mask deadlocks or trigger event-loop mismatch errors. Always use `AsyncClient` for async apps."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What library is `FastAPI(TestClient)` built on top of?",
+      "answer": "It is provided by Starlette and built on top of `requests` and `httpx` synchronously."
+    },
+    {
+      "q": "Why is `httpx.AsyncClient` preferred over `TestClient` for heavily async applications?",
+      "answer": "It tests the application in a true asyncio event loop, matching the production environment and exposing concurrency bugs."
+    },
+    {
+      "q": "What transport is needed for `httpx.AsyncClient` to directly test a FastAPI app without a real network server?",
+      "answer": "`ASGITransport(app=app)`."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you structure your pytest fixtures to provide an `AsyncClient`?",
+      "answer": "I would create an `async def` fixture using `pytest-asyncio` that yields an `httpx.AsyncClient` configured with `ASGITransport(app=app)` so every test gets an isolated async client."
+    },
+    {
+      "question": "A test passes with `TestClient` but the app fails in production under uvicorn. What's the likely difference?",
+      "answer": "`TestClient` runs your app synchronously. If your app has blocking I/O inside an `async def` endpoint, `TestClient` might survive it, but uvicorn will freeze the event loop."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/advanced/async-tests/"
+  ]
+}

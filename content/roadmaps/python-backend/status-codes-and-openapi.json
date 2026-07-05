@@ -1,0 +1,138 @@
+{
+  "slug": "status-codes-and-openapi",
+  "title": "Status Codes & OpenAPI",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "routers-and-app-structure"
+    ],
+    "unlocks": [
+      "httpexception-and-error-shape"
+    ],
+    "project_usage": [
+      "FastAPI documentation generation",
+      "API client generation"
+    ]
+  },
+  "overview": {
+    "what": "FastAPI automatically generates an OpenAPI specification (Swagger UI) from your route signatures, and allows you to declare exactly which HTTP status codes your API returns.",
+    "why": "Backend developers must map their logic to standard HTTP status codes (like 201 Created or 404 Not Found) instead of returning 200 OK for everything. Exposing this via OpenAPI lets frontend teams auto-generate clients and view interactive docs.",
+    "where_used": [
+      "FastAPI endpoint definitions",
+      "Interactive /docs UI",
+      "Frontend API integration"
+    ]
+  },
+  "why_learning_this": [
+    "Returning a 200 OK when a resource isn't found is a classic rookie mistake that breaks REST semantics.",
+    "OpenAPI is the industry standard for documenting APIs. In FastAPI, you don't write it by hand; your Python code is the documentation."
+  ],
+  "hook": {
+    "scenario": "A frontend developer complains they can't handle a resource creation properly because your API returns 200 OK for everything—even when it successfully creates a new record, where it should return 201 Created. They shouldn't have to parse your JSON body just to figure out what happened."
+  },
+  "mental_model": {
+    "intuition": "The HTTP status code is the envelope's color, telling the client if the request succeeded or failed before they even open the response. OpenAPI is the instruction manual printed on the side of the box, generated automatically from your code.",
+    "description": "Clients and proxies look at the HTTP status code to know what happened without reading the JSON payload. By explicitly setting these codes in FastAPI, you get semantic HTTP responses. FastAPI then translates your Python code (types, status codes, request shapes) into a live OpenAPI specification, giving you interactive documentation for free."
+  },
+  "sections": [
+    {
+      "body": "HTTP relies on five buckets of status codes: 1xx (info), 2xx (success), 3xx (redirect), 4xx (client error), and 5xx (server error). In a RESTful API, you must use these semantically. For example, 200 is for a successful read, 201 is for a creation, 204 for a deletion, 400 for bad input, and 404 for missing items. The status code tells the client the result without them needing to parse the response body.",
+      "recap": "Status codes provide the client with the request's outcome instantly."
+    },
+    {
+      "body": "By default, FastAPI returns 200 OK for any successful route. You override this using the `status_code` argument in the route decorator. Instead of memorizing integers, you should use the constants provided in `fastapi.status` (like `status.HTTP_201_CREATED`). This prevents subtle typos like writing 202 instead of 201.",
+      "recap": "Use the status_code argument in the decorator to set the default successful response code."
+    },
+    {
+      "body": "FastAPI inspects your route paths, request models (Pydantic), return types, and status codes to automatically build an OpenAPI schema (formerly Swagger). If you go to the `/docs` path of your running app, you'll see an interactive UI that is completely driven by the types and decorators you wrote in Python. You don't have to maintain separate documentation files.",
+      "recap": "Python types + route decorators = automatic OpenAPI documentation."
+    },
+    {
+      "body": "While `status_code` sets the primary success code, your endpoint might also return a 404 or a 400 during execution. You can document these potential errors in your OpenAPI spec using the `responses` parameter in the decorator, so clients reading the docs know exactly what error shapes to expect.",
+      "recap": "Declare error status codes in the responses dictionary to make your OpenAPI spec complete."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Set the correct success status code",
+      "language": "python",
+      "code": "from fastapi import FastAPI, status\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Item(BaseModel):\n    name: str\n\n# Default is 200 OK, but creation should be 201 Created\n@app.post(\"/items/\", status_code=status.HTTP_201_CREATED)\ndef create_item(item: Item):\n    # Create item logic here\n    return {\"name\": item.name, \"id\": 123}\n",
+      "explanation": "Passing status_code=status.HTTP_201_CREATED ensures the client gets the correct REST semantics. FastAPI will also reflect this 201 status as the successful response in the OpenAPI documentation."
+    },
+    {
+      "title": "Document error responses for OpenAPI",
+      "language": "python",
+      "code": "from fastapi import FastAPI, HTTPException, status\n\napp = FastAPI()\n\n# Documenting that this route can return a 404\n@app.get(\n    \"/items/{item_id}\", \n    responses={\n        status.HTTP_404_NOT_FOUND: {\"description\": \"Item not found\"}\n    }\n)\ndef read_item(item_id: int):\n    if item_id > 100:\n        # We manually raise an HTTPException to return a 4xx error\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND, \n            detail=\"Item not found\"\n        )\n    \n    return {\"item_id\": item_id}\n",
+      "explanation": "To return an error during execution, you raise HTTPException. By adding the responses dict to the decorator, the generated /docs page will explicitly show clients that a 404 error is possible and documented."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Status codes matter",
+      "detail": "Use 201 for POST (create), 204 for DELETE (no content), and 404 for Not Found. Don't just return 200 OK for everything."
+    },
+    {
+      "title": "Use FastAPI status constants",
+      "detail": "Always use fastapi.status (e.g., status.HTTP_201_CREATED) instead of bare integers to prevent typos and clarify intent."
+    },
+    {
+      "title": "OpenAPI is free",
+      "detail": "Your Pydantic models, type hints, and route decorators automatically compile into the interactive /docs page."
+    },
+    {
+      "title": "Documenting errors",
+      "detail": "While status_code sets the success code, you document potential execution errors (like 404s) using the responses dict in the decorator."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Returning 200 OK for everything",
+      "explanation": "Returning `{\"status\": \"error\", \"message\": \"Not found\"}` with a 200 OK status code breaks HTTP semantics. Clients and proxies rely on the status code to know if a request succeeded, not the JSON body."
+    },
+    {
+      "title": "Using magic numbers instead of status constants",
+      "explanation": "Writing `status_code=201` is easy, but writing `status_code=202` by accident is hard to spot. Using `status.HTTP_201_CREATED` gives you IDE autocomplete and prevents silly bugs."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How do you change the default success status code of a FastAPI endpoint from 200 to 201?",
+      "answer": "By passing `status_code=status.HTTP_201_CREATED` to the route decorator (e.g., `@app.post(..., status_code=...)`).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If your endpoint needs to return a 404 Not Found, how do you do it in FastAPI?",
+      "answer": "You `raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=\"...\")` inside the route function.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the purpose of the `responses` argument in a route decorator?",
+      "answer": "It allows you to document additional status codes (like 404 or 400) in the OpenAPI schema so that frontend clients know what errors to expect.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A frontend developer complains that when an item doesn't exist, your API returns a 200 OK with a body like `{'error': 'not found'}`. How do you fix this in a RESTful way?",
+      "company": "Backend Engineering Screen",
+      "answer": "I would update the endpoint to raise an HTTPException with a 404 Not Found status code. HTTP status codes should dictate success or failure, not the response payload.",
+      "approach": "Identify that returning 200 for an error breaks REST semantics. State that the correct approach is a 4xx status code, implemented in FastAPI via HTTPException."
+    },
+    {
+      "question": "How does FastAPI generate its interactive `/docs` page, and how do you ensure the documentation accurately reflects the errors your endpoint might throw?",
+      "company": "API Design Interview",
+      "answer": "FastAPI generates an OpenAPI specification automatically from Pydantic models, type hints, and route decorators. To ensure errors are documented, I pass a `responses` dictionary mapping status codes (like 404) to their descriptions in the route decorator.",
+      "approach": "Explain that OpenAPI generation is built-in based on Python types. Then mention the `responses` parameter as the way to enrich the schema with non-default status codes."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/response-status-code/",
+    "https://fastapi.tiangolo.com/advanced/additional-responses/"
+  ]
+}

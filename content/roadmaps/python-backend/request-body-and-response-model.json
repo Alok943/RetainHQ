@@ -1,0 +1,132 @@
+{
+  "slug": "request-body-and-response-model",
+  "title": "Request Body & response_model",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "path-and-query-parameters"
+    ],
+    "unlocks": [
+      "pydantic-models-and-validators"
+    ],
+    "project_usage": [
+      "FastAPI API endpoints",
+      "Data validation"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "serialization",
+      "definition": "The process of converting complex Python objects (like Pydantic models) into a format that can be sent over the network, typically JSON."
+    },
+    {
+      "term": "deserialization",
+      "definition": "The reverse of serialization: parsing incoming raw bytes (like a JSON string) and validating them into native Python objects."
+    }
+  ],
+  "hook": {
+    "scenario": "A client sends `{ \"user_id\": \"abc\", \"email\": \"not-an-email\" }` to your API. You could write 15 lines of `if type(...) != int:` and regex checks, or you could let the framework instantly reject it with a 422 Unprocessable Entity, detailing exactly which fields failed.",
+    "question": "How do you declare the exact shape and types your endpoint expects, so invalid data never even reaches your code?"
+  },
+  "mental_model": {
+    "intuition": "A Pydantic model is a strict bouncer at the door of your endpoint, and `response_model` is the censor on the way out.",
+    "description": "In FastAPI, you define a Python class (a Pydantic model) that describes the exact structure of the JSON payload. FastAPI uses this model as a bouncer: if incoming JSON doesn't match the model, it bounces the request with an error before your code runs. If it passes, your code receives a fully instantiated Python object. On the way out, `response_model` acts as a censor: it strips away any fields you don't want to expose (like a password hash) before sending the response."
+  },
+  "sections": [
+    {
+      "body": "In FastAPI, you don't manually parse raw request bytes. Instead, you define a Python class inheriting from `BaseModel` (provided by Pydantic) and declare the fields with type hints. When you add this model as a parameter to your route handler, FastAPI knows to read the request body, parse the JSON, and validate it against your model. This is deserialization.",
+      "recap": "Request bodies are defined by passing a Pydantic model as a function parameter."
+    },
+    {
+      "body": "Because FastAPI uses these type hints, your editor gets full autocompletion for the request data. You access fields with dot notation (`user.email`), not dictionary keys (`user['email']`). If a client sends a string where an integer is expected, FastAPI automatically attempts to coerce it. If coercion fails, it returns a 422 error response.",
+      "recap": "Models provide autocompletion and automatic type coercion/validation."
+    },
+    {
+      "body": "Just as you validate data coming IN, you must control data going OUT. If your endpoint returns a database object that includes a `hashed_password`, returning it directly leaks a secret. By setting the `response_model` parameter in the `@app.post()` decorator, FastAPI guarantees that only the fields defined in the response model are serialized and sent to the client.",
+      "recap": "Use response_model to filter outbound data and prevent accidental secret leakage."
+    },
+    {
+      "body": "Under the hood, Pydantic v2 powers this entirely with fast, Rust-backed validation. We'll look at custom validation logic and ORM integration in later lessons, but the core mechanics of the request and response lifecycle remain exactly the same.",
+      "recap": "Pydantic v2 drives both the inbound validation and outbound serialization."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Defining a Request Body",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n# 1. Define the shape of the data\nclass ItemCreate(BaseModel):\n    name: str\n    description: str | None = None  # Optional field\n    price: float\n\n# 2. Add it as a parameter to the handler\n@app.post(\"/items/\")\nasync def create_item(item: ItemCreate):\n    # 'item' is a fully validated Python object, not a dict\n    total = item.price * 1.2  # Safe: price is guaranteed to be a float\n    return {\"name\": item.name, \"total\": total}",
+      "explanation": "By declaring `item: ItemCreate`, FastAPI reads the request body as JSON, validates it against the `ItemCreate` model, and injects the instantiated object into the function."
+    },
+    {
+      "title": "Filtering outputs with response_model",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass UserIn(BaseModel):\n    username: str\n    password: str\n\n# Define the safe shape of the output\nclass UserOut(BaseModel):\n    username: str\n\n# The response_model parameter dictates the output shape\n@app.post(\"/users/\", response_model=UserOut)\nasync def create_user(user: UserIn):\n    # Simulate saving to DB and returning the raw dict with the password\n    saved_user = {\"username\": user.username, \"password\": user.password}\n    \n    # FastAPI will automatically strip the 'password' field before responding\n    # because it is not present in UserOut.\n    return saved_user",
+      "explanation": "Even though the handler returns a dictionary containing the `password`, FastAPI passes it through `UserOut` which acts as a filter, ensuring the password never hits the network."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Inherit from BaseModel",
+      "detail": "All request and response shapes are defined as classes that inherit from Pydantic's BaseModel."
+    },
+    {
+      "title": "Dot notation",
+      "detail": "Inside the handler, access data via attributes (item.price), avoiding dictionary key lookups and KeyErrors."
+    },
+    {
+      "title": "response_model filters data",
+      "detail": "The response_model argument in the route decorator dictates the output structure and strips any fields not defined in that model."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Leaking secrets by omitting response_model",
+      "explanation": "If you return a database object directly from the handler without specifying a `response_model`, FastAPI will serialize all readable fields. If a user record has a `password_hash`, it gets sent to the client. Always define an explicit output model."
+    },
+    {
+      "title": "Treating the injected model as a dictionary",
+      "explanation": "Attempting to do `item['name']` will raise a `TypeError` because `item` is a Pydantic object, not a dictionary. Use `item.name`, or call `item.model_dump()` to convert it to a dictionary."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What Python base class is used to define the expected structure of a JSON request body in FastAPI?",
+      "answer": "`BaseModel` from the `pydantic` library.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a client sends `{ \"price\": \"50.5\" }` for a field typed as `float`, what does FastAPI do?",
+      "answer": "Pydantic attempts to coerce the string into a float. It will successfully parse it as `50.5`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is it important to use `response_model` when returning data created from a database?",
+      "answer": "To filter the output. It ensures sensitive fields (like password hashes or internal IDs) that might exist on the database object are stripped out before the response is sent to the client.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A code review flags that an endpoint returns a complete user dictionary retrieved from the database, including their `hashed_password`. How do you fix this leak using FastAPI's built-in features?",
+      "company": "Backend API screening",
+      "answer": "Define a Pydantic model containing only the safe fields to expose (e.g., `UserPublic`), and pass it to the route decorator as `response_model=UserPublic`. FastAPI will automatically filter out any fields (like `hashed_password`) that aren't in `UserPublic`.",
+      "approach": "Identify `response_model` as the native way to censor output payloads. Returning safe dicts manually is error-prone."
+    },
+    {
+      "question": "Your endpoint accepts `def update_item(item: ItemUpdate):`. A developer tries to save it by calling `db.save(**item)` but gets a `TypeError`. Why, and how do you fix it?",
+      "company": "Python Backend Interview",
+      "answer": "The injected `item` is a Pydantic object, not a dictionary, so `**` unpacking fails. Fix it by converting the model to a dictionary using `item.model_dump()`.",
+      "approach": "Recognize that FastAPI provides fully instantiated class instances, not raw parsed JSON dicts."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/body/",
+    "https://fastapi.tiangolo.com/tutorial/response-model/"
+  ]
+}

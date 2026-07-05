@@ -1,0 +1,113 @@
+{
+  "slug": "sqlalchemy-sqlmodel-async",
+  "title": "Async SQLAlchemy and SQLModel",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "sessions-and-expire-on-commit"
+    ],
+    "project_usage": [
+      "Setting up the database connection",
+      "Defining models"
+    ]
+  },
+  "hook": {
+    "scenario": "Your FastAPI app can handle 10k req/sec in a synthetic benchmark, but the moment you connect it to Postgres, it plummets to 200 req/sec and throws timeout errors everywhere."
+  },
+  "mental_model": {
+    "intuition": "Async DB drivers are like placing an order at a busy kitchen: you drop the ticket and step back to do other work, instead of standing at the pass blocking the only waiter until your food is ready.",
+    "description": "FastAPI runs on a single-threaded event loop. If you use a synchronous driver, that single thread stops entirely while waiting for the database. An asynchronous driver (like asyncpg) pauses only the specific request, allowing the event loop to serve thousands of other requests in the meantime."
+  },
+  "sections": [
+    {
+      "body": "FastAPI is built around an event loop (asyncio). It achieves high concurrency using a single thread that switches tasks whenever it hits an I/O pause (like a database query). If you use a synchronous database driver (like psycopg2), the driver blocks the entire thread while waiting for the database to reply. The event loop freezes. No other requests can be served.",
+      "recap": "Synchronous drivers freeze the event loop, tanking performance."
+    },
+    {
+      "body": "To fix this, we use an asynchronous driver (like asyncpg for PostgreSQL). It returns control to the event loop immediately when it sends the query over the network. Other requests are served in the meantime. When Postgres replies, the event loop resumes the original task.",
+      "recap": "Asynchronous drivers yield control during I/O, allowing massive concurrency."
+    },
+    {
+      "body": "SQLAlchemy 2.0 has built-in native support for asyncio. You use create_async_engine and AsyncSession, and you await database operations. The query syntax uses select(...) and session.execute(...) instead of the old legacy .query(...).",
+      "recap": "SQLAlchemy 2.0 handles async cleanly with select() and await session.execute()."
+    },
+    {
+      "body": "SQLModel, created by FastAPI's author, combines SQLAlchemy (for the database) and Pydantic (for data validation) into a single model definition. You define a class once, and it serves as both the database table schema and the Pydantic data validator for your API endpoints.",
+      "recap": "SQLModel reduces boilerplate by uniting DB schemas and Pydantic validators."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Defining an async model with SQLModel",
+      "language": "python",
+      "code": "from sqlmodel import SQLModel, Field\nfrom typing import Optional\n\nclass Hero(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    name: str = Field(index=True)\n    secret_name: str\n    age: Optional[int] = None",
+      "explanation": "You define the model once. table=True makes it a SQLAlchemy model, while under the hood it remains a Pydantic model. We use modern Python typing."
+    },
+    {
+      "title": "Executing an async query",
+      "language": "python",
+      "code": "from sqlmodel import select\nfrom sqlalchemy.ext.asyncio import AsyncSession\n\nasync def get_heroes(session: AsyncSession) -> list[Hero]:\n    # Built-in async support: we await the execute\n    statement = select(Hero).where(Hero.age > 25)\n    result = await session.execute(statement)\n    return result.scalars().all()",
+      "explanation": "Notice the `await session.execute(...)`. The asyncpg driver yields control back to the event loop while Postgres works. select() replaces the legacy session.query()."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Never use psycopg2 in an async app",
+      "detail": "It blocks the thread. Use asyncpg combined with SQLAlchemy's AsyncEngine."
+    },
+    {
+      "title": "Await everything",
+      "detail": "Any call that touches the database (session.execute, session.commit) must be awaited."
+    },
+    {
+      "title": "SQLModel = SQLAlchemy + Pydantic",
+      "detail": "Reduces boilerplate by keeping schema and validation in one single class definition."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a synchronous driver in an async framework",
+      "explanation": "If you configure your DB URL with postgresql:// instead of postgresql+asyncpg://, SQLAlchemy will default to a synchronous driver, freezing the entire event loop on every query."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is a synchronous database driver dangerous in FastAPI?",
+      "answer": "It blocks the entire thread while waiting for the database, freezing the event loop and preventing any other requests from being served.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which driver should you use with Postgres in an async SQLAlchemy setup?",
+      "answer": "asyncpg.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary benefit of SQLModel?",
+      "answer": "It combines SQLAlchemy models and Pydantic models into a single class definition, eliminating duplicate code between the DB schema and API validation.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Our FastAPI application's latency spikes massively under load, even though CPU usage is low. We're using SQLAlchemy with psycopg2. What's the problem and how do we fix it?",
+      "answer": "psycopg2 is a synchronous driver. It blocks the event loop thread while waiting for I/O, queuing up all other requests. Switch to an asynchronous driver like asyncpg and use SQLAlchemy's AsyncEngine.",
+      "company": "Backend Engineer Interview"
+    },
+    {
+      "question": "How does SQLAlchemy 2.0's query syntax differ from 1.4, specifically regarding async support?",
+      "answer": "SQLAlchemy 2.0 uses select() and session.execute(stmt) instead of session.query(). This separates the statement construction from the execution, allowing the execution to be safely awaited.",
+      "company": "Python Backend Interview"
+    }
+  ],
+  "sources": [
+    "https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html",
+    "https://sqlmodel.tiangolo.com/"
+  ]
+}

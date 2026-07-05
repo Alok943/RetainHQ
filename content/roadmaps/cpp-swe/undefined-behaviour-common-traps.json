@@ -1,0 +1,83 @@
+{
+  "slug": "undefined-behaviour-common-traps",
+  "title": "undefined behaviour \u2014 common traps",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "memory-leaks-dangling-pointers-double-free"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You write a function that occasionally forgets to return a value on a certain `if` branch. During local debug testing, it silently returns `0` and seems fine. In production, the compiler entirely deletes the function and the surrounding `if` statements, causing catastrophic logic failure.",
+    "question": "Why does the C++ compiler intentionally rewrite and destroy your logic when you make a mistake?"
+  },
+  "mental_model": {
+    "intuition": "Undefined Behavior (UB) is like violating the laws of physics in a simulation. Once you break a fundamental rule, the simulation doesn't just give you an error; it mathematically destabilizes. The compiler assumes you *never* break the rules, and it aggressively optimizes your code based on that absolute assumption.",
+    "description": "Undefined Behavior (UB) means the C++ standard imposes no requirements on how the program should behave. Compilers exploit UB for extreme optimization: they assume UB never happens. If your code contains UB, the compiler is legally allowed to generate code that crashes, returns garbage, or entirely deletes your security checks."
+  },
+  "explanation": "**The Philosophy of UB:**\nUnlike Java or Python, which add runtime checks (like array bounds checking) to throw safe exceptions, C++ refuses to add hidden overhead. It strictly adheres to the principle of **zero-overhead abstractions**, putting the burden of correctness entirely on the programmer. \n\n**Common Traps that trigger UB:**\n1. **Signed Integer Overflow:** `INT_MAX + 1` is UB. The compiler assumes signed integers never overflow, allowing it to optimize loops heavily. (Note: Unsigned integer overflow is perfectly defined; it wraps around to 0).\n2. **Out of Bounds Array Access:** `arr[10]` on a 5-element array is UB. It might crash, or it might silently overwrite another variable, leading to impossible-to-track bugs.\n3. **Dereferencing Null or Dangling Pointers:** Using a pointer after it has been deleted or using a `nullptr` is UB.\n4. **Missing Return Statement:** If a non-void function (other than `main`) reaches the end without returning a value, it is **always** UB, regardless of whether the caller uses the return value.\n5. **Uninitialized Variables:** Reading an uninitialized local variable (e.g., `int x; cout << x;`) is UB. It might print 0, it might print garbage, or it might crash.\n6. **Shift out of bounds:** Shifting a 32-bit integer by 32 or more bits (`x << 32`) is UB.\n\n**Time Travel Optimization & Assumption Propagation:**\nIf the compiler sees that an `if` statement leads to UB, it assumes that branch can never be taken and deletes it. Similarly, if you perform a potentially UB operation (like dereferencing a pointer), the compiler assumes it must be valid (not null). It will then propagate this assumption forward and aggressively delete any subsequent `if (ptr == nullptr)` safety checks, leading to a hard crash.",
+  "code_snippets": [
+    {
+      "title": "UB and Compiler Optimization",
+      "language": "cpp",
+      "code": "bool verify_password(int attempt) {\n    // Signed integer overflow is UB!\n    // The compiler assumes attempt + 1 > attempt is ALWAYS true.\n    if (attempt + 1 < attempt) {\n        return false; // Security check for overflow\n    }\n    return true;\n}",
+      "explanation": "Because `attempt + 1 < attempt` implies signed integer overflow (which is UB), the compiler assumes it can never happen. The compiler will optimize this function to simply `return true;`, completely deleting your security check."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Testing UB locally and assuming it's safe",
+      "explanation": "Developers often trigger UB, observe that it returns a predictable garbage value or a 0 locally, and think 'I can live with that.' UB is non-deterministic. It might work locally, but a different compiler version, an OS update, or turning on `-O3` optimization flags will suddenly cause the program to format your hard drive or skip execution entirely."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between signed and unsigned integer overflow in C++?",
+      "answer": "Signed integer overflow is Undefined Behavior; the compiler assumes it never happens. Unsigned integer overflow is well-defined by the standard; it mathematically wraps around to 0.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why doesn't C++ perform automatic bounds checking on arrays to prevent UB?",
+      "answer": "To uphold the principle of 'zero-overhead abstractions'. Adding bounds checking requires hidden branching and CPU cycles on every single array access, which violates C++'s core philosophy of bare-metal performance.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if a non-void function finishes execution without hitting a `return` statement?",
+      "answer": "In C++, flowing off the end of a non-void function (except main) is always Undefined Behavior, regardless of whether the caller uses the return value.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes: `int x; if (x == x) doWork();`. Using `-O3` optimization, `doWork()` is occasionally skipped. How is `x == x` evaluating to false?",
+      "answer": "Because `x` is an uninitialized local variable, reading its value triggers Undefined Behavior. The compiler is not required to evaluate `x == x` as mathematically true; it is allowed to assume the code path is invalid or aggressively optimize it away entirely.",
+      "approach": "Recognize that logic laws break down when applied to uninitialized memory."
+    },
+    {
+      "question": "To prevent null pointer crashes, a junior engineer writes: `int val = *ptr; if (ptr == nullptr) return -1;`. The program crashes anyway. Why did the compiler delete the null check?",
+      "answer": "The pointer is dereferenced *before* the null check. Since dereferencing a null pointer is UB, the compiler assumes `ptr` can never be null (because the program would be invalid). It optimizes by completely removing the `if (ptr == nullptr)` check, causing a hard crash.",
+      "approach": "Understand that performing an operation (dereferencing) forces the compiler to assume validity, allowing it to delete subsequent safety checks via assumption propagation."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "UB is not an 'error'",
+      "detail": "UB gives the compiler legal permission to do absolutely anything, including deleting your code."
+    },
+    {
+      "title": "Compilers assume perfection",
+      "detail": "Optimization algorithms are mathematically built on the assumption that your code contains zero UB."
+    }
+  ],
+  "why_it_exists": "Undefined Behavior is the secret to C++'s unrivaled speed. By refusing to define edge cases (like overflow or out-of-bounds), compiler writers are freed from emitting sluggish safety guards. They can generate hyper-optimized, assumption-driven machine code, placing the ultimate responsibility for program safety squarely onto the developer.",
+  "sources": [
+    "https://blog.llvm.org/2011/05/what-every-c-programmer-should-know.html"
+  ]
+}

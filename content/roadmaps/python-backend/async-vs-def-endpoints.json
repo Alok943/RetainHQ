@@ -1,0 +1,135 @@
+{
+  "slug": "async-vs-def-endpoints",
+  "title": "async vs def Endpoints",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "coroutines-async-await",
+      "the-event-loop"
+    ],
+    "unlocks": [
+      "dependency-injection-depends"
+    ],
+    "project_usage": [
+      "FastAPI routing",
+      "Database access"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "event loop",
+      "definition": "The single main process that handles all concurrent requests in an ASGI framework like FastAPI, switching between them when they pause."
+    },
+    {
+      "term": "threadpool",
+      "definition": "A background group of worker threads that FastAPI uses to safely execute synchronous, blocking endpoints without halting the event loop."
+    }
+  ],
+  "hook": {
+    "scenario": "You deploy a new /upload endpoint in FastAPI that does a lot of synchronous image processing. You write it as `async def` because 'FastAPI is async'. Under load, every user on the site experiences a 5-second timeout, even on simple read operations.",
+    "question": "Why did making the endpoint async actually break the concurrency of the whole server?"
+  },
+  "mental_model": {
+    "intuition": "The event loop is a single chef in a kitchen. `async def` means the chef handles the task personally. `def` means they hand it off to a sous-chef.",
+    "description": "The event loop (the main chef) is incredibly fast but there is only ONE of them. If a task uses `async def`, the chef handles it, switching to other tasks when waiting (like waiting for the oven). But if the task is synchronous and blocking (like chopping carrots for 5 minutes), the chef is stuck and the whole restaurant halts. If you use a plain `def`, FastAPI knows it's blocking, so it gives the task to a threadpool (the sous-chefs) so the main chef can keep taking orders."
+  },
+  "sections": [
+    {
+      "body": "In FastAPI, `async def` means 'run this on the main event loop'. This is perfect for I/O bound operations where you can `await` a database query or network request. While waiting, the event loop yields and serves thousands of other requests. But if you have CPU-bound work or a blocking library (like `requests` or `sqlalchemy` without async plugins) in an `async def`, it will NOT yield.",
+      "recap": "async def runs on the single main event loop and must never block."
+    },
+    {
+      "body": "If you have a blocking operation, you should declare the endpoint as a plain `def`. When FastAPI sees a normal `def`, it thinks: 'This will block, so I cannot run it on my main event loop.' It automatically delegates the execution of that function to an external threadpool (using anyio).",
+      "recap": "Plain def endpoints are automatically run in a threadpool to protect the event loop."
+    },
+    {
+      "body": "This means FastAPI is safe by default for synchronous code—IF you don't lie to it. The catastrophe happens when you write `async def` but put synchronous code inside. You lied to the framework, it ran your blocking code on the main loop, and now every single request is queued waiting for it to finish.",
+      "recap": "Using async def for synchronous code freezes the entire application."
+    },
+    {
+      "body": "This is why understanding exactly which libraries are synchronous vs asynchronous is critical. If your database driver is synchronous (e.g., standard psycopg2), your endpoint must be `def`. If you use httpx for async requests, your endpoint can be `async def`.",
+      "recap": "The choice between async def and def is dictated by the libraries you call inside the endpoint."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Danger: Blocking code inside async def (freezes everything)",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nimport time\nimport requests\n\napp = FastAPI()\n\n# ❌ DANGER: Blocking code inside async def\n@app.get(\"/sync-in-async\")\nasync def get_data():\n    # The main event loop is now FROZEN for 2 seconds.\n    # No other user can get a response until this finishes.\n    time.sleep(2)\n    \n    # This also blocks the event loop\n    resp = requests.get(\"https://example.com\")\n    \n    return {\"message\": \"I just blocked the whole server\"}",
+      "explanation": "Because it's `async def`, FastAPI runs this on the main event loop. Since `time.sleep()` and `requests.get()` are synchronous blocking calls, the entire server freezes and handles 0 other requests until they finish."
+    },
+    {
+      "title": "The Fix for blocking code: Use a plain def",
+      "language": "python",
+      "code": "# ✅ FIX 1: Use a plain `def` for synchronous code\n@app.get(\"/sync-in-def\")\ndef get_data_safely():\n    # FastAPI sees `def` (not async) and runs this in a background threadpool.\n    # The main event loop remains free to serve other requests!\n    time.sleep(2)\n    \n    # Standard sync requests are completely fine here\n    resp = requests.get(\"https://example.com\")\n    \n    return {\"message\": \"I safely blocked a background thread, not the server\"}",
+      "explanation": "By dropping the `async` keyword, we tell FastAPI the truth: this code blocks. FastAPI responds by offloading the function to a threadpool, protecting the event loop's concurrency."
+    },
+    {
+      "title": "The modern async approach: await non-blocking calls",
+      "language": "python",
+      "code": "import asyncio\nimport httpx\n\n# ✅ FIX 2: Use `async def` with proper async libraries\n@app.get(\"/pure-async\")\nasync def get_data_async():\n    # `await` tells the event loop: \"I'm waiting for I/O. Go serve other users!\"\n    # When the sleep finishes, the loop comes back here.\n    await asyncio.sleep(2)\n    \n    # Use httpx.AsyncClient instead of the synchronous requests library\n    async with httpx.AsyncClient() as client:\n        resp = await client.get(\"https://example.com\")\n        \n    return {\"message\": \"I yielded control properly\"}",
+      "explanation": "If you want maximum performance with `async def`, you must use libraries that support `await`. This allows the event loop to pause this task and serve other requests during the I/O wait."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "async def runs on the event loop",
+      "detail": "Use this only when you have `await` statements (async DB drivers, httpx, asyncio.sleep) to pause execution properly."
+    },
+    {
+      "title": "def runs in a threadpool",
+      "detail": "FastAPI automatically ships synchronous endpoints to a worker thread so they don't block the main event loop."
+    },
+    {
+      "title": "Never block the event loop",
+      "detail": "Putting `time.sleep()`, `requests.get()`, or heavy CPU computation in an `async def` function will freeze the entire server for all users."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using async def just because it's FastAPI",
+      "explanation": "Developers often think they must use `async def` for all FastAPI endpoints. If your code uses synchronous libraries (like SQLAlchemy without async, or standard `requests`), you MUST use `def` to prevent freezing the server."
+    },
+    {
+      "title": "Assuming FastAPI magically makes sync code async",
+      "explanation": "FastAPI cannot convert blocking I/O into non-blocking I/O. It relies entirely on the `def` vs `async def` signature to know how to safely execute your code."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Where does FastAPI execute a plain `def` endpoint?",
+      "answer": "In an external threadpool. This ensures that any blocking synchronous code inside the endpoint does not halt the main asyncio event loop."
+    },
+    {
+      "q": "What happens if you call a synchronous function like `time.sleep(5)` inside an `async def` route handler?",
+      "answer": "The entire application event loop freezes for 5 seconds. No other requests can be accepted or processed during that time because the single thread running the event loop is blocked."
+    },
+    {
+      "q": "If you need to use the synchronous `requests` library to fetch data from an external API, should your endpoint be `def` or `async def`?",
+      "answer": "It must be a plain `def`. The `requests` library blocks the thread it runs on, so FastAPI needs to run it in a threadpool to avoid freezing the event loop."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You deploy a new FastAPI endpoint that runs a heavy machine learning model. It uses `async def`. Under load, the entire API becomes unresponsive, timing out on even basic health checks. What is happening and how do you fix it?",
+      "company": "Backend Engineer interview",
+      "answer": "The heavy ML model is CPU-bound and is running on the main event loop because of `async def`, freezing all other request processing. The fix is to change the endpoint to a plain `def` so FastAPI offloads the heavy computation to a background threadpool, freeing the main loop.",
+      "approach": "Identify that `async def` forces execution onto the main loop. CPU-bound or blocking I/O must either be pushed to a threadpool (via `def` or `run_in_executor`) or handled by separate worker processes."
+    },
+    {
+      "question": "What is the difference between WSGI and ASGI, and why does FastAPI support both `def` and `async def` endpoints?",
+      "company": "Python Backend Screen",
+      "answer": "WSGI is synchronous (one request per thread/process), which struggles with high I/O concurrency. ASGI uses an event loop to handle thousands of concurrent requests by yielding during I/O waits. FastAPI is ASGI-native (using `async def`) but provides `def` endpoints that run in a threadpool to safely support synchronous, blocking libraries without freezing the loop.",
+      "approach": "Contrast the thread-per-request model (WSGI) with the event loop model (ASGI). Show that you understand FastAPI's dual nature: `async def` for native non-blocking performance, and `def` for safe legacy sync support."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/async/"
+  ]
+}

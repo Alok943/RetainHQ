@@ -1,0 +1,127 @@
+{
+  "slug": "pydantic-models-and-validators",
+  "title": "Pydantic Models and Validators",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "request-body-and-response-model"
+    ],
+    "unlocks": [
+      "configdict-from-attributes"
+    ],
+    "project_usage": [
+      "Python Backend Engineer interview"
+    ]
+  },
+  "hook": {
+    "scenario": "Your API accepts a 'discount_percentage' field. A user sends 'discount_percentage': 150. Your database accepts it, and suddenly every order is completely free.",
+    "question": "How do you guarantee that bad data never even reaches your business logic?"
+  },
+  "mental_model": {
+    "intuition": "Pydantic is a ruthless bouncer at the club door.",
+    "description": "It checks everyone's ID (data types) and applies the club rules (validators). If the payload says age=17, the bouncer rejects them with a 422 Unprocessable Entity before they even step inside your FastAPI route. Your internal code never has to worry about checking types or rules again."
+  },
+  "sections": [
+    {
+      "body": "In a backend, you can't trust the data the client sends. Instead of scattering `if age < 0` checks throughout your handlers, you declare a Pydantic model. You state exactly what the data should look like using standard Python type hints. Pydantic enforces this boundary.",
+      "recap": "Models define the boundary: bad data bounces before your logic runs."
+    },
+    {
+      "body": "Pydantic does two things: parsing and validation. Parsing means if you expect an integer and receive the string `\"42\"`, Pydantic silently converts it to the integer `42` (coercion). Validation means if you expect an integer and receive `\"apple\"`, Pydantic raises a clear validation error detailing exactly which field failed.",
+      "recap": "Parsing coerces types when possible; validation rejects what can't be coerced."
+    },
+    {
+      "body": "Standard types aren't always enough. A string could be empty, or an integer might be out of range. Pydantic v2 uses `Field` constraints (`min_length`, `ge` for greater-than-or-equal) and the `@field_validator` decorator to enforce custom business rules directly on the data shape.",
+      "recap": "Use Field for simple bounds and @field_validator for custom logic."
+    },
+    {
+      "body": "When a Pydantic v2 model fails validation inside FastAPI, the framework automatically catches the `ValidationError` and returns a 422 HTTP response to the client. The response body is a highly detailed JSON array explaining every single field that failed and why. You never write this error handling code yourself.",
+      "recap": "FastAPI + Pydantic automatically turns validation failures into 422 responses."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The naive way (no Pydantic)",
+      "language": "python",
+      "code": "def create_user(payload: dict):\n    # Business logic polluted with validation\n    if \"age\" not in payload:\n        raise ValueError(\"age is required\")\n    if not isinstance(payload[\"age\"], int):\n        raise ValueError(\"age must be int\")\n    if payload[\"age\"] < 18:\n        raise ValueError(\"must be 18 or older\")\n    \n    return save_to_db(payload)",
+      "explanation": "Without a model, you have to manually check for missing keys, wrong types, and business rules. It scales poorly and makes the handler unreadable."
+    },
+    {
+      "title": "The realistic version (Pydantic v2)",
+      "language": "python",
+      "code": "from pydantic import BaseModel, Field, field_validator\n\nclass UserCreate(BaseModel):\n    username: str = Field(min_length=3, max_length=50)\n    age: int = Field(ge=18)  # greater than or equal to 18\n    email: str\n\n    @field_validator('email')\n    @classmethod\n    def must_be_company_email(cls, v: str) -> str:\n        if not v.endswith('@company.com'):\n            raise ValueError('Must use a company email address')\n        return v",
+      "explanation": "Here, Pydantic v2's `Field` handles simple constraints, while `@field_validator` handles custom logic. The classmethod takes the raw value and either returns it or raises an error."
+    },
+    {
+      "title": "The modern v2 configuration pattern",
+      "language": "python",
+      "code": "from pydantic import BaseModel, ConfigDict\n\nclass UserResponse(BaseModel):\n    # v2 configuration replaces the old `class Config:`\n    model_config = ConfigDict(from_attributes=True, extra='forbid')\n\n    id: int\n    username: str\n    email: str",
+      "explanation": "In Pydantic v2, configurations use `model_config = ConfigDict(...)`. The `from_attributes=True` setting is critical for serializers, allowing Pydantic to read fields from SQLAlchemy ORM objects (e.g. `user.id`), not just dictionaries."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Type Coercion",
+      "detail": "Pydantic tries to convert data to the declared type (e.g., '1' to 1) before failing."
+    },
+    {
+      "title": "Field vs field_validator",
+      "detail": "Use `Field(ge=0)` for standard constraints. Use `@field_validator` for custom Python logic."
+    },
+    {
+      "title": "ConfigDict over class Config",
+      "detail": "Pydantic v2 configures models using the `model_config` attribute and `ConfigDict`, not the v1 inner class."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Pydantic v1 idioms in modern codebases",
+      "explanation": "Using `@validator` or `class Config: orm_mode = True` is instantly flagged as outdated in 2026 interviews. Pydantic v2 requires `@field_validator` and `model_config = ConfigDict(from_attributes=True)`."
+    },
+    {
+      "title": "Forgetting @classmethod on validators",
+      "explanation": "In Pydantic v2, `@field_validator` methods must be class methods (they take `cls` and the value), because validation runs before the instance is fully constructed."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if a client sends the string \"42\" for a Pydantic field typed as `int`?",
+      "answer": "Pydantic coerces (parses) the string \"42\" into the integer 42, and the validation succeeds.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you configure a Pydantic v2 model to read data from ORM objects (like SQLAlchemy) instead of just dictionaries?",
+      "answer": "Set `model_config = ConfigDict(from_attributes=True)` on the model class.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must a `@field_validator` method use `@classmethod`?",
+      "answer": "Because the validator executes on the raw input data BEFORE the actual instance of the model has been created.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A candidate's code review submission includes: `class User(BaseModel): class Config: orm_mode = True`. What is wrong with this in a modern FastAPI application?",
+      "company": "Python Backend Engineer interview",
+      "answer": "It uses Pydantic v1 syntax. In modern FastAPI (Pydantic v2), configurations must use `model_config = ConfigDict(from_attributes=True)`.",
+      "approach": "Identify the outdated `class Config` and `orm_mode` syntax, and provide the correct v2 `ConfigDict` equivalent."
+    },
+    {
+      "question": "You have a Pydantic model for user registration. How do you enforce that the 'password' and 'confirm_password' fields match?",
+      "company": "Backend System Design",
+      "answer": "Use a `@model_validator(mode='after')` (or `mode='before'`) to inspect the entire model's data. A single `@field_validator` only has access to its own field, not the others.",
+      "approach": "Explain that field validators validate single fields in isolation, whereas a model validator has access to the full payload."
+    }
+  ],
+  "sources": [
+    "https://docs.pydantic.dev/latest/concepts/validators/",
+    "https://docs.pydantic.dev/latest/concepts/config/"
+  ]
+}

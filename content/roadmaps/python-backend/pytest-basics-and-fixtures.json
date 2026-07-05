@@ -1,0 +1,80 @@
+{
+  "slug": "pytest-basics-and-fixtures",
+  "title": "Pytest Basics and Fixtures",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "parametrized-tests",
+      "mocking-and-patching"
+    ],
+    "project_usage": [
+      "Writing backend unit tests",
+      "Database session fixture setup"
+    ]
+  },
+  "hook": {
+    "scenario": "You have a massive test file with 100 lines of setup (database connection, user creation) copied and pasted at the top of every single test function. It's brittle and slow."
+  },
+  "mental_model": {
+    "intuition": "Fixtures are dependency injection for your tests. Just like FastAPI's `Depends`, a test simply declares what it needs, and pytest figures out how to build it, pass it in, and clean it up."
+  },
+  "sections": [
+    {
+      "body": "Pytest is the standard testing framework for Python. Instead of subclassing `unittest.TestCase`, you write plain `assert` statements. Pytest introspects the assertions to provide rich failure diffs."
+    },
+    {
+      "body": "A `fixture` is a setup function decorated with `@pytest.fixture`. When a test function includes the fixture's name in its arguments, pytest executes the fixture first and injects the returned value."
+    },
+    {
+      "body": "Fixtures use `yield` instead of `return` to handle teardown. Everything before `yield` is setup; everything after `yield` runs after the test finishes, ensuring resources like database connections are closed even if the test fails."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "With Pytest Fixtures (Clean)",
+      "language": "python",
+      "code": "import pytest\n\n@pytest.fixture\ndef db_session():\n    # Setup: runs before test\n    db = setup_test_db()\n    yield db\n    # Teardown: runs after test\n    teardown_test_db(db)\n\ndef test_create_user(db_session):\n    # db_session is injected automatically\n    user = create_user(db_session, 'alice')\n    assert user.name == 'alice'",
+      "explanation": "The fixture handles the lifecycle. The test only contains the actual logic. Pytest guarantees the code after `yield` runs."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to yield",
+      "explanation": "Using `return` instead of `yield` in a fixture means you cannot write teardown code. The fixture will just exit, leaving database connections or files open."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does pytest know to pass a fixture into a test?",
+      "answer": "By matching the argument name of the test function with the name of the fixture."
+    },
+    {
+      "q": "How do you execute teardown code in a pytest fixture?",
+      "answer": "Use `yield` to return the resource. Any code placed after the `yield` statement will run as teardown."
+    },
+    {
+      "q": "What happens if a test fails when using a generator (yield) fixture?",
+      "answer": "The teardown code after the `yield` in the fixture will still execute."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How would you share a database connection fixture across hundreds of tests without recreating the engine every time?",
+      "answer": "Use a fixture with `scope='session'` to create the engine once. Then, use a `scope='function'` fixture that connects to the engine, starts a transaction, `yield`s the session, and rolls back the transaction in the teardown so tests don't see each other's data."
+    },
+    {
+      "question": "If test A and test B both require a `user` fixture, does test B get the exact same user object?",
+      "answer": "By default, fixtures are function-scoped. Pytest will execute the fixture twice, so test B gets a freshly created user object, preventing test pollution."
+    }
+  ],
+  "sources": [
+    "https://docs.pytest.org/en/7.1.x/fixture.html"
+  ]
+}

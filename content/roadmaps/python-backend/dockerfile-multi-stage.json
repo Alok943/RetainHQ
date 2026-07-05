@@ -1,0 +1,83 @@
+{
+  "slug": "dockerfile-multi-stage",
+  "title": "Dockerfile & Multi-stage Builds",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": [
+      "Containerizing apps",
+      "Deployment"
+    ]
+  },
+  "hook": {
+    "scenario": "Your Python Docker image is 1.5GB. It takes 10 minutes to deploy, and a security scanner flags that you shipped a C++ compiler and pip caching artifacts into production."
+  },
+  "mental_model": {
+    "intuition": "A multi-stage Dockerfile is a factory with two rooms. Room 1 (builder) has all the heavy tools needed to compile dependencies. Room 2 (runtime) is completely empty; you only copy the finished product from Room 1. Room 2 gets shipped."
+  },
+  "sections": [
+    {
+      "body": "Docker containers package an application and its dependencies into a single runnable artifact."
+    },
+    {
+      "body": "A standard Python `Dockerfile` often includes build tools (like `gcc`) required to compile certain packages. If you ship this image, it's bloated and has a large attack surface."
+    },
+    {
+      "body": "Multi-stage builds solve this. You use a `builder` stage to install dependencies into a virtual environment, then use a slim `runtime` stage where you simply copy the virtual environment over."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Single-stage (Bloated)",
+      "language": "dockerfile",
+      "code": "FROM python:3.11\nWORKDIR /app\nCOPY requirements.txt .\n# Caches pip artifacts permanently in the layer\nRUN pip install -r requirements.txt\nCOPY . .\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\"]",
+      "explanation": "This image includes the entire Debian OS, development headers, and `pip` caches. It's huge."
+    },
+    {
+      "title": "Multi-stage Build (Ground Truth)",
+      "language": "dockerfile",
+      "code": "# Stage 1: Builder\nFROM python:3.11-slim AS builder\nRUN apt-get update && apt-get install -y gcc\nRUN python -m venv /opt/venv\nENV PATH=\"/opt/venv/bin:$PATH\"\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\n# Stage 2: Runtime\nFROM python:3.11-slim\n# Copy only the compiled environment, leave gcc behind\nCOPY --from=builder /opt/venv /opt/venv\nENV PATH=\"/opt/venv/bin:$PATH\"\nWORKDIR /app\nCOPY . .\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
+      "explanation": "The final image drops the `builder` stage completely. It only contains the application code and the clean virtual environment."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Baking secrets into the Dockerfile",
+      "explanation": "Never use `ENV SECRET_KEY=1234` in a Dockerfile. Docker caches this in a layer permanently. Anyone with the image can extract the secret. Secrets must be passed at runtime."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the main advantage of a multi-stage Docker build?",
+      "answer": "It reduces the final image size and attack surface by excluding build tools and caching artifacts."
+    },
+    {
+      "q": "How do you transfer files from a previous stage in a multi-stage Dockerfile?",
+      "answer": "Using the `COPY --from=<stage_name>` directive."
+    },
+    {
+      "q": "Why should you never put API keys in a Dockerfile?",
+      "answer": "Because Docker layers are readable by anyone who has the image. Secrets must be injected at runtime."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Why do we create a Python virtual environment (`venv`) inside a Docker container when the container itself is already isolated?",
+      "answer": "While isolation isn't the issue, a virtual environment makes it extremely easy to move dependencies in a multi-stage build. You can simply `COPY --from=builder /opt/venv /opt/venv` and you've transferred exactly what you need without copying system-level files."
+    },
+    {
+      "question": "What is the order of operations in a Dockerfile for optimal caching?",
+      "answer": "Copy `requirements.txt`, run `pip install`, and THEN copy the application code. This ensures that if only application code changes, the dependency installation layer is cached."
+    }
+  ],
+  "sources": [
+    "https://docs.docker.com/build/building/multi-stage/"
+  ]
+}

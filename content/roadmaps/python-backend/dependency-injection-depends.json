@@ -1,0 +1,139 @@
+{
+  "slug": "dependency-injection-depends",
+  "title": "Dependency Injection (Depends)",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "routers-and-app-structure",
+      "async-vs-def-endpoints"
+    ],
+    "unlocks": [
+      "middleware-and-cors",
+      "sqlalchemy-sqlmodel-async"
+    ],
+    "project_usage": [
+      "Providing database sessions to routes",
+      "Extracting and verifying JWT tokens for authentication"
+    ]
+  },
+  "overview": {
+    "what": "Dependency injection (DI) via `Depends` in FastAPI is a mechanism to declare what a route needs—like a database connection or current user—and have the framework automatically provide it.",
+    "why": "It separates setup code from business logic, prevents massive code duplication across routes, and makes endpoints trivially easy to test by overriding the dependencies.",
+    "where_used": [
+      "FastAPI route definitions",
+      "Authentication and authorization flows",
+      "Database session management"
+    ]
+  },
+  "why_learning_this": [
+    "Virtually every FastAPI route beyond a 'Hello World' needs some shared state or setup.",
+    "It is the standard FastAPI way to handle authentication and database sessions.",
+    "Understanding Depends is key to writing modular and testable backend code."
+  ],
+  "hook": {
+    "scenario": "Your endpoint needs to query the database and verify the user is logged in. You could write the auth verification and DB connection code inside the route function itself, but then you'd have to copy-paste it for the next 50 endpoints."
+  },
+  "mental_model": {
+    "intuition": "Depends is a restaurant kitchen: the waiter doesn't cook, he declares what the dish needs.",
+    "description": "When an endpoint declares a parameter with `Depends(get_db)`, FastAPI pauses before running the endpoint. It runs `get_db()`, takes whatever it returns, and passes it into the endpoint parameter. The endpoint just declares what it needs; FastAPI handles the fetching."
+  },
+  "sections": [
+    {
+      "body": "Without dependency injection, an endpoint has to do its own chores: open a database connection, check the headers for a token, validate the token, and handle errors if it's missing. This mixes 'setup' with 'business logic' and leads to massive code duplication across routes.",
+      "recap": "Doing setup inside the route creates bloated, repeated code."
+    },
+    {
+      "body": "FastAPI solves this with the `Depends` function. You write a separate function that does the chore (e.g., `def get_db(): ...`). In your endpoint, you add a parameter: `db: Session = Depends(get_db)`. Before calling your endpoint, FastAPI automatically calls `get_db()`, takes its result, and injects it into the `db` parameter.",
+      "recap": "Depends separates 'getting what you need' from 'using it'."
+    },
+    {
+      "body": "Dependencies can do more than return values; they can enforce rules. If a dependency raises an `HTTPException` (e.g., an invalid token), the request stops immediately. The endpoint code never runs, guaranteeing that if the endpoint *does* run, the dependency succeeded.",
+      "recap": "Dependencies act as gatekeepers for authentication and validation."
+    },
+    {
+      "body": "Because dependencies are declared in the function signature, testing becomes incredibly easy. In your test, you can tell FastAPI, 'Whenever a route asks for `get_db`, give it `get_test_db` instead.' This allows you to swap out real databases or auth systems for mocked ones without changing the endpoint code.",
+      "recap": "DI makes testing trivial by allowing you to override dependencies."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The bad way: Manual setup inside the endpoint",
+      "language": "python",
+      "code": "from fastapi import APIRouter, Header, HTTPException\n\nrouter = APIRouter()\n\n@router.get('/users/me')\ndef get_current_user(authorization: str = Header(None)):\n    # 1. Setup/Auth logic mixed into the endpoint\n    if not authorization or not authorization.startswith('Bearer '):\n        raise HTTPException(status_code=401, detail='Invalid token')\n    token = authorization.split(' ')[1]\n    user = fake_verify_token(token)\n    \n    # 2. Actual business logic\n    return {'user': user}",
+      "explanation": "Here, the endpoint does its own authentication. If you add 10 more routes that need the current user, you have to copy-paste the auth logic into every single one."
+    },
+    {
+      "title": "The FastAPI way: Using Depends",
+      "language": "python",
+      "code": "from fastapi import APIRouter, Depends, Header, HTTPException\n\n# The dependency function\ndef get_current_user(authorization: str = Header(None)):\n    if not authorization or not authorization.startswith('Bearer '):\n        raise HTTPException(status_code=401, detail='Invalid token')\n    token = authorization.split(' ')[1]\n    return fake_verify_token(token)\n\nrouter = APIRouter()\n\n# The endpoint just asks for what it needs\n@router.get('/users/me')\ndef read_user_profile(user: dict = Depends(get_current_user)):\n    return {'user': user}",
+      "explanation": "The `get_current_user` function handles the complexity. The endpoint simply declares it needs a user via `Depends`. FastAPI calls the dependency and injects the result."
+    },
+    {
+      "title": "Overriding dependencies in tests",
+      "language": "python",
+      "code": "from fastapi.testclient import TestClient\nfrom main import app, get_current_user\n\n# A fake dependency for testing\ndef mock_get_current_user():\n    return {'id': 1, 'username': 'test_user'}\n\n# Tell the app to use the mock instead of the real dependency\napp.dependency_overrides[get_current_user] = mock_get_current_user\n\nclient = TestClient(app)\n\ndef test_read_user_profile():\n    # The request doesn't need a real auth header now!\n    response = client.get('/users/me')\n    assert response.status_code == 200\n    assert response.json() == {'user': {'id': 1, 'username': 'test_user'}}",
+      "explanation": "`app.dependency_overrides` lets you swap out complex dependencies (like database connections or auth calls) with simple test doubles, meaning you don't have to change your application code to test it."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Functions or Classes",
+      "detail": "A dependency can be any callable: a regular function, an async function, or a class."
+    },
+    {
+      "title": "Execution Order",
+      "detail": "Dependencies run BEFORE the route handler. If a dependency raises an exception, the handler never executes."
+    },
+    {
+      "title": "Caching",
+      "detail": "By default, if multiple dependencies in the same request require the same sub-dependency, FastAPI only executes it once and caches the result for that request."
+    },
+    {
+      "title": "Overrides",
+      "detail": "You can replace any dependency globally during tests using `app.dependency_overrides`."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling the dependency instead of passing it to Depends",
+      "explanation": "Writing `user = Depends(get_current_user())` instead of `user = Depends(get_current_user)`. You must pass the function reference, not call the function yourself. FastAPI needs to call it at request time."
+    },
+    {
+      "title": "Using mutable global state instead of dependencies",
+      "explanation": "Creating a global database connection object and importing it into routes. This breaks in async servers and makes testing impossible because you can't easily isolate the database for each test."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the main benefit of using `Depends` in FastAPI?",
+      "answer": "It extracts reusable setup logic (like database connections or authentication) out of the endpoint, making the code DRY, modular, and easy to test."
+    },
+    {
+      "q": "How do you mock a dependency for a test in FastAPI?",
+      "answer": "You assign a mock function to `app.dependency_overrides[original_dependency]`."
+    },
+    {
+      "q": "If a dependency raises an `HTTPException`, what happens to the endpoint code?",
+      "answer": "The endpoint code never executes; FastAPI immediately returns the HTTP error response to the client."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What is dependency injection in FastAPI?",
+      "answer": "It's a mechanism where you declare what an endpoint needs (like a DB session or a user) in the function signature using `Depends()`. The framework automatically runs the required setup code and passes the result into the endpoint."
+    },
+    {
+      "question": "You are writing tests for an endpoint that requires an expensive third-party API call to verify a user token. How do you test the endpoint's logic without hitting the API?",
+      "answer": "I would put the API call in a FastAPI dependency, then use `app.dependency_overrides` in my test suite to replace that dependency with a mock function that returns a dummy user."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/tutorial/dependencies/"
+  ]
+}

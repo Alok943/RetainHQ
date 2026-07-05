@@ -1,0 +1,87 @@
+{
+  "slug": "mocking-and-patching",
+  "title": "Mocking and Patching",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "pytest-basics-and-fixtures"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Testing third-party APIs",
+      "Isolating unit tests"
+    ]
+  },
+  "hook": {
+    "scenario": "Your CI pipeline is failing randomly because an external payment API (Stripe) is rate-limiting your test runner. Tests shouldn't hit real external APIs."
+  },
+  "mental_model": {
+    "intuition": "Mocking is like a movie set. Instead of using a real bank vault (an external API), you build a wooden prop that looks like a vault. The actors (your code) interact with the prop, and you control exactly what the prop does."
+  },
+  "sections": [
+    {
+      "body": "In Python, `unittest.mock.patch` temporarily replaces a real object (like a function or a class) with a `MagicMock` during a test. A mock records how it was called and can be configured to return specific values."
+    },
+    {
+      "body": "FastAPI provides a superior alternative to `patch` for APIs: `app.dependency_overrides`. Instead of monkey-patching Python's internals, you tell the framework to inject a fake dependency when running tests."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Bad: Patching internals",
+      "language": "python",
+      "code": "from unittest.mock import patch\n\n@patch('app.services.payment.charge_stripe')\ndef test_payment(mock_charge):\n    mock_charge.return_value = True\n    # Brittle: if the import path changes, the mock breaks\n    res = process_order() \n    mock_charge.assert_called_once()",
+      "explanation": "Patching requires knowing exactly where the module is imported. It is highly brittle and can cause weird side effects if not cleaned up."
+    },
+    {
+      "title": "Good: FastAPI Dependency Overrides",
+      "language": "python",
+      "code": "from fastapi.testclient import TestClient\nfrom app.main import app\nfrom app.dependencies import get_payment_gateway\n\nclass FakeGateway:\n    def charge(self, amount):\n        return True\n\n# Override the dependency\napp.dependency_overrides[get_payment_gateway] = FakeGateway\n\nclient = TestClient(app)\n\ndef test_payment_endpoint():\n    res = client.post('/checkout')\n    assert res.status_code == 200\n    # Clean up override after test\n    app.dependency_overrides = {}",
+      "explanation": "Instead of `patch`, we override the FastAPI dependency. This is typesafe, refactor-friendly, and respects the framework's lifecycle."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Patching the wrong path",
+      "explanation": "You must patch the object where it is *used* (imported into), not where it is *defined*. If module `A` imports `foo` from `B`, you patch `A.foo`, not `B.foo`."
+    },
+    {
+      "title": "Using patch instead of dependency_overrides",
+      "explanation": "In FastAPI, patching internal functions that are meant to be injected is an anti-pattern. Always use `app.dependency_overrides` instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary rule for the string path passed to `@patch()`?",
+      "answer": "Patch where the object is looked up/used (the namespace it's imported into), not where it is defined."
+    },
+    {
+      "q": "How do you check if a mocked function was executed exactly once?",
+      "answer": "Use `mock_obj.assert_called_once()` or `mock_obj.assert_called_once_with(*args, **kwargs)`."
+    },
+    {
+      "q": "In FastAPI, what is the preferred way to mock a database session or external service?",
+      "answer": "Using `app.dependency_overrides[original_dependency] = mock_dependency`."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you test an endpoint that sends an email without actually sending an email?",
+      "answer": "If the email sender is injected via FastAPI `Depends`, I would use `app.dependency_overrides` to inject a `FakeEmailSender` that just appends the email to an in-memory list. Then I can assert the list length."
+    },
+    {
+      "question": "Why is FastAPI's dependency overriding superior to `unittest.mock.patch`?",
+      "answer": "`patch` relies on string paths which break during refactoring and can cause state leakage if not torn down. Dependency overrides are strongly typed, robust against refactoring, and explicitly supported by the framework."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/advanced/testing-dependencies/",
+    "https://docs.python.org/3/library/unittest.mock.html"
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "slug": "blocking-calls-in-async",
+  "title": "Blocking Calls in Async Code",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "coroutines-async-await",
+      "the-event-loop"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "Your FastAPI app handles 500 req/sec effortlessly. You add one endpoint that uses the standard `requests` library to fetch a 3rd-party API. Suddenly, your entire server freezes for 2 seconds every time someone hits that endpoint. All 500 users timeout."
+  },
+  "mental_model": {
+    "intuition": "The event loop is a single waiter serving 100 tables. If the waiter goes to the kitchen and waits 10 minutes staring at the chef (a blocking call), no other table gets served.",
+    "description": "Async Python runs on a single thread\u2014the event loop. When you `await`, you tell the loop 'I am pausing, go serve someone else.' But if you make a synchronous, blocking call (like `time.sleep` or `requests.get`), the loop doesn't know you paused. It literally freezes the entire thread until the call finishes, halting all other concurrent tasks."
+  },
+  "sections": [
+    {
+      "body": "Async code achieves high concurrency by never waiting. When it hits an `await` (like `await db.fetch()`), it registers a callback and the event loop instantly switches to another request. The golden rule of async is: you must never block the event loop thread.",
+      "recap": "`await` yields control back to the event loop. Synchronous calls do not."
+    },
+    {
+      "body": "Standard libraries like `requests`, `time.sleep`, or `psycopg2` are synchronous. They do not yield control. If you put `requests.get()` inside an `async def` function, the event loop stops dead. It cannot process new HTTP requests, it cannot respond to open websockets, it is completely frozen until that network call returns.",
+      "recap": "A single synchronous call in an `async def` freezes the entire server for all users."
+    },
+    {
+      "body": "To fix this, you must either use an async-compatible library (like `httpx.AsyncClient` or `asyncpg`) and `await` it, OR, in FastAPI, declare the endpoint as a standard `def` (not `async def`). FastAPI will automatically run standard `def` endpoints in a separate background threadpool, keeping the main event loop unblocked.",
+      "recap": "Fix: Use async libraries, or let FastAPI run it in a threadpool using a standard `def`."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The Bug: Freezing the Event Loop",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nimport time, requests\n\napp = FastAPI()\n\n@app.get(\"/fast\")\nasync def fast_endpoint():\n    return {\"msg\": \"I am fast!\"}\n\n@app.get(\"/slow\")\nasync def slow_endpoint():\n    # FATAL MISTAKE: Sync call inside `async def`\n    # The entire server freezes for 2 seconds. \n    # Nobody can access /fast while this is running.\n    time.sleep(2)  \n    \n    # Same issue: requests.get is blocking\n    # resp = requests.get(\"https://api.example.com\")\n    \n    return {\"msg\": \"Done\"}",
+      "explanation": "Because it's an `async def`, FastAPI runs it directly on the event loop. `time.sleep` (or `requests.get`) blocks the thread. The event loop is stuck, meaning all other incoming requests queue up and hang."
+    },
+    {
+      "title": "Fix 1: Use an Async Library",
+      "language": "python",
+      "code": "import asyncio\nimport httpx\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/slow-fixed-async\")\nasync def slow_endpoint_async():\n    # Async sleep yields control to the loop\n    await asyncio.sleep(2)  \n    \n    # Async network call yields control\n    async with httpx.AsyncClient() as client:\n        resp = await client.get(\"https://api.example.com\")\n        \n    return {\"msg\": \"Done, and server stayed responsive!\"}",
+      "explanation": "By using `await asyncio.sleep(2)` and `httpx.AsyncClient`, control is yielded back to the event loop. Other endpoints like `/fast` continue to be served instantly while this request waits."
+    },
+    {
+      "title": "Fix 2: Let FastAPI Threadpool It",
+      "language": "python",
+      "code": "from fastapi import FastAPI\nimport requests, time\n\napp = FastAPI()\n\n# Notice: `def`, NOT `async def`\n@app.get(\"/slow-fixed-sync\")\ndef slow_endpoint_sync():\n    # This is safe! FastAPI runs standard `def` endpoints \n    # in an external threadpool.\n    time.sleep(2)\n    resp = requests.get(\"https://api.example.com\")\n    \n    return {\"msg\": \"Done, threadpool absorbed the block.\"}",
+      "explanation": "If you MUST use a blocking library (like boto3, or an older database driver), drop the `async` keyword. FastAPI detects this and runs the function in a threadpool, preventing the main event loop from freezing."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using `time.sleep` or sync `requests` inside `async def`",
+      "explanation": "This is the classic production bug. `time.sleep` / sync `requests` / sync DB driver inside `async def` freezes the whole event loop \u2014 every request, not just this one. Fix = `asyncio.sleep`, async clients, or `def` endpoint (FastAPI threadpools it)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens to a FastAPI server if you run `requests.get()` inside an `async def` endpoint?",
+      "answer": "The event loop freezes completely until the request finishes. The server will not accept or process any other requests during that time."
+    },
+    {
+      "q": "How does FastAPI handle standard `def` endpoints (without `async`) differently?",
+      "answer": "It runs them in an external threadpool. This allows the blocking code to run without freezing the main async event loop."
+    },
+    {
+      "q": "If you are writing an `async def` endpoint, how should you make an HTTP request to a 3rd-party API?",
+      "answer": "You must use an async-compatible HTTP client, such as `httpx.AsyncClient` or `aiohttp`, and `await` the request."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A FastAPI endpoint marked with `async def` performs a slow synchronous database query using psycopg2. What is the impact on the application under load?",
+      "company": "Backend Engineer interview",
+      "answer": "The application will completely lock up under load. An `async def` function runs directly on the single event loop thread. A synchronous blocking call (like psycopg2) will freeze the loop, meaning the server cannot process any other requests for any endpoint until the query returns.",
+      "approach": "Identify that the event loop gets blocked. State the blast radius (affects ALL requests, not just the slow one)."
+    },
+    {
+      "question": "If you absolutely must use a synchronous library like boto3 in FastAPI, how do you prevent it from blocking the event loop?",
+      "company": "API Design interview",
+      "answer": "You define the endpoint function as a standard `def` (instead of `async def`), or you explicitly run the blocking code in a threadpool using `run_in_executor`. FastAPI automatically detects standard `def` endpoints and executes them in an external threadpool, keeping the main event loop free.",
+      "approach": "Give the practical framework-specific solution (dropping the async keyword) or the pure Python solution (run_in_executor)."
+    }
+  ],
+  "sources": [
+    "https://fastapi.tiangolo.com/async/",
+    "https://docs.python.org/3/library/asyncio-task.html#sleeping"
+  ]
+}
