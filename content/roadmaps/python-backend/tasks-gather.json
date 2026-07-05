@@ -1,0 +1,116 @@
+{
+  "slug": "tasks-gather",
+  "title": "Tasks & gather",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "coroutines-async-await",
+      "the-event-loop"
+    ],
+    "unlocks": [
+      "blocking-calls-in-async"
+    ]
+  },
+  "hook": {
+    "scenario": "You need to call three microservices, each taking 1 second. You `await` them one after another and the endpoint takes 3 seconds. But the calls don't depend on each other — they could all be in flight at once. How do you get it down to 1 second?"
+  },
+  "mental_model": {
+    "intuition": "`await` on its own is like mailing three letters and waiting by the mailbox for each reply before sending the next. `create_task` / `gather` is dropping all three in the box at once, then waiting for the whole batch. The waiting overlaps, so the batch finishes about as fast as the slowest single letter.",
+    "description": "A bare `await coro()` is sequential — it starts the coroutine and blocks until it's done. To overlap independent coroutines you must first *schedule* them so the event loop starts running them concurrently. `asyncio.create_task(coro())` wraps a coroutine in a Task and hands it to the loop immediately (it starts running at the next `await`). `asyncio.gather(*coros)` is the common shortcut: it schedules several awaitables as concurrent tasks and returns a single awaitable that resolves to a list of their results, in the original order, once all finish. Total time collapses from the *sum* of the waits to roughly the *maximum*."
+  },
+  "sections": [
+    {
+      "body": "The trap: `await a(); await b(); await c()` runs strictly in sequence — each `await` fully completes before the next starts, so three 1-second calls take 3 seconds. `await` means 'run this and wait here,' not 'run this in the background.' Sequential awaits are correct only when each step *depends* on the previous result.",
+      "recap": "Back-to-back `await`s are sequential; their durations add up."
+    },
+    {
+      "body": "`asyncio.gather(a(), b(), c())` schedules all three as concurrent tasks and awaits the batch. They run overlapped on the one loop, so the total is ~max(durations), not the sum. `gather` returns results as a list in the *same order you passed the coroutines*, regardless of which finished first — so you can safely unpack `x, y, z = await gather(...)`.",
+      "recap": "`gather` runs awaitables concurrently and returns their results in input order."
+    },
+    {
+      "body": "`asyncio.create_task(coro())` is the lower-level primitive: it schedules one coroutine right away and returns a Task handle you can `await` later, check with `.done()`, or `.cancel()`. Use it when you want a coroutine running in the background while you do other work, then await it at the point you actually need its result. `gather` is essentially create-task-then-await-all wrapped up for the common fan-out case.",
+      "recap": "`create_task` starts one coroutine now and gives you a handle to await/cancel later."
+    },
+    {
+      "body": "Error handling differs. By default, if any coroutine in `gather` raises, `gather` propagates that first exception immediately — but the other tasks keep running (they aren't auto-cancelled), which can leak work. Pass `return_exceptions=True` to instead collect exceptions as ordinary items in the results list, so one failure doesn't sink the batch. (In modern code, `asyncio.TaskGroup` gives structured cancellation — a failure cancels its siblings — but `gather` remains the ubiquitous interview answer.)",
+      "recap": "`gather` raises on the first error by default; `return_exceptions=True` collects errors instead."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Sequential vs. concurrent",
+      "language": "python",
+      "code": "import asyncio, time\n\nasync def call_service(name):\n    await asyncio.sleep(1)          # each call takes 1s\n    return f\"{name}-ok\"\n\nasync def sequential():\n    a = await call_service(\"A\")\n    b = await call_service(\"B\")\n    c = await call_service(\"C\")\n    return [a, b, c]                # ~3s total\n\nasync def concurrent():\n    # scheduled together -> overlap -> ~1s total\n    return await asyncio.gather(\n        call_service(\"A\"),\n        call_service(\"B\"),\n        call_service(\"C\"),\n    )\n\nasync def main():\n    t = time.perf_counter()\n    print(await sequential(),  f\"{time.perf_counter()-t:.1f}s\")\n    t = time.perf_counter()\n    print(await concurrent(),  f\"{time.perf_counter()-t:.1f}s\")\n\nasyncio.run(main())\n# ['A-ok','B-ok','C-ok'] 3.0s\n# ['A-ok','B-ok','C-ok'] 1.0s",
+      "explanation": "`sequential` awaits each call before starting the next, so the 1-second waits add to 3s. `gather` schedules all three at once; their waits overlap on the single loop, so the batch finishes in ~1s. Note `gather` preserves input order (A, B, C) even though they run together."
+    },
+    {
+      "title": "create_task for background work",
+      "language": "python",
+      "code": "import asyncio\n\nasync def fetch(name, delay):\n    await asyncio.sleep(delay)\n    return name\n\nasync def main():\n    # start it now; it runs while we do other work\n    task = asyncio.create_task(fetch(\"report\", 2))\n\n    await do_other_setup()          # happens concurrently with fetch\n\n    result = await task             # await only when we need it\n    print(result)                   # 'report'\n\nasync def do_other_setup():\n    await asyncio.sleep(1)\n\nasyncio.run(main())",
+      "explanation": "`create_task` kicks off `fetch` immediately and returns a handle. The setup work runs during fetch's 2-second wait, so we only pay for the overlap. We `await task` at the point we actually need its result — and could have cancelled it with `task.cancel()` instead."
+    },
+    {
+      "title": "Not letting one failure sink the batch",
+      "language": "python",
+      "code": "import asyncio\n\nasync def ok():   return \"ok\"\nasync def boom(): raise ValueError(\"service down\")\n\nasync def main():\n    # default: first exception propagates out of gather\n    try:\n        await asyncio.gather(ok(), boom())\n    except ValueError as e:\n        print(\"raised:\", e)         # raised: service down\n\n    # collect exceptions as results instead\n    results = await asyncio.gather(ok(), boom(), return_exceptions=True)\n    print(results)                  # ['ok', ValueError('service down')]\n\nasyncio.run(main())",
+      "explanation": "By default `gather` re-raises the first exception, so you handle it with try/except. With `return_exceptions=True`, each coroutine's outcome — value or exception object — lands in the results list by position, letting you inspect partial success instead of losing the whole batch."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Awaiting in a loop when calls are independent",
+      "explanation": "`for url in urls: results.append(await fetch(url))` runs the fetches one at a time — the classic accidental-sequential bug. If the calls don't depend on each other, schedule them together: `results = await asyncio.gather(*(fetch(u) for u in urls))`."
+    },
+    {
+      "title": "Expecting results in completion order",
+      "explanation": "`gather` returns results in the order the coroutines were *passed in*, not the order they finished. If you need results as they complete, use `asyncio.as_completed(...)` instead — but for a fixed fan-out, rely on gather's positional ordering."
+    },
+    {
+      "title": "A fire-and-forget task that's never awaited (or referenced)",
+      "explanation": "`asyncio.create_task(...)` without keeping the returned handle risks the task being garbage-collected mid-flight, and its exceptions vanish silently. Keep a reference and `await` it (or gather it) so errors surface and the work actually completes."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does `await a(); await b()` take the sum of their durations instead of the max?",
+      "answer": "Each `await` fully completes before the next begins — they run sequentially, not concurrently. `await` means 'run and wait here', so the waits don't overlap and their times add up."
+    },
+    {
+      "q": "What does `asyncio.gather(*coros)` do, and in what order are its results returned?",
+      "answer": "It schedules all the coroutines to run concurrently and returns a single awaitable that resolves to a list of their results once all finish. Results are in the same order the coroutines were passed, regardless of completion order."
+    },
+    {
+      "q": "How does `asyncio.create_task` differ from a plain `await`?",
+      "answer": "`create_task` schedules the coroutine to start running immediately and returns a Task handle, so it can run in the background while you do other work; you `await` (or cancel) it later. A plain `await` starts the coroutine and blocks right there until it finishes."
+    },
+    {
+      "q": "By default, what happens to a `gather` if one of its coroutines raises?",
+      "answer": "The first exception propagates out of `gather` immediately, but the other scheduled tasks are not automatically cancelled. Passing `return_exceptions=True` instead collects exceptions as items in the results list."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An endpoint fetches a user, their orders, and their recommendations from three independent services, each ~200ms, using three sequential `await`s — total ~600ms. How do you cut the latency, and what's the new expected time?",
+      "company": "Backend Engineer interview",
+      "answer": "The three calls are independent, so run them concurrently with `user, orders, recs = await asyncio.gather(get_user(), get_orders(), get_recs())`. Scheduled together, their 200ms waits overlap on the event loop, so total latency drops to ~200ms (the slowest single call) instead of the ~600ms sum. `gather` also returns results in the order passed, so the unpacking is safe.",
+      "approach": "Recognize the calls are independent, replace sequential awaits with `gather` for concurrency, and state the new time is ~max(durations), not the sum."
+    },
+    {
+      "question": "You fan out 50 API calls with `asyncio.gather`. One call fails. Describe the default behavior and how you'd make the batch resilient to individual failures.",
+      "company": "System Design interview",
+      "answer": "By default `gather` raises the first exception up to the caller, and the remaining tasks keep running in the background (not auto-cancelled), which can leak work. To be resilient, pass `return_exceptions=True` so each result — a value or an exception object — is returned by position; you then filter successes from failures and retry or log the failed ones. For structured cancellation where a failure should cancel siblings, `asyncio.TaskGroup` is the modern alternative.",
+      "approach": "State that gather raises the first error by default (and doesn't cancel siblings), then use `return_exceptions=True` to collect per-call outcomes; mention TaskGroup for structured cancellation."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/asyncio-task.html#asyncio.gather",
+    "https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task",
+    "https://docs.python.org/3/library/asyncio-task.html#task-object"
+  ]
+}

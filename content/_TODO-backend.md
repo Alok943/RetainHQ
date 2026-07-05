@@ -50,13 +50,13 @@ __hash__ gap acceptable) · str-vs-repr · inheritance-super · duck-typing · d
 | Shallow vs deep copy | shallow-vs-deep-copy | REUSE |
 
 ## Phase 5 · Web Framework & API (12) — all engineering (NEW)
-wsgi-vs-asgi · path-and-query-parameters · request-body-and-response-model · routers-and-app-structure ·
-async-vs-def-endpoints · dependency-injection-depends · middleware-and-cors · status-codes-and-openapi ·
-background-tasks · pydantic-models-and-validators · pydantic-settings · configdict-from-attributes
+[x] wsgi-vs-asgi · [x] path-and-query-parameters · [x] request-body-and-response-model · [x] routers-and-app-structure ·
+[x] async-vs-def-endpoints · [x] dependency-injection-depends · [x] middleware-and-cors · [x] status-codes-and-openapi ·
+[x] background-tasks · [x] pydantic-models-and-validators · [x] pydantic-settings · [x] configdict-from-attributes
 
 ## Phase 6 · Data Layer (7) — all engineering (NEW)
-sqlalchemy-sqlmodel-async · sessions-and-expire-on-commit · eager-loading-selectinload · n-plus-1-queries ·
-alembic-migrations · transactions-and-atomicity · connection-pooling
+[x] sqlalchemy-sqlmodel-async · [x] sessions-and-expire-on-commit · [x] eager-loading-selectinload · [x] n-plus-1-queries ·
+[x] alembic-migrations · [x] transactions-and-atomicity · [x] connection-pooling
 
 ## Phase 7 · Testing (6) — all engineering (NEW)
 [x] pytest-basics-and-fixtures · [x] parametrized-tests · [x] mocking-and-patching · [x] async-tests ·

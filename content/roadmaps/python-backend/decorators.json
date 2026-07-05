@@ -1,0 +1,118 @@
+{
+  "slug": "decorators",
+  "title": "Decorators",
+  "roadmap": "python-backend",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "functions",
+      "first-class-functions",
+      "closures"
+    ],
+    "unlocks": [
+      "functools-wraps",
+      "decorator-factories"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Flask",
+      "Django"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "syntactic sugar",
+      "definition": "Syntax in a programming language that makes things easier to read or to express, but doesn't add any new functionality. For example, `@my_decorator` is syntactic sugar for `func = my_decorator(func)`. Example: `@timer`"
+    },
+    {
+      "term": "cross-cutting concerns",
+      "definition": "Aspects of a program that affect many different parts of the system, like logging or security, rather than just one specific feature. Example: `@log_calls`"
+    }
+  ],
+  "overview": {
+    "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure, which is a function that retains access to its enclosing scope) that replaces the original function. It acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.",
+    "why": "Decorators allow you to cleanly extract reusable cross-cutting concerns—like logging, authentication, or timing—away from the core business logic of your functions.",
+    "where_used": [
+      "FastAPI route definitions (@app.get)",
+      "Flask routes (@app.route)",
+      "Built-in class properties (@property)"
+    ]
+  },
+  "why_learning_this": [
+    "You can wrap dozens of functions with repetitive logic like access control with just one line of code.",
+    "It is the foundational mechanism for web framework routing in Python."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to return the wrapper",
+      "explanation": "Without this `return` statement, the decorator evaluates to `None`, silently breaking the function it wraps."
+    },
+    {
+      "title": "Forgetting to return the original function's result",
+      "explanation": "The inner wrapper must pass back the result of `func(*args, **kwargs)` so the caller receives the expected value."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the equivalent manual code for `@my_decorator\\ndef my_func(): pass`?",
+      "answer": "It is exactly equivalent to `my_func = my_decorator(my_func)`. The decorator function takes the original function as an argument and reassigns its name to the result.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What kind of object does a decorator function typically return?",
+      "answer": "It typically returns a new wrapper function (a closure). This wrapper replaces the original function and adds new behavior before or after calling it.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why use decorators instead of just writing the logic inside the function?",
+      "answer": "They separate cross-cutting concerns (like logging or timing) from the core logic. This keeps the core functions clean and allows you to reuse the same behavior across many functions.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What will this code print?",
+      "code": "def make_bold(func):\n    def wrapper():\n        return f\"<b>{func()}</b>\"\n    return wrapper\n\n@make_bold\ndef get_text():\n    return \"Hello\"\n\nprint(get_text())",
+      "answer": "<b>Hello</b>",
+      "why": "The decorator `make_bold` wraps `get_text`. When `get_text()` is called, it actually calls `wrapper()`, which evaluates `func()` (returning 'Hello'), wraps it in `<b>` tags, and returns the result."
+    },
+    {
+      "type": "find-bug",
+      "question": "This decorator is meant to log the execution of a function, but calling `add(2, 3)` returns `None`. Why?",
+      "code": "def log_execution(func):\n    def wrapper(*args, **kwargs):\n        print(\"Executing function...\")\n        func(*args, **kwargs)\n    return wrapper\n\n@log_execution\ndef add(a, b):\n    return a + b\n\nresult = add(2, 3)",
+      "answer": "The `wrapper` function forgot to return the result of `func(*args, **kwargs)`.",
+      "why": "In a decorator, the `wrapper` replaces the original function. If the original function calculates a value but the `wrapper` doesn't explicitly return it, the caller will implicitly receive `None`."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "name": "Add Logging to a Decorator",
+      "description": "The current `log_call` decorator doesn't do anything yet. Modify it so that it prints 'Calling function' before executing the decorated function, and 'Function finished' after. Apply it to the `say_hello` function.",
+      "starter_code": "def log_call(func):\n    def wrapper():\n        # TODO: Print 'Calling function', call func(), print 'Function finished'\n        return func()\n    return wrapper\n\n# TODO: Decorate this function\ndef say_hello():\n    print('Hello!')\n\nsay_hello()",
+      "solution_code": "def log_call(func):\n    def wrapper():\n        print('Calling function')\n        func()\n        print('Function finished')\n    return wrapper\n\n@log_call\ndef say_hello():\n    print('Hello!')\n\nsay_hello()"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def uppercase(func):\n  def wrapper():\n    original_result = func()\n    return original_result.upper()\n  return wrapper\n\n@uppercase\ndef greet():\n  return 'hello'\n\nprint(greet())",
+    "focus": "return original_result.upper()"
+  },
+  "aha_moment": {
+    "code": "def no_op(func):\n  pass\n\n@no_op\ndef greet():\n  return 'hello'\n\nprint(greet())",
+    "prediction": "What does this code print?",
+    "common_guess": "It prints 'hello', assuming the decorator does nothing.",
+    "why": "It throws a TypeError. Since `no_op` doesn't explicitly return anything, it returns `None`. The decorator syntax does `greet = no_op(greet)`, so `greet` is now `None`."
+  },
+  "challenge": {
+    "title": "Write a timing decorator that accepts arguments",
+    "prompt": "Create a decorator `timer` that measures the execution time of a function. It must accept any number of positional and keyword arguments (`*args`, `**kwargs`), run the original function, print the time taken in seconds (you can mock the time or use `import time`), and return the original function's result."
+  },
+  "sources": [
+    "https://docs.python.org/3/glossary.html#term-decorator"
+  ]
+}

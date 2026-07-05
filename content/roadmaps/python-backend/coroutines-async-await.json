@@ -1,0 +1,111 @@
+{
+  "slug": "coroutines-async-await",
+  "title": "Coroutines, async / await",
+  "roadmap": "python-backend",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "generators-and-yield"
+    ],
+    "unlocks": [
+      "the-event-loop",
+      "tasks-gather",
+      "blocking-calls-in-async"
+    ]
+  },
+  "hook": {
+    "scenario": "You call `result = fetch_user(1)` and it returns instantly — but `result` isn't the user, it's a `<coroutine object>`. You `print(result)` and get a RuntimeWarning: 'coroutine was never awaited.' The function you wrote never actually ran."
+  },
+  "mental_model": {
+    "intuition": "A regular function is a worker who does the whole job the moment you call them. A coroutine is a worker who, when called, just hands you a to-do card. Nothing happens until someone (the event loop) picks up that card and works it — pausing whenever it hits an `await`.",
+    "description": "`async def` does not define a function that runs — it defines a coroutine factory. Calling it builds a coroutine object (a paused, resumable computation) and returns immediately without executing the body. `await` is the only thing that drives a coroutine forward: it runs it until the coroutine yields control (because it's waiting on I/O), then lets whoever is awaiting decide what to do while it waits. This is cooperative multitasking — tasks voluntarily pause at `await` points so others can run."
+  },
+  "sections": [
+    {
+      "body": "`async def` turns a function into a coroutine function. Calling it (`fetch_user(1)`) runs *none* of the body — it constructs and returns a coroutine object. This is the single most common beginner surprise: the code inside an `async def` does not execute until the coroutine is awaited or scheduled on the event loop.",
+      "recap": "Calling an `async def` builds a coroutine object; it does not run the body."
+    },
+    {
+      "body": "`await` does two jobs. It *drives* the awaited coroutine (runs its body), and it marks a *suspension point* — a spot where this coroutine is allowed to pause and hand control back so other work can proceed while it waits on something slow (a network reply, a DB row). You can only use `await` inside an `async def`.",
+      "recap": "`await` both runs a coroutine and marks where it may pause to yield control."
+    },
+    {
+      "body": "You can only `await` an *awaitable*: a coroutine, a Task, or a Future. Awaiting a plain value or a normal function call is a `TypeError`. In practice you `await` other `async def` calls (`await db.fetch()`) and library primitives (`await asyncio.sleep(1)`). To actually start the top-level coroutine from synchronous code, you hand it to `asyncio.run(main())`, which spins up an event loop, runs the coroutine to completion, and tears the loop down.",
+      "recap": "`await` needs an awaitable; `asyncio.run(main())` is the sync→async entry point."
+    },
+    {
+      "body": "Coroutines are the async evolution of generators. A generator uses `yield` to pause and hand a value back to its caller; a coroutine uses `await` to pause and hand control back to the event loop. Same underlying machinery (a resumable, stack-preserving frame) — different purpose: generators produce values lazily, coroutines wait on I/O without blocking.",
+      "recap": "Coroutines are generators repurposed: `await` pauses for I/O like `yield` pauses for a value."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Calling vs. awaiting a coroutine",
+      "language": "python",
+      "code": "import asyncio\n\nasync def fetch_user(uid):\n    # pretend this is a slow DB / network call\n    await asyncio.sleep(1)\n    return {\"id\": uid, \"name\": \"Ada\"}\n\n# WRONG: this runs none of the body\nc = fetch_user(1)\nprint(c)          # <coroutine object fetch_user at 0x...>\n# RuntimeWarning: coroutine 'fetch_user' was never awaited\n\n# RIGHT: drive it from an event loop\nasync def main():\n    user = await fetch_user(1)   # now the body actually runs\n    print(user)                  # {'id': 1, 'name': 'Ada'}\n\nasyncio.run(main())",
+      "explanation": "`fetch_user(1)` just builds a coroutine object — printing it shows exactly that, and the 'never awaited' warning tells you the body never executed. Only `await fetch_user(1)` inside a running loop drives it to produce a result."
+    },
+    {
+      "title": "await is a suspension point, not a blocking call",
+      "language": "python",
+      "code": "import asyncio, time\n\nasync def slow_task(name):\n    print(f\"{name}: start\")\n    await asyncio.sleep(1)   # pause HERE, let others run\n    print(f\"{name}: done\")\n\nasync def main():\n    start = time.perf_counter()\n    # both run concurrently: total ~1s, not 2s\n    await asyncio.gather(slow_task(\"A\"), slow_task(\"B\"))\n    print(f\"elapsed: {time.perf_counter() - start:.1f}s\")\n\nasyncio.run(main())\n# A: start / B: start / A: done / B: done / elapsed: 1.0s",
+      "explanation": "At each `await asyncio.sleep(1)`, the coroutine yields control instead of blocking the thread. While A waits, B gets to run — so two 1-second waits overlap and finish in ~1 second total. That overlap is the entire point of async."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to `await` (the silent no-op)",
+      "explanation": "Writing `fetch_user(1)` instead of `await fetch_user(1)` produces a coroutine object that never runs. There's no error — just a 'coroutine was never awaited' RuntimeWarning and a value that isn't what you expected. If a result looks like `<coroutine object ...>`, you forgot an `await`."
+    },
+    {
+      "title": "Thinking `await` means 'run in the background'",
+      "explanation": "`await coro()` runs the coroutine and waits for it right there — it is sequential, not concurrent. To overlap work you need `asyncio.gather` or `asyncio.create_task`. A function full of sequential `await`s is no faster than sync code; it just doesn't block the loop while waiting."
+    },
+    {
+      "title": "Using `await` outside an `async def`",
+      "explanation": "`await` at module level or inside a normal `def` is a SyntaxError. The entry point from synchronous code is `asyncio.run(main())`, where `main` is an `async def`; everything you `await` lives inside that async call tree."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does calling an `async def` function actually return, and does it run the body?",
+      "answer": "It returns a coroutine object and runs none of the body. The code only executes once the coroutine is awaited or scheduled on the event loop."
+    },
+    {
+      "q": "What are the two jobs `await` performs?",
+      "answer": "It drives the awaited coroutine (runs its body to a result) and marks a suspension point where the current coroutine may pause and yield control back to the event loop while it waits."
+    },
+    {
+      "q": "How do you start async code from an ordinary synchronous script?",
+      "answer": "Call `asyncio.run(main())`, where `main` is an `async def`. It creates an event loop, runs the coroutine to completion, and closes the loop."
+    },
+    {
+      "q": "Why does a function with several sequential `await`s run no faster than synchronous code?",
+      "answer": "Each `await` runs and waits for its coroutine before moving on — they don't overlap. Concurrency requires scheduling them together with `asyncio.gather` or `create_task`."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes `data = fetch_data()` where `fetch_data` is an `async def`, then tries to use `data` as a dict and gets errors. What went wrong and how do they fix it?",
+      "company": "Backend Engineer interview",
+      "answer": "Calling an `async def` returns a coroutine object, not the result — the body never ran. `data` is a coroutine, not a dict. The fix is `data = await fetch_data()` inside an `async def` (ultimately entered via `asyncio.run(...)`). The give-away is that `data` prints as `<coroutine object ...>` and Python emits a 'coroutine was never awaited' warning.",
+      "approach": "Identify that `async def` returns a coroutine object, that awaiting is what runs it, and name the 'never awaited' warning as the diagnostic."
+    },
+    {
+      "question": "Explain the difference between `await coro()` and `asyncio.gather(coro(), coro())`. When would each be correct?",
+      "company": "API Design interview",
+      "answer": "`await coro()` runs one coroutine and blocks the current coroutine until it finishes — sequential. `asyncio.gather(...)` schedules multiple coroutines to run concurrently and waits for all of them, so their I/O waits overlap. Use a single `await` when a step depends on the previous result; use `gather` when independent I/O operations can proceed in parallel (e.g. fetching three unrelated endpoints).",
+      "approach": "Contrast sequential vs concurrent execution, tie the choice to whether the operations are independent, and note that `await` alone gives no speedup for parallelizable I/O."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/asyncio-task.html#coroutines",
+    "https://docs.python.org/3/reference/expressions.html#await-expression",
+    "https://fastapi.tiangolo.com/async/"
+  ]
+}

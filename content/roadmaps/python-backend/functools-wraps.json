@@ -1,0 +1,100 @@
+{
+  "slug": "functools-wraps",
+  "title": "functools.wraps",
+  "roadmap": "python-backend",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "decorators",
+      "closures"
+    ],
+    "unlocks": [
+      "decorator-factories"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Flask"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "metadata",
+      "definition": "Information that describes other data, like a function's name or its documentation. Example: `func.__name__`"
+    },
+    {
+      "term": "reflection",
+      "definition": "The ability of a program to examine and modify its own structure and behavior while it is running. Example: `inspect.signature(func)`"
+    }
+  ],
+  "overview": {
+    "what": "When you write a decorator, the returned wrapper function replaces the original function. By default, this wrapper hides the original function's metadata (like its `__name__` and `__doc__`). Using `@functools.wraps(func)` on the wrapper copies the original function's metadata to the wrapper. Think of it like wearing a costume: without `@wraps`, people see the costume and forget who is inside; with `@wraps`, you wear a name tag over the costume so your real identity is preserved.",
+    "why": "Web frameworks and documentation generators rely on function metadata to register routes and build docs. If decorators obscure this, frameworks fail to map URLs correctly.",
+    "where_used": [
+      "FastAPI routes",
+      "Flask views",
+      "Celery tasks"
+    ]
+  },
+  "why_learning_this": [
+    "Ensuring your decorators don't break web frameworks that inspect function names.",
+    "Generating accurate documentation for decorated functions."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Missing @wraps on decorators",
+      "explanation": "Forgetting to decorate the inner wrapper with `@wraps(func)`. This causes the decorated function's `__name__` to become `'wrapper'`, breaking reflection."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens to a function's `__name__` attribute if you decorate it with a custom decorator that doesn't use `functools.wraps`?",
+      "answer": "It changes to the name of the inner wrapper function defined inside the decorator.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do frameworks like FastAPI or Flask require decorators to use `functools.wraps`?",
+      "answer": "They rely on the original function's metadata, like its name and docstring, to properly register routes and generate documentation. Without it, all routes might appear to be named 'wrapper'.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix a broken decorator",
+      "prompt": "The provided `log_calls` decorator currently hides the original function's name and docstring. Import `functools` and use `@functools.wraps` to fix the decorator so that `calculate_tax.__name__` prints `'calculate_tax'`.",
+      "starter_code": "def log_calls(func):\n  def wrapper(*args, **kwargs):\n    print('Calling function')\n    return func(*args, **kwargs)\n  return wrapper\n\n@log_calls\ndef calculate_tax(amount):\n  '''Calculates tax for an amount.'''\n  return amount * 0.2\n\nprint(calculate_tax.__name__)",
+      "solution": "import functools\n\ndef log_calls(func):\n  @functools.wraps(func)\n  def wrapper(*args, **kwargs):\n    print('Calling function')\n    return func(*args, **kwargs)\n  return wrapper\n\n@log_calls\ndef calculate_tax(amount):\n  '''Calculates tax for an amount.'''\n  return amount * 0.2\n\nprint(calculate_tax.__name__)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import functools\n\ndef my_decorator(func):\n  @functools.wraps(func)\n  def wrapper():\n    return func()\n  return wrapper\n\n@my_decorator\ndef real_function():\n  pass\n\nprint(real_function.__name__)",
+    "focus": "print(real_function.__name__)"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def naive_decorator(func):\n  def wrapper():\n    return func()\n  return wrapper\n\n@naive_decorator\ndef greet():\n  '''Says hello'''\n  pass\n\nprint(greet.__name__)",
+      "question": "What does this script print?",
+      "answer": "wrapper",
+      "why": "Because `greet` is replaced by `wrapper`, its `__name__` becomes `'wrapper'`. Without `@wraps`, the original identity is lost."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why would missing @wraps on a decorator cause a FastAPI application to fail when defining routes?",
+      "answer": "FastAPI uses the function's name and type hints to register routes and build documentation.",
+      "why": "If a decorator hides the original function's metadata, FastAPI only sees the wrapper function's name (often literally 'wrapper') and signature, losing the actual route details."
+    }
+  ],
+  "challenge": {
+    "title": "Create a well-behaved timing decorator",
+    "prompt": "Write a `time_it` decorator that measures execution time and prints it. It must use `functools.wraps` so the decorated function retains its `__doc__` and `__name__`. Test it on a function named `process_data`.",
+    "solution": "import functools\nimport time\n\ndef time_it(func):\n  @functools.wraps(func)\n  def wrapper(*args, **kwargs):\n    start = time.time()\n    result = func(*args, **kwargs)\n    print(f'Took {time.time() - start}s')\n    return result\n  return wrapper\n\n@time_it\ndef process_data():\n  '''Processes a bunch of data.'''\n  pass"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/functools.html#functools.wraps"
+  ]
+}
