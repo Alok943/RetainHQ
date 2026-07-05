@@ -1,20 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Shield, LogOut, Trash2, Sun, Moon } from 'lucide-react';
+import { User, Mail, Shield, LogOut, Trash2, Sun, Moon, GraduationCap, School } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from './lib/theme';
+import { apiFetch } from './lib/api';
 
 function Profile() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const [user, setUser] = useState(null);
+  const [audience, setAudience] = useState(null);
+  const [savingAudience, setSavingAudience] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
+    apiFetch('/api/prefs/').then((p) => setAudience(p.audience)).catch(() => {});
   }, []);
+
+  const switchAudience = async (value) => {
+    if (value === audience || savingAudience) return;
+    setSavingAudience(true);
+    try {
+      const p = await apiFetch('/api/prefs/', {
+        method: 'PUT',
+        body: JSON.stringify({ audience: value }),
+      });
+      setAudience(p.audience);
+    } catch {
+      // keep the old selection on failure
+    } finally {
+      setSavingAudience(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -184,6 +204,41 @@ function Profile() {
               }`}
             />
           </button>
+        </div>
+      </div>
+
+      {/* Learning catalog (career vs school) */}
+      <div className="kinetic-card bg-white p-6">
+        <h3 className="font-sans text-sm font-semibold text-[#0F172A] mb-1 uppercase tracking-widest">Learning Catalog</h3>
+        <p className="font-sans text-xs text-[#64748B] mb-4">
+          Pick what you're studying — this decides which roadmaps you see. Your progress in the other catalog is kept.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {[
+            { value: 'career', icon: GraduationCap, title: 'College — Coding & CS', desc: 'DSA, Python, SQL, core CS & interviews.' },
+            { value: 'school', icon: School, title: 'School — Class 9 & 10', desc: 'NCERT Physics, concept by concept.' },
+          ].map(({ value, icon: Icon, title, desc }) => (
+            <button
+              key={value}
+              type="button"
+              disabled={savingAudience || audience === null}
+              onClick={() => switchAudience(value)}
+              aria-pressed={audience === value}
+              className={`flex-1 flex items-start gap-3 p-4 border rounded text-left transition-colors disabled:opacity-60 ${
+                audience === value
+                  ? 'border-[#0891B2] bg-[#0891B2]/5'
+                  : 'border-slate-200 hover:border-[#0891B2] hover:bg-slate-50'
+              }`}
+            >
+              <div className="w-9 h-9 shrink-0 rounded-full bg-[rgba(15,23,42,0.05)] flex items-center justify-center text-[#0891B2]">
+                <Icon size={16} />
+              </div>
+              <div>
+                <p className="font-sans text-sm font-semibold text-[#0F172A]">{title}</p>
+                <p className="font-sans text-xs text-[#64748B] mt-0.5">{desc}</p>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 

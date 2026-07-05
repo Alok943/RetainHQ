@@ -13,6 +13,9 @@ class Roadmap(SQLModel, table=True):
     slug: Optional[str] = Field(default=None, unique=True, index=True)
     title: str
     description: Optional[str] = None
+    # Platform split: 'career' (placement/college roadmaps) | 'school' (Class 9-10 NCERT).
+    # GET /api/roadmaps/ filters by the caller's user_prefs.audience. Migration c4d7e9a2b501.
+    audience: str = Field(default="career")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     nodes: List["RoadmapNode"] = Relationship(back_populates="roadmap")
@@ -129,6 +132,19 @@ class Feedback(SQLModel, table=True):
     message: str
     status: str = Field(default="new") # new, reviewed, resolved
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UserPref(SQLModel, table=True):
+    """Per-user platform preferences. `audience` picks which roadmap catalog the
+    user sees ('career' = college/placement tracks, 'school' = Class 9-10 NCERT).
+    Server-side (not localStorage) so the choice survives devices and sign-outs.
+    A missing row means the user hasn't chosen yet — the frontend shows the
+    one-time picker and the API defaults to 'career'. Migration c4d7e9a2b501."""
+    __tablename__ = "user_prefs"
+    user_id: uuid.UUID = Field(primary_key=True)
+    audience: str = Field(default="career")  # 'career' | 'school'
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 class ReminderLog(SQLModel, table=True):
     """At-most-once-per-day ledger for due-review reminder emails. The unique

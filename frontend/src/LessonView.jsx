@@ -13,6 +13,7 @@ import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
 import { linkifyGlossary } from './lib/glossary';
+import RayDiagram from './physics/RayDiagram';
 
 // The DSA execution-trace player (Framer Motion + renderers) is heavy and only needed on
 // dsa-kind lessons that carry a `viz` — lazy-load it so every other lesson stays light.
@@ -23,7 +24,7 @@ const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
 const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
 
 // Short roadmap labels for the per-page <title> (keyword-targeted SEO).
-const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering' };
+const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering', 'cpp-swe': 'C++', 'python-backend': 'Python Backend' };
 
 // Understanding-check intents → badge label, colour, icon.
 const CHECK_META = {
@@ -129,7 +130,37 @@ export default function LessonView() {
         : `Learn ${lesson.title} and lock it into long-term memory with spaced repetition and active recall on RetainHQ.`
       ).slice(0, 158)
     : null;
-  useSeo(seoTitle, seoDesc);
+  // Structured data: mark each lesson as a LearningResource + a breadcrumb trail
+  // so Google indexes the hierarchy and is eligible to show rich results.
+  const seoLd = lesson
+    ? (() => {
+        const label = ROADMAP_LABEL[lesson.roadmap] || 'RetainHQ';
+        const lessonUrl = `https://retainhq.app/roadmaps/${lesson.roadmap}/learn/${lesson.slug || slug}`;
+        return [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'LearningResource',
+            name: lesson.title,
+            description: seoDesc,
+            url: lessonUrl,
+            inLanguage: 'en',
+            learningResourceType: 'lesson',
+            isPartOf: { '@type': 'Course', name: `${label} — RetainHQ` },
+            publisher: { '@type': 'Organization', name: 'RetainHQ', url: 'https://retainhq.app' },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Roadmaps', item: 'https://retainhq.app/roadmaps' },
+              { '@type': 'ListItem', position: 2, name: label, item: `https://retainhq.app/roadmaps/${lesson.roadmap}` },
+              { '@type': 'ListItem', position: 3, name: lesson.title },
+            ],
+          },
+        ];
+      })()
+    : null;
+  useSeo(seoTitle, seoDesc, seoLd);
 
   if (loading) {
     return (
@@ -248,7 +279,7 @@ export default function LessonView() {
   // Aptitude (quant) + Reasoning (logical/verbal) are thin, method/intuition-first
   // lessons — a completely different shape from python/sql. Render them here and
   // return early, before the overview/walkthrough code that assumes those fields.
-  if (lesson.kind === 'aptitude' || lesson.kind === 'reasoning' || lesson.kind === 'theory' || lesson.kind === 'engineering') {
+  if (lesson.kind === 'aptitude' || lesson.kind === 'reasoning' || lesson.kind === 'theory' || lesson.kind === 'engineering' || lesson.kind === 'physics') {
     return (
       <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
         {header}
@@ -765,6 +796,17 @@ function ProcessAnimation({ animation }) {
   );
 }
 
+/** Physics `diagram` dispatcher. `ray` is computed + drawn by RayDiagram (the
+ *  physics lives in the renderer). `image` falls back to a bucket asset. Other
+ *  structured types (circuit/graph/free-body) render nothing until their
+ *  renderers land — a lesson can reference them early without breaking. */
+function PhysicsDiagram({ diagram }) {
+  if (!diagram || typeof diagram !== 'object') return null;
+  if (diagram.type === 'ray') return <RayDiagram diagram={diagram} />;
+  if (diagram.type === 'image') return <LessonImage image={diagram} />;
+  return null; // circuit / graph / free-body — renderer pending
+}
+
 /** A lesson image. `asset` is a Supabase-bucket key (resolved via lessonImageUrl);
  *  absolute URLs / root-relative paths pass through. If the file isn't uploaded yet
  *  the <img> errors and we render nothing — so lessons can reference assets before
@@ -1179,6 +1221,13 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         </>
       )}
 
+      {/* Diagram (physics, optional) — the lesson's main figure (ray/circuit/graph) */}
+      {lesson.diagram && (
+        <Section icon={<Sparkles size={16} />} title="Diagram" accent="#0891B2">
+          <PhysicsDiagram diagram={lesson.diagram} />
+        </Section>
+      )}
+
       {/* Key points (theory, optional) — the component breakdown */}
       {Array.isArray(lesson.key_points) && lesson.key_points.length > 0 && (
         <Section icon={<Target size={16} />} title="Key points" accent="#0F766E">
@@ -1258,30 +1307,54 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         </Section>
       )}
 
-      {/* Worked example (reasoning, required) — method applied; reveal the solution */}
-      {we?.problem && (
-        <Section icon={<Sparkles size={16} />} title="Worked example" accent="#7C3AED">
-          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3">{linkifyGlossary(we.problem, lesson.glossary, usedGlossaryTerms)}</p>
+      {/* Worked example(s). Aptitude/reasoning = ONE {problem, steps[](strings), answer}.
+          Physics = a LIST of {problem, steps[]({narration,math}), answer, diagram?}.
+          Normalise to an array and render both step shapes + optional diagram. */}
+      {(Array.isArray(we) ? we.length > 0 : we?.problem) && (
+        <Section icon={<Sparkles size={16} />} title={Array.isArray(we) && we.length > 1 ? 'Worked examples' : 'Worked example'} accent="#7C3AED">
           {!ahaRevealed ? (
-            <button onClick={() => setAhaRevealed(true)} className="flex items-center gap-2 text-sm font-semibold text-white bg-[#7C3AED] hover:bg-[#6D28D9] rounded px-3.5 py-2 transition-colors">
-              <Eye size={15} /> Reveal the solution
-            </button>
+            <>
+              {(Array.isArray(we) ? we : [we]).map((ex, i) => (
+                <p key={i} className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3">
+                  {Array.isArray(we) && we.length > 1 && <span className="text-[#7C3AED] font-semibold">Example {i + 1}. </span>}
+                  {linkifyGlossary(ex.problem, lesson.glossary, usedGlossaryTerms)}
+                </p>
+              ))}
+              <button onClick={() => setAhaRevealed(true)} className="flex items-center gap-2 text-sm font-semibold text-white bg-[#7C3AED] hover:bg-[#6D28D9] rounded px-3.5 py-2 transition-colors">
+                <Eye size={15} /> Reveal the solution{Array.isArray(we) && we.length > 1 ? 's' : ''}
+              </button>
+            </>
           ) : (
-            <div className="animate-in fade-in duration-200">
-              {Array.isArray(we.steps) && (
-                <ol className="flex flex-col gap-2 mb-3">
-                  {we.steps.map((step, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                      <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(step, lesson.glossary, usedGlossaryTerms)}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-              <div className="rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
-                <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">Answer</div>
-                <p className="font-sans text-sm font-semibold text-[#0F172A] leading-relaxed">{we.answer}</p>
-              </div>
+            <div className="flex flex-col gap-5 animate-in fade-in duration-200">
+              {(Array.isArray(we) ? we : [we]).map((ex, ei) => (
+                <div key={ei}>
+                  {Array.isArray(we) && we.length > 1 && (
+                    <p className="font-sans text-sm font-semibold text-[#7C3AED] mb-2">Example {ei + 1}. {linkifyGlossary(ex.problem, lesson.glossary, usedGlossaryTerms)}</p>
+                  )}
+                  {ex.diagram && <div className="mb-3"><PhysicsDiagram diagram={ex.diagram} /></div>}
+                  {Array.isArray(ex.steps) && (
+                    <ol className="flex flex-col gap-2 mb-3">
+                      {ex.steps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-2.5">
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                          {typeof step === 'string' ? (
+                            <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(step, lesson.glossary, usedGlossaryTerms)}</span>
+                          ) : (
+                            <span className="font-sans text-sm text-[#0F172A] leading-relaxed">
+                              {linkifyGlossary(step.narration, lesson.glossary, usedGlossaryTerms)}
+                              {step.math && <span className="block font-mono text-[12.5px] text-[#0891B2] mt-0.5">{step.math}</span>}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  <div className="rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
+                    <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">Answer</div>
+                    <p className="font-sans text-sm font-semibold text-[#0F172A] leading-relaxed">{ex.answer}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </Section>

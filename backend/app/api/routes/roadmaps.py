@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_current_user, get_optional_user
 from app.core.security import SupabaseUser
-from app.models.models import Roadmap, RoadmapNode, UserProgress, RoadmapNodePrerequisite
+from app.models.models import Roadmap, RoadmapNode, UserProgress, RoadmapNodePrerequisite, UserPref
 from app.schemas.roadmap import (
     RoadmapListItem,
     RoadmapDetailOut,
@@ -42,8 +42,18 @@ async def list_roadmaps(
     db: AsyncSession = Depends(get_db),
     current_user: SupabaseUser | None = Depends(get_optional_user),
 ):
-    """List all roadmaps with the current user's real progress computed server-side."""
+    """List the caller's audience's roadmaps with real progress computed server-side."""
     user_id = uuid.UUID(current_user.id) if current_user else None
+
+    # Audience gate: school users see only school roadmaps and vice versa.
+    # Guests and users who haven't picked yet default to 'career' (the original catalog).
+    audience = "career"
+    if user_id:
+        pref = (
+            await db.execute(select(UserPref.audience).where(UserPref.user_id == user_id))
+        ).scalar_one_or_none()
+        if pref:
+            audience = pref
 
     done_node = case((UserProgress.status == "done", UserProgress.node_id))
     stmt = (
@@ -55,6 +65,7 @@ async def list_roadmaps(
             func.count(func.distinct(RoadmapNode.id)).label("total_nodes"),
             func.count(func.distinct(done_node)).label("done_nodes"),
         )
+        .where(Roadmap.audience == audience)
         .outerjoin(RoadmapNode, RoadmapNode.roadmap_id == Roadmap.id)
         .outerjoin(
             UserProgress,

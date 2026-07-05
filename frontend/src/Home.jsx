@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import FirstCapture from './FirstCapture';
+import AudiencePicker from './AudiencePicker';
 import { useAuth } from './lib/AuthContext';
 import { useToast } from './lib/ToastContext';
 import ReviewHeatmap from './ReviewHeatmap';
@@ -75,6 +76,18 @@ function Home({ onStartReviews }) {
     () => sessionStorage.getItem(SKIP_FIRST_CAPTURE_KEY) === 'true'
   );
   const [resumeLesson, setResumeLesson] = useState(null);
+  // null = still loading; true = show the one-time catalog picker (no pref row yet).
+  const [needsAudiencePick, setNeedsAudiencePick] = useState(null);
+
+  useEffect(() => {
+    if (!session) {
+      setNeedsAudiencePick(false);
+      return;
+    }
+    apiFetch('/api/prefs/')
+      .then((p) => setNeedsAudiencePick(!p.is_set))
+      .catch(() => setNeedsAudiencePick(false)); // fail open: never block Home on prefs
+  }, [session]);
 
   useEffect(() => {
     if (!session) {
@@ -198,6 +211,22 @@ function Home({ onStartReviews }) {
   // Home. We wait for the dashboard count so we don't flash the empty dashboard.
   const isFirstRun =
     session && !loadingDashboard && dashboard?.total_activities === 0 && !skipFirstCapture;
+
+  // Catalog choice comes before everything else for a brand-new user: it decides
+  // which roadmaps (and therefore which first-capture suggestions) they see.
+  if (session && needsAudiencePick) {
+    return (
+      <AudiencePicker
+        onDone={() => {
+          setNeedsAudiencePick(false);
+          // Re-fetch roadmaps — the catalog may have just changed.
+          apiFetch('/api/roadmaps/', { optionalAuth: true })
+            .then((data) => setRoadmaps(Array.isArray(data) ? data : []))
+            .catch(() => {});
+        }}
+      />
+    );
+  }
 
   if (isFirstRun) {
     return (
