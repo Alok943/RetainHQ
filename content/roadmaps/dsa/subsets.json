@@ -22,6 +22,25 @@
     "description": "We traverse a binary decision tree. At index `i`, we branch left (take `nums[i]`) and branch right (skip `nums[i]`). The recursion depth is `n`, leading to 2^n leaves. Every single node in this tree represents a valid subset.",
     "repeated_decision": "At the current element index, do I include this element in my subset, or do I exclude it?"
   },
+  "viz": {
+    "generator": "subsets",
+    "default_input": [1, 2, 3],
+    "invariants": {
+      "inv-decision": "At each index, branch left to include, branch right to exclude."
+    },
+    "steps": [
+      { "id": 1, "label": "Subset generation" }
+    ],
+    "predictions": [
+      {
+        "at_op": "CALL",
+        "occurrence": "last",
+        "prompt": "What choice is made next?",
+        "derive": "next_choice",
+        "level": "medium"
+      }
+    ]
+  },
   "explanation": "Subset generation is fundamentally a binary choice per element: include it, or exclude it.\n\nImagine the array `[1, 2]`. The state-space tree looks like this:\n\n```text\n          []\n        /    \\\n   (take 1) (skip 1)\n      /        \\\n    [1]        []\n   /   \\      /   \\\n (t2) (s2)  (t2) (s2)\n /      \\    /      \\\n[1,2]  [1]  [2]     []\n```\n\nThe depth is `n` (the number of elements). At each step, we have 2 branches, resulting in exactly `2^n` leaves. Each leaf (and in fact, every node) is a valid subset.\n\nThere are two common idioms to record the subsets:\n1. **Record at every node:** Start the recursive function by immediately appending `path.copy()` to the results. Then loop `i` from `start_index` to `n-1`, append `nums[i]`, recurse with `i + 1`, and pop. This is the 'for-loop' idiom.\n2. **Record at leaves only:** Pass the current `index`. At index `n`, record `path.copy()`. Otherwise, make two explicit recursive calls: one with `nums[index]` appended to `path`, and one without it.\n\nBoth are valid, but the for-loop idiom is extremely common and extends elegantly to other backtracking problems. The time complexity is O(n * 2^n) because there are 2^n subsets, and copying each subset into the result array takes up to O(n) time.",
   "engineering_examples": [
     {

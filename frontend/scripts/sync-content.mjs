@@ -80,6 +80,19 @@ async function main() {
         console.warn(`[sync-content] Skipping ${file}: ${err.message}`);
       }
     }
+
+    // Second pass: copy _numericals/ subdirectory if it exists (physics phase-end practice sets).
+    const numDir = join(srcDir, '_numericals');
+    let numFiles;
+    try { numFiles = await readdir(numDir); } catch { numFiles = []; }
+    if (numFiles.length) {
+      const numDest = join(destDir, '_numericals');
+      await mkdir(numDest, { recursive: true });
+      for (const nf of numFiles) {
+        if (!nf.endsWith('.json')) continue;
+        await cp(join(numDir, nf), join(numDest, nf), { force: true });
+      }
+    }
   }
 
   // Write manifest

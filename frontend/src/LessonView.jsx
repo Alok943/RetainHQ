@@ -1081,7 +1081,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
-                  {q.company && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.company}</span>}
+                  {(q.source || q.company) && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.source || q.company}</span>}
                 </div>
                 {oaRevealed.has(i) ? (
                   <div className="mt-2">
@@ -1417,7 +1417,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
-                  {q.company && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.company}</span>}
+                  {(q.source || q.company) && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.source || q.company}</span>}
                 </div>
                 {oaRevealed.has(i) ? (
                   <div className="mt-2">

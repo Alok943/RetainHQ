@@ -27,12 +27,15 @@ except OSError:
     DERIVE_NAMES = set()
 PREDICTION_LEVELS = {"easy", "medium", "hard", "expert"}
 
-KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa"}
+KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa", "physics", "numericals"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
 CHECK_TYPES = {"predict-output", "predict-result", "explain-behavior", "find-bug", "choose-model", "debug-misconception"}
 RUNTIMES = {"python", "sql", "none"}
+
+DIAGRAM_TYPES = {"ray", "circuit", "graph", "free-body", "image"}
+RAY_OPTICS = {"concave-mirror", "convex-mirror", "concave-lens", "convex-lens"}
 
 errors = []
 warnings = []
@@ -129,6 +132,38 @@ def extract_prose(d):
     return " ".join(str(x) for x in prose if isinstance(x, str) and x.strip())
 
 
+def _validate_physics_diagram(diag, path, rel):
+    """Validate a physics diagram object. Deep-checks for types with live renderers
+    (ray, graph, image); membership-only for unbuilt types (circuit, free-body)."""
+    if not isinstance(diag, dict):
+        err(rel, f"{path} must be an object"); return
+    dtype = diag.get("type")
+    if dtype not in DIAGRAM_TYPES:
+        err(rel, f"{path}.type must be one of {sorted(DIAGRAM_TYPES)}")
+        return
+    # --- Deep validation for types with live renderers ---
+    if dtype == "ray":
+        optic = diag.get("optic")
+        if optic not in RAY_OPTICS:
+            err(rel, f"{path}.optic must be one of {sorted(RAY_OPTICS)}")
+        fl = diag.get("focal_length")
+        if not isinstance(fl, (int, float)) or fl <= 0:
+            err(rel, f"{path}.focal_length must be a positive number")
+        od = diag.get("object_distance")
+        if not isinstance(od, (int, float)) or od <= 0:
+            err(rel, f"{path}.object_distance must be a positive number")
+    elif dtype == "graph":
+        axes = diag.get("axes")
+        if not isinstance(axes, dict) or not axes.get("x") or not axes.get("y"):
+            err(rel, f"{path}.axes must be an object with non-empty 'x' and 'y'")
+        if not diag.get("curve") and not diag.get("line"):
+            err(rel, f"{path} needs at least one of 'curve' or 'line'")
+    elif dtype == "image":
+        if not diag.get("asset"):
+            err(rel, f"{path} needs a non-empty 'asset'")
+    # circuit and free-body: membership-only, no deep checks (renderer not built yet)
+
+
 def validate_sections(d, rel):
     """Optional 'illustration' (a hero image) + 'sections' (the born-visual interleaved
     layout: each block = a short body + optional image/animation + optional recap). Both
@@ -160,6 +195,8 @@ def main():
         return 0
 
     files = sorted(ROOT.glob("*/*.json"))
+    # Also discover phase-end numericals stored one level deeper.
+    files += sorted(ROOT.glob("*/_numericals/*.json"))
     if not files:
         print("No topic JSON found under content/roadmaps/<roadmap>/.")
         return 0
@@ -651,6 +688,121 @@ def main():
                         err(rel, f"sources[{i}] is not a URL: {s!r}")
             if d.get("roadmap"):
                 by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
+        # Physics (NCERT School) — conceptual + numerical lesson (kind: "physics"): teach-from-
+        # scratch explanation in Hinglish + English terms, EXACTLY 2 unrelated worked examples with
+        # numericals, optional structured diagrams (ray/circuit/graph/free-body/image).
+        # See content/PROMPT-physics.md.
+        if d.get("kind") == "physics":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition')")
+            if isinstance(mm, dict) and not mm.get("description"):
+                warn(rel, "mental_model.description is strongly recommended for physics lessons")
+            if not d.get("sections") and (not isinstance(d.get("explanation"), str) or not d.get("explanation").strip()):
+                err(rel, "explanation OR sections is required (the teach-from-scratch body)")
+            validate_sections(d, rel)
+            # worked_example: EXACTLY 2 unrelated examples, each with problem + steps + answer.
+            we = d.get("worked_example")
+            if not isinstance(we, list) or len(we) != 2:
+                err(rel, "worked_example must be a list of EXACTLY 2 items (two unrelated contexts)")
+            else:
+                for i, w in enumerate(we):
+                    if not isinstance(w, dict):
+                        err(rel, f"worked_example[{i}] must be an object"); continue
+                    if not w.get("problem"):
+                        err(rel, f"worked_example[{i}] needs a non-empty 'problem'")
+                    if not isinstance(w.get("steps"), list) or not w.get("steps"):
+                        err(rel, f"worked_example[{i}] needs a non-empty 'steps' list")
+                    else:
+                        for j, st in enumerate(w["steps"]):
+                            if not isinstance(st, dict) or not st.get("narration"):
+                                err(rel, f"worked_example[{i}].steps[{j}] needs a non-empty 'narration'")
+                    if not w.get("answer"):
+                        err(rel, f"worked_example[{i}] needs a non-empty 'answer'")
+                    # per-example diagram (optional) — validate if present
+                    wed = w.get("diagram")
+                    if wed is not None:
+                        _validate_physics_diagram(wed, f"worked_example[{i}].diagram", rel)
+            # top-level diagram (optional)
+            diag = d.get("diagram")
+            if diag is not None:
+                _validate_physics_diagram(diag, "diagram", rel)
+            # animation (optional)
+            an = d.get("animation")
+            if an is not None:
+                atype = an.get("type") if isinstance(an, dict) else None
+                if atype not in {"sequence", "cycle"}:
+                    err(rel, "animation.type must be one of sequence|cycle for physics")
+            kp = d.get("key_points")
+            if kp is not None:
+                if not isinstance(kp, list) or not all(isinstance(p, dict) and p.get("title") and p.get("detail") for p in kp):
+                    err(rel, "key_points, if present, must be a list of {title, detail} objects")
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            else:
+                for i, c in enumerate(cm):
+                    if not isinstance(c, dict) or not c.get("title") or not c.get("explanation"):
+                        err(rel, f"common_mistakes[{i}] needs non-empty 'title' and 'explanation'")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            else:
+                for i, q in enumerate(rq):
+                    if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
+                        err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            oq = d.get("oa_questions")
+            if not isinstance(oq, list) or len(oq) < 2:
+                err(rel, "oa_questions is required: >=2 board/school-exam items")
+            else:
+                for i, q in enumerate(oq):
+                    q_text = q.get("question") or q.get("q") if isinstance(q, dict) else None
+                    if not isinstance(q, dict) or not q_text or not q.get("answer"):
+                        err(rel, f"oa_questions[{i}] needs 'question' (or 'q') and 'answer'")
+            hk = d.get("hook")
+            if hk is not None and (not isinstance(hk, dict) or not hk.get("scenario")):
+                err(rel, "hook, if present, needs a non-empty 'scenario'")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
+            else:
+                for i, s in enumerate(srcs):
+                    if not isinstance(s, str) or not s.startswith("http"):
+                        err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
+        # Numericals (phase-end practice sets for physics). kind: "numericals".
+        # Shape: { phase, roadmap, kind, problems: [{prompt, given[], solution_steps[], answer, ...}] }
+        if d.get("kind") == "numericals":
+            if not d.get("phase"):
+                err(rel, "phase is required for numericals")
+            probs = d.get("problems")
+            if not isinstance(probs, list) or not probs:
+                err(rel, "problems must be a non-empty list")
+            else:
+                for i, p in enumerate(probs):
+                    if not isinstance(p, dict):
+                        err(rel, f"problems[{i}] must be an object"); continue
+                    if not p.get("prompt"):
+                        err(rel, f"problems[{i}] needs a non-empty 'prompt'")
+                    if not isinstance(p.get("solution_steps"), list) or not p.get("solution_steps"):
+                        err(rel, f"problems[{i}] needs a non-empty 'solution_steps' list")
+                    else:
+                        for j, st in enumerate(p["solution_steps"]):
+                            if not isinstance(st, dict) or not st.get("narration"):
+                                err(rel, f"problems[{i}].solution_steps[{j}] needs 'narration'")
+                    if not p.get("answer"):
+                        err(rel, f"problems[{i}] needs a non-empty 'answer'")
+                    pd_diag = p.get("problem_diagram")
+                    if pd_diag is not None:
+                        _validate_physics_diagram(pd_diag, f"problems[{i}].problem_diagram", rel)
+                    sd_diag = p.get("solution_diagram")
+                    if sd_diag is not None:
+                        _validate_physics_diagram(sd_diag, f"problems[{i}].solution_diagram", rel)
             continue
 
         ov = d.get("overview")

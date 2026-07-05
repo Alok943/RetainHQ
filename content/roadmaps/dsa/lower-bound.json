@@ -45,6 +45,25 @@
     "description": "Lower Bound returns the index of the first element that is GREATER THAN OR EQUAL TO the target. If `arr[mid] >= target`, the current element is valid, but an earlier valid element might exist to the left. We update `high = mid` (or `mid - 1`) to aggressively search leftward without losing our current valid boundary.",
     "repeated_decision": "Is `arr[mid] >= target`? If yes, the leftmost answer is at `mid` or to its left (`high = mid`). If no, the leftmost answer is strictly to its right (`low = mid + 1`)."
   },
+  "viz": {
+    "generator": "lower-bound",
+    "default_input": [1, 2, 2, 2, 5],
+    "invariants": {
+      "inv-window": "If the target exists, it always lies inside the current [lo, hi] window."
+    },
+    "steps": [
+      { "id": "start", "label": "lo = 0, hi = end" }
+    ],
+    "predictions": [
+      {
+        "at_op": "WINDOW",
+        "occurrence": "first",
+        "prompt": "Does the search go left or right?",
+        "derive": "branch_binary",
+        "level": "medium"
+      }
+    ]
+  },
   "explanation": "The Lower Bound algorithm fundamentally alters the termination logic of binary search. Instead of halting on a match, it squeezes the search window `[low, high]` inward until the two pointers converge on the precise leftmost boundary.\n\nCrucially, if the target is entirely absent from the array, Lower Bound returns the exact insertion point where the target *should* go to maintain sorted order.\n\nAnother powerful engineering detail: Lower Bound does not require the entire array to be fully sorted. It only requires the array to be *partitioned* with respect to a boolean predicate (e.g., `element < target`). This allows you to use Lower Bound on custom object arrays divided by boolean states (e.g., all active users preceding inactive users).\n\nIn systems programming, Lower Bound is used for memory allocators to find the smallest free memory block that can satisfy a requested size, minimizing fragmentation.",
   "key_points": [
     {

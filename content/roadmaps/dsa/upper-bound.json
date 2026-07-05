@@ -44,6 +44,25 @@
     "description": "Upper Bound returns the index of the first element that is STRICTLY GREATER THAN the target. Even if the current element matches the target, the algorithm treats it as 'too small' (or 'not great enough') and pushes the `low` pointer rightward (`low = mid + 1`). It only updates the potential answer when it finds an element definitively larger than the target.",
     "repeated_decision": "Is `arr[mid] > target`? If yes, the boundary is at `mid` or to its left (`high = mid`). If no (meaning it is `<= target`), the boundary is strictly to the right (`low = mid + 1`)."
   },
+  "viz": {
+    "generator": "upper-bound",
+    "default_input": [1, 2, 2, 2, 5],
+    "invariants": {
+      "inv-window": "If the target exists, it always lies inside the current [lo, hi] window."
+    },
+    "steps": [
+      { "id": "start", "label": "lo = 0, hi = end" }
+    ],
+    "predictions": [
+      {
+        "at_op": "WINDOW",
+        "occurrence": "first",
+        "prompt": "Does the search go left or right?",
+        "derive": "branch_binary",
+        "level": "medium"
+      }
+    ]
+  },
   "explanation": "The only difference between Lower Bound and Upper Bound is the relational operator in the predicate. \n- Lower Bound predicate: `element < target` (Finds first element `>= target`)\n- Upper Bound predicate: `target < element` (Finds first element `> target`)\n\nIf the target value does not exist in the array at all, both Lower Bound and Upper Bound will return the exact same index (the insertion point).\n\nIn computer science, combining these two algorithms creates a 'Half-Open Interval': `[start, end)`. Half-open intervals are the standard for loop boundaries because they prevent off-by-one errors. You can loop over all duplicates safely using `for (int i = lower; i < upper; i++)`. Because `upper` points one index *past* the target, the loop terminates exactly when it should.",
   "key_points": [
     {
