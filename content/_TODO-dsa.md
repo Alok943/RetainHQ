@@ -91,11 +91,11 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [ ] Recursion tree  · C · `recursion-tree`
 
 ## 12. Backtracking  (all `D`)
-- [ ] Backtracking template  · D · `backtracking-template`
-- [ ] Subsets  · D · `subsets`
-- [ ] Permutations  · D · `permutations`
-- [ ] Combination sum  · D · `combination-sum`
-- [ ] N-Queens  · D · `n-queens`
+- [x] Backtracking template  · D · `backtracking-template`
+- [x] Subsets  · D · `subsets`
+- [x] Permutations  · D · `permutations`
+- [x] Combination sum  · D · `combination-sum`
+- [x] N-Queens  · D · `n-queens`
 
 ## 13. Sorting — Divide & Conquer
 - [ ] ~~Merge sort~~  · D · `merge-sort` — **SKIP: Claude authors as the gold exemplar**

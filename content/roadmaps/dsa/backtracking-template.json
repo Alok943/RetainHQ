@@ -1,0 +1,130 @@
+{
+  "slug": "backtracking-template",
+  "title": "Backtracking template",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["recursion-tree", "the-call-stack"],
+    "unlocks": ["subsets", "permutations", "combination-sum", "n-queens"]
+  },
+  "why_it_exists": {
+    "problem": "Generating all combinations, permutations, or configurations of a set by brute force uses too much memory if we copy the state for every possibility.",
+    "naive_solution": "Generate all possible states blindly, often by allocating new memory for every single node in the state-space tree, then filter out the invalid ones.",
+    "better_idea": "Use a single shared mutable state. Make a choice, recurse to explore that choice, and then 'un-choose' (undo) the change when the recursion returns. This keeps memory usage strictly bounded to the depth of the recursion tree."
+  },
+  "mental_model": {
+    "intuition": "Like exploring a maze with a single piece of string: you walk down a path, and if it's a dead end, you rewind your string back to the fork and try the next path.",
+    "description": "Backtracking is simply depth-first search on a dynamically generated state-space tree. The state is shared across all recursive frames. When moving down the tree (recursing), we apply a choice. When moving up (returning), we undo that choice. This guarantees that each branch explores from a clean state.",
+    "repeated_decision": "What are all the valid choices from the current state? For each, choose it, explore it, and un-choose it."
+  },
+  "viz": {
+    "generator": "backtracking-template",
+    "default_input": 3,
+    "invariants": {
+      "inv-explore": "We explore all choices systematically, building a decision tree."
+    },
+    "steps": [
+      { "id": 1, "label": "Decision Tree" }
+    ],
+    "predictions": [
+      {
+        "at_op": "CALL",
+        "occurrence": "last",
+        "prompt": "What is the next choice made here?",
+        "derive": "next_choice",
+        "level": "easy"
+      }
+    ]
+  },
+  "explanation": "Backtracking is not a new algorithm; it is plain recursion where each stack frame makes a choice, recurses, and then explicitly undoes that choice so the shared state remains clean for the next option. The 'undo' step is the entire trick.\n\nThe skeleton looks like this in Python:\n```python\ndef backtrack(state):\n    if goal(state):\n        record(state.copy())\n        return\n    for choice in options(state):\n        apply(choice)\n        backtrack(state)\n        undo(choice)\n```\n\nEach `backtrack` call is a stack frame. The state-space tree is exactly the recursion tree. The un-choose step happens on the way UP the tree, which is just 'work during unwinding'.\n\nComplexity-wise, backtracking does not change the worst-case exponential bounds (e.g., O(2^n) or O(n!)). However, pruning (stopping early when a path is invalid) changes the PRACTICAL size of the searched tree, transforming intractable problems into solvable ones.",
+  "common_mistakes": [
+    {
+      "title": "Appending a reference instead of a copy",
+      "explanation": "The most common bug is `results.append(state)` instead of `results.append(state.copy())`. Because the state is shared and mutable, if you append a reference, every recorded answer will eventually mutate to the final state (usually empty) when the recursion unwinds."
+    },
+    {
+      "title": "Forgetting to un-choose",
+      "explanation": "If you forget to undo the choice after the recursive call returns, sibling branches will inherit a polluted state from previously explored paths."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Counting-only questions",
+      "reason": "If you only need to count the number of ways (not list them), Dynamic Programming can count without enumerating, saving exponential time."
+    },
+    {
+      "scenario": "Optimization with overlapping subproblems",
+      "reason": "If the same sub-states are reached multiple times, standard backtracking wastes time. Use DP (memoization) instead."
+    },
+    {
+      "scenario": "Finding a single feasible answer in a monotone space",
+      "reason": "Use binary search on the answer instead of combinatorial search."
+    }
+  ],
+  "pattern": {
+    "name": "Backtracking Template",
+    "recognition_cues": [
+      "Phrases like 'generate all', 'all combinations', 'all permutations', 'all ways'",
+      "Phrases like 'exists a path/assignment'",
+      "Input constraints are very small (n <= 20)"
+    ]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the primary difference between standard recursion and backtracking?",
+      "answer": "Backtracking mutates a shared state before recursing and explicitly undoes (un-chooses) that mutation after the recursion returns.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must you record a deep copy of the state when a solution is found?",
+      "answer": "Because the state is a single shared mutable reference. If you record the reference itself, the backtracking process will eventually 'un-choose' everything, leaving all recorded solutions empty.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does backtracking save memory compared to a naive generate-all approach?",
+      "answer": "It never materializes the full tree in memory. By reusing a single state and undoing changes, memory is strictly bounded by the maximum depth of the call stack.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A student's backtracking code returns a list of empty arrays: `[[], [], []]`. What is the bug?",
+      "answer": "They appended a reference to the shared state array instead of a deep copy. When the recursion fully unwound, the shared state became empty, mutating all references in the results list.",
+      "approach": "Recognize the classic mutable reference trap in Python/JS backtracking.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Given a grid, find all valid paths from start to end without revisiting cells.",
+      "answer": "Use backtracking. Mark a cell as visited, recurse to neighbors, and unmark it when returning.",
+      "approach": "Identify the 'all paths' keyword and small grid size as a backtracking cue.",
+      "company": "SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Generate Parentheses",
+      "url": "https://leetcode.com/problems/generate-parentheses/",
+      "difficulty": "medium",
+      "why": "Excellent practice for the raw template mechanics."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "State sharing",
+      "detail": "The state is identical before and after exploring a branch. That is what 'un-choose' guarantees."
+    },
+    {
+      "title": "Pruning",
+      "detail": "By halting recursion early when a state becomes invalid, backtracking avoids exploring massive dead subtrees."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Backtracking",
+    "https://www.geeksforgeeks.org/backtracking-algorithms/"
+  ]
+}

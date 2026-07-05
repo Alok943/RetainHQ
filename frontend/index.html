@@ -12,7 +12,7 @@
       name="description"
       content="Spaced repetition and active recall for developers. RetainHQ schedules reviews of your DSA, system design, and coding-interview topics right before you'd forget — so what you study actually sticks."
     />
-    <meta name="keywords" content="spaced repetition for coding, active recall, DSA retention, system design review, coding interview prep, remember what you learn, learning retention app, spaced repetition for developers" />
+    <meta name="keywords" content="spaced repetition for coding, active recall, DSA practice, system design, Python backend, C++ interview prep, AI engineering, SQL, coding interview prep, remember what you learn, learning retention app, spaced repetition for developers" />
     <meta name="author" content="RetainHQ" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#0b0f1a" />
@@ -44,17 +44,32 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "RetainHQ",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web",
-        "url": "https://retainhq.app/",
-        "description": "RetainHQ measures what you still remember, not just what you completed. Built on spaced repetition and active recall, it schedules each review right before you'd forget — so knowledge sticks.",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://retainhq.app/#org",
+            "name": "RetainHQ",
+            "url": "https://retainhq.app/",
+            "logo": "https://retainhq.app/og-image.png"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://retainhq.app/#website",
+            "name": "RetainHQ",
+            "url": "https://retainhq.app/",
+            "publisher": { "@id": "https://retainhq.app/#org" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "RetainHQ",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web",
+            "url": "https://retainhq.app/",
+            "description": "RetainHQ measures what you still remember, not just what you completed. Built on spaced repetition and active recall, it schedules each review right before you'd forget — so knowledge sticks.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://retainhq.app/#org" }
+          }
+        ]
       }
     </script>
     <script>
@@ -81,8 +96,9 @@
           Built on spaced repetition and active recall, it schedules each review
           right before you'd forget — so knowledge sticks. Log what you learn,
           capture the one key memory that matters, and let RetainHQ time your
-          reviews with an SM-2 schedule across roadmaps for DSA, system design,
-          web development, and more.
+          reviews with a spaced-repetition schedule across roadmaps for DSA,
+          system design, Python, Python backend, C++, SQL, AI engineering, and
+          core CS.
         </p>
       </noscript>
     </div>

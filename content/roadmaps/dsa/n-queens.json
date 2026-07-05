@@ -1,0 +1,125 @@
+{
+  "slug": "n-queens",
+  "title": "N-Queens",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": ["backtracking-template"],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Placing N non-attacking queens on an NxN chessboard. A naive generate-and-filter approach on an 8x8 board would evaluate '64 choose 8' (over 4.4 billion) combinations, which is computationally intractable.",
+    "better_idea": "Enforce constraints intrinsically. Place queens row by row (since exactly one queen must occupy each row). Use O(1) set lookups to track attacked columns and diagonals, abandoning any invalid subtree the moment a threat is detected."
+  },
+  "mental_model": {
+    "intuition": "Like filling out a Sudoku row by row, crossing out entire sections of possibilities as soon as a number is placed.",
+    "description": "We process the board row by row. At each row, we try placing a queen in each column. If the cell isn't attacked, we place it, mark its column and both its diagonals as 'under attack', and recurse to the next row.",
+    "repeated_decision": "In the current row, which column is safe to place a queen based on the three attack sets?"
+  },
+  "viz": {
+    "generator": "n-queens",
+    "default_input": 4,
+    "invariants": {
+      "inv-row": "We place exactly one queen per row, guaranteeing no two queens share a row.",
+      "inv-safe": "A queen is placed only if it's not attacked by any previously placed queen."
+    },
+    "steps": [
+      { "id": 1, "label": "Backtracking trace" }
+    ],
+    "predictions": [
+      {
+        "at_op": "TEST_CELL",
+        "occurrence": "first",
+        "prompt": "Is this cell safe to place a queen?",
+        "derive": "is_safe",
+        "level": "medium"
+      }
+    ]
+  },
+  "explanation": "N-Queens is the flagship backtracking problem because it demonstrates how profoundly pruning reduces a search space.\n\n**1. Why row-by-row?**\nSince queens attack horizontally, two queens can never share a row. Therefore, we MUST place exactly one queen per row. By making the recursion depth equal to the row index, we get the row constraint for free and shrink the search from 'combinations of 64 squares' to 'N branches per row, depth N'.\n\n**2. The O(1) Attack Sets**\nTo place a queen at `(row, col)`, we must check if that cell is safe. Scanning the board takes O(N). Instead, we track three sets:\n- `cols`: columns currently occupied.\n- `diag1`: the primary diagonal. Notice that for any cell, `row - col` is constant along its top-left to bottom-right diagonal.\n- `diag2`: the anti-diagonal. For any cell, `row + col` is constant along its top-right to bottom-left diagonal.\n\nChecking safety becomes three O(1) set lookups.\n\n**3. The Loop**\n```python\nfor col in range(N):\n    if col in cols or (row - col) in diag1 or (row + col) in diag2:\n        continue\n    # Choose\n    cols.add(col); diag1.add(row-col); diag2.add(row+col)\n    board[row][col] = 'Q'\n    # Recurse\n    backtrack(row + 1)\n    # Un-choose\n    cols.remove(col); diag1.remove(row-col); diag2.remove(row+col)\n    board[row][col] = '.'\n```\n\n**4. Hand-Trace (4x4 Board)**\nN=4 is the smallest solvable board (N=2 and N=3 have no solutions!).\n- Row 0: Place Q at (0, 0).\n- Row 1: Columns 0 and 1 are attacked. Place Q at (1, 2).\n- Row 2: All columns 0, 1, 2, 3 are attacked! Dead end.\n- Backtrack to Row 1, move Q to (1, 3).\n- Row 2: Place Q at (2, 1).\n- Row 3: All columns attacked. Dead end.\n- Backtrack all the way to Row 0, move Q to (0, 1). This eventually finds a solution.",
+  "common_mistakes": [
+    {
+      "title": "Scanning the board to check safety",
+      "explanation": "Iterating through the board grid to check if a queen is threatened takes O(N) per cell. Using mathematical invariants (`row - col` and `row + col`) with hash sets brings this down to O(1)."
+    },
+    {
+      "title": "Confusing the two diagonal families",
+      "explanation": "It's easy to mix up the math. Remember: `row - col` tracks the \\ diagonal, and `row + col` tracks the / diagonal."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Constraint Satisfaction Solvers",
+      "problem": "Exam timetabling, register allocation in compilers, and Sudoku solvers.",
+      "why_this_algorithm": "N-Queens is the canonical constraint-satisfaction template, assigning values to variables subject to hard constraints via backtracking."
+    }
+  ],
+  "pattern": {
+    "name": "Constraint Satisfaction Backtracking",
+    "recognition_cues": ["Place N items on a grid", "Complex non-overlapping constraints"]
+  },
+  "recall_questions": [
+    {
+      "q": "Why does the N-Queens algorithm process the board row by row?",
+      "answer": "Because a valid solution requires exactly one queen per row. By doing this, the algorithm enforces the row constraint automatically, massively shrinking the search space.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the algorithm verify diagonal safety in O(1) time?",
+      "answer": "By exploiting mathematical invariants: cells on the same primary diagonal share the same `row - col` value, and cells on the same anti-diagonal share the same `row + col` value. These are tracked in sets.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the smallest N for which the N-Queens problem has a valid solution?",
+      "answer": "N=4. (N=1 is trivially true, but N=2 and N=3 have zero solutions because the queens choke out all available space immediately).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Solve the N-Queens puzzle and return all distinct solutions.",
+      "answer": "Backtrack row by row. Use three sets: `cols`, `posDiag (r+c)`, `negDiag (r-c)`. For each col in row, if not in sets, add to sets, update board, backtrack to `row+1`, then remove from sets.",
+      "approach": "Row-by-row traversal with O(1) coordinate invariant tracking.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Is it possible to optimize the space complexity of the attack trackers?",
+      "answer": "Yes, by replacing the hash sets or boolean arrays with integer bitmasks. Using bitwise operations allows tracking column and diagonal availability with virtually zero allocation overhead.",
+      "approach": "Bitmasking for extreme constraint-satisfaction performance.",
+      "company": "SDE interview"
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Mathematical Coordinate Invariants",
+      "detail": "Any top-left to bottom-right diagonal shares a constant `row - col`. Any top-right to bottom-left diagonal shares a constant `row + col`."
+    }
+  ],
+  "failure_signals": [
+    "Checking safety by rescanning the whole board.",
+    "Recursion that never un-marks the attack sets."
+  ],
+  "practice": [
+    {
+      "title": "N-Queens",
+      "url": "https://leetcode.com/problems/n-queens/",
+      "difficulty": "hard",
+      "why": "The ultimate constraint-satisfaction problem."
+    },
+    {
+      "title": "Word Search",
+      "url": "https://leetcode.com/problems/word-search/",
+      "difficulty": "medium",
+      "why": "Grid backtracking practice."
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/n-queens/",
+    "https://en.wikipedia.org/wiki/Eight_queens_puzzle"
+  ]
+}

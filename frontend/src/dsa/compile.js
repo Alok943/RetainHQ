@@ -132,20 +132,31 @@ function stackQueueReducer(state, op, args) {
 function treeReducer(state, op, args) {
   switch (op) {
     case 'TREE_INIT': {
-      // layout once: in-order positioning
+      // layout once: in-order positioning or n-ary positioning
       const { nodes, root } = args;
       const nodeMap = new Map();
       nodes.forEach(n => nodeMap.set(n.id, { ...n }));
       
       let index = 0;
+      // Support both binary (left/right) and n-ary (children) trees
       const traverse = (id, depth) => {
         if (id == null || !nodeMap.has(id)) return;
         const node = nodeMap.get(id);
-        traverse(node.left, depth + 1);
-        node.x = index * 40; // pitch
-        node.y = depth * 50; // levelHeight
-        index++;
-        traverse(node.right, depth + 1);
+        
+        if (node.children) {
+          const mid = Math.floor(node.children.length / 2);
+          for (let i = 0; i < mid; i++) traverse(node.children[i], depth + 1);
+          node.x = index * 40;
+          node.y = depth * 50;
+          index++;
+          for (let i = mid; i < node.children.length; i++) traverse(node.children[i], depth + 1);
+        } else {
+          traverse(node.left, depth + 1);
+          node.x = index * 40; // pitch
+          node.y = depth * 50; // levelHeight
+          index++;
+          traverse(node.right, depth + 1);
+        }
       };
       traverse(root, 0);
       
@@ -153,7 +164,7 @@ function treeReducer(state, op, args) {
       if (index > 0) {
         const offset = ((index - 1) * 40) / 2;
         for (const n of nodeMap.values()) {
-          n.x -= offset;
+          if (n.x !== undefined) n.x -= offset;
         }
       }
       
@@ -164,19 +175,34 @@ function treeReducer(state, op, args) {
       return { view: 'tree' };
     }
     case 'VISIT_NODE':
-      state.cursor = args.id;
+    case 'CALL': // Backtracking descend
+      if (args.id != null) state.cursor = args.id;
       return { view: 'tree' };
     case 'MARK_NODE':
       state.nodeTags[args.id] = args.tag;
       return { view: 'tree' };
+    case 'CHOOSE': // Apply a choice -> tag path
+      state.nodeTags[args.id] = 'path';
+      if (args.id != null) state.cursor = args.id;
+      return { view: 'tree' };
+    case 'UNCHOOSE': // Undo a choice -> tag backtrack
+      state.nodeTags[args.id] = 'visited';
+      if (args.id != null) state.cursor = args.id; // or parent id if provided
+      return { view: 'tree' };
+    case 'RECORD': // A solution
+      state.nodeTags[args.id] = 'matched';
+      return { view: 'tree' };
+    case 'PRUNE': // Dead branch
+      state.nodeTags[args.id] = 'invalid';
+      return { view: 'tree' };
     case 'COMPARE_NODE':
-      // could use tags or a specific compare overlay
       return { view: 'tree' };
     case 'SET_EDGE':
-      // optional, if edges need coloring
       return { view: 'tree' };
     case 'RETURN_NODE':
+    case 'RETURN': // Backtracking ascend
       if (args.value !== undefined) state.nodeReturns[args.id] = args.value;
+      if (args.id != null) state.cursor = args.id; // point back to caller
       return { view: 'tree' };
     default:
       if (state.tree) return { view: 'tree' };
@@ -202,11 +228,42 @@ function gridReducer(state, op, args) {
       state.cellTags[`${args.r},${args.c}`] = args.tag;
       return { view: 'grid' };
     case 'PLACE':
-      if (state.grid) state.grid.cells[args.r][args.c] = 'Q'; // Example for N-Queens
+      if (state.grid) state.grid.cells[args.r][args.c] = 'Q';
+      state.cellTags[`${args.r},${args.c}`] = 'queen';
       return { view: 'grid' };
     case 'REMOVE':
       if (state.grid) state.grid.cells[args.r][args.c] = null;
+      delete state.cellTags[`${args.r},${args.c}`];
       return { view: 'grid' };
+    case 'ATTACK':
+    case 'UNATTACK':
+      // Overwrite attacked tags completely based on args.attacked
+      // First clear all attacked tags
+      Object.keys(state.cellTags).forEach(k => {
+        if (state.cellTags[k] === 'attacked') delete state.cellTags[k];
+      });
+      // Then re-apply
+      if (args.attacked) {
+        args.attacked.forEach(({r, c}) => {
+          if (state.cellTags[`${r},${c}`] !== 'queen') {
+            state.cellTags[`${r},${c}`] = 'attacked';
+          }
+        });
+      }
+      return { view: 'grid' };
+    case 'SOLUTION':
+      // Mark all queens as solution
+      if (args.queens) {
+        args.queens.forEach(({r, c}) => {
+          state.cellTags[`${r},${c}`] = 'max'; // or 'path'
+        });
+      }
+      return { view: 'grid' };
+    case 'CALL':
+    case 'RETURN':
+      // N-Queens also emits CALL/RETURN for rows; just keep view as grid
+      if (state.grid) return { view: 'grid' };
+      return null;
     default:
       if (state.grid) return { view: 'grid' };
       return null;

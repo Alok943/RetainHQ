@@ -115,6 +115,45 @@ const DERIVES = {
     const answer = next.hi > cur.hi ? 'expand' : next.lo > cur.lo ? 'shrink' : 'done';
     return { type: 'choice', answer, display: answer, choices: ['expand', 'shrink'] };
   },
+
+  // the next choice made in a backtracking decision tree
+  next_choice(events, i) {
+    for (let k = i + 1; k < events.length; k++) {
+      const e = events[k];
+      if (e.op === 'CHOOSE' && e.args && e.args.choice != null) {
+        return { type: 'value', answer: e.args.choice, display: String(e.args.choice) };
+      }
+    }
+    return null;
+  },
+
+  // whether the next tested cell is safe (N-Queens)
+  is_safe(events, i) {
+    for (let k = i + 1; k < events.length; k++) {
+      const e = events[k];
+      if (e.op === 'TEST_CELL' && e.args && e.args.isSafe != null) {
+        const ans = e.args.isSafe ? 'safe' : 'attacked';
+        return { type: 'choice', answer: ans, display: ans, choices: ['safe', 'attacked'] };
+      }
+    }
+    return null;
+  },
+
+  // whether the next candidate is pruned (Combination Sum / Permutations)
+  is_pruned(events, i) {
+    for (let k = i + 1; k < events.length; k++) {
+      const e = events[k];
+      if (e.op === 'CHECK_PRUNE') {
+        const ans = e.args.candidate > e.args.remaining ? 'pruned' : 'valid';
+        return { type: 'choice', answer: ans, display: ans, choices: ['pruned', 'valid'] };
+      }
+      if (e.op === 'CHECK_USED') {
+        const ans = e.args.isUsed ? 'pruned' : 'valid';
+        return { type: 'choice', answer: ans, display: ans, choices: ['pruned', 'valid'] };
+      }
+    }
+    return null;
+  },
 };
 
 // Parse "next_n_writes(2)" -> { name:'next_n_writes', args:[2] }.

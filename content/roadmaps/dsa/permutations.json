@@ -1,0 +1,92 @@
+{
+  "slug": "permutations",
+  "title": "Permutations",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["backtracking-template"],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "We need to generate all possible ordered arrangements of a distinct set of elements (n-factorial sequences).",
+    "naive_solution": "Randomly shuffling the array and storing unique results in a set, which is highly inefficient and non-deterministic.",
+    "better_idea": "Build the arrangement position by position. At each position, choose any element that hasn't been used yet. Use a boolean array `used[]` to track availability."
+  },
+  "mental_model": {
+    "intuition": "Filling chairs on a stage. For the first chair, you can pick any of the n actors. For the second chair, you can pick any of the remaining n-1 actors.",
+    "description": "The decision tree branches on 'which unused element goes in the current position'. The branching factor shrinks by 1 at each level: n branches, then n-1, down to 1. This creates exactly n! leaves.",
+    "repeated_decision": "For the current position in the sequence, which currently unused element should I place here?"
+  },
+  "explanation": "Permutations differ from subsets because order matters: `[1, 2]` is different from `[2, 1]`. Therefore, we cannot just move a `start_index` forward.\n\nInstead, at EVERY recursive step, we must consider the entire array. To prevent reusing the same element twice in a single permutation, we maintain a `used[]` boolean array.\n\nHand-trace for `[1, 2, 3]` at depth 0 (first position):\n- Choose 1 (mark used). Recurse to depth 1 (second position).\n  - Choose 2 (mark used). Recurse to depth 2 (third position).\n    - Choose 3. Path is `[1, 2, 3]`. Record and backtrack.\n  - Un-choose 2.\n  - Choose 3 (mark used). Path is `[1, 3]`. Recurse to depth 2.\n    - Choose 2. Path is `[1, 3, 2]`. Record and backtrack.\n- Un-choose 1.\n- Choose 2... and so on.\n\nThe time complexity is O(n * n!) because there are n! permutations, and copying each to the results takes O(n).\n\nAn alternative space optimization exists (Heap's Algorithm or swap-in-place), which swaps elements in the array to avoid the `used[]` array, but the boolean array tracker is the standard interview approach because it's easier to read and extend.",
+  "common_mistakes": [
+    {
+      "title": "Forgetting to unmark the used tracker",
+      "explanation": "If you don't set `used[i] = false` after the recursive call, sibling branches will think the element is still taken, silently pruning valid paths and missing most permutations."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Brute-force scheduling",
+      "problem": "Evaluating all possible execution orders for a small set of interdependent tasks.",
+      "why_this_algorithm": "Generates all n! task permutations to simulate and score."
+    }
+  ],
+  "pattern": {
+    "name": "Exhaustive Arrangement",
+    "recognition_cues": ["All permutations", "Ordered arrangements", "Factorial time complexity implied (n <= 10)"]
+  },
+  "recall_questions": [
+    {
+      "q": "How does the permutation decision tree differ from the subset decision tree?",
+      "answer": "Subsets decide PER ELEMENT (include or not, yielding 2^n leaves). Permutations decide PER POSITION (which unused element goes here, yielding n! leaves).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do permutations require a `used[]` array but subsets do not?",
+      "answer": "Subsets enforce uniqueness by only iterating forward (`i + 1`). Permutations must iterate over the entire array every time to explore different orderings, requiring a tracker to avoid reusing elements.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of generating permutations?",
+      "answer": "O(n * n!), as there are n! permutations and copying each into the result array takes O(n) time.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given an array of distinct integers, return all the possible permutations.",
+      "answer": "Use backtracking with a `used` array. Loop from 0 to n-1. If `used[i]` is false: choose it, set `used[i] = true`, recurse, then un-choose by setting `used[i] = false` and popping.",
+      "approach": "Standard permutations template with an availability tracker.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "How can you optimize permutation generation to O(1) auxiliary space?",
+      "answer": "By swapping elements in-place instead of using a `path` and a `used` array. At depth `i`, swap `nums[i]` with every element from index `i` to `n-1`, recurse, and swap back.",
+      "approach": "In-place swapping avoids external trackers.",
+      "company": "SDE interview"
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Subsets vs Permutations",
+      "detail": "Subsets = decision per element, 2^n leaves, no tracker needed. Permutations = decision per position, n! leaves, tracker needed."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Permutations",
+      "url": "https://leetcode.com/problems/permutations/",
+      "difficulty": "medium",
+      "why": "The baseline problem for arrangement generation."
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/permutations/",
+    "https://en.wikipedia.org/wiki/Heap%27s_algorithm"
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "slug": "subsets",
+  "title": "Subsets",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["backtracking-template"],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "We need to generate the power set (all possible combinations) of an array of distinct elements. Trying to generate combinations cleverly often leads to missed subsets or duplicates.",
+    "naive_solution": "Using multiple nested loops, which is impossible since the number of loops depends on the subset size.",
+    "better_idea": "Frame the problem as a sequence of independent yes/no decisions. For each element, decide whether to include it or exclude it. This perfectly enumerates the power set without duplicates."
+  },
+  "mental_model": {
+    "intuition": "At every item on a buffet line, you have exactly two choices: put it on your plate, or walk past it.",
+    "description": "We traverse a binary decision tree. At index `i`, we branch left (take `nums[i]`) and branch right (skip `nums[i]`). The recursion depth is `n`, leading to 2^n leaves. Every single node in this tree represents a valid subset.",
+    "repeated_decision": "At the current element index, do I include this element in my subset, or do I exclude it?"
+  },
+  "explanation": "Subset generation is fundamentally a binary choice per element: include it, or exclude it.\n\nImagine the array `[1, 2]`. The state-space tree looks like this:\n\n```text\n          []\n        /    \\\n   (take 1) (skip 1)\n      /        \\\n    [1]        []\n   /   \\      /   \\\n (t2) (s2)  (t2) (s2)\n /      \\    /      \\\n[1,2]  [1]  [2]     []\n```\n\nThe depth is `n` (the number of elements). At each step, we have 2 branches, resulting in exactly `2^n` leaves. Each leaf (and in fact, every node) is a valid subset.\n\nThere are two common idioms to record the subsets:\n1. **Record at every node:** Start the recursive function by immediately appending `path.copy()` to the results. Then loop `i` from `start_index` to `n-1`, append `nums[i]`, recurse with `i + 1`, and pop. This is the 'for-loop' idiom.\n2. **Record at leaves only:** Pass the current `index`. At index `n`, record `path.copy()`. Otherwise, make two explicit recursive calls: one with `nums[index]` appended to `path`, and one without it.\n\nBoth are valid, but the for-loop idiom is extremely common and extends elegantly to other backtracking problems. The time complexity is O(n * 2^n) because there are 2^n subsets, and copying each subset into the result array takes up to O(n) time.",
+  "engineering_examples": [
+    {
+      "title": "Testing feature flags",
+      "problem": "Testing software behavior under all possible combinations of boolean feature flags.",
+      "why_this_algorithm": "Subset generation creates the exhaustive power set of configurations to test."
+    },
+    {
+      "title": "Query planners",
+      "problem": "Evaluating different join orders in databases.",
+      "why_this_algorithm": "A query optimizer might generate subsets of joined tables to estimate execution costs."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Appending the path reference",
+      "explanation": "Writing `result.append(path)` instead of `result.append(path.copy())`. You must deep-copy the path before recording it."
+    }
+  ],
+  "pattern": {
+    "name": "Include/Exclude Decision",
+    "recognition_cues": ["Generate all combinations", "Power set"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the size of the state-space tree for subsets of an array of length n?",
+      "answer": "The tree has a depth of n, with 2 branches at each node, resulting in exactly 2^n leaves.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In the include/exclude tree, which nodes represent valid subsets?",
+      "answer": "Every node represents a valid subset, from the root (the empty set) all the way down to the leaves.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of generating subsets, and why?",
+      "answer": "O(n * 2^n). There are 2^n subsets, and copying each subset to the results list takes O(n) time.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Generate all subsets of an array with distinct integers.",
+      "answer": "Use backtracking with a for-loop idiom. Record `path.copy()` at every node. Loop `i` from `start_index` to end, choose `nums[i]`, recurse with `start_index = i + 1`, then un-choose.",
+      "approach": "Standard subsets template.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "How do you avoid generating duplicate combinations?",
+      "answer": "By always recursing with `start_index = i + 1` (or `index + 1`). This ensures we only move forward in the array and never look backward, preventing different orderings of the same elements.",
+      "approach": "Monotonic index advancement is the invariant that prevents permutation-like duplicates.",
+      "company": "SDE interview"
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Forward-only recursion",
+      "detail": "By always passing `i + 1` into the next recursive call, we artificially enforce an order, which guarantees we don't produce permutations like `[1, 2]` and `[2, 1]`."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Subsets",
+      "url": "https://leetcode.com/problems/subsets/",
+      "difficulty": "medium",
+      "why": "The purest form of the power set problem."
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/subsets/",
+    "https://en.wikipedia.org/wiki/Power_set"
+  ]
+}

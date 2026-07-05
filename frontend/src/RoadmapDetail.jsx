@@ -159,10 +159,23 @@ function RoadmapDetail() {
   const didInitialFocus = useRef(false);
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
 
-  // Per-page SEO — title/description from the loaded roadmap (null until fetched).
+  // Per-page SEO — title/description/structured-data from the loaded roadmap
+  // (null until fetched). Course schema makes the roadmap eligible for rich results.
+  const roadmapDesc = meta?.description ? meta.description.replace(/\s+/g, ' ').trim().slice(0, 158) : null;
   useSeo(
     meta?.title ? `${meta.title} Roadmap · Spaced Repetition | RetainHQ` : null,
-    meta?.description ? meta.description.replace(/\s+/g, ' ').trim().slice(0, 158) : null
+    roadmapDesc,
+    meta?.title
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: meta.title,
+          description: roadmapDesc || undefined,
+          url: `https://retainhq.app/roadmaps/${id}`,
+          inLanguage: 'en',
+          provider: { '@type': 'Organization', name: 'RetainHQ', url: 'https://retainhq.app' },
+        }
+      : null
   );
 
   const focusNode = useCallback((nodeId, zoom = 1.1) => {

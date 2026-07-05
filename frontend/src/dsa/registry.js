@@ -24,7 +24,11 @@ import { validParenthesesEvents } from './generators/valid-parentheses.js';
 import { minStackEvents } from './generators/min-stack.js';
 import { nextGreaterElementEvents } from './generators/next-greater-element.js';
 import { queueDequeEvents } from './generators/queue-deque.js';
-
+import { nQueensEvents } from './generators/n-queens.js';
+import { backtrackingTemplateEvents } from './generators/backtracking-template.js';
+import { subsetsEvents } from './generators/subsets.js';
+import { permutationsEvents } from './generators/permutations.js';
+import { combinationSumEvents } from './generators/combination-sum.js';
 export const GENERATORS = {
   'merge-sort': mergeSortEvents,
   'in-place-operations': inPlaceReverseEvents,
@@ -50,6 +54,11 @@ export const GENERATORS = {
   'min-stack': minStackEvents,
   'next-greater-element': nextGreaterElementEvents,
   'queue-deque': queueDequeEvents,
+  'n-queens': nQueensEvents,
+  'backtracking-template': backtrackingTemplateEvents,
+  'subsets': subsetsEvents,
+  'permutations': permutationsEvents,
+  'combination-sum': combinationSumEvents,
 };
 
 export function getGenerator(key) {
