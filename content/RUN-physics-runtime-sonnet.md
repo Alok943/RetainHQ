@@ -20,6 +20,16 @@ stated check. Match existing code style exactly (look at the referenced files fi
 
 ---
 
+## Adjudicated decisions (Fable, do not re-litigate)
+- **Diagram validation:** deep-validate the types that have a live renderer (`ray`, `graph`, `image`);
+  membership-only for `circuit`/`free-body` (renderers not built — schema discovered when built).
+- **oa_questions field:** physics uses **`source`** (e.g. "CBSE 2023"), NOT `company`. Validator accepts
+  either (`source` OR `company`). **Also patch the oa renderer** in `LessonView.jsx` (two pill sites, ~lines
+  1084 and 1420): change `q.company` → `q.source || q.company` so the source chip shows for physics.
+- **_numericals discovery:** the validator glob `ROOT.glob("*/*.json")` is ONE level and SKIPS
+  `_numericals/` files. Add a second glob `ROOT.glob("*/_numericals/*.json")`. Check `sync-content.mjs`
+  for the same one-level bug and widen it too, or the numericals page 404s.
+
 ## TASK 1 — `validate.py`: add `physics` and `numericals` kinds
 File: `content/validate.py`.
 1. Add `"physics"` and `"numericals"` to the `KIND` set (near line 30).
