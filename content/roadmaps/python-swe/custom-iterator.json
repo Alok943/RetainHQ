@@ -25,11 +25,11 @@
   "glossary": [
     {
       "term": "exhausted",
-      "definition": "When an iterator has gone through all its items and has no more left to provide."
+      "definition": "When an iterator has gone through all its items and has no more left to provide, e.g. `next(it)` raises `StopIteration`."
     },
     {
       "term": "lazily",
-      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance."
+      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance, e.g. `line = next(f)`."
     }
   ],
   "overview": {
@@ -59,17 +59,17 @@
   "recall_questions": [
     {
       "q": "What two dunder methods must a class implement to be a complete custom iterator?",
-      "answer": "It must implement `__iter__()` and `__next__()`.",
+      "answer": "A complete custom iterator must implement both `__iter__()` to return the iterator itself and `__next__()` to provide the next value.",
       "tier": "tier1"
     },
     {
       "q": "What exception must `__next__()` raise to signal that the iteration is finished?",
-      "answer": "It must raise `StopIteration`.",
+      "answer": "It must raise the `StopIteration` exception to indicate that there are no more items.",
       "tier": "tier1"
     },
     {
       "q": "What should the `__iter__()` method typically return when defined on an iterator class?",
-      "answer": "It should return `self`.",
+      "answer": "It should return `self`, meaning the iterator object itself, so that it can be used in `for` loops.",
       "tier": "tier1"
     }
   ],

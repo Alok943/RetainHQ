@@ -21,6 +21,9 @@ export function linkifyGlossary(text, terms = [], used = new Set()) {
     const regex = new RegExp(`\\b(${escapedTerm})\\b`, 'i');
     
     const match = text.match(regex);
+    if (entry.term === 'keyword-only' || entry.term === 'positional-only') {
+      console.log('[gd]', JSON.stringify(text.slice(0, 40)), entry.term, 'used?', used.has(termLower), 'match?', !!match);
+    }
     if (match) {
       used.add(termLower);
       const before = text.substring(0, match.index);
@@ -44,6 +47,14 @@ export function linkifyGlossary(text, terms = [], used = new Set()) {
   return [text];
 }
 
+/**
+ * @deprecated Do NOT use as a JSX component — React StrictMode double-invokes
+ * each component independently, causing the shared `used` Set to be mutated in
+ * the discarded first render so the second (kept) render sees terms as already
+ * consumed and falls back to shorter/wrong matches.
+ *
+ * Call `linkifyGlossary(text, terms, used)` directly as a plain function instead.
+ */
 export function GlossaryText({ children, terms, used }) {
   if (typeof children !== 'string') return children;
   if (!terms || terms.length === 0) return children;

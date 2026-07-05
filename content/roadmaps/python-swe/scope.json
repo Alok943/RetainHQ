@@ -26,11 +26,11 @@
   "glossary": [
     {
       "term": "LEGB rule",
-      "definition": "The specific order (Local, Enclosing, Global, Built-in) Python follows to look up the value of a variable."
+      "definition": "The specific order (Local, Enclosing, Global, Built-in) Python follows to look up the value of a variable. Example: Python checks Local before Global."
     },
     {
       "term": "enclosing function",
-      "definition": "An outer function that contains an inner, nested function within its code."
+      "definition": "An outer function that contains an inner, nested function within its code. Example: `def outer(): def inner(): pass`."
     }
   ],
   "overview": {
@@ -38,7 +38,7 @@
     "why": "LEGB explains every NameError and UnboundLocalError you'll encounter. It also explains why global state in a module works across functions without passing arguments — a pattern common in config objects and connection pools.",
     "where_used": [
       "Module-level config objects accessed from route handlers",
-      "Counter variables in enclosing scopes (used by closures)",
+      "Counter variables in enclosing scopes (used by closures, which are functions that remember the variables from their enclosing scope)",
       "Built-in shadowing bugs (e.g., naming a variable list or id)"
     ]
   },

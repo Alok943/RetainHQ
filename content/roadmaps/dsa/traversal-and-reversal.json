@@ -1,0 +1,157 @@
+{
+  "slug": "traversal-and-reversal",
+  "title": "Traversal & reversal",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "find-the-middle",
+      "reverse-in-k-groups",
+      "floyd-s-cycle-detection",
+      "merge-two-sorted-lists"
+    ]
+  },
+  "hook": {
+    "scenario": "You need to process a linked list of network packets backwards, but the list only has forward pointers.",
+    "question": "How do you reverse the entire list in-place without using extra memory or getting stuck in an infinite loop?"
+  },
+  "why_it_exists": {
+    "problem": "Navigating backward in a singly linked list is impossible because edges are unidirectional. Reversing the order of elements naively requires copying all values into a stack or array, which uses O(N) extra space and leaves the original list as abandoned memory.",
+    "naive_solution": "Traverse the list, push all values onto a stack, then pop them out to create an entirely new list.",
+    "better_idea": "Modify the existing pointers in-place. By maintaining three tracking pointers (previous, current, and next), you can walk through the list and flip each pointer backward one by one, achieving complete reversal in strictly O(1) extra space."
+  },
+  "mental_model": {
+    "intuition": "Walk through the sequence, holding the current node, reaching out to save the next node, and then turning the current node around to point behind you.",
+    "description": "You need three references: 'prev' (initially null), 'curr' (initially the head), and 'next'. Because altering the outgoing edge of a 'curr' node immediately severs the connection to the remainder of the sequence, you must first cache the successor node in 'next'. Then, rewrite 'curr.next' to point backward to 'prev'. Finally, advance your pointers: 'prev' steps forward to 'curr', and 'curr' steps forward to the cached 'next'. This strictly partitions the list into a fully reversed segment and an unreversed segment.",
+    "repeated_decision": "Have I saved the next node before I flip the current node's pointer?"
+  },
+  "explanation": "A singly linked list is defined entirely by its edges (pointers) rather than contiguous memory allocation. This means elements are scattered across memory, connected only by unidirectional references. To reverse this structure in-place, you cannot simply swap values; you must systematically rewire the edges.\n\nThe iterative reversal algorithm requires three pointers: prev, curr, and next. We start with prev as null and curr at the head of the list. In each step, we must first cache curr.next into our next pointer. This is the most critical operation: if we change curr.next before saving it, we sever our only link to the rest of the list, permanently losing access to those nodes in memory.\n\nOnce the next node is safely cached, we can safely overwrite curr.next to point backward to prev. After the edge is flipped, we shift our working window forward. The prev pointer moves up to where curr is, and curr moves up to the cached next node. This loop continues until curr becomes null, meaning we have processed every node. At termination, the prev pointer holds the memory address of the final node processed, which is the new head of our fully reversed list.",
+  "key_points": [
+    {
+      "title": "O(N) Time, O(1) Space",
+      "detail": "Iterative reversal modifies the structure in a single linear pass using only three pointer variables, maintaining strictly constant extra space."
+    },
+    {
+      "title": "Iterative vs. Recursive",
+      "detail": "While recursive reversal is possible, it requires O(N) space for the call stack and risks a stack overflow fault on long lists. Iterative traversal is the preferred, safe pattern."
+    },
+    {
+      "title": "The Null Terminator",
+      "detail": "The original head node's next pointer must become null to signify the end of the new list, which happens naturally if the previous pointer starts as null."
+    }
+  ],
+  "pattern": {
+    "name": "In-place pointer manipulation",
+    "recognition_cues": [
+      "Requires reordering a linked list.",
+      "Strict memory constraint (O(1) extra space).",
+      "Terms like 'in-place', 'constant space', or 'pointer rewiring'."
+    ]
+  },
+  "failure_signals": [
+    "You are using a stack or array to store node values.",
+    "You are swapping node values instead of modifying the next pointers.",
+    "You encounter a null pointer exception or infinite loop during traversal."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Network packet processing",
+      "problem": "Certain telecommunications protocol decoding requires asynchronous packets to be parsed in reverse order of their arrival.",
+      "why_this_algorithm": "Rewiring pointers in-place minimizes buffer allocation overhead in memory-constrained routing hardware."
+    },
+    {
+      "title": "Reversing an execution path",
+      "problem": "In memory-constrained embedded systems, a hardware execution path or event-log chain must be reversed.",
+      "why_this_algorithm": "Rewiring the pointers in-place is the only way to reverse the path when allocating a stack is impossible due to memory constraints."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Multi-threaded environments requiring concurrent reads",
+      "reason": "In-place reversal mutates the shared underlying structure, fundamentally breaking concurrent forward reads by other threads. Immutable data structures are preferred here."
+    },
+    {
+      "scenario": "Lists holding primitive values with no memory constraints",
+      "reason": "If you just need the values reversed and memory is abundant, copying to an array and reading backwards has better performance due to memory caching."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Flipping pointers before caching",
+      "explanation": "If you update curr.next to point backward BEFORE saving curr.next into a temporary variable, you sever the rest of the list. Save next, then flip."
+    },
+    {
+      "title": "Returning the wrong head node",
+      "explanation": "A common error is returning curr at the end of the algorithm. Since the loop terminates when curr evaluates to null, returning curr returns an empty list. The prev pointer holds the true new head."
+    },
+    {
+      "title": "Failing to nullify the original head's next pointer",
+      "explanation": "If the original head's outgoing edge isn't pointed to null (which happens naturally if prev is initialized to null), it creates a circular dependency causing infinite loops."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is the iterative linked list reversal O(1) space?",
+      "answer": "Because it rewires the existing edges in-place using only three reference variables (prev, curr, next) instead of allocating a new data structure to hold the nodes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you mutate the current node's next pointer before caching it?",
+      "answer": "You sever the connection to the rest of the list and lose access to the remaining unreversed nodes, permanently abandoning them in memory.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which pointer should you return at the end of the reversal algorithm, and why?",
+      "answer": "You must return the 'prev' pointer. The loop terminates when 'curr' becomes null, at which point 'prev' holds the memory address of the last processed node (the new head).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Reverse a linked list iteratively.",
+      "company": "SDE interview",
+      "answer": "Initialize prev to null and curr to head. Loop while curr is not null: save curr.next to next, set curr.next to prev, advance prev to curr, and advance curr to next. Return prev.",
+      "approach": "This is the direct application of the three-pointer state machine pattern."
+    },
+    {
+      "question": "Explain the tradeoff between iterative and recursive linked list reversal.",
+      "company": "SDE interview",
+      "answer": "Iterative reversal uses O(1) extra space and avoids scaling risks. Recursive reversal uses O(N) space for the call stack and risks a stack overflow fault on very long lists.",
+      "approach": "Focus on the architectural risk of unbounded call stack depth versus constant space."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Reverse Linked List",
+      "url": "https://leetcode.com/problems/reverse-linked-list/",
+      "difficulty": "easy",
+      "why": "The foundational exercise for pointer rewiring."
+    },
+    {
+      "title": "Palindrome Linked List",
+      "url": "https://leetcode.com/problems/palindrome-linked-list/",
+      "difficulty": "easy",
+      "why": "Often solved by finding the middle and then applying in-place reversal to the second half."
+    }
+  ],
+  "related": [
+    "find-the-middle",
+    "reverse-in-k-groups",
+    "floyd-s-cycle-detection",
+    "merge-two-sorted-lists"
+  ],
+  "interesting_facts": [
+    "In languages without automatic memory cleanup, losing the reference to the rest of a linked list during a botched reversal operation results in a permanent memory leak."
+  ],
+  "sources": [
+    "https://unstop.com/blog/reverse-a-linked-list",
+    "https://algocademy.com/blog/in-place-reversal-of-a-linked-list-a-comprehensive-guide/",
+    "https://www.almabetter.com/bytes/articles/how-to-reverse-a-linked-list"
+  ]
+}

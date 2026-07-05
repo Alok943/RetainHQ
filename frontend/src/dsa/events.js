@@ -4,12 +4,18 @@
 // the renderer shows its caption + invariant (graceful fallback). See docs/dsa-architecture.md.
 
 export const OP_FAMILIES = {
-  array:     ['COMPARE', 'SWAP', 'MOVE', 'WRITE', 'SPLIT', 'MERGE_DONE'],
-  recursion: ['CALL', 'RETURN', 'CHOOSE', 'UNDO'],
-  stack:     ['PUSH', 'POP', 'ENQUEUE', 'DEQUEUE'],
-  graph:     ['VISIT', 'MARK_VISITED', 'RELAX', 'ENQUEUE_NODE'],
-  dp:        ['MEMO_WRITE', 'MEMO_HIT', 'FILL_CELL'],
+  array:     ['COMPARE','SWAP','MOVE','WRITE','SPLIT','MERGE_DONE','POINT','SET','WINDOW','MARK','DONE'],
+  recursion: ['CALL','RETURN','CHOOSE','UNDO'],
+  stack:     ['PUSH','POP','ENQUEUE','DEQUEUE'],
+  hashing:   ['COUNT'],
   scalar:    ['VAR'],
+  tree:      ['TREE_INIT','VISIT_NODE','MARK_NODE','COMPARE_NODE','SET_EDGE','RETURN_NODE'],
+  grid:      ['GRID_INIT','FILL_CELL','READ_CELL','MARK_CELL','PLACE','REMOVE'],
+  graph:     ['GRAPH_INIT','VISIT','MARK_VISITED','RELAX','ENQUEUE_NODE','SET_EDGE','UNION'],
+  list:      ['LIST_INIT','POINT_NODE','SET_NEXT','MARK_NODE'],
+  intervals: ['INTERVAL_INIT','SELECT','SKIP','MERGE_INTERVAL'],
+  bits:      ['BITS_INIT','XOR_STEP','SET_BIT'],
+  dp:        ['MEMO_WRITE', 'MEMO_HIT', 'FILL_CELL'],
 };
 
 const OP_TO_FAMILY = Object.fromEntries(

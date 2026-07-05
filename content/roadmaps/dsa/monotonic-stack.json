@@ -1,0 +1,151 @@
+{
+  "slug": "monotonic-stack",
+  "title": "Monotonic stack",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "stack-fundamentals"
+    ],
+    "unlocks": [
+      "next-greater-element"
+    ]
+  },
+  "viz": {
+    "generator": "next-greater-element",
+    "default_input": [4, 5, 2, 10, 8],
+    "invariants": {
+      "inv-monotonic": "Keep the stack monotonic (here decreasing by value); the moment an element breaks the order it evicts the violators, and each eviction resolves that element's answer."
+    },
+    "steps": [
+      { "id": "read", "label": "read the next element" },
+      { "id": "resolve", "label": "evict while it breaks the decreasing order" },
+      { "id": "push", "label": "push the current index" },
+      { "id": "done", "label": "unresolved indices have no greater element" }
+    ],
+    "predictions": [
+      { "at_op": "POINT", "occurrence": 2, "level": "medium", "prompt": "The next element is arriving. Will it EVICT the stack top (POP), or just get PUSHED?", "derive": "next_op" }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Resolving relationships between sequentially processed elements (like finding the next greater element) normally requires O(n^2) nested scanning.",
+    "better_idea": "Maintain elements in a strictly ordered sequence (increasing or decreasing). Incoming elements forcefully evict elements that violate the order. The moment an element is evicted, we've found its answer. This yields O(n) amortized time.",
+    "naive_solution": "For every element, scanning all subsequent elements in a nested loop to find the next greater/smaller match, resulting in O(n^2) time."
+  },
+  "mental_model": {
+    "intuition": "A localized memory buffer for elements 'waiting' for a specific condition. A massive element comes in and bulldozes all the smaller elements waiting in line.",
+    "description": "A monotonic stack enforces order via a forceful eviction policy during the push operation. If the stack is strictly decreasing, smaller elements sit on top of larger ones. When a large element arrives, it shatters the invariant, forcing all smaller elements to pop. The popped elements acknowledge the incoming element as their 'next greater' match. We typically store array *indices* instead of values to calculate distances and update result arrays.",
+    "repeated_decision": "Does the incoming element violate the monotonic order? If so, pop the top of the stack and resolve its answer."
+  },
+  "engineering_examples": [
+    {
+      "title": "Financial Span Calculations",
+      "problem": "Stock market span problem",
+      "why_this_algorithm": "Computes consecutive previous days a stock was lower by ejecting all previous days with lower prices, allowing instant calculation to the nearest prior peak."
+    },
+    {
+      "title": "Geometric Area Problems",
+      "problem": "Largest rectangle in a histogram",
+      "why_this_algorithm": "Shorter bars trigger evictions of taller bars, allowing the calculation of locally bounded areas efficiently."
+    }
+  ],
+  "failure_signals": [
+    "The problem doesn't involve relative ordering or range queries.",
+    "Looking for absolute max/min of the entire array (use a standard variable)."
+  ],
+  "pattern": {
+    "name": "Monotonic Eviction",
+    "recognition_cues": [
+      "Next greater/smaller element",
+      "Finding the nearest element that satisfies a magnitude condition",
+      "Histogram/Area problems"
+    ]
+  },
+  "common_mistakes": [
+    {
+      "title": "Believing it is O(n^2) time complexity",
+      "explanation": "Because there is a while loop inside a for loop, developers incorrectly assume O(n^2). Amortized analysis proves O(n) because each element is pushed and popped at most once."
+    },
+    {
+      "title": "Storing values instead of indices",
+      "explanation": "Storing actual integer values loses spatial metadata. Storing indices allows resolving distance calculations and placing answers in a pre-allocated result array."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the amortized time complexity of traversing an array with a monotonic stack, and why?",
+      "answer": "O(n). Each element is pushed exactly once and popped at most once, meaning the while loop operations are bounded linearly overall.",
+      "tier": "tier1"
+    },
+    {
+      "q": "To find the 'next greater element', should you use a strictly increasing or strictly decreasing monotonic stack?",
+      "answer": "A strictly decreasing stack (Largest at bottom, smallest at top). An incoming larger element forces the smaller elements to pop, resolving them.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is it usually better to push array indices onto the monotonic stack rather than values?",
+      "answer": "Indices allow you to write the resolution directly to the correct position in a result array and calculate physical distances between elements.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the maximum area of a rectangle in a histogram.",
+      "answer": "Use an increasing monotonic stack. When a shorter bar arrives, pop taller bars, calculating their bounded area using the current index and the new top of stack index. To compute the width, use the formula `current_index - stack.top() - 1` using the NEW top after popping as the left boundary. Use a sentinel trick: append a 0-height bar at the end of the array to flush any remaining elements from the stack.",
+      "approach": "Identify that shorter bars act as rigid boundary limits for taller bars.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Calculate the stock span for each day.",
+      "answer": "Use a decreasing stack of indices. When a higher price arrives, pop lower prices. The span is the current index minus the index now at the top of the stack.",
+      "approach": "Evicting lower prices resolves the 'consecutive previous days' constraint.",
+      "company": "SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Daily Temperatures",
+      "url": "https://leetcode.com/problems/daily-temperatures/",
+      "difficulty": "medium",
+      "why": "The classic distance-based monotonic stack problem."
+    },
+    {
+      "title": "Largest Rectangle in Histogram",
+      "url": "https://leetcode.com/problems/largest-rectangle-in-histogram/",
+      "difficulty": "hard",
+      "why": "Applies monotonic boundaries to geometric area calculation."
+    }
+  ],
+  "related": [
+    "next-greater-element"
+  ],
+  "sources": [
+    "https://unwiredlearning.com/blog/monotonic-stack-guide",
+    "https://purpletutor.com/monotonic-stack/",
+    "https://www.hellointerview.com/learn/code/stack/monotonic-stack"
+  ],
+  "explanation": "The monotonic stack is one of the most powerful and feared interview patterns. It fundamentally solves the 'next greater' or 'next smaller' query over an entire array in O(n) amortized time.\n\nThe beauty of this structure is that the *destruction* of the invariant provides the answer. Elements wait peacefully on the stack in order. The moment a contradictory element arrives, it triggers a cascade of pops. Each pop is an element realizing that its wait is over: the incoming element is exactly what it was waiting for.\n\nHere is the vital direction rule to memorize: Keep the stack DECREASING to find the next GREATER element (pop when a bigger element arrives); keep it INCREASING to find the next SMALLER element / to bound areas like histogram bars (pop when a smaller element arrives). Understanding this choice is the key to mastering the pattern. While the nested while loop looks like O(n^2), amortized analysis proves it is O(n) overall because every element is pushed exactly once and popped at most once.\n\nThe same eviction machinery solves area problems like the largest rectangle in a histogram. Keep an INCREASING stack of bar indices; when a shorter bar arrives it evicts taller bars, and each evicted bar's rectangle is bounded on the right by the current index and on the left by the NEW stack top after popping — so its width is `current_index - stack.top() - 1`. Append a single sentinel bar of height 0 at the end to force every remaining bar to flush and be measured.",
+  "hook": {
+    "scenario": "You're looking at a line of people and want to find the next person taller than you. You could ask everyone in line one by one.",
+    "question": "Is there a way to find the next taller person for everyone in just a single pass?"
+  },
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "The stack elements remain strictly increasing or decreasing from bottom to top."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(n) amortized time, as each element is pushed and popped at most once."
+    },
+    {
+      "title": "Recognition cue",
+      "detail": "Finding the next greater/smaller element, or computing bounds like in histogram areas."
+    }
+  ]
+}

@@ -22,11 +22,11 @@
   "glossary": [
     {
       "term": "data retention policies",
-      "definition": "Rules set by an organization that dictate how long specific types of data, like logs, must be kept before being deleted."
+      "definition": "Rules set by an organization that dictate how long specific types of data, like logs, must be kept before being deleted, e.g. keeping logs for 30 days then auto-deleting them."
     },
     {
       "term": "worker processes",
-      "definition": "Separate instances of a program running simultaneously to handle multiple tasks or requests at the same time."
+      "definition": "Separate instances of a program running simultaneously to handle multiple tasks or requests at the same time, e.g. running `gunicorn -w 4 app:app` starts 4 worker processes."
     }
   ],
   "overview": {
@@ -76,7 +76,7 @@
     {
       "type": "explain-behavior",
       "question": "If you configure `backupCount=3`, how many log files will eventually exist on disk?",
-      "answer": "4 log files.",
+      "answer": "4 log files: the currently active `app.log` plus 3 numbered backups (`app.log.1`, `app.log.2`, `app.log.3`).",
       "why": "It keeps the current active file (`app.log`) plus exactly 3 backups (`app.log.1`, `app.log.2`, `app.log.3`)."
     }
   ],

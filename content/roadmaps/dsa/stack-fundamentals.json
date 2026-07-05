@@ -1,0 +1,154 @@
+{
+  "slug": "stack-fundamentals",
+  "title": "Stack fundamentals",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "valid-parentheses",
+      "min-stack"
+    ]
+  },
+  "viz": {
+    "generator": "stack-fundamentals",
+    "default_input": [3, 7, 1, 8],
+    "invariants": {
+      "inv-lifo": "Access happens only at the top: the last element pushed is always the first one popped."
+    },
+    "steps": [
+      { "id": "push", "label": "stack.push(x)" },
+      { "id": "pop", "label": "stack.pop() (from the top)" },
+      { "id": "done", "label": "all elements processed" }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Sometimes we need to process data in the exact reverse order of its arrival, like hitting 'undo' in an editor or returning from nested function calls. A generic array or list doesn't strictly enforce this ordering.",
+    "better_idea": "A Stack restricts access to a single boundary called the 'top'. By strictly enforcing a Last-In-First-Out (LIFO) policy, we guarantee O(1) time complexity for adding (push) or removing (pop) the most recent item.",
+    "naive_solution": "Using a standard array and manually tracking the 'last inserted' index, or shifting elements, which can lead to bugs or O(n) operations if not careful."
+  },
+  "mental_model": {
+    "intuition": "Think of a physical stack of plates in a cafeteria. You can only add a new plate to the top, and you can only take a plate off the top.",
+    "description": "A stack is a dynamic set functioning strictly under a Last-In-First-Out (LIFO) policy. It can be implemented using a dynamic array (excellent cache locality) or a linked list (strict O(1) bounds). Popping an element doesn't destroy the data in memory; it just shifts the 'top' boundary pointer downwards.",
+    "repeated_decision": "When inserting, place the item at the current top boundary. When removing, take the item at the top boundary and shift the boundary down."
+  },
+  "engineering_examples": [
+    {
+      "title": "Function Call Stack",
+      "problem": "Tracking nested subroutine execution state",
+      "why_this_algorithm": "The LIFO property perfectly models suspending a current context, handling a nested context, and resuming the original state."
+    },
+    {
+      "title": "Undo/Redo Buffers",
+      "problem": "Reversing sequential document mutations",
+      "why_this_algorithm": "Each action is pushed onto a stack. An undo pops the most recent action and reverses it."
+    }
+  ],
+  "failure_signals": [
+    "Need to access elements in the middle of the collection",
+    "Need FIFO ordering instead of LIFO"
+  ],
+  "pattern": {
+    "name": "LIFO Processing",
+    "recognition_cues": [
+      "Requires reversing the order of input",
+      "Processing nested structures",
+      "Simulating recursion"
+    ]
+  },
+  "common_mistakes": [
+    {
+      "title": "Using legacy Java Stack",
+      "explanation": "The legacy java.util.Stack extends Vector, inheriting index-based access (breaking the LIFO invariant) and incurring heavy synchronization locks. Modern Java uses ArrayDeque."
+    },
+    {
+      "title": "Ignoring Cache Locality",
+      "explanation": "While linked lists provide strict O(1) pushes, array-based stacks are overwhelmingly preferred in engineering due to superior CPU cache prefetching."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the defining property of a Stack?",
+      "answer": "Last-In-First-Out (LIFO) access. Elements are only pushed or popped from the top.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of push and pop operations?",
+      "answer": "O(1) (strict for linked list, amortized for dynamic arrays). POP is strict O(1). For pushes, dynamic arrays occasionally double capacity when full (that push is O(n)), but averaged over many pushes it's O(1) \u2014 'amortized'.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is an array-based stack often faster in practice than a linked-list stack?",
+      "answer": "Contiguous memory allocation provides excellent CPU cache locality. CPU cache lines fetch chunks of contiguous memory, so array neighbours arrive together; scattered linked-list nodes each cause a cache miss.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Design an undo/redo system for a text editor.",
+      "answer": "Use two stacks. Push actions to the undo stack. On undo, pop from the undo stack, reverse the action, and push to the redo stack.",
+      "approach": "Recognize that reversing actions perfectly maps to a LIFO structure.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "How does the operating system manage function calls?",
+      "answer": "It uses a call stack. Each function call pushes a stack frame (local variables, return address). Returning pops the frame.",
+      "approach": "Demonstrate understanding of systemic stack usage.",
+      "company": "Systems interview"
+    },
+    {
+      "question": "Implement a Queue using two Stacks.",
+      "answer": "Use one stack for enqueueing. For dequeue, if the out-stack is empty, pop everything from the in-stack and push to the out-stack, reversing the order. Pop from out-stack. Amortized O(1).",
+      "approach": "Simulate FIFO by reversing LIFO twice.",
+      "company": "SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Implement Stack using Queues",
+      "url": "https://leetcode.com/problems/implement-stack-using-queues/",
+      "difficulty": "easy",
+      "why": "Forces you to think about how to simulate LIFO behavior using FIFO primitives."
+    },
+    {
+      "title": "Valid Parentheses",
+      "url": "https://leetcode.com/problems/valid-parentheses/",
+      "difficulty": "easy",
+      "why": "A classic LIFO problem checking structural validity."
+    }
+  ],
+  "sources": [
+    "https://medium.com/@fr.monfared/from-abstract-data-types-to-real-data-structures-994c85974ef3",
+    "https://algomaster.io/learn/dsa/stack-introduction"
+  ],
+  "explanation": "A stack is the foundational linear data structure for anything that requires reversing chronological order. Whether it is a depth-first search exploring the deepest branch first, or the CPU executing nested subroutine calls, stacks elegantly freeze a current state to be resumed later.\n\nWhile you can technically build a stack out of a linked list (inserting and removing at the head), modern production systems almost universally use dynamic arrays (like Python's list or Java's ArrayDeque). This is because contiguous memory allows the CPU to pre-fetch the array into its extremely fast L1/L2 caches, obliterating the performance of pointer-heavy linked lists in the real world.\n\nOne subtlety with array-backed stacks: when the array fills up it must double its capacity, and that single push costs O(n) to copy everything across. But because a doubling buys you n more free pushes before the next resize, the cost averages out to O(1) per push over many operations — this is what 'amortized O(1)' means. (Pop is always strict O(1); it never resizes.) A final party trick: two stacks placed back-to-back can simulate a FIFO queue — push onto an 'in' stack, and when you need to dequeue, pour everything into an 'out' stack, which reverses the LIFO order into FIFO.",
+  "hook": {
+    "scenario": "Ever hit Ctrl+Z? That undo history is a stack \u2014 the last thing you did is the first thing undone.",
+    "question": "How do we structurally enforce this reverse-chronological order?"
+  },
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "Elements are strictly added and removed from only one end (the top)."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(1) time for push and pop operations."
+    },
+    {
+      "title": "Recognition cue",
+      "detail": "Whenever you need to process data in a Last-In-First-Out (LIFO) or reverse-chronological order."
+    }
+  ],
+  "related": [
+    "min-stack",
+    "monotonic-stack",
+    "valid-parentheses",
+    "queue-and-deque"
+  ]
+}

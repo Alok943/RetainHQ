@@ -1,0 +1,87 @@
+{
+  "slug": "the-call-stack",
+  "title": "The call stack",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["recursive-relation", "stack-fundamentals", "tracing-state-and-invariants"],
+    "unlocks": ["recursion-tree"]
+  },
+  "overview": {
+    "what": "The call stack is the behind-the-scenes memory structure that tracks active function calls. Each recursive call pushes its own 'frame' onto the stack containing its local variables, parameters, and return address.",
+    "why": "Recursion isn't magic; it has a memory cost. Because frames unwind Last-In, First-Out (LIFO), understanding the call stack is essential to grasping how recursive state is preserved, why work can happen 'on the way up' after a call returns, and why too many calls cause a crash.",
+    "where_used": [
+      "Navigating mazes or routing paths, where the call stack remembers the trail of previous intersections to backtrack to."
+    ]
+  },
+  "why_learning_this": [
+    "It demystifies recursion by exposing the actual mechanism the computer uses to execute it.",
+    "It explains why deep recursion requires O(depth) space and can trigger a RecursionError.",
+    "Understanding stack unwinding is crucial for problems that require 'work done on the way back up', like calculating a nested folder's total size."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming recursion costs zero memory",
+      "explanation": "Every active recursive call requires its own stack frame. The space complexity of a recursive algorithm is always at least O(depth), where depth is the maximum number of live frames."
+    },
+    {
+      "title": "Confusing 'pre-call' and 'post-call' execution",
+      "explanation": "Work done before the recursive call happens 'on the way down'. Work done after the recursive call returns happens 'on the way up' as the stack unwinds. Mixing these up causes reversed outputs or incorrect aggregations."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens when a recursive function reaches its base case?",
+      "answer": "It returns a value, popping its frame off the call stack, and the paused caller function resumes execution.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the space complexity of a recursive algorithm?",
+      "answer": "O(depth), which corresponds to the maximum number of live stack frames in memory at any one time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In Python, why might a recursive function crash with a RecursionError after roughly 1,000 calls?",
+      "answer": "Because Python enforces a maximum call stack depth to prevent infinite recursion from freezing the system, as it intentionally avoids Tail Call Optimization to preserve full stack traces for debugging.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does this function print when called with `3`? `def print_nums(n): if n == 0: return; print_nums(n-1); print(n)`",
+      "answer": "It prints 1, 2, 3.",
+      "why": "Because `print(n)` happens AFTER the recursive call, the work happens 'on the way up' as the stack unwinds (LIFO order). The base case returns when `n=0`, then the `n=1` frame prints, then `n=2`, and finally `n=3`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "To find the maximum depth of nested folders (a directory inside a directory), you recursively call `1 + max(depth(subfolders))`. Why is this easier than using an iterative loop?",
+      "answer": "The recursive approach delegates the state tracking (knowing which folder you are currently looking at and its subfolders) to the call stack implicitly. An iterative approach would require manually managing an explicit list of folders.",
+      "why": "The call stack is essentially an automatic, built-in data structure that remembers where you came from, making nested structure traversals very elegant to write."
+    }
+  ],
+  "aha_moment": {
+    "code": "def tail_call_demo(n):\n    if n == 0:\n        return 0\n    # The recursive call is the very last action\n    return tail_call_demo(n - 1)",
+    "prediction": "Since nothing happens after the recursive call, the current stack frame could theoretically be reused.",
+    "common_guess": "Python will optimize this to use O(1) space.",
+    "why": "While Tail Call Optimization (TCO) allows reusing the frame for O(1) space, Python deliberately REJECTS this optimization to ensure full, readable stack traces for debugging. Thus, it still uses O(depth) space and will hit the default recursion limit (typically around 1,000 calls)!"
+  },
+  "practice_tasks": [
+    {
+      "title": "Trace the stack output",
+      "prompt": "Mentally simulate the call stack for `mystery(3)` and write down the exact output printed to the console. Pay close attention to when the print statement executes relative to the recursive call.",
+      "starter_code": "def mystery(n):\n    if n == 0:\n        return\n    mystery(n - 1)\n    print(n)",
+      "solution": "It prints 1, then 2, then 3. The `print(n)` happens AFTER the recursive call, meaning the work is done 'on the way up' as the stack frames pop in LIFO order."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Call_stack",
+    "https://en.wikipedia.org/wiki/Tail_call"
+  ]
+}

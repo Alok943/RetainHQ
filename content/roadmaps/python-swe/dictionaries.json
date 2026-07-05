@@ -27,15 +27,15 @@
   "glossary": [
     {
       "term": "hash table",
-      "definition": "A data structure that stores information in a way that allows for extremely fast retrieval using a unique key."
+      "definition": "A data structure that stores information in a way that allows for extremely fast retrieval using a unique key. Python dicts use one internally, which is why `d['key']` is instant regardless of how large the dict is. Example: `{'id': 1}`"
     },
     {
       "term": "serialize",
-      "definition": "The process of converting complex data structures into a format that can be easily stored or transmitted, like turning a Python dictionary into a JSON string."
+      "definition": "The process of converting complex data structures into a format that can be easily stored or transmitted, like turning a Python dictionary into a JSON string. Example: `json.dumps({'id': 1})`"
     }
   ],
   "overview": {
-    "what": "A dict maps hashable keys to values using a hash table, giving O(1) average-time lookups, inserts, and deletes. Keys must be immutable (str, int, tuple) — lists and dicts cannot be keys. Since Python 3.7+ dicts preserve insertion order.\n\nCreate one with braces or dict():\n\n  user = {'name': 'sam', 'role': 'admin', 'active': True}\n\nAccess a value by key — direct access raises KeyError if the key is missing, while .get() returns a default instead:\n\n  user['name']              # 'sam'\n  user['email']             # KeyError!\n  user.get('email', 'n/a')  # 'n/a' — safe fallback\n\n.keys(), .values(), and .items() return live view objects — they reflect changes to the dict without copying:\n\n  for k, v in user.items():\n      print(k, v)\n\nMutation methods:\n  user['email'] = 'sam@co.io'          # add or overwrite a key\n  del user['active']                    # remove a key (KeyError if missing)\n  user.pop('role', None)                # remove and return value, or default\n  user.setdefault('plan', 'free')       # insert 'plan' only if absent\n  user.update({'active': False})        # merge another dict in place\n\nDict unpacking (**) merges dicts into a new one without mutating either source:\n\n  merged = {**defaults, **overrides}\n\nCommon pattern — grouping items by a key:\n\n  groups = {}\n  for item in items:\n      groups.setdefault(item['team'], []).append(item)\n\nThink of a dict as a filing cabinet: each drawer has a unique label (key) and holds one document (value). You open a drawer by its label in constant time — you never search drawer-by-drawer.",
+    "what": "A dict maps hashable keys to values using a hash table, giving O(1) average-time lookups (instant retrieval regardless of size), inserts, and deletes. Keys must be immutable (str, int, tuple) — lists and dicts cannot be keys. Since Python 3.7+ dicts preserve insertion order.\n\nCreate one with braces or dict():\n\n  user = {'name': 'sam', 'role': 'admin', 'active': True}\n\nAccess a value by key — direct access raises KeyError if the key is missing, while .get() returns a default instead:\n\n  user['name']              # 'sam'\n  user['email']             # KeyError!\n  user.get('email', 'n/a')  # 'n/a' — safe fallback\n\n.keys(), .values(), and .items() return live view objects — they reflect changes to the dict without copying:\n\n  for k, v in user.items():\n      print(k, v)\n\nMutation methods:\n  user['email'] = 'sam@co.io'          # add or overwrite a key\n  del user['active']                    # remove a key (KeyError if missing)\n  user.pop('role', None)                # remove and return value, or default\n  user.setdefault('plan', 'free')       # insert 'plan' only if absent\n  user.update({'active': False})        # merge another dict in place\n\nDict unpacking (**) merges dicts into a new one without mutating either source:\n\n  merged = {**defaults, **overrides}\n\nCommon pattern — grouping items by a key:\n\n  groups = {}\n  for item in items:\n      groups.setdefault(item['team'], []).append(item)\n\nThink of a dict as a filing cabinet: each drawer has a unique label (key) and holds one document (value). You open a drawer by its label in constant time — you never search drawer-by-drawer.",
     "why": "Dicts are the backbone of Python data handling — JSON payloads are dicts, FastAPI response models serialize to dicts, config files parse into dicts, and ORM row objects expose dict-like access. Choosing .get() over direct access prevents crashes on optional fields, and understanding view objects avoids wasteful copies in hot loops.",
     "where_used": [
       "FastAPI response models",
@@ -52,15 +52,15 @@
   "common_mistakes": [
     {
       "title": "Using direct access on optional keys",
-      "explanation": "config['timeout'] raises KeyError if 'timeout' was never set. Use config.get('timeout', 30) to supply a default, or guard with 'timeout' in config."
+      "explanation": "Direct access raises a `KeyError` if the key is missing. Instead, use `.get('timeout', 30)` to safely supply a default value."
     },
     {
       "title": "Iterating and mutating at the same time",
-      "explanation": "Adding or deleting keys while iterating over a dict raises RuntimeError: dictionary changed size during iteration. Iterate over a snapshot instead: for k in list(d.keys())."
+      "explanation": "This raises a `RuntimeError`. Instead, iterate over a static snapshot by wrapping the keys in a list, like `list(d.keys())`."
     },
     {
       "title": "Expecting dict.update() to return the merged dict",
-      "explanation": "update() mutates in place and returns None — just like list.append(). To merge into a NEW dict, use unpacking: merged = {**base, **extra}."
+      "explanation": "This method mutates the dictionary in place and evaluates to `None`. To create a new merged dictionary, use unpacking syntax instead: `{**base, **extra}`."
     }
   ],
   "understanding_checks": [
@@ -81,11 +81,11 @@
   "recall_questions": [
     {
       "q": "What is the average time complexity for lookups, inserts, and deletes in a Python dictionary?",
-      "answer": "O(1) average time."
+      "answer": "O(1) average time — meaning the operation takes roughly the same amount of time no matter how many items are in the dictionary, because Python uses a hash table internally."
     },
     {
       "q": "What method can you use to access a dictionary value safely without raising a KeyError if it is missing?",
-      "answer": "The `.get()` method."
+      "answer": "The `.get()` method. You can also supply a default: `d.get('key', 'fallback')` returns `'fallback'` instead of raising an error when the key is absent."
     }
   ],
   "practice_tasks": [

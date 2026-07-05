@@ -22,11 +22,11 @@
   "glossary": [
     {
       "term": "reference counting",
-      "definition": "A method of memory management where Python keeps track of how many times an object is being used."
+      "definition": "A method of memory management where Python keeps track of how many times an object is being used. Example: `sys.getrefcount(obj)`"
     },
     {
       "term": "memory leaks",
-      "definition": "When a program fails to release memory that it no longer needs, eventually causing the system to run out of memory."
+      "definition": "When a program fails to release memory that it no longer needs, eventually causing the system to run out of memory. Example: `storing unused data in a cache`"
     }
   ],
   "overview": {
@@ -60,7 +60,7 @@
     },
     {
       "q": "Why is a secondary garbage collection process needed in addition to reference counting?",
-      "answer": "To clean up cyclic references, where objects point to each other and their reference counts never reach zero even when no variables point to them.",
+      "answer": "It cleans up cyclic references, where objects point to each other. In this case, their reference counts never reach zero even when no variables point to them.",
       "tier": "tier2"
     }
   ],

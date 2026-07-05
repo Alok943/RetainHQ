@@ -3,7 +3,7 @@ import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Lock, ChevronDown } 
 import { getGenerator } from './registry.js';
 import { compile } from './compile.js';
 import { evaluateCheckpoint, gradeAnswer } from './predict.js';
-import ArrayViz from './renderers/ArrayViz.jsx';
+import { rendererFor } from './renderers/index.js';
 import StateMachine from './renderers/StateMachine.jsx';
 import StackQueueViz from './renderers/StackQueueViz.jsx';
 
@@ -182,6 +182,8 @@ export default function Player({
   const reading = step !== animatedStep;
   const nextFrame = frames[Math.min(step, last) + 1] || null;
 
+  const MainViz = rendererFor(visFrame);
+
   const activeGate = gates.find((g) => g.gateIndex === Math.min(step, last) && !fired.has(g.gateIndex)) || null;
 
   // Hold the comment, THEN animate the visual to the new step.
@@ -314,7 +316,7 @@ export default function Player({
 
       {/* VISUALIZATION — lags the comment by READ_DELAY */}
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_240px] gap-4 p-5">
-        <div><ArrayViz frame={visFrame} /></div>
+        <div><MainViz frame={visFrame} invariants={invariants} /></div>
         <div className="md:border-l md:pl-4 border-[rgba(15,23,42,0.08)]">
           <PseudoSteps steps={steps} frames={frames} activeStepId={capFrame?.step_id} />
           {visFrame && (visFrame.stack || visFrame.queue) && (

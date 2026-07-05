@@ -1,0 +1,83 @@
+{
+  "slug": "fenwick-tree-bit-prefix-sums",
+  "title": "Fenwick tree (BIT) \u2014 prefix sums",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "bit-manipulation-tricks-for-cp"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to process dynamic range sum queries. You could write a Segment Tree, but it takes 50 lines of recursive code, requires 4N memory, and has a heavy constant factor overhead.",
+    "question": "Is there a way to do O(log N) dynamic range sums in just 5 lines of code?"
+  },
+  "mental_model": {
+    "intuition": "Think of a Fenwick tree like a system of measuring cups. To get 7 liters, you don't use 7 one-liter cups. You use a 4-liter cup, a 2-liter cup, and a 1-liter cup. A Fenwick tree decomposes array ranges into powers of 2 using binary bits, storing exactly enough 'cups' to reconstruct any prefix sum.",
+    "description": "A Fenwick Tree (or Binary Indexed Tree / BIT) is a highly specialized data structure that computes Prefix Sums and handles Point Updates in `O(log N)` time. It uses bitwise operations to traverse a flat array, using exactly `O(N)` memory and running much faster in practice than a Segment Tree."
+  },
+  "explanation": "**1. The Core Idea (Binary Decomposition):**\nAny number can be represented as a sum of powers of 2. For example, index `13` is `8 + 4 + 1`. \nIn a Fenwick tree, the array `BIT` doesn't store single elements. Instead, `BIT[i]` stores the sum of a specific range of elements ending at `i`. The length of this range is exactly equal to the *lowest set bit* of `i`.\n\n**2. Isolating the Lowest Set Bit (LSB):**\nThrough two's complement binary math, you can isolate the lowest 1-bit of an integer `x` using the expression `x & (-x)`. \nIf `x = 10` (binary `1010`), `x & (-x)` yields `2` (binary `0010`).\n\n**3. Point Update (Adding `val` at index `i`):**\nWhen you update index `i`, you must update `BIT[i]` and every subsequent 'measuring cup' that includes `i`. You do this by continuously adding the LSB to `i` until you reach the end of the array. Adding the LSB mathematically jumps to the index of the next larger power-of-2 interval (the next 'cup') that completely encompasses the current index.\n`for (; i <= N; i += (i & -i)) BIT[i] += val;`\n\n**4. Prefix Sum (Sum from `1` to `i`):**\nTo get the sum up to `i`, you simply add `BIT[i]` to your total, and then strip away the LSB from `i` to jump to the next 'measuring cup', until `i` reaches 0.\n`for (; i > 0; i -= (i & -i)) sum += BIT[i];`\n\n**Range Query & Invertible Operations:**\nTo get the sum of range `[L, R]`, you 'subtract' the prefix: `query(R) - query(L - 1)`. Because Range Queries mathematically require inverting/subtracting a prefix, Fenwick Trees ONLY work for **invertible operations** like Sum or XOR. They cannot be used for Min/Max operations, since you cannot 'subtract' a minimum.",
+  "code_snippets": [
+    {
+      "title": "Fenwick Tree Implementation",
+      "language": "cpp",
+      "code": "vector<int> BIT;\nint N;\n\n// Add 'val' to index 'i' (1-based indexing)\nvoid update(int i, int val) {\n    for (; i <= N; i += (i & -i)) {\n        BIT[i] += val;\n    }\n}\n\n// Get sum of array[1...i]\nint query(int i) {\n    int sum = 0;\n    for (; i > 0; i -= (i & -i)) {\n        sum += BIT[i];\n    }\n    return sum;\n}\n\n// Get sum of array[l...r]\nint query(int l, int r) {\n    return query(r) - query(l - 1);\n}",
+      "explanation": "This is the entire data structure. Notice that Fenwick Trees absolutely MUST use 1-based indexing, because the lowest set bit of 0 is 0, which would cause an infinite loop in the update function."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using 0-based indexing",
+      "explanation": "The Fenwick tree bitwise traversal breaks entirely if you pass `i = 0`. `0 & -0` is 0. The loop `i += (i & -i)` will stall at 0 forever. You must either 1-index your arrays or internally offset all indices by `+1`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time and space complexity of a Fenwick Tree compared to a Segment Tree?",
+      "answer": "Time complexity for updates/queries is identical: `O(log N)`. However, Fenwick Tree space complexity is strictly `O(N)`, whereas a Segment Tree requires `4*N`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What bitwise expression is used to extract the lowest set bit of an integer `i`?",
+      "answer": "`i & (-i)`",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must a Fenwick Tree use 1-based indexing?",
+      "answer": "Because the lowest set bit of `0` is `0`. If you attempt to update index `0`, the operation `i += (i & -i)` will result in an infinite loop.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer needs to answer Range Minimum Queries (RMQ). They implement a Fenwick Tree instead of a Segment Tree to save memory. Their code fails logic checks. Why?",
+      "answer": "A standard Fenwick Tree can only handle invertible operations (like addition/subtraction or XOR). To get the sum of `[L, R]`, it calculates `PrefixSum(R) - PrefixSum(L-1)`. You cannot 'subtract' a minimum. Therefore, Fenwick Trees cannot do general RMQ. You must use a Segment Tree or Sparse Table.",
+      "approach": "Understand the algebraic requirements (invertibility) of prefix-based data structures."
+    },
+    {
+      "question": "You are given an array of 100,000 numbers and need to process both Point Updates and Range Sum Queries. However, memory is extremely constrained on the embedded device. Should you use a Segment Tree or a Fenwick Tree?",
+      "answer": "You should strictly use a Fenwick Tree. A Segment Tree requires an array of size `4 * N` (400,000 integers), while a Fenwick Tree operates completely in-place or requires an array of size exactly `N` (100,000 integers). Both provide O(log N) operations.",
+      "approach": "Evaluate the memory overhead constants of logarithmic data structures."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Invertible operations only",
+      "detail": "Fenwick Trees excel at Sum and XOR, but generally cannot be used for Min/Max."
+    },
+    {
+      "title": "1-based indexing",
+      "detail": "Never pass 0 into a Fenwick update or query function."
+    }
+  ],
+  "why_it_exists": "While Segment Trees are incredibly versatile, their constant factor (recursive calls, 4N memory allocations) makes them somewhat slow. Fenwick trees exist to provide a hyper-optimized, iterative, low-memory alternative for specific algebraic operations (like dynamic prefix sums), allowing programmers to squeeze past exceptionally tight time limits. In software engineering, they are used for maintaining cumulative frequency tables in arithmetic coding or dynamically ranking elements in memory-constrained embedded systems.",
+  "sources": [
+    "https://cp-algorithms.com/data_structures/fenwick.html"
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "slug": "sieve-of-eratosthenes-prime-factorization",
+  "title": "Sieve of Eratosthenes & prime factorization",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to find all prime numbers up to 1,000,000. If you write a loop checking every number `i` by dividing it by every number from 2 to `sqrt(i)`, the program will take too long and fail.",
+    "question": "How can you instantly identify all primes in a massive range without doing any division?"
+  },
+  "mental_model": {
+    "intuition": "Imagine you have a list of numbers from 2 to 100. You circle 2 (it's prime), then aggressively cross out every multiple of 2 (4, 6, 8...). You then move to the next uncrossed number (3), circle it, and cross out all multiples of 3. By the end, the uncrossed numbers are exactly the primes.",
+    "description": "The Sieve of Eratosthenes is an ancient, highly optimized algorithm (O(N log log N)) used to generate all prime numbers up to a limit `N`. Instead of testing if a number is prime (division), it iteratively crosses out composites (multiplication/addition)."
+  },
+  "explanation": "**The Sieve of Eratosthenes:**\nWe create a boolean array `is_prime` of size `N+1`, initialized to `true`. We start at 2. If `is_prime[2]` is true, we iterate through its multiples (4, 6, 8...) and mark them `false`. We proceed to the next true number, and repeat. \n\n*Optimization 1:* We only need to check numbers up to `sqrt(N)`. Every composite number up to `N` must have at least one prime factor `<= sqrt(N)`. Thus, checking primes up to `sqrt(N)` safely crosses out all composites up to `N`.\n*Optimization 2:* When crossing out multiples for a prime `p`, we can start crossing out at `p * p`. All smaller multiples (`p * 2`, `p * 3`) were already crossed out by smaller primes.\n\n**Prime Factorization (O(sqrt(N))):**\nTo find the prime factors of a single number `N`, we don't need the Sieve. We just loop `d` from 2 to `sqrt(N)`. While `N` is divisible by `d`, we add `d` to our factors and divide `N` by `d`. If `N > 1` at the very end, that leftover `N` is itself a prime factor. \n\n*(Note: If you need to factorize 100,000 different numbers, you can modify the Sieve to store the Smallest Prime Factor (SPF) for each number. To factorize, repeatedly divide the query number by its SPF (`N = N / SPF[N]`) until it becomes 1. This takes O(log N) time per query!)*\n\n**Space Complexity Warning:**\nThe Sieve requires `O(N)` memory. An array of size 10^9 requires ~1GB of RAM, exceeding typical limits. The standard Sieve is only viable up to `N ~ 10^7`.",
+  "code_snippets": [
+    {
+      "title": "Sieve of Eratosthenes",
+      "language": "cpp",
+      "code": "vector<bool> sieve(int n) {\n    vector<bool> is_prime(n + 1, true);\n    is_prime[0] = is_prime[1] = false;\n    \n    // Optimization 1: Loop up to sqrt(n)\n    for (int p = 2; p * p <= n; p++) {\n        if (is_prime[p]) {\n            // Optimization 2: Start crossing out at p*p\n            for (int i = p * p; i <= n; i += p) {\n                is_prime[i] = false;\n            }\n        }\n    }\n    return is_prime;\n}",
+      "explanation": "This computes all primes up to N in O(N log log N) time, which is practically linear. `N = 10^7` computes in fractions of a second."
+    },
+    {
+      "title": "Prime Factorization of a Single Number",
+      "language": "cpp",
+      "code": "vector<long long> prime_factors(long long n) {\n    vector<long long> factors;\n    for (long long d = 2; d * d <= n; d++) {\n        while (n % d == 0) {\n            factors.push_back(d);\n            n /= d;\n        }\n    }\n    // If n is a prime greater than the loop limit\n    if (n > 1) {\n        factors.push_back(n);\n    }\n    return factors;\n}",
+      "explanation": "Calculates the prime factors of N in O(sqrt(N)) time. This works efficiently for isolated numbers up to 10^14."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the leftover prime in factorization",
+      "explanation": "When doing the O(sqrt(N)) factorization, beginners often forget the `if (n > 1)` check at the end. For example, if `N = 14`, the loop extracts `2`, leaving `N = 7`. The loop terminates because `3*3 > 7`. Without the final check, you lose the factor `7`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of the Sieve of Eratosthenes?",
+      "answer": "O(N log log N), which is extremely close to O(N).",
+      "tier": "tier1"
+    },
+    {
+      "q": "In the Sieve, why is it safe to start marking composite numbers at `p * p` instead of `p * 2`?",
+      "answer": "Because any multiple smaller than `p * p` (like `p * 2` or `p * 3`) would have already been marked as composite by smaller prime numbers (like 2 or 3) during earlier iterations.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the time complexity to find the prime factors of a single, isolated number without a pre-computed sieve?",
+      "answer": "O(sqrt(N)). You only need to test divisors up to the square root of the number.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer runs the Sieve of Eratosthenes up to `N = 10^9`. Their code gets a 'Memory Limit Exceeded' error, or a Segmentation Fault. Why?",
+      "answer": "An array of size 10^9 requires massive contiguous memory allocation. Even as a `vector<bool>` (which optimizes to 1 bit per boolean), it requires ~125 MB, and standard arrays would require 1-4 GB. The standard Sieve should only be used for N up to ~10^7.",
+      "approach": "Recognize the space complexity constraints of O(N) memory algorithms."
+    },
+    {
+      "question": "You are given 100,000 queries, each asking for the prime factorization of a number up to 10^7. Using the O(sqrt(N)) factorization loop for each query results in TLE. How can you optimize this?",
+      "answer": "Modify the Sieve of Eratosthenes to store the Smallest Prime Factor (SPF) for every number up to 10^7. Then, for each query, repeatedly divide the number by its SPF. This reduces factorization from O(sqrt(N)) to O(log N) per query.",
+      "approach": "Understand how to augment standard algorithms for bulk querying."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Sieve for ranges, division for instances",
+      "detail": "Use the Sieve when you need all primes up to N. Use the O(sqrt(N)) loop when you only need to factorize a single number."
+    },
+    {
+      "title": "The sqrt(N) boundary",
+      "detail": "Every composite number N has at least one prime factor less than or equal to sqrt(N)."
+    }
+  ],
+  "why_it_exists": "Number theory is a heavy component of mathematical programming and cryptography. Finding primes and prime factors is the foundation for calculating common divisors and understanding large-scale numerical patterns. The Sieve of Eratosthenes provides an elegant, near-linear time pre-computation table that transforms O(sqrt(N)) prime-checking into O(1) lookups.",
+  "sources": [
+    "https://cp-algorithms.com/algebra/sieve-of-eratosthenes.html"
+  ]
+}

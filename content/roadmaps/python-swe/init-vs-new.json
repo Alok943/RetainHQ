@@ -25,11 +25,11 @@
   "glossary": [
     {
       "term": "Singleton",
-      "definition": "A design pattern that ensures a class only ever has one single instance created, no matter how many times you try to instantiate it."
+      "definition": "A design pattern that ensures a class only ever has one single instance created, no matter how many times you try to instantiate it. Example: `db1 = DB(); db2 = DB(); assert db1 is db2` — both variables point to the same object."
     },
     {
       "term": "flyweight",
-      "definition": "A design pattern that minimizes memory usage by sharing as much data as possible with other similar objects."
+      "definition": "A design pattern that minimizes memory usage by sharing as much data as possible with other similar objects. Example: Python reuses the same integer object for small numbers like `1` rather than creating a new object each time."
     }
   ],
   "overview": {
@@ -58,12 +58,12 @@
   "recall_questions": [
     {
       "q": "Which method is responsible for actually creating and returning a new instance in memory?",
-      "answer": "The `__new__` method.",
+      "answer": "The `__new__` method. It is a class-level method that allocates memory and returns the new uninitialized instance before `__init__` is ever called.",
       "tier": "tier2"
     },
     {
       "q": "If `__new__` does not return an instance of the current class, what happens to `__init__`?",
-      "answer": "It is not called at all.",
+      "answer": "It is not called at all. Because `__new__` did not return an instance of the current class, Python skips the initialization step entirely.",
       "tier": "tier2"
     },
     {

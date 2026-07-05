@@ -22,11 +22,11 @@
   "glossary": [
     {
       "term": "dependency graph",
-      "definition": "A map showing how all the different software packages rely on each other to work properly."
+      "definition": "A map showing how all the different software packages rely on each other to work properly. Example: `poetry show --tree`."
     },
     {
       "term": "deterministic builds",
-      "definition": "A guarantee that compiling or installing the exact same code will always produce the exact same result, every single time."
+      "definition": "A guarantee that compiling or installing the exact same code will always produce the exact same result, every single time. Example: `poetry install`."
     }
   ],
   "overview": {
@@ -69,7 +69,7 @@
     {
       "type": "explain-behavior",
       "question": "A developer runs `poetry add requests`. They notice that not only `requests` but also packages like `urllib3` and `certifi` are added to the lockfile. Why?",
-      "answer": "Poetry resolves and locks the entire dependency tree.",
+      "answer": "Poetry resolves and locks the entire dependency tree. It walks through every package's own requirements recursively so that all sub-dependencies are pinned to exact versions in `poetry.lock`.",
       "why": "`requests` depends on other packages like `urllib3`. Poetry calculates all sub-dependencies recursively and locks their exact versions to guarantee reproducible behavior."
     },
     {

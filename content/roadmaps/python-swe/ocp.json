@@ -22,15 +22,15 @@
   "glossary": [
     {
       "term": "coupling",
-      "definition": "The degree to which different parts of a program rely on or are connected to each other; lower is usually better."
+      "definition": "The degree to which different parts of a program rely on or are connected to each other; lower is usually better. Example: `process(MyClass())`."
     },
     {
       "term": "Strategy and Factory",
-      "definition": "Common design patterns; Strategy lets you swap out behaviors on the fly, while Factory helps create new objects."
+      "definition": "Common design patterns; Strategy lets you swap out behaviors on the fly, while Factory helps create new objects without exposing construction logic. Example: `EmailNotifier()`."
     }
   ],
   "overview": {
-    "what": "The Open/Closed Principle (OCP) states that software entities should be open for extension, but closed for modification. You should be able to add new functionality without changing existing code. In Python, this is typically achieved using inheritance, composition, or duck typing.\n\nFor example, instead of a single function checking types:\n\n  def process(item):\n    if isinstance(item, Text):\n      item.read()\n    elif isinstance(item, Image):\n      item.render()\n\nYou rely on a common interface:\n\n  def process(item):\n    item.handle()\n\nNow, adding a `Video` class doesn't require modifying `process`. Think of a power strip: it is closed for modification (you don't rewire it to plug in a new device) but open for extension (you just plug a new adapter into an existing socket).",
+    "what": "The Open/Closed Principle (OCP) states that software entities should be open for extension, but closed for modification. You should be able to add new functionality without changing existing code. In Python, this is typically achieved using inheritance, composition, or duck typing (determining object suitability by its methods rather than its type).\n\nFor example, instead of a single function checking types:\n\n  def process(item):\n    if isinstance(item, Text):\n      item.read()\n    elif isinstance(item, Image):\n      item.render()\n\nYou rely on a common interface:\n\n  def process(item):\n    item.handle()\n\nNow, adding a `Video` class doesn't require modifying `process`. Think of a power strip: it is closed for modification (you don't rewire it to plug in a new device) but open for extension (you just plug a new adapter into an existing socket).",
     "why": "It prevents bugs from being introduced into tested, working code when requirements change. It also reduces coupling and makes codebases easier to maintain as they grow.",
     "where_used": [
       "FastAPI dependencies",
@@ -99,14 +99,14 @@
     {
       "type": "explain-behavior",
       "question": "In a notification system, what happens to the core `NotificationService` when a new `SlackNotification` class is added in an OCP-compliant design?",
-      "answer": "The core `NotificationService` does not need to be modified at all.",
+      "answer": "The core `NotificationService` does not need to be modified at all. Because new notification types implement the same shared interface, they plug in as extensions rather than requiring changes to existing tested code.",
       "why": "Because the system is \"closed for modification\" but \"open for extension\". The `NotificationService` relies on a shared interface. Adding a new `SlackNotification` simply extends the system by introducing a new adapter, without touching the existing, tested service code."
     },
     {
       "type": "find-bug",
       "question": "A developer created this code to process different file types. Why does it violate the Open/Closed Principle?",
       "code": "def process_file(file_obj):\n    if file_obj.type == \"csv\":\n        parse_csv(file_obj)\n    elif file_obj.type == \"json\":\n        parse_json(file_obj)\n    else:\n        raise ValueError(\"Unknown type\")",
-      "answer": "It uses an if-elif chain based on the file type.",
+      "answer": "It uses an if-elif chain that checks `file_obj.type`. Adding any new file type requires editing the `process_file` function itself, which violates OCP's rule that existing code should not need to change.",
       "why": "To support a new file type (like \"xml\"), you must modify the `process_file` function itself. This violates OCP, which states that code should be closed for modification. Instead, this should be refactored to use polymorphism, where each file object shares a common `parse()` interface."
     }
   ]

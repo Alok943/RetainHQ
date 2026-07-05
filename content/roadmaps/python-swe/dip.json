@@ -26,15 +26,15 @@
   "glossary": [
     {
       "term": "abstractions",
-      "definition": "Simplified representations of complex systems, hiding the complicated details so you can focus on what the system does rather than how it works."
+      "definition": "Simplified representations of complex systems, hiding the complicated details so you can focus on what the system does rather than how it works. Example: `class Logger:`"
     },
     {
       "term": "decouples",
-      "definition": "Separating different parts of a program so that a change in one part does not force you to change the other parts."
+      "definition": "Separating different parts of a program so that a change in one part does not force you to change the other parts. Example: `def __init__(self, db):`"
     }
   ],
   "overview": {
-    "what": "The Dependency Inversion Principle (DIP) states that high-level modules should not depend on low-level modules; both should depend on abstractions. Furthermore, abstractions should not depend on details; details should depend on abstractions. In Python, this means your core business logic (high-level) shouldn't import concrete database or API classes (low-level). Instead, both should depend on an interface (like an abstract base class or Protocol). For example, instead of a `PaymentProcessor` instantiating a `StripeAPI` directly, it accepts any object that satisfies a `PaymentGateway` abstraction. Analogy: When you plug a lamp into a wall, the lamp (high-level) depends on a standard outlet interface (abstraction), not the specific wiring in the wall (low-level detail).",
+    "what": "The Dependency Inversion Principle (DIP) states that high-level modules should not depend on low-level modules; both should depend on abstractions. Furthermore, abstractions should not depend on details; details should depend on abstractions. In Python, this means your core business logic (high-level) shouldn't import concrete database or API classes (low-level). Instead, both should depend on an interface (like an abstract base class or Protocol, which defines expected methods). For example, instead of a `PaymentProcessor` instantiating a `StripeAPI` directly, it accepts any object that satisfies a `PaymentGateway` abstraction. Analogy: When you plug a lamp into a wall, the lamp (high-level) depends on a standard outlet interface (abstraction), not the specific wiring in the wall (low-level detail).",
     "why": "It decouples your system's core logic from volatile implementation details, making it significantly easier to swap out components, mock dependencies for testing, and maintain code without breaking existing functionality.",
     "where_used": [
       "FastAPI dependency injection",
@@ -50,11 +50,11 @@
   "common_mistakes": [
     {
       "title": "Depending on concrete classes",
-      "explanation": "Instantiating a low-level detail (like `requests.Session()`) directly inside a high-level class. Fix this by passing the session into the class via its constructor (Dependency Injection) or depending on an abstract HTTP client."
+      "explanation": "Instead of instantiating a specific detail like `requests.Session()` internally, pass it into the constructor. This is known as Dependency Injection."
     },
     {
       "title": "Leaking implementation details into abstractions",
-      "explanation": "Designing an interface that includes methods specific to one implementation (e.g., a `save_to_sql` method on a generic `Repository`). Fix this by making abstractions generic (e.g., `save`)."
+      "explanation": "Avoid naming methods after specific technologies (like `save_to_sql`) in your interfaces. Keep method names generic (like `save`) so they apply to any implementation."
     }
   ],
   "understanding_checks": [
@@ -75,7 +75,7 @@
   "recall_questions": [
     {
       "q": "What does the Dependency Inversion Principle state regarding high-level and low-level modules?",
-      "answer": "High-level modules should not depend on low-level modules; both should depend on abstractions."
+      "answer": "High-level modules (your core business logic) should not depend on low-level modules (like a specific database class); both should depend on abstractions (like a shared interface or Protocol). This way, you can swap the database without rewriting the business logic."
     }
   ],
   "practice_tasks": [

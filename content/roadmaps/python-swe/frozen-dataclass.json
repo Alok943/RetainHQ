@@ -22,11 +22,11 @@
   "glossary": [
     {
       "term": "immutable",
-      "definition": "An object whose state or data cannot be changed or modified after it is created."
+      "definition": "An object whose state or data cannot be changed or modified after it is created. Example: `frozenset([1, 2])`"
     },
     {
       "term": "hashable",
-      "definition": "An object that has a fixed value that never changes during its lifetime, allowing it to be used as a dictionary key or set item."
+      "definition": "An object that has a fixed value that never changes during its lifetime, allowing it to be used as a dictionary key or set item. Example: `hash('text')`"
     }
   ],
   "overview": {
@@ -45,7 +45,7 @@
   "common_mistakes": [
     {
       "title": "Mutating internal lists",
-      "explanation": "A frozen dataclass prevents reassigning the field (e.g., `obj.items = []`), but if the field is a mutable object like a list, you can still mutate the list itself (`obj.items.append(1)`). Frozen only applies to the attributes directly on the class."
+      "explanation": "Frozen only applies to the attributes directly on the class. If a field is a mutable object like a list, you can still mutate the list itself."
     },
     {
       "title": "Manual __hash__ conflicts",
@@ -55,7 +55,7 @@
   "recall_questions": [
     {
       "q": "How do you make a dataclass immutable?",
-      "answer": "By passing the `frozen=True` argument to the `@dataclass` decorator.",
+      "answer": "By passing the `frozen=True` argument to the `@dataclass` decorator. This makes the generated class immutable.",
       "tier": "tier1"
     },
     {
@@ -65,7 +65,7 @@
     },
     {
       "q": "Why would you want to make a dataclass frozen?",
-      "answer": "To prevent accidental state mutation and to allow the instances to be used as dictionary keys or in sets.",
+      "answer": "To prevent accidental state mutation, keeping data safe from unintended changes. It also allows the instances to be used as dictionary keys or in sets.",
       "tier": "tier2"
     }
   ],

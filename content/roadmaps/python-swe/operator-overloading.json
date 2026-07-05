@@ -23,15 +23,15 @@
   "glossary": [
     {
       "term": "syntactic sugar",
-      "definition": "Syntax in a programming language that makes things easier to read or to express, but doesn't add any new functionality."
+      "definition": "Syntax in a programming language that makes things easier to read or to express, but doesn't add any new functionality. Example: `a + b`."
     },
     {
       "term": "operand",
-      "definition": "The object or value that an operator (like + or -) works on or manipulates."
+      "definition": "The object or value that an operator (like + or -) works on or manipulates. Example: `3 + 5`."
     }
   ],
   "overview": {
-    "what": "In Python, operators like `+`, `==`, and `<` are syntactic sugar for method calls on objects. When you run `a + b`, Python translates it to `a.__add__(b)`. Operator overloading allows you to define these double-underscore (dunder) methods in your own classes, giving your objects custom behaviour for built-in operators. For instance, defining `__eq__` lets you compare two separate instances by their data rather than their memory identity, and defining `__lt__` (less than) is required for built-in functions like `sorted()` to work. Think of operators as universal remotes: the button `+` is standard, but the specific device (the object) decides what action is taken when the button is pressed. When a dunder method doesn't know how to handle the other operand's type, it must return the singleton `NotImplemented`, which tells Python to try the reverse operation (like `__radd__`) on the other object. Lastly, operators like `+` should return a completely new instance, leaving the original operands unchanged.",
+    "what": "In Python, operators like `+`, `==`, and `<` are syntactic sugar for method calls on objects. When you run `a + b`, Python translates it to `a.__add__(b)`. Operator overloading allows you to define these double-underscore (dunder) methods in your own classes, giving your objects custom behaviour for built-in operators. For instance, defining `__eq__` lets you compare two separate instances by their data rather than their memory identity, and defining `__lt__` (less than) is required for built-in functions like `sorted()` to work. Think of operators as universal remotes: the button `+` is standard, but the specific device (the object) decides what action is taken when the button is pressed. When a dunder method doesn't know how to handle the other operand's type, it must return the singleton (an object with only one instance) `NotImplemented`, which tells Python to try the reverse operation (like `__radd__`) on the other object. Lastly, operators like `+` should return a completely new instance, leaving the original operands unchanged.",
     "why": "It allows custom objects to integrate seamlessly with Python's built-in syntax and functions, making code cleaner and more expressive. It also enables objects to be sorted or compared for equality without writing custom method names.",
     "where_used": [
       "Pandas",
@@ -109,7 +109,7 @@
     {
       "type": "explain-behavior",
       "question": "When defining the `__eq__` method, what is the correct way to handle comparison with an unsupported type?",
-      "answer": "Return the singleton `NotImplemented`.",
+      "answer": "Return the singleton `NotImplemented`. This tells Python to try the reverse operation on the other object before falling back to default behavior.",
       "why": "Returning `NotImplemented` tells Python that this method does not know how to handle the other operand's type. Python will then attempt to call the reverse operation (e.g., `__req__` or the other object's `__eq__`) before finally falling back to default behavior."
     }
   ]

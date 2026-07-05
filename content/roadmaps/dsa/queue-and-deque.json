@@ -1,0 +1,142 @@
+{
+  "slug": "queue-and-deque",
+  "title": "Queue & deque",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "viz": {
+    "generator": "queue-deque",
+    "default_input": [4, 8, 15, 16],
+    "invariants": {
+      "inv-fifo": "Elements leave in the exact order they arrived: insert at the tail, remove from the head."
+    },
+    "steps": [
+      { "id": "enqueue", "label": "queue.push_back(x)" },
+      { "id": "dequeue", "label": "queue.pop_front()" },
+      { "id": "done", "label": "done" }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Some problems require strict chronological fairness (processing exactly in order of arrival). A naive array queue takes O(n) to dequeue because removing the front element forces shifting all remaining elements to the left.",
+    "better_idea": "Use a circular buffer with head/tail pointers, or a doubly-linked list. A Double-Ended Queue (Deque) generalizes this, allowing O(1) insertions and deletions from both ends simultaneously.",
+    "naive_solution": "Using a standard array and removing from the front, which requires shifting all remaining elements left in O(n) time."
+  },
+  "mental_model": {
+    "intuition": "A queue is a checkout line at a grocery store (First-In-First-Out). A deque is a line where people can join or leave from both the front and the back.",
+    "description": "The Queue ADT enforces a FIFO policy (insert at tail, remove at head). To avoid O(n) array shifts, an array-based circular queue wraps pointers using modulo arithmetic (`ptr = (ptr + 1) % cap`). Python's `collections.deque` uses a hybrid linked list of memory blocks. Java's `ArrayDeque` uses a circular array, vastly outperforming legacy `LinkedList` queues due to cache locality.",
+    "repeated_decision": "For FIFO: append to the tail, pop from the head. For Deque: choose the optimal boundary (front or back) to insert or extract."
+  },
+  "engineering_examples": [
+    {
+      "title": "Task Scheduling & Message Brokers",
+      "problem": "Distributing asynchronous work fairly",
+      "why_this_algorithm": "Message brokers like RabbitMQ and Celery use FIFO queues so work is generally processed in arrival order (strict ordering can relax under multiple consumers or requeues, but the queue is the core primitive)."
+    },
+    {
+      "title": "Sliding Window Maximums",
+      "problem": "Maintaining trailing state constraints",
+      "why_this_algorithm": "A Monotonic Deque dynamically manages temporal expiration at the front boundary and magnitude superiority at the back boundary."
+    }
+  ],
+  "failure_signals": [
+    "Using standard array `.pop(0)` in Python or `ArrayList.remove(0)` in Java, causing catastrophic O(n) shifts."
+  ],
+  "pattern": {
+    "name": "FIFO and Double-Ended Buffering",
+    "recognition_cues": [
+      "Processing level-by-level (BFS)",
+      "Maintaining a moving window of data",
+      "Strict fairness guarantees"
+    ]
+  },
+  "common_mistakes": [
+    {
+      "title": "Using Naive Arrays for Queues",
+      "explanation": "Dequeueing from the front of a naive dynamic array leaves a gap, requiring an O(n) shift of all elements. Always use `collections.deque` or `ArrayDeque`."
+    },
+    {
+      "title": "Using Java's LinkedList",
+      "explanation": "While functionally a queue, `LinkedList` causes severe memory fragmentation and cache misses. Java officially advises using `ArrayDeque`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the defining property of a Queue?",
+      "answer": "First-In-First-Out (FIFO). Elements are inserted at the tail and removed from the head.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a circular array queue prevent O(n) shifting penalties?",
+      "answer": "It uses two pointers (head and tail) that aggressively wrap around the array boundaries using modulo arithmetic, chasing each other in a circle.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is a Deque fundamentally more powerful than a standard Queue or Stack?",
+      "answer": "A Deque allows O(1) insertions and deletions from BOTH the front and the rear boundaries simultaneously.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the maximum in each sliding window of size k.",
+      "answer": "Use a Monotonic Deque storing indices. Expire old elements from the front. Evict smaller elements from the back to maintain decreasing order. The front is always the max.",
+      "approach": "Synthesize monotonicity with double-ended temporal expiration.",
+      "company": "Hard SDE interview"
+    },
+    {
+      "question": "Return the level order traversal of a binary tree's nodes' values.",
+      "answer": "Use a FIFO Queue. Push the root, then loop while the queue isn't empty: for each node popped from the front, push its children to the back. This naturally processes nodes level by level.",
+      "approach": "Recognize that Breadth-First Search (BFS) on a tree maps perfectly to the FIFO structure of a queue.",
+      "company": "SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Implement Queue using Stacks",
+      "url": "https://leetcode.com/problems/implement-queue-using-stacks/",
+      "difficulty": "easy",
+      "why": "Classic mechanical understanding of FIFO vs LIFO."
+    },
+    {
+      "title": "Sliding Window Maximum",
+      "url": "https://leetcode.com/problems/sliding-window-maximum/",
+      "difficulty": "hard",
+      "why": "The ultimate synthesis of Deque mechanics and monotonic invariants."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Queue_(abstract_data_type)",
+    "https://www.geeksforgeeks.org/python/deque-implementation-in-python/",
+    "https://docs.oracle.com/javase/8/docs/api/java/util/ArrayDeque.html"
+  ],
+  "explanation": "While Stacks enforce LIFO chronological reversal, Queues enforce strict FIFO fairness. The foundational engineering hurdle of queues is that popping from the front of an array is destructive, requiring an O(n) shift to fill the gap.\n\nTo bypass this, systems implement queues either through pointers (linked lists) or via mathematical pointer wrapping (circular buffers with modulo arithmetic). The Deque (Double-Ended Queue) represents the ultimate generalization, allowing O(1) modifications at both boundaries. Because of this dual-access property, deques are fundamentally required for complex range limit algorithms like Sliding Window Maximum, which need to expire elements chronologically from the front while enforcing monotonicity from the back.\n\nThe flagship hard application of a deque is the monotonic sliding-window technique. To find the maximum in a sliding window of size k: keep a deque of indices; before reading the front, pop it if it's outside the window (`front <= i - k`); before pushing i, pop from the back while the back's value < arr[i] so the deque stays decreasing; the front is always the window max.",
+  "hook": {
+    "scenario": "Think of waiting in line at a grocery store. The first person to line up is the first to check out.",
+    "question": "How do we build a structure that strictly respects this 'first come, first served' fairness?"
+  },
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "Elements are processed strictly First-In-First-Out (FIFO), or from both ends (Deque)."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(1) time for enqueue and dequeue operations."
+    },
+    {
+      "title": "Gotcha",
+      "detail": "Removing from the front of a naive array is O(n); a proper queue uses pointers or a linked structure."
+    }
+  ],
+  "related": [
+    "stack-fundamentals"
+  ]
+}

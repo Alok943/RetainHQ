@@ -1,0 +1,136 @@
+{
+  "slug": "merge-two-sorted-lists",
+  "title": "Merge two sorted lists",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "traversal-and-reversal"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have two independent streams of already-sorted data that need to be unified into a single sorted stream.",
+    "question": "How do you combine them without allocating extra memory or re-sorting from scratch?"
+  },
+  "why_it_exists": {
+    "problem": "Combining lists by extracting their values into an array, appending them, and sorting from scratch takes O((N+M) log(N+M)) time and O(N+M) extra memory. This wastes the fact that both lists are already sorted.",
+    "naive_solution": "Extracting all values into a new array, sorting it, and building a completely new list.",
+    "better_idea": "Since the input lists are already sorted, we can merge them topologically in-place. We keep a pointer at the head of each list and wire their edges together, always picking the smaller node. This takes O(N+M) time and O(1) space."
+  },
+  "mental_model": {
+    "intuition": "Like a zipper bringing two sets of teeth together: at each step, you attach whichever tooth is smaller to the growing merged chain.",
+    "description": "Use an independent read pointer for each list and a construction pointer for the merged result. Compare the front nodes of the two lists, append the smaller one to the merged list, and advance that list's pointer. To avoid messy conditional checks for the very first node, anchor the merged list to a sterile 'dummy node', and just return `dummy.next` at the end.",
+    "repeated_decision": "Which of the two current front nodes is smaller? Attach it to the merged list and advance its pointer."
+  },
+  "explanation": "When working with linked lists, we want to modify edges rather than transferring data payloads. Merging two sorted linked lists is a classic example of this in-place manipulation.\n\nThe algorithm uses two read pointers, one for each input list. At each step, it compares the numerical payloads of the two nodes. The node with the smaller value is appended to the merged sequence by rewiring their pointers in-place, and its respective read pointer advances. This localized evaluation repeats until one of the sequences is completely exhausted. This merge logic can also be generalized to k lists by using a min-heap to always pick the smallest current node across all sequences.\n\nA critical engineering pattern used here is the 'dummy node' anchor. When building a new list, figuring out which node becomes the definitive head requires cumbersome conditional checks. By allocating a temporary dummy node at the start, the construction pointer always has a valid memory address to append to. At the end, we safely discard the dummy by returning its successor.\n\nFinally, when one list runs out of nodes before the other, we don't need to iterate through the remainder. The rest of the unexhausted list is already sorted and structurally linked! We simply point the tail of our merged list directly to the head of the remaining sequence in a single, constant-time pointer assignment. This exact algorithm is also the critical merging step for performing a merge sort on a linked list (often paired with fast/slow pointers to find the middle).",
+  "key_points": [
+    {
+      "title": "The dummy node anchor",
+      "detail": "Allocating a dummy head guarantees the construction pointer has a valid node to append to, eliminating complex conditional branching for the first insertion."
+    },
+    {
+      "title": "O(1) concatenation",
+      "detail": "When one list is exhausted, a single O(1) pointer assignment attaches the entire remaining sequence of the other list to the merged tail."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(N+M) time because we visit each node at most once, and strictly O(1) auxiliary space because we only rewire existing edges."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Special-casing the first node",
+      "explanation": "Trying to determine which list's head becomes the true head before starting the loop leads to messy code. A dummy head makes every loop iteration uniform."
+    },
+    {
+      "title": "Iterating through the remainder element-by-element",
+      "explanation": "Once one list is empty, you don't need a `while` loop to copy the rest. Just point the tail's `next` to the remaining list's head."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Merging arrays or contiguous memory buffers",
+      "reason": "Arrays require shifting elements or allocating a completely new buffer of size N+M. The O(1) in-place topological trick only works on independent linked nodes."
+    }
+  ],
+  "failure_signals": [
+    "You are trying to combine multiple sorted sequences of data without allocating new structures.",
+    "You need to sort a linked list in O(N log N) time and constant space (this algorithm is the merge step of Merge Sort)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Merging event log chains",
+      "problem": "Combining two chronologically ordered streams of system events into a single timeline without allocating new memory.",
+      "why_this_algorithm": "In-place pointer rewiring unifies the two chains directly in memory, which is critical for low-level system loggers operating under strict memory limits."
+    }
+  ],
+  "pattern": {
+    "name": "Two pointers / Topological Merge",
+    "recognition_cues": [
+      "Multiple sorted sequences",
+      "In-place pointer rewiring"
+    ]
+  },
+  "recall_questions": [
+    {
+      "q": "Why use a dummy head node when merging two lists?",
+      "answer": "It eliminates conditional branching for the very first node insertion, giving the construction pointer a guaranteed valid node to append against.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What should you do when one of the lists is exhausted during the merge?",
+      "answer": "Directly attach the remainder of the unexhausted list to the merged tail in a single constant-time pointer assignment.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time and space complexity of merging two sorted linked lists?",
+      "answer": "O(N+M) time to traverse both lists, and O(1) auxiliary space because it rewires existing pointers in place without allocating new nodes.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Merge k sorted lists into a single sorted list.",
+      "company": "SDE interview",
+      "answer": "Use a min-heap (priority queue) to track the current smallest node among all k lists. Extract the minimum, append it to the result, and push its successor to the heap.",
+      "approach": "Generalize the two-pointer comparison step to k pointers by using a data structure that efficiently finds the minimum."
+    },
+    {
+      "question": "Sort a linked list in O(n log n) time and constant space.",
+      "company": "SDE interview",
+      "answer": "Use the fast and slow pointer approach to find the middle, and apply bottom-up iterative merge sort to avoid the O(log n) call stack space required by recursion.",
+      "approach": "Merge sort for linked lists relies entirely on the O(1) space topological merge operation to keep the space complexity constant."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Merge Two Sorted Lists",
+      "url": "https://leetcode.com/problems/merge-two-sorted-lists/",
+      "difficulty": "easy",
+      "why": "The fundamental algorithm itself."
+    },
+    {
+      "title": "Merge k Sorted Lists",
+      "url": "https://leetcode.com/problems/merge-k-sorted-lists/",
+      "difficulty": "hard",
+      "why": "Generalizes the merge logic to multiple lists using a priority queue."
+    }
+  ],
+  "related": [
+    "merge-sort",
+    "find-the-middle"
+  ],
+  "interesting_facts": [
+    "This exact algorithm serves as the continuous runtime engine for external database sorting, where multi-gigabyte datasets are streamed into the application via a topological merge."
+  ],
+  "sources": [
+    "https://algo.monster/liteproblems/21",
+    "https://medium.com/@reza.shokrzad/merge-two-sorted-lists-combining-ordered-data-efficiently-3f9fb5bda028"
+  ]
+}

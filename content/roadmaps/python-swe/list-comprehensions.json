@@ -28,11 +28,11 @@
   "glossary": [
     {
       "term": "iterable",
-      "definition": "Any collection or data structure in Python that you can loop through one item at a time, like a list or a string."
+      "definition": "Any collection or data structure in Python that you can loop through one item at a time, like a list or a string, e.g. `for x in [1, 2, 3]`."
     },
     {
       "term": "declarative",
-      "definition": "A style of programming where you describe what you want the result to be, rather than writing the step-by-step instructions on how to get it."
+      "definition": "A style of programming where you describe what you want the result to be, rather than writing the step-by-step instructions on how to get it, e.g. `[x*2 for x in nums]` instead of a manual append loop."
     }
   ],
   "overview": {
@@ -129,7 +129,7 @@
       "type": "find-bug",
       "code": "nums = [1, 2, 3]\nres = [x * 2 if x > 1 for x in nums]\nprint(res)",
       "question": "Why does this comprehension result in a syntax error?",
-      "answer": "The `if` filtering condition is placed in the wrong position.",
+      "answer": "A filtering `if` clause must go after the `for` clause, not before it. Moving `if x > 1` to after `for x in nums` fixes the error: `[x * 2 for x in nums if x > 1]`.",
       "why": "A filtering `if` must go *after* the `for` clause (`[x * 2 for x in nums if x > 1]`). Putting it before the `for` is only valid when using an `if-else` ternary expression."
     }
   ]

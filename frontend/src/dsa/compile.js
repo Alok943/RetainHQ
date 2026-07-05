@@ -129,7 +129,14 @@ function stackQueueReducer(state, op, args) {
   }
 }
 
-const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer, stackQueueReducer];
+function treeReducer(state, op, args) { return null; }
+function gridReducer(state, op, args) { return null; }
+function graphReducer(state, op, args) { return null; }
+function listReducer(state, op, args) { return null; }
+function intervalsReducer(state, op, args) { return null; }
+function bitsReducer(state, op, args) { return null; }
+
+const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer, stackQueueReducer, treeReducer, gridReducer, graphReducer, listReducer, intervalsReducer, bitsReducer];
 
 export function compile(input, events) {
   const state = {
@@ -169,6 +176,7 @@ export function compile(input, events) {
       stack: state.stack && state.stack.length ? [...state.stack] : undefined,
       queue: state.queue && state.queue.length ? [...state.queue] : undefined,
       structActive: result.structActive !== undefined && result.structActive !== null ? result.structActive : undefined,
+      view: result.view || 'array',
       activeOp: op,
       caption: note || op,
       invariant,

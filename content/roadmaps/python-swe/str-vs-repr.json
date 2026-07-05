@@ -23,11 +23,11 @@
   "glossary": [
     {
       "term": "unambiguous",
-      "definition": "Clear and exact, leaving no doubt about what something is or what it means."
+      "definition": "Clear and exact, leaving no doubt about what something is or what it means. For example, `User(name='Alice', role='admin')` is unambiguous, while `<User object at 0x...>` is not."
     },
     {
       "term": "REPL",
-      "definition": "Read-Eval-Print Loop; an interactive programming environment where you can type commands and see the results immediately."
+      "definition": "Read-Eval-Print Loop; an interactive programming environment where you can type commands and see the results immediately. For example, typing `repr(obj)` in the Python REPL prints its developer-facing representation."
     }
   ],
   "overview": {
@@ -57,7 +57,7 @@
     },
     {
       "q": "If an object only implements `__repr__`, what happens when you call `str(obj)`?",
-      "answer": "Python will fallback to using the `__repr__` output.",
+      "answer": "Python falls back to using the `__repr__` output. So `str(obj)` and `repr(obj)` will return the same string when only `__repr__` is defined.",
       "tier": "tier2"
     }
   ],

@@ -1,0 +1,81 @@
+{
+  "slug": "segment-tree-range-query-point-update",
+  "title": "Segment tree \u2014 range query & point update",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have an array of 100,000 numbers. You need to answer 100,000 queries asking 'What is the minimum number between index L and R?' while simultaneously processing updates like 'Change index 5 to 99'.",
+    "question": "A simple loop takes O(N) per query, leading to TLE. Precomputing takes O(N^2). How can you update and query ranges in O(log N) time?"
+  },
+  "mental_model": {
+    "intuition": "Imagine organizing a company into a hierarchy. Individual workers (array elements) are at the bottom. The manager above them knows the 'minimum sales' of their direct reports. The CEO at the top knows the 'minimum sales' of the whole company. To find the minimum of a specific department, you just ask the manager, rather than polling every single worker.",
+    "description": "A Segment Tree is a binary tree where the leaf nodes are the elements of an array, and each internal node stores the merged result (sum, min, max) of its two children. This structure allows both point updates and range queries to be executed in `O(log N)` time."
+  },
+  "explanation": "**1. Structure of the Tree:**\nThe root of the tree represents the entire array range `[0, N-1]`. Its left child represents the left half `[0, mid]`, and its right child represents the right half `[mid+1, N-1]`. This splitting continues until the leaves represent a single index `[i, i]`.\nFor an array of size `N`, the segment tree requires an array of size `4*N`. This is because non-perfect binary trees leave 'holes' in the array representation when mapping children to `2*node` and `2*node+1`, requiring extra buffer space.\n\n**2. Building the Tree (O(N)):**\nYou build it recursively. A leaf node takes the value directly from the array. An internal node takes the `min()` (or `+`, etc.) of its left and right children.\n\n**3. Point Update (O(log N)):**\nIf you change `A[i]`, you update the leaf node for `i`. Then, as you return from the recursion, you recalculate the parent nodes all the way up to the CEO (the root). Since the tree depth is `log N`, this takes `O(log N)`.\n\n**4. Range Query (O(log N)):**\nTo find the minimum in range `[L, R]`, you traverse the tree. \n- If a node's range is *completely inside* `[L, R]`, return the node's precomputed value immediately.\n- If a node's range is *completely outside* `[L, R]`, return the operation's **identity element** (e.g., `INFINITY` for a minimum query, or `0` for a sum query). Returning the identity element ensures the answer isn't corrupted.\n- If a node's range *partially overlaps* `[L, R]`, recurse into both children and combine their results.\n\n*(Note: If the underlying array is completely static and never receives Point Updates, you can use a Sparse Table instead, which provides O(1) Range Minimum Queries).*",
+  "code_snippets": [
+    {
+      "title": "Segment Tree (Point Update, Range Min Query)",
+      "language": "cpp",
+      "code": "vector<int> tree;\n\n// node is current tree index, [start, end] is the array range the node covers\n// NOTE: Root must be called with node = 1 to avoid infinite recursion at 2*node\nvoid update(int node, int start, int end, int idx, int val) {\n    if (start == end) {\n        tree[node] = val;\n        return;\n    }\n    int mid = (start + end) / 2;\n    if (idx <= mid) update(2 * node, start, mid, idx, val);      // left child\n    else update(2 * node + 1, mid + 1, end, idx, val);           // right child\n    \n    tree[node] = min(tree[2 * node], tree[2 * node + 1]);\n}\n\nint query(int node, int start, int end, int l, int r) {\n    // Completely outside\n    if (r < start || end < l) return 1e9; // Infinity\n    // Completely inside\n    if (l <= start && end <= r) return tree[node];\n    \n    // Partial overlap\n    int mid = (start + end) / 2;\n    int p1 = query(2 * node, start, mid, l, r);\n    int p2 = query(2 * node + 1, mid + 1, end, l, r);\n    return min(p1, p2);\n}",
+      "explanation": "Because the tree is a complete binary tree, the left child of `node` is always at `2*node` and the right child is at `2*node + 1`. This allows us to store the tree in a flat array, avoiding slow pointer allocations."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Allocating exactly 2*N space for the tree array",
+      "explanation": "A common mistake is assuming the tree has `2*N - 1` nodes, so `tree` size `2*N` is enough. However, because we map nodes to `2*node` and `2*node+1`, missing nodes in a non-perfect binary tree leave 'holes' in the array index. You must allocate exactly `4 * N` memory to prevent out-of-bounds segfaults."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of updating a single element and querying a range in a Segment Tree?",
+      "answer": "Both operations take `O(log N)` time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When performing a Range Query, under what condition does the recursion stop and return the node's precomputed value immediately?",
+      "answer": "When the node's representing range `[start, end]` is *completely inside* the query range `[L, R]`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must you allocate `4 * N` size for the Segment Tree array?",
+      "answer": "To account for the 'holes' created in the array indexing (`2*node`, `2*node+1`) when the size `N` of the base array is not a perfect power of 2.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes a Segment Tree for Range Sum queries. When a query is *completely outside* the range, they return `1e9` (Infinity). Their sum answers are totally wrong. Why?",
+      "answer": "The return value for 'completely outside' must be the *identity element* for the operation being performed. For Minimum, the identity is Infinity. For Sum, the identity is `0`. Returning Infinity for a Sum query corrupts the addition.",
+      "approach": "Understand associative identity values (0 for sum, 1 for product, INF for min)."
+    },
+    {
+      "question": "You need to perform 100,000 Range Minimum Queries, but the array is strictly static (no updates ever occur). Should you use a Segment Tree?",
+      "answer": "A Segment Tree works in O(log N) per query, but a Sparse Table can answer static RMQs in O(1) time. While a Segment Tree is acceptable, it is not the most optimal data structure for purely static range queries.",
+      "approach": "Identify when mutable data structures are overkill for static data."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Divide and Conquer",
+      "detail": "Segment trees work by recursively dividing the array into halves, computing metadata for each half."
+    },
+    {
+      "title": "Array backing",
+      "detail": "Like heaps, segment trees are stored in flat 1D arrays of size 4N for massive performance gains."
+    }
+  ],
+  "why_it_exists": "In massive data streams, systems must frequently update data points and request aggregate analytics (like the sum of traffic over a 5-hour window). Segment Trees provide the algorithmic bedrock for dynamic range querying, offering a perfect O(log N) compromise between O(1) reads (Prefix Arrays) and O(1) writes (Raw Arrays).",
+  "sources": [
+    "https://cp-algorithms.com/data_structures/segment_tree.html"
+  ]
+}

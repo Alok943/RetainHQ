@@ -12,7 +12,7 @@ import { track, EVENTS } from './lib/analytics';
 import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
-import { GlossaryText } from './lib/glossary';
+import { linkifyGlossary } from './lib/glossary';
 
 // The DSA execution-trace player (Framer Motion + renderers) is heavy and only needed on
 // dsa-kind lessons that carry a `viz` — lazy-load it so every other lesson stays light.
@@ -323,7 +323,7 @@ export default function LessonView() {
                   {i + 1}
                 </span>
                 <span className="font-sans text-sm text-[#0F172A] leading-relaxed">
-                  <GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{item}</GlossaryText>
+                  {linkifyGlossary(item, lesson.glossary, usedGlossaryTerms)}
                 </span>
               </li>
             ))}
@@ -361,7 +361,7 @@ export default function LessonView() {
                   <AlertTriangle size={13} /> {m.title}
                 </div>
                 <p className="font-sans text-sm text-[#475569] leading-relaxed">
-                  <GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{m.explanation}</GlossaryText>
+                  {linkifyGlossary(m.explanation, lesson.glossary, usedGlossaryTerms)}
                 </p>
               </div>
             ))}
@@ -807,7 +807,7 @@ function LessonSections({ sections, glossary, used }) {
           {s.recap && (
             <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#0F766E]/[0.06] border-l-2 border-[#0F766E] px-3 py-2">
               <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] shrink-0 mt-0.5">So far</span>
-              <span className="font-sans text-[13px] text-[#0F172A] leading-snug"><GlossaryText terms={glossary} used={used}>{s.recap}</GlossaryText></span>
+              <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{linkifyGlossary(s.recap, glossary, used)}</span>
             </div>
           )}
         </div>
@@ -837,7 +837,7 @@ function RichText({ text, tone = 'ink', glossary, used }) {
         }
         return (
           <p key={i} className={`font-sans text-sm ${color} leading-relaxed`}>
-            <GlossaryText terms={glossary} used={used}>{block.trim()}</GlossaryText>
+            {linkifyGlossary(block.trim(), glossary, used)}
           </p>
         );
       })}
@@ -868,17 +868,17 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Q1 — Why it exists (problem → naive → better idea) */}
       {(wie.problem || wie.better_idea) && (
         <Section icon={<HelpCircle size={16} />} title="Why it exists" accent="#0891B2">
-          {wie.problem && <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{wie.problem}</GlossaryText></p>}
+          {wie.problem && <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(wie.problem, lesson.glossary, usedGlossaryTerms)}</p>}
           {wie.naive_solution && (
             <div className="mt-2 rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
               <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B91C1C] mb-1">The naive way</div>
-              <p className="font-sans text-sm text-[#475569] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{wie.naive_solution}</GlossaryText></p>
+              <p className="font-sans text-sm text-[#475569] leading-relaxed">{linkifyGlossary(wie.naive_solution, lesson.glossary, usedGlossaryTerms)}</p>
             </div>
           )}
           {wie.better_idea && (
             <div className="mt-2 rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/[0.05] p-3">
               <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-1">The better idea</div>
-              <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{wie.better_idea}</GlossaryText></p>
+              <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(wie.better_idea, lesson.glossary, usedGlossaryTerms)}</p>
             </div>
           )}
         </Section>
@@ -887,7 +887,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Q2/Q3 — Mental model: the intuition + the one repeated decision */}
       {mm.intuition && (
         <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
-          <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{mm.intuition}</GlossaryText></p>
+          <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{linkifyGlossary(mm.intuition, lesson.glossary, usedGlossaryTerms)}</p>
           {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
           {mm.repeated_decision && (
             <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#7C3AED]/[0.06] border-l-2 border-[#7C3AED] px-3 py-2">
@@ -1139,7 +1139,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
 
       {/* Mental model (required) — the intuition anchor */}
       <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
-        <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{mm.intuition}</GlossaryText></p>
+        <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{linkifyGlossary(mm.intuition, lesson.glossary, usedGlossaryTerms)}</p>
         {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
       </Section>
 
@@ -1167,7 +1167,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
           {/* Analogy (theory, optional) */}
           {lesson.analogy && (
             <Section icon={<Lightbulb size={16} />} title="Analogy" accent="#7C3AED">
-              <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{lesson.analogy}</GlossaryText></p>
+              <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(lesson.analogy, lesson.glossary, usedGlossaryTerms)}</p>
             </Section>
           )}
           {/* Explanation — the concept, plainly */}
@@ -1186,7 +1186,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.key_points.map((p, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> <GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{p.detail}</GlossaryText></span>
+                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {linkifyGlossary(p.detail, lesson.glossary, usedGlossaryTerms)}</span>
               </div>
             ))}
           </div>
@@ -1243,7 +1243,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.method.map((step, i) => (
               <li key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0891B2]/10 text-[#0891B2] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{step}</GlossaryText></span>
+                <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(step, lesson.glossary, usedGlossaryTerms)}</span>
               </li>
             ))}
           </ol>
@@ -1253,15 +1253,15 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Formula (aptitude, required) */}
       {lesson.formula?.statement && (
         <Section icon={<Target size={16} />} title="The rule" accent="#0F766E">
-          <p className="font-mono text-[13px] text-[#0F172A] bg-[#0F766E]/[0.06] rounded px-3 py-2 leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{lesson.formula.statement}</GlossaryText></p>
-          {lesson.formula.explain && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{lesson.formula.explain}</GlossaryText></p>}
+          <p className="font-mono text-[13px] text-[#0F172A] bg-[#0F766E]/[0.06] rounded px-3 py-2 leading-relaxed">{linkifyGlossary(lesson.formula.statement, lesson.glossary, usedGlossaryTerms)}</p>
+          {lesson.formula.explain && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2">{linkifyGlossary(lesson.formula.explain, lesson.glossary, usedGlossaryTerms)}</p>}
         </Section>
       )}
 
       {/* Worked example (reasoning, required) — method applied; reveal the solution */}
       {we?.problem && (
         <Section icon={<Sparkles size={16} />} title="Worked example" accent="#7C3AED">
-          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{we.problem}</GlossaryText></p>
+          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3">{linkifyGlossary(we.problem, lesson.glossary, usedGlossaryTerms)}</p>
           {!ahaRevealed ? (
             <button onClick={() => setAhaRevealed(true)} className="flex items-center gap-2 text-sm font-semibold text-white bg-[#7C3AED] hover:bg-[#6D28D9] rounded px-3.5 py-2 transition-colors">
               <Eye size={15} /> Reveal the solution
@@ -1273,7 +1273,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
                   {we.steps.map((step, i) => (
                     <li key={i} className="flex items-start gap-2.5">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                      <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{step}</GlossaryText></span>
+                      <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(step, lesson.glossary, usedGlossaryTerms)}</span>
                     </li>
                   ))}
                 </ol>
@@ -1309,7 +1309,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.common_mistakes.map((m, i) => (
               <div key={i} className="rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
                 <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1">{m.title}</div>
-                <p className="font-sans text-sm text-[#0F172A] leading-relaxed"><GlossaryText terms={lesson.glossary} used={usedGlossaryTerms}>{m.explanation}</GlossaryText></p>
+                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(m.explanation, lesson.glossary, usedGlossaryTerms)}</p>
               </div>
             ))}
           </div>

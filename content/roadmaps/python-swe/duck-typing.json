@@ -20,15 +20,15 @@
   "glossary": [
     {
       "term": "interface",
-      "definition": "The specific methods and properties that an object is expected to have so it can be used in a certain way."
+      "definition": "The specific methods and properties that an object is expected to have so it can be used in a certain way. Example: `hasattr(obj, 'read')`"
     },
     {
       "term": "rigid",
-      "definition": "Code that is inflexible and hard to change or adapt because it strictly enforces rules, like exact data types."
+      "definition": "Code that is inflexible and hard to change or adapt because it strictly enforces rules, like exact data types. Example: `if type(obj) == int:`"
     },
     {
       "term": "EAFP",
-      "definition": "Easier to Ask Forgiveness than Permission -- try the operation and catch the exception, instead of checking first (LBYL)."
+      "definition": "Easier to Ask Forgiveness than Permission — try the operation and catch the exception, instead of checking first. Example: `try: val = d['key']`"
     }
   ],
   "overview": {
@@ -53,7 +53,7 @@
     },
     {
       "title": "Over-checking types",
-      "explanation": "Using `isinstance()` everywhere instead of relying on duck typing, which makes the code rigid and defeats the purpose of Python's dynamic nature. The fix is to use `hasattr()` or `try/except` (EAFP)."
+      "explanation": "Using `isinstance()` everywhere defeats the purpose of Python's dynamic nature. The fix is to use `hasattr()` or `try/except` (EAFP)."
     }
   ],
   "understanding_checks": [

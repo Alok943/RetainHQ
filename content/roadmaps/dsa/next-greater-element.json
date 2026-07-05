@@ -1,0 +1,140 @@
+{
+  "slug": "next-greater-element",
+  "title": "Next greater element",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "monotonic-stack"
+    ],
+    "unlocks": []
+  },
+  "viz": {
+    "generator": "next-greater-element",
+    "default_input": [2, 1, 5, 6, 3],
+    "invariants": {
+      "inv-monotonic": "The stack of indices stays strictly decreasing in value; a larger arrival evicts everything smaller, and each eviction resolves that element's next-greater."
+    },
+    "steps": [
+      { "id": "read", "label": "read arr[i]" },
+      { "id": "resolve", "label": "pop while arr[top] < arr[i] — found next greater" },
+      { "id": "push", "label": "push index i" },
+      { "id": "done", "label": "indices left on the stack have no greater element (-1)" }
+    ],
+    "predictions": [
+      { "at_op": "POINT", "occurrence": 3, "level": "medium", "prompt": "The next element is arriving. Will it EVICT the stack top (POP), or just get PUSHED?", "derive": "next_op" }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Given an array, we want to map each element to the first element to its right that is strictly larger. A brute force scan for every element takes O(n^2) time.",
+    "better_idea": "Use a monotonic decreasing stack to act as a waiting line. Array indices wait on the stack until a larger element arrives and resolves their query, reducing time complexity to O(n).",
+    "naive_solution": "Scan forward from every element to find its next greater \u2014 O(n^2) nested loops."
+  },
+  "mental_model": {
+    "intuition": "Small people wait in line. When a tall person arrives, all the smaller people in front of them immediately see them and leave the line.",
+    "description": "Traverse the array from left to right. Maintain a stack of indices for elements that haven't found their next greater element yet. Because we pop whenever a larger element arrives, the stack naturally stays in decreasing order. When we pop an index, we know the current element is its 'next greater'. Any indices left on the stack at the end have no greater element to their right and default to -1.",
+    "repeated_decision": "While the stack is non-empty and the current element is greater than the element at the top index: pop the index and record the current element as its answer."
+  },
+  "engineering_examples": [
+    {
+      "title": "Signal Processing Thresholds",
+      "problem": "Finding the next timestamp where a sensor reading exceeds a critical threshold",
+      "why_this_algorithm": "Efficiently maps thousands of data points to their nearest future spikes in linear time."
+    }
+  ],
+  "failure_signals": [
+    "Looking for absolute maximums instead of relative next greater elements."
+  ],
+  "pattern": {
+    "name": "Monotonic Decreasing Stack",
+    "recognition_cues": [
+      "Find the 'next greater', 'next warmer', or 'nearest larger' element to the right."
+    ]
+  },
+  "common_mistakes": [
+    {
+      "title": "Simulating circular arrays with memory bloat",
+      "explanation": "If the array is circular, don't allocate a new array of double the length. Iterate up to 2n and use modulo arithmetic `i % n` to wrap around."
+    },
+    {
+      "title": "Not using a pre-allocated result array",
+      "explanation": "Since elements are resolved out of order (popping from the stack), you must initialize a result array with default values (-1) and place answers into specific indices."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens to indices that remain on the stack after the entire array is traversed?",
+      "answer": "They represent elements that have no greater element to their right. They should be assigned the default value (usually -1).",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you efficiently handle a circular 'Next Greater Element' problem without doubling the array allocation?",
+      "answer": "Loop from 0 to 2n-1 and access elements using modulo arithmetic `i % n`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What condition triggers a pop from the stack in this algorithm?",
+      "answer": "The stack must be non-empty AND the incoming element must be strictly greater than the element mapped to the index at the top of the stack.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the Next Greater Element for each element in an array.",
+      "answer": "Initialize a result array with -1. Use a decreasing monotonic stack of indices. When `arr[i] > arr[stack.top()]`, pop and set `result[popped_index] = arr[i]`. Push `i`.",
+      "approach": "Standard NGE template.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Find the Next Greater Element in a circular array.",
+      "answer": "Iterate `i` from 0 to 2n-1. Access elements via `arr[i % n]`. Use the identical monotonic stack logic.",
+      "approach": "Virtual double-pass using modulo.",
+      "company": "SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Next Greater Element I",
+      "url": "https://leetcode.com/problems/next-greater-element-i/",
+      "difficulty": "easy",
+      "why": "The foundational introduction to the pattern."
+    },
+    {
+      "title": "Next Greater Element II",
+      "url": "https://leetcode.com/problems/next-greater-element-ii/",
+      "difficulty": "medium",
+      "why": "Tests the application of modulo arithmetic for circular traversal."
+    }
+  ],
+  "related": [
+    "monotonic-stack"
+  ],
+  "sources": [
+    "https://www.hellointerview.com/learn/code/stack/monotonic-stack",
+    "https://purpletutor.com/monotonic-stack/"
+  ],
+  "explanation": "Next Greater Element is the canonical problem for applying the monotonic stack pattern. It directly maps to the algorithm's mechanical strengths: elements sit in a decreasing state until they are shattered by a larger arrival.\n\nA powerful extension of this problem is the circular array variant. Rather than concatenating two arrays together in memory (which costs O(n) space overhead), a virtual double-pass is executed by running the loop to 2n and accessing elements via `i % n`. The stack logic remains completely oblivious to the circular trick.\n\nFor circular arrays, we can simulate concatenating the array to itself by iterating up to `2n-1` and using the modulo operator (`i % n`) to map back to valid bounds. This works perfectly because each real index resolves its next greater element at most once, and the stack handles the wrap-around naturally.",
+  "hook": {
+    "scenario": "You are tracking daily stock prices and want to know how many days you have to wait for a higher price.",
+    "question": "How do you find the next greater price efficiently without comparing every day to every future day?"
+  },
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "The stack keeps track of elements waiting for a greater element. A new larger element resolves them."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(n) amortized time, processing each element linearly."
+    },
+    {
+      "title": "Recognition cue",
+      "detail": "Problems asking for the 'next largest' or 'first element greater than X to its right'."
+    }
+  ]
+}

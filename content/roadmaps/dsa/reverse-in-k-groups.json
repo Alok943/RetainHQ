@@ -1,0 +1,166 @@
+{
+  "slug": "reverse-in-k-groups",
+  "title": "Reverse in k-groups",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "traversal-and-reversal"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to process a stream of network packets in batches of 4, but each batch arrives backwards. You must flip each batch without touching the rest of the stream.",
+    "question": "How do you reverse these chunks in place, while safely skipping the final chunk if it doesn't have 4 packets?"
+  },
+  "why_it_exists": {
+    "problem": "Reversing sections of a linked list is complex because you must isolate a block, reverse it, and carefully stitch it back into the sequence.",
+    "naive_solution": "Navigate to the k-group boundaries and swap the raw data payloads between the nodes to avoid complex pointer management.",
+    "better_idea": "Copying large object payloads adds data transfer overhead. More importantly, in the context of this classic algorithm puzzle, interviewers explicitly forbid value-swapping to test your ability to manage complex pointer topology."
+  },
+  "mental_model": {
+    "intuition": "Imagine uncoupling a specific number of train cars, turning that entire chunk around, and then safely re-attaching them to the main track.",
+    "description": "You need an anchor pointer (groupPrev) targeting the tail of the previously processed segment. For the current segment, probe ahead k steps. If the list ends early, you stop immediately -- trailing remainders of fewer than k nodes stay untouched. If you have k nodes, you cache the start of the NEXT segment (groupNext). Then, you perform a standard in-place reversal strictly on your k nodes. Finally, you attach groupPrev to the newly reversed segment's head, and point the segment's new tail (which was its old head) to groupNext. Advance the anchor, and repeat.",
+    "repeated_decision": "Do I have at least k nodes remaining ahead of me to reverse?"
+  },
+  "explanation": "Bounded sublist reversal (reversing in k-groups) is the most structurally complex linked list pattern because it requires localized, batch-oriented inversion within a continuous sequence without destroying the overarching structural connectivity.\n\nExecuting this safely requires a rigorous four-phase approach. Phase one is boundary probing: advance a pointer exactly k steps to confirm a complete group exists. If you hit a null boundary prematurely, the algorithm terminates immediately, ensuring trailing segments of fewer than k nodes remain entirely undisturbed.\n\nPhase two is detachment: identify the successor to the k-th node and cache it as 'groupNext'. This is the start of the next batch. Phase three is local reversal: apply the standard three-pointer iterative reversal (prev, current, next) strictly within the bounds of your k nodes.\n\nPhase four is topological reconnection. You must maintain a static anchor, 'groupPrev', which always points to the final node of the previously processed segment. Rewire groupPrev.next to the new head of your reversed segment. Simultaneously, take the node that was originally the head of your segment (which has now become its tail) and wire its next pointer to groupNext. Finally, advance groupPrev to this new tail, preparing the state machine to evaluate the next batch. Doing this cleanly avoids orphaned memory leaks or cyclic dependencies.",
+  "key_points": [
+    {
+      "title": "Probe before you flip",
+      "detail": "Always verify that k nodes exist before altering any pointers. A common pitfall is prematurely reversing a trailing segment that violates the k threshold."
+    },
+    {
+      "title": "Four-phase state machine",
+      "detail": "The operation strictly follows: 1) Probe, 2) Detach and cache groupNext, 3) Reverse locally, 4) Rewire to groupPrev and groupNext."
+    },
+    {
+      "title": "Complexity",
+      "detail": "Time complexity is O(N) because each node is visited at most twice (once to probe, once to reverse). Auxiliary space is O(1) due to in-place pointer manipulation."
+    }
+  ],
+  "pattern": {
+    "name": "Bounded Sublist Reversal",
+    "recognition_cues": [
+      "The problem asks to reverse or permute nodes in specific batches or intervals.",
+      "The phrase 'in-place' combined with modifying chunks of a linked list.",
+      "Rules specifying that a remainder of the list should be handled differently (e.g., left as-is)."
+    ]
+  },
+  "failure_signals": [
+    "You are creating new linked list nodes to hold the reversed values.",
+    "You are swapping the internal values/payloads of the nodes instead of rewiring the topological edges.",
+    "Your algorithm reverses the very last nodes even when there are fewer than k of them."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Memory pool free block management",
+      "problem": "A custom memory allocator needs to detach, reorder, and re-attach chunks of free memory blocks to combat fragmentation.",
+      "why_this_algorithm": "Managing these chunks requires precise bounded sublist detachment and rewiring without losing references to the rest of the unallocated memory pool."
+    },
+    {
+      "title": "Pointer manipulation stress test",
+      "problem": "Software engineering interviews frequently use this problem to filter candidates.",
+      "why_this_algorithm": "It is notorious for being an artificial puzzle designed specifically to test a candidate's ability to manage complex, multi-phase pointer state machines without memory leaks."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Concurrent multi-threaded environments",
+      "reason": "In-place pointer reversal mutates the shared underlying structure, fundamentally breaking concurrent forward reads by other threads. Immutable data structures or Read-Copy-Update (RCU) mechanisms are strictly preferred."
+    },
+    {
+      "scenario": "Lists carrying simple primitive values where memory is unconstrained",
+      "reason": "If nodes only hold small integers and cache misses aren't a concern, writing to a new array and rebuilding the list might be faster to implement and less error-prone."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Reversing a trailing remainder of fewer than k nodes",
+      "explanation": "If the list has 8 nodes and k=3, the last 2 nodes must not be reversed. Failing to probe the boundary first leads to violating the k threshold."
+    },
+    {
+      "title": "Swapping node values instead of pointers",
+      "explanation": "Copying large payloads adds data transfer overhead, and more importantly, interviewers explicitly forbid value-swapping to test your ability to manage complex pointer topology."
+    },
+    {
+      "title": "Losing the overarching list connection",
+      "explanation": "Failing to correctly cache the groupNext node before detaching the segment results in permanently severing access to the remaining unreversed data structure."
+    },
+    {
+      "title": "Creating orphaned memory segments",
+      "explanation": "If the groupPrev anchor is not rewired to the new head of the reversed segment, the reversed nodes detach from the main list and leak into unallocated memory."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the crucial first step before reversing a batch of nodes in this algorithm?",
+      "answer": "Boundary probing. You must advance a pointer exactly k steps to confirm a complete group exists, ensuring you don't reverse a trailing remainder of fewer than k nodes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is swapping node payloads (values) considered an anti-pattern compared to rewiring pointers?",
+      "answer": "Copying large object payloads adds data transfer overhead. More importantly, interviewers explicitly forbid value-swapping to rigorously test your ability to safely manage complex pointer topology.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you fail to cache the successor to the k-th node before starting the local reversal?",
+      "answer": "You permanently sever the connection to the remainder of the unreversed list, losing access to all subsequent data.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the four phases of the state machine for bounded sublist reversal?",
+      "answer": "1) Boundary probing, 2) Segment detachment (caching the next segment), 3) Local reversal, 4) Anchor rewiring (reconnecting the reversed segment to the main list).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Reverse nodes in k-groups, but if the final group is less than k nodes, reverse it as well.",
+      "company": "SDE interview",
+      "answer": "Follow the same four-phase state machine, but adjust the boundary probing phase. If the probe hits null before k steps, detach the segment there and reverse the available nodes instead of terminating early.",
+      "approach": "Modify the invariant condition of the boundary probe while keeping the detachment and rewiring phases identical."
+    },
+    {
+      "question": "Swap nodes in pairs in a linked list.",
+      "company": "SDE interview",
+      "answer": "This is a specialized case of reverse in k-groups where k=2. Use the exact same probing and rewiring logic, ensuring the anchor pointers are correctly updated after every pair.",
+      "approach": "Recognize that swapping pairs is just bounded sublist reversal with a fixed batch size of 2."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Reverse Nodes in k-Group",
+      "url": "https://leetcode.com/problems/reverse-nodes-in-k-group/",
+      "difficulty": "hard",
+      "why": "The canonical implementation of the four-phase state machine."
+    },
+    {
+      "title": "Swap Nodes in Pairs",
+      "url": "https://leetcode.com/problems/swap-nodes-in-pairs/",
+      "difficulty": "medium",
+      "why": "A simplified, highly frequent variant where k is exactly 2."
+    },
+    {
+      "title": "Reverse Linked List II",
+      "url": "https://leetcode.com/problems/reverse-linked-list-ii/",
+      "difficulty": "medium",
+      "why": "Tests the detachment and rewiring phases (phases 2 and 4) without the repeating loop."
+    }
+  ],
+  "related": [
+    "traversal-and-reversal"
+  ],
+  "interesting_facts": [
+    "The operational logic identically mimics block-wise memory permutations common in low-level embedded block cipher cryptography."
+  ],
+  "sources": [
+    "https://algo.monster/liteproblems/25",
+    "https://algomaster.io/learn/dsa/reverse-nodes-in-k-group",
+    "https://softwareinterviews.com/coding/linked-lists/reverse-k-group/"
+  ]
+}

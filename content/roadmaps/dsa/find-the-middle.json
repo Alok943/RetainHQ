@@ -1,0 +1,158 @@
+{
+  "slug": "find-the-middle",
+  "title": "Find the middle",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "traversal-and-reversal"
+    ],
+    "unlocks": [
+      "floyd-s-cycle-detection",
+      "merge-sort"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "fast pointer",
+      "definition": "A traversal pointer that advances multiple steps per iteration, typically two steps."
+    },
+    {
+      "term": "slow pointer",
+      "definition": "A traversal pointer that advances one step per iteration, maintaining a speed differential with the fast pointer."
+    },
+    {
+      "term": "boundary condition",
+      "definition": "The edge cases at the start or end of a sequence, such as ensuring a pointer doesn't attempt to read past the end of a list."
+    }
+  ],
+  "hook": {
+    "scenario": "You have a sequence of unknown length and need to find the exact middle item, but you can only walk forward one by one.",
+    "question": "Do you really have to walk it all the way to count, and then walk it a second time to find the halfway point?"
+  },
+  "why_it_exists": {
+    "problem": "Identifying the exact midpoint of a sequentially accessed structure presents a unique algorithmic challenge when the total capacity of the structure is unknown at runtime.",
+    "naive_solution": "A two-pass algorithm: a primary traversal to enumerate the total node count, followed by a secondary traversal terminating at the calculated half-capacity index. This severely degrades performance due to sustained cache misses on scattered heap memory.",
+    "better_idea": "Introduce a relative speed differential utilizing two simultaneous traversal pointers. The faster pointer travels at exactly twice the velocity of the slower pointer. When the fast pointer reaches the end, the slow pointer crosses the precise halfway mark."
+  },
+  "mental_model": {
+    "intuition": "Two runners on a track. If the fast runner goes twice as fast as the slow runner, when the fast runner crosses the finish line, the slow runner is exactly at the halfway mark.",
+    "description": "The algorithm starts a slow pointer and a fast pointer, both at the list's head. In each step of the loop, the slow pointer moves one node forward while the fast pointer moves two nodes forward. This guarantees that the number of nodes visited by the fast pointer is always exactly double the nodes visited by the slow pointer. Because of this, the traversal finishes in a single pass.",
+    "repeated_decision": "Can the fast pointer make a two-step jump safely? If so, advance fast by two and slow by one."
+  },
+  "explanation": "Unlike arrays, where the midpoint is calculated in constant time via simple arithmetic on the capacity property, linked lists require sequential discovery. The naive approach is a two-pass algorithm: a primary traversal to count the total nodes, followed by a secondary traversal stopping at the halfway mark.\n\nThe optimal solution uses two traversal pointers moving at different speeds, commonly referred to as the Tortoise and Hare algorithm. The intuition parallels two runners on a track. If the faster runner travels at exactly twice the speed of the slower runner, the slower runner will cross the precise halfway mark at the exact moment the faster runner reaches the finish line.\n\nTranslating this to pointers, the algorithm starts a slow pointer and a fast pointer at the head. In each loop step, the slow pointer moves forward by one node, while the fast pointer moves forward by two nodes. This guarantees the fast pointer has processed exactly twice as many nodes. Consequently, the traversal completes in a single elegant pass without needing to store the length in a separate variable. For problems that require deleting or modifying the middle node, you can maintain a 'prev' pointer that trails the slow pointer by exactly one step, allowing you to easily rewire the list structure.\n\nThe stability of the fast and slow pointer methodology relies on boundary condition checking. Because the fast pointer advances two steps per cycle, the loop must explicitly confirm that both the immediate node and its successor exist. The standard boolean logic is verifying that the fast pointer is not null and the fast pointer's successor is not null. In a list with an odd length (e.g., 5 nodes), the fast pointer lands precisely on the final node, leaving the slow pointer exactly on the absolute center (Node 3). In an even-length list (e.g., 6 nodes), the fast pointer leaps past the final node, evaluating to null, leaving the slow pointer on the second middle node (Node 4).",
+  "key_points": [
+    {
+      "title": "Time and Space Complexity",
+      "detail": "O(N) time and O(1) space. Completes in exactly one elegant pass without needing a separate variable to store the list length."
+    },
+    {
+      "title": "The Speed Differential Invariant",
+      "detail": "The fast pointer evaluates exactly twice as many nodes as the slow pointer. This mathematical guarantee ensures the slow pointer is at the midpoint when the fast pointer reaches the end."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Missing the secondary loop check",
+      "explanation": "The loop condition must be `fast != null && fast.next != null`. Omitting the secondary check results in an immediate null pointer dereference exception when processing sequences of even length, as the fast pointer attempts to read a property of an unallocated memory address."
+    },
+    {
+      "title": "Confusion on even-length midpoints",
+      "explanation": "Even-length lists have two middles. Using `fast != null && fast.next != null` lands the slow pointer on the SECOND middle node. If your specific problem requires the FIRST middle node, you need to adjust the starting positions or the loop condition."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Contiguous arrays",
+      "reason": "Arrays have a known capacity property, so you can calculate the midpoint in O(1) time using simple arithmetic without traversing."
+    }
+  ],
+  "failure_signals": [
+    "You are making two full passes over a linked list just to find its halfway point."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Divide-and-conquer on linked structures",
+      "problem": "Sorting a linked list using Merge Sort.",
+      "why_this_algorithm": "By identifying the midpoint in one pass, the list is dynamically severed into independent halves for recursive sorting."
+    },
+    {
+      "title": "Palindrome linked list checking",
+      "problem": "Determining if a linked list reads the same forwards and backwards in O(1) space.",
+      "why_this_algorithm": "The fast and slow pointer technique finds the exact middle in one pass, allowing you to easily reverse the second half of the list to compare it against the first half."
+    }
+  ],
+  "pattern": {
+    "name": "Fast/Slow Pointers (Tortoise and Hare)",
+    "recognition_cues": [
+      "Need to find a specific relative position (like the middle or a cycle) in a linked list.",
+      "The total length is unknown or unbound.",
+      "You want to achieve it in a single pass with O(1) extra space."
+    ]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the core intuition behind the fast and slow pointer technique to find the middle?",
+      "answer": "If a fast pointer travels at exactly twice the speed of a slow pointer, the slow pointer will be at the halfway mark when the fast pointer reaches the end.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the exact loop condition to prevent a null pointer exception in this algorithm?",
+      "answer": "The loop condition must check that both `fast != null` and `fast.next != null` before allowing the fast pointer to advance two steps.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In an even-length linked list, which of the two middle nodes does the standard `fast != null && fast.next != null` loop condition land on?",
+      "answer": "It lands on the second middle node, because the fast pointer jumps exactly past the end (becoming null), advancing the slow pointer one extra time.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the middle of a linked list.",
+      "company": "SDE interview",
+      "answer": "Initialize both a slow and fast pointer at the head. Loop while `fast` and `fast.next` are not null, advancing `slow` by 1 and `fast` by 2. When the loop terminates, return the `slow` pointer. O(N) time, O(1) space.",
+      "approach": "This is the direct application of the fast/slow pointer speed differential."
+    },
+    {
+      "question": "Delete the middle node of a linked list.",
+      "company": "SDE interview",
+      "answer": "Use the fast/slow pointer method, but maintain a `prev` pointer that trails the `slow` pointer by one step. When the middle is found, rewire `prev.next` to `slow.next`. O(N) time, O(1) space.",
+      "approach": "Combine the fast/slow midpoint finding with basic linked list pointer rewiring."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Middle of the Linked List",
+      "url": "https://leetcode.com/problems/middle-of-the-linked-list/",
+      "difficulty": "easy",
+      "why": "The bare mechanic of the tortoise and hare speed differential."
+    },
+    {
+      "title": "Delete the Middle Node of a Linked List",
+      "url": "https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/",
+      "difficulty": "medium",
+      "why": "Applies the midpoint identification to a structural manipulation task."
+    }
+  ],
+  "related": [
+    "floyd-s-cycle-detection",
+    "traversal-and-reversal",
+    "merge-two-sorted-lists"
+  ],
+  "interesting_facts": [
+    "The tortoise and hare algorithm is most famous for cycle detection, but the speed differential concept elegantly solves the midpoint problem without needing the complex math of cycle entry point calculation.",
+    "This technique is vital in stream processing where maintaining absolute counters could eventually lead to integer overflow."
+  ],
+  "sources": [
+    "https://www.finalroundai.com/articles/find-middle-linked-list",
+    "https://prepinsta.com/java-program/find-middle-of-a-linked-list/",
+    "https://algo.monster/liteproblems/876",
+    "https://www.backendml.com/dsa/middle-of-the-linked-list-XMlRC20zm"
+  ]
+}

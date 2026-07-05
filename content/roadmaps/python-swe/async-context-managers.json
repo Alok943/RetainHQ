@@ -23,15 +23,15 @@
   "glossary": [
     {
       "term": "event loop",
-      "definition": "The core mechanism that manages and runs multiple asynchronous tasks efficiently."
+      "definition": "The core mechanism that manages and runs multiple asynchronous tasks efficiently, e.g. `asyncio.run(main())`."
     },
     {
       "term": "I/O",
-      "definition": "Input/Output operations, like reading from a database or a network, which often take time to complete."
+      "definition": "Input/Output operations, like reading from a database or a network, which often take time to complete, e.g. `await db.fetch('SELECT ...')`."
     }
   ],
   "overview": {
-    "what": "Async context managers allow you to manage resources that require asynchronous setup or teardown (like network connections). They use `async with` instead of `with`, and are implemented via the `__aenter__` and `__aexit__` dunder methods, both of which must be `async def`. Alternatively, you can use the `@asynccontextmanager` decorator from `contextlib` on an async generator. `__aexit__` is guaranteed to run (awaited) even if the block raises.",
+    "what": "Async context managers allow you to manage resources that require asynchronous setup or teardown (like network connections). They use `async with` instead of `with`, and are implemented via the `__aenter__` and `__aexit__` dunder methods (special built-in methods with double underscores before and after their name), both of which must be `async def`. Alternatively, you can use the `@asynccontextmanager` decorator from `contextlib` on an async generator. `__aexit__` is guaranteed to run (awaited) even if the block raises.",
     "why": "Regular context managers block the event loop if their setup/teardown performs I/O. Async context managers let you await network calls or database operations safely while ensuring cleanup.",
     "where_used": [
       "Database connection pools (asyncpg)",
@@ -55,17 +55,17 @@
   "recall_questions": [
     {
       "q": "Which keyword must precede the `with` statement to use an async context manager?",
-      "answer": "The `async` keyword.",
+      "answer": "The `async` keyword — you write `async with` instead of just `with`.",
       "tier": "tier1"
     },
     {
       "q": "What two dunder methods are required to implement a class-based async context manager?",
-      "answer": "`__aenter__` and `__aexit__`.",
+      "answer": "The two required methods are `__aenter__` for the setup phase and `__aexit__` for the teardown phase.",
       "tier": "tier2"
     },
     {
       "q": "Which decorator from `contextlib` is used to create an async context manager from a generator?",
-      "answer": "`@asynccontextmanager`.",
+      "answer": "You can use the `@asynccontextmanager` decorator to transform a generator into an async context manager.",
       "tier": "tier1"
     }
   ],

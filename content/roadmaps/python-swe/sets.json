@@ -27,15 +27,15 @@
   "glossary": [
     {
       "term": "unordered collection",
-      "definition": "A group of items that do not have a specific sequence or position, meaning you can't rely on their order."
+      "definition": "A group of items that do not have a specific sequence or position, meaning you can't rely on their order. Example: `{3, 1, 2}`."
     },
     {
       "term": "deduplicating",
-      "definition": "The process of removing duplicate or repeated items from a dataset so that only unique items remain."
+      "definition": "The process of removing duplicate or repeated items from a dataset so that only unique items remain. Example: `set([1, 1, 2])` gives `{1, 2}`."
     }
   ],
   "overview": {
-    "what": "A set is an unordered collection of unique, hashable elements. It is defined using curly braces `{1, 2, 3}` or the `set()` constructor. Unlike a list, a set automatically discards duplicate values and cannot be accessed by index. Sets are backed by a hash table, so membership (`x in myset`) is ~O(1), whereas scanning a list is O(n) -- that's why set membership is faster. Think of a set like a VIP guest list: someone is either on the list or they aren't, but their exact position in line doesn't matter (unordered). Sets support mathematical operations like union `|`, intersection `&`, and difference `-`.",
+    "what": "A set is an unordered collection of unique, hashable (having a hash value which never changes during its lifetime) elements. It is defined using curly braces `{1, 2, 3}` or the `set()` constructor. Unlike a list, a set automatically discards duplicate values and cannot be accessed by index. Sets are backed by a hash table, so membership (`x in myset`) is ~O(1), whereas scanning a list is O(n) -- that's why set membership is faster. Think of a set like a VIP guest list: someone is either on the list or they aren't, but their exact position in line doesn't matter (unordered). Sets support mathematical operations like union `|`, intersection `&`, and difference `-`.",
     "why": "Sets are optimized for two things: answering 'is this item in the collection?' instantly, and guaranteeing uniqueness. When you need to check if a user has a specific permission out of thousands, a set makes that check extremely fast compared to scanning a list.",
     "where_used": [
       "API scope validation",

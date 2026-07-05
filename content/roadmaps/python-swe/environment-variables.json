@@ -24,11 +24,11 @@
   "glossary": [
     {
       "term": "Twelve-Factor App",
-      "definition": "A popular methodology or set of best practices for building software-as-a-service apps that are easy to maintain and scale."
+      "definition": "A popular methodology or set of best practices for building software-as-a-service apps that are easy to maintain and scale. Example: `store config in environment`"
     },
     {
       "term": "cast",
-      "definition": "To explicitly convert a value from one data type to another, like changing the string 1 into the integer 1."
+      "definition": "To explicitly convert a value from one data type to another, like changing the string 1 into the integer 1. Example: `int('1')`"
     }
   ],
   "overview": {
@@ -48,15 +48,15 @@
   "common_mistakes": [
     {
       "title": "Hardcoding secrets",
-      "explanation": "Writing `API_KEY = 'secret123'` in your code commits it to Git forever. If the repository is public, bots will steal the key in seconds."
+      "explanation": "This commits sensitive data to Git forever. Bots can steal keys from public repositories in seconds."
     },
     {
       "title": "Crashing on missing variables",
-      "explanation": "Using `os.environ['API_KEY']` will raise a KeyError if the variable isn't set. Prefer `os.environ.get('API_KEY', 'default_value')` for optional configs."
+      "explanation": "Direct access raises a `KeyError` if the variable isn't set. Use `.get()` instead to provide safe defaults."
     },
     {
       "title": "Forgetting that all values are strings",
-      "explanation": "Even if you set `DEBUG=1`, `os.environ['DEBUG']` is the string `'1'`, not an integer. You must cast types explicitly."
+      "explanation": "The operating system passes all variables as strings. You must explicitly convert them to integers or booleans in your code."
     }
   ],
   "recall_questions": [

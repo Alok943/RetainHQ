@@ -25,11 +25,11 @@
   "glossary": [
     {
       "term": "cached",
-      "definition": "Storing frequently used data in a temporary, fast-access memory area so it doesn't have to be recreated every time."
+      "definition": "Storing frequently used data in a temporary, fast-access memory area so it doesn't have to be recreated every time. e.g. CPython caches small integers so `a = 5; b = 5; a is b` is `True`."
     },
     {
       "term": "CPython",
-      "definition": "The standard, original, and most widely used version of the Python programming language, written in C."
+      "definition": "The standard, original, and most widely used version of the Python programming language, written in C. Example: `python script.py`."
     }
   ],
   "overview": {
@@ -68,7 +68,7 @@
     },
     {
       "q": "When should you use `is` rather than `==`?",
-      "answer": "Only for None, True, and False.",
+      "answer": "You should use `is` only for singletons (objects that only ever have one instance) like None, True, and False, because they always give the correct result. For everything else, use `==` to compare values.",
       "tier": "tier1"
     }
   ],

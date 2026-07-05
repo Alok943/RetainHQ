@@ -1,0 +1,87 @@
+{
+  "slug": "recursive-relation",
+  "title": "Recursive relation",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["base-case"],
+    "unlocks": ["the-call-stack"]
+  },
+  "overview": {
+    "what": "A recursive relation is how a function expresses a problem in terms of a strictly smaller version of that exact same problem.",
+    "why": "It allows complex problems to be broken down into identical, simpler subproblems. By taking a 'leap of faith'—assuming the recursive call correctly solves the smaller case—you only need to figure out how to combine that result with the current step.",
+    "where_used": [
+      "Processing nested JSON objects where a value can be another JSON object.",
+      "Traversing a file system directory tree where a folder can contain other folders."
+    ]
+  },
+  "why_learning_this": [
+    "Defining the recursive relation is the core logic of any recursive algorithm.",
+    "It teaches you the 'leap of faith' approach to problem solving: assume the subproblem is already solved and focus on the current step.",
+    "Many algorithm complexities are defined by how their recursive relation shrinks the input size. For example, Merge Sort splits an array in half (two T(n/2) subproblems) and takes O(n) work to combine them, resulting in an O(n log n) runtime."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Restating the exact same problem",
+      "explanation": "Passing the exact same input to the recursive call means no progress is made. The recursive call must operate on a STRICTLY SMALLER subproblem to eventually reach the base case."
+    },
+    {
+      "title": "Failing to combine the result",
+      "explanation": "A recursive call computes the answer for the smaller subproblem. You must remember to take its return value and combine it with the current step's data to produce the final answer for the current level."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the 'leap of faith' in recursive thinking?",
+      "answer": "Assuming that the recursive call will correctly solve the smaller subproblem, so you can focus only on how to combine its result with the current step.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must the input to a recursive call be strictly smaller than the current input?",
+      "answer": "To guarantee that the sequence of calls makes progress toward the base case, preventing infinite recursion.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a problem is split into two halves and takes O(n) work to combine them, what classic algorithm does its recursive relation describe?",
+      "answer": "Merge sort (T(n) = 2T(n/2) + O(n)).",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "In the fast exponentiation algorithm to compute `Pow(x, n)`, why is the recursive relation for even `n` defined as `(x^(n/2))^2` instead of `x * Pow(x, n - 1)`?",
+      "answer": "By halving the exponent `n/2`, the input size shrinks exponentially, turning an O(n) linear operation into an O(log n) operation.",
+      "why": "A recursive relation that halves the search space or input size is drastically more efficient than one that merely decrements it."
+    },
+    {
+      "type": "predict-output",
+      "question": "Consider a function `def sum_array(arr): if not arr: return 0; return arr[0] + sum_array(arr[1:])`. What does the recursive relation here represent?",
+      "answer": "The sum of the entire array is the first element plus the sum of the strictly smaller sub-array (everything after the first element).",
+      "why": "This perfectly illustrates expressing the problem in terms of a smaller version of itself: the sum of N items is 1 item + the sum of N-1 items."
+    }
+  ],
+  "aha_moment": {
+    "code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    # The leap of faith: assume fibonacci(n-1) and fibonacci(n-2) work\n    return fibonacci(n - 1) + fibonacci(n - 2)",
+    "prediction": "The result is calculated by blindly trusting that the smaller recursive calls return the correct sequence values.",
+    "common_guess": "You have to mentally trace down all the branches to understand how it works.",
+    "why": "Tracing the entire execution tree is exhausting and error-prone. The 'leap of faith' means you only need to verify the base cases and that the recursive relation correctly combines the results of the strictly smaller subproblems."
+  },
+  "practice_tasks": [
+    {
+      "title": "Write the recursive relation",
+      "prompt": "You are writing a function to reverse a string `s`. The base case is when the string is empty or length 1. Write the recursive relation using a 'leap of faith'—assuming the function can already reverse the strictly smaller substring `s[1:]`.",
+      "starter_code": "def reverse_string(s):\n    if len(s) <= 1:\n        return s\n    # Write the recursive relation here",
+      "solution": "The reversed string is the reversed strictly smaller substring plus the first character at the end. `return reverse_string(s[1:]) + s[0]`."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Recursive_definition"
+  ]
+}

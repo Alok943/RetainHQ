@@ -1,0 +1,83 @@
+{
+  "slug": "recursion-tree",
+  "title": "Recursion tree",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier2",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["the-call-stack"],
+    "unlocks": ["backtracking", "memoization"]
+  },
+  "overview": {
+    "what": "A recursion tree is a visual representation of branching recursive calls. The root represents the initial call, and children represent the subproblems spawned by that call.",
+    "why": "It allows you to read the time complexity of an algorithm visually. By summing the total work done across all nodes at every level, you can determine if an algorithm is efficient (like merge sort) or explosively slow (like naive Fibonacci)."
+  },
+  "why_learning_this": [
+    "It corrects the dangerous misconception that the time cost of recursion is merely its depth.",
+    "It provides an intuitive way to understand divide-and-conquer runtime analysis (predicting runtime).",
+    "Seeing how a leaf-heavy recursion tree explodes in size is exactly what motivates caching results (memoization)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming time complexity equals depth",
+      "explanation": "Depth only tells you the space complexity (the height of the call stack). The time complexity is the sum of the work done by ALL nodes in the entire recursion tree."
+    },
+    {
+      "title": "Ignoring overlapping subproblems",
+      "explanation": "If a recursion tree repeatedly branches into subproblems that have already been solved elsewhere in the tree (like in naive Fibonacci), the tree grows exponentially. Caching these results (memoization) prevents recalculation, turning exponential growth into linear time."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In a recursion tree, what determines the total time complexity?",
+      "answer": "The sum of the work done across all nodes at all levels of the tree.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the time complexity of a naive recursive Fibonacci O(2^n)?",
+      "answer": "Because each call spawns two more calls, causing the number of nodes in the recursion tree to double at each level, leading to exponential growth.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the purpose of memoization when applied to a recursion tree?",
+      "answer": "To cache the results of subproblems so that repeated nodes in the tree are pruned, collapsing exponential leaf-heavy work down to linear time.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "Merge sort divides an array in two halves and takes O(n) time to combine them. Naive Fibonacci spawns two smaller calls and takes O(1) time to add them. Why is merge sort O(n log n) but Fibonacci O(2^n)?",
+      "answer": "Merge sort's tree is balanced: every level does O(n) total work, and there are log(n) levels. Fibonacci's tree is leaf-heavy: the number of nodes explodes exponentially because each node spawns two children but the input size only decrements by 1 or 2, creating massive overlapping subproblems.",
+      "why": "A tree where the problem size is halved at each step stays shallow (log n depth) and balanced. A tree where the problem size is only decremented stays deep (n depth), causing exponential node explosion."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "When writing a program to parse nested structures like HTML or mathematical formulas, multiple recursive functions call each other (e.g., `parseExpression` calls `parseTerm`, which might call `parseExpression` again). What does the resulting recursion tree represent?",
+      "answer": "The recursion tree implicitly builds the hierarchical structure of the parsed text.",
+      "why": "This is a real-world engineering application known as mutual recursion. The shape of the call stack's recursion tree exactly mirrors the nested structure of the data being parsed."
+    }
+  ],
+  "aha_moment": {
+    "code": "def fib(n):\n    if n <= 1:\n        return n\n    return fib(n-1) + fib(n-2)",
+    "prediction": "Calculating `fib(5)` seems small, so it should only take a few steps.",
+    "common_guess": "It makes 5 recursive calls because n=5.",
+    "why": "`fib(5)` actually creates 15 total calls. `fib(3)` is computed 2 separate times, and `fib(2)` is computed 3 times. The total work is the sum of ALL nodes in the tree, not just the depth!"
+  },
+  "practice_tasks": [
+    {
+      "title": "Draw the tree and count nodes",
+      "prompt": "Sketch the recursion tree for the naive recursive function `fib(4)`, where `fib(n) = fib(n-1) + fib(n-2)`. How many times is `fib(2)` computed in total? What does this tell you about its time complexity?",
+      "starter_code": "def fib(n):\n    if n <= 1:\n        return n\n    return fib(n-1) + fib(n-2)",
+      "solution": "`fib(2)` is computed twice (once as the right child of `fib(4)`, and once as the left child of `fib(3)`). The overlapping subproblems cause the number of nodes to explode, illustrating an O(2^n) exponential time complexity."
+    }
+  ],
+  "sources": [
+    "https://www.geeksforgeeks.org/recursion-tree-method-to-solve-recurrences/"
+  ]
+}

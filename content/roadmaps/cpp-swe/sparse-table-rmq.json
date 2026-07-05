@@ -1,0 +1,83 @@
+{
+  "slug": "sparse-table-rmq",
+  "title": "Sparse table & RMQ",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 6,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "bit-manipulation-tricks-for-cp"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You are building an algorithm to find the Lowest Common Ancestor (LCA) of nodes in a massive, static DOM tree or organizational hierarchy with 10^6 nodes. You must answer 10^7 queries for the minimum element in a given range. A Segment Tree takes O(log N) per query, which will result in 200 million operations\u2014too slow.",
+    "question": "How can you achieve true O(1) instant responses for Range Minimum Queries?"
+  },
+  "mental_model": {
+    "intuition": "If you want to find the minimum across a 12-foot span, you don't need a 12-foot ruler. You can take two 8-foot rulers, lay them down so they overlap in the middle, and just ask: 'What is the minimum of the left ruler, and the minimum of the right ruler?' Because minimums can overlap without altering the answer, two overlapping segments can cover any arbitrary range.",
+    "description": "A Sparse Table is a static data structure used to answer Range Minimum Queries (RMQ) in true `O(1)` time after `O(N log N)` precomputation. It exploits the fact that idempotent operations (like `min` or `max`) allow overlapping ranges to be queried instantly using powers of 2."
+  },
+  "explanation": "**1. The Precomputation (O(N log N)):**\nWe create a 2D array `st[N][K]`, where `st[i][j]` stores the minimum of a subsegment starting at index `i` with length `2^j`.\nWe build this table dynamically: a segment of length `2^j` is just two segments of length `2^{j-1}` glued together.\n`st[i][j] = min(st[i][j-1], st[i + (1 << (j-1))][j-1])`.\nBecause `K` only goes up to `log N` (about 20 for 1,000,000), building the table takes `O(N log N)` time and memory.\n\n**2. The O(1) Query:**\nTo answer a query for the range `[L, R]`, we calculate the length of the range: `len = R - L + 1`.\nWe find the largest power of 2 that fits inside `len`. Let's call its exponent `j`. (We can find `j` instantly using `__builtin_clz` or `log2`).\nThe range `[L, R]` can be completely covered by two overlapping segments of length `2^j`: one starting at `L`, and one ending at `R`.\n\n**3. The Overlap Trick:**\nWe simply take the minimum of those two precomputed segments:\n`ans = min(st[L][j], st[R - (1 << j) + 1][j])`.\nBecause it's a `min` operation, the overlapping elements in the middle are evaluated twice, but `min(X, X) == X`, so it doesn't corrupt the answer. This returns the exact minimum in exactly one O(1) operation.",
+  "code_snippets": [
+    {
+      "title": "Sparse Table RMQ",
+      "language": "cpp",
+      "code": "const int K = 20; // log2(N)\nint st[1000000][K]; // st[i][j] covers length 2^j\n\nvoid build(int N, const vector<int>& a) {\n    for (int i = 0; i < N; i++) st[i][0] = a[i];\n    \n    for (int j = 1; j < K; j++) {\n        for (int i = 0; i + (1 << j) <= N; i++) {\n            st[i][j] = min(st[i][j - 1], st[i + (1 << (j - 1))][j - 1]);\n        }\n    }\n}\n\nint query(int L, int R) {\n    // Find the largest power of 2 that fits in the range\n    int len = R - L + 1;\n    // __builtin_clz counts leading zeros of a 32-bit int.\n    // 31 - clz yields the floor of log2(len)\n    int j = 31 - __builtin_clz(len);\n    \n    return min(st[L][j], st[R - (1 << j) + 1][j]);\n}",
+      "explanation": "Once `build()` is called, `query()` runs in absolute O(1) time. This is the fastest possible way to answer RMQs in C++."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Sparse Table for Sum Queries",
+      "explanation": "Sparse Tables only offer O(1) queries for *idempotent* operations\u2014operations where overlapping elements don't change the result (like `min`, `max`, or `gcd`). If you use the overlap trick for a Range Sum Query, the elements in the overlapped middle section will be added twice, ruining the sum."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time complexity to build a Sparse Table, and what is the time complexity to query it for RMQ?",
+      "answer": "Build takes `O(N log N)`. Queries take `O(1)`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does the Sparse Table O(1) overlap trick work for Minimum queries but not for Sum queries?",
+      "answer": "Minimum is an idempotent operation (`min(X, X) = X`), so evaluating the overlapping middle section twice does not affect the final answer. Sum is not idempotent; overlapping sections would be added twice, yielding an incorrect sum.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does `st[i][j]` represent in a Sparse Table?",
+      "answer": "It represents the precomputed result (e.g., minimum) of a subarray starting at index `i` and having a length of exactly `2^j`.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You deploy a Sparse Table to handle 10^7 Range Minimum Queries. An hour later, the product manager asks you to support a feature where the values in the array can be updated dynamically. What must you change?",
+      "answer": "You must completely scrap the Sparse Table and replace it with a Segment Tree. Sparse Tables are strictly static. Updating a single element in a Sparse Table requires recalculating up to `O(N)` states, destroying its performance.",
+      "approach": "Recognize the limitation of static precomputation tables versus dynamic tree structures."
+    },
+    {
+      "question": "A developer implements a Sparse Table for Range Minimum Query. They test it heavily on an array of length 15 and it works perfectly. In production on an array of length 200,000, it occasionally segfaults. What likely happened?",
+      "answer": "They likely hardcoded the column dimension `K` (the max power of 2) to a small number like 4 (since 2^4 = 16 > 15). For N = 200,000, `K` must be at least 18 (`log2(200000)`). Querying lengths longer than 16 caused out-of-bounds array accesses.",
+      "approach": "Understand how the logarithmic depth constant `K` scales with `N`."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Idempotent operations only",
+      "detail": "The O(1) query relies on overlapping ranges. It only works for Min, Max, and GCD."
+    },
+    {
+      "title": "Strictly Static",
+      "detail": "If the underlying array changes, you cannot use a Sparse Table."
+    }
+  ],
+  "why_it_exists": "While Segment Trees offer O(log N) queries, in algorithmic problem solving and low-latency systems, processing millions of RMQ queries with an O(log N) overhead can still cause timeouts. Unlike Segment Trees, which allow dynamic updates in O(log N) time, Sparse Tables are strictly static. They trade O(N log N) memory/precomputation time for the absolute theoretical limit of O(1) query time.",
+  "sources": [
+    "https://cp-algorithms.com/data_structures/sparse-table.html"
+  ]
+}

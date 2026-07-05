@@ -24,11 +24,11 @@
   "glossary": [
     {
       "term": "metadata",
-      "definition": "Information that describes other data, like a function's name or its documentation."
+      "definition": "Information that describes other data, like a function's name or its documentation. Example: `func.__name__`"
     },
     {
       "term": "reflection",
-      "definition": "The ability of a program to examine and modify its own structure and behavior while it is running."
+      "definition": "The ability of a program to examine and modify its own structure and behavior while it is running. Example: `inspect.signature(func)`"
     }
   ],
   "overview": {
@@ -58,7 +58,7 @@
     },
     {
       "q": "Why do frameworks like FastAPI or Flask require decorators to use `functools.wraps`?",
-      "answer": "They rely on the original function's metadata to properly register routes and generate documentation.",
+      "answer": "They rely on the original function's metadata, like its name and docstring, to properly register routes and generate documentation. Without it, all routes might appear to be named 'wrapper'.",
       "tier": "tier2"
     }
   ],

@@ -1,0 +1,81 @@
+{
+  "slug": "disjoint-set-union-dsu-with-path-compression",
+  "title": "Disjoint Set Union (DSU) with path compression",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have 100,000 computers. Every second, two computers are connected with a cable. You must constantly answer queries: 'Is computer A currently connected to computer B through any series of cables?'",
+    "question": "Running BFS/DFS on the graph for every query takes O(V+E) time, which will TLE instantly. How do you track dynamic connectivity in near O(1) time?"
+  },
+  "mental_model": {
+    "intuition": "Imagine a forest of trees. Every connected component is a tree, and the 'root' of the tree is the component's leader. To check if two computers are connected, just check if they have the same leader. When connecting two components, simply make the leader of one tree point to the leader of the other.",
+    "description": "Disjoint Set Union (DSU), also known as Union-Find, is a data structure that tracks a set of elements partitioned into a number of disjoint (non-overlapping) subsets. It supports two operations: `find` (determine which subset an element is in) and `union` (merge two subsets). With path compression, these operations run in inverse Ackermann time, which is practically `O(1)`."
+  },
+  "explanation": "**1. Initialization:**\nWe use an array `parent[]`. Initially, every node is disconnected, meaning every node is its own leader: `parent[i] = i`.\n\n**2. The Find Operation & Path Compression:**\nTo find the leader of node `i`, we follow the `parent` pointers until we hit a node that points to itself (`parent[root] == root`).\n*Path Compression:* While searching for the root, we recursively update every visited node to point *directly* to the root. This flattens the tree. The next time we call `find` on those nodes, it takes exactly O(1) time!\n\n**3. The Union Operation:**\nTo connect node `A` and node `B`, we find their leaders: `rootA = find(A)` and `rootB = find(B)`. If they are different, we merge them by pointing one root to the other: `parent[rootA] = rootB`.\n*Union by Size/Rank:* To keep the tree perfectly balanced before Path Compression kicks in, we should always attach the smaller tree to the root of the larger tree. This guarantees the tree depth never exceeds O(log N).\n\nWhen you combine Path Compression and Union by Rank, the time complexity becomes `O(\\alpha(N))`, where `\\alpha` is the inverse Ackermann function. For any conceivable number in the universe, `\\alpha(N) < 5`. It is practically O(1).\n\n**4. Tracking Metadata (Aggregates):**\nThe root of a component can store arbitrary metadata for the entire set (like maximum element, sum, or size). When calling `unite(A, B)`, you simply update the new root: `max_val[rootA] = max(max_val[rootA], max_val[rootB])`. This maintains O(1) queries for component-wide properties.",
+  "code_snippets": [
+    {
+      "title": "DSU (Union-Find) Implementation",
+      "language": "cpp",
+      "code": "vector<int> parent;\nvector<int> sz; // size of the component\n\nvoid init(int n) {\n    parent.resize(n);\n    sz.resize(n, 1);\n    for (int i = 0; i < n; i++) parent[i] = i;\n}\n\nint find(int i) {\n    // Path compression: recursively point to the ultimate root\n    if (parent[i] == i) return i;\n    return parent[i] = find(parent[i]); \n}\n\nvoid unite(int i, int j) {\n    int rootI = find(i);\n    int rootJ = find(j);\n    if (rootI != rootJ) {\n        // Union by size: attach smaller tree to larger tree\n        if (sz[rootI] < sz[rootJ]) swap(rootI, rootJ);\n        parent[rootJ] = rootI;\n        sz[rootI] += sz[rootJ];\n    }\n}",
+      "explanation": "This 20-line struct is the backbone of Kruskal's Minimum Spanning Tree algorithm and is a mandatory tool for any graph connectivity problem."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting Path Compression",
+      "explanation": "If you write `return find(parent[i]);` instead of `return parent[i] = find(parent[i]);`, the tree never flattens. In a worst-case scenario (like connecting 1-2, then 2-3, then 3-4...), the tree degrades into a linked list, and the `find` operation drops from O(1) to O(N), causing a Time Limit Exceeded error."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two heuristics/optimizations are required to achieve the O(alpha(N)) time complexity in a DSU?",
+      "answer": "Path Compression (flattening the tree during `find`) and Union by Rank/Size (attaching the smaller tree to the larger tree during `union`).",
+      "tier": "tier1"
+    },
+    {
+      "q": "In a DSU, how do you determine if two elements `A` and `B` belong to the same connected component?",
+      "answer": "You check if they have the same ultimate root by calling `find(A) == find(B)`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the purpose of 'Union by Size'?",
+      "answer": "It ensures that the smaller tree is attached to the root of the larger tree. This guarantees that the maximum depth of the tree never exceeds O(log N), preventing worst-case O(N) chains.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer is writing Kruskal's Algorithm to find a Minimum Spanning Tree. To check if adding an edge creates a cycle, they run a Depth First Search (DFS) on their graph. The algorithm fails the time constraints. What should they use instead?",
+      "answer": "They should use a Disjoint Set Union (DSU). For each edge `(u, v)`, if `find(u) == find(v)`, a cycle is detected in O(1) time. Using DFS takes O(V+E) time per edge, which is drastically slower.",
+      "approach": "Identify DSU as the optimal data structure for dynamic cycle detection."
+    },
+    {
+      "question": "A team tries to use a DSU to answer queries like: 'What is the maximum element in the connected component containing node X?'. Can DSU support this?",
+      "answer": "Yes. DSU can be easily augmented. Alongside the `parent` and `size` arrays, you maintain a `max_val` array. Whenever `unite(A, B)` is called, you simply update `max_val[rootA] = max(max_val[rootA], max_val[rootB])`. This maintains O(1) queries for component-wide maximums.",
+      "approach": "Recognize that DSU roots can store arbitrary aggregate metadata for the entire component."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "The ultimate cycle detector",
+      "detail": "If you `union` two nodes that already share the same root, you have just detected a cycle."
+    },
+    {
+      "title": "Almost O(1)",
+      "detail": "The time complexity is the inverse Ackermann function, which is effectively constant time."
+    }
+  ],
+  "why_it_exists": "DSU is a foundational data structure in graph theory. It provides an elegantly simple, lightning-fast mechanism to track connected components and detect cycles as edges are added to a graph. It is the primary engine behind Kruskal's Algorithm for Minimum Spanning Trees and is universally used in network connectivity problems. In real-world software engineering, DSU is essential for connected component labeling in image processing, network cluster identification, and compiling linker dependencies.",
+  "sources": [
+    "https://cp-algorithms.com/data_structures/disjoint_set_union.html"
+  ]
+}

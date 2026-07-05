@@ -27,15 +27,15 @@
   "glossary": [
     {
       "term": "syntactic sugar",
-      "definition": "Syntax in a programming language that makes things easier to read or to express, but doesn't add any new functionality."
+      "definition": "Syntax in a programming language that makes things easier to read or to express, but doesn't add any new functionality. For example, `@my_decorator` is syntactic sugar for `func = my_decorator(func)`. Example: `@timer`"
     },
     {
       "term": "cross-cutting concerns",
-      "definition": "Aspects of a program that affect many different parts of the system, like logging or security, rather than just one specific feature."
+      "definition": "Aspects of a program that affect many different parts of the system, like logging or security, rather than just one specific feature. Example: `@log_calls`"
     }
   ],
   "overview": {
-    "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure) that replaces the original function. It acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.",
+    "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure, which is a function that retains access to its enclosing scope) that replaces the original function. It acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.",
     "why": "Decorators allow you to cleanly extract reusable cross-cutting concerns—like logging, authentication, or timing—away from the core business logic of your functions.",
     "where_used": [
       "FastAPI route definitions (@app.get)",
@@ -50,27 +50,27 @@
   "common_mistakes": [
     {
       "title": "Forgetting to return the wrapper",
-      "explanation": "If your decorator forgets to `return wrapper` at the end, the decorated function becomes `None`."
+      "explanation": "Without this `return` statement, the decorator evaluates to `None`, silently breaking the function it wraps."
     },
     {
       "title": "Forgetting to return the original function's result",
-      "explanation": "If the inner wrapper forgets to return `func(*args, **kwargs)`, the decorated function will unexpectedly return `None`."
+      "explanation": "The inner wrapper must pass back the result of `func(*args, **kwargs)` so the caller receives the expected value."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the equivalent manual code for `@my_decorator\\ndef my_func(): pass`?",
-      "answer": "It is exactly equivalent to `my_func = my_decorator(my_func)`.",
+      "answer": "It is exactly equivalent to `my_func = my_decorator(my_func)`. The decorator function takes the original function as an argument and reassigns its name to the result.",
       "tier": "tier1"
     },
     {
       "q": "What kind of object does a decorator function typically return?",
-      "answer": "A decorator typically returns a new wrapper function (a closure) that replaces the original function.",
+      "answer": "It typically returns a new wrapper function (a closure). This wrapper replaces the original function and adds new behavior before or after calling it.",
       "tier": "tier1"
     },
     {
       "q": "Why use decorators instead of just writing the logic inside the function?",
-      "answer": "Decorators separate cross-cutting concerns (like logging or timing) from the core logic, keeping the code clean and reusable.",
+      "answer": "They separate cross-cutting concerns (like logging or timing) from the core logic. This keeps the core functions clean and allows you to reuse the same behavior across many functions.",
       "tier": "tier1"
     }
   ],

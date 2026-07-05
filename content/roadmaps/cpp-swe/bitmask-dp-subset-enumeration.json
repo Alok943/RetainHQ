@@ -1,0 +1,83 @@
+{
+  "slug": "bitmask-dp-subset-enumeration",
+  "title": "Bitmask DP & subset enumeration",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "bit-manipulation-tricks-for-cp"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have a classic Traveling Salesperson Problem (TSP) with N=18 cities. A naive permutations approach takes O(N!), which is 6.4 quadrillion operations and will definitely Time Limit Exceed (TLE).",
+    "question": "How can you compress 18 true/false states into a single integer to solve this in milliseconds?"
+  },
+  "mental_model": {
+    "intuition": "Think of an integer not as a number, but as an array of 32 boolean switches. If you have 10 items in a backpack, the number 5 (binary `00...00101`) means you took the 0th and 2nd items. This allows you to use simple integers as indices in a Dynamic Programming table.",
+    "description": "Bitmask DP uses an integer's binary representation to represent a subset of items or a state of boolean variables. This technique drops the time complexity of factorial algorithms (like TSP) from `O(N!)` to `O(N^2 * 2^N)`, making them viable for N up to ~20."
+  },
+  "explanation": "**1. The State Representation (The Bitmask):**\nIf we have `N` items, there are `2^N` possible subsets. Each subset maps directly to an integer from `0` to `2^N - 1`. \nFor example, if `N=3`, the integer 5 is `101` in binary. This perfectly represents a state where items 0 and 2 are 'included' (bits are set), and item 1 is 'excluded'.\n*Reminder: Set a bit using `mask | (1 << v)` and check a bit using `mask & (1 << v)`.*\n\n**2. Using Bitmasks as DP Indices:**\nIn classical DP, if you need to track which cities you've visited, you might try to pass an array or `vector<bool>` as state. However, arrays cannot be used as array indices for memoization! By using a bitmask, the state 'visited cities {0, 2, 4}' becomes the integer 21 (`10101`). You can now memoize the answer in `dp[21]`.\n\n**3. The DP Transition:**\nTo build the DP solution, you transition from one state to the next by iterating through all items. If the item `v` is unvisited `(mask & (1 << v)) == 0`, you transition to the new state by setting the bit: `new_mask = mask | (1 << v)` and calculating the cost: `dist[u][v] + solve(v, new_mask)`.\n\n**4. Subset Enumeration (Iterating over Submasks):**\nSometimes you need to iterate over every subset of a specific bitmask. A naive loop checks all numbers up to the mask, which is slow. Iterating through submasks directly takes `O(2^K)` per mask, where `K` is the number of set bits. When running this across all `2^N` possible masks, the total global complexity becomes exactly `O(3^N)`:\n`for (int s = mask; ; s = (s - 1) & mask) { /* use s */; if (s == 0) break; }`\nThis cleverly subtracts 1 (flipping the lowest bits) and then `& mask` forces the result to strictly remain a subset of the original mask.",
+  "code_snippets": [
+    {
+      "title": "Bitmask DP (Traveling Salesperson)",
+      "language": "cpp",
+      "code": "int n;\nint dist[20][20];\nint memo[20][1 << 20]; // memo[current_city][visited_mask]\n\nint tsp(int u, int mask) {\n    // Base case: all n cities visited (mask is all 1s)\n    if (mask == (1 << n) - 1) return dist[u][0];\n    \n    if (memo[u][mask] != -1) return memo[u][mask];\n    \n    int ans = 1e9;\n    for (int v = 0; v < n; v++) {\n        // If city v is NOT visited (v-th bit is 0)\n        if ((mask & (1 << v)) == 0) {\n            // Recurse: move to v, turn on v-th bit in mask\n            int new_mask = mask | (1 << v);\n            ans = min(ans, dist[u][v] + tsp(v, new_mask));\n        }\n    }\n    return memo[u][mask] = ans;\n}",
+      "explanation": "This reduces TSP from O(N!) down to O(N^2 * 2^N). For N=18, this runs in roughly 85 million operations, well under a 1-second time limit."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Bitmask DP for N > 25",
+      "explanation": "Bitmask DP is powerful, but exponential. `2^25` is ~33 million. `2^30` is over 1 billion. If N is 30, a bitmask DP approach will cause a Memory Limit Exceeded (you cannot allocate `memo[1<<30]`) and a Time Limit Exceeded. Bitmask DP is strictly for very small N."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the maximum practical value of N for which an `O(2^N)` Bitmask DP algorithm can run within a standard 1-second time limit?",
+      "answer": "Typically around N = 20 to 22. Anything larger (like N=30) will exceed both the time limit (1 billion operations) and memory limits.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In a bitmask, what does the expression `mask | (1 << v)` accomplish?",
+      "answer": "It sets the `v`-th bit of the mask to 1, effectively marking the `v`-th item as 'visited' or 'included'.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you iterate through all submasks (subsets) of a given `mask` efficiently?",
+      "answer": "By using the loop `for (int s = mask; s > 0; s = (s - 1) & mask)`. This avoids iterating through numbers that aren't subsets.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes a DP function `solve(int items[], vector<bool> visited)` to solve a knapsack variant. They try to use a `map<vector<bool>, int>` for memoization, but it is extremely slow. Why is this bad, and how does a bitmask fix it?",
+      "answer": "Using a `vector<bool>` as a map key involves hashing the entire vector or performing linear element-wise comparisons on every DP lookup, which adds a massive O(N) overhead. A bitmask compresses the boolean state into a single integer, allowing for O(1) array indexing (`memo[integer]`).",
+      "approach": "Understand the memory and lookup overhead of complex data structures in tight DP states."
+    },
+    {
+      "question": "In a TSP solver, a junior engineer checks if a city is visited using `if (mask ^ (1 << v))`. This introduces a severe bug. Why?",
+      "answer": "The XOR operator `^` flips the bit. If the bit was 1, it becomes 0. If it was 0, it becomes 1. It does not *check* the bit. To check if a bit is visited, they must use the AND operator: `if (mask & (1 << v))`.",
+      "approach": "Distinguish between bitwise toggling (XOR) and bitwise masking/checking (AND)."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Integers are boolean arrays",
+      "detail": "Use bits as true/false flags to compress state into a single dimension for O(1) DP lookups."
+    },
+    {
+      "title": "Strictly for N <= 22",
+      "detail": "Bitmask DP is an exponential O(2^N) algorithm. Know the mathematical limits of the time complexity."
+    }
+  ],
+  "why_it_exists": "In graph theory and combinatorics, many problems (like TSP, Hamiltonian paths, and perfect matchings) are NP-hard and inherently require exploring permutations. Bitmask DP exists to change the complexity class entirely from factorial `O(N!)` to exponential `O(N^2 * 2^N)`, turning 'impossible' problems into solvable ones for small datasets.",
+  "sources": [
+    "https://cp-algorithms.com/dynamic_programming/profile-dynamics.html"
+  ]
+}

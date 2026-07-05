@@ -24,11 +24,11 @@
   "glossary": [
     {
       "term": "side effect",
-      "definition": "When a function or expression changes something outside of its own scope, like modifying a global variable or printing to the screen."
+      "definition": "When a function or expression changes something outside of its own scope, like modifying a global variable or printing to the screen. For example, `print('done')` inside a branch is a side effect, not a returned value."
     },
     {
       "term": "conditional expression",
-      "definition": "Another name for a ternary expression; a piece of code that evaluates a condition and returns one of two possible values."
+      "definition": "Another name for a ternary expression; a piece of code that evaluates a condition and returns one of two possible values. Example: `label = 'on' if enabled else 'off'`."
     }
   ],
   "overview": {
@@ -106,7 +106,7 @@
     {
       "type": "explain-behavior",
       "question": "Why shouldn't you nest ternary expressions like `a if x else b if y else c`?",
-      "answer": "Because it makes the code difficult to read.",
+      "answer": "Because it makes the code very difficult to read and understand. Use a full `if/elif/else` block whenever you have more than two possible outcomes.",
       "why": "Ternary expressions compress simple two-branch decisions into one line. For anything more complex or with multiple outcomes, a full if/elif/else block is much clearer."
     }
   ]

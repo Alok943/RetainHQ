@@ -1,0 +1,154 @@
+{
+  "slug": "floyd-s-cycle-detection",
+  "title": "Floyd's cycle detection",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "traversal-and-reversal"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You are traversing a linked list but your loop never terminates.",
+    "question": "How can you detect if the list loops back on itself without using extra memory to remember every node you've visited?"
+  },
+  "why_it_exists": {
+    "problem": "Topological loops in a singly linked list trap naive traversal algorithms in infinite loops. Detecting them requires knowing if you've visited a node before.",
+    "naive_solution": "Store the memory address of every traversed node in a Hash Set. If you encounter an address already in the set, a cycle exists. This uses O(n) auxiliary space.",
+    "better_idea": "Use two pointers moving at different speeds (fast and slow). If there is a cycle, the faster pointer will eventually lap the slower pointer, colliding with it in O(1) auxiliary space."
+  },
+  "mental_model": {
+    "intuition": "Two runners on a track. The faster runner will lap the slower runner and they will eventually meet.",
+    "description": "Send a 'slow' pointer advancing one node per step, and a 'fast' pointer advancing two nodes per step. If the list is linear, the fast pointer reaches the end. If it has a loop, both pointers get trapped. Because the fast pointer travels exactly twice as fast, it closes the gap to the slow pointer by exactly one node per step. This monotonic reduction guarantees they will collide without skipping over each other. To find the exact start of the cycle, leave one pointer at the collision point, move the other to the head, and advance both at speed 1. Where they meet is the start of the loop.",
+    "repeated_decision": "Advance the slow pointer by 1 node and the fast pointer by 2 nodes, then check if they meet or reach null."
+  },
+  "explanation": "Floyd's Cycle Detection algorithm utilizes the fast/slow pointer pattern (the same structural technique used to find the middle of a list) and operates in two distinct phases: detection and origin isolation.\n\nPhase 1 (Detection) relies on relative velocity. A slow pointer advances by one node per step, and a fast pointer advances by two. Because the fast pointer moves two steps, you must verify both `fast` and `fast.next` are not null before advancing to prevent null dereferences. If the list is linear, the fast pointer safely reaches this null boundary. However, if a cycle exists, both pointers will enter the loop. Once both are inside the cycle, the fast pointer effectively chases the slow pointer. Because the speed differential is exactly one node per tick, the distance between them decreases by one at each step. This mathematically guarantees they will collide, confirming the existence of a cycle in O(1) space.\n\nPhase 2 (Origin Isolation) pinpoints the exact node where the cycle begins. The collision node found in Phase 1 is generally not the start of the loop; it's an arbitrary offset. However, there is a fascinating physical reality: because the fast pointer traveled twice as fast, the extra distance it covered equals a multiple of the cycle length. This perfectly offsets the distance from the head of the list to the start of the cycle. Therefore, the distance from the head to the cycle start is exactly equal to the distance from the collision point to the cycle start. To find the origin, we park one pointer at the collision node and reset the other to the head of the list. We then advance both pointers at the same speed (one node per tick). They are mathematically guaranteed to collide at the exact topological entrance of the cycle.",
+  "key_points": [
+    {
+      "title": "Guaranteed Collision",
+      "detail": "The fast pointer closes the distance by exactly 1 node per step. It cannot 'skip' over the slow pointer; a collision is inevitable if a cycle exists."
+    },
+    {
+      "title": "Finding the Cycle Start",
+      "detail": "The distance from the list head to the cycle start equals the distance from the collision point to the cycle start. Resetting one pointer to the head and moving both at speed 1 finds the origin."
+    },
+    {
+      "title": "Constant Space",
+      "detail": "The algorithm uses strictly O(1) auxiliary space, making it vastly superior to O(n) Hash Set tracking for memory-constrained environments."
+    }
+  ],
+  "pattern": {
+    "name": "Fast and Slow Pointers",
+    "recognition_cues": [
+      "Detecting a loop or cycle in a sequential structure.",
+      "O(1) space constraint when tracking visited nodes.",
+      "Finding an entry point to a repeated sequence."
+    ]
+  },
+  "failure_signals": [
+    "Using a Hash Set to track visited nodes when O(1) space is required.",
+    "Stopping only at cycle detection when the problem requires the cycle's starting node."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Pseudorandom Number Generators (PRNG)",
+      "problem": "Evaluating the quality and periodicity of a PRNG sequence to ensure it doesn't repeat too quickly.",
+      "why_this_algorithm": "Since the sequence is deterministic and single-path (out-degree 1), Floyd's cycle detection can find the cycle length using O(1) memory."
+    },
+    {
+      "title": "Pollard's rho algorithm",
+      "problem": "Integer factorization in cryptography requires finding a cycle in a sequence of pseudorandom values.",
+      "why_this_algorithm": "Pollard's rho uses Floyd's fast/slow pointer method to detect cycles in the sequence without storing previously generated values."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Immediate cycle detection is required",
+      "reason": "Floyd's algorithm requires the fast pointer to traverse the cycle before colliding. If you need to stop the exact moment a duplicate node is seen, a Hash Set detects it immediately upon the first revisit."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Stopping at detection",
+      "explanation": "Many beginners successfully detect the cycle but fail to realize the classic follow-up is finding the cycle START. You must know how to reset one pointer to the head and advance both by 1 to find the entry point."
+    },
+    {
+      "title": "Missing boundary checks",
+      "explanation": "Because the fast pointer advances by two, you must check both 'fast' and 'fast.next' for null before advancing, otherwise you will trigger a null pointer dereference."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does the fast pointer not skip over the slow pointer in Floyd's algorithm?",
+      "answer": "Because the relative speed differential is exactly one node per tick, the distance between them decreases by exactly one with each step. They will collide without skipping.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you find the exact start of the cycle after detecting it?",
+      "answer": "Keep one pointer at the collision node, reset the other pointer to the head, and advance both at a speed of 1 node per step. They will meet at the cycle's start.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the space complexity of Floyd's Cycle Detection algorithm?",
+      "answer": "It operates in O(1) auxiliary space, as it only uses two tracking pointers.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What condition must you check in the while loop to prevent a null pointer dereference?",
+      "answer": "You must verify that both the fast pointer and its successor (fast.next) are not null before advancing.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given a linked list, return the node where the cycle begins. If there is no cycle, return null.",
+      "company": "SDE interview",
+      "answer": "Use Floyd's Cycle Detection. First, advance slow by 1 and fast by 2 to find a collision. If they collide, leave slow at the collision, move fast to the head, and advance both by 1 to find the cycle start.",
+      "approach": "Apply both Phase 1 (detection) and Phase 2 (origin isolation) of Floyd's algorithm."
+    },
+    {
+      "question": "Determine if a linked list has a cycle in O(1) memory.",
+      "company": "SDE interview",
+      "answer": "Initialize slow and fast pointers at the head. While fast and fast.next are valid, advance slow by 1 and fast by 2. If slow equals fast, a cycle exists. If fast reaches null, it is linear.",
+      "approach": "This is the classic Phase 1 detection of Floyd's algorithm."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Linked List Cycle",
+      "url": "https://leetcode.com/problems/linked-list-cycle/",
+      "difficulty": "easy",
+      "why": "Tests the core Phase 1 cycle detection mechanic."
+    },
+    {
+      "title": "Linked List Cycle II",
+      "url": "https://leetcode.com/problems/linked-list-cycle-ii/",
+      "difficulty": "medium",
+      "why": "Requires both detecting the cycle and mathematically isolating the origin (Phase 2)."
+    },
+    {
+      "title": "Find the Duplicate Number",
+      "url": "https://leetcode.com/problems/find-the-duplicate-number/",
+      "difficulty": "medium",
+      "why": "Applies Floyd's algorithm on an array index mapping, proving understanding of the invariant beyond standard linked lists."
+    }
+  ],
+  "related": [
+    "find-the-middle",
+    "traversal-and-reversal"
+  ],
+  "interesting_facts": [
+    "Floyd's algorithm mathematically maps to the 'tortoise and the hare' fable, which is why the two pointers are universally named after these animals.",
+    "The algorithm was named after Robert W. Floyd, who was credited with its invention by Donald Knuth, though Floyd's original paper never explicitly described it."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cycle_detection",
+    "https://abstractalgorithms.dev/fast-and-slow-pointer"
+  ]
+}

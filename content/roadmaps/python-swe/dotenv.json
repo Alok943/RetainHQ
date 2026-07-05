@@ -22,11 +22,11 @@
   "glossary": [
     {
       "term": "version control",
-      "definition": "A system that records changes to a file or set of files over time so that you can recall specific versions later, like Git."
+      "definition": "A system that records changes to a file or set of files over time so that you can recall specific versions later, like Git. Example: `git commit`"
     },
     {
       "term": "hardcoding",
-      "definition": "Directly embedding data, like passwords or settings, right into the source code of a program instead of obtaining it from an external source."
+      "definition": "Directly embedding data, like passwords or settings, right into the source code of a program instead of obtaining it from an external source. Example: `API_KEY = 'secret123'`"
     }
   ],
   "overview": {
@@ -46,22 +46,22 @@
   "common_mistakes": [
     {
       "title": "Committing .env to version control",
-      "explanation": "Beginners often forget to add `.env` to `.gitignore`, leaking sensitive API keys to GitHub. Always ignore `.env` and commit a `.env.example` template instead."
+      "explanation": "This accidentally leaks sensitive API keys to GitHub. Always add this file to your `.gitignore` and share a `.env.example` template instead."
     },
     {
       "title": "Assuming types are preserved",
-      "explanation": "Everything loaded from a `.env` file is a string. If your `.env` has `DEBUG=True`, `os.environ.get('DEBUG')` returns the string `'True'`, not a boolean."
+      "explanation": "All loaded variables are strings. For example, `DEBUG=True` will return the string `'True'`, not a boolean value, requiring you to parse it manually."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the primary purpose of the `python-dotenv` library?",
-      "answer": "It reads key-value pairs from a `.env` file and adds them to the application's environment variables (`os.environ`).",
+      "answer": "It reads key-value pairs from a `.env` file and adds them to `os.environ`. This simulates system environment variables during local development.",
       "tier": "tier1"
     },
     {
       "q": "Why is it important to use a `.env` file instead of putting secrets in your Python code?",
-      "answer": "To prevent hardcoding sensitive information like API keys and database passwords in the codebase, which could otherwise be leaked into version control.",
+      "answer": "It prevents hardcoding sensitive information like API keys in the codebase. This keeps secrets secure and out of version control.",
       "tier": "tier1"
     }
   ],

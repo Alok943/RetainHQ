@@ -27,11 +27,11 @@
   "glossary": [
     {
       "term": "proxy object",
-      "definition": "A special object that stands in for another object, forwarding or delegating commands to it."
+      "definition": "A special object that stands in for another object, forwarding or delegating commands to it. Example: `super()` returns a proxy object so that `super().__init__()` calls the parent class's `__init__` without naming the parent directly."
     },
     {
       "term": "base classes",
-      "definition": "The original or parent classes that other classes are built upon and inherit features from."
+      "definition": "The original or parent classes that other classes are built upon and inherit features from. Example: in `class Dog(Animal):`, `Animal` is the base class."
     }
   ],
   "overview": {
@@ -51,7 +51,7 @@
   "common_mistakes": [
     {
       "title": "Forgetting to call super() in __init__",
-      "explanation": "If a child class overrides `__init__` but forgets `super().__init__()`, the parent's attributes are never initialized, leading to `AttributeError` when those attributes are accessed."
+      "explanation": "The parent's attributes are never initialized, leading to an `AttributeError` when those attributes are accessed."
     },
     {
       "title": "Redefining parent behavior instead of extending it",
@@ -71,7 +71,7 @@
     },
     {
       "q": "What kind of relationship does inheritance establish between a parent and child class?",
-      "answer": "An 'is-a' relationship.",
+      "answer": "An 'is-a' relationship — meaning the child class is a more specific type of the parent. For example, a `Dog` class inheriting from `Animal` means every `Dog` is an `Animal`.",
       "tier": "tier1"
     }
   ],

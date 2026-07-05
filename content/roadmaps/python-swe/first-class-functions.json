@@ -24,16 +24,16 @@
   "glossary": [
     {
       "term": "closure",
-      "definition": "A function that remembers and has access to variables from the environment where it was created, even after that environment is gone."
+      "definition": "A function that remembers and has access to variables from the environment where it was created, even after that environment is gone. Example: `def inner(): return val`"
     },
     {
       "term": "subclassing",
-      "definition": "The process of creating a new class based on an existing class to inherit or modify its behavior."
+      "definition": "The process of creating a new class based on an existing class to inherit or modify its behavior. Example: `class Child(Parent):`"
     }
   ],
   "overview": {
     "what": "In Python, functions are objects — they can be assigned to variables, stored in collections, passed as arguments, and returned from other functions. This is called first-class function support.\n\nAssigning and passing:\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions (function factory pattern):\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function add_prefix remembers prefix from the outer scope even after make_prefixer has returned — this is a closure.",
-    "why": "Higher-order functions (functions that take or return functions) are the foundation of decorators, middleware pipelines, retry wrappers, and dependency injection. Without first-class functions, each of these patterns would require explicit subclassing instead of composable functions.",
+    "why": "Higher-order functions (functions that take or return functions) are the foundation of decorators, middleware pipelines, retry wrappers, and dependency injection (passing objects as arguments instead of creating them internally). Without first-class functions, each of these patterns would require explicit subclassing instead of composable functions.",
     "where_used": [
       "FastAPI middleware and dependency injection (Depends receives a function)",
       "Retry decorator wrapping route handlers",

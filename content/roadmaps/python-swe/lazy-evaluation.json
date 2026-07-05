@@ -94,7 +94,7 @@
     {
       "type": "explain-behavior",
       "question": "Why would you choose a generator expression over a list comprehension when reading a massive log file line-by-line?",
-      "answer": "To prevent memory exhaustion (Out Of Memory errors).",
+      "answer": "A generator expression yields one line at a time on demand, so it uses almost no memory no matter how large the file is. A list comprehension loads every line into memory at once, which can crash the program if the file is larger than available RAM.",
       "why": "A list comprehension materializes all items in memory at once, which could crash your program if the file is larger than available RAM. A generator expression evaluates lazily, yielding one line at a time and maintaining a low memory footprint regardless of the file size."
     },
     {

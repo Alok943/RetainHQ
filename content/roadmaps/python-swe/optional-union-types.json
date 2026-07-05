@@ -24,11 +24,11 @@
   "glossary": [
     {
       "term": "type hinting",
-      "definition": "Adding labels to your code to indicate what kind of data (like an integer or string) a variable should hold, helping catch errors early."
+      "definition": "Adding labels to your code to indicate what kind of data a variable should hold, helping catch errors early. Example: `name: str`."
     },
     {
       "term": "Static type checkers",
-      "definition": "Tools that analyze your code without running it to find potential errors related to data types."
+      "definition": "Tools that analyze your code without running it to find potential errors related to data types. Example: `mypy myfile.py`."
     }
   ],
   "overview": {
@@ -72,7 +72,7 @@
       "type": "predict-output",
       "code": "def get_length(text: str | None) -> int:\n  if text is None:\n    return 0\n  return len(text)\n\nprint(get_length(None))",
       "question": "What does this code print?",
-      "answer": "It prints 0.",
+      "answer": "It prints 0. The function guards against `None` by returning 0 early, so `len(None)` is never called and no error occurs.",
       "why": "The function correctly handles the case where `text` is `None`, returning 0 instead of crashing when attempting to call `len(None)`."
     },
     {

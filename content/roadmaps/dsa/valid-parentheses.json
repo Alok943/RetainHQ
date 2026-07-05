@@ -1,0 +1,150 @@
+{
+  "slug": "valid-parentheses",
+  "title": "Valid parentheses",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "stack-fundamentals"
+    ],
+    "unlocks": []
+  },
+  "viz": {
+    "generator": "valid-parentheses",
+    "default_input": ["{", "[", "(", ")", "]", "}"],
+    "input_mode": "string",
+    "invariants": {
+      "inv-match": "The stack holds exactly the currently-unmatched openers, in order; a closer must match the top.",
+      "inv-valid": "The string is valid only if every closer matched AND the stack is empty at the end."
+    },
+    "steps": [
+      { "id": "read", "label": "read next character" },
+      { "id": "push", "label": "opener -> push" },
+      { "id": "pop", "label": "closer matches top -> pop" },
+      { "id": "mismatch", "label": "closer != top -> invalid" },
+      { "id": "done", "label": "stack empty ? valid : invalid" }
+    ],
+    "predictions": [
+      { "at_step": "read", "occurrence": 4, "level": "medium", "prompt": "Reading this character -- will the stack PUSH it, POP a match, or flag a MISMATCH?", "derive": "next_step_id" }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Parsing nested scopes (like brackets, HTML tags, or code blocks) requires verifying they are perfectly balanced. A naive counter approach fails because `([)]` yields equal counts but violates hierarchical nesting.",
+    "better_idea": "Use a stack as an active memory of unresolved scopes. Push opening brackets. When a closing bracket arrives, verify it matches the most recently opened scope by popping the stack.",
+    "naive_solution": "Counting the number of open and closed brackets. This fails for '([)]' because it ignores the correct nesting order."
+  },
+  "mental_model": {
+    "intuition": "Unresolved open brackets pile up. A closing bracket must perfectly match the one on the top of the pile.",
+    "description": "The parser scans left to right. Opening brackets are pushed. Closing brackets never enter the stack; instead, they act as triggers to pop the top of the stack and check for a match. The invariant is that the stack strictly contains unmatched open brackets in chronological order. A valid string leaves the stack empty.",
+    "repeated_decision": "Is this a closing bracket that matches the most recent unmatched opener on top of the stack?"
+  },
+  "engineering_examples": [
+    {
+      "title": "Compilers and Interpreters",
+      "problem": "Generating Abstract Syntax Trees (ASTs)",
+      "why_this_algorithm": "Pushdown Automata (PDA) couple a finite state machine with a stack to parse context-free grammars like nested brackets."
+    },
+    {
+      "title": "JSON / HTML Validation",
+      "problem": "Validating structural token nesting",
+      "why_this_algorithm": "The stack verifies that deeply nested objects or tags close in the exact reverse order they opened."
+    }
+  ],
+  "failure_signals": [
+    "Just counting the number of brackets (fails on ordering)"
+  ],
+  "pattern": {
+    "name": "Stack-based Parsing",
+    "recognition_cues": [
+      "Nested structures",
+      "Matching pairs",
+      "Context-free grammar parsing"
+    ]
+  },
+  "common_mistakes": [
+    {
+      "title": "Forgetting to check if stack is empty before popping",
+      "explanation": "If a closing bracket arrives when the stack is empty, it means a scope is being closed before it was ever opened. This should immediately return false."
+    },
+    {
+      "title": "Forgetting the final emptiness check",
+      "explanation": "After processing all characters, the stack must be empty. If elements remain, it means there are unclosed scopes."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why doesn't a simple counter work for validating parentheses?",
+      "answer": "A counter only verifies quantities, not the strict hierarchical nesting order (e.g., `([)]` would pass a counter).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does the stack represent at any given point in the algorithm?",
+      "answer": "The stack acts as an active memory containing all currently unmatched opening brackets in the exact chronological order of their discovery.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What are the two failure conditions during parsing?",
+      "answer": "1. A closing bracket arrives but the stack is empty (or the popped opener doesn't match). 2. The string ends but the stack is not empty (unclosed scopes remain).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Determine if a string of brackets is valid.",
+      "answer": "Scan left to right. Push openers. On closer, pop stack and check if they form a valid pair. Finally, return `stack.isEmpty()`.",
+      "approach": "Standard stack matching invariant.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Find the length of the longest valid parentheses substring.",
+      "answer": "Use a stack to store indices instead of characters, initializing with -1 to serve as a base. When a valid pair is formed, compute length using the current index minus the new top of stack.",
+      "approach": "Store indices in the stack to calculate distances between matching boundaries.",
+      "company": "SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Valid Parentheses",
+      "url": "https://leetcode.com/problems/valid-parentheses/",
+      "difficulty": "easy",
+      "why": "The prototypical application of stack-based parsing."
+    },
+    {
+      "title": "Longest Valid Parentheses",
+      "url": "https://leetcode.com/problems/longest-valid-parentheses/",
+      "difficulty": "hard",
+      "why": "Extends the pattern to use stack indices for distance calculation."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Context-free_grammar",
+    "https://www.geeksforgeeks.org/check-for-balanced-parentheses-in-an-expression/"
+  ],
+  "explanation": "Validating perfectly nested scopes is a fundamental problem in theoretical computer science, separating finite state machines (which can only parse regular expressions) from pushdown automata (which have stack memory and can parse context-free grammars).\n\nThe stack is the perfect tool because it elegantly handles nesting. By storing only the unmatched opening characters, the stack naturally exposes the *most recently opened* scope at its top boundary. Thus, when a closing bracket arrives, determining if it is legally positioned is an instant O(1) peek.\n\nIn compiler theory, checking nested brackets requires a memory of what was opened. A left-to-right scan can't count nesting depth; a stack gives it the memory to keep track of this state. This is exactly how a pushdown automaton (a machine with a stack) parses context-free grammars.\n\nFor advanced problems like finding the 'Longest Valid Parentheses', we use an index-stack with a sentinel value. We seed the stack with -1 to represent the boundary before the string starts. We push indices of unmatched `(`, and on a match, we compute the length as `i - stack.top()`. This technique seamlessly handles contiguous valid sequences.",
+  "hook": {
+    "scenario": "Imagine typing a math formula with multiple nested brackets. You need to ensure every opened bracket is properly closed.",
+    "question": "How can a program verify this without getting confused by the nesting?"
+  },
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "Every closing bracket must match the most recently opened unmatched bracket at the top of the stack."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(n) time to scan the string, O(n) space for the stack."
+    },
+    {
+      "title": "Gotcha",
+      "detail": "Don't forget to check if the stack is empty at the end; leftover open brackets mean it's invalid."
+    }
+  ],
+  "related": [
+    "stack-fundamentals"
+  ]
+}

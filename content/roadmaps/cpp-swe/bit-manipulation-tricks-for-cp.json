@@ -1,0 +1,83 @@
+{
+  "slug": "bit-manipulation-tricks-for-cp",
+  "title": "Bit manipulation tricks for CP",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "bitmask-dp-subset-enumeration"
+    ]
+  },
+  "hook": {
+    "scenario": "You need to check if a number is a power of 2. You write a while loop that continuously divides the number by 2. It's O(log N). A senior engineer replaces it with a single, incomprehensible line of symbols that runs in O(1).",
+    "question": "How can manipulating raw binary bits replace loops and division?"
+  },
+  "mental_model": {
+    "intuition": "Numbers in a CPU are just arrays of light switches (bits). Arithmetic operations (addition, division) are complex mechanical processes that flip many switches. Bitwise operators are direct electrical wiring: they force individual switches on or off instantly.",
+    "description": "Bit manipulation involves using bitwise operators (`&`, `|`, `^`, `~`, `<<`, `>>`) to evaluate logic at the bare-metal level. In CP and technical interviews, these tricks are used to achieve O(1) performance for tasks that would normally require loops or modulo arithmetic."
+  },
+  "explanation": "**The Core Operators:**\n- **AND (`&`)**: 1 if both bits are 1.\n- **OR (`|`)**: 1 if either bit is 1.\n- **XOR (`^`)**: 1 if bits are DIFFERENT. XOR is commutative and associative. (Crucial properties: `x ^ x = 0` (cancels itself) and `x ^ 0 = x`).\n- **NOT (`~`)**: Inverts all bits (0 becomes 1, 1 becomes 0).\n- **Shifts (`<<`, `>>`)**: `1 << n` shifts a 1 to the left by `n` positions. This is equivalent to `2^n`. `x >> 1` is integer division by 2.\n\n**Common CP Tricks:**\n1. **Check if Even/Odd:** `(x & 1)` is 1 if odd, 0 if even. Much faster than `x % 2 != 0`.\n2. **Multiply/Divide by 2:** `x << 1` multiplies by 2. `x >> 1` divides by 2 (specifically for positive integers, as negative right-shifts round to negative infinity).\n3. **Set the i-th bit to 1:** `x = x | (1 << i)`\n4. **Check if i-th bit is 1:** `if (x & (1 << i))`\n5. **Check if Power of 2:** `x > 0 && (x & (x - 1)) == 0`. (If x is 8 `1000`, x-1 is 7 `0111`. ANDing them yields 0). We must check `x > 0` because `0 & -1` is also 0.\n6. **Strip the lowest set bit:** `x = x & (x - 1)` (Crucial for counting set bits).\n\n**GCC Built-in Functions:**\nC++ compilers offer blazing-fast hardware-level intrinsics. \n- `__builtin_popcount(x)`: Returns the number of 1-bits in `x` (Hamming weight).\n- `__builtin_clz(x)`: Counts leading zeros.\n- `__builtin_ctz(x)`: Counts trailing zeros.",
+  "code_snippets": [
+    {
+      "title": "Bitwise Operations",
+      "language": "cpp",
+      "code": "#include <iostream>\n\nint main() {\n    int x = 44; // Binary: 101100\n    \n    // Check if odd\n    bool is_odd = (x & 1);\n    \n    // Toggle the 2nd bit (0-indexed)\n    // (1 << 2) is 000100. XOR toggles it.\n    x = x ^ (1 << 2); // Now 101000 (40)\n    \n    // Check if power of 2 (false for 40)\n    bool is_pow_2 = (x > 0) && ((x & (x - 1)) == 0);\n    \n    // Count set bits (returns 2 for 101000)\n    int set_bits = __builtin_popcount(x);\n    \n    return 0;\n}",
+      "explanation": "These operations compile down to single CPU instructions, making them the fastest operations possible in C++."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Shifting past 32 bits on a standard integer",
+      "explanation": "If you write `1 << 40`, you might expect a large number. But standard `1` is a 32-bit signed integer. Shifting it 40 times is Undefined Behavior and yields garbage. For large masks, you must use a 64-bit literal: `1LL << 40`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the expression `x & (x - 1)` do to the binary representation of `x`?",
+      "answer": "It strips (sets to 0) the lowest set bit (the right-most 1) of `x`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the O(1) bitwise expression to check if a positive integer `x` is a power of 2?",
+      "answer": "`x & (x - 1) == 0`. A power of 2 has exactly one 1-bit. Stripping it yields 0.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does `__builtin_popcount(x)` do?",
+      "answer": "It counts the number of set bits (1s) in the binary representation of `x`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You have an array where every number appears exactly twice, except for one number which appears exactly once. How can you find the unique number in O(N) time and O(1) space?",
+      "answer": "XOR all the numbers together. Because `x ^ x = 0`, all pairs will cancel each other out to 0. The remaining value will be the single unique number, since `0 ^ y = y`.",
+      "approach": "Identify the cancelling property of the XOR operator."
+    },
+    {
+      "question": "A developer tries to check if a specific bit `i` is set in a 64-bit integer using `(x & (1 << i))`. For `i = 45`, it incorrectly returns 0 even though the bit is 1. Why?",
+      "answer": "Because the literal `1` is a 32-bit integer. Shifting it 45 times results in undefined behavior (usually wrapping around or resolving to 0). You must use `1LL << i` to ensure the mask is 64-bit.",
+      "approach": "Recognize default literal types and shifting limits."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Use 1LL for large shifts",
+      "detail": "Always use `1LL << i` if `i` can be greater than 31."
+    },
+    {
+      "title": "XOR cancels itself",
+      "detail": "`A ^ A = 0` is one of the most useful properties in interview questions."
+    }
+  ],
+  "why_it_exists": "Bitwise operations map directly to the CPU's ALU (Arithmetic Logic Unit). An integer modulo or division operation might take 10-20 CPU cycles, while a bitwise AND or Shift takes 1 cycle. In systems programming, cryptography, and competitive programming, this 10x hardware acceleration is heavily exploited to optimize bottlenecks.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Bit_manipulation"
+  ]
+}

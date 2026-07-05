@@ -1,0 +1,81 @@
+{
+  "slug": "cp-template-fast-io-macros-type-aliases",
+  "title": "CP template \u2014 fast I/O, macros & type aliases",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You start a competitive programming contest. You spend the first 3 minutes typing `#include <iostream>`, `#include <vector>`, `using namespace std;`, and setting up `cin.tie(NULL)`. You've already lost time compared to higher-ranked competitors.",
+    "question": "How do Grandmasters avoid writing the same 20 lines of boilerplate every single match?"
+  },
+  "mental_model": {
+    "intuition": "A CP template is like a chef's 'mise en place'. Before the cooking timer even starts, all the ingredients (tools, aliases, optimizations) are already chopped, measured, and placed exactly where you need them.",
+    "description": "A CP (Competitive Programming) template is a standardized header block that you copy-paste at the start of every contest. It includes universal headers (like `<bits/stdc++.h>`), type aliases (like `using ll = long long;`), and standard fast I/O boilerplate to ensure your program reads input optimally without manual setup."
+  },
+  "explanation": "**1. The Master Header:**\nInstead of `#include <iostream>`, `#include <vector>`, etc., competitors use `#include <bits/stdc++.h>`. This is a non-standard GCC header that includes *every* standard library header at once. It slows down compilation slightly, but saves immense typing time during contests.\n\n**2. Fast I/O Setup:**\nBy default, `std::cin` and `std::cout` are tied to C's `stdio` (printf/scanf) to allow mixing C and C++ I/O. This synchronization makes C++ I/O incredibly slow. `ios_base::sync_with_stdio(false);` unties C++ streams from C's `stdio`, making C++ streams vastly faster. However, because they now have independent buffering, mixing `cin`/`cout` with `scanf`/`printf` leads to unpredictable, interleaved output. `cin.tie(NULL);` does something entirely different: it unties `cin` from `cout`, preventing `cout` from automatically forcing an expensive buffer flush every time input is read.\n\n**3. Type Aliases & Macros:**\n`long long` is verbose. `using ll = long long;` saves typing. \nMacros like `#define pb push_back` or `#define all(x) (x).begin(), (x).end()` are extremely common to compress algorithms into fewer keystrokes.\n\n**Real-world Engineering vs. CP:**\nWhile a CP template is essential for racing against a 2-hour clock, it is considered **terrible practice in production engineering**. `#include <bits/stdc++.h>` ruins build times and isn't portable. `#define` macros pollute the global namespace and make debugging impossible. Keep these tricks strictly for contests.",
+  "code_snippets": [
+    {
+      "title": "A Standard CP Template",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Type aliases for speed\nusing ll = long long;\nusing vi = vector<int>;\nusing vll = vector<ll>;\n\n// Macros for common operations\n#define pb push_back\n#define all(x) (x).begin(), (x).end()\n#define FOR(i, a, b) for (int i = (a); i < (b); ++i)\n\nvoid solve() {\n    int n;\n    cin >> n;\n    vi a(n);\n    FOR(i, 0, n) cin >> a[i];\n    \n    sort(all(a));\n    cout << a.back() << \"\\n\";\n}\n\nint main() {\n    // FAST I/O\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    int t = 1;\n    cin >> t; // Read number of test cases\n    while (t--) {\n        solve();\n    }\n    return 0;\n}",
+      "explanation": "This template guarantees maximum I/O speed, provides shortcuts for vectors and sorting, and automatically wraps the logic in a multi-test-case loop."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using std::endl instead of \"\\n\"",
+      "explanation": "`std::endl` doesn't just output a newline; it also flushes the output buffer. Flushing the buffer is an expensive OS-level operation. In problems with massive output, flushing on every line will cause a Time Limit Exceeded (TLE) error. Always use `\"\\n\"` in CP."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `ios_base::sync_with_stdio(false);` actually do?",
+      "answer": "It disables the synchronization between C++ streams (`cin`/`cout`) and C streams (`scanf`/`printf`), which significantly speeds up C++ I/O. However, it means you can no longer safely mix C and C++ I/O functions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `#include <bits/stdc++.h>` used in CP but banned in production?",
+      "answer": "It includes the entire standard library at once, saving typing time in contests. In production, it severely inflates compilation times and is a compiler-specific hack (GCC) rather than a C++ standard.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why should you avoid `std::endl` in competitive programming?",
+      "answer": "`std::endl` automatically flushes the output stream. Frequent flushing causes massive I/O latency and often leads to Time Limit Exceeded (TLE). You should use the newline character `\"\\n\"` instead.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A competitor includes the fast I/O lines in `main()`, but their program crashes or outputs garbage data because they used both `cin >> x` and `scanf(\"%d\", &y)` sequentially. Why did this happen?",
+      "answer": "Because `ios_base::sync_with_stdio(false)` unties the internal buffering of C and C++ I/O streams. Mixing them after untying results in unpredictable interleaving of reads and writes.",
+      "approach": "Understand the side-effects of performance hacks."
+    },
+    {
+      "question": "A developer submits a solution with `std::cout << ans << std::endl;` inside a loop running 10^6 times. They get TLE. They change it to `std::cout << ans << \"\\n\";` and pass. Why did this fix it?",
+      "answer": "`std::endl` forces a buffer flush to the operating system on every single iteration. `\"\\n\"` simply adds a newline character to the buffer, allowing the stream to write to the OS in large, efficient chunks.",
+      "approach": "Identify I/O bottlenecks in tight loops."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Fast I/O is mandatory",
+      "detail": "Always disable sync with stdio and untie `cin` from `cout`."
+    },
+    {
+      "title": "Never flush in a loop",
+      "detail": "Use `\"\\n\"` instead of `endl` to prevent I/O bottlenecks."
+    }
+  ],
+  "why_it_exists": "In Competitive Programming, you are graded against a strict time limit (usually 1-2 seconds). Reading 1 million integers using standard synchronized `std::cin` can easily take 0.8 seconds, leaving almost no CPU time for your actual algorithm. CP templates exist to instantly inject I/O optimizations and shorthand aliases so you can focus entirely on the logic without hitting artificial timeouts.",
+  "sources": [
+    "https://codeforces.com/blog/entry/5217"
+  ]
+}

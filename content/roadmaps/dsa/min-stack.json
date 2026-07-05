@@ -1,0 +1,139 @@
+{
+  "slug": "min-stack",
+  "title": "Min stack",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "stack-fundamentals"
+    ],
+    "unlocks": []
+  },
+  "viz": {
+    "generator": "min-stack",
+    "default_input": [5, 2, 7, 1, 3],
+    "invariants": {
+      "inv-min-tracks": "The min-stack's top always equals the minimum of every value currently in the main stack."
+    },
+    "steps": [
+      { "id": "push", "label": "push x; minStack.push(min(x, curMin))" },
+      { "id": "pop", "label": "pop both stacks together" },
+      { "id": "done", "label": "done" }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "While a standard stack provides O(1) access to the top element, querying a global property like the minimum value requires an O(n) linear scan.",
+    "better_idea": "Leverage the immutable historical nature of LIFO structures. Capture a snapshot of the minimum value at the exact moment an element is pushed, storing it in a parallel auxiliary stack.",
+    "naive_solution": "Scanning the entire stack from top to bottom every time you need the minimum value, taking O(n) time."
+  },
+  "mental_model": {
+    "intuition": "Keep a shadow stack running next to the main stack, where every element represents the absolute minimum value seen up to that depth.",
+    "description": "The optimal solution uses an auxiliary 'min-stack'. When pushing a value x, compare it to the current minimum (the top of the min-stack), and push the lesser of the two onto the min-stack. When popping, both stacks pop simultaneously. This guarantees the top of the min-stack always holds the global minimum of the current elements in O(1) time.",
+    "repeated_decision": "When pushing x, what is smaller: x, or the current minimum at the top of the min-stack?"
+  },
+  "engineering_examples": [
+    {
+      "title": "Streaming min/max ('min-queue')",
+      "problem": "Reporting the minimum of a stream that supports both ends in O(1)",
+      "why_this_algorithm": "Two min-stacks compose into a FIFO queue that returns its minimum in amortized O(1) — the classic 'min-queue' used inside sliding-window and streaming-analytics code. The stack is the reusable building block."
+    }
+  ],
+  "failure_signals": [
+    "Attempting to sort the stack",
+    "Linearly scanning the stack on every getMin request"
+  ],
+  "pattern": {
+    "name": "Parallel State Tracking",
+    "recognition_cues": [
+      "Design a stack that supports getMin/getMax in O(1)",
+      "Need to query global state of a LIFO structure instantly"
+    ]
+  },
+  "common_mistakes": [
+    {
+      "title": "Forgetting to sync pops",
+      "explanation": "If you only push to the min-stack when a new minimum is found, you must be extremely careful during popping to only pop the min-stack if the popped value equals the current minimum. Using a parallel 1:1 stack avoids this sync issue entirely."
+    },
+    {
+      "title": "Differential encoding underflow/overflow",
+      "explanation": "An O(1) space optimization exists using mathematical differential encoding, but it risks integer overflow (`2*x - min_val`). Production systems must use 64-bit bounds checking."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does the parallel min-stack achieve O(1) time complexity for getMin()?",
+      "answer": "It captures and stores a snapshot of the global minimum at every specific stack depth, effectively memorizing the answer for any given state.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is state snapshotting possible in a stack but harder in a dynamic array?",
+      "answer": "A stack strictly mutates at a single boundary (the top). Elements below the top are immutable as long as the stack height exceeds their depth.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the space complexity of the standard parallel min-stack approach?",
+      "answer": "O(n) auxiliary space to store the shadow stack of minimums.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.",
+      "answer": "Use a main stack for values and an auxiliary stack that pushes `min(x, current_min)`. Both pop simultaneously.",
+      "approach": "Apply the parallel synchronization mechanism.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Optimize Min Stack to use O(1) extra space.",
+      "answer": "Use differential encoding. Store an anomaly value `2*x - min_val` when a new minimum is found. Upon popping an anomaly, decode it to restore the previous minimum. Decode step: if a popped value is < current min, it was an encoded flag \u2014 recover the previous min as `2*min - popped`; the real data value equals the old min.",
+      "approach": "Mathematical state embedding.",
+      "company": "Advanced SDE interview"
+    }
+  ],
+  "practice": [
+    {
+      "title": "Min Stack",
+      "url": "https://leetcode.com/problems/min-stack/",
+      "difficulty": "medium",
+      "why": "The foundational state snapshotting implementation."
+    },
+    {
+      "title": "Max Stack",
+      "url": "https://leetcode.com/problems/max-stack/",
+      "difficulty": "hard",
+      "why": "The same concept applied to finding the maximum, with an added twist for removing the maximum."
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/min-stack/",
+    "https://code.likeagirl.io/implement-min-stack-leetcode-155-b56d846772b8",
+    "https://onyxwizard.medium.com/leetcode-understanding-the-minimum-stack-implementation-b6c94bc8bde9"
+  ],
+  "explanation": "Min Stack perfectly highlights how leveraging invariants can circumvent seemingly mandatory linear scans. Because the physical structure of a stack guarantees that historical elements cannot be removed out of order, the statistical properties of that history (such as the minimum) are statically locked until popped.\n\nWhile the O(n) space double-stack method is completely standard, being able to articulate the O(1) mathematical differential encoding (storing a transformed value to flag a state change) demonstrates an elite understanding of state management and boundary risks (overflow).",
+  "hook": {
+    "scenario": "You have a stack of numbers, and you constantly need to know the smallest one. Scanning the whole stack takes too long.",
+    "question": "How can we know the minimum instantly, even as numbers are added and removed?"
+  },
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "The minimum state is perfectly synchronized with the main stack's lifecycle."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(1) time for push, pop, and getMin."
+    },
+    {
+      "title": "Gotcha",
+      "detail": "When popping, ensure the parallel minimum state is also popped to remain synchronized."
+    }
+  ],
+  "related": [
+    "stack-fundamentals"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "slug": "gcd-lcm-eulers-totient-ncr-mod-p",
+  "title": "GCD/LCM, Euler's totient, nCr mod p",
+  "roadmap": "cpp-swe",
+  "kind": "engineering",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "sieve-of-eratosthenes-prime-factorization",
+      "modular-arithmetic-fast-power"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You need to calculate 'N choose K' (Combinations) where N = 100,000. The factorial of 100,000 has over 400,000 digits. Standard math libraries will instantly overflow, even with 64-bit integers.",
+    "question": "How do you calculate combinations of massive numbers modulo a prime without overflowing?"
+  },
+  "mental_model": {
+    "intuition": "Normally, computing combinations involves division (N! / (K! * (N-K)!)). But in modular arithmetic, division doesn't exist. Instead, you multiply by a 'reciprocal' (the modular inverse), calculated using Fermat's Little Theorem.",
+    "description": "Advanced CP Number Theory relies on a conceptual chain: GCD and LCM form the basics of divisibility. Euler's Totient describes prime properties, which yields Fermat's Little Theorem. This theorem finally gives us the ability to perform modular division, allowing us to compute massive Combinations (nCr) within standard memory limits."
+  },
+  "explanation": "**1. GCD and LCM:**\nThe Greatest Common Divisor is found using the Euclidean Algorithm: `gcd(a, b) = gcd(b, a % b)` (with base case `gcd(a, 0) = a`). Every two steps, the modulo operation guarantees the numbers decrease by at least half, leading to its blazing-fast `O(log(min(a,b)))` complexity. The Least Common Multiple is mathematically tied to it: `lcm(a, b) = (a * b) / gcd(a, b)`. (Always divide first to prevent overflow: `a / gcd(a,b) * b`). Modern C++ provides `std::gcd` and `std::lcm` in `<numeric>`.\n\n**2. Euler's Totient Function ($\\\\phi(n)$):**\nThis function counts how many integers from 1 to `n` are coprime to `n` (meaning `gcd(x, n) == 1`). If `n` is prime, $\\\\phi(n) = n - 1$. Euler's Theorem states that $B^{\\\\phi(M)} \\\\equiv 1 \\\\pmod M$. For a prime $M$, this directly becomes Fermat's Little Theorem! \n\n**3. Modular Inverse & Fermat's Little Theorem:**\nYou cannot divide in modular arithmetic. To calculate `(A / B) % M`, you must compute `A * B^{-1} % M`. \nIf `M` is prime, Fermat's Little Theorem states that `B^{M-1} \\\\equiv 1 \\\\pmod M`. By splitting this, we get `B * B^{M-2} \\\\equiv 1 \\\\pmod M`. This proves that `B^{M-2}` acts as the exact multiplicative inverse (`B^{-1}`)! Therefore, to divide by `B`, you multiply by `B^{M-2} \\\\pmod M`. You can compute this instantly using Fast Power!\n\n**4. Combinations (nCr mod P):**\nCombinations are calculated as `N! / (K! * (N-K)!)`. \nTo do this modulo a prime `P`:\n1. Precompute factorials up to N using an array: `fact[i] = (fact[i-1] * i) % P`, with the base case `fact[0] = 1`.\n2. To divide by `K!`, multiply by its modular inverse: `fast_power(fact[K], P-2, P)`.\n3. Complete the formula: `nCr = (fact[N] * inverse(fact[K]) % P * inverse(fact[N-K]) % P) % P`.",
+  "code_snippets": [
+    {
+      "title": "nCr modulo P (using Fermat's Little Theorem)",
+      "language": "cpp",
+      "code": "long long fast_power(long long base, long long exp, long long mod) {\n    long long res = 1;\n    base %= mod;\n    while (exp > 0) {\n        if (exp % 2 == 1) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp /= 2;\n    }\n    return res;\n}\n\n// Modular Inverse using Fermat's Little Theorem (only if mod is Prime)\nlong long mod_inverse(long long n, long long p) {\n    return fast_power(n, p - 2, p);\n}\n\nlong long nCr_mod_p(long long n, long long r, long long p, const vector<long long>& fact) {\n    if (r < 0 || r > n) return 0;\n    // N! * (R!)^-1 * ((N-R)!)^-1  (all modulo P)\n    long long num = fact[n];\n    long long den = (fact[r] * fact[n - r]) % p;\n    return (num * mod_inverse(den, p)) % p;\n}",
+      "explanation": "Assuming the `fact` array is precomputed, this calculates exact combinations of massive sets modulo P in O(log P) time."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Fermat's Little Theorem with non-primes",
+      "explanation": "The trick `B^{M-2} % M` only works if `M` is a prime number (like 10^9+7). If `M` is composite, you cannot use Fermat's Little Theorem. You must use the Extended Euclidean Algorithm to find the modular inverse, which is much more complex."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the formula to calculate the Least Common Multiple (LCM) of two numbers using their Greatest Common Divisor (GCD)?",
+      "answer": "`LCM(a, b) = (a * b) / GCD(a, b)`. To prevent integer overflow, it is strictly programmed as `(a / GCD(a, b)) * b`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does Fermat's Little Theorem allow us to perform division in modular arithmetic when the modulo `M` is prime?",
+      "answer": "It proves that `B^{M-1} \\\\equiv 1 \\\\pmod M`, which implies that `B * B^{M-2} \\\\equiv 1 \\\\pmod M`. Therefore, `B^{M-2}` acts as the multiplicative inverse (the 'reciprocal') of B. We calculate it using Fast Power.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does Euler's Totient function count?",
+      "answer": "It counts the number of positive integers up to `N` that are coprime to `N` (meaning they share no common divisors with `N` other than 1).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer writes a custom `gcd(a, b)` function. They call it on two massive Fibonacci numbers. The function finishes in less than a millisecond. How is the Euclidean algorithm able to be so fast on massive inputs?",
+      "answer": "The Euclidean algorithm uses the modulo operator iteratively `gcd(b, a % b)`. Every two steps, the numbers are guaranteed to decrease by at least half. Thus, its time complexity is O(log(min(a,b))), which takes fewer than 100 steps even for numbers up to 10^18.",
+      "approach": "Understand the logarithmic decay of the modulo operator in the Euclidean algorithm."
+    },
+    {
+      "question": "A junior developer needs to find the GCD of two numbers and writes a loop that tests every integer down from `min(a, b)`. It causes a TLE. What should they use instead?",
+      "answer": "They should use the Euclidean algorithm `gcd(b, a % b)`, which computes the GCD in O(log(min(a, b))) time, or simply use C++'s built-in `std::gcd`.",
+      "approach": "Know standard library built-ins for foundational math operations."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Division is Inverse Multiplication",
+      "detail": "In modular arithmetic, you never divide. You multiply by the modular inverse."
+    },
+    {
+      "title": "Precompute factorials",
+      "detail": "For nCr queries, precompute an array of factorials `O(N)` to answer queries in `O(log P)`."
+    }
+  ],
+  "why_it_exists": "Competitive programming frequently tests combinatorial mathematics (e.g., 'How many valid permutations exist?'). Because factorials grow astronomically fast, these answers are always required modulo a prime. Fermat's Little Theorem and Modular Inverses provide the mathematical bridge to compute exact division under a modulo, making massive statistical algorithms programmable in standard memory.",
+  "sources": [
+    "https://cp-algorithms.com/combinatorics/binomial-coefficients.html"
+  ]
+}

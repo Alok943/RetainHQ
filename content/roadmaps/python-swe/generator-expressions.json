@@ -23,15 +23,15 @@
   "glossary": [
     {
       "term": "lazy evaluation",
-      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance."
+      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance. Example: `(x*2 for x in range(10))` — values are computed one at a time, not all upfront."
     },
     {
       "term": "random-access",
-      "definition": "The ability to instantly retrieve an item at any specific position in a collection, like getting the 5th item in a list."
+      "definition": "The ability to instantly retrieve an item at any specific position in a collection, like getting the 5th item in a list. Example: `my_list[4]` fetches the 5th element in constant time."
     }
   ],
   "overview": {
-    "what": "A generator expression looks just like a list comprehension, but uses parentheses `()` instead of square brackets `[]`. Instead of building an entire list in memory all at once, a generator expression uses lazy evaluation. It calculates and yields exactly one item at a time, pausing execution until the next item is requested. This means a generator expression takes up virtually no memory, regardless of how many items it will eventually produce. You can use them directly inside aggregation functions like `sum()`, `max()`, or `any()`.",
+    "what": "A generator expression looks just like a list comprehension, but uses parentheses `()` instead of square brackets `[]`. Instead of building an entire list in memory all at once, a generator expression uses lazy evaluation. It calculates and yields exactly one item at a time, pausing execution until the next item is requested. This means a generator expression takes up virtually no memory, regardless of how many items it will eventually produce. You can use them directly inside aggregation functions (functions that compute a single result from many values) like `sum()`, `max()`, or `any()`.",
     "why": "When processing millions of database rows or gigabytes of log files, loading the entire dataset into memory with a list comprehension will crash your application with an OutOfMemory error. Generator expressions allow you to process massive datasets in a constant O(1) memory footprint.",
     "where_used": [
       "Aggregating data directly (e.g. `sum(x for x in data)`)",
@@ -47,7 +47,7 @@
   "common_mistakes": [
     {
       "title": "Iterating a generator twice",
-      "explanation": "A generator expression is exhausted as it produces items. If you loop over it a second time, it yields nothing because all items have already been consumed. If you need multiple passes, use a list."
+      "explanation": "It is exhausted as it produces items, so a second loop yields nothing because all items have already been consumed. If you need multiple passes, use a list."
     },
     {
       "title": "Trying to index or slice",

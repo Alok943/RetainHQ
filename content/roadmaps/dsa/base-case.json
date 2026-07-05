@@ -1,0 +1,83 @@
+{
+  "slug": "base-case",
+  "title": "Base case",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": ["recursive-relation"]
+  },
+  "overview": {
+    "what": "The base case is the stopping condition of a recursive function — a block of code that returns a direct result without making any further recursive calls.",
+    "why": "Without a reachable base case, a recursive function will call itself infinitely, leading to a stack overflow or 'RecursionError'. It ensures the recursion eventually terminates by handling the simplest possible instance of the problem. When the base case is hit and returns its value, that value bubbles back up through the chain of previous calls."
+  },
+  "why_learning_this": [
+    "Understanding the base case is the very first step to writing any recursive function.",
+    "Failing to write a reachable base case is the most common cause of fatal crashes (stack overflows) in recursive code.",
+    "It teaches you the two unbreakable rules of recursion: you must have a base case, and every recursive step must shrink the input strictly toward that base case."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming recursion 'just knows when to stop'",
+      "explanation": "Recursion has no built-in awareness of when to terminate. If you do not explicitly define a base case and return without making another recursive call, the function will recurse infinitely."
+    },
+    {
+      "title": "Unreachable base case",
+      "explanation": "The base case exists, but the recursive step never shrinks the input toward it. For example, if the base case is n == 0, but the recursive step is f(n + 1), it will never terminate for positive n."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is a base case in recursion?",
+      "answer": "A condition that returns a result without making any further recursive calls, effectively stopping the recursion.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a recursive function lacks a reachable base case?",
+      "answer": "It will continue to call itself infinitely until the language's call stack limit is exceeded, resulting in a stack overflow or RecursionError.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What two properties must a valid recursive function have?",
+      "answer": "A base case that terminates the recursion, and a recursive step that reduces every input strictly toward that base case.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "question": "A student writes a recursive countdown function: `def count(n): if n == 0: return; else: print(n); count(n)` What is the bug?",
+      "answer": "The recursive step `count(n)` passes the exact same input instead of shrinking it. The argument never moves strictly toward the base case `n == 0`, leading to infinite recursion.",
+      "why": "A base case is only effective if every recursive call guarantees the input becomes strictly smaller, moving measurably closer to the stopping condition."
+    },
+    {
+      "type": "predict-output",
+      "question": "What happens when you call `factorial(-1)` on this function: `def factorial(n): if n == 1: return 1; return n * factorial(n - 1)`?",
+      "answer": "It causes a stack overflow. Because the input -1 is already less than 1, subtracting 1 moves it further away from the base case `n == 1`, making the base case unreachable.",
+      "why": "Base cases must handle the smallest possible valid inputs and the bounds must be robust. A safer base case would be `if n <= 1: return 1` to catch edge cases."
+    }
+  ],
+  "aha_moment": {
+    "code": "def countdown(n):\n    # This is the base case\n    if n <= 0:\n        print('Liftoff!')\n        return\n    \n    print(n)\n    countdown(n - 1)",
+    "prediction": "The base case is `if n <= 0: return`, which stops the countdown when it reaches zero.",
+    "common_guess": "Recursion just knows when to stop once the numbers get small enough.",
+    "why": "Recursion isn't magic and has no built-in awareness of 'stopping'. The base case (`n <= 0`) is explicitly doing the work of terminating the function when the countdown finishes."
+  },
+  "practice_tasks": [
+    {
+      "title": "Identify the missing base case",
+      "prompt": "The following recursive function is supposed to sum all integers from `n` down to 1. Currently, it crashes with a RecursionError. Identify why and add the appropriate base case to fix it.",
+      "starter_code": "def sum_to_one(n):\n    return n + sum_to_one(n - 1)",
+      "solution": "The function lacks a stopping condition (base case). It will continue subtracting 1 forever. Fix it by adding a check at the top: `if n <= 1: return n`."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Recursion_(computer_science)"
+  ]
+}
