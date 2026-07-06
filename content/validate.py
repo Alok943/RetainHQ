@@ -34,8 +34,18 @@ FREQ = {"low", "medium", "high"}
 CHECK_TYPES = {"predict-output", "predict-result", "explain-behavior", "find-bug", "choose-model", "debug-misconception"}
 RUNTIMES = {"python", "sql", "none"}
 
-DIAGRAM_TYPES = {"ray", "circuit", "graph", "free-body", "image"}
+DIAGRAM_TYPES = {"ray", "circuit", "graph", "free-body", "image", "schematic"}
 RAY_OPTICS = {"concave-mirror", "convex-mirror", "concave-lens", "convex-lens"}
+
+# diagram3d — interactive R3F concept simulators (content/PROMPT-physics-3d.md).
+# Scoped to EXACTLY these 6 scene-kinds; nothing else gets 3D.
+DIAGRAM3D_SCENES = {"orbit", "magnetic-field", "fleming-rule", "em-induction", "dispersion-prism", "longitudinal-wave"}
+AXIS_VALUES = {"+x", "-x", "+y", "-y", "+z", "-z"}
+MAGNETIC_SOURCES = {"bar-magnet", "straight-wire", "solenoid", "circular-loop"}
+CURRENT_DIRECTIONS = {"into", "out", "n/a"}
+FLEMING_RULES = {"left", "right"}
+INDUCTION_MOTIONS = {"insert", "withdraw"}
+INDUCTION_POLES = {"N", "S"}
 
 errors = []
 warnings = []
@@ -161,7 +171,95 @@ def _validate_physics_diagram(diag, path, rel):
     elif dtype == "image":
         if not diag.get("asset"):
             err(rel, f"{path} needs a non-empty 'asset'")
+    elif dtype == "schematic":
+        bodies = diag.get("bodies")
+        if not isinstance(bodies, list) or not bodies:
+            err(rel, f"{path} needs a non-empty 'bodies' list")
+        elif not all(isinstance(b, dict) and b.get("id") and isinstance(b.get("x"), (int, float))
+                     and isinstance(b.get("y"), (int, float)) for b in bodies):
+            err(rel, f"{path}.bodies each need 'id' and numeric 'x'/'y'")
     # circuit and free-body: membership-only, no deep checks (renderer not built yet)
+
+
+def _validate_diagram3d(diag, path, rel):
+    """Validate a `diagram3d` object (content/PROMPT-physics-3d.md). Checks the
+    schema envelope, the scene-kind's required params, and the optional
+    prediction/manipulate/reflection blocks. `poster`, if present, is a normal
+    2D diagram object and reuses _validate_physics_diagram."""
+    if not isinstance(diag, dict):
+        err(rel, f"{path} must be an object"); return
+    if diag.get("schema_version") != 1:
+        err(rel, f"{path}.schema_version must be 1")
+    scene = diag.get("scene")
+    if scene not in DIAGRAM3D_SCENES:
+        err(rel, f"{path}.scene must be one of {sorted(DIAGRAM3D_SCENES)}")
+        return
+    if not diag.get("caption"):
+        err(rel, f"{path} needs a non-empty 'caption'")
+
+    if scene == "orbit":
+        central = diag.get("central")
+        if not isinstance(central, dict) or not central.get("label") or not isinstance(central.get("mass"), (int, float)):
+            err(rel, f"{path}.central must be an object with 'label' and numeric 'mass'")
+        satellite = diag.get("satellite")
+        if not isinstance(satellite, dict) or not satellite.get("label") or not isinstance(satellite.get("mass"), (int, float)):
+            err(rel, f"{path}.satellite must be an object with 'label' and numeric 'mass'")
+        if not isinstance(diag.get("radius_km"), (int, float)) or diag.get("radius_km") <= 0:
+            err(rel, f"{path}.radius_km must be a positive number")
+    elif scene == "magnetic-field":
+        if diag.get("source") not in MAGNETIC_SOURCES:
+            err(rel, f"{path}.source must be one of {sorted(MAGNETIC_SOURCES)}")
+        if diag.get("current_direction") not in CURRENT_DIRECTIONS:
+            err(rel, f"{path}.current_direction must be one of {sorted(CURRENT_DIRECTIONS)}")
+    elif scene == "fleming-rule":
+        rule = diag.get("rule")
+        if rule not in FLEMING_RULES:
+            err(rel, f"{path}.rule must be one of {sorted(FLEMING_RULES)}")
+        if diag.get("field_direction") not in AXIS_VALUES:
+            err(rel, f"{path}.field_direction must be one of {sorted(AXIS_VALUES)}")
+        if rule == "left":
+            if diag.get("current_direction") not in AXIS_VALUES:
+                err(rel, f"{path}.current_direction must be one of {sorted(AXIS_VALUES)} for rule=left")
+        elif rule == "right":
+            if diag.get("motion_direction") not in AXIS_VALUES and diag.get("current_direction") not in AXIS_VALUES:
+                err(rel, f"{path} needs 'motion_direction' (preferred) or 'current_direction' in {sorted(AXIS_VALUES)} for rule=right")
+    elif scene == "em-induction":
+        if diag.get("motion") not in INDUCTION_MOTIONS:
+            err(rel, f"{path}.motion must be one of {sorted(INDUCTION_MOTIONS)}")
+        if diag.get("magnet_pole") not in INDUCTION_POLES:
+            err(rel, f"{path}.magnet_pole must be one of {sorted(INDUCTION_POLES)}")
+    elif scene == "dispersion-prism":
+        pass  # no required params beyond scene/caption
+    elif scene == "longitudinal-wave":
+        if not isinstance(diag.get("frequency"), (int, float)) or diag.get("frequency") <= 0:
+            err(rel, f"{path}.frequency must be a positive number")
+
+    pred = diag.get("prediction")
+    if pred is not None:
+        if not isinstance(pred, dict) or not pred.get("question"):
+            err(rel, f"{path}.prediction needs a non-empty 'question'")
+        else:
+            choices = pred.get("choices")
+            if not isinstance(choices, list) or not choices:
+                err(rel, f"{path}.prediction.choices must be a non-empty list")
+            answer = pred.get("answer")
+            if not isinstance(answer, int) or not isinstance(choices, list) or not (0 <= answer < len(choices)):
+                err(rel, f"{path}.prediction.answer must be a valid index into 'choices'")
+
+    manip = diag.get("manipulate")
+    if manip is not None:
+        if not isinstance(manip, dict) or not manip.get("param"):
+            err(rel, f"{path}.manipulate needs a non-empty 'param'")
+        elif not isinstance(manip.get("options"), list) or not manip.get("options"):
+            err(rel, f"{path}.manipulate.options must be a non-empty list")
+
+    refl = diag.get("reflection")
+    if refl is not None and (not isinstance(refl, dict) or not refl.get("prompt")):
+        err(rel, f"{path}.reflection needs a non-empty 'prompt'")
+
+    poster = diag.get("poster")
+    if poster is not None:
+        _validate_physics_diagram(poster, f"{path}.poster", rel)
 
 
 def validate_sections(d, rel):
@@ -721,14 +819,20 @@ def main():
                                 err(rel, f"worked_example[{i}].steps[{j}] needs a non-empty 'narration'")
                     if not w.get("answer"):
                         err(rel, f"worked_example[{i}] needs a non-empty 'answer'")
-                    # per-example diagram (optional) — validate if present
+                    # per-example diagram (optional; diagram3d and diagram are mutually optional)
                     wed = w.get("diagram")
                     if wed is not None:
                         _validate_physics_diagram(wed, f"worked_example[{i}].diagram", rel)
-            # top-level diagram (optional)
+                    wed3 = w.get("diagram3d")
+                    if wed3 is not None:
+                        _validate_diagram3d(wed3, f"worked_example[{i}].diagram3d", rel)
+            # top-level diagram (optional; diagram3d and diagram are mutually optional)
             diag = d.get("diagram")
             if diag is not None:
                 _validate_physics_diagram(diag, "diagram", rel)
+            diag3d = d.get("diagram3d")
+            if diag3d is not None:
+                _validate_diagram3d(diag3d, "diagram3d", rel)
             # animation (optional)
             an = d.get("animation")
             if an is not None:
@@ -800,9 +904,15 @@ def main():
                     pd_diag = p.get("problem_diagram")
                     if pd_diag is not None:
                         _validate_physics_diagram(pd_diag, f"problems[{i}].problem_diagram", rel)
+                    pd_diag3d = p.get("problem_diagram3d")
+                    if pd_diag3d is not None:
+                        _validate_diagram3d(pd_diag3d, f"problems[{i}].problem_diagram3d", rel)
                     sd_diag = p.get("solution_diagram")
                     if sd_diag is not None:
                         _validate_physics_diagram(sd_diag, f"problems[{i}].solution_diagram", rel)
+                    sd_diag3d = p.get("solution_diagram3d")
+                    if sd_diag3d is not None:
+                        _validate_diagram3d(sd_diag3d, f"problems[{i}].solution_diagram3d", rel)
             continue
 
         ov = d.get("overview")

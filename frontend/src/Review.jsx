@@ -13,6 +13,17 @@ function lessonSlugForNode(slugByTitle, title) {
   return Object.values(slugByTitle).includes(s) ? s : null;
 }
 
+// "Why this card today" — one honest sentence so the schedule never feels like a
+// black box (the #1 trust-killer for adaptive systems). Derived from data already
+// in the due payload; no extra fetch.
+function whyDueLine(activity) {
+  if (!activity?.last_reviewed_at) {
+    return 'First review — new memories fade fastest in the first days, so we check early.';
+  }
+  const days = Math.max(1, Math.round((Date.now() - new Date(activity.last_reviewed_at)) / 86400000));
+  return `Last recalled ${days} day${days === 1 ? '' : 's'} ago — due now so it sticks before it fades.`;
+}
+
 // Each post-reveal choice carries BOTH signals at once:
 //   recalled = objective (did they reconstruct it?)   rating = subjective (how hard it felt)
 const OUTCOMES = [
@@ -128,7 +139,8 @@ function Review({ onBack }) {
                  const limited = qs.slice(0, 3);
                  setQuestions(limited.map(x => x.q));
                  setQAnswers(limited.map(() => ''));
-                 setCanonicalAnswers(limited.map(x => x.a));
+                 // Lesson JSON uses {q, answer, tier} across all kinds ('a' kept as a legacy fallback).
+                 setCanonicalAnswers(limited.map(x => x.answer ?? x.a ?? null));
                  setLoadingQuestions(false);
                  return;
                }
@@ -382,6 +394,9 @@ function Review({ onBack }) {
             {activity.topic}
           </h2>
 
+          {/* Why this card today — the schedule must never feel like a black box. */}
+          <p className="font-sans text-xs text-[#64748B] mt-2">{whyDueLine(activity)}</p>
+
           {!revealed ? (
             /* ---------- RECALL GATE: commit before reveal ---------- */
             <div className="mt-6 flex flex-col gap-4">
@@ -454,6 +469,13 @@ function Review({ onBack }) {
                         <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed mt-1.5 whitespace-pre-wrap">
                           {qAnswers[i]?.trim() ? qAnswers[i] : <span className="italic text-[#64748B]">No answer.</span>}
                         </p>
+                        {/* Canonical answer from the lesson — deterministic, shown whether or not
+                            the AI grader is available. The student must always see the right answer. */}
+                        {canonicalAnswers[i] && (
+                          <p className="font-sans text-sm text-[#0F766E] leading-relaxed mt-1.5">
+                            <span className="font-semibold">Answer:</span> {canonicalAnswers[i]}
+                          </p>
+                        )}
                         {item?.note && (
                           <p className="font-sans text-xs text-[#64748B] mt-1.5">{item.note}</p>
                         )}

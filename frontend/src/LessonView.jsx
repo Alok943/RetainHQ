@@ -14,17 +14,28 @@ import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
 import { linkifyGlossary } from './lib/glossary';
 import RayDiagram from './physics/RayDiagram';
+import GraphDiagram from './physics/GraphDiagram';
+import SchematicDiagram from './physics/SchematicDiagram';
 
 // The DSA execution-trace player (Framer Motion + renderers) is heavy and only needed on
 // dsa-kind lessons that carry a `viz` — lazy-load it so every other lesson stays light.
 const DsaPlayer = lazy(() => import('./dsa/Player.jsx'));
+
+// Physics3D (React Three Fiber) is heavier still (~150KB gz) and only needed on the
+// handful of physics lessons that carry a `diagram3d` — lazy-load it (see
+// content/PROMPT-physics-3d.md) so Three.js never touches a non-3D lesson's bundle.
+const Physics3D = lazy(() => import('./physics/three/Physics3D.jsx'));
+
+function Physics3DFallback() {
+  return <div className="rounded-lg border border-[rgba(15,23,42,0.12)] bg-[#f9f9f6] animate-pulse" style={{ height: 320 }} />;
+}
 
 const TIER_LABEL = { tier1: 'Tier 1', tier2: 'Tier 2', tier3: 'Tier 3' };
 const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
 const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
 
 // Short roadmap labels for the per-page <title> (keyword-targeted SEO).
-const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering', 'cpp-swe': 'C++', 'python-backend': 'Python Backend' };
+const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering', 'cpp-swe': 'C++', 'python-backend': 'Python Backend', 'physics-9-10': 'Physics (Class 9–10)' };
 
 const prettifySlug = (slug) => {
   if (!slug) return '';
@@ -792,8 +803,10 @@ function ProcessAnimation({ animation }) {
 function PhysicsDiagram({ diagram }) {
   if (!diagram || typeof diagram !== 'object') return null;
   if (diagram.type === 'ray') return <RayDiagram diagram={diagram} />;
+  if (diagram.type === 'graph') return <GraphDiagram diagram={diagram} />;
+  if (diagram.type === 'schematic') return <SchematicDiagram diagram={diagram} />;
   if (diagram.type === 'image') return <LessonImage image={diagram} />;
-  return null; // circuit / graph / free-body — renderer pending
+  return null; // circuit / free-body — renderer pending
 }
 
 /** A lesson image. `asset` is a Supabase-bucket key (resolved via lessonImageUrl);
@@ -1172,10 +1185,17 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         </>
       )}
 
-      {/* Diagram (physics, optional) — the lesson's main figure (ray/circuit/graph) */}
-      {lesson.diagram && (
+      {/* Diagram (physics, optional) — the lesson's main figure (ray/circuit/graph),
+          or a `diagram3d` interactive simulator (mutually optional with `diagram`). */}
+      {(lesson.diagram || lesson.diagram3d) && (
         <Section icon={<Sparkles size={16} />} title="Diagram" accent="#0891B2">
-          <PhysicsDiagram diagram={lesson.diagram} />
+          {lesson.diagram3d ? (
+            <Suspense fallback={<Physics3DFallback />}>
+              <Physics3D diagram3d={lesson.diagram3d} />
+            </Suspense>
+          ) : (
+            <PhysicsDiagram diagram={lesson.diagram} />
+          )}
         </Section>
       )}
 
@@ -1282,7 +1302,13 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
                   {Array.isArray(we) && we.length > 1 && (
                     <p className="font-sans text-sm font-semibold text-[#7C3AED] mb-2">Example {ei + 1}. {linkifyGlossary(ex.problem, lesson.glossary, usedGlossaryTerms)}</p>
                   )}
-                  {ex.diagram && <div className="mb-3"><PhysicsDiagram diagram={ex.diagram} /></div>}
+                  {ex.diagram3d ? (
+                    <div className="mb-3">
+                      <Suspense fallback={<Physics3DFallback />}>
+                        <Physics3D diagram3d={ex.diagram3d} />
+                      </Suspense>
+                    </div>
+                  ) : ex.diagram && <div className="mb-3"><PhysicsDiagram diagram={ex.diagram} /></div>}
                   {Array.isArray(ex.steps) && (
                     <ol className="flex flex-col gap-2 mb-3">
                       {ex.steps.map((step, i) => (

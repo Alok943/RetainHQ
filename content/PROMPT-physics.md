@@ -92,6 +92,11 @@ Author the structured type where one fits (renderer draws it consistently + can 
 `image` only for genuine one-offs. **If unsure a structured type renders yet, use `image` and flag it** — do
 not block a lesson on a diagram type. (Renderer coverage is tracked separately; ray + circuit + graph first.)
 
+**3D subset:** for the ~6 spatial concept families where a flat diagram misleads (gravitation/orbits,
+magnetic fields, Fleming's rule, EM induction, prism dispersion, longitudinal sound waves), a lesson may
+carry a `diagram3d` field instead of/alongside `diagram` — see `content/PROMPT-physics-3d.md` for that
+contract (separate schema, own validator branch, own renderer). Everything else stays 2D.
+
 ---
 
 ## PHASE-END NUMERICALS (separate deliverable — predict-before-reveal practice set)

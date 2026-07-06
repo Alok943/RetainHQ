@@ -109,9 +109,15 @@ function ReviewHeatmap() {
 
   if (loading) {
     return (
-      <div className="kinetic-card bg-white p-5">
-        <div className="h-4 w-32 bg-[rgba(15,23,42,0.07)] rounded animate-pulse mb-4" />
-        <div className="h-24 bg-[rgba(15,23,42,0.04)] rounded animate-pulse" />
+      <div className="kinetic-card bg-white p-5 flex flex-col gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="skeleton h-6 w-20" />
+          <div className="w-px h-4 bg-[rgba(15,23,42,0.08)]" />
+          <div className="skeleton h-6 w-24" />
+          <div className="skeleton h-6 w-24" />
+          <div className="skeleton h-6 w-20" />
+        </div>
+        <div className="skeleton h-24 w-full rounded" />
       </div>
     );
   }

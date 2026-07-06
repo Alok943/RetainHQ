@@ -859,6 +859,12 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
   const phases = [];
   topLevel.forEach((n) => { if (!phases.includes(n.phase)) phases.push(n.phase); });
 
+  // For physics-9-10 roadmaps, we show a "Practice numericals" link per phase.
+  // The phase name is slugified: lowercase, spaces and non-alphanumeric → hyphens.
+  const isPhysics = contentKey === 'physics-9-10';
+  const phaseToSlug = (phase) =>
+    phase.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
   return (
     <div className="flex flex-col gap-3">
       {phases.map((phase) => {
@@ -922,6 +928,18 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                     ))}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Practice numericals affordance for physics-9-10 */}
+            {isPhysics && !collapsed && (
+              <div className="border-t border-[rgba(15,23,42,0.05)] px-4 py-3">
+                <Link
+                  to={`/roadmaps/${roadmapId}/numericals/${phaseToSlug(phase)}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0891B2]/[0.08] text-[#0891B2] font-sans text-[12px] font-semibold hover:bg-[#0891B2]/20 transition-colors"
+                >
+                  <BookOpen size={13} /> Practice numericals
+                </Link>
               </div>
             )}
           </section>
