@@ -1,0 +1,25 @@
+# SECRETS — never bake into the image. The Dockerfile does `COPY . .`;
+# without this file, backend/.env (DB password, JWT secret, API keys,
+# CRON_SECRET) ends up in every image layer AND pydantic-settings would
+# load it as a fallback in prod (env_file=".env"), which could silently
+# enable DEBUG/DEV_AUTH_BYPASS. Keep this block first and never remove it.
+.env
+.env.*
+*.pem
+*.key
+
+# Local Python cruft — huge and useless in the image
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Not needed at runtime
+tests/
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+README.md
