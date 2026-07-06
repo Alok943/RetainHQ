@@ -17,7 +17,8 @@ const ROADMAP_LABEL = {
   'dsa': 'DSA',
   'ai-engineering': 'AI Engineering',
   'cpp-swe': 'C++',
-  'python-backend': 'Python Backend'
+  'python-backend': 'Python Backend',
+  'physics-9-10': 'Physics (Class 9–10)'
 };
 
 function escapeHTML(str) {
@@ -59,15 +60,16 @@ function renderContentBlocks(lesson) {
 
   function extractText(val) {
     if (typeof val === 'string') return val;
-    if (Array.isArray(val)) return val.map(extractText).filter(Boolean).join('n');
+    if (Array.isArray(val)) return val.map(extractText).filter(Boolean).join('\n');
     if (typeof val === 'object' && val !== null) {
       if (val.text) return val.text;
       if (val.content) return val.content;
       if (val.body) return val.body;
       // Also might be a mistake object {mistake, why}
       if (val.mistake) return val.mistake + (val.why ? ' - ' + val.why : '');
-      // Or a recall object {q, a}
+      // Or a recall object {q, a} / {question, answer}
       if (val.q) return val.q;
+      if (val.question) return val.question;
     }
     return '';
   }
@@ -93,7 +95,7 @@ function renderContentBlocks(lesson) {
       const arr = Array.isArray(val) ? val : [val];
       html += `<ul>\n`;
       for (const item of arr) {
-        const text = item.q || extractText(item);
+        const text = item?.q || item?.question || extractText(item);
         if (text) {
           html += `<li>${escapeHTML(text)}</li>\n`;
         }
@@ -160,6 +162,8 @@ async function main() {
   }
 
   let generatedCount = 0;
+  // roadmapKey -> [{slug, title}] — collected for the static hub pages below.
+  const hubIndex = new Map();
 
   for (const entry of roadmapDirs) {
     if (!entry.isDirectory()) continue;
@@ -193,25 +197,26 @@ async function main() {
       const pageDesc = getSeoDescription(lesson);
       const url = `${BASE_URL}/roadmaps/${roadmapKey}/learn/${slug}`;
 
-      // 1. Replacements in <head>
+      // 1. Replacements in <head>. NOTE: every replacement uses the function form —
+      // lesson prose can contain `$&`/`$'`, which are special in string replacements.
       let html = templateHtml;
-      
+
       // Replace <title>...</title>
-      html = html.replace(/<title>.*?<\/title>/, `<title>${escapeHTML(pageTitle)}</title>`);
-      
+      html = html.replace(/<title>.*?<\/title>/, () => `<title>${escapeHTML(pageTitle)}</title>`);
+
       // Replace <meta name="description" content="...">
-      html = html.replace(/<meta[^>]*name="description"[^>]*>/i, `<meta name="description" content="${escapeHTML(pageDesc)}">`);
-      
+      html = html.replace(/<meta[^>]*name="description"[^>]*>/i, () => `<meta name="description" content="${escapeHTML(pageDesc)}">`);
+
       // Replace <link rel="canonical" href="...">
-      html = html.replace(/<link[^>]*rel="canonical"[^>]*>/i, `<link rel="canonical" href="${url}">`);
-      
+      html = html.replace(/<link[^>]*rel="canonical"[^>]*>/i, () => `<link rel="canonical" href="${url}">`);
+
       // Replace <meta property="og:url" content="...">
-      html = html.replace(/<meta[^>]*property="og:url"[^>]*>/i, `<meta property="og:url" content="${url}">`);
-      
+      html = html.replace(/<meta[^>]*property="og:url"[^>]*>/i, () => `<meta property="og:url" content="${url}">`);
+
       // Optionally handle og:title and twitter:title if they exist in the template
       // Usually Vite injects these via JS, but if they are static, replace them:
-      html = html.replace(/<meta[^>]*property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeHTML(pageTitle)}">`);
-      html = html.replace(/<meta[^>]*name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${escapeHTML(pageTitle)}">`);
+      html = html.replace(/<meta[^>]*property="og:title"[^>]*>/i, () => `<meta property="og:title" content="${escapeHTML(pageTitle)}">`);
+      html = html.replace(/<meta[^>]*name="twitter:title"[^>]*>/i, () => `<meta name="twitter:title" content="${escapeHTML(pageTitle)}">`);
 
       // 2. Append JSON-LD before </head>
       const ldJson = [
@@ -238,7 +243,7 @@ async function main() {
       ];
       
       const ldScript = `<script type="application/ld+json">${JSON.stringify(ldJson)}</script>`;
-      html = html.replace(/<\/head>/, `${ldScript}</head>`);
+      html = html.replace(/<\/head>/, () => `${ldScript}</head>`);
 
       // 3. Inject readable article content into <div id="root">
       // 4. Internal links inside the article
@@ -283,18 +288,91 @@ async function main() {
       articleHtml += `<p><a href="/roadmaps/${roadmapKey}">Return to ${escapeHTML(label)} Roadmap</a></p>\n`;
       articleHtml += `</article>`;
 
-      html = html.replace(/<div id="root">[\s\S]*?(?:<\/noscript>)?\s*<\/div>/, `<div id="root">${articleHtml}</div>`);
+      html = html.replace(/<div id="root">[\s\S]*?(?:<\/noscript>)?\s*<\/div>/, () => `<div id="root">${articleHtml}</div>`);
 
       // Create output dir and write file
       const outDir = join(DIST_ROOT, 'roadmaps', roadmapKey, 'learn', slug);
       await mkdir(outDir, { recursive: true });
       await writeFile(join(outDir, 'index.html'), html);
-      
+
       generatedCount++;
+    }
+
+    if (lessons.length) {
+      hubIndex.set(roadmapKey, lessons.map(({ slug, lesson }) => ({ slug, title: lesson.title })));
     }
   }
 
-  console.log(`[generate-lesson-html] Wrote ${generatedCount} static lesson page(s).`);
+  // --- Static hub pages -----------------------------------------------------
+  // Lesson pages link UP to /roadmaps/<key>, but to crawlers those routes are
+  // empty SPA shells — nothing links DOWN to the lessons. These hubs complete
+  // the crawl graph: /roadmaps -> each roadmap hub -> every lesson.
+  // (The React app mounts on top and replaces the article, same as lessons.)
+
+  function hubPage({ path, pageTitle, pageDesc, articleHtml, ldJson }) {
+    let html = templateHtml;
+    const url = `${BASE_URL}${path}`;
+    html = html.replace(/<title>.*?<\/title>/, () => `<title>${escapeHTML(pageTitle)}</title>`);
+    html = html.replace(/<meta[^>]*name="description"[^>]*>/i, () => `<meta name="description" content="${escapeHTML(pageDesc)}">`);
+    html = html.replace(/<link[^>]*rel="canonical"[^>]*>/i, () => `<link rel="canonical" href="${url}">`);
+    html = html.replace(/<meta[^>]*property="og:url"[^>]*>/i, () => `<meta property="og:url" content="${url}">`);
+    html = html.replace(/<meta[^>]*property="og:title"[^>]*>/i, () => `<meta property="og:title" content="${escapeHTML(pageTitle)}">`);
+    html = html.replace(/<meta[^>]*name="twitter:title"[^>]*>/i, () => `<meta name="twitter:title" content="${escapeHTML(pageTitle)}">`);
+    if (ldJson) {
+      const ldScript = `<script type="application/ld+json">${JSON.stringify(ldJson)}</script>`;
+      html = html.replace(/<\/head>/, () => `${ldScript}</head>`);
+    }
+    html = html.replace(/<div id="root">[\s\S]*?(?:<\/noscript>)?\s*<\/div>/, () => `<div id="root">${articleHtml}</div>`);
+    return html;
+  }
+
+  const ARTICLE_STYLE = 'max-width: 800px; margin: 0 auto; padding: 20px; font-family: system-ui, sans-serif; color: #1a1a1a; background: #fff;';
+
+  // Per-roadmap hubs: /roadmaps/<key>
+  for (const [roadmapKey, lessonList] of hubIndex) {
+    const label = ROADMAP_LABEL[roadmapKey] || 'RetainHQ';
+    const pageTitle = `${label} Roadmap · Spaced Repetition | RetainHQ`;
+    const pageDesc = `Learn ${label} step by step — ${lessonList.length} free lessons with spaced repetition and active recall on RetainHQ, so what you study actually sticks.`.slice(0, 158);
+
+    let articleHtml = `<article style="${ARTICLE_STYLE}">\n`;
+    articleHtml += `<div style="margin-bottom: 20px; font-size: 0.9em;"><a href="/roadmaps">Roadmaps</a> › ${escapeHTML(label)}</div>\n`;
+    articleHtml += `<h1>${escapeHTML(label)} Roadmap</h1>\n`;
+    articleHtml += `<p>${escapeHTML(pageDesc)}</p>\n<h2>Lessons</h2>\n<ul>\n`;
+    for (const { slug, title } of lessonList) {
+      articleHtml += `<li><a href="/roadmaps/${roadmapKey}/learn/${slug}">${escapeHTML(title)}</a></li>\n`;
+    }
+    articleHtml += `</ul>\n</article>`;
+
+    const ldJson = {
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: `${label} — RetainHQ`,
+      description: pageDesc,
+      url: `${BASE_URL}/roadmaps/${roadmapKey}`,
+      inLanguage: 'en',
+      provider: { '@type': 'Organization', name: 'RetainHQ', url: BASE_URL },
+    };
+
+    const outDir = join(DIST_ROOT, 'roadmaps', roadmapKey);
+    await mkdir(outDir, { recursive: true });
+    await writeFile(join(outDir, 'index.html'), hubPage({ path: `/roadmaps/${roadmapKey}`, pageTitle, pageDesc, articleHtml, ldJson }));
+  }
+
+  // Top hub: /roadmaps — must byte-match the client-side useSeo title in Roadmaps.jsx.
+  {
+    const pageTitle = 'Learning Roadmaps · DSA, System Design, Python & SQL | RetainHQ';
+    const pageDesc = 'Structured learning roadmaps for DSA, system design, Python, SQL, Core CS, and aptitude — each topic tracked by spaced repetition so what you study actually sticks.';
+    let articleHtml = `<article style="${ARTICLE_STYLE}">\n<h1>Learning Roadmaps</h1>\n<p>${escapeHTML(pageDesc)}</p>\n<ul>\n`;
+    for (const [roadmapKey, lessonList] of hubIndex) {
+      const label = ROADMAP_LABEL[roadmapKey] || roadmapKey;
+      articleHtml += `<li><a href="/roadmaps/${roadmapKey}">${escapeHTML(label)}</a> — ${lessonList.length} lessons</li>\n`;
+    }
+    articleHtml += `</ul>\n</article>`;
+    await mkdir(join(DIST_ROOT, 'roadmaps'), { recursive: true });
+    await writeFile(join(DIST_ROOT, 'roadmaps', 'index.html'), hubPage({ path: '/roadmaps', pageTitle, pageDesc, articleHtml, ldJson: null }));
+  }
+
+  console.log(`[generate-lesson-html] Wrote ${generatedCount} static lesson page(s) + ${hubIndex.size + 1} hub page(s).`);
 }
 
 main().catch((err) => {
