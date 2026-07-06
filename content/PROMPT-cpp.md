@@ -72,6 +72,13 @@ prose-complete now; nothing blocks on the visualizer.
 - **≥2 snippets, and make them EARN their place:** typically (a) the naive/buggy way, then (b) the
   correct idiom — the contrast IS the lesson. Not two near-duplicates.
 - **NEVER copy** prose from cppreference/SO/GfG — read, understand, write original. Cite in `sources`.
+- **Formatting (renderer contract):** in `sections[].body`/`explanation`, paragraphs stay 1–3
+  sentences; any 3+-item enumeration becomes `- ` bullets at column 0 (indented lines render as
+  code) or a `key_points` promotion — never a run-on paragraph; wrap every identifier, type, and
+  expression (`std::vector`, `push_back()`, `constexpr`) in `backticks` in ALL prose fields — they
+  render as inline code chips. Flag the node's sharp edges inside the teach with a short snippet +
+  forward pointer when a later node owns the full treatment (e.g. the vector lesson flags iterator
+  invalidation → its own node).
 
 ---
 

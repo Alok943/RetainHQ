@@ -39,6 +39,18 @@ English.** This is not optional flavour — it is the retention design.
 
 ---
 
+## FORMATTING (renderer contract — `explanation` / `sections[].body`)
+- Paragraphs 1–3 sentences (Hinglish), blank-line separated. Enumerations of 3+ parallel items
+  (factors, laws, cases, steps) = `- ` bullets at column 0 (indented lines render as code), or
+  `key_points` when the items ARE the concept's parts — never a run-on paragraph.
+- Wrap every formula, symbol, unit, and value in `backticks` (`v = u + at`, `9.8 m/s^2`, `n = c/v`)
+  in ALL prose fields — they render as inline code chips, which keeps the English exam layer
+  visually separate from the Hinglish narration.
+- MISCONCEPTION FLAGS: the teach must flag the classic board traps WHERE they arise (mass vs weight,
+  sign convention, "current flows in electron direction" galat hai) — 1-2 sentences + a tiny example,
+  with a forward pointer when a later KC owns the full story. Don't save every trap for
+  `common_mistakes` alone; plant it in the explanation too.
+
 ## THE TEMPLATE (field order = teaching order)
 | # | Field | Required? | What it is |
 |---|---|---|---|

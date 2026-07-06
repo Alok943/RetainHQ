@@ -53,6 +53,14 @@ Use these as the `common_mistakes` / snippet material for the matching lessons. 
 - **Migrations:** schema changes via Alembic only; autogenerate then READ the diff — it misses renames (sees drop+add).
 - **Testing:** override dependencies (`app.dependency_overrides`) instead of patching internals; async tests need an async test client (`httpx.AsyncClient` + ASGI transport), not `TestClient`, when the code under test awaits.
 
+## Formatting (renderer contract — same as PROMPT-engineering.md)
+`sections[].body` / `explanation`: paragraphs 1–3 sentences; any enumeration of 3+ parallel items
+becomes `- ` bullets at column 0 (or promote to `key_points`) — never a run-on paragraph; wrap every
+identifier, API, and param (`Depends`, `selectinload`, `expire_on_commit=False`) in `backticks` in
+ALL prose fields — they render as inline code chips. Flag the ground-truth production traps inline
+where they arise in the teach (not only in `common_mistakes`), with a one-line forward pointer when
+a sibling node owns the deep dive.
+
 ## Voice & scope guards
 - Target learner: 0–2 yrs, prepping backend interviews + first 90 days on the job. Interview-signal first.
 - Teach the CONCEPT through FastAPI/SQLAlchemy, don't tour the framework: "dependency injection" is the

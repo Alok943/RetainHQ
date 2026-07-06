@@ -109,4 +109,9 @@ REPLACES the formula. The worked_example REPLACES discovery.
 - Are `recall_questions` about the METHOD (transferable), not one-off trivia?
 - `company` tags = honest exam CATEGORIES (TCS NQT / AMCAT-style / service-co OA), never a fabricated
   "X company asked this exact question."
+- FORMATTING (renderer contract): in every prose field, paragraphs stay 1–3 sentences; a 3+-item
+  enumeration becomes a `- ` bullet block at column 0 (never a run-on sentence); wrap notation and
+  worked expressions in `backticks` (`|30H − 5.5M|`, `+ male / − female`) — the renderer shows them
+  as inline chips. Flag the classic trap with one sentence where it arises in the method/example,
+  not only in `common_mistakes`.
 - Single quotes + literal characters in strings so they nest in JSON.

@@ -66,6 +66,13 @@ recap should be the **pipeline-recap / where-this-fits** line. Total teaching ac
 complete (a beginner could learn it) — chunking is about *rhythm*, not *cutting depth*.
 Reference: `content/roadmaps/ai-engineering/embed-and-retrieve-top-k.json`.
 
+**Formatting inside `body` (and `explanation`) — renderer contract:** paragraphs stay 1–3 sentences;
+any enumeration of 3+ parallel items becomes `- ` bullets at column 0 (or promote to `key_points`) —
+never a run-on paragraph; wrap every identifier, API call, param, and metric (`temperature`,
+`client.messages.create`, `top_k=5`, `<=>`) in `backticks` in ALL prose fields — they render as
+inline code chips. Flag the topic's production traps inline where they arise (not only in
+`common_mistakes`), with a one-line forward pointer when a sibling node owns the deep dive.
+
 ## `image` / `illustration` — generated stills (optional)
 Images are generated separately (see `content/PROMPT-images.md` + `content/_TODO-images.md`) and stored in
 Supabase. In the lesson you reference ONLY the key + alt: `{ "asset": "ai-engineering/<slug>/<id>.png",

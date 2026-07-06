@@ -116,7 +116,20 @@ HARD RULES:
 10. VALUE HIERARCHY (spend effort here, in order): overview · understanding_checks · recall ·
     query_walkthrough > practice_task > challenge. A learner who predicts the result set and
     explains why understands the query; one who copies a big query may not.
-11. OUTPUT: exactly ONE raw JSON object, no fences, no commentary. Must parse with json.loads().
+11. FORMATTING (renderer contract): overview.what supports three block types separated by BLANK
+    lines (\n\n): prose paragraphs of 1-3 sentences; SQL blocks with every line indented 2 spaces;
+    bullet lists where every line starts with "- " at column 0 (indented lines render as code).
+    Use a bullet block for ANY enumeration of 3+ parallel items (clause rules, join types, NULL
+    behaviours) — never a run-on paragraph. Wrap every keyword, function, column, and expression
+    in `backticks` in ALL prose fields (overview, mistakes, answers, why) — they render as inline
+    code chips.
+12. EDGE-CASE FLAGS: overview.what must flag the sharp edges of this topic that bite in real
+    queries — even when a later roadmap topic owns the full treatment. A flag = a short query or
+    2-4 line snippet showing the trap + 1-2 sentences naming the rule + "covered fully in <slug>"
+    when a later topic owns it. Canonical examples: `NULL = NULL` is unknown so `WHERE` drops the
+    row (point to null-handling); `COUNT(col)` skips NULLs while `COUNT(*)` doesn't; joins on
+    duplicate keys multiply rows. Plant the hook — do NOT teach the later lesson.
+13. OUTPUT: exactly ONE raw JSON object, no fences, no commentary. Must parse with json.loads().
     Single source of truth for results is the seed data — if unsure what a query returns, simplify
     it until you are certain.
 ```

@@ -51,6 +51,12 @@ Output of Phase 1: the lost-here list, the mental-model/arc verdicts, and your a
    (5) how to recognize when to apply it. Name any that are unanswerable.
 4. **Source + example integrity** — are `engineering_examples` real engineering problems (not
    "Company X uses it" folklore)? Are `sources` plausibly real and authoritative?
+5. **Format check (renderer contract)** — flag: any run-on enumeration (3+ parallel items inside
+   one paragraph instead of a `- ` bullet block at column 0 or `key_points`); any prose paragraph
+   over 3 sentences; identifiers/formulas/APIs not wrapped in `backticks` in prose fields; bullets
+   written with leading indentation (they render as code); a missing edge-case flag the topic's
+   contract names as canonical (e.g. shallow copy for lists). Rank these after correctness errors
+   and teaching holes.
 
 Output of Phase 2: correctness issues (with corrections), the per-question grade + teaching-hole vs
 beginner-error classification, the five-questions gaps, and example/source flags.

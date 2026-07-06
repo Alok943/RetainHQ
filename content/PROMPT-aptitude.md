@@ -122,4 +122,9 @@ formula inside `hook`/`mental_model`.
   the formula genuinely **after** it? If discovery is forced, **delete it**.
 - Is the lesson **thin** — no padding, no playground, no invented sections?
 - Do `oa_questions[].approach` give the **10-second path**?
+- FORMATTING (renderer contract): in every prose field, paragraphs stay 1–3 sentences; a 3+-item
+  enumeration becomes a `- ` bullet block at column 0 (never a run-on sentence); wrap formulas,
+  expressions, and worked arithmetic in `backticks` (`0.8×0.9 = 0.72`, `nCr`, `2xy/(x+y)`) — the
+  renderer shows them as inline chips. Flag the tempting-wrong trap with one sentence where it
+  arises in the teach, not only in `common_mistakes`.
 - Single quotes + literal numbers in code/formula strings so they nest in JSON.

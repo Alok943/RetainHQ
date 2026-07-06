@@ -74,6 +74,15 @@ problem?, why_this_algorithm}]`, `pattern {name, recognition_cues?}`, `related [
 `interesting_facts [str]`, `practice [{title, url, difficulty?, why?}]`, `key_points [{title, detail}]`,
 `hook {scenario, question?}`.
 
+### Prose formatting + edge flags (renderer contract — `sections[].body` / `explanation`)
+Blank-line-separated blocks: prose paragraphs of 1-3 sentences; code blocks with every line indented
+2 spaces; bullet lists with `- ` at column 0 (indented lines render as code) for any enumeration of
+3+ items (cases, invariant conditions, complexity comparisons). Backtick every identifier, expression,
+and complexity (`lo <= hi`, `O(log n)`, `pop()`) in ALL prose fields — they render as inline code
+chips. Flag the topic's sharp edges inside the teaching body where they arise (off-by-one on bounds,
+integer overflow in `mid = (lo + hi) / 2` in fixed-width languages, hash-collision degradation to
+`O(n)`), even when a later node owns the deep dive — one short example + "covered fully in <slug>".
+
 ---
 
 ## RESEARCH → LESSON field mapping (kind `dsa`)

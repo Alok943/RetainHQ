@@ -76,6 +76,19 @@ A diagram-in-words belongs inside `explanation` or `mental_model.description`.
 }
 ```
 
+## Formatting + edge-case flags (renderer contract — `explanation`, `mental_model.description`)
+- Paragraphs are 1-3 sentences, blank-line separated. Any enumeration of 3+ parallel items
+  (conditions, states, layers, steps) becomes either `key_points` (preferred when the items ARE the
+  concept's parts) or a bullet block inside `explanation` — every line starting `- ` at column 0
+  (indented lines render as code). Never a run-on paragraph.
+- Wrap technical tokens (`SYN-ACK`, `fork()`, `O(1)`, `wait()`, `2PL`) in `backticks` in ALL prose
+  fields — the renderer shows them as inline code chips.
+- EDGE-CASE FLAGS: the `explanation` must flag the classic traps/misconceptions of the topic WHERE
+  they arise, even when a later node owns the full story — 1-2 sentences + "covered in <node>"
+  (e.g. the paging lesson flags that too little RAM turns paging into thrashing; the TCP lesson
+  flags that reliable ≠ fast). Plant the hook, don't teach the later node. Traps still get their
+  full entry in `common_mistakes`.
+
 ## `animation` — for PROCESS concepts (optional)
 A 5–10s animated diagram that runs right after the `mental_model`. It is **structured data**, not a
 video — `actors` (the boxes) + `steps` (a directed `from`→`to` flow). The frontend renders boxes with
