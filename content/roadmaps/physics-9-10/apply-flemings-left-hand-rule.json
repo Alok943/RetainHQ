@@ -26,6 +26,45 @@
     "intuition": "FBI trick: F = Force (Thumb), B = Magnetic field (Forefinger), I = Current (Middle finger). Apne left hand ko in teeno ko perpendicular karke stretch karo.",
     "description": "Jab humara thumb, forefinger, aur middle finger left hand ki ek dusre se 90-degrees (mutually perpendicular) par stretch ki jati hain, toh wo ek 3D coordinate system banati hain. Ye teen ungliyan force, magnetic field aur current ke relation ko represent karti hain."
   },
+  "diagram3d": {
+    "schema_version": 1,
+    "scene": "fleming-rule",
+    "rule": "left",
+    "field_direction": "+x",
+    "current_direction": "+y",
+    "prediction": {
+      "question": "Magnetic field +x direction mein hai aur current +y direction mein — force kis direction mein lagegi?",
+      "choices": ["+z (upar)", "-z (neeche)", "+x (field ke saath)"],
+      "answer": 1,
+      "explains": "F = I L × B. Cross product: ŷ × x̂ = -ẑ. Left-hand rule se bhi confirm: forefinger +x (field), middle finger +y (current), thumb points -z (neeche)."
+    },
+    "manipulate": {
+      "param": "current_direction",
+      "options": ["+y", "-y"],
+      "prompt": "Current ki direction flip karo — pehle predict karo ki force ab kis taraf lagegi."
+    },
+    "reflection": {
+      "prompt": "Current reverse karne se force kyun reverse ho gayi?",
+      "answer": "F = I L × B — jab I reverse hota hai toh cross product ka sign bhi reverse ho jaata hai, isliye force opposite direction mein flip ho jaati hai."
+    },
+    "caption": "Fleming's Left-Hand Rule — field (+x) aur current (+y) se force (-z) milti hai, I × B cross product se.",
+    "poster": {
+      "type": "schematic",
+      "bodies": [
+        { "id": "origin", "x": 50, "y": 50, "r": 3, "label": "Wire", "color": "#64748B" },
+        { "id": "field-tip", "x": 85, "y": 50, "r": 2, "label": "B (+x)", "color": "#64748B" },
+        { "id": "current-tip", "x": 50, "y": 15, "r": 2, "label": "I (+y)", "color": "#B45309" },
+        { "id": "force-tip", "x": 50, "y": 85, "r": 2, "label": "F (-z)", "color": "#0891B2" }
+      ],
+      "arrows": [
+        { "from": "origin", "to": "field-tip", "label": "B", "style": "force" },
+        { "from": "origin", "to": "current-tip", "label": "I", "style": "reaction" },
+        { "from": "origin", "to": "force-tip", "label": "F", "style": "force" }
+      ],
+      "caption": "Left-hand rule: Forefinger = B (+x), Middle = I (+y), Thumb = F (-z)."
+    }
+  },
+
   "explanation": "Fleming's Left-Hand Rule ek practical rule hai jo predict karta hai ki current-carrying conductor kis taraf move karega (force kis taraf lagega) jab usay kisi magnetic field mein perpendicular rakha jaye.\n\nIs rule ko use karne ke liye, apne Left Hand ke Thumb (anguthe), Forefinger (index finger), aur Middle finger ko aise stretch karo ki wo teeno ek dusre par right angles (90 degrees) banayein. Ab unhe set karo is order mein:\n1. Forefinger ko Magnetic Field ki direction mein point karo (North se South).\n2. Middle finger ko Current ki direction mein point karo (Positive to Negative).\n3. Jis disha mein aapka Thumb (angutha) point kar raha hoga, wahi disha conductor pe lagne wali Force (motion) ki hogi.\n\nQuestions mein aksar alpha particles (positive charge) ya electrons (negative charge) ka movement diya hota hai. Dhyan rakhna, current ki direction hamesha alpha particles (positive) ke movement ki direction mein hi li jati hai, par electrons ke movement ke theek opposite direction mein. Agar electrons east ja rahe hain, toh current ko west consider karke apna middle finger point karna hota hai. Tabhi thumb sahi force batayega.",
   "key_points": [
     {

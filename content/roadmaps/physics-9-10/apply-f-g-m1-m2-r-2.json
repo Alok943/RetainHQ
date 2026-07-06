@@ -38,7 +38,38 @@
         { "narration": "Denominator: (6.4)² = 40.96, (10⁶)² = 10¹².", "math": "Denominator = 40.96 × 10¹²" },
         { "narration": "Divide karo: 2002.2/40.96 ≈ 48.88, 10¹³/10¹² = 10¹.", "math": "F ≈ 48.88 × 10 = 488.8 N ≈ 490 N" }
       ],
-      "answer": "F ≈ 490 N. Cross-check: mg = 50 × 9.8 = 490 N ✓ — formula gives exactly the weight!"
+      "answer": "F ≈ 490 N. Cross-check: mg = 50 × 9.8 = 490 N ✓ — formula gives exactly the weight!",
+      "diagram3d": {
+        "schema_version": 1,
+        "scene": "orbit",
+        "central": { "label": "Earth", "mass": 6e24 },
+        "satellite": { "label": "Person", "mass": 50 },
+        "radius_km": 6400,
+        "show_force_vector": true,
+        "prediction": {
+          "question": "Satellite ki height badha dein (6400 km se 36000 km), toh gravitational force par kya effect hoga?",
+          "choices": ["Force bahut kam ho jaayegi (inverse-square law)", "Force same rahegi", "Force badh jaayegi"],
+          "answer": 0,
+          "explains": "F = G m₁ m₂ / r² — jab r badhta hai toh F r² ke hisaab se kam hota hai. Distance ~5.6× badhi toh force ~31× kam ho jaayegi."
+        },
+        "reflection": {
+          "prompt": "Agar satellite ki mass double kar dein par height same rakhein, toh force par kya hoga? Kya yeh orbit ki speed badal dega?",
+          "answer": "Force double ho jaayegi (F ∝ m), lekin orbital speed mass par depend nahi karti — same rahegi. Isliye ISRO ko satellite ki mass se orbit calculate karne ki zarurat nahi padti."
+        },
+        "caption": "Low-Earth orbit satellite — gravity ka pull hamesha centre ki taraf, height badhne par rapidly weak hota hai.",
+        "poster": {
+          "type": "schematic",
+          "bodies": [
+            { "id": "earth", "x": 30, "y": 30, "r": 18, "label": "Earth (M)", "color": "#2563EB" },
+            { "id": "satellite", "x": 75, "y": 30, "r": 3, "label": "Satellite (m)", "color": "#94A3B8" }
+          ],
+          "arrows": [
+            { "from": "satellite", "to": "earth", "label": "F = GMm/r²", "style": "force" }
+          ],
+          "distance": { "from": "earth", "to": "satellite", "label": "r" },
+          "caption": "Satellite Earth ke gravitational pull mein orbit kar raha hai. Force hamesha centre ki taraf point karti hai."
+        }
+      }
     },
     {
       "problem": "Two spheres of masses 20 kg and 30 kg are placed with their centres 0.5 m apart. Find the gravitational force between them.",

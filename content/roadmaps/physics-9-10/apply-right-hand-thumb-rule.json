@@ -28,6 +28,41 @@
     "intuition": "Apne daahine haath (right hand) se taar ko pakadne ki acting karo: agar angutha (thumb) current ki direction mein hai, toh ungliyan (fingers) magnetic field ka ghera banayengi.",
     "description": "Jab ek straight wire mein current flow hota hai, toh uske aaspas ka magnetic field circles (concentric circles) ki form mein hota hai. Right-Hand Thumb rule ek simple trick hai in circles ki direction (clockwise ya anticlockwise) pata lagane ki."
   },
+  "diagram3d": {
+    "schema_version": 1,
+    "scene": "magnetic-field",
+    "source": "straight-wire",
+    "current_direction": "out",
+    "show_compass": true,
+    "prediction": {
+      "question": "Current wire se bahar (screen se tumhari taraf) aa raha hai — compass needle wire ke RIGHT side mein kis direction mein point karegi?",
+      "choices": ["Upar (+y)", "Neeche (-y)", "Wire ki taraf"],
+      "answer": 0,
+      "explains": "Right-hand thumb rule: thumb bahar (current), fingers anticlockwise curl karti hain. Wire ke right side par field upar (+y) ki taraf point karti hai."
+    },
+    "manipulate": {
+      "param": "current_direction",
+      "options": ["out", "into"],
+      "prompt": "Current ki direction flip karo (bahar se andar) — predict karo compass needle ab kis taraf ghoomegi."
+    },
+    "reflection": {
+      "prompt": "Current reverse karne se field direction kyun reverse ho gayi?",
+      "answer": "Right-hand thumb rule: thumb ki direction badli (bahar → andar), toh fingers ka curl bhi reverse ho gaya (anticlockwise → clockwise). Field direction hamesha current ki direction par depend karti hai."
+    },
+    "caption": "Straight wire ke around concentric circular field lines — Right-Hand Thumb Rule se direction milti hai, current flip karo toh field bhi flip.",
+    "poster": {
+      "type": "schematic",
+      "bodies": [
+        { "id": "wire", "x": 50, "y": 50, "r": 5, "label": "Wire (I)", "color": "#B45309" },
+        { "id": "field-right", "x": 80, "y": 30, "r": 2, "label": "B", "color": "#0891B2" },
+        { "id": "field-left", "x": 20, "y": 70, "r": 2, "label": "B", "color": "#0891B2" }
+      ],
+      "arrows": [
+        { "from": "wire", "to": "field-right", "label": "B (anticlockwise)", "style": "force" }
+      ],
+      "caption": "Wire ke chaaron taraf concentric circles mein field — current ki direction se field ki direction tay hoti hai."
+    }
+  },
   "explanation": "Right-Hand Thumb Rule bahut hi convenient tarika hai kisi current-carrying conductor ke aaspas magnetic field ki direction find out karne ka.\n\nImagine karo ki tumne ek straight current-carrying wire ko apne right hand mein pakda hua hai is tarah ki tumhara angutha (thumb) current ki direction mein point kar raha hai. Ab dekho tumhari ungliyan (fingers) us wire ke chaaron taraf kis direction mein curl kar rahi hain. Jis direction mein fingers lapet rahi hain, wahi magnetic field lines ki direction hogi.\n\nAgar wire table par vertical hai aur current neeche se upar (upwards) ja raha hai, toh thumb upar rakhkar curl karne pe fingers anticlockwise ghoomti hain. Matlab field anticlockwise hai. Agar current upar se neeche (downwards) aa raha hai, toh thumb neeche hoga aur fingers clockwise wrap hongi.\n\nYeh rule yaad rakhna bahut zaroori hai kyunki aage aane wale circular loop aur solenoid ke concepts isi par based hain. Is rule ko Maxwell's corkscrew rule bhi kaha jata hai.",
   "key_points": [
     {

@@ -24,6 +24,36 @@
     "intuition": "Prism ek running race track jaisa hai jahan white light ke saare colors ek saath entry lete hain, par unki bending speed alag hone se wo separate ho jate hain.",
     "description": "White light mix of different colors (wavelengths) se bani hoti hai. Jab ye kisi glass prism jaisi cheez se guzarati hai, toh har color alag angle par bend (refract) hota hai, aur isi bending difference se band of colors banta hai."
   },
+  "diagram3d": {
+    "schema_version": 1,
+    "scene": "dispersion-prism",
+    "prediction": {
+      "question": "Jab white light prism se guzregi, toh kaunsa rang sabse ZYADA bend (deviate) hoga?",
+      "choices": ["Red (sabse badi wavelength)", "Violet (sabse chhoti wavelength)", "Green (beech wala)"],
+      "answer": 1,
+      "explains": "Chhoti wavelength = zyada bending. Violet ki wavelength sabse chhoti hai, isliye yeh sabse zyada deviate hota hai. Red ki wavelength sabse badi hai, isliye yeh sabse kam bend hota hai."
+    },
+    "reflection": {
+      "prompt": "Agar ek doosra ulta (inverted) prism spectrum ke saamne rakh dein, toh kya hoga?",
+      "answer": "Saare 7 rang wapas combine hokar white light ban jaayenge — Newton ne yahi experiment karke prove kiya tha ki white light actually 7 colors ka mixture hai."
+    },
+    "caption": "White light prism se guzar kar VIBGYOR spectrum mein split hoti hai — violet sabse zyada aur red sabse kam deviate hota hai.",
+    "poster": {
+      "type": "schematic",
+      "bodies": [
+        { "id": "prism", "x": 45, "y": 35, "r": 15, "label": "Glass Prism", "color": "#64748B" },
+        { "id": "white-ray", "x": 10, "y": 35, "r": 3, "label": "White Light", "color": "#FBBF24" },
+        { "id": "violet", "x": 85, "y": 60, "r": 2, "label": "V", "color": "#7C3AED" },
+        { "id": "red", "x": 85, "y": 15, "r": 2, "label": "R", "color": "#DC2626" }
+      ],
+      "arrows": [
+        { "from": "white-ray", "to": "prism", "label": "Incident ray", "style": "force" },
+        { "from": "prism", "to": "violet", "label": "V (max deviation)", "style": "force" },
+        { "from": "prism", "to": "red", "label": "R (min deviation)", "style": "reaction" }
+      ],
+      "caption": "White light prism se VIBGYOR mein split hoti hai. Violet sabse zyada bend hota hai, Red sabse kam."
+    }
+  },
   "explanation": "Jab safed light (white light) kisi transparent medium jaise glass prism se paas hoti hai, toh wo apne constituent colors mein split ho jati hai. Is phenomenon ko dispersion of light kehte hain. White light asal mein saat (7) alag colors ka mixture hoti hai: Violet, Indigo, Blue, Green, Yellow, Orange, aur Red (VIBGYOR).\n\nDispersion ka main reason yeh hai ki light ke alag-alag colors ki speed kisi bhi transparent medium (jaise glass) mein alag-alag hoti hai. Vacuum ya air mein sab colors ki speed lagbhag same hoti hai, isliye wo saath travel karte hain aur white dikhte hain. Par glass mein aate hi red light sabse tez chalti hai aur violet sabse slowly.\n\nKyunki unki speeds alag ho jati hain, wo alag-alag angles par bend (refract) karte hain. Red light sabse kam bend karti hai, aur violet light sabse zyada bend karti hai. Isi wajah se prism se bahar nikalte waqt yeh saare colors fan out ho jate hain aur ek distinct spectrum banate hain.\n\nSir Isaac Newton ne sabse pehle glass prism ka use karke sunlight ka spectrum obtain kiya tha. Unhone ek doosra inverted prism pehle waale prism ke aage rakha aur dekha ki saare rang wapas milkar phir se white light ban gaye (recombination of spectrum). Rainbow banna bhi dispersion of sunlight ka hi ek natural example hai, jisme pani ki boondein (water droplets) chote prisms ki tarah kaam karti hain.",
   "key_points": [
     {
