@@ -1,0 +1,127 @@
+{
+  "slug": "apply-pressure-force-area",
+  "title": "Apply Pressure = Force / Area",
+  "roadmap": "physics-9-10",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "define-pressure"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 9 Boards",
+      "NCERT Exercise"
+    ]
+  },
+  "hook": {
+    "scenario": "Aapke paas ek 5 kg ki eent (brick) hai. Agar aap isko sidha khada karke table pe rakhte hain to ek nishaan padd jata hai, lekin flat rakhne par nahi.",
+    "question": "Formula se kaise saabit (prove) karein ki same eent ka asar uski position par depend karta hai?"
+  },
+  "mental_model": {
+    "intuition": "Formula as a balancer: Upar rakho force (weight) aur usko divide kar do area se.",
+    "description": "Pressure = Force / Area. Numerator mein force (Newton) hai aur denominator mein area (meter\u00b2). Ek object apna alag-alag area zameen pe dikha sakta hai, isliye uska P bhi badalta rahega, jabki F (uske weight) same hai."
+  },
+  "explanation": "Pressure ka formula P = F / A, numericals solve karne ka main tool hai. Yahan 'F' thrust ya force hai jo perpendicular direction mein lag raha hai, aur 'A' woh area hai jo surface ke contact mein hai.\n\nProblem solve karte waqt do cheezon ka dhyan sabse zyada rakhna padta hai. Pehli, unit conversion. Bahut baar area cm\u00b2 ya mm\u00b2 mein diya hota hai. Pascal (Pa) use karne ke liye aapko Area hamesha m\u00b2 (square meters) mein convert karna hoga. (Yaad rakhein 1 cm\u00b2 = 10^-4 m\u00b2).\n\nDoosri baat F (force) nikalna. Kai baar F direct nahi diya hota, balki object ka mass diya hota hai. Aise cases mein force uska weight hota hai, isliye hum pehle W = m \u00d7 g se F nikalte hain. Uske baad area se divide karke pressure calculate karte hain.\n\nJaise ek wooden block (dimensions 20\u00d710\u00d75 cm) table par rakha ho. Agar aap use uske 20\u00d710 wale face par rakhenge toh area sabse bada hoga aur pressure sabse kam. Agar 10\u00d75 wale face par rakhenge toh area sabse chhota hoga aur pressure sabse zyada.",
+  "diagram": {
+    "type": "free-body"
+  },
+  "key_points": [
+    {
+      "title": "Area Conversion is MUST",
+      "detail": "Always convert cm or mm to meters before calculating area, or properly adjust the final area unit."
+    },
+    {
+      "title": "Force is Weight",
+      "detail": "Do not divide mass directly. First convert mass to force (weight) by multiplying by acceleration due to gravity (9.8 m/s\u00b2)."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A block of mass 5 kg and dimensions 20 cm x 10 cm x 5 cm is placed on a table with its 20 cm x 10 cm face in contact with the table. Find the pressure exerted on the table. (Take g = 9.8 m/s^2)",
+      "steps": [
+        {
+          "narration": "Pehle thrust ya force nikalenge W = m * g lagakar.",
+          "math": "F = 5 * 9.8 = 49 N"
+        },
+        {
+          "narration": "Ab area of contact calculate karte hain jo 20 cm x 10 cm hai. Ise meter mein convert karna hoga.",
+          "math": "Area = 0.2 m * 0.1 m = 0.02 m^2"
+        },
+        {
+          "narration": "Ab formula mein rakh kar divide karenge.",
+          "math": "Pressure = F / Area = 49 / 0.02 = 2450 Pa"
+        }
+      ],
+      "answer": "2450 Pa",
+      "diagram": {
+        "type": "free-body"
+      }
+    },
+    {
+      "problem": "If the same 5 kg block is now placed on its 10 cm x 5 cm face, calculate the new pressure.",
+      "steps": [
+        {
+          "narration": "Force abhi bhi wahi rahega kyunki object ka weight change nahi hua.",
+          "math": "F = 49 N"
+        },
+        {
+          "narration": "Naya area of contact 10 cm x 5 cm hai, jise meter mein convert karenge.",
+          "math": "Area = 0.1 m * 0.05 m = 0.005 m^2"
+        },
+        {
+          "narration": "Formula mein values lagayenge.",
+          "math": "Pressure = 49 / 0.005 = 9800 Pa"
+        }
+      ],
+      "answer": "9800 Pa",
+      "diagram": {
+        "type": "free-body"
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to square the conversion factor",
+      "explanation": "Bache 100 cm = 1 m jante hain, aur wo cm\u00b2 ko meter\u00b2 banate waqt sirf 100 se divide karte hain. Actually unhe 100 \u00d7 100 yani 10000 se divide karna hota hai."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If a force of 100 N is applied over an area of 2 m\u00b2, what is the pressure?",
+      "answer": "50 Pa",
+      "tier": "tier1"
+    },
+    {
+      "q": "Extra recall question?",
+      "answer": "Answer here",
+      "tier": "tier1"
+    },
+    {
+      "q": "Extra recall question? (Variant)",
+      "answer": "Answer here",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "CBSE",
+      "question": "A girl of mass 40 kg stands on one foot. The area of her foot is 100 cm^2. What is the pressure she exerts on the ground? (g = 10 m/s^2)",
+      "answer": "40,000 Pa.",
+      "approach": "Force = 40 * 10 = 400 N. Area = 100 cm^2 = 100 / 10000 m^2 = 0.01 m^2. Pressure = 400 / 0.01 = 40000 Pa."
+    },
+    {
+      "source": "Board Exam",
+      "question": "Extra OA question?",
+      "answer": "Answer here",
+      "approach": "Approach here"
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=10-10"
+  ]
+}

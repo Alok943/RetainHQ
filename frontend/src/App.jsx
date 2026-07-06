@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate, Link } from 'react-router-dom';
 import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
@@ -104,20 +104,20 @@ function AppLayout() {
       >
         <div className="w-full">
           <div className={`flex items-center mb-10 ${isCollapsed ? 'flex-col gap-4' : ''}`}>
-            <div className="flex items-center gap-2.5 cursor-pointer overflow-hidden" onClick={() => navigate('/dashboard')}>
+            <Link to="/dashboard" className="flex items-center gap-2.5 cursor-pointer overflow-hidden">
               <Logo variant={logoVariant} className="h-7 w-auto shrink-0" />
               {!isCollapsed && <h1 className="font-sans font-semibold text-2xl tracking-tight text-[#0F172A] whitespace-nowrap">RetainHQ</h1>}
-            </div>
+            </Link>
           </div>
 
           <nav className={`flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
-            <SidebarItem isCollapsed={isCollapsed} icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => navigate('/dashboard')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<Brain size={20} />} label="Reviews" active={activeTab === 'review'} onClick={() => navigate('/reviews')} badge={dueCount} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => navigate('/roadmaps')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<RouteIcon size={20} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => navigate('/paths')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} onClick={() => navigate('/vault')} />
-            <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => navigate('/analytics')} />
-            {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('/admin')} />}
+            <SidebarItem isCollapsed={isCollapsed} icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} to="/dashboard" />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Brain size={20} />} label="Reviews" active={activeTab === 'review'} to="/reviews" badge={dueCount} />
+            <SidebarItem isCollapsed={isCollapsed} icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} to="/roadmaps" />
+            <SidebarItem isCollapsed={isCollapsed} icon={<RouteIcon size={20} />} label="Career Paths" active={activeTab === 'paths'} to="/paths" />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} to="/vault" />
+            <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} to="/analytics" />
+            {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} to="/admin" />}
           </nav>
           
           <div className="mt-8">
@@ -170,10 +170,10 @@ function AppLayout() {
         
         {/* Mobile Header (Hidden on md+) */}
         <header className="md:hidden px-4 py-4 border-b glass-nav sticky top-0 z-10 flex justify-between items-center">
-          <div className="flex items-center gap-2" onClick={() => navigate('/dashboard')}>
+          <Link to="/dashboard" className="flex items-center gap-2">
             <Logo variant={logoVariant} className="h-6 w-auto" />
             <h1 className="font-sans font-semibold text-xl tracking-tight text-[#0F172A]">RetainHQ</h1>
-          </div>
+          </Link>
           <div className="flex items-center gap-3">
             {session ? (
               <>
@@ -231,8 +231,8 @@ function AppLayout() {
             100vh is taller than the visible area (the classic mobile-100vh bug). Pages
             already reserve pb-20 for it. */}
         <nav className="md:hidden fixed inset-x-0 bottom-0 glass-nav border-t flex justify-around items-center px-2 py-3 z-30 pb-safe gap-1">
-          <NavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => { setShowMoreMenu(false); navigate('/dashboard'); }} />
-          <NavItem icon={<Brain size={20} />} label="Review" active={activeTab === 'review'} onClick={() => { setShowMoreMenu(false); navigate('/reviews'); }} badge={dueCount} />
+          <NavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => setShowMoreMenu(false)} to="/dashboard" />
+          <NavItem icon={<Brain size={20} />} label="Review" active={activeTab === 'review'} onClick={() => setShowMoreMenu(false)} to="/reviews" badge={dueCount} />
           
           <button
             onClick={() => { setShowMoreMenu(false); navigate('/log'); }}
@@ -244,7 +244,7 @@ function AppLayout() {
             <span className={`font-sans text-[10px] font-medium ${activeTab === 'log' ? 'text-[#0891B2]' : 'text-[#64748B]'}`}>Log</span>
           </button>
           
-          <NavItem icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => { setShowMoreMenu(false); navigate('/roadmaps'); }} />
+          <NavItem icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} onClick={() => setShowMoreMenu(false)} to="/roadmaps" />
           
           <div className="relative flex flex-col items-center justify-center w-16">
             <NavItem 
@@ -258,10 +258,10 @@ function AppLayout() {
                 {/* Invisible backdrop to close the menu on outside click */}
                 <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
                 <div className="absolute bottom-[100%] right-0 mb-3 bg-white border border-[rgba(15,23,42,0.08)] shadow-lg rounded-xl flex flex-col w-48 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
-                  <MenuButton icon={<RouteIcon size={16} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => { setShowMoreMenu(false); navigate('/paths'); }} />
-                  <MenuButton icon={<Library size={16} />} label="Vault" active={activeTab === 'vault'} onClick={() => { setShowMoreMenu(false); navigate('/vault'); }} />
-                  <MenuButton icon={<TrendingUp size={16} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => { setShowMoreMenu(false); navigate('/analytics'); }} />
-                  {isAdmin && <MenuButton icon={<ShieldCheck size={16} />} label="Admin" active={activeTab === 'admin'} onClick={() => { setShowMoreMenu(false); navigate('/admin'); }} />}
+                  <MenuButton icon={<RouteIcon size={16} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => setShowMoreMenu(false)} to="/paths" />
+                  <MenuButton icon={<Library size={16} />} label="Vault" active={activeTab === 'vault'} onClick={() => setShowMoreMenu(false)} to="/vault" />
+                  <MenuButton icon={<TrendingUp size={16} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => setShowMoreMenu(false)} to="/analytics" />
+                  {isAdmin && <MenuButton icon={<ShieldCheck size={16} />} label="Admin" active={activeTab === 'admin'} onClick={() => setShowMoreMenu(false)} to="/admin" />}
                 </div>
               </>
             )}
@@ -282,10 +282,12 @@ function AppLayout() {
   );
 }
 
-function SidebarItem({ icon, label, active, onClick, isCollapsed, badge = 0 }) {
+function SidebarItem({ icon, label, active, onClick, to, isCollapsed, badge = 0 }) {
+  const Component = to ? Link : 'button';
   return (
-    <button
+    <Component
       onClick={onClick}
+      to={to}
       title={isCollapsed ? label : undefined}
       className={`flex items-center gap-3 py-3 rounded text-sm font-medium transition-colors w-full ${
         isCollapsed ? 'justify-center px-0' : 'px-4 text-left'
@@ -307,14 +309,16 @@ function SidebarItem({ icon, label, active, onClick, isCollapsed, badge = 0 }) {
           {badge > 9 ? '9+' : badge}
         </span>
       )}
-    </button>
+    </Component>
   );
 }
 
-function NavItem({ icon, label, active, onClick, badge = 0 }) {
+function NavItem({ icon, label, active, onClick, to, badge = 0 }) {
+  const Component = to ? Link : 'button';
   return (
-    <button
+    <Component
       onClick={onClick}
+      to={to}
       className={`flex flex-col items-center justify-center w-16 gap-1 ${
         active ? 'text-[#0891B2]' : 'text-[#64748B] hover:text-[#0F172A]'
       } transition-colors`}
@@ -328,21 +332,23 @@ function NavItem({ icon, label, active, onClick, badge = 0 }) {
         )}
       </div>
       <span className="font-sans text-[10px] font-medium">{label}</span>
-    </button>
+    </Component>
   );
 }
 
-function MenuButton({ icon, label, active, onClick }) {
+function MenuButton({ icon, label, active, onClick, to }) {
+  const Component = to ? Link : 'button';
   return (
-    <button
+    <Component
       onClick={onClick}
+      to={to}
       className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
         active ? 'bg-[rgba(15,23,42,0.05)] text-[#0891B2]' : 'text-[#64748B] hover:bg-[rgba(15,23,42,0.02)] hover:text-[#0F172A]'
       }`}
     >
       <div className="shrink-0">{icon}</div>
       <span className="truncate flex-1 text-left">{label}</span>
-    </button>
+    </Component>
   );
 }
 

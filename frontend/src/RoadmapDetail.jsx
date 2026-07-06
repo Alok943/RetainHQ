@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass, BookOpen } from 'lucide-react';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
@@ -595,12 +595,12 @@ function RoadmapDetail() {
     <div className="flex flex-col h-full" onClick={() => setContextNode(null)}>
       {/* Header */}
       <div className="px-4 md:px-8 pt-4 md:pt-6 pb-3 border-b border-[rgba(15,23,42,0.08)] bg-[#f9f9f6]">
-        <button
-          onClick={() => navigate('/roadmaps')}
-          className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] font-sans text-sm font-medium mb-3 transition-colors"
+        <Link
+          to="/roadmaps"
+          className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] font-sans text-sm font-medium mb-3 transition-colors block w-fit"
         >
           <ArrowLeft size={16} /> Back to Roadmaps
-        </button>
+        </Link>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {/* Official logo / themed glyph — matches the roadmap list card identity */}
@@ -827,12 +827,12 @@ function RoadmapDetail() {
         <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#131b2e] text-white rounded-lg shadow-xl px-4 py-3 animate-in fade-in slide-in-from-bottom-3 duration-200 max-w-[calc(100vw-2rem)]">
           <Check size={16} className="text-[#5DCAA5] shrink-0" />
           <span className="font-sans text-sm truncate max-w-[200px]">{logPrompt}</span>
-          <button
-            onClick={() => navigate(`/log?topic=${encodeURIComponent(logPrompt)}`)}
+          <Link
+            to={`/log?topic=${encodeURIComponent(logPrompt)}`}
             className="flex items-center gap-1.5 font-sans text-sm font-semibold text-[#22D3EE] hover:text-white transition-colors shrink-0"
           >
             <PlusSquare size={14} /> Log what you learned
-          </button>
+          </Link>
           <button onClick={() => setLogPrompt(null)} aria-label="Dismiss" className="text-[#7c839b] hover:text-white shrink-0">
             <X size={14} />
           </button>
@@ -960,12 +960,14 @@ function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, road
         </button>
 
         {learnSlug && (
-          <button
-            onClick={(e) => { e.stopPropagation(); navigate(`/roadmaps/${roadmapId}/learn/${learnSlug}`, { state: { contentKey, nodeId: node.id } }); }}
+          <Link
+            to={`/roadmaps/${roadmapId}/learn/${learnSlug}`}
+            state={{ contentKey, nodeId: node.id }}
+            onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-[#0891B2] bg-[#0891B2]/10 hover:bg-[#0891B2]/20 transition-colors shrink-0"
           >
             <BookOpen size={12} /> Learn
-          </button>
+          </Link>
         )}
         {tierColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tierColor }} title={node.tier} />}
         {hasInfo && (

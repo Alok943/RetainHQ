@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table, Check, Plus, Image as ImageIcon } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { lessonImageUrl } from './lib/assets';
@@ -25,6 +25,15 @@ const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
 
 // Short roadmap labels for the per-page <title> (keyword-targeted SEO).
 const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering', 'cpp-swe': 'C++', 'python-backend': 'Python Backend' };
+
+const prettifySlug = (slug) => {
+  if (!slug) return '';
+  const acronyms = ['tcp', 'udp', 'ip', 'dns', 'sql', 'api', 'os', 'http'];
+  return slug
+    .split('-')
+    .map(word => acronyms.includes(word.toLowerCase()) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 // Understanding-check intents → badge label, colour, icon.
 const CHECK_META = {
@@ -193,12 +202,12 @@ export default function LessonView() {
           <BookOpen size={32} className="text-[#94a3b8]" />
           <h2 className="font-sans text-lg font-semibold text-[#0F172A]">Lesson not available yet</h2>
           <p className="font-sans text-sm text-[#64748B]">We haven't published content for this topic yet. Check back soon!</p>
-          <button
-            onClick={() => navigate(`/roadmaps/${id}`)}
-            className="flex items-center gap-2 font-sans text-sm font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
+          <Link
+            to={`/roadmaps/${id}`}
+            className="flex items-center gap-2 font-sans text-sm font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors w-fit block"
           >
             <ArrowLeft size={16} /> Back to roadmap
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -211,12 +220,12 @@ export default function LessonView() {
   // aptitude/reasoning render paths.
   const header = (
     <>
-      <button
-        onClick={() => navigate(`/roadmaps/${id}`)}
-        className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] font-sans text-sm font-medium mb-4 transition-colors"
+      <Link
+        to={`/roadmaps/${id}`}
+        className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] font-sans text-sm font-medium mb-4 transition-colors w-fit block"
       >
         <ArrowLeft size={16} /> Back to roadmap
-      </button>
+      </Link>
 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -529,26 +538,7 @@ export default function LessonView() {
         </Section>
       )}
 
-      {/* --- §8 Sources --- */}
-      {lesson.sources?.length > 0 && (
-        <Section icon={<ExternalLink size={16} />} title="Sources">
-          <ul className="flex flex-col gap-2">
-            {lesson.sources.map((url, i) => (
-              <li key={i}>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 font-sans text-sm text-[#0891B2] hover:text-[#0F172A] font-medium transition-colors break-all"
-                >
-                  <ExternalLink size={13} className="shrink-0" />
-                  {url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      <LessonFooter lesson={lesson} />
     </div>
   );
 }
@@ -1119,44 +1109,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
         </Section>
       )}
 
-      {/* Learn next (optional) */}
-      {Array.isArray(lesson.related) && lesson.related.length > 0 && (
-        <Section icon={<GitBranch size={16} />} title="Learn next" accent="#7C3AED">
-          <div className="flex flex-wrap gap-1.5">
-            {lesson.related.map((slug) => (
-              <span key={slug} className="px-2.5 py-1 rounded-full bg-[#7C3AED]/10 font-sans text-[12px] font-medium text-[#7C3AED]">{slug}</span>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Did you know (optional) — memorable hooks */}
-      {Array.isArray(lesson.interesting_facts) && lesson.interesting_facts.length > 0 && (
-        <Section icon={<Lightbulb size={16} />} title="Did you know" accent="#B45309">
-          <ul className="flex flex-col gap-2">
-            {lesson.interesting_facts.map((f, i) => (
-              <li key={i} className="flex items-start gap-2 font-sans text-sm text-[#0F172A] leading-relaxed">
-                <Lightbulb size={13} className="text-[#B45309] mt-1 shrink-0" /> {f}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {/* Sources */}
-      {lesson.sources?.length > 0 && (
-        <Section icon={<ExternalLink size={16} />} title="Sources">
-          <ul className="flex flex-col gap-2">
-            {lesson.sources.map((url, i) => (
-              <li key={i}>
-                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-sans text-sm text-[#0891B2] hover:text-[#0F172A] font-medium transition-colors break-all">
-                  <ExternalLink size={13} className="shrink-0" /> {url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      <LessonFooter lesson={lesson} />
     </>
   );
 }
@@ -1435,20 +1388,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         </Section>
       )}
 
-      {/* Sources */}
-      {lesson.sources?.length > 0 && (
-        <Section icon={<ExternalLink size={16} />} title="Sources">
-          <ul className="flex flex-col gap-2">
-            {lesson.sources.map((url, i) => (
-              <li key={i}>
-                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-sans text-sm text-[#0891B2] hover:text-[#0F172A] font-medium transition-colors break-all">
-                  <ExternalLink size={13} className="shrink-0" /> {url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      <LessonFooter lesson={lesson} />
     </>
   );
 }

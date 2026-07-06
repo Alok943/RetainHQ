@@ -3,7 +3,7 @@ import {
   GraduationCap, ListChecks, ArrowRight, Plus, Sparkles,
   ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { getRoadmapStyle, RoadmapLogo } from './lib/roadmapVisuals';
@@ -43,13 +43,13 @@ function useCountUp(target, duration = 800) {
   return val;
 }
 
-function RoadmapCard({ rm, index, onClick, meta }) {
+function RoadmapCard({ rm, index, to, meta }) {
   const { Icon, accent } = getRoadmapStyle(rm.title);
   const pct = useCountUp(rm.progress_pct ?? 0);
 
   return (
-    <article
-      onClick={onClick}
+    <Link
+      to={to}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
       className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl shadow-sm p-5 cursor-pointer group flex flex-col min-h-[210px] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-3"
     >
@@ -104,7 +104,7 @@ function RoadmapCard({ rm, index, onClick, meta }) {
           />
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -134,7 +134,7 @@ function CollapsibleGroup({ label, blurb, items, navigate }) {
       {open && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((rm, i) => (
-            <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+            <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} to={`/roadmaps/${rm.slug || rm.id}`} />
           ))}
         </div>
       )}
@@ -257,9 +257,9 @@ function Roadmaps() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {flagships.map((rm) => (
-              <button
+              <Link
                 key={rm.id}
-                onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)}
+                to={`/roadmaps/${rm.slug || rm.id}`}
                 className="bg-white border border-[rgba(15,23,42,0.08)] rounded-xl p-3 flex items-center gap-3 text-left hover:-translate-y-0.5 hover:shadow-md transition-all group"
               >
                 <div className="w-10 h-10 rounded-lg bg-[rgba(15,23,42,0.03)] flex items-center justify-center shrink-0 border border-[rgba(15,23,42,0.05)]">
@@ -269,7 +269,7 @@ function Roadmaps() {
                   <div className="font-sans text-sm font-semibold text-[#0F172A] truncate">{rm.title}</div>
                   <div className="font-sans text-[10px] text-[#0891B2] font-semibold mt-0.5">{rm.meta.lessonCount} lessons</div>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
@@ -354,7 +354,7 @@ function Roadmaps() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {sorted.map((rm, i) => (
-              <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+              <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} to={`/roadmaps/${rm.slug || rm.id}`} />
             ))}
           </div>
         )}

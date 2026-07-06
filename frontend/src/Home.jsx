@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import FirstCapture from './FirstCapture';
 import AudiencePicker from './AudiencePicker';
@@ -284,22 +284,19 @@ function Home({ onStartReviews }) {
               {entryCard.type === 'continue_lesson' && (
                 <ResumeLessonCard
                   lesson={entryCard}
-                  onClick={() => navigate(
-                    `/roadmaps/${entryCard.roadmapSlug}/learn/${entryCard.lessonSlug}`,
-                    { state: { contentKey: entryCard.contentKey } }
-                  )}
+                  to={`/roadmaps/${entryCard.roadmapSlug}/learn/${entryCard.lessonSlug}`}
+                  state={{ contentKey: entryCard.contentKey }}
                 />
               )}
               {entryCard.type === 'continue_roadmap' && (
                 <ContinueRoadmapCard 
                   roadmap={entryCard.roadmap} 
-                  onClick={() => navigate(`/roadmaps/${entryCard.roadmap.slug || entryCard.roadmap.id}`)} 
+                  to={`/roadmaps/${entryCard.roadmap.slug || entryCard.roadmap.id}`} 
                 />
               )}
               {entryCard.type === 'start_learning' && (
                 <StartLearningCard 
                   roadmaps={entryCard.roadmaps} 
-                  onClickRoadmap={(slug) => navigate(`/roadmaps/${slug}`)} 
                 />
               )}
             </section>
@@ -330,7 +327,7 @@ function Home({ onStartReviews }) {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {roadmapTiles.map((rm) => (
-                  <RoadmapTile key={rm.id} rm={rm} onClick={() => navigate(`/roadmaps/${rm.slug || rm.id}`)} />
+                  <RoadmapTile key={rm.id} rm={rm} to={`/roadmaps/${rm.slug || rm.id}`} />
                 ))}
               </div>
             )}
@@ -350,7 +347,7 @@ function Home({ onStartReviews }) {
           <RecentRail
             loading={loadingActivities}
             activities={activities}
-            onNavigate={() => navigate('/vault')}
+            to="/vault"
           />
         </aside>
       </div>
@@ -447,10 +444,10 @@ function DueSessionCard({ isBrandNew, topReview, doneToday, dueCount, nextReview
 // "Continue learning" resume card — see design-system/components/resume-lesson.html.
 // One click from Home straight into the next unread lesson in the user's furthest-
 // along roadmap; progress bar reflects position among that roadmap's lesson-bearing nodes.
-function ResumeLessonCard({ lesson, onClick }) {
+function ResumeLessonCard({ lesson, to, state }) {
   const pct = lesson.total > 0 ? Math.round(((lesson.index - 1) / lesson.total) * 100) : 0;
   return (
-    <button onClick={onClick} className="w-full text-left group">
+    <Link to={to} state={state} className="w-full text-left group block">
       <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center justify-between gap-4 hover:-translate-y-0.5 transition-transform">
         <div className="min-w-0">
           <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
@@ -470,14 +467,14 @@ function ResumeLessonCard({ lesson, onClick }) {
       <div className="h-[3px] rounded-full bg-[rgba(15,23,42,0.08)] mt-2.5 overflow-hidden">
         <div className="h-full rounded-full bg-[#0891B2] transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
-    </button>
+    </Link>
   );
 }
 
-function ContinueRoadmapCard({ roadmap, onClick }) {
+function ContinueRoadmapCard({ roadmap, to }) {
   const pct = roadmap.progress_pct ?? 0;
   return (
-    <button onClick={onClick} className="w-full text-left group">
+    <Link to={to} className="w-full text-left group block">
       <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center justify-between gap-4 hover:-translate-y-0.5 transition-transform">
         <div className="min-w-0">
           <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
@@ -497,11 +494,11 @@ function ContinueRoadmapCard({ roadmap, onClick }) {
       <div className="h-[3px] rounded-full bg-[rgba(15,23,42,0.08)] mt-2.5 overflow-hidden">
         <div className="h-full rounded-full bg-[#0891B2] transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
-    </button>
+    </Link>
   );
 }
 
-function StartLearningCard({ roadmaps, onClickRoadmap }) {
+function StartLearningCard({ roadmaps }) {
   return (
     <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
       <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-3">
@@ -509,9 +506,9 @@ function StartLearningCard({ roadmaps, onClickRoadmap }) {
       </div>
       <div className="flex flex-col gap-3">
         {roadmaps.map(rm => (
-          <button 
+          <Link 
             key={rm.id} 
-            onClick={() => onClickRoadmap(rm.slug || rm.id)}
+            to={`/roadmaps/${rm.slug || rm.id}`}
             className="flex items-center justify-between text-left p-3 rounded-lg border border-[rgba(15,23,42,0.06)] hover:border-[#0891B2] hover:shadow-[0_2px_8px_-2px_rgba(8,145,178,0.2)] bg-white transition-all group"
           >
             <div className="min-w-0 pr-4">
@@ -521,7 +518,7 @@ function StartLearningCard({ roadmaps, onClickRoadmap }) {
             <div className="w-8 h-8 rounded-full bg-[rgba(8,145,178,0.1)] flex items-center justify-center shrink-0 group-hover:bg-[#0891B2] transition-colors">
               <ArrowRight size={14} className="text-[#0891B2] group-hover:text-white transition-colors" />
             </div>
-          </button>
+          </Link>
         ))}
       </div>
     </div>
@@ -529,11 +526,11 @@ function StartLearningCard({ roadmaps, onClickRoadmap }) {
 }
 
 // Compact roadmap tile: small progress ring + title + pct. No description text.
-function RoadmapTile({ rm, onClick }) {
+function RoadmapTile({ rm, to }) {
   const pct = rm.progress_pct ?? 0;
   return (
-    <button
-      onClick={onClick}
+    <Link
+      to={to}
       className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-3 flex items-center gap-2.5 text-left hover:-translate-y-0.5 transition-transform"
     >
       <ProgressRing size={28} stroke={3.5} pct={pct} color="#0891B2">
@@ -543,7 +540,7 @@ function RoadmapTile({ rm, onClick }) {
         <div className="font-sans text-[13px] font-medium text-[#0F172A] truncate">{rm.title}</div>
         <div className="font-mono text-[11px] text-[#64748B]">{pct}%</div>
       </div>
-    </button>
+    </Link>
   );
 }
 
@@ -579,7 +576,7 @@ function StatRow({ value, label, emphasis, mono, isLast }) {
 }
 
 // Right-rail recent captures — up to 3 single-line entries linking to the Vault.
-function RecentRail({ loading, activities, onNavigate }) {
+function RecentRail({ loading, activities, to }) {
   const recent = activities.slice(0, 3);
   return (
     <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
@@ -600,14 +597,14 @@ function RecentRail({ loading, activities, onNavigate }) {
       ) : (
         <div className="flex flex-col">
           {recent.map((a, i) => (
-            <button
+            <Link
               key={a.id}
-              onClick={onNavigate}
+              to={to}
               className={`flex items-baseline gap-2 py-2 first:pt-0 last:pb-0 last:border-b-0 border-b border-[rgba(15,23,42,0.08)] text-left w-full ${i === recent.length - 1 ? 'border-b-0' : ''}`}
             >
               <span className="font-sans text-[13px] text-[#0F172A] truncate flex-1 min-w-0">{a.topic}</span>
               <span className="font-mono text-[10px] text-[#64748B] shrink-0">{formatDate(a.created_at)}</span>
-            </button>
+            </Link>
           ))}
         </div>
       )}

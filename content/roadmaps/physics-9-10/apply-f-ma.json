@@ -1,0 +1,167 @@
+{
+  "slug": "apply-f-ma",
+  "title": "Apply F = ma",
+  "roadmap": "physics-9-10",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "state-newtons-second-law-of-motion"
+    ],
+    "unlocks": [
+      "state-newtons-third-law-of-motion"
+    ],
+    "appears_in": [
+      "CBSE Class 9 Boards",
+      "NCERT Class 9"
+    ]
+  },
+  "hook": {
+    "scenario": "Agar ek rocket aur ek kar dono ke engines same thrust (force) produce karein, toh rocket kafi dheere start lega, jabki car ek second mein gayab ho jayegi.",
+    "question": "Same force alag-alag mass wali cheezon mein alag raftaar (acceleration) kyun paida karta hai?"
+  },
+  "mental_model": {
+    "intuition": "Force (F) = Mass (m) \u00d7 Acceleration (a). Matlab ek nishchit force halke object ko tez aur bhari object ko dheere accelerate karega.",
+    "description": "Newton ke Second Law se humari sabse famous equation nikalti hai: F = ma. Yeh equation directly relate karti hai ki humne kitna jor (force) lagaya, cheez kitni bhari (mass) thi, aur woh kitni tezi se apni speed badhayegi (acceleration). Dono balance mein chalte hain."
+  },
+  "explanation": "Newton ke Second Law ka mathematical derivation directly humein F = ma formula tak le aata hai. Force directly proportional hota hai rate of change of momentum ke, F \u221d (mv - mu) / t. Agar mass constant rahe toh ise hum m * (v - u) / t likh sakte hain. Hum jaante hain ki change in velocity per unit time (v - u)/t ko hum acceleration (a) kehte hain. Isliye formula ban jata hai F = k * m * a. SI units is tarah define ki gayi hain ki constant 'k' ki value 1 ho jati hai, giving us the elegant equation: F = ma.\n\nYeh chota sa formula mechanics ki back-bone hai. Is equation mein F woh 'Net Unbalanced Force' hai jo object par lag raha hai. Agar kisi cheez par 3-4 direction se force lag rahe hain, toh tum pehle unka net resultant nikaloge aur use F ki jagah rakhoge. Mass 'm' kilogram (kg) mein hona chahiye, aur acceleration 'a' meter per second squared (m/s\u00b2) mein.\n\nForce ki SI unit 'Newton' (N) rakhi gayi hai, Sir Isaac Newton ke honor mein. Agar tum ek 1 kg ke object par itna force lagate ho ki uski speed har second 1 m/s badh jaye (yani acceleration 1 m/s\u00b2 ho), toh tum exact 1 Newton force laga rahe ho (1 N = 1 kg * 1 m/s\u00b2).\n\nF = ma humein batata hai ki acceleration a = F/m. Iska matlab acceleration applied force ke proportional hota hai (zyada push = zyada pickup) aur mass ke inversely proportional (zyada bhari = kam pickup). Ye equation effectively connect karti hai dynamics (forces) ko kinematics (motion) se.",
+  "diagram": {
+    "type": "free-body",
+    "object": "block",
+    "forces": [
+      {
+        "label": "F_net",
+        "dir": "right",
+        "magnitude": "ma"
+      },
+      {
+        "label": "a",
+        "dir": "right",
+        "magnitude": ""
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Formula Meaning",
+      "detail": "Net Force = Mass \u00d7 Acceleration. Ensure mass is in kg and acceleration in m/s\u00b2."
+    },
+    {
+      "title": "1 Newton Definition",
+      "detail": "One Newton is the amount of force required to accelerate a 1 kg mass at 1 m/s\u00b2."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A constant force acts on an object of mass 5 kg for a duration of 2 seconds. It increases the object's velocity from 3 m/s to 7 m/s. Find the magnitude of the applied force.",
+      "steps": [
+        {
+          "narration": "Pehla step hai acceleration calculate karna motion ke data se.",
+          "math": "a = (v - u) / t = (7 - 3) / 2"
+        },
+        {
+          "narration": "Acceleration ki value m/s\u00b2 mein nikal lo.",
+          "math": "a = 4 / 2 = 2 m/s^2"
+        },
+        {
+          "narration": "Ab seedha F = ma lagao. Mass 5 kg given hai.",
+          "math": "F = 5 kg * 2 m/s^2 = 10 N"
+        }
+      ],
+      "answer": "The magnitude of the applied force is 10 N.",
+      "diagram": {
+        "type": "free-body",
+        "object": "object",
+        "forces": [
+          {
+            "label": "F_net",
+            "dir": "right",
+            "magnitude": "10 N"
+          }
+        ]
+      }
+    },
+    {
+      "problem": "A car of mass 1000 kg is moving with a velocity of 20 m/s. If it is brought to rest in 5 seconds by applying brakes, calculate the braking force.",
+      "steps": [
+        {
+          "narration": "Car ruk rahi hai, iska matlab final velocity zero (v = 0) hogi. Pehle acceleration nikalte hain.",
+          "math": "a = (v - u) / t = (0 - 20) / 5"
+        },
+        {
+          "narration": "Acceleration negative aayega, jo show karta hai ki speed kam ho rahi hai (retardation).",
+          "math": "a = -4 m/s^2"
+        },
+        {
+          "narration": "Ab F = ma formula apply karke net force pata karo.",
+          "math": "F = 1000 kg * (-4 m/s^2) = -4000 N"
+        },
+        {
+          "narration": "Negative sign ka matlab yeh ek opposing ya braking force hai, jo motion ki opposite direction mein lag raha hai.",
+          "math": "Magnitude of braking force = 4000 N"
+        }
+      ],
+      "answer": "The braking force applied is 4000 N acting in the opposite direction to the motion.",
+      "diagram": {
+        "type": "free-body",
+        "object": "car",
+        "forces": [
+          {
+            "label": "Braking Force",
+            "dir": "left",
+            "magnitude": "4000 N"
+          }
+        ]
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to convert units to kg and m/s",
+      "explanation": "Agar speed km/h mein ya mass grams mein diya hai, aur tumne directly multiply kar diya, toh answer Newton mein nahi aayega. Hamesha standard units check karo."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the relationship between mass, acceleration, and force?",
+      "answer": "Force is equal to mass times acceleration (F = ma).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the SI unit of force?",
+      "answer": "The SI unit of force is the Newton (N).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens to acceleration if the net force is doubled on a constant mass?",
+      "answer": "The acceleration is doubled.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If force is kept constant, what is the relation between mass and acceleration?",
+      "answer": "They are inversely proportional.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Class 9",
+      "question": "What is 1 Newton?",
+      "answer": "One Newton is defined as the amount of force that produces an acceleration of 1 m/s\u00b2 in an object of 1 kg mass.",
+      "approach": "Use the formula F = ma. Put m = 1 kg and a = 1 m/s\u00b2 to derive the definition."
+    },
+    {
+      "source": "CBSE Class 9",
+      "question": "Calculate the acceleration produced when a 12 N force acts on a 3 kg mass.",
+      "answer": "4 m/s\u00b2.",
+      "approach": "Use a = F/m."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=9-9"
+  ]
+}

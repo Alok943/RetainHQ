@@ -1,0 +1,126 @@
+{
+  "slug": "read-acceleration-off-a-velocity-time-graph",
+  "title": "Read acceleration off a velocity-time graph",
+  "roadmap": "physics-9-10",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 10,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "interpret-uniform-acceleration-on-velocity-time-graph",
+      "calculate-the-slope-of-a-straight-line"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 9/10 Boards"
+    ]
+  },
+  "hook": {
+    "scenario": "Aapke samne do cars ka graph hai. Ek ki line thodi flat si hai, aur dusre ki line ekdum khadi pahadi jaisi steep hai. Bina koi lambi calculation ke, kis car ka engine zyada powerful hai?",
+    "question": "Hum v-t graph me steepness dekh kar mathematically acceleration kaise measure karte hain?"
+  },
+  "mental_model": {
+    "intuition": "v-t graph ka slope = Acceleration. Line jitni vertically khadi hogi, object utni tez accelerate kar raha hai.",
+    "description": "Jaise d-t graph ka slope hume speed (d/t) deta tha, wahi same math logic yahan lagta hai. v-t graph me, y-axis velocity hai aur x-axis time. Rise/Run matlab (change in velocity) / (time). Ye perfectly acceleration ka formula (v-u)/t ban jata hai."
+  },
+  "explanation": "Graph reading ki beauty ye hai ki ek line bohot saare math formulas ko chupa kar rakhti hai. Velocity-time graph mein jab aap kisi teerchi (slanted) line ko dekhte ho, to uski dhalan (slope) direct us object ka acceleration represent karti hai. Aisa isliye hota hai kyunki slope = (y2 - y1)/(x2 - x1), joki is case me (v - u)/t ban jata hai.\n\nAgar line y-axis ki taraf bohot steep (khadi) hai, iska matlab hai ki kam time me velocity me bohot bada uchhal aaya hai. Yani acceleration bohot high hai (jaise ek sports car). Agar line halki slanted hai, to matlab waqt zyada lag raha hai aur speed dheere badh rahi hai, to acceleration low hoga (jaise heavily loaded truck).\n\nNumerical nikalne ke liye steps fixed hain: Line par do easy points choose karo (jinki x,y reading clear ho). Y-axis par un dono points ki velocity padho aur unhe subtract karo (ye aapka change in velocity hai). Fir x-axis par un dono points ka time padho aur unhe subtract karo (ye aapka time interval hai). Divide the difference in velocity by the difference in time, aur aapke paas acceleration ki value hogi.\n\nAgar line neeche (downward) ja rahi hai, to aapka y2 - y1 negative aayega, jo sahi hai, kyunki wo retardation (negative acceleration) ko darshata hai. Origin (0,0) hamesha best point hota hai lenay ke liye agar line usme se guzar rahi ho.",
+  "key_points": [
+    {
+      "title": "Slope = Acceleration",
+      "detail": "The numerical slope of a velocity-time graph equals the acceleration of the object."
+    },
+    {
+      "title": "Formula derivation",
+      "detail": "Slope = (y2 - y1) / (x2 - x1) mathematically translates to a = (v - u) / t."
+    },
+    {
+      "title": "Downward slope",
+      "detail": "A negative slope (pointing downwards) will give a negative acceleration value, representing retardation."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A velocity-time graph for a car shows a straight line passing from (0,0) to (5s, 30 m/s). Find its acceleration.",
+      "steps": [
+        {
+          "narration": "Line par do points hain (0,0) aur (5,30). Slope nikalne ke liye inka difference lein.",
+          "math": "Point 1: (0,0), Point 2: (5,30)"
+        },
+        {
+          "narration": "Acceleration = Change in y / Change in x.",
+          "math": "a = (30 - 0) / (5 - 0)"
+        },
+        {
+          "narration": "Divide karein.",
+          "math": "a = 30 / 5 = 6"
+        }
+      ],
+      "answer": "6 m/s^2"
+    },
+    {
+      "problem": "A train's v-t graph starts at (0, 20 m/s) and ends at (10s, 0 m/s). Calculate its acceleration.",
+      "steps": [
+        {
+          "narration": "Initial point y=20 par hai aur final point y=0 par hai. Train break laga rahi hai.",
+          "math": "Point 1: (0,20), Point 2: (10,0)"
+        },
+        {
+          "narration": "Slope = (y2 - y1) / (x2 - x1). Final minus initial karna hai.",
+          "math": "a = (0 - 20) / (10 - 0)"
+        },
+        {
+          "narration": "Negative numerator ko denominator se divide karein.",
+          "math": "a = -20 / 10 = -2"
+        }
+      ],
+      "answer": "-2 m/s^2 (retardation)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Finding area instead of slope",
+      "explanation": "Bache aksar v-t graph me velocity nikalne wale aur distance nikalne wale concept ko mix kar dete hain. Slope (divide karke) acceleration deta hai. Area (multiply karke) displacement deta hai."
+    },
+    {
+      "title": "Reversing the points for negative slope",
+      "explanation": "Downward line me bache y1-y2 kar dete hain positive answer laane ke liye. Rule strictly y2-y1 (Final - Initial) follow karna chahiye, jisse retardation apne aap negative sign ke sath aa jayega."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What physical quantity does the slope of a velocity-time graph give?",
+      "answer": "Acceleration",
+      "tier": "tier1"
+    },
+    {
+      "q": "If the slope of a v-t graph is negative, what does it mean?",
+      "answer": "The object is decelerating (retardation).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is a key takeaway about read acceleration off a velocity time graph?",
+      "answer": "Refer to the fundamental concepts of motion.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "How can you find the acceleration of a body from its velocity-time graph?",
+      "answer": "By calculating the slope of the velocity-time graph. Acceleration = change in velocity (y-axis) / time taken (x-axis).",
+      "approach": "Direct explanation of slope = (v-u)/t."
+    },
+    {
+      "source": "CBSE 2018",
+      "question": "Two cars A and B have their v-t graphs plotted. Line A makes a 30-degree angle with the time axis, and line B makes a 60-degree angle. Which car has greater acceleration?",
+      "answer": "Car B.",
+      "approach": "A larger angle means a steeper slope. Since slope equals acceleration, the steeper line (B) represents higher acceleration."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=8-8"
+  ]
+}

@@ -223,7 +223,7 @@ def main():
             err(rel, f"kind must be one of {KIND}")
         if d.get("tier") not in TIER:
             err(rel, f"tier must be one of {TIER}")
-        if d.get("roadmap") and d["roadmap"] != path.parent.name:
+        if d.get("roadmap") and d["roadmap"] != path.parent.name and path.parent.name != "_numericals":
             err(rel, f"roadmap '{d['roadmap']}' != folder '{path.parent.name}'")
 
         m = d.get("metadata")
