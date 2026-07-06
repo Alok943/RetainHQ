@@ -200,18 +200,18 @@ async function main() {
       html = html.replace(/<title>.*?<\/title>/, `<title>${escapeHTML(pageTitle)}</title>`);
       
       // Replace <meta name="description" content="...">
-      html = html.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escapeHTML(pageDesc)}">`);
+      html = html.replace(/<meta[^>]*name="description"[^>]*>/i, `<meta name="description" content="${escapeHTML(pageDesc)}">`);
       
       // Replace <link rel="canonical" href="...">
-      html = html.replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${url}">`);
+      html = html.replace(/<link[^>]*rel="canonical"[^>]*>/i, `<link rel="canonical" href="${url}">`);
       
       // Replace <meta property="og:url" content="...">
-      html = html.replace(/<meta property="og:url"([^>]*)>/, `<meta property="og:url" content="${url}">`);
+      html = html.replace(/<meta[^>]*property="og:url"[^>]*>/i, `<meta property="og:url" content="${url}">`);
       
       // Optionally handle og:title and twitter:title if they exist in the template
       // Usually Vite injects these via JS, but if they are static, replace them:
-      html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${escapeHTML(pageTitle)}">`);
-      html = html.replace(/<meta name="twitter:title" content="[^"]*">/, `<meta name="twitter:title" content="${escapeHTML(pageTitle)}">`);
+      html = html.replace(/<meta[^>]*property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeHTML(pageTitle)}">`);
+      html = html.replace(/<meta[^>]*name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${escapeHTML(pageTitle)}">`);
 
       // 2. Append JSON-LD before </head>
       const ldJson = [
