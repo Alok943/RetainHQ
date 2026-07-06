@@ -538,7 +538,6 @@ export default function LessonView() {
         </Section>
       )}
 
-      <LessonFooter lesson={lesson} />
     </div>
   );
 }
@@ -1109,7 +1108,6 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
         </Section>
       )}
 
-      <LessonFooter lesson={lesson} />
     </>
   );
 }
@@ -1388,7 +1386,6 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         </Section>
       )}
 
-      <LessonFooter lesson={lesson} />
     </>
   );
 }
