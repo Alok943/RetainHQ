@@ -336,7 +336,7 @@ function RoadmapDetail() {
     const cur = statusMap[nodeId] || 'not_started';
     const next = cur === 'done' ? 'not_started' : 'done';
     setStatusMap((m) => ({ ...m, [nodeId]: next })); // optimistic
-    if (next === 'done') focusNode(nodeId); // pan to the topic just completed (map view; no-op in list)
+    if (next === 'done' && view === 'map') focusNode(nodeId); // pan to the topic just completed (map view; no-op in list)
     if (next === 'done') {
       const raw = rawNodes.find((n) => n.id === nodeId);
       if (raw) {
@@ -354,7 +354,7 @@ function RoadmapDetail() {
       console.error('Failed to save progress:', err);
       setStatusMap((m) => ({ ...m, [nodeId]: cur })); // revert
     }
-  }, [statusMap, focusNode, rawNodes, requireAuth]);
+  }, [statusMap, focusNode, rawNodes, requireAuth, view]);
 
   useEffect(() => () => clearTimeout(logPromptTimer.current), []);
 
@@ -375,14 +375,14 @@ function RoadmapDetail() {
 
   // On load: center on the furthest-completed topic, or the first node if none done
   useEffect(() => {
-    if (!instanceReady || didInitialFocus.current || nodes.length === 0 || rawNodes.length === 0) return;
+    if (view !== 'map' || !instanceReady || didInitialFocus.current || nodes.length === 0 || rawNodes.length === 0) return;
     const tops = rawNodes.filter((n) => !n.parent_id);
     const doneTops = tops.filter((n) => statusMap[n.id] === 'done');
     let targetId = null;
     if (doneTops.length) targetId = doneTops.reduce((a, b) => (a.order_index > b.order_index ? a : b)).id;
     else if (tops.length) targetId = tops.reduce((a, b) => (a.order_index < b.order_index ? a : b)).id;
     if (targetId) { focusNode(targetId); didInitialFocus.current = true; }
-  }, [instanceReady, nodes, rawNodes, statusMap, focusNode]);
+  }, [instanceReady, nodes, rawNodes, statusMap, focusNode, view]);
 
   const onNodeClick = useCallback((e, node) => {
     if (node.type === 'step') return;
