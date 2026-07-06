@@ -2,11 +2,11 @@ import React from 'react';
 import GlossaryTerm from '../GlossaryTerm';
 
 /**
- * Given a plain string and a list of glossary terms, returns an array of strings
- * and <GlossaryTerm> components. Matches each term at most once per lesson
- * (tracked via the `used` Set). Longest terms are matched first.
+ * Core term matcher: plain prose in, array of strings and <GlossaryTerm> nodes
+ * out. Matches each term at most once per lesson (tracked via the `used` Set).
+ * Longest terms are matched first.
  */
-export function linkifyGlossary(text, terms = [], used = new Set()) {
+function linkifyTerms(text, terms, used) {
   if (!text || !terms || terms.length === 0) return [text];
 
   // Sort terms longest-first to match multi-word terms before single words
@@ -19,20 +19,17 @@ export function linkifyGlossary(text, terms = [], used = new Set()) {
     // Use word boundaries. Case insensitive.
     const escapedTerm = entry.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`\\b(${escapedTerm})\\b`, 'i');
-    
+
     const match = text.match(regex);
-    if (entry.term === 'keyword-only' || entry.term === 'positional-only') {
-      console.log('[gd]', JSON.stringify(text.slice(0, 40)), entry.term, 'used?', used.has(termLower), 'match?', !!match);
-    }
     if (match) {
       used.add(termLower);
       const before = text.substring(0, match.index);
       const matchedText = match[1]; // preserve original case
       const after = text.substring(match.index + matchedText.length);
-      
-      const beforeNodes = linkifyGlossary(before, terms, used);
-      const afterNodes = linkifyGlossary(after, terms, used);
-      
+
+      const beforeNodes = linkifyTerms(before, terms, used);
+      const afterNodes = linkifyTerms(after, terms, used);
+
       return [
         ...beforeNodes,
         <GlossaryTerm key={termLower} term={entry.term} definition={entry.definition} example={entry.example}>
@@ -45,6 +42,31 @@ export function linkifyGlossary(text, terms = [], used = new Set()) {
 
   // No match found
   return [text];
+}
+
+/**
+ * Inline renderer for lesson prose: `backtick spans` become styled <code>
+ * chips, and everything else goes through the glossary term matcher. Glossary
+ * matching is intentionally disabled inside code spans — `append()` should be
+ * a code chip, not a tooltip link.
+ */
+export function linkifyGlossary(text, terms = [], used = new Set()) {
+  if (!text) return [text];
+  if (typeof text !== 'string') return [text];
+
+  const parts = text.split(/(`[^`\n]+`)/g);
+  if (parts.length === 1) return linkifyTerms(text, terms, used);
+
+  return parts.flatMap((part, i) => {
+    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+      return [
+        <code key={`c${i}`} className="font-mono text-[0.9em] text-[#0F172A] bg-[#0F172A]/[0.06] border border-[#0F172A]/[0.08] rounded px-1 py-px whitespace-nowrap">
+          {part.slice(1, -1)}
+        </code>
+      ];
+    }
+    return linkifyTerms(part, terms, used);
+  });
 }
 
 /**

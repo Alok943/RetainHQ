@@ -35,7 +35,7 @@ Return ONE JSON object matching this exact shape. No markdown, no commentary, JS
     "project_usage": ["FastAPI", "micrograd"]
   },
   "overview": {
-    "what": "Core definition + 2-3 concrete examples + the key mental model. Exactly ONE analogy, connected back to real Python behavior. Everything later tested must appear here.",
+    "what": "Core definition + 2-3 concrete examples + the key mental model + edge-case flags (rule 28). Exactly ONE analogy, connected back to real Python behavior. Everything later tested must appear here. Format per rule 16: short prose paragraphs, 2-space-indented code blocks, '- ' bullet lists for enumerations, `backticks` around inline code.",
     "why": "Why it matters / what problem it solves, 2-3 sentences.",
     "where_used": ["FastAPI", "Pydantic", "Django"]
   },
@@ -150,9 +150,19 @@ HARD RULES:
 16. OVERVIEW COMPLETENESS: overview.what must explicitly teach the core definition, 2-3 concrete
     examples, and the single most important mental model — not the analogy alone. Any example or
     fact referenced by a recall question, practice task, or challenge must already appear in overview.
-    FORMATTING: put each code example on its own lines, indented 2 spaces, with a BLANK LINE before
-    and after it (separate \n\n), so the lesson view renders it as a code block instead of collapsing
-    it into a run-on paragraph. Keep prose and code in distinct blocks.
+    FORMATTING — the renderer supports exactly three block types, separated by BLANK LINES (\n\n):
+    a) PROSE paragraphs: 1-3 sentences each. Never longer — split dense paragraphs.
+    b) CODE blocks: every line indented 2 spaces, blank line before and after. Each code example
+       on its own lines — never inline code runs inside a prose paragraph.
+    c) BULLET lists: every line starts with "- " at column 0 (NO leading indentation — indented
+       lines render as code). Use a bullet list for ANY enumeration of 3+ parallel items (methods,
+       rules, options, cases). One item per line. NEVER write an enumeration as a run-on paragraph
+       or as pseudo-list lines inside a paragraph — the renderer collapses those into a blob.
+    INLINE CODE: wrap every identifier, call, literal, and expression that appears inside prose or
+    bullets in `backticks` — the renderer displays them as inline code chips. E.g.
+    "- `pop(i)` — remove AND return the item at index `i`; raises `IndexError` on an empty list".
+    METHOD BULLETS must state three things: what it does, what it RETURNS (call out the ones that
+    return None), and which exception the failure path raises.
 17. WALKTHROUGH DESIGN: code_walkthrough demonstrates EXACTLY ONE concept — the learner can point to
     one line and say "that reveals the lesson." Prefer 4-8 lines over 12-15. focus names the single
     most important state change. Never combine multiple concepts in one walkthrough.
@@ -189,6 +199,15 @@ HARD RULES:
     box." Favour progressive revelation (show code -> provoke a prediction -> explain) over a flat definition.
 27. OUTPUT: return exactly ONE raw JSON object. Do NOT wrap it in markdown fences. No commentary,
     no explanations, no preamble, no epilogue.
+28. EDGE-CASE FLAGS (prevents "the AI told me something my lesson didn't"): overview.what must
+    flag every sharp edge of this topic that bites in real code — even when the FULL treatment
+    belongs to a later roadmap topic. Flag = a 3-6 line code block showing the trap firing, one
+    prose sentence naming the rule, and (if a later topic owns it) an explicit forward pointer:
+    "covered fully in <slug>". Canonical examples: lists MUST flag that `a[:]`/`a.copy()` are
+    shallow (forward -> shallow-vs-deep-copy); tuples MUST flag that immutability protects slots,
+    not the objects inside them; dict lessons MUST flag KeyError-on-missing vs `.get()`. Never
+    silently defer a gotcha to the later lesson — the flag plants the hook, the later topic goes
+    deep. Do NOT turn the flag into the full later lesson either: 1 code block + 1-2 sentences max.
 ```
 
 ---

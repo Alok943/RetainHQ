@@ -861,8 +861,9 @@ function LessonSections({ sections, glossary, used }) {
 }
 
 /** Renders a content string as structured blocks: paragraphs separated by blank
- *  lines, with indented blocks rendered as real code. Overviews embed code examples
- *  this way, and a plain <p> would collapse the newlines into one run-on blob. */
+ *  lines, indented blocks rendered as real code, and `- ` lines rendered as a
+ *  bullet list. Overviews embed code examples this way, and a plain <p> would
+ *  collapse the newlines into one run-on blob. */
 function RichText({ text, tone = 'ink', glossary, used }) {
   const color = tone === 'muted' ? 'text-[#475569]' : 'text-[#0F172A]';
   const blocks = String(text || '').split(/\n[ \t]*\n/).filter((b) => b.trim() !== '');
@@ -877,6 +878,28 @@ function RichText({ text, tone = 'ink', glossary, used }) {
           const code = lines.map((l) => l.slice(min)).join('\n').trim();
           return (
             <pre key={i} className="m-0 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[12.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0">{code}</pre>
+          );
+        }
+        // A block where every line is a `- ` bullet becomes a real list. A wrapped
+        // continuation line (no `- ` prefix) is folded into the previous bullet.
+        const isBullets = lines.every((l) => l.trim() === '' || /^- /.test(l.trim())) && lines.some((l) => /^- /.test(l.trim()));
+        if (isBullets) {
+          const items = [];
+          for (const l of lines) {
+            const t = l.trim();
+            if (!t) continue;
+            if (t.startsWith('- ')) items.push(t.slice(2));
+            else if (items.length) items[items.length - 1] += ' ' + t;
+          }
+          return (
+            <ul key={i} className="m-0 pl-1 flex flex-col gap-1.5 list-none">
+              {items.map((item, j) => (
+                <li key={j} className={`font-sans text-sm ${color} leading-relaxed flex items-start gap-2`}>
+                  <span className="text-[#0F766E] font-bold shrink-0 mt-px select-none">›</span>
+                  <span className="min-w-0">{linkifyGlossary(item, glossary, used)}</span>
+                </li>
+              ))}
+            </ul>
           );
         }
         return (
