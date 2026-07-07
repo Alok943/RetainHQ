@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback, internal, prefs
+from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback, internal, prefs, tests
 
 app = FastAPI(title="RetainHQ API", version="1.0.0")
 
@@ -30,6 +30,7 @@ app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(feedback.router, prefix="/api/feedback", tags=["feedback"])
 app.include_router(internal.router, prefix="/api/internal", tags=["internal"])
 app.include_router(prefs.router, prefix="/api/prefs", tags=["prefs"])
+app.include_router(tests.router, prefix="/api/tests", tags=["tests"])
 
 @app.get("/me")
 async def get_me(current_user: SupabaseUser = Depends(get_current_user)):

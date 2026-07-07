@@ -1,0 +1,55 @@
+{
+  "slug": "aggregation-basics",
+  "title": "Test — Aggregation",
+  "roadmap": "sql",
+  "kind": "test",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "interview_frequency": "high",
+    "importance": 8,
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "phase": "Aggregation",
+  "questions": [
+    {
+      "id": "agg-q1",
+      "node": "null-handling",
+      "type": "query-write",
+      "difficulty": "medium",
+      "trap": true,
+      "trap_note": "COUNT(*) counts ROWS (including the one with a NULL amount); COUNT(amount) skips NULLs. The obvious COUNT(*) gives 5 — wrong.",
+      "prompt": "Return how many orders have an amount actually recorded (i.e. not missing).",
+      "schema_sql": "CREATE TABLE orders (id INT, customer TEXT, amount INT);\nINSERT INTO orders VALUES\n  (1, 'asha', 250),\n  (2, 'vikram', 120),\n  (3, 'asha', NULL),\n  (4, 'meena', 400),\n  (5, 'vikram', 90);",
+      "canonical_query": "SELECT COUNT(amount) FROM orders;",
+      "order_matters": false,
+      "explain": "COUNT(column) counts non-NULL values in that column — 4 here. COUNT(*) counts rows — 5. The seed data plants exactly one NULL so the wrong query is visibly wrong, not accidentally right."
+    },
+    {
+      "id": "agg-q2",
+      "node": "having-vs-where",
+      "type": "fillup",
+      "difficulty": "easy",
+      "trap": false,
+      "prompt": "A filter on an aggregate (e.g. keep only customers whose SUM(amount) exceeds 300) cannot go in WHERE — it belongs in the ______ clause.",
+      "answer": "HAVING — WHERE filters individual rows BEFORE grouping (aggregates don't exist yet); HAVING filters groups AFTER GROUP BY has computed the aggregates.",
+      "accept": [
+        "HAVING"
+      ],
+      "explain": "Order of operations: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY. WHERE runs before groups exist, so SUM() in WHERE is an error; HAVING runs on the grouped result."
+    },
+    {
+      "id": "agg-q3",
+      "node": "group-by",
+      "type": "query-write",
+      "difficulty": "medium",
+      "trap": false,
+      "prompt": "Return each customer's total order value (customer, total), highest total first. Treat missing amounts as 0.",
+      "schema_sql": "CREATE TABLE orders (id INT, customer TEXT, amount INT);\nINSERT INTO orders VALUES\n  (1, 'asha', 250),\n  (2, 'vikram', 120),\n  (3, 'asha', NULL),\n  (4, 'meena', 400),\n  (5, 'vikram', 90);",
+      "canonical_query": "SELECT customer, SUM(COALESCE(amount, 0)) AS total FROM orders GROUP BY customer ORDER BY total DESC;",
+      "order_matters": true,
+      "explain": "GROUP BY collapses rows per customer; COALESCE turns the NULL into 0 (plain SUM would silently skip it — same totals here, but the habit matters when a whole group is NULL); ORDER BY total DESC ranks them: meena 400, asha 250, vikram 210."
+    }
+  ]
+}

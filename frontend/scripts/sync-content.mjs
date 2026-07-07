@@ -93,6 +93,20 @@ async function main() {
         await cp(join(numDir, nf), join(numDest, nf), { force: true });
       }
     }
+
+    // Third pass: copy _test/ subdirectory if it exists (Tests-section question banks,
+    // docs/SPEC-test-runtime.md). Same shape as _numericals — a phase-keyed JSON file.
+    const testDir = join(srcDir, '_test');
+    let testFiles;
+    try { testFiles = await readdir(testDir); } catch { testFiles = []; }
+    if (testFiles.length) {
+      const testDest = join(destDir, '_test');
+      await mkdir(testDest, { recursive: true });
+      for (const tf of testFiles) {
+        if (!tf.endsWith('.json')) continue;
+        await cp(join(testDir, tf), join(testDest, tf), { force: true });
+      }
+    }
   }
 
   // Write manifest

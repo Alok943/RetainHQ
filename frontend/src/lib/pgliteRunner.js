@@ -49,6 +49,30 @@ function shape(result) {
 }
 
 /**
+ * Run a query against a FULLY ISOLATED database — no canonical SQL-lessons dataset
+ * loaded first. For the Tests section (docs/SPEC-test-runtime.md): a query-write
+ * question's `schema_sql` is a small, self-contained schema (its own `orders`/`t`/
+ * whatever table names), NOT an addition to the shared lessons dataset — reusing
+ * runSql()'s `setupSql` path here would collide with tables of the same name that
+ * already exist in the canonical dataset (e.g. the lessons' own `orders` table).
+ * @param {string} sql        The query to run.
+ * @param {string} schemaSql  The question's own DDL/seed — the ENTIRE schema, nothing implied.
+ * @returns {Promise<{columns:string[], rows:object[], affectedRows:?number, error:?string}>}
+ */
+export async function runIsolatedSql(sql, schemaSql) {
+  try {
+    const PGlite = await importPGlite();
+    const db = new PGlite();
+    if (schemaSql) await db.exec(schemaSql);
+    const out = shape(await db.query(sql));
+    return { ...out, error: null };
+  } catch (e) {
+    const msg = (e && e.message) ? e.message : String(e);
+    return { columns: [], rows: [], affectedRows: null, error: msg };
+  }
+}
+
+/**
  * Run a single SQL statement and return its result set.
  * @param {string} sql   The query (a single statement).
  * @param {string=} setupSql  Optional topic-specific extra DDL/seed, additive to the

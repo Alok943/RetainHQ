@@ -27,6 +27,8 @@ export const EVENTS = {
   LESSON_OPENED: 'lesson_opened',
   ROADMAP_OPENED: 'roadmap_opened',
   AUTH_WALL_HIT: 'auth_wall_hit',
+  TEST_STARTED: 'test_started',
+  TEST_COMPLETED: 'test_completed', // carries { score, max_score, roadmap, phase }
 };
 
 export function initAnalytics() {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass, BookOpen } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass, BookOpen, ClipboardCheck } from 'lucide-react';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 import { useSeo } from './lib/useSeo';
 import { jsPDF } from 'jspdf';
@@ -931,14 +931,25 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
               </div>
             )}
 
-            {/* Practice numericals affordance for physics-9-10 */}
-            {isPhysics && !collapsed && (
-              <div className="border-t border-[rgba(15,23,42,0.05)] px-4 py-3">
+            {/* Practice numericals + Take a test affordances. Numericals stays physics-9-10
+                only (that content only exists there); "Take a test" is generic — every
+                roadmap's Tests bank lives under content/roadmaps/<key>/_test/<phase>.json,
+                and Tests.jsx shows a friendly empty state if this phase has no bank yet. */}
+            {!collapsed && (
+              <div className="border-t border-[rgba(15,23,42,0.05)] px-4 py-3 flex flex-wrap gap-2">
+                {isPhysics && (
+                  <Link
+                    to={`/roadmaps/${roadmapId}/numericals/${phaseToSlug(phase)}`}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0891B2]/[0.08] text-[#0891B2] font-sans text-[12px] font-semibold hover:bg-[#0891B2]/20 transition-colors"
+                  >
+                    <BookOpen size={13} /> Practice numericals
+                  </Link>
+                )}
                 <Link
-                  to={`/roadmaps/${roadmapId}/numericals/${phaseToSlug(phase)}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0891B2]/[0.08] text-[#0891B2] font-sans text-[12px] font-semibold hover:bg-[#0891B2]/20 transition-colors"
+                  to={`/roadmaps/${contentKey || roadmapId}/test/${phaseToSlug(phase)}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#B45309]/[0.08] text-[#B45309] font-sans text-[12px] font-semibold hover:bg-[#B45309]/20 transition-colors"
                 >
-                  <BookOpen size={13} /> Practice numericals
+                  <ClipboardCheck size={13} /> Take a test
                 </Link>
               </div>
             )}

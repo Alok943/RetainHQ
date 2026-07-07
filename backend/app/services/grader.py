@@ -326,3 +326,53 @@ async def grade_question_set(
         return QuestionSetGrade.model_validate_json(raw)
     except ValidationError as e:
         raise GraderError(f"Question grader returned malformed JSON: {e}") from e
+
+
+# =========================================================================== #
+# TEST-SECTION FILLUP GRADING (SPEC-test-runtime.md). The ONE LLM call in the
+# whole Tests system — everything else (numeric/mcq/code/query) grades
+# deterministically client-side. This grades against a CURATED bank answer
+# (the question's `answer` field), not a user-written key_memory, so the
+# reference is always complete and unambiguous — same trust model as
+# grade_recall, just a different (and more reliable) source of ground truth.
+# =========================================================================== #
+
+class FillupVerdict(BaseModel):
+    verdict: Literal["correct", "partial", "incorrect"]
+    feedback: str  # one short sentence
+
+
+_FILLUP_SYSTEM_PROMPT = (
+    "You grade a student's fill-in-the-blank test answer against a REFERENCE answer "
+    "written by a curriculum author.\n"
+    "Rules:\n"
+    "1. The REFERENCE answer is ground truth. Judge ONLY whether the student's answer "
+    "captures its key idea — ignore outside knowledge.\n"
+    "2. Be lenient on WORDING, strict on CORRECTNESS. A right answer in different words is "
+    "'correct'; a partially-right or vague answer is 'partial'; a wrong or missing answer is "
+    "'incorrect'.\n"
+    "3. feedback: ONE short sentence. If wrong, name the specific gap or error — do not just "
+    "say 'incorrect'.\n"
+    'Respond ONLY as JSON: {"verdict": "correct|partial|incorrect", "feedback": "..."}'
+)
+
+
+async def grade_fillup(question: str, reference_answer: str, student_answer: str) -> FillupVerdict:
+    """Grade a single Test-section fill-up answer. Raises GraderError if not configured."""
+    if not settings.GROQ_API_KEY:
+        raise GraderError("GROQ_API_KEY is not set — grader is disabled.")
+
+    if not student_answer or not student_answer.strip():
+        return FillupVerdict(verdict="incorrect", feedback="No answer given.")
+
+    user_msg = (
+        f"QUESTION: {question}\n\n"
+        f"REFERENCE ANSWER:\n{reference_answer}\n\n"
+        f"STUDENT ANSWER:\n{student_answer.strip()}"
+    )
+
+    raw = await _groq_json(_FILLUP_SYSTEM_PROMPT, user_msg, max_tokens=300, reasoning="low")
+    try:
+        return FillupVerdict.model_validate_json(raw)
+    except ValidationError as e:
+        raise GraderError(f"Fillup grader returned malformed JSON: {e}") from e

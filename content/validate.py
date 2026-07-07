@@ -27,7 +27,7 @@ except OSError:
     DERIVE_NAMES = set()
 PREDICTION_LEVELS = {"easy", "medium", "hard", "expert"}
 
-KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa", "physics", "numericals"}
+KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa", "physics", "numericals", "test"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
@@ -35,6 +35,9 @@ CHECK_TYPES = {"predict-output", "predict-result", "explain-behavior", "find-bug
 RUNTIMES = {"python", "sql", "none"}
 
 DIAGRAM_TYPES = {"ray", "circuit", "graph", "free-body", "image", "schematic"}
+
+# Test-section question banks (content/PROMPT-tests.md, docs/SPEC-test-runtime.md).
+TEST_TYPES = {"fillup", "numeric", "code-output", "code-fix", "code-write", "query-write", "mcq"}
 RAY_OPTICS = {"concave-mirror", "convex-mirror", "concave-lens", "convex-lens"}
 
 # diagram3d — interactive R3F concept simulators (content/PROMPT-physics-3d.md).
@@ -293,8 +296,9 @@ def main():
         return 0
 
     files = sorted(ROOT.glob("*/*.json"))
-    # Also discover phase-end numericals stored one level deeper.
+    # Also discover phase-end numericals + test banks stored one level deeper.
     files += sorted(ROOT.glob("*/_numericals/*.json"))
+    files += sorted(ROOT.glob("*/_test/*.json"))
     if not files:
         print("No topic JSON found under content/roadmaps/<roadmap>/.")
         return 0
@@ -309,6 +313,9 @@ def main():
         except json.JSONDecodeError as e:
             err(rel, f"invalid JSON: {e}")
             continue
+        except UnicodeDecodeError as e:
+            err(rel, f"not valid UTF-8 (wrong encoding, e.g. a stray temp/dump file?): {e}")
+            continue
         docs[path] = d
 
         for k in ("slug", "title", "roadmap", "kind", "tier"):
@@ -321,7 +328,7 @@ def main():
             err(rel, f"kind must be one of {KIND}")
         if d.get("tier") not in TIER:
             err(rel, f"tier must be one of {TIER}")
-        if d.get("roadmap") and d["roadmap"] != path.parent.name and path.parent.name != "_numericals":
+        if d.get("roadmap") and d["roadmap"] != path.parent.name and path.parent.name not in ("_numericals", "_test"):
             err(rel, f"roadmap '{d['roadmap']}' != folder '{path.parent.name}'")
 
         m = d.get("metadata")
@@ -913,6 +920,108 @@ def main():
                     sd_diag3d = p.get("solution_diagram3d")
                     if sd_diag3d is not None:
                         _validate_diagram3d(sd_diag3d, f"problems[{i}].solution_diagram3d", rel)
+            continue
+
+        # Test-section question banks. kind: "test". content/PROMPT-tests.md,
+        # docs/SPEC-test-runtime.md. Shape: { phase, roadmap, kind, questions: [...] }.
+        if d.get("kind") == "test":
+            if not d.get("phase"):
+                err(rel, "phase is required for a test bank")
+            qs = d.get("questions")
+            if not isinstance(qs, list) or not qs:
+                err(rel, "questions must be a non-empty list")
+                continue
+
+            seen_ids = set()
+            trap_count = 0
+            mcq_count = 0
+            production_count = 0
+            for i, q in enumerate(qs):
+                if not isinstance(q, dict):
+                    err(rel, f"questions[{i}] must be an object"); continue
+                qid = q.get("id")
+                if not qid or not isinstance(qid, str):
+                    err(rel, f"questions[{i}] needs a non-empty 'id'")
+                elif qid in seen_ids:
+                    err(rel, f"questions[{i}].id '{qid}' is duplicated in this file")
+                else:
+                    seen_ids.add(qid)
+
+                node = q.get("node")
+                if not node or not isinstance(node, str):
+                    err(rel, f"questions[{i}] needs a non-empty 'node'")
+                elif d.get("roadmap") and not (ROOT / d["roadmap"] / f"{node}.json").exists():
+                    err(rel, f"questions[{i}].node '{node}' does not resolve to a lesson in roadmap '{d['roadmap']}'")
+
+                qtype = q.get("type")
+                if qtype not in TEST_TYPES:
+                    err(rel, f"questions[{i}].type must be one of {sorted(TEST_TYPES)}")
+
+                if q.get("difficulty") not in DIFF:
+                    err(rel, f"questions[{i}].difficulty must be one of {DIFF}")
+                if not q.get("prompt"):
+                    err(rel, f"questions[{i}] needs a non-empty 'prompt'")
+                if not q.get("explain"):
+                    err(rel, f"questions[{i}] needs a non-empty 'explain'")
+
+                is_trap = q.get("trap", False)
+                if is_trap:
+                    trap_count += 1
+                    if not q.get("trap_note"):
+                        err(rel, f"questions[{i}] has trap=true but no 'trap_note'")
+                if qtype == "mcq":
+                    mcq_count += 1
+                elif qtype in ("fillup", "numeric", "code-fix", "code-write", "query-write"):
+                    production_count += 1
+
+                # --- type-specific required fields ---
+                if qtype == "fillup":
+                    if not q.get("answer"):
+                        err(rel, f"questions[{i}] (fillup) needs a non-empty 'answer'")
+                elif qtype == "numeric":
+                    if not isinstance(q.get("answer"), (int, float)):
+                        err(rel, f"questions[{i}] (numeric) needs a numeric 'answer'")
+                    if not isinstance(q.get("tolerance"), (int, float)) or q.get("tolerance") < 0:
+                        err(rel, f"questions[{i}] (numeric) needs a non-negative numeric 'tolerance'")
+                elif qtype == "code-output":
+                    if not q.get("code"):
+                        err(rel, f"questions[{i}] (code-output) needs non-empty 'code'")
+                    if not q.get("answer"):
+                        err(rel, f"questions[{i}] (code-output) needs a non-empty 'answer'")
+                elif qtype in ("code-fix", "code-write"):
+                    if not q.get("starter"):
+                        err(rel, f"questions[{i}] ({qtype}) needs non-empty 'starter'")
+                    if not q.get("asserts"):
+                        err(rel, f"questions[{i}] ({qtype}) needs non-empty 'asserts'")
+                    if not q.get("answer"):
+                        err(rel, f"questions[{i}] ({qtype}) needs a non-empty 'answer'")
+                elif qtype == "query-write":
+                    if not q.get("schema_sql"):
+                        err(rel, f"questions[{i}] (query-write) needs non-empty 'schema_sql'")
+                    if not q.get("canonical_query"):
+                        err(rel, f"questions[{i}] (query-write) needs non-empty 'canonical_query'")
+                    if not isinstance(q.get("order_matters"), bool):
+                        err(rel, f"questions[{i}] (query-write) needs boolean 'order_matters'")
+                elif qtype == "mcq":
+                    opts = q.get("options")
+                    if not isinstance(opts, list) or len(opts) < 2:
+                        err(rel, f"questions[{i}] (mcq) needs 'options': a list of >=2")
+                        opts = None
+                    ans = q.get("answer")
+                    if not isinstance(ans, int) or (opts and not (0 <= ans < len(opts))):
+                        err(rel, f"questions[{i}] (mcq) needs integer 'answer' as a valid index into 'options'")
+                    miscs = q.get("misconceptions")
+                    if not isinstance(miscs, list) or (opts and len(miscs) != len(opts)):
+                        err(rel, f"questions[{i}] (mcq) needs 'misconceptions' with the SAME length as 'options'")
+
+            # Authoring-quality guidance (PROMPT-tests.md ratios) — advisory, not fatal.
+            n = len(qs) or 1
+            if trap_count / n < 0.25:
+                warn(rel, f"trap ratio {trap_count}/{n} is below the ~25% target")
+            if mcq_count / n > 0.20:
+                warn(rel, f"mcq ratio {mcq_count}/{n} exceeds the ~20% cap")
+            if production_count / n < 0.60:
+                warn(rel, f"production-format ratio {production_count}/{n} is below the ~60% target")
             continue
 
         ov = d.get("overview")

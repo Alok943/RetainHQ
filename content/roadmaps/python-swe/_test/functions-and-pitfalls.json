@@ -1,0 +1,107 @@
+{
+  "slug": "functions-and-pitfalls",
+  "title": "Test — Functions & Pitfalls",
+  "roadmap": "python-swe",
+  "kind": "test",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "interview_frequency": "high",
+    "importance": 8,
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "phase": "Functions & Pitfalls",
+  "questions": [
+    {
+      "id": "fnp-q1",
+      "node": "mutable-default-argument",
+      "type": "code-output",
+      "runtime": "python",
+      "difficulty": "medium",
+      "trap": true,
+      "trap_note": "The default list is created ONCE at function definition, not per call — both calls share the same list. The obvious answer [1] then [2] is the trap.",
+      "prompt": "What does this print? Type the exact output (one line per print).",
+      "code": "def f(x, items=[]):\n    items.append(x)\n    return items\n\nprint(f(1))\nprint(f(2))",
+      "answer": "[1]\n[1, 2]",
+      "explain": "Default argument values are evaluated once, when `def` runs. Every call that omits `items` reuses that same list object, so state leaks across calls. Fix: default to None and create the list inside."
+    },
+    {
+      "id": "fnp-q2",
+      "node": "late-binding-closures",
+      "type": "code-output",
+      "runtime": "python",
+      "difficulty": "hard",
+      "trap": true,
+      "trap_note": "Closures capture the VARIABLE, not its value at loop time. By the time any lambda runs, the loop is over and i is 2 — so the intuitive [0, 1, 2] is the trap.",
+      "prompt": "What does this print? Type the exact output.",
+      "code": "funcs = [lambda: i for i in range(3)]\nprint([f() for f in funcs])",
+      "answer": "[2, 2, 2]",
+      "explain": "All three lambdas close over the same variable `i`. They read it when CALLED, after the loop finished with i = 2. To freeze each value, bind it as a default: `lambda i=i: i`."
+    },
+    {
+      "id": "fnp-q3",
+      "node": "is-vs-equals",
+      "type": "fillup",
+      "difficulty": "easy",
+      "trap": false,
+      "prompt": "`a == b` can be True while `a is b` is False, because `is` checks ______.",
+      "answer": "identity — whether both names point to the SAME object in memory (same id()) — while == checks value equality; two distinct list objects can hold equal values.",
+      "accept": [
+        "identity",
+        "same object",
+        "same object in memory",
+        "object identity"
+      ],
+      "explain": "== calls __eq__ and compares values; `is` compares object identity (memory). Use `is` only for singletons like None."
+    },
+    {
+      "id": "fnp-q4",
+      "node": "mutable-default-argument",
+      "type": "code-fix",
+      "runtime": "python",
+      "difficulty": "medium",
+      "trap": false,
+      "prompt": "This function leaks items across calls — the asserts below fail. Fix it without changing its call signature's behavior for callers.",
+      "starter": "def add_item(x, items=[]):\n    items.append(x)\n    return items",
+      "asserts": "assert add_item(1) == [1]\nassert add_item(2) == [2]\nassert add_item(5, [1, 2]) == [1, 2, 5]",
+      "answer": "def add_item(x, items=None):\n    if items is None:\n        items = []\n    items.append(x)\n    return items",
+      "explain": "The None-sentinel pattern: a fresh list is created per call, and an explicitly passed list still works. This is the standard fix for the mutable-default pitfall."
+    },
+    {
+      "id": "fnp-q5",
+      "node": "list-comprehensions",
+      "type": "code-write",
+      "runtime": "python",
+      "difficulty": "easy",
+      "trap": false,
+      "prompt": "Complete the function: return a list of the squares of only the even numbers, in order.",
+      "starter": "def even_squares(nums):\n    \"\"\"even_squares([1, 2, 3, 4]) -> [4, 16]\"\"\"\n    # your code here",
+      "asserts": "assert even_squares([1, 2, 3, 4]) == [4, 16]\nassert even_squares([]) == []\nassert even_squares([7, 9]) == []\nassert even_squares([0, -2]) == [0, 4]",
+      "answer": "def even_squares(nums):\n    \"\"\"even_squares([1, 2, 3, 4]) -> [4, 16]\"\"\"\n    return [n * n for n in nums if n % 2 == 0]",
+      "explain": "One comprehension: filter (`if n % 2 == 0`) then map (`n * n`). Note 0 and negatives are even too — the asserts check the edge."
+    },
+    {
+      "id": "fnp-q6",
+      "node": "object-identity",
+      "type": "mcq",
+      "difficulty": "hard",
+      "trap": false,
+      "prompt": "a = [1, 2, 3]\nb = a\nb += [4]\nprint(a)\n\nWhat does this print? (Trace it — every option is a real outcome of a wrong mental model.)",
+      "options": [
+        "[1, 2, 3, 4]",
+        "[1, 2, 3]",
+        "[1, 2, 3, [4]]",
+        "TypeError"
+      ],
+      "answer": 0,
+      "misconceptions": [
+        null,
+        "+= rebinds b to a new list, leaving a untouched (true for tuples/str, not lists)",
+        "+= appends the list itself rather than extending",
+        "+= is not defined for lists"
+      ],
+      "explain": "For lists, += is in-place extension (__iadd__): it MUTATES the shared object, so a and b — two names for one list — both show [1, 2, 3, 4]. With b = b + [4] instead, a new list is created and a would stay [1, 2, 3]."
+    }
+  ]
+}

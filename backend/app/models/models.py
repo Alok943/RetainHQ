@@ -2,7 +2,12 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, Column, JSON
+from sqlalchemy.dialects.postgresql import JSONB
+
+# JSONB in Postgres (indexable, typed); plain JSON under SQLite so the test
+# suite's create_all() can build the schema. Postgres path is unchanged.
+_JSONB = JSONB().with_variant(JSON(), "sqlite")
 
 class Roadmap(SQLModel, table=True):
     __tablename__ = "roadmaps"
@@ -144,6 +149,26 @@ class UserPref(SQLModel, table=True):
     audience: str = Field(default="career")  # 'career' | 'school'
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class TestAttempt(SQLModel, table=True):
+    """One completed Tests-section session (SPEC-test-runtime.md). Question banks
+    are static content (content/roadmaps/<key>/_test/*.json) — this table only
+    holds the user-state outcome: what was attempted, how it went, and the score.
+
+    `results` is a JSONB array of
+    {question_id, node_title, type, outcome ('got'|'missed'|'wrong'), trap, misconception}.
+    node_title (not the content slug) is the join key back to RoadmapNode.title,
+    matching how ReviewResponse.node_title already works. Migration f2b7d3a9c8e4."""
+    __tablename__ = "test_attempts"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    roadmap_id: uuid.UUID = Field(foreign_key="roadmaps.id")
+    phase: str
+    score: int
+    max_score: int
+    results: list = Field(sa_column=Column(_JSONB))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class ReminderLog(SQLModel, table=True):
