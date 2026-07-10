@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { ArrowLeft, Check, ChevronDown, ChevronRight, StickyNote, X, MousePointerClick, ExternalLink, Download, List, Map as MapIcon, PlusSquare, Compass, BookOpen, ClipboardCheck } from 'lucide-react';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
@@ -116,6 +116,11 @@ function layoutGraph(rfNodes, rfEdges) {
 function RoadmapDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Deep-link from a chapter tile (e.g. SchoolRoadmaps' Class -> Subject -> Chapter
+  // picker): land with every OTHER phase collapsed so the requested chapter reads
+  // as its own page, not a scroll hunt through the whole roadmap.
+  const expandOnlyPhase = location.state?.expandOnlyPhase || null;
 
   // Analytics: opening a roadmap is a key "explore" funnel event.
   useEffect(() => {
@@ -136,7 +141,7 @@ function RoadmapDetail() {
 
   // List view is the default — it scans, works on touch, and matches the data's
   // linear shape. The flowchart stays available as "Map".
-  const [view, setView] = useState(() => localStorage.getItem('retainhq_roadmap_view') || 'list');
+  const [view, setView] = useState(() => (expandOnlyPhase ? 'list' : localStorage.getItem('retainhq_roadmap_view') || 'list'));
   const switchView = (v) => { setView(v); localStorage.setItem('retainhq_roadmap_view', v); };
   const [collapsedPhases, setCollapsedPhases] = useState(null); // null until initialised from data
   const [openTopic, setOpenTopic] = useState(null);             // node id with notes expanded inline
@@ -224,10 +229,16 @@ function RoadmapDetail() {
 
   // Collapse phases that are already 100% done, once, when data first arrives —
   // so a long sheet opens scrolled-to-where-you-are instead of a wall of finished work.
+  // Deep-linked from a chapter tile (expandOnlyPhase): collapse every OTHER phase
+  // instead, so the requested chapter is the only thing open.
   useEffect(() => {
     if (rawNodes.length === 0 || collapsedPhases !== null) return;
     const byPhase = {};
     rawNodes.forEach((n) => { (byPhase[n.phase] = byPhase[n.phase] || []).push(n); });
+    if (expandOnlyPhase) {
+      setCollapsedPhases(new Set(Object.keys(byPhase).filter((p) => p !== expandOnlyPhase)));
+      return;
+    }
     const done = new Set(
       Object.keys(byPhase).filter((p) => byPhase[p].every((n) => statusMap[n.id] === 'done'))
     );

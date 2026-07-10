@@ -29,6 +29,9 @@ function Profile() {
         body: JSON.stringify({ audience: value }),
       });
       setAudience(p.audience);
+      // The whole point of switching catalogs is to go look at the new one —
+      // land the user on Learn instead of leaving them on the settings page.
+      navigate('/roadmaps');
     } catch {
       // keep the old selection on failure
     } finally {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   GraduationCap, ListChecks, ArrowRight, Plus, Sparkles,
-  ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown,
+  ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown, Search, X,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
@@ -11,6 +11,7 @@ import { useSeo } from './lib/useSeo';
 import { DOMAINS, getRoadmapMeta } from './lib/roadmapDomains';
 import { CAREER_PATHS } from './lib/careerPaths';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
+import SchoolRoadmaps from './SchoolRoadmaps';
 
 // Trade-wise grouping (JD Research Run 3): roadmaps organized by the career track
 // they build toward, ordered by the SDE → Backend → GenAI pathway + foundations.
@@ -148,8 +149,23 @@ function Roadmaps() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grouped'); // 'grouped' | 'list'
   const [sortBy, setSortBy] = useState('title-asc');
+  const [query, setQuery] = useState(''); // search-to-jump, avoids scrolling a 30+ roadmap list
   const { session } = useAuth();
   const [contentManifest, setContentManifest] = useState(null);
+  // School users get a completely different browsing model (Class -> Subject ->
+  // Chapter, below) — the career grouping (Placement Prep / Software Engineering /
+  // ... / B.Tech Core) is career-only vocabulary. null = not resolved yet, so we
+  // don't flash the career page for a school user before this comes back.
+  const [audience, setAudience] = useState(session ? null : 'career');
+
+  useEffect(() => {
+    if (!session) { setAudience('career'); return; }
+    let cancelled = false;
+    apiFetch('/api/prefs/')
+      .then((p) => { if (!cancelled) setAudience(p.audience || 'career'); })
+      .catch(() => { if (!cancelled) setAudience('career'); });
+    return () => { cancelled = true; };
+  }, [session]);
 
   useEffect(() => {
     fetch('/content/manifest.json')
@@ -231,12 +247,30 @@ function Roadmaps() {
     return result;
   }, [roadmapsWithMeta]);
 
+  const q = query.trim().toLowerCase();
+  const filteredSorted = useMemo(
+    () => (q ? sorted.filter((rm) => rm.title.toLowerCase().includes(q)) : sorted),
+    [sorted, q]
+  );
+  const filteredGrouped = useMemo(() => {
+    if (!q) return grouped;
+    return grouped
+      .map((g) => ({ ...g, items: g.items.filter((rm) => rm.title.toLowerCase().includes(q)) }))
+      .filter((g) => g.items.length > 0);
+  }, [grouped, q]);
+
   const flagships = useMemo(() => {
     return roadmapsWithMeta.filter(rm => {
       const meta = getRoadmapMeta(rm.slug || rm.id);
       return meta.flagship && rm.meta.lessonCount > 0;
     });
   }, [roadmapsWithMeta]);
+
+  // School catalog: hand off entirely to the Class -> Subject -> Chapter browser.
+  // audience === null means "still resolving" — render nothing rather than flash
+  // the career page (and its 'B.Tech Core' fallback header) for a school user.
+  if (audience === null) return null;
+  if (audience === 'school') return <SchoolRoadmaps />;
 
   return (
     <div className="relative max-w-5xl mx-auto w-full p-4 md:p-8 pb-20 md:pb-8 animate-in fade-in duration-300">
@@ -277,6 +311,27 @@ function Roadmaps() {
 
 
       <section>
+        {/* Search — jump straight to a roadmap by name instead of scrolling the list. */}
+        <div className="relative mb-4">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search roadmaps…"
+            className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-[rgba(15,23,42,0.12)] bg-white font-sans text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A]"
+              aria-label="Clear search"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+
         {/* Controls bar */}
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5">
@@ -345,15 +400,17 @@ function Roadmaps() {
           </div>
         ) : roadmaps.length === 0 ? (
           <div className="p-8 text-center text-[#64748B] bg-white rounded border border-[rgba(15,23,42,0.1)]">No roadmaps found.</div>
+        ) : q && filteredSorted.length === 0 ? (
+          <div className="p-8 text-center text-[#64748B] bg-white rounded border border-[rgba(15,23,42,0.1)]">No roadmaps match "{query}".</div>
         ) : viewMode === 'grouped' ? (
           <div>
-            {grouped.map(({ label, blurb, items }) => (
-              <CollapsibleGroup key={label} label={label} blurb={blurb} items={items} navigate={navigate} />
+            {filteredGrouped.map(({ label, blurb, items }) => (
+              <CollapsibleGroup key={label} label={label} blurb={q ? '' : blurb} items={items} navigate={navigate} />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sorted.map((rm, i) => (
+            {filteredSorted.map((rm, i) => (
               <RoadmapCard key={rm.id} rm={rm} index={i} meta={rm.meta} to={`/roadmaps/${rm.slug || rm.id}`} />
             ))}
           </div>
