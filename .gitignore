@@ -46,8 +46,13 @@ frontend/public/sitemap.xml
 # Local staging for lesson images — uploaded to Supabase 'lesson-images' bucket, never committed
 _image-staging/
 
-# Repo archives + one-off throwaway content-patch scripts (not product code)
+# Repo archives + one-off throwaway content-patch scripts (not product code).
+# Convention: the repo root and content/ hold no product .py files except
+# content/validate.py and content/scripts/ — anything else is a throwaway
+# patch script and should never enter git.
 *.zip
-/fix.py
-/fix_json.py
-content/fix_agents.py
+*.log.*
+/*.py
+content/*.py
+!content/validate.py
+content/roadmaps/**/*.py

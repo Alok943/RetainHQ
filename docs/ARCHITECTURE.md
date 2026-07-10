@@ -1,5 +1,7 @@
 # RetainHQ — Architecture
 
+> **⚠ Partially stale (written ~2026-06-07).** Predates the reminder-email system, the `prefs`/`tests` routers, the career/school audience split, the Tests section, and the roadmap catalog growing to 30. For the verified current state (architecture, security posture, plans), see **[SYSTEM-OVERVIEW.md](SYSTEM-OVERVIEW.md)** (verified against code + prod DB on 2026-07-10).
+
 ## Overview
 
 RetainHQ is a learning-retention app built around one core loop:
