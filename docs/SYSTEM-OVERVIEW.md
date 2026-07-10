@@ -1,6 +1,8 @@
 # RetainHQ — System Overview
 
-**Date: 2026-07-10. Every claim in this document was verified against the actual code and the live production database (Supabase MCP) on this date.** It supersedes the stale parts of `ARCHITECTURE.md` (last touched 2026-06-07), `API.md`, and the status sections of `CLAUDE.md`. See the [Stale-docs appendix](#appendix--doc-freshness) at the bottom for what to trust elsewhere.
+**Last full verification: 2026-07-10** (every claim checked against the actual code and the live production database via the read-only Supabase MCP).
+
+> **This is a LIVING document — the single source of truth for system state.** Convention (also in CLAUDE.md): any commit that adds/removes an endpoint or router, changes `models/models.py` or adds a migration, adds a service/integration, changes deploy topology, or moves the security posture **must update the relevant section here and add a Changelog line below, in the same commit**. Claims about prod state (migration head, catalog counts) must be re-verified via the Supabase MCP, not assumed. Roughly monthly — or before any launch/pitch — re-run a full verification pass and bump the date above. It supersedes the stale parts of `ARCHITECTURE.md` (last touched 2026-06-07), `API.md`, and the status sections of `CLAUDE.md`. See the [Stale-docs appendix](#appendix--doc-freshness) at the bottom for what to trust elsewhere.
 
 RetainHQ is a learning-retention platform: **Log Activity → Capture Key Memory → Schedule Reviews (FSRS) → Active Recall → Retain**, with a growing library of interactive lessons (Python/SQL/DSA/aptitude/Core-CS/Physics) that feed cards into that loop. Solo-founder build, live in production at `retainhq.app`.
 
@@ -185,3 +187,11 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 | `docs/hardening-plan.md` | Tier-0/1 items largely **done in code**; still useful as the rationale + for unfinished items (rate limiting) |
 | `docs/SPEC-test-runtime.md`, `dsa-*`, `content-engine.md`, `design-bible.md` | Recent, written alongside the shipped features — trustworthy |
 | `docs/SESSION_HANDOFF.md`, `HANDOFF-*`, `PROMPT-*` | Point-in-time working docs — read with their dates in mind |
+
+---
+
+## Changelog
+
+One line per system-state change, newest first: `YYYY-MM-DD — what changed (sections touched)`.
+
+- 2026-07-10 — Document created from a full code + prod-DB verification pass; repo cleanup (one-off scripts purged, `.gitignore` hardened); living-doc convention added to CLAUDE.md.

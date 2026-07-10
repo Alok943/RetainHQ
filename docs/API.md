@@ -1,5 +1,7 @@
 # RetainHQ — API Reference
 
+> **⚠ Stale — legacy doc.** Predates the `internal`/`prefs`/`tests` routers, dashboard `review-metrics`/`heatmap`, and the audience split. The verified current state lives in **[SYSTEM-OVERVIEW.md](SYSTEM-OVERVIEW.md)** (keep that one updated, not this).
+
 Base URL: `https://<your-backend-domain>` (local: `http://localhost:8000`)
 
 All endpoints require a valid Supabase Bearer JWT unless marked otherwise.

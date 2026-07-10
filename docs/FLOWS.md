@@ -1,5 +1,7 @@
 # RetainHQ — Application Flows
 
+> **⚠ Stale — legacy doc.** Predates the `internal`/`prefs`/`tests` routers, dashboard `review-metrics`/`heatmap`, and the audience split. The verified current state lives in **[SYSTEM-OVERVIEW.md](SYSTEM-OVERVIEW.md)** (keep that one updated, not this).
+
 How the app behaves end-to-end: what happens when a button is clicked, a form is
 submitted, a page loads. Each flow traces **UI → `apiFetch` → FastAPI → Postgres → back → UI**.
 
