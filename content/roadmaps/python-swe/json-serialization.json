@@ -1,0 +1,104 @@
+{
+  "slug": "json-serialization",
+  "title": "JSON serialization with the json module",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "file-io-basics"
+    ],
+    "unlocks": [
+      "csv-files"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "serialization",
+      "definition": "Converting an in-memory object into a storable/transmittable format like a JSON string. Example: `json.dumps({'a': 1})`."
+    },
+    {
+      "term": "deserialization",
+      "definition": "Rebuilding an in-memory object from a serialized string. Example: `json.loads('{\"a\": 1}')`."
+    }
+  ],
+  "overview": {
+    "what": "The `json` module converts between Python objects and JSON text. Four functions cover almost everything — remember them by the pattern 's = string, no-s = file':\n\n  import json\n\n  json.dumps(obj)      # object -> JSON string\n  json.loads(text)     # JSON string -> object\n  json.dump(obj, f)    # object -> write to file\n  json.load(f)         # read from file -> object\n\nThe type mapping is fixed: dict↔object, list↔array, str↔string, int/float↔number, True/False↔true/false, None↔null. Useful options: `indent=2` for pretty output, `sort_keys=True` for stable ordering, and `default=str` (or a custom function) to serialize types JSON doesn't know natively, like `datetime` or `Decimal`.",
+    "why": "JSON is the lingua franca of APIs, config files, and data interchange. Reading a request body, writing a config, caching a result, or talking to any web service almost always means serializing to and from JSON.",
+    "where_used": [
+      "REST API request/response bodies",
+      "Config files and app settings",
+      "Caching and message payloads"
+    ]
+  },
+  "why_learning_this": [
+    "Every API and most config formats move data as JSON — this is the read/write layer for all of it.",
+    "Knowing the type mapping and the `default=` escape hatch prevents the common 'Object of type datetime is not JSON serializable' crash."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing dumps/loads with dump/load",
+      "explanation": "The `s` means 'string'. `dumps`/`loads` work with strings; `dump`/`load` work with an open file object. Passing a file to `dumps` or a string to `load` fails."
+    },
+    {
+      "title": "Trying to serialize non-JSON types",
+      "explanation": "`datetime`, `Decimal`, `set`, and custom objects raise `TypeError: not JSON serializable`. Convert them first, or pass `default=str`/a custom encoder function to tell `json` how to represent them."
+    },
+    {
+      "title": "Expecting non-string dict keys to survive",
+      "explanation": "JSON object keys are always strings, so `json.dumps({1: 'a'})` emits `{\"1\": \"a\"}` and a round-trip gives you the key back as the string `'1'`, not the int `1`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between `json.dumps` and `json.dump`?",
+      "answer": "`dumps` returns a JSON string; `dump` writes JSON directly to an open file object. The trailing `s` stands for 'string'. Their inverses are `loads` (from string) and `load` (from file).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when you `json.dumps` a `datetime` object, and how do you handle it?",
+      "answer": "It raises `TypeError: Object of type datetime is not JSON serializable`. Convert it to a string first (e.g. `.isoformat()`), or pass `default=str` / a custom `default` function to `dumps`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "If you serialize `{1: 'a'}` to JSON and load it back, what is the key?",
+      "answer": "The string `'1'`. JSON object keys must be strings, so integer keys are coerced to strings on serialization and don't convert back automatically.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Round-trip with pretty output",
+      "prompt": "Given the dict below, produce a pretty-printed JSON string with 2-space indentation and keys sorted, then parse that string back into a Python object and print the value of 'name'.",
+      "starter_code": "import json\n\ndata = {'name': 'Ada', 'age': 36, 'skills': ['python', 'math']}\n# 1) pretty JSON string  2) parse back  3) print name\n",
+      "solution": "import json\n\ndata = {'name': 'Ada', 'age': 36, 'skills': ['python', 'math']}\ntext = json.dumps(data, indent=2, sort_keys=True)\nprint(text)\nback = json.loads(text)\nprint(back['name'])"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import json\n\nobj = {'id': 1, 'tags': ['a', 'b'], 'active': True, 'note': None}\ntext = json.dumps(obj)\nprint(text)\n\nback = json.loads(text)\nprint(back['active'], type(back['active']).__name__)",
+    "focus": "json.loads(text)  (JSON true/null become Python True/None)"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import json\nprint(json.dumps({'ok': True, 'val': None}))",
+      "question": "What JSON string does this print?",
+      "answer": "{\"ok\": true, \"val\": null}",
+      "why": "Python `True` maps to JSON `true` and `None` maps to `null` (both lowercase, unquoted). Strings use double quotes in JSON output."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer says 'json.dumps and json.dump are the same, just spelled differently.' Correct this.",
+      "answer": "They differ: `dumps` returns a string, `dump` writes to a file object.",
+      "why": "The `s` denotes 'string'. `json.dumps(obj)` produces a string in memory; `json.dump(obj, file)` streams the JSON into an open file. Using the wrong one (e.g. `dump` without a file) raises an error."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/json.html",
+    "https://realpython.com/python-json/"
+  ]
+}

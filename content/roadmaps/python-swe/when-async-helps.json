@@ -1,0 +1,104 @@
+{
+  "slug": "when-async-helps",
+  "title": "When async actually helps",
+  "roadmap": "python-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "the-event-loop",
+      "threading-vs-multiprocessing"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You rewrite a number-crunching script with `async`/`await` everywhere, expecting it to fly. It runs at exactly the same speed — you just added `await` noise to code that has no I/O. Async isn't 'fast mode'; used on the wrong workload it buys you nothing."
+  },
+  "mental_model": {
+    "intuition": "Async is one hyper-efficient waiter who never stands idle at a table — the instant a table is 'waiting on the kitchen', they go take another order. Brilliant when the night is mostly waiting (I/O). But if every table asks the waiter to personally solve a math problem (CPU work), one waiter is still one waiter — no amount of cleverness makes them compute two answers at once.",
+    "description": "Async concurrency overlaps *waiting*, not *computing*. It runs many coroutines on a single thread, switching at `await` points while I/O is in flight — so it shines for high-volume I/O-bound work (thousands of network/DB calls) with far less memory than one-thread-per-task. It does nothing for CPU-bound work: there are no `await` points to yield at, and one thread still can't use multiple cores. The decision tree: CPU-bound → multiprocessing; I/O-bound at modest scale → threads (simplest); I/O-bound at high scale → asyncio."
+  },
+  "sections": [
+    {
+      "body": "Async's superpower is scale of I/O concurrency at low cost. A coroutine parked at `await` is just a small object on one thread — no OS thread stack. So asyncio can keep tens of thousands of connections in flight where one-thread-per-connection would exhaust memory. This is why async web servers and high-fan-out API clients use it.",
+      "recap": "asyncio overlaps many I/O waits cheaply — it scales I/O concurrency far past what threads can."
+    },
+    {
+      "body": "Async does nothing for CPU-bound work. There's no I/O to `await`, so a heavy computation just runs start-to-finish on the single event-loop thread — and worse, it *blocks the loop*, freezing every other coroutine until it finishes. CPU parallelism needs multiple cores, which means multiprocessing (or offloading the CPU chunk to a process/thread pool via `run_in_executor`).",
+      "recap": "No I/O means no yield points; CPU work just blocks the single loop — use processes instead."
+    },
+    {
+      "body": "Async vs threads for I/O: both overlap waits, so at modest scale threads are usually the pragmatic choice — no need to rewrite call sites as `async`, and blocking libraries just work. Async wins when concurrency is very high (its per-task overhead is tiny) or when you're already in an async framework (FastAPI, aiohttp) where the whole call chain must be awaitable. The catch: async is all-or-nothing — one blocking call in a coroutine stalls the entire loop, so you need async-native libraries throughout.",
+      "recap": "Threads: simplest for modest I/O. Async: high-scale I/O or an already-async stack — but needs async-native libs end to end."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The decision, in one function",
+      "language": "python",
+      "code": "# Pseudocode decision guide — pick the model from the workload.\n\ndef choose(workload):\n    if workload == \"cpu_bound\":            # hashing, parsing, math, image work\n        return \"multiprocessing (own GIL per process -> real cores)\"\n    if workload == \"io_bound\":            # network, disk, DB, subprocess\n        if concurrency == \"very_high\":     # tens of thousands in flight\n            return \"asyncio (cheapest per-task, but needs async libs)\"\n        return \"threading (simplest; blocking libs just work)\"\n    return \"plain serial code\"\n\n# Mixed job? Keep async for the I/O and hand the CPU chunk to a pool:\n#   result = await loop.run_in_executor(process_pool, heavy_cpu_fn, data)",
+      "explanation": "The axis that matters is CPU-bound vs I/O-bound, then scale. Async is one branch of the I/O side — not a universal speed switch. Mixed workloads combine models: async for the waiting, a process pool for the computing."
+    },
+    {
+      "title": "Async gives nothing here — and even blocks",
+      "language": "python",
+      "code": "import asyncio, time\n\ndef heavy():                 # CPU-bound: no I/O to await\n    return sum(i*i for i in range(30_000_000))\n\nasync def worker(name):\n    print(f\"{name} start\")\n    heavy()                  # blocks the loop the whole time\n    print(f\"{name} done\")\n\nasync def main():\n    t = time.perf_counter()\n    await asyncio.gather(worker(\"A\"), worker(\"B\"))\n    print(f\"{time.perf_counter()-t:.2f}s\")   # ~sum, not overlapped\n\nasyncio.run(main())\n# A start / A done / B start / B done  <- no overlap; B waits for A",
+      "explanation": "Because `heavy()` has no `await`, the loop can't switch to B while A computes — A runs to completion first. Async didn't parallelize anything and actually serialized the two CPU tasks on one thread. This work belongs in a process pool."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Treating async as a general speed-up",
+      "explanation": "Async overlaps waiting, not computing. Sprinkling `async`/`await` on CPU-bound code adds complexity for zero gain — and blocks the event loop. Match the model to the workload instead."
+    },
+    {
+      "title": "Putting a blocking call inside a coroutine",
+      "explanation": "One synchronous blocking call (`requests.get`, `time.sleep`, a sync DB driver, a heavy loop) freezes the entire event loop — every other coroutine stalls. Async needs async-native libraries end to end, or you must offload the blocking part via `run_in_executor`."
+    },
+    {
+      "title": "Choosing async when threads are simpler",
+      "explanation": "For a few dozen I/O calls, a `ThreadPoolExecutor` is less invasive than converting the whole call chain to async and hunting for async-native libraries. Reserve asyncio for very high concurrency or an already-async framework."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What kind of work does async speed up, and what does it not?",
+      "answer": "It speeds up I/O-bound work by overlapping waits on a single thread. It does not speed up CPU-bound work — there are no `await` points to yield at, and one thread can't use multiple cores."
+    },
+    {
+      "q": "Why can asyncio handle far more concurrent I/O than one-thread-per-task?",
+      "answer": "A coroutine waiting at `await` is a small object on a shared thread, not an OS thread with its own stack, so per-task overhead is tiny. asyncio can keep tens of thousands of I/O operations in flight where threads would exhaust memory."
+    },
+    {
+      "q": "For a CPU-bound job, which concurrency model do you pick and why?",
+      "answer": "Multiprocessing — each process has its own GIL and runs on a separate core, giving true parallelism. Threads and async can't, because the GIL serializes bytecode and async has no yield points for pure computation."
+    },
+    {
+      "q": "When would you pick threads over asyncio for I/O work?",
+      "answer": "At modest concurrency, when you don't want to convert the whole call chain to async or when you must use blocking libraries — threads overlap I/O waits with far less rewriting. asyncio is worth it at very high scale or in an already-async stack."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Walk me through how you'd choose between threading, multiprocessing, and asyncio for a given task.",
+      "company": "Backend Engineer interview",
+      "answer": "First classify the bottleneck. CPU-bound (math, parsing, compression) → multiprocessing, because only separate processes escape the GIL and use multiple cores. I/O-bound (network, disk, DB) → threading for simplicity at modest scale, or asyncio when concurrency is very high or the framework is already async, since coroutines overlap thousands of waits with tiny per-task overhead. For mixed workloads, combine them: async/threads for the I/O and a process pool (via `run_in_executor`) for the CPU chunk. The one-liner: async and threads overlap waiting; multiprocessing overlaps computing.",
+      "approach": "Lead with CPU-bound vs I/O-bound, map each to a model, then add the scale nuance (threads vs async) and the mixed-workload combination."
+    },
+    {
+      "question": "A FastAPI endpoint that's `async def` becomes unresponsive whenever it runs a heavy in-memory computation. Explain why and how you'd fix it.",
+      "company": "API Design interview",
+      "answer": "The heavy computation is CPU-bound and has no `await`, so it runs on the single event-loop thread and blocks it — while it runs, the loop can't service any other request, so the whole app stalls. Fixes: offload the CPU work off the loop with `await loop.run_in_executor(process_pool, fn, data)` (a ProcessPoolExecutor for real parallelism), move it to a background worker/queue, or make the endpoint a plain `def` so FastAPI runs it in a threadpool (helps availability but not CPU parallelism). Async was the wrong tool for the compute itself.",
+      "approach": "Explain that CPU work with no await point blocks the single loop, then offload to a process pool / background worker rather than expecting async to parallelize compute."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/asyncio.html",
+    "https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor",
+    "https://realpython.com/python-concurrency/"
+  ]
+}

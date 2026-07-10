@@ -1,0 +1,99 @@
+{
+  "slug": "functools-lru-cache",
+  "title": "functools: lru_cache, partial, reduce",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "decorators"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "memoization",
+      "definition": "Caching a function's results by its arguments so repeat calls with the same inputs return instantly. `@lru_cache` does this automatically."
+    }
+  ],
+  "overview": {
+    "what": "`functools` bundles higher-order helpers. Three carry their weight:\n\n  from functools import lru_cache, partial, reduce\n\n  @lru_cache(maxsize=None)          # memoize: cache results by args\n  def fib(n):\n      return n if n < 2 else fib(n-1) + fib(n-2)\n\n  int2 = partial(int, base=2)       # freeze an argument -> new callable\n  int2('1010')                      # 10\n\n  reduce(lambda a, b: a*b, [1,2,3,4])   # 24 — fold a sequence to one value\n\n`lru_cache` turns exponential recursions (naive Fibonacci, top-down DP) into linear by remembering each result — the single most useful one. `partial` pre-binds arguments to make specialized callables (great for callbacks). `reduce` folds a sequence with a binary function, though an explicit loop or `sum`/`math.prod` is often clearer. Constraint: `lru_cache` requires **hashable** arguments, so it can't cache a function called with a list or dict.",
+    "why": "Memoization is the difference between an O(2^n) and an O(n) solution — it's the backbone of top-down dynamic programming, which your DSA track leans on. partial and reduce round out a functional-style toolkit that shows up in real codebases.",
+    "where_used": [
+      "Top-down dynamic programming (memoization)",
+      "Caching expensive pure computations",
+      "Pre-binding arguments for callbacks (partial)"
+    ]
+  },
+  "why_learning_this": [
+    "`@lru_cache` converts exponential recursive solutions into linear ones — the core trick behind top-down DP.",
+    "partial and reduce are common functional patterns you'll read in real code and use for callbacks and folds."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Caching a function with unhashable arguments",
+      "explanation": "`lru_cache` keys the cache on the arguments, so they must be hashable. Calling an lru_cached function with a `list` or `dict` raises `TypeError: unhashable type`. Pass tuples/frozensets instead."
+    },
+    {
+      "title": "Memoizing an impure function",
+      "explanation": "`lru_cache` returns the stored result for repeat args and never re-runs the body. If the function depends on time, randomness, or external state, you'll get stale answers. Only cache pure functions."
+    },
+    {
+      "title": "Unbounded cache growth",
+      "explanation": "`maxsize=None` caches every distinct argument forever, which can leak memory for functions called with many unique inputs. Use a finite `maxsize` (default 128) when the input space is large."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does `@lru_cache` change the time complexity of naive recursive Fibonacci, and why?",
+      "answer": "From exponential O(2^n) to linear O(n). It caches each `fib(k)` the first time it's computed, so the overlapping subproblems are looked up instead of recomputed.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can't you call an `lru_cache`-decorated function with a list argument?",
+      "answer": "The cache keys on the arguments, which must be hashable. Lists (and dicts/sets) are unhashable, so it raises TypeError. Use a tuple/frozenset instead.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does `functools.partial(f, x)` return?",
+      "answer": "A new callable that calls `f` with `x` already bound as an argument, so you only supply the remaining arguments when you call it.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Memoize an expensive recursion",
+      "prompt": "Add `@lru_cache` to the recursive `count_paths` grid-walk function so repeated subproblems aren't recomputed, then print `count_paths(15, 15)` (which is far too slow without caching).",
+      "starter_code": "def count_paths(r, c):\n    if r == 0 or c == 0:\n        return 1\n    return count_paths(r-1, c) + count_paths(r, c-1)\n\nprint(count_paths(15, 15))",
+      "solution": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef count_paths(r, c):\n    if r == 0 or c == 0:\n        return 1\n    return count_paths(r-1, c) + count_paths(r, c-1)\n\nprint(count_paths(15, 15))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    return n if n < 2 else fib(n-1) + fib(n-2)\n\nprint(fib(30))\nprint(fib.cache_info())",
+    "focus": "fib.cache_info()  (hits show subproblems were reused, not recomputed)"
+  },
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A developer decorates `def now(): return datetime.now()` with `@lru_cache`. Why does it always return the same time after the first call?",
+      "answer": "lru_cache stores the first result and returns it for every later call with the same (here, empty) arguments, never re-executing the body.",
+      "why": "Memoization assumes the function is pure — output depends only on arguments. `now()` depends on the clock (external state), so caching freezes it at the first value. Don't cache impure functions."
+    },
+    {
+      "type": "find-bug",
+      "code": "from functools import lru_cache\n\n@lru_cache\ndef total(items):\n    return sum(items)\n\nprint(total([1, 2, 3]))",
+      "question": "Why does this raise a TypeError?",
+      "answer": "The argument `[1, 2, 3]` is a list, which is unhashable, and lru_cache must hash arguments to key the cache.",
+      "why": "lru_cache stores results keyed by arguments, requiring them to be hashable. A list can't be hashed; passing a tuple `(1, 2, 3)` would work."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/functools.html#functools.lru_cache",
+    "https://docs.python.org/3/library/functools.html#functools.partial",
+    "https://docs.python.org/3/library/functools.html#functools.reduce"
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "slug": "concurrency-vs-parallelism",
+  "title": "Concurrency vs Parallelism",
+  "roadmap": "python-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [
+      "the-gil",
+      "threading-io-bound"
+    ]
+  },
+  "hook": {
+    "scenario": "Your server handles 1,000 requests per second. Does it have 1,000 CPUs, or is it juggling them really fast?"
+  },
+  "mental_model": {
+    "intuition": "Concurrency is about dealing with lots of things at once (juggling). Parallelism is about doing lots of things at once (having multiple jugglers).",
+    "description": "Concurrency is a design structure. You break your program into independent tasks that can pause and resume. Parallelism is hardware execution. You literally run multiple tasks at the exact same nanosecond on different CPU cores."
+  },
+  "sections": [
+    {
+      "body": "Concurrency is about structure. When one task has to wait (like waiting for a database to respond), it pauses, and the CPU switches to another task. It's one chef making a salad while the steak is in the oven. The tasks make progress interleaved.",
+      "recap": "Concurrency = interleaved execution (one CPU core bouncing between tasks)."
+    },
+    {
+      "body": "Parallelism is about hardware. Two tasks run at the exact same time on different CPU cores. It's two chefs in the kitchen: one making the salad, one cooking the steak, simultaneously.",
+      "recap": "Parallelism = simultaneous execution (multiple CPU cores at the same time)."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Concurrency (Interleaved - One Core)",
+      "language": "python",
+      "code": "import asyncio\n\nasync def fetch_data():\n    print(\"Start fetching\")\n    await asyncio.sleep(1) # Simulates network I/O, yields control\n    print(\"Done fetching\")\n\nasync def main():\n    # Both start, but they take turns on the single event loop thread\n    await asyncio.gather(fetch_data(), fetch_data())\n\nasyncio.run(main())",
+      "explanation": "These two tasks run concurrently. While the first task waits for `asyncio.sleep(1)`, it yields control, allowing the second task to start. They don't run at the exact same nanosecond, but they overlap in time."
+    },
+    {
+      "title": "Parallelism (Simultaneous - Multiple Cores)",
+      "language": "python",
+      "code": "from multiprocessing import Process\nimport time\n\ndef crunch_numbers():\n    print(\"Crunching\")\n    time.sleep(1) # Simulates CPU work\n    print(\"Done crunching\")\n\nif __name__ == '__main__':\n    # Spawns separate OS processes, each can run on a different CPU core\n    p1 = Process(target=crunch_numbers)\n    p2 = Process(target=crunch_numbers)\n    \n    p1.start(); p2.start()\n    p1.join(); p2.join()",
+      "explanation": "These processes can run parallelly. The OS can schedule `p1` on Core 0 and `p2` on Core 1, meaning they physically execute instructions at the exact same time."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking concurrency speeds up CPU-heavy work",
+      "explanation": "If a task requires 10 seconds of pure math calculation on the CPU, concurrency won't make it faster. The single CPU will just bounce between the math tasks, taking the same total time (or slightly longer due to context switching). You need parallelism (multiple cores) to speed up CPU-bound work."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core difference between concurrency and parallelism?",
+      "answer": "Concurrency is managing multiple tasks at once (interleaving them). Parallelism is executing multiple tasks at the exact same physical time on different cores."
+    },
+    {
+      "q": "Does concurrency require multiple CPU cores?",
+      "answer": "No. Concurrency can happen on a single CPU core by rapidly switching context between tasks."
+    },
+    {
+      "q": "Which approach is better for I/O-bound tasks (like waiting for network requests)?",
+      "answer": "Concurrency. While waiting for the network, the CPU can switch to handle another request instead of sitting idle."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "If you have a Python web scraper downloading thousands of images, should you use concurrency or parallelism?",
+      "company": "Backend Engineer interview",
+      "answer": "Concurrency. Downloading images is I/O-bound (most of the time is spent waiting for the network). A single core can concurrently manage thousands of active network connections using `asyncio` or threads.",
+      "approach": "Identify the bottleneck (I/O). State that concurrency is the right tool to overlap waiting times without the overhead of multiple processes."
+    },
+    {
+      "question": "Is Node.js concurrent or parallel?",
+      "company": "General Engineering",
+      "answer": "Concurrent. Node.js runs on a single thread (event loop) and uses concurrency to handle many requests at once. It achieves high throughput by never blocking on I/O, but it does not execute parallelly on multiple cores by default.",
+      "approach": "Mention the single-threaded event loop and how it interleaves tasks."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/asyncio.html",
+    "https://docs.python.org/3/library/multiprocessing.html"
+  ]
+}

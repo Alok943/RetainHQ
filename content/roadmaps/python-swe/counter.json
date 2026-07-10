@@ -1,0 +1,98 @@
+{
+  "slug": "counter",
+  "title": "collections.Counter",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "defaultdict"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "multiset",
+      "definition": "A set that allows repeated elements and tracks how many times each appears. A `Counter` is Python's multiset. Example: `Counter('aab') -> {'a': 2, 'b': 1}`."
+    }
+  ],
+  "overview": {
+    "what": "`collections.Counter` is a dict subclass built for counting. Pass it any iterable and it tallies occurrences; it also adds counting-specific methods.\n\n  from collections import Counter\n\n  c = Counter('mississippi')      # {'i':4,'s':4,'p':2,'m':1}\n  c.most_common(2)                # [('i', 4), ('s', 4)]\n  c['x']                          # 0  (missing key -> 0, no KeyError)\n  c.update('sip')                 # add more counts\n\nCounters support arithmetic: `c1 + c2` adds counts, `c1 - c2` subtracts (dropping zero/negatives), and `&`/`|` give min/max intersections. `most_common(n)` returns the n highest-frequency items already sorted — the reason Counter shows up in almost every 'top-k frequent' problem.",
+    "why": "Frequency analysis is a staple: word counts, top-k elements, detecting duplicates, comparing distributions. Counter replaces a manual dict-plus-loop with one line and gives you sorted top-k for free.",
+    "where_used": [
+      "Word / event frequency analysis",
+      "Top-k frequent elements problems",
+      "Detecting duplicates and anagrams"
+    ]
+  },
+  "why_learning_this": [
+    "Counting frequencies and finding top-k elements are extremely common in data tasks and interviews.",
+    "`most_common()` hands you sorted results without writing any sorting code."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Expecting KeyError for missing keys",
+      "explanation": "Unlike a plain dict, `Counter()['missing']` returns `0` rather than raising. That's convenient, but it means a typo'd key silently reads as 0 instead of failing loudly."
+    },
+    {
+      "title": "Thinking Counter subtraction can go negative",
+      "explanation": "The `-` operator drops zero and negative results (`Counter({'a': 1}) - Counter({'a': 3})` gives an empty Counter, not `-2`). Use `.subtract()` if you actually want negative counts retained."
+    },
+    {
+      "title": "Sorting manually for top-k",
+      "explanation": "Writing `sorted(c.items(), key=..., reverse=True)[:k]` reinvents `c.most_common(k)`, which already returns the k most frequent items in order."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `Counter('aabbbc')` produce, and what does `.most_common(1)` return?",
+      "answer": "`Counter({'b': 3, 'a': 2, 'c': 1})`, and `.most_common(1)` returns `[('b', 3)]` — the single highest-frequency item as a (element, count) tuple in a list.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does indexing a missing key on a Counter return?",
+      "answer": "`0`. Counter treats absent elements as having a count of zero instead of raising KeyError.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does `Counter - Counter` handle a result that would be negative?",
+      "answer": "The `-` operator keeps only positive counts, dropping any element whose result is zero or negative. Use `.subtract()` to retain negative counts.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Top-2 most common words",
+      "prompt": "Given the sentence, count word frequencies with Counter and print the two most common words with their counts.",
+      "starter_code": "from collections import Counter\n\ntext = 'the cat sat on the mat the cat ran'\n# print the 2 most common words\n",
+      "solution": "from collections import Counter\n\ntext = 'the cat sat on the mat the cat ran'\ncounts = Counter(text.split())\nprint(counts.most_common(2))   # [('the', 3), ('cat', 2)]"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from collections import Counter\n\nc = Counter('mississippi')\nprint(c['s'])\nprint(c['z'])\nprint(c.most_common(2))",
+    "focus": "c['z'] prints 0 (missing element counts as zero, no KeyError)"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from collections import Counter\nc = Counter('banana')\nprint(c.most_common(1))",
+      "question": "What does this print?",
+      "answer": "[('a', 3)]",
+      "why": "'banana' has a:3, n:2, b:1. `most_common(1)` returns the single highest-frequency element as a (element, count) tuple inside a list."
+    },
+    {
+      "type": "predict-result",
+      "code": "from collections import Counter\nprint(Counter({'a': 1}) - Counter({'a': 3}))",
+      "question": "What is the resulting Counter?",
+      "answer": "Counter() (empty)",
+      "why": "Counter's `-` keeps only positive counts. 1 - 3 = -2, which is dropped, leaving an empty Counter. To keep -2 you'd use `.subtract()`."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/collections.html#collections.Counter"
+  ]
+}

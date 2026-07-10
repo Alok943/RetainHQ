@@ -1,0 +1,103 @@
+{
+  "slug": "multiprocessing-cpu-bound",
+  "title": "Multiprocessing for CPU-bound work",
+  "roadmap": "python-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "threading-vs-multiprocessing"
+    ],
+    "unlocks": []
+  },
+  "hook": {
+    "scenario": "You have an 8-core machine and a CPU-heavy job: hash a million records. You thread it across 8 workers expecting an 8x speedup — and it runs exactly as slow as the single-threaded version, sometimes slower. Switch `ThreadPoolExecutor` to `ProcessPoolExecutor`, change nothing else, and it finally runs ~8x faster."
+  },
+  "mental_model": {
+    "intuition": "One kitchen with one stove (the GIL) can only cook one dish at a time no matter how many cooks you hire — extra cooks just wait for the stove. Multiprocessing builds eight separate kitchens, each with its own stove. Now eight dishes cook at once. The cost: the kitchens don't share a fridge, so you have to carry ingredients (data) between them.",
+    "description": "Each Python process has its own interpreter and its own GIL, so N processes run Python bytecode on N cores truly in parallel — the only way to get real CPU parallelism in CPython. The trade-off is isolation: processes don't share memory, so arguments and return values are pickled and shipped between them, and starting a process is far heavier than starting a thread. That overhead is worth it when the compute per task dwarfs the data shipped — the definition of CPU-bound work."
+  },
+  "sections": [
+    {
+      "body": "Because every process gets its own GIL, multiprocessing is the standard way to parallelize CPU-bound Python — math, parsing, image/number crunching, compression. Split the work across roughly `os.cpu_count()` workers and each runs on a separate core simultaneously. This is the exact case where threading fails.",
+      "recap": "Separate processes = separate GILs = true multi-core parallelism for CPU work."
+    },
+    {
+      "body": "The cost is data movement. Processes don't share address space, so inputs and outputs cross the boundary via pickling (serialize → send → deserialize). If each task does little compute but passes large objects, that serialization can cost more than you save. Multiprocessing wins when compute-per-task is large relative to the data shipped.",
+      "recap": "Args/results are pickled across the process boundary — cheap compute + big data can erase the gains."
+    },
+    {
+      "body": "Use `concurrent.futures.ProcessPoolExecutor` — the API mirrors `ThreadPoolExecutor`, so switching between them is often a one-word change. Two gotchas: the target function and its arguments must be picklable (no lambdas/local closures), and on the 'spawn' start method (default on Windows and macOS) your entry point must be guarded by `if __name__ == '__main__':` or child processes re-import and re-run your module.",
+      "recap": "`ProcessPoolExecutor` mirrors the thread API; require picklable targets and guard `__main__`."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Threads vs processes on CPU-bound work",
+      "language": "python",
+      "code": "import time\nfrom concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor\n\ndef crunch(n):\n    # pure CPU: sum of squares, no I/O\n    return sum(i * i for i in range(n))\n\ntasks = [10_000_000] * 8\n\nif __name__ == \"__main__\":   # required for the process pool (spawn)\n    for Pool, label in [(ThreadPoolExecutor, \"threads\"), (ProcessPoolExecutor, \"processes\")]:\n        start = time.perf_counter()\n        with Pool(max_workers=8) as pool:\n            list(pool.map(crunch, tasks))\n        print(f\"{label}: {time.perf_counter()-start:.2f}s\")\n\n# threads:   ~4.0s  (GIL serializes -> no parallelism)\n# processes: ~0.6s  (8 cores in parallel)",
+      "explanation": "`crunch` never releases the GIL (no I/O), so the thread pool runs the 8 tasks one-at-a-time — no faster than serial. The process pool runs 8 interpreters on 8 cores at once, so the same work finishes in roughly an eighth of the time."
+    },
+    {
+      "title": "The __main__ guard and picklable targets",
+      "language": "python",
+      "code": "from concurrent.futures import ProcessPoolExecutor\n\ndef square(x):        # top-level, importable, picklable\n    return x * x\n\ndef run():\n    with ProcessPoolExecutor() as pool:\n        return list(pool.map(square, range(10)))\n\nif __name__ == \"__main__\":   # without this, spawned children re-run run() -> recursion / error\n    print(run())\n\n# NOTE: pool.map(lambda x: x*x, range(10)) would raise\n# 'cannot pickle local object' — lambdas/closures aren't picklable.",
+      "explanation": "With the default 'spawn' start method, each child process imports this module fresh. Without the `__main__` guard, importing would re-trigger `run()` in every child. And because arguments/functions are pickled to reach the child, the target must be a top-level function — a `lambda` or nested closure can't be pickled."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Reaching for multiprocessing on I/O-bound work",
+      "explanation": "For network/disk/DB waiting, processes add pickling and startup overhead for no benefit — the GIL is already released during I/O, so threads or asyncio are lighter and faster. Multiprocessing is specifically for CPU-bound work."
+    },
+    {
+      "title": "Ignoring serialization cost",
+      "explanation": "Passing huge arrays/DataFrames to workers that do little compute can be dominated by pickling time, making the parallel version slower than serial. Minimize data crossing the boundary (send indices/paths, use shared memory, or chunk coarsely)."
+    },
+    {
+      "title": "Forgetting the __main__ guard or using unpicklable targets",
+      "explanation": "On spawn (Windows/macOS default), missing `if __name__ == '__main__':` causes children to re-import and re-run top-level code — often a crash or fork bomb. And lambdas/local functions/open file handles can't be pickled, so they can't be sent to workers."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does multiprocessing achieve true parallelism where threading can't?",
+      "answer": "Each process has its own Python interpreter and its own GIL, so N processes execute bytecode on N cores simultaneously. Threads share one GIL and therefore take turns executing bytecode."
+    },
+    {
+      "q": "What is the main cost of multiprocessing compared to threading?",
+      "answer": "Isolation: processes don't share memory, so arguments and results are pickled and copied across the process boundary, and process startup is much heavier than thread startup. Large data with little compute can erase the speedup."
+    },
+    {
+      "q": "When should you choose processes over threads?",
+      "answer": "For CPU-bound work (computation that keeps the GIL busy). For I/O-bound work, threads or asyncio are lighter and just as effective because the GIL is released during I/O."
+    },
+    {
+      "q": "Why must multiprocessing targets be top-level functions and the entry point be guarded by `if __name__ == '__main__'`?",
+      "answer": "Targets and arguments are pickled to reach child processes, and lambdas/closures aren't picklable. With the spawn start method each child re-imports the module, so without the `__main__` guard the top-level code re-executes in every child."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A data pipeline applies a heavy CPU transform to 10 million rows and is CPU-bound on one core. How do you parallelize it in Python, and what's the expected ceiling?",
+      "company": "Data Engineer interview",
+      "answer": "Use multiprocessing (e.g. `ProcessPoolExecutor` with ~`os.cpu_count()` workers), chunking the rows so each worker transforms a batch — each process has its own GIL and runs on a separate core, so the speedup ceiling is roughly the core count minus serialization/coordination overhead. Keep data crossing the process boundary small (pass chunks/paths, not the whole dataset repeatedly). Threads wouldn't help because the transform is CPU-bound and the GIL would serialize it. For very heavy numeric work, a vectorized/native library (NumPy, Polars) that releases the GIL can beat or complement multiprocessing.",
+      "approach": "Identify CPU-bound → multiprocessing, size to cores, chunk to limit pickling, and note the near-linear-minus-overhead ceiling."
+    },
+    {
+      "question": "An engineer parallelizes a function with `ProcessPoolExecutor` but it's slower than the serial version. Give two plausible causes.",
+      "company": "Systems interview",
+      "answer": "(1) The work is I/O-bound or too small per task, so process startup and pickling overhead dominate the tiny compute — threads/asyncio or plain serial would be faster. (2) Large arguments/results are being serialized across the boundary each call, and that data movement costs more than the parallel compute saves. Related causes: too many workers thrashing cores, or the task itself already using a native library that parallelizes internally.",
+      "approach": "Point to overhead exceeding benefit — either work-too-small/I/O-bound, or serialization of large payloads dominating."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor",
+    "https://docs.python.org/3/library/multiprocessing.html",
+    "https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods"
+  ]
+}

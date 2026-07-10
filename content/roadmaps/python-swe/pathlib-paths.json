@@ -1,0 +1,98 @@
+{
+  "slug": "pathlib-paths",
+  "title": "pathlib for filesystem paths",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "file-io-basics"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "Path object",
+      "definition": "An object representing a filesystem path with methods and operators for manipulating it. Example: `Path('data') / 'in.csv'`."
+    }
+  ],
+  "overview": {
+    "what": "`pathlib.Path` is the modern, object-oriented way to handle filesystem paths — replacing string juggling and most of `os.path`. You build paths with the `/` operator and query or act on them with methods.\n\n  from pathlib import Path\n\n  data = Path('data')\n  csv = data / 'reports' / 'q1.csv'   # OS-correct separators\n  csv.suffix        # '.csv'\n  csv.stem          # 'q1'\n  csv.name          # 'q1.csv'\n  csv.parent        # Path('data/reports')\n  csv.exists()      # bool\n\nPath objects also read and write directly (`csv.read_text(encoding='utf-8')`, `p.write_text(...)`), list directories (`Path('.').iterdir()`), glob (`Path('.').glob('**/*.py')`), and create folders (`p.mkdir(parents=True, exist_ok=True)`). Because `/` inserts the correct separator per OS, the same code works on Windows and Linux.",
+    "why": "String path manipulation ('dir' + '/' + name) is error-prone and breaks across operating systems. `pathlib` makes path logic readable, cross-platform, and less bug-prone, and it's the idiom modern Python code and libraries expect.",
+    "where_used": [
+      "Locating config and data files",
+      "Walking directory trees",
+      "Cross-platform CLI tools and scripts"
+    ]
+  },
+  "why_learning_this": [
+    "Cross-platform path handling that just works on both Windows and Unix without manual separator juggling.",
+    "It's the modern idiom — most current libraries and codebases pass and expect `Path` objects."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Building paths with string concatenation",
+      "explanation": "`base + '/' + name` hardcodes the separator and breaks on Windows (and doubles slashes). Use `base / name` — the `/` operator inserts the OS-correct separator."
+    },
+    {
+      "title": "Confusing .name, .stem, and .suffix",
+      "explanation": "For `q1.csv`: `.name` is 'q1.csv', `.stem` is 'q1' (no extension), `.suffix` is '.csv'. Mixing them up leads to filenames with or without the extension where you didn't expect."
+    },
+    {
+      "title": "Forgetting exist_ok / parents on mkdir",
+      "explanation": "`p.mkdir()` raises if the directory already exists or if a parent is missing. Use `p.mkdir(parents=True, exist_ok=True)` for the common 'ensure this folder exists' intent."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How do you join a directory and a filename with pathlib, and why is it better than string concatenation?",
+      "answer": "Use the `/` operator: `Path('dir') / 'file.txt'`. It inserts the OS-correct separator, so the code works on Windows and Unix without manual slash handling.",
+      "tier": "tier1"
+    },
+    {
+      "q": "For `Path('report.tar.gz')`, what are `.suffix`, `.stem`, and `.name`?",
+      "answer": "`.suffix` is '.gz' (the last extension), `.name` is 'report.tar.gz', and `.stem` is 'report.tar'. (`.suffixes` gives ['.tar', '.gz'].)",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you recursively find all `.py` files under a directory with pathlib?",
+      "answer": "`Path('.').glob('**/*.py')` (or `rglob('*.py')`), which yields matching Path objects across all subdirectories.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Build and inspect a path",
+      "prompt": "Using pathlib and the `/` operator, build the path `output/data/results.json` starting from `Path('output')`. Print its `.parent`, `.stem`, and `.suffix`.",
+      "starter_code": "from pathlib import Path\n\nbase = Path('output')\n# build output/data/results.json and print parent, stem, suffix\n",
+      "solution": "from pathlib import Path\n\nbase = Path('output')\np = base / 'data' / 'results.json'\nprint(p.parent)   # output/data\nprint(p.stem)     # results\nprint(p.suffix)   # .json"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from pathlib import Path\n\np = Path('project') / 'src' / 'main.py'\nprint(p.name)\nprint(p.stem)\nprint(p.suffix)\nprint(p.parent)",
+    "focus": "p.parent  (everything above the file: Path('project/src'))"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from pathlib import Path\np = Path('a') / 'b' / 'c.txt'\nprint(p.stem, p.suffix)",
+      "question": "What does this print?",
+      "answer": "c .txt",
+      "why": "`.stem` is the final component without its extension ('c'), and `.suffix` is the extension including the dot ('.txt'). They're printed space-separated."
+    },
+    {
+      "type": "choose-model",
+      "question": "You need code that joins a base directory and filename and runs correctly on both Windows and Linux. Which approach do you choose: `base + '/' + name`, or `Path(base) / name`?",
+      "answer": "`Path(base) / name`.",
+      "why": "The `/` operator on Path inserts the platform-correct separator (`\\` on Windows, `/` on Unix), whereas hardcoding '/' in a concatenation produces wrong or mixed separators on Windows."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/pathlib.html",
+    "https://realpython.com/python-pathlib/"
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "slug": "file-io-basics",
+  "title": "Reading and writing files with open()",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "pathlib-paths",
+      "json-serialization"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "context manager",
+      "definition": "An object used with `with` that sets up and guarantees cleanup of a resource. Example: `with open('f') as fh:` closes the file automatically."
+    },
+    {
+      "term": "encoding",
+      "definition": "The rule mapping text characters to bytes on disk, such as UTF-8. Example: `open('f', encoding='utf-8')`."
+    }
+  ],
+  "overview": {
+    "what": "`open(path, mode, encoding=...)` returns a file object you read from or write to, and you almost always use it with a `with` block so it closes automatically — even if an error is raised mid-way.\n\n  with open('notes.txt', 'w', encoding='utf-8') as f:\n      f.write('hello\\n')\n\n  with open('notes.txt', 'r', encoding='utf-8') as f:\n      text = f.read()\n\nThe mode string picks the operation: `'r'` read (default), `'w'` write (truncates!), `'a'` append, `'x'` create-or-fail, and a `'b'` suffix (`'rb'`, `'wb'`) for raw bytes instead of text. For text files, iterating the file object yields one line at a time, which streams a huge file without loading it all into memory.",
+    "why": "Every program eventually touches files — reading config, writing logs, processing data exports. Doing it correctly (closing handles, choosing the right mode, setting an explicit encoding) prevents corrupted output, locked files, and the classic 'works on my machine' encoding bugs.",
+    "where_used": [
+      "Reading config and data files",
+      "Writing logs and reports",
+      "ETL / data processing scripts"
+    ]
+  },
+  "why_learning_this": [
+    "Reading input data and writing results is the backbone of almost every script and batch job.",
+    "Knowing that `'w'` truncates and that `with` guarantees closing prevents real data-loss and resource-leak bugs."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Opening in 'w' when you meant to append",
+      "explanation": "`'w'` truncates the file to empty the instant it's opened — before you write anything. If you want to add to existing content, use `'a'`. Reaching for `'w'` on a file you care about silently destroys it."
+    },
+    {
+      "title": "Not using with (leaking the handle)",
+      "explanation": "A bare `f = open(...)` without `f.close()` leaves the OS handle open until garbage collection — on Windows this can lock the file, and buffered writes may not be flushed to disk. `with` closes and flushes deterministically."
+    },
+    {
+      "title": "Relying on the default encoding",
+      "explanation": "Without `encoding='utf-8'`, Python uses a platform default that differs across OSes, so a file written on one machine can fail to decode on another. Always pass an explicit encoding for text."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does opening a file in `'w'` mode do to existing contents?",
+      "answer": "It truncates the file to zero length immediately on open, discarding whatever was there. Use `'a'` to preserve and append.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `with open(...) as f:` preferred over a bare `open()`?",
+      "answer": "The `with` block is a context manager: it guarantees the file is flushed and closed when the block exits, even if an exception is raised — preventing leaked handles and lost buffered writes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you read a large file line by line without loading it all into memory?",
+      "answer": "Iterate the file object directly: `for line in f:` — it yields one line at a time and streams the file instead of reading the whole thing with `.read()`.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Append without clobbering",
+      "prompt": "The script below overwrites `log.txt` every run because it opens in `'w'`. Change it so each run adds a new line and keeps previous lines. Then read the whole file back and print it.",
+      "starter_code": "with open('log.txt', 'w', encoding='utf-8') as f:\n    f.write('entry\\n')\n\n# read it back\n",
+      "solution": "with open('log.txt', 'a', encoding='utf-8') as f:\n    f.write('entry\\n')\n\nwith open('log.txt', 'r', encoding='utf-8') as f:\n    print(f.read())"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "with open('demo.txt', 'w', encoding='utf-8') as f:\n    f.write('line 1\\n')\n    f.write('line 2\\n')\n\ntotal = 0\nwith open('demo.txt', 'r', encoding='utf-8') as f:\n    for line in f:\n        total += 1\n\nprint(total)",
+    "focus": "for line in f  (streaming one line at a time, so total counts lines)"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "with open('a.txt', 'w', encoding='utf-8') as f:\n    f.write('first\\n')\nwith open('a.txt', 'w', encoding='utf-8') as f:\n    f.write('second\\n')\nwith open('a.txt', 'r', encoding='utf-8') as f:\n    print(f.read().strip())",
+      "question": "What does this print?",
+      "answer": "second",
+      "why": "The second `open(..., 'w')` truncates the file before writing, so 'first' is gone. Only 'second' remains. If the goal was to keep both, the second open should use `'a'`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why might text written inside a bare `f = open('x','w'); f.write('hi')` (with no `close()` and no `with`) not appear in the file if the program crashes right after?",
+      "answer": "Writes are buffered in memory and only flushed to disk on close/flush; without `with` or `close()`, a crash can lose the buffered data.",
+      "why": "File objects buffer writes for efficiency. `with` (or an explicit `close()`) flushes the buffer and releases the OS handle deterministically; skipping it risks unflushed, lost writes."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/functions.html#open",
+    "https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files"
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "slug": "csv-files",
+  "title": "CSV files with the csv module",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "file-io-basics"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "delimiter",
+      "definition": "The character separating fields in a row, a comma by default. Example: `csv.reader(f, delimiter=';')`."
+    }
+  ],
+  "overview": {
+    "what": "The `csv` module reads and writes comma-separated files correctly — handling quoting, embedded commas, and newlines that naive `line.split(',')` gets wrong. The `DictReader`/`DictWriter` variants map each row to a dict keyed by the header, which is what you usually want.\n\n  import csv\n\n  with open('people.csv', newline='', encoding='utf-8') as f:\n      for row in csv.DictReader(f):\n          print(row['name'], row['age'])   # row is a dict\n\n  with open('out.csv', 'w', newline='', encoding='utf-8') as f:\n      w = csv.DictWriter(f, fieldnames=['name', 'age'])\n      w.writeheader()\n      w.writerow({'name': 'Ada', 'age': 36})\n\nAlways open CSV files with `newline=''` — the module handles line endings itself, and omitting it can produce blank rows on Windows. Note every value read from a CSV is a string; convert types yourself (`int(row['age'])`).",
+    "why": "CSV is the universal export format for spreadsheets, databases, and data pipelines. The module handles the quoting edge cases that make hand-rolled `split(',')` parsers silently corrupt data.",
+    "where_used": [
+      "Spreadsheet and database exports",
+      "Data ingestion / ETL scripts",
+      "Report generation"
+    ]
+  },
+  "why_learning_this": [
+    "CSV is the default interchange format for tabular data — you'll import and export it constantly.",
+    "The module correctly handles quoted fields containing commas and newlines, which naive string splitting mangles."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Parsing CSV with line.split(',')",
+      "explanation": "A field like `\"Smith, Jr.\"` legitimately contains a comma inside quotes. `split(',')` breaks it into two fields and corrupts every downstream column. The `csv` module respects quoting; hand-rolled splitting doesn't."
+    },
+    {
+      "title": "Forgetting newline='' when opening",
+      "explanation": "The csv module manages line endings itself. Opening without `newline=''` lets the OS translate newlines too, which on Windows inserts a blank row between every data row."
+    },
+    {
+      "title": "Assuming values are typed",
+      "explanation": "Every field read from CSV is a string — `row['age']` is `'36'`, not `36`. Comparing or doing math without converting (`int(...)`, `float(...)`) gives wrong results or type errors."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why use the csv module instead of `line.split(',')`?",
+      "answer": "The module correctly handles quoted fields that contain commas or newlines, plus configurable delimiters and quoting. `split(',')` breaks on any comma inside a quoted value, silently corrupting the data.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does `csv.DictReader` give you for each row?",
+      "answer": "A dictionary mapping each column header to that row's value, so you access fields by name (`row['name']`) instead of by numeric index.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why should CSV files be opened with `newline=''`?",
+      "answer": "The csv module handles line endings itself; opening without `newline=''` lets the platform also translate newlines, which on Windows produces spurious blank rows between records.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Sum a numeric column",
+      "prompt": "Write CSV content with a header `name,score` and two rows, then read it back with DictReader and print the total of the `score` column. Remember values come back as strings.",
+      "starter_code": "import csv, io\n\nbuf = io.StringIO()\n# write header + rows, then read back and sum the scores\n",
+      "solution": "import csv, io\n\nbuf = io.StringIO()\nw = csv.DictWriter(buf, fieldnames=['name', 'score'])\nw.writeheader()\nw.writerow({'name': 'Ada', 'score': 90})\nw.writerow({'name': 'Bo', 'score': 75})\n\nbuf.seek(0)\ntotal = sum(int(row['score']) for row in csv.DictReader(buf))\nprint(total)   # 165"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import csv, io\n\nraw = 'name,city\\n\"Smith, Jr.\",Pune\\nAda,Delhi\\n'\nreader = csv.DictReader(io.StringIO(raw))\nfor row in reader:\n    print(row['name'], '->', row['city'])",
+    "focus": "the first row's name stays \"Smith, Jr.\" — the quoted comma is not split"
+  },
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "line = '\"Smith, Jr.\",Pune'\nname, city = line.split(',')\nprint(name, city)",
+      "question": "Why does this fail or produce the wrong result?",
+      "answer": "`split(',')` splits on the comma inside the quoted name, producing three parts, so unpacking into two variables raises a ValueError (and the name is corrupted).",
+      "why": "The comma inside `\"Smith, Jr.\"` is data, not a field separator. `csv.reader`/`DictReader` honor the quotes and keep it as one field; `str.split` cannot."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "After reading a CSV with DictReader, `row['age'] > 18` raises a TypeError. Why?",
+      "answer": "`row['age']` is a string like '25', and you can't compare a string to an int with `>`.",
+      "why": "CSV stores everything as text, so every field arrives as a string. You must convert (`int(row['age']) > 18`) before numeric comparison or arithmetic."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/csv.html",
+    "https://realpython.com/python-csv/"
+  ]
+}

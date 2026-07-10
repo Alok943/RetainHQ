@@ -1,0 +1,92 @@
+{
+  "slug": "the-gil",
+  "title": "The GIL (Global Interpreter Lock)",
+  "roadmap": "python-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "concurrency-vs-parallelism"
+    ],
+    "unlocks": [
+      "threading-io-bound",
+      "threading-vs-multiprocessing"
+    ]
+  },
+  "hook": {
+    "scenario": "You spin up 4 threads on your 4-core server to process a massive dataset, expecting it to be 4x faster. But it actually takes slightly longer than using 1 thread. Why?"
+  },
+  "mental_model": {
+    "intuition": "The GIL is a speaking baton. Even if there are 10 people in the room (threads), only the person holding the baton is allowed to speak (execute Python code).",
+    "description": "The Global Interpreter Lock (GIL) is a mutex in CPython that protects access to Python objects, preventing multiple threads from executing Python bytecodes at once. This means no matter how many threads or CPU cores you have, only one thread can execute Python code at any given time."
+  },
+  "sections": [
+    {
+      "body": "Python's memory management uses reference counting. If two threads increase a variable's reference count at the exact same nanosecond, the count might only go up by 1 instead of 2. The variable would eventually be deleted while a thread was still using it, causing a crash. The GIL was introduced as a simple, foolproof lock to prevent these race conditions at the interpreter level.",
+      "recap": "The GIL exists to make Python's memory management (reference counting) thread-safe."
+    },
+    {
+      "body": "The massive consequence: Python threads CANNOT run in parallel. A multi-threaded Python program is strictly concurrent. If you have CPU-bound work (like crunching numbers), threads will fight over the GIL, and the overhead of switching the lock will actually make the program slower than a single thread.",
+      "recap": "The GIL prevents true parallelism for Python threads."
+    },
+    {
+      "body": "However, the GIL is released when a thread does I/O (like network requests, reading a file, or waiting for a database). During that time, another thread can acquire the GIL and execute Python code. This means threading IS useful in Python, but only for I/O-bound tasks.",
+      "recap": "The GIL is dropped during I/O, allowing other threads to run."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "CPU-Bound: Threads fight for the GIL (Slower)",
+      "language": "python",
+      "code": "import threading\n\ndef count_down(n):\n    while n > 0:\n        n -= 1\n\n# Using 2 threads to do CPU-heavy math\nt1 = threading.Thread(target=count_down, args=(50_000_000,))\nt2 = threading.Thread(target=count_down, args=(50_000_000,))\n\nt1.start(); t2.start()\nt1.join(); t2.join()\n\n# This takes LONGER than running count_down(100_000_000) sequentially!\n# Both threads are fighting for the single GIL.",
+      "explanation": "Because of the GIL, `t1` and `t2` cannot execute their `while` loops simultaneously. They rapidly pass the GIL back and forth, and that context-switching overhead makes it slower than doing the math in one thread."
+    },
+    {
+      "title": "I/O-Bound: The GIL is released (Faster)",
+      "language": "python",
+      "code": "import threading\nimport time\n\ndef simulated_network_call():\n    # The GIL is RELEASED during time.sleep() (or any I/O)\n    time.sleep(1)\n\nt1 = threading.Thread(target=simulated_network_call)\nt2 = threading.Thread(target=simulated_network_call)\n\nstart = time.time()\nt1.start(); t2.start()\nt1.join(); t2.join()\n\n# This takes ~1 second, not 2 seconds.\nprint(f\"Took {time.time() - start:.2f}s\")",
+      "explanation": "When `t1` hits the blocking I/O (simulated by `sleep`), it drops the GIL. `t2` grabs the GIL and also starts waiting. They wait concurrently, finishing in 1 second total."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using threads for CPU-intensive tasks",
+      "explanation": "Believing that threading in Python will speed up math, image processing, or data crunching. Because of the GIL, the threads will run sequentially, but slower due to lock-switching overhead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the GIL stand for, and what does it do?",
+      "answer": "Global Interpreter Lock. It prevents multiple native threads from executing Python bytecodes at once."
+    },
+    {
+      "q": "Why was the GIL introduced in Python?",
+      "answer": "To make CPython's memory management (specifically reference counting) thread-safe without needing to add locks to every single object."
+    },
+    {
+      "q": "Does the GIL prevent concurrency or parallelism?",
+      "answer": "It prevents parallelism (simultaneous execution on multiple cores) for Python threads. It still allows concurrency."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What is the GIL and how does it affect threads?",
+      "company": "Backend Engineer interview",
+      "answer": "The Global Interpreter Lock ensures only one thread executes Python code at a time. It prevents CPU-bound threads from running in parallel, making them useless for performance gains. However, I/O-bound threads drop the GIL while waiting, so multithreading is still highly effective for network or disk operations.",
+      "approach": "Define it, explain WHY it restricts parallelism (CPU-bound bottleneck), and ALWAYS mention the I/O-bound exception where it's released."
+    },
+    {
+      "question": "If you have a 16-core machine, how can you bypass the GIL to fully utilise the CPU for a heavy data-processing script?",
+      "company": "Data Engineering",
+      "answer": "You must use multiprocessing instead of threading. The `multiprocessing` module spawns separate OS processes, each with its own memory space and its own Python interpreter/GIL, allowing them to run truly in parallel across the 16 cores.",
+      "approach": "State that threading cannot bypass the GIL, but multiprocessing can because it isolates the interpreters."
+    }
+  ],
+  "sources": [
+    "https://wiki.python.org/moin/GlobalInterpreterLock"
+  ]
+}

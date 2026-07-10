@@ -1,0 +1,101 @@
+{
+  "slug": "regex-basics",
+  "title": "Regular expressions with re",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 6,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "capture group",
+      "definition": "A parenthesized part of a pattern whose matched text can be extracted separately. Example: in `(\\d+)-(\\d+)`, group 1 and group 2."
+    },
+    {
+      "term": "raw string",
+      "definition": "A string literal prefixed with `r` where backslashes are literal, so `r'\\d'` is backslash-d, not an escape. Always use raw strings for regex."
+    }
+  ],
+  "overview": {
+    "what": "The `re` module matches text against patterns. The workflow is a handful of functions plus a small pattern vocabulary.\n\n  import re\n\n  re.search(r'\\d+', 'abc123')      # first match anywhere -> Match('123') or None\n  re.match(r'\\d+', 'abc123')       # match only at the START -> None here\n  re.findall(r'\\d+', 'a1 b22')     # every match as a list -> ['1', '22']\n  re.sub(r'\\s+', '_', 'a  b')      # replace -> 'a_b'\n\n  m = re.search(r'(\\d+)-(\\d+)', '12-34')\n  m.group(1), m.group(2)           # '12', '34'  — capture groups\n\nCore metacharacters: `\\d` digit, `\\w` word char, `\\s` whitespace, `.` any char, `+` one-or-more, `*` zero-or-more, `?` optional, `^`/`$` start/end, `[...]` a set, `(...)` a capture group. Two rules that prevent most bugs: always write patterns as **raw strings** (`r'...'`) so backslashes survive, and remember quantifiers are **greedy** by default (`.+` grabs as much as possible — add `?` for lazy `.+?`).",
+    "why": "Validation and extraction — parsing log lines, pulling fields out of text, checking formats like emails or IDs — are everyday tasks. Regex is interview-light but genuinely useful for text wrangling where a fixed `str` method won't do.",
+    "where_used": [
+      "Validating input formats",
+      "Extracting fields from log lines / text",
+      "Search-and-replace transformations"
+    ]
+  },
+  "why_learning_this": [
+    "Extracting structured data from messy text and validating formats are common real-world jobs.",
+    "Knowing raw strings and greedy-vs-lazy matching avoids the two mistakes that make regex 'mysteriously' misbehave."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Not using raw strings",
+      "explanation": "Writing `'\\d'` (no `r`) means Python first processes the backslash escape, which can mangle the pattern or trigger warnings. Always use `r'\\d'` so the regex engine sees the backslash intact."
+    },
+    {
+      "title": "Confusing match with search",
+      "explanation": "`re.match` anchors at the *start* of the string; `re.search` scans anywhere. `re.match(r'\\d+', 'abc1')` is None even though a digit exists — people expect search behavior and get None."
+    },
+    {
+      "title": "Greedy quantifiers overshooting",
+      "explanation": "`<.+>` on `'<a><b>'` matches the whole `'<a><b>'` because `.+` is greedy. Use the lazy `<.+?>` to stop at the first `>`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between `re.match` and `re.search`?",
+      "answer": "`re.match` only matches at the beginning of the string; `re.search` finds the first match anywhere in the string. A pattern that exists mid-string returns None from `match` but a Match from `search`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why should regex patterns be written as raw strings?",
+      "answer": "So Python doesn't interpret backslash sequences before the regex engine sees them. `r'\\d'` passes a literal backslash-d to `re`; without the `r`, Python's own escaping can corrupt the pattern.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does a greedy quantifier like `.+` do, and how do you make it lazy?",
+      "answer": "Greedy `.+` matches as much as possible, backtracking only if needed. Add `?` to make it lazy (`.+?`), matching as little as possible — useful for stopping at the first delimiter.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Extract all numbers",
+      "prompt": "Using `re.findall`, extract every run of digits from the string `'order 12 has 3 items, total 450'` and print the resulting list.",
+      "starter_code": "import re\n\ntext = 'order 12 has 3 items, total 450'\n# print all digit runs as a list\n",
+      "solution": "import re\n\ntext = 'order 12 has 3 items, total 450'\nprint(re.findall(r'\\d+', text))   # ['12', '3', '450']"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import re\n\nm = re.search(r'(\\d{4})-(\\d{2})-(\\d{2})', 'date: 2026-07-07 ok')\nprint(m.group(0))\nprint(m.group(1), m.group(2), m.group(3))",
+    "focus": "m.group(1..3)  (each parenthesized group captured separately)"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "code": "import re\nprint(re.match(r'\\d+', 'abc123'))",
+      "question": "What does this evaluate to?",
+      "answer": "None",
+      "why": "`re.match` only matches at the start of the string. 'abc123' begins with letters, not digits, so there's no match at position 0. `re.search` would find '123'."
+    },
+    {
+      "type": "predict-output",
+      "code": "import re\nprint(re.findall(r'<.+?>', '<a><b>'))",
+      "question": "What does this print?",
+      "answer": "['<a>', '<b>']",
+      "why": "The lazy `.+?` matches as little as possible, stopping at the first `>`, so it finds two separate tags. A greedy `<.+>` would match the whole '<a><b>' as one."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/re.html",
+    "https://docs.python.org/3/howto/regex.html"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "slug": "defaultdict",
+  "title": "collections.defaultdict",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "dictionaries"
+    ],
+    "unlocks": [
+      "counter"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "factory function",
+      "definition": "A zero-argument callable that produces the default value for a missing key. Example: `defaultdict(list)` calls `list()` to make `[]`."
+    }
+  ],
+  "overview": {
+    "what": "`collections.defaultdict(factory)` is a dict that auto-creates a value the first time you touch a missing key, using the zero-argument `factory` you pass. It removes the 'check if key exists, else initialize' boilerplate.\n\n  from collections import defaultdict\n\n  groups = defaultdict(list)         # missing key -> []\n  groups['a'].append(1)              # no KeyError; makes [] then appends\n\n  counts = defaultdict(int)          # missing key -> 0\n  counts['x'] += 1                   # 0 + 1\n\nThe factory is any zero-arg callable: `list`→`[]`, `int`→`0`, `set`→`set()`, `dict`→`{}`, or your own `lambda: ...`. Key subtlety: merely *accessing* a missing key (`d[k]`) inserts the default and grows the dict — a side effect a plain dict doesn't have.",
+    "why": "Grouping and counting are everywhere — bucketing records by a field, tallying frequencies, building adjacency lists for graphs. `defaultdict` makes these one-liners and shows up constantly in interview solutions.",
+    "where_used": [
+      "Grouping records by a key",
+      "Frequency counting / tallies",
+      "Graph adjacency lists"
+    ]
+  },
+  "why_learning_this": [
+    "Grouping and tallying are among the most common data-shaping tasks, and defaultdict turns them into clean one-liners.",
+    "Graph problems (adjacency lists) and interview questions lean on it heavily."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Passing the factory's result instead of the factory",
+      "explanation": "`defaultdict(list)` is correct — pass the callable. `defaultdict(list())` passes an already-made empty list (not callable), which raises TypeError. The factory must be called per missing key, so you pass `list`, not `list()`."
+    },
+    {
+      "title": "Accidentally creating keys by reading them",
+      "explanation": "With a defaultdict, `if d[k]:` inserts `k` with its default as a side effect even when you only meant to check. Use `k in d` or `d.get(k)` to test membership without mutating."
+    },
+    {
+      "title": "Wrong factory for the job",
+      "explanation": "Use `int` for counters (0), `list` for appending, `set` for unique membership. Using `list` when you meant `int` (or vice-versa) leads to `+=` on a list or `.append` on an int errors."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does the argument to `defaultdict` have to be, and what does it do?",
+      "answer": "A zero-argument callable (a factory) like `int`, `list`, or `set`. When a missing key is accessed, the factory is called to produce that key's default value, which is inserted before the access returns.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is `defaultdict(list)` correct but `defaultdict(list())` an error?",
+      "answer": "`list` is the callable factory the dict invokes per missing key; `list()` is an already-created empty list, which isn't callable, so defaultdict raises TypeError.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How can reading a key from a defaultdict change the dictionary?",
+      "answer": "Accessing a missing key (`d[k]`) triggers the factory and inserts `k` with its default value, growing the dict — a side effect a plain dict's `[]` access (which raises KeyError) doesn't have.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Group words by first letter",
+      "prompt": "Given the list of words, build a dict mapping each first letter to the list of words starting with it, using defaultdict so you never check for missing keys.",
+      "starter_code": "from collections import defaultdict\n\nwords = ['apple', 'ant', 'bee', 'bear', 'cat']\n# group by first letter into {'a': ['apple','ant'], ...}\n",
+      "solution": "from collections import defaultdict\n\nwords = ['apple', 'ant', 'bee', 'bear', 'cat']\ngroups = defaultdict(list)\nfor w in words:\n    groups[w[0]].append(w)\n\nprint(dict(groups))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from collections import defaultdict\n\ncounts = defaultdict(int)\nfor ch in 'mississippi':\n    counts[ch] += 1\n\nprint(dict(counts))",
+    "focus": "counts[ch] += 1  (missing key starts at 0, so += works with no setup)"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from collections import defaultdict\nd = defaultdict(list)\nprint(d['x'])\nprint(len(d))",
+      "question": "What are the two printed lines?",
+      "answer": "[] then 1",
+      "why": "Accessing missing key 'x' triggers the `list` factory, so it prints `[]` — and that access also inserts 'x' into the dict, so its length is now 1 (the read had a side effect)."
+    },
+    {
+      "type": "find-bug",
+      "code": "from collections import defaultdict\ncounts = defaultdict(int())\ncounts['a'] += 1",
+      "question": "Why does this raise an error?",
+      "answer": "`int()` is the value `0`, not a callable; defaultdict needs a factory function, so pass `int` (without parentheses).",
+      "why": "defaultdict calls the factory for each missing key. `int` is callable and returns 0; `int()` is already 0 and can't be called, causing a TypeError on the first missing-key access."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/collections.html#collections.defaultdict"
+  ]
+}

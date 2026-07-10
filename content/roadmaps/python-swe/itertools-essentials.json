@@ -1,0 +1,98 @@
+{
+  "slug": "itertools-essentials",
+  "title": "itertools essentials",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "generator-expressions"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "lazy iterator",
+      "definition": "An object that produces items one at a time on demand rather than building the whole sequence in memory. itertools tools return these."
+    }
+  ],
+  "overview": {
+    "what": "`itertools` is a toolbox of memory-efficient, lazy building blocks for looping. Each returns an iterator that yields on demand rather than materializing a list. The high-value few:\n\n  import itertools as it\n\n  it.chain([1,2], [3,4])          # 1 2 3 4  — flatten iterables end-to-end\n  it.islice(range(100), 2, 5)     # 2 3 4    — slice an iterator (can't do seq[2:5] on one)\n  it.groupby('aabbbc')            # (a,[aa]) (b,[bbb]) (c,[c]) — group CONSECUTIVE runs\n  it.product([0,1], repeat=2)     # (0,0)(0,1)(1,0)(1,1) — cartesian product\n  it.combinations('abc', 2)       # ab ac bc — choose-k, order-independent\n  it.permutations('abc', 2)       # ab ac ba bc ca cb — ordered arrangements\n\nThe critical `groupby` gotcha: it groups only *consecutive* equal keys, so you almost always `sorted()` first if you want global grouping. Because results are lazy iterators, you consume them once — wrap in `list()` to reuse.",
+    "why": "These express common combinatorial and streaming loops declaratively and without building big intermediate lists. `product`/`combinations`/`permutations` map directly onto brute-force and enumeration interview problems.",
+    "where_used": [
+      "Flattening nested iterables",
+      "Generating combinations/permutations for brute force",
+      "Streaming large data without materializing lists"
+    ]
+  },
+  "why_learning_this": [
+    "combinations/permutations/product turn fiddly nested-loop enumeration into a single clear call.",
+    "Lazy tools like chain and islice process large or infinite streams without building huge lists in memory."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Expecting groupby to group non-adjacent items",
+      "explanation": "`groupby` only groups *consecutive* equal keys. On unsorted data `groupby([1,2,1])` yields three groups, not two. Sort by the same key first if you want all like items grouped together."
+    },
+    {
+      "title": "Reusing an exhausted iterator",
+      "explanation": "itertools results are one-shot iterators. After you loop over `chain(...)` once it's empty; a second loop yields nothing. Wrap in `list(...)` if you need to iterate more than once."
+    },
+    {
+      "title": "Confusing combinations with permutations",
+      "explanation": "`combinations` ignores order (ab == ba, so only `ab`); `permutations` counts order (`ab` and `ba` both appear). Picking the wrong one gives too few or too many results."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the key constraint of `itertools.groupby`?",
+      "answer": "It groups only consecutive elements with equal keys. To group all occurrences regardless of position, you must sort the data by that key first.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the difference between `combinations` and `permutations`?",
+      "answer": "`combinations` selects items without regard to order (each subset once, e.g. only `ab`), while `permutations` treats different orderings as distinct (`ab` and `ba` both appear).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can't you slice an iterator with `[2:5]`, and what do you use instead?",
+      "answer": "Iterators aren't subscriptable — they have no `__getitem__`. Use `itertools.islice(iterator, 2, 5)`, which lazily advances and yields the requested range.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "All pairs that sum to a target",
+      "prompt": "Use `itertools.combinations` to print every unordered pair of numbers from the list that adds up to 6.",
+      "starter_code": "import itertools\n\nnums = [1, 5, 2, 4, 3]\n# print pairs summing to 6\n",
+      "solution": "import itertools\n\nnums = [1, 5, 2, 4, 3]\nfor a, b in itertools.combinations(nums, 2):\n    if a + b == 6:\n        print(a, b)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import itertools\n\ndata = 'aaabbc'\nfor key, group in itertools.groupby(data):\n    print(key, len(list(group)))",
+    "focus": "groupby splits into consecutive runs: a x3, b x2, c x1"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import itertools\ndata = [1, 1, 2, 1]\nprint([k for k, _ in itertools.groupby(data)])",
+      "question": "What list of keys does this print?",
+      "answer": "[1, 2, 1]",
+      "why": "groupby breaks on *consecutive* runs, not global value. The two 1s at the start form one group, then 2, then the trailing 1 is a separate group — so 1 appears twice. Sorting first would give [1, 2]."
+    },
+    {
+      "type": "predict-result",
+      "code": "import itertools\nprint(len(list(itertools.combinations('abcd', 2))))\nprint(len(list(itertools.permutations('abcd', 2))))",
+      "question": "What are the two printed counts?",
+      "answer": "6 and 12",
+      "why": "combinations of 4 items taken 2 = C(4,2) = 6 (order ignored). permutations = P(4,2) = 12 (order matters), exactly twice as many because each pair counts in both orders."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/itertools.html"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "slug": "the-event-loop",
+  "title": "asyncio and the event loop",
+  "roadmap": "python-swe",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "coroutines-async-await"
+    ],
+    "unlocks": [
+      "when-async-helps"
+    ]
+  },
+  "hook": {
+    "scenario": "Your async server juggles 10,000 open connections on a single CPU core, and htop shows one Python thread. No thread pool, no 10,000 threads eating memory. How does one thread serve ten thousand users at once?"
+  },
+  "mental_model": {
+    "intuition": "The event loop is one very fast receptionist for a whole office of doctors' rooms. They can't do a patient's lab work themselves, but the moment a patient says 'I'm waiting on my blood test' (an `await`), the receptionist parks that patient and calls the next ready one. Nobody's appointment blocks anyone else's — because everyone waits in the hallway, not in the receptionist's chair.",
+    "description": "The event loop is a single-threaded scheduler that runs your coroutines. It keeps a queue of ready-to-run tasks and pulls them one at a time. A task runs until it hits an `await` on something not-yet-ready (a socket with no data, a timer that hasn't fired) — at that point the coroutine suspends and registers a callback with the OS ('wake me when this socket is readable'). The loop then runs the next ready task. When the OS signals that an awaited resource is ready, the loop re-queues the suspended coroutine and eventually resumes it exactly where it paused. One thread, thousands of overlapping I/O waits."
+  },
+  "sections": [
+    {
+      "body": "There is normally exactly one event loop per thread, and it runs one coroutine at a time. This is *not* parallelism — no two lines of your Python run simultaneously. It's concurrency: the loop rapidly interleaves many tasks by switching between them at their `await` points. Because the switching is cooperative (tasks only yield where you wrote `await`), you never need locks around ordinary in-between-await code.",
+      "recap": "One loop, one thread, one coroutine at a time — concurrency by interleaving, not parallelism."
+    },
+    {
+      "body": "The loop's core cycle: (1) run every ready task until it awaits or finishes; (2) ask the OS ('select'/'epoll') which of the registered file descriptors and timers are now ready, sleeping efficiently if nothing is; (3) move the coroutines waiting on those now-ready events back to the ready queue; (4) repeat. The magic is step 2 — the loop offloads all the actual *waiting* to the OS, so the thread sleeps instead of spinning, and wakes only when there's real work.",
+      "recap": "Run ready tasks → poll the OS for ready I/O → re-queue those tasks → repeat."
+    },
+    {
+      "body": "This model has one non-negotiable rule: never block the loop. Every task shares the single thread, so if one coroutine runs a slow *synchronous* call (a CPU-heavy loop, `time.sleep`, a sync DB driver), the loop can't reach step 2 — every other task freezes until that call returns. Awaitable operations cooperate by yielding; blocking calls don't, and they stall everyone.",
+      "recap": "Because all tasks share one thread, a single blocking call freezes the entire loop."
+    },
+    {
+      "body": "You rarely touch the loop directly — `asyncio.run(main())` creates one, runs your top coroutine on it, and closes it. Inside, `asyncio.get_running_loop()` returns the active loop if you need it (e.g. to offload blocking work with `loop.run_in_executor(...)`, which hands the slow call to a thread pool so the loop keeps spinning).",
+      "recap": "`asyncio.run` owns the loop's lifecycle; `run_in_executor` offloads blocking work to threads."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "One thread, interleaved tasks",
+      "language": "python",
+      "code": "import asyncio\n\nasync def worker(name, delay):\n    print(f\"{name}: working\")\n    await asyncio.sleep(delay)   # yield to the loop; OS wakes us later\n    print(f\"{name}: finished after {delay}s\")\n\nasync def main():\n    # three coroutines share ONE loop on ONE thread\n    await asyncio.gather(\n        worker(\"A\", 2),\n        worker(\"B\", 1),\n        worker(\"C\", 3),\n    )\n\nasyncio.run(main())\n# A: working / B: working / C: working   <- all start before any finishes\n# B: finished after 1s\n# A: finished after 2s\n# C: finished after 3s   <- total ~3s, not 6s",
+      "explanation": "All three print 'working' first because each yields at its `await asyncio.sleep`, letting the loop start the next one. The OS timers fire in order (1s, 2s, 3s) and the loop resumes each coroutine when its timer is ready — so the three waits overlap and the whole thing takes ~3s (the longest wait), not 6s."
+    },
+    {
+      "title": "Keeping the loop alive when you must block",
+      "language": "python",
+      "code": "import asyncio, time\n\ndef slow_sync_call():\n    # a blocking, CPU/legacy-driver call you can't rewrite as async\n    time.sleep(2)\n    return \"done\"\n\nasync def main():\n    loop = asyncio.get_running_loop()\n    # offload to the default thread pool so the loop stays free\n    result = await loop.run_in_executor(None, slow_sync_call)\n    print(result)\n\nasyncio.run(main())",
+      "explanation": "Calling `slow_sync_call()` directly inside a coroutine would freeze the loop for 2 seconds. `run_in_executor` runs it on a separate thread and hands back an awaitable — the loop suspends only *this* coroutine and keeps serving everything else."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming async means multi-threaded or parallel",
+      "explanation": "A default asyncio program runs on one thread with one loop — only one line of Python executes at any instant. Async overlaps *waiting*, not *computing*. CPU-bound work gets no speedup from asyncio; it needs multiprocessing or a thread/process pool."
+    },
+    {
+      "title": "Blocking the loop with a synchronous call",
+      "explanation": "`time.sleep`, `requests.get`, a heavy `for` loop, or a sync DB driver inside a coroutine stalls the single thread — the loop can't poll for other ready I/O, so every task hangs. Use async equivalents (`asyncio.sleep`, `httpx.AsyncClient`) or offload via `run_in_executor`."
+    },
+    {
+      "title": "Creating or nesting extra event loops",
+      "explanation": "Calling `asyncio.run()` inside code that's already running inside a loop raises 'asyncio.run() cannot be called from a running event loop'. There's one loop per thread; from within async code you `await` coroutines directly or use `create_task`, you don't spin up a second loop."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How can a single-threaded event loop serve thousands of connections at once?",
+      "answer": "It interleaves tasks: each coroutine runs until it `await`s on not-yet-ready I/O, then suspends and registers with the OS. The loop runs other ready tasks and, when the OS reports a resource is ready, resumes the waiting coroutine. The waiting is offloaded to the OS, so one thread overlaps thousands of I/O waits."
+    },
+    {
+      "q": "Is asyncio concurrency the same as parallelism? Why or why not?",
+      "answer": "No. It's concurrency — one thread runs one coroutine at a time, rapidly switching at `await` points. Nothing runs truly simultaneously, so it speeds up I/O-bound (waiting) work but not CPU-bound work."
+    },
+    {
+      "q": "What happens to every other task if one coroutine makes a blocking synchronous call?",
+      "answer": "They all freeze. All tasks share the single thread, so a blocking call prevents the loop from reaching its polling step until the call returns — the whole loop stalls."
+    },
+    {
+      "q": "How do you run unavoidable blocking code without stalling the loop?",
+      "answer": "Offload it to a thread (or process) pool with `loop.run_in_executor(...)` (or `asyncio.to_thread`), then `await` the result. The blocking work runs off-thread while the loop keeps serving other tasks."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "An interviewer asks: 'You have a single event loop on one thread. Explain, step by step, how it handles 5,000 concurrent HTTP clients without 5,000 threads.'",
+      "company": "Backend Engineer interview",
+      "answer": "Each client connection is a coroutine. A coroutine runs until it awaits I/O (reading the request body, waiting on a DB reply); at that point it suspends and registers its socket with the OS via epoll/kqueue. The loop then runs the next ready coroutine. It periodically asks the OS which sockets are now readable/writable and re-queues those coroutines to resume where they paused. Because all the actual waiting is delegated to the OS and the loop only ever runs code that's ready, one thread multiplexes thousands of mostly-idle connections — no per-connection thread, tiny memory overhead.",
+      "approach": "Frame each connection as a suspendable coroutine, describe the run→poll-OS→resume cycle, and stress that I/O waiting is offloaded to the OS so the single thread is never idle-blocked."
+    },
+    {
+      "question": "A team reports their FastAPI service becomes unresponsive under load, and profiling shows a coroutine doing heavy JSON parsing / a tight numeric loop. Explain the root cause in event-loop terms and give two fixes.",
+      "company": "System Design interview",
+      "answer": "The heavy CPU work is synchronous and never yields, so it monopolizes the single loop thread — while it runs, the loop can't poll for or resume any other task, so all requests stall. Fixes: (1) offload the CPU work to a process pool via `loop.run_in_executor(ProcessPoolExecutor(), ...)` or `asyncio.to_thread` for I/O-ish blocking, keeping the loop free; (2) move heavy CPU work out of the request path entirely (a background worker/queue), or scale with multiple worker processes so each has its own loop.",
+      "approach": "Identify that CPU-bound code blocks the single-threaded loop, then propose offloading to a pool and/or architecturally removing the work from the async request path."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/asyncio-eventloop.html",
+    "https://docs.python.org/3/library/asyncio-dev.html",
+    "https://fastapi.tiangolo.com/async/"
+  ]
+}

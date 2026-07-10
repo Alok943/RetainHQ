@@ -1,0 +1,105 @@
+{
+  "slug": "threading-io-bound",
+  "title": "Threading for I/O-bound work",
+  "roadmap": "python-swe",
+  "kind": "engineering",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "the-gil"
+    ],
+    "unlocks": [
+      "threading-vs-multiprocessing"
+    ]
+  },
+  "hook": {
+    "scenario": "You download 50 web pages, one per HTTP request, each taking ~200ms of network wait. Done serially it takes 10 seconds. You wrap it in threads and it drops to under a second — even though the GIL supposedly means 'only one thread runs Python at a time.' How is that not a contradiction?"
+  },
+  "mental_model": {
+    "intuition": "Ten people ordering pizza by phone. One phone, ten callers — but 95% of each call is waiting on hold. So one caller dials, and the moment they're on hold they hand the phone to the next. The phone (the CPU) is almost never the bottleneck; the waiting is, and waiting overlaps for free.",
+    "description": "The GIL lets only one thread execute Python bytecode at a time, so threading gives no speedup for CPU-bound work. But I/O-bound work isn't running bytecode while it waits — it's blocked in the OS on a socket, disk, or lock. CPython *releases the GIL* around blocking I/O calls, so while thread A waits for bytes to arrive, thread B holds the GIL and runs. The waits overlap. That's why threading is the right tool for I/O-bound concurrency (network, files, DB calls) and the wrong tool for number-crunching."
+  },
+  "sections": [
+    {
+      "body": "The distinction that decides everything: is the work CPU-bound (busy computing — parsing, math, compression) or I/O-bound (mostly waiting — network, disk, database, subprocess)? Threading only helps the second kind. For I/O-bound work the thread spends nearly all its time blocked, not executing bytecode, so the GIL is free for other threads.",
+      "recap": "Threading speeds up I/O-bound (waiting) work, not CPU-bound (computing) work."
+    },
+    {
+      "body": "The reason it works: CPython releases the GIL before it makes a blocking system call (a socket read, a file read, `time.sleep`) and re-acquires it after. So a thread parked in `requests.get()` is holding no GIL — other threads run during that window. Ten threads each waiting 200ms overlap into ~200ms total instead of 2 seconds.",
+      "recap": "Blocking I/O calls release the GIL, letting other threads run during the wait."
+    },
+    {
+      "body": "In practice you rarely manage threads by hand — `concurrent.futures.ThreadPoolExecutor` gives you a pool and a clean `map`/`submit` API. Pick a worker count based on how many operations can be in-flight at once (for network calls, tens to low hundreds is fine — they're mostly idle). Because threads share memory, guard any shared mutable state with a `Lock`.",
+      "recap": "Use `ThreadPoolExecutor` for I/O fan-out; lock shared mutable state."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Serial vs threaded I/O",
+      "language": "python",
+      "code": "import time\nfrom concurrent.futures import ThreadPoolExecutor\n\ndef fetch(url):\n    time.sleep(0.2)   # stand-in for a 200ms network round-trip\n    return f\"{url}: ok\"\n\nurls = [f\"https://api/{i}\" for i in range(50)]\n\n# serial: ~10s (50 * 0.2)\nstart = time.perf_counter()\n[fetch(u) for u in urls]\nprint(f\"serial:   {time.perf_counter()-start:.2f}s\")\n\n# threaded: ~0.2s of overlapped waiting\nstart = time.perf_counter()\nwith ThreadPoolExecutor(max_workers=50) as pool:\n    list(pool.map(fetch, urls))\nprint(f\"threaded: {time.perf_counter()-start:.2f}s\")",
+      "explanation": "Each `fetch` is 200ms of pure waiting. Serially that's 50 waits back-to-back (~10s). In the thread pool all 50 waits happen at once — while any thread is blocked in `time.sleep`/the network, it isn't holding the GIL, so the others proceed. Total collapses to ~one wait."
+    },
+    {
+      "title": "Locking shared mutable state",
+      "language": "python",
+      "code": "import threading\nfrom concurrent.futures import ThreadPoolExecutor\n\ncounter = 0\nlock = threading.Lock()\n\ndef work():\n    global counter\n    for _ in range(100_000):\n        with lock:          # without this, updates race and get lost\n            counter += 1\n\nwith ThreadPoolExecutor(max_workers=4) as pool:\n    for _ in range(4):\n        pool.submit(work)\n\nprint(counter)   # 400000 — correct only because of the lock",
+      "explanation": "`counter += 1` is read-modify-write — not atomic — so two threads can read the same value and one increment is lost. The GIL does NOT save you here: it can switch threads mid-operation. A `Lock` makes the update mutually exclusive so the final count is right."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using threads to speed up CPU-bound work",
+      "explanation": "Threading a tight numeric loop gives zero speedup (often a slight slowdown from lock contention) because the GIL serializes bytecode execution — the threads never actually run in parallel. CPU-bound work needs multiprocessing or a native library that releases the GIL, not threads."
+    },
+    {
+      "title": "Assuming the GIL makes shared state thread-safe",
+      "explanation": "The GIL guarantees one bytecode at a time, not one *operation* at a time. `counter += 1`, list appends interleaved with reads, and check-then-act patterns can still race. Protect shared mutable state with a `Lock` (or use thread-safe primitives like `queue.Queue`)."
+    },
+    {
+      "title": "Spawning unbounded threads",
+      "explanation": "Creating one raw `Thread` per task for thousands of tasks wastes memory and context-switch time. Use a bounded `ThreadPoolExecutor`; for very high I/O concurrency (tens of thousands), asyncio scales better than threads."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does threading speed up I/O-bound work despite the GIL?",
+      "answer": "CPython releases the GIL around blocking I/O calls, so while one thread waits on the network/disk it holds no GIL and other threads run. The waits overlap. The GIL only serializes actual bytecode execution, which I/O-bound threads spend almost no time doing."
+    },
+    {
+      "q": "Why does threading NOT speed up CPU-bound work?",
+      "answer": "CPU-bound threads are constantly executing bytecode, and the GIL allows only one thread to do that at a time. They take turns rather than running in parallel, so there's no speedup — and lock contention can even make it slightly slower."
+    },
+    {
+      "q": "Does the GIL make `counter += 1` across threads safe? Why or why not?",
+      "answer": "No. `+=` is a non-atomic read-modify-write, and the interpreter can switch threads between those steps, so increments can be lost. You need an explicit `Lock` (or an atomic/thread-safe structure)."
+    },
+    {
+      "q": "What's the idiomatic tool for running many I/O-bound calls concurrently?",
+      "answer": "`concurrent.futures.ThreadPoolExecutor` — submit the tasks or use `pool.map`, with a worker count sized to how many operations you want in flight. For extreme concurrency, asyncio is the better fit."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A script makes 200 independent REST API calls, each ~150ms, and takes 30 seconds. A teammate says 'Python has the GIL so threads won't help — use multiprocessing.' Are they right? What do you do?",
+      "company": "Backend Engineer interview",
+      "answer": "They're wrong for this workload. The calls are I/O-bound — almost all of the 150ms is network waiting, during which CPython releases the GIL — so threads overlap the waits and cut the wall-clock dramatically. A `ThreadPoolExecutor` with, say, 50–100 workers brings 30s down toward ~a second. Multiprocessing would also work but adds process/serialization overhead that's unnecessary for pure I/O; threads (or asyncio) are the lean choice. Multiprocessing is the answer only when the bottleneck is CPU.",
+      "approach": "Classify the work as I/O-bound, explain the GIL is released during I/O so threads overlap waits, and reserve multiprocessing for CPU-bound work."
+    },
+    {
+      "question": "Two threads each increment a shared integer 1,000,000 times, but the final total is less than 2,000,000. Explain the bug and fix it.",
+      "company": "Concurrency interview",
+      "answer": "`x += 1` compiles to load, add, store — three steps. A thread can be suspended between the load and the store; the other thread reads the same old value, and one increment is overwritten, so counts are lost (a race condition). The GIL doesn't prevent this because it can switch threads between bytecodes. Fix: wrap the update in a `threading.Lock` (`with lock: x += 1`) so it's atomic, or use a lock-free design like accumulating per-thread and summing at the end.",
+      "approach": "Identify the non-atomic read-modify-write race, note the GIL doesn't guarantee operation-level atomicity, and fix with a Lock."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor",
+    "https://docs.python.org/3/library/threading.html#lock-objects",
+    "https://realpython.com/python-gil/"
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "slug": "deque",
+  "title": "collections.deque",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "lists"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "amortized O(1)",
+      "definition": "An operation that is constant-time on average across many calls, even if a rare individual call costs more. deque appends/pops at both ends are O(1)."
+    }
+  ],
+  "overview": {
+    "what": "`collections.deque` ('deck') is a double-ended queue: appending and popping at *either* end is O(1). A Python `list` is O(1) at the right end but O(n) at the left, because `list.pop(0)`/`insert(0, x)` shift every remaining element.\n\n  from collections import deque\n\n  q = deque([1, 2, 3])\n  q.append(4)         # right end\n  q.appendleft(0)     # left end  -> [0,1,2,3,4]\n  q.popleft()         # O(1) from the front\n  q.pop()             # O(1) from the back\n\nThat makes deque the correct structure for FIFO queues and BFS. It also takes `maxlen`: a bounded deque that automatically discards from the opposite end when full — perfect for 'last N items' / sliding windows. Trade-off: no fast random access — indexing the middle is O(n), so use a list when you need `d[i]` in the interior.",
+    "why": "BFS (graph/tree level-order traversal) and any producer/consumer queue need O(1) pops from the front. Using `list.pop(0)` there turns an O(n) algorithm into O(n^2) — a classic performance bug and interview gotcha.",
+    "where_used": [
+      "BFS queue in graph/tree traversal",
+      "Sliding-window / last-N buffers (maxlen)",
+      "Producer-consumer task queues"
+    ]
+  },
+  "why_learning_this": [
+    "BFS and queue-based algorithms require O(1) front removal — deque is the right tool, `list.pop(0)` is the trap.",
+    "The `maxlen` bounded deque is an elegant one-liner for sliding windows and 'keep the last N' buffers."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using list.pop(0) as a queue",
+      "explanation": "`list.pop(0)` is O(n) because every remaining element shifts left one slot. In a loop that's O(n^2) and silently slow on large inputs. `deque.popleft()` is O(1)."
+    },
+    {
+      "title": "Indexing into the middle of a deque",
+      "explanation": "deque is optimized for the ends; `d[len(d)//2]` is O(n), not O(1). If you need fast interior random access, a list is the right structure."
+    },
+    {
+      "title": "Forgetting maxlen discards silently",
+      "explanation": "A `deque(maxlen=3)` drops an element from the opposite end each time you append past the limit — no error, no warning. That's the feature, but it will quietly lose data if you didn't intend a bounded buffer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is `deque.popleft()` better than `list.pop(0)` for a queue?",
+      "answer": "`popleft()` is O(1), while `list.pop(0)` is O(n) because it shifts every remaining element left by one. In a loop that difference turns an O(n) pass into O(n^2).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does a `deque(maxlen=n)` do when you append beyond n items?",
+      "answer": "It automatically discards an item from the opposite end to stay at length n — making it a self-trimming 'last n items' buffer.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is deque worse at than a list?",
+      "answer": "Random access to the middle: indexing an interior element is O(n) for a deque versus O(1) for a list. deque is optimized for the two ends, not the middle.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Keep the last 3 readings",
+      "prompt": "Feed the numbers 1..6 one at a time into a bounded deque that keeps only the 3 most recent values, then print the final deque.",
+      "starter_code": "from collections import deque\n\nwindow = deque(maxlen=3)\nfor n in range(1, 7):\n    window.append(n)\n# print the final window\n",
+      "solution": "from collections import deque\n\nwindow = deque(maxlen=3)\nfor n in range(1, 7):\n    window.append(n)\nprint(window)   # deque([4, 5, 6], maxlen=3)"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from collections import deque\n\nq = deque()\nq.append('a')\nq.append('b')\nq.appendleft('z')\nprint(q)\nprint(q.popleft())\nprint(q)",
+    "focus": "q.popleft()  (removes 'z' from the front in O(1))"
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from collections import deque\nd = deque(maxlen=2)\nfor x in [1, 2, 3]:\n    d.append(x)\nprint(list(d))",
+      "question": "What does this print?",
+      "answer": "[2, 3]",
+      "why": "With maxlen=2, appending 3 pushes the deque over its limit, so the oldest element (1) is discarded from the left. Only the two most recent values remain."
+    },
+    {
+      "type": "choose-model",
+      "question": "You're implementing BFS and repeatedly remove the next node from the front of a collection of thousands of nodes. Do you use a list with `.pop(0)` or a deque with `.popleft()`?",
+      "answer": "A deque with `.popleft()`.",
+      "why": "Front removal happens once per node; `list.pop(0)` is O(n) each time, making BFS O(n^2), while `deque.popleft()` is O(1), keeping BFS O(n)."
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/collections.html#collections.deque"
+  ]
+}
