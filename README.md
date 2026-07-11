@@ -27,7 +27,7 @@ The whole product is one loop, and every feature serves it:
 ```
 React SPA (Vercel)
   ├─ Supabase Auth (Google OAuth) ──► ES256 JWT
-  └─ apiFetch + Bearer JWT ──► FastAPI (Railway / Singapore) ──asyncpg──► Supabase Postgres
+  └─ apiFetch + Bearer JWT ──► FastAPI (Render) ──asyncpg──► Supabase Postgres
 ```
 
 - The frontend talks **only** to FastAPI. Supabase is used purely as an **identity provider** (Google OAuth) and a **managed Postgres** database.
@@ -43,7 +43,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture.
 | Layer | Stack |
 |---|---|
 | **Frontend** | React 19 + Vite + Tailwind CSS, React Router, React Flow + dagre (roadmap flowchart), jsPDF (roadmap export). Deployed on **Vercel** (root = `frontend/`). |
-| **Backend** | FastAPI (Python 3.10+), SQLModel + Alembic + asyncpg, pydantic-settings, PyJWT (crypto). Deployed on **Railway** (Singapore region, for latency to Supabase Mumbai). |
+| **Backend** | FastAPI (Python 3.10+), SQLModel + Alembic + asyncpg, pydantic-settings, PyJWT (crypto). Deployed on **Render** (keep the region close to Supabase Mumbai for latency). |
 | **Database / Auth** | Supabase — Postgres (UUID PKs, naive-UTC timestamps) + Google OAuth. |
 | **AI (advisory)** | Groq (`openai/gpt-oss-120b` by default) for the optional LLM recall grader + question mode. |
 
@@ -76,7 +76,7 @@ RetainHQ/
 │   │       └── AuthContext.jsx  # PLG guest-exploration + requireAuth() gating
 │   └── vercel.json           # SPA rewrite (fixes deep-link / OAuth 404s)
 │
-├── backend/                  # FastAPI (Railway root)
+├── backend/                  # FastAPI (Render root)
 │   └── app/
 │       ├── main.py           # app, CORS allow-list, router mounts, /health, /me
 │       ├── core/
@@ -281,7 +281,7 @@ Each lesson declares a **`kind`** that sets its shape (and optional client-side 
 ## Deployment
 
 - **Frontend → Vercel** (root = `frontend/`). `vercel.json` SPA rewrite is **required** (fixes 404s on deep links / OAuth redirects). Auto-deploys on push to `main`.
-- **Backend → Railway** (root = `backend/`, Singapore region). Env includes `DATABASE_URL`, `SUPABASE_*`, `ADMIN_EMAIL`, the CORS allow-list (apex + www), and `GROQ_API_KEY` / `GRADER_ENABLED`. Run `alembic upgrade head` against the DB.
+- **Backend → Render** (root = `backend/`). Env includes `DATABASE_URL`, `SUPABASE_*`, `ADMIN_EMAIL`, the CORS allow-list (apex + www), `GROQ_API_KEY` / `GRADER_ENABLED`, and (for syllabus upload) `SYLLABUS_MODEL` + `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Run `alembic upgrade head` against the DB.
 - **CORS** is an explicit allow-list (`https://retainhq.app`, `https://www.retainhq.app`), never `*`.
 - **Secrets** live only in `.env` (git-ignored) — never committed.
 
@@ -321,7 +321,7 @@ Each lesson declares a **`kind`** that sets its shape (and optional client-side 
 **Latest — the learning layer:** node-anchored **lessons** with multiple `kind`s (`aptitude`, `reasoning`, `theory` on top of the runtime-backed `python`/`sql`), client-side execution (Pyodide / PGlite), **process animations** for Core CS, clean **slug URLs** (`/roadmaps/<slug>/learn/<lesson>`), and the **content→review bridge** ("Add to reviews" → an FSRS card via `activities.node_id`). Earlier: anti-fatigue redesign (first review deferred to tomorrow, daily session cap with rollover) and an LLM **question mode** + **related-subtopics** (gated behind `GRADER_ENABLED`; free recall stays the fallback).
 
 **Next, in order of leverage:**
-1. Flip the AI grader + question mode on in prod (`GRADER_ENABLED=true`, `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` on Railway) and validate question/subtopic quality on real cards.
+1. Flip the AI grader + question mode on in prod (`GRADER_ENABLED=true`, `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` on Render) and validate question/subtopic quality on real cards.
 2. Expand seed content (e.g. a proper Git section; fine-tuning + evals for AI Engineering).
 3. Logged Reviews Vault (review history).
 4. Real Track / Roadmap pickers on the log form (currently capture-only).

@@ -39,7 +39,7 @@ Help like a pragmatic senior engineer: verify changes by running/testing before 
 ```
 React SPA (Vercel, root=frontend/)  ←  retainhq.app
   ├─ Supabase Auth (Google OAuth) ──► ES256 JWT
-  └─ apiFetch + Bearer JWT ──► FastAPI (Railway Singapore, root=backend/) ──asyncpg──► Supabase Postgres (Mumbai, pooler :6543)
+  └─ apiFetch + Bearer JWT ──► FastAPI (Render, root=backend/) ──asyncpg──► Supabase Postgres (Mumbai, pooler :6543)
 ```
 
 - The frontend talks **only** to FastAPI via `frontend/src/lib/api.js` (`apiFetch` attaches the JWT; `optionalAuth` = guest reads). Never add direct `supabase.from(...)` DB calls in React — Supabase on the client is auth-only.
@@ -61,7 +61,7 @@ React SPA (Vercel, root=frontend/)  ←  retainhq.app
 
 ## Working agreements
 
-- **Commits:** authored solely by the user — **NO `Co-Authored-By: Claude` trailer**. Work on `main` (solo; deploys from main). **Never push/deploy without an explicit "push" from the user** — pushing main triggers Vercel + Railway.
+- **Commits:** authored solely by the user — **NO `Co-Authored-By: Claude` trailer**. Work on `main` (solo; deploys from main). **Never push/deploy without an explicit "push" from the user** — pushing main triggers Vercel + Render.
 - **Content pipeline:** bulk lesson generation is delegated to **Antigravity, not Claude**. Claude owns the contracts (`schema`/`validate.py`/`PROMPT-*`), the runtime/renderer, and **critiquing** output (validator checks structure only; someone must check lessons actually teach).
 - **Admin gate (interim):** email check — `get_admin_user` 403s unless `current_user.email == ADMIN_EMAIL`. `DEV_AUTH_BYPASS` is boot-guarded behind `DEBUG=true`.
 - **Product thesis:** "Track what you remember, not what you complete." Retention engine is the moat; lessons are the hook. Out-teach YouTube+docs for the AI-assisted coder via docs-as-truth lessons, step-through execution, predict-before-reveal.
