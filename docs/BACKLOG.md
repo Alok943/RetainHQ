@@ -18,9 +18,9 @@ Format: `- [ ] idea — one line of context (YYYY-MM-DD)`
 - [ ] (see also SYSTEM-OVERVIEW §5 for already-acknowledged debt: rate limiting, admin auth, feedback workflow)
 - [ ] `Profile.jsx` calls raw `supabase.auth.getUser()` instead of `useAuth()`'s session — under `DEV_AUTH_BYPASS` (no real Supabase login happens) this never resolves, so the whole Profile page hangs on its loading skeleton forever in dev. Found verifying the audience-switcher redirect; not fixed, out of that session's scope (2026-07-10)
 - [ ] Groq model upgrade path — currently `openai/gpt-oss-120b` (all 6 LLM endpoints); evaluate Kimi/GLM as alternatives. Raised by the founder, not evaluated (2026-07-05)
-- [ ] Verify Railway builder (dashboard → service → Settings → Build, or build logs) — Dockerfile vs Nixpacks; if Dockerfile, one rebuild is needed for the new `.dockerignore` to purge old layers; also confirm no locally built image was ever pushed to a registry (closes/reopens the D-008 no-rotation call) (2026-07-10)
+- [ ] Verify the Render build (dashboard → service → Settings) — Dockerfile vs native runtime; if Dockerfile, one rebuild is needed for the `.dockerignore` to purge old layers; also confirm no locally built image was ever pushed to a registry (closes/reopens the D-008 no-rotation call). Originally a Railway item; re-check after the 2026-07-11 move to Render (2026-07-10)
 - [ ] Auth 401 responses echo JWT-library exception text (`detail=f"Could not validate credentials: {e}"`) — return a generic message, log the detail server-side (audit finding, deferred) (2026-07-10)
-- [ ] `/health` doesn't touch the DB — Railway reports healthy while the pool is dead; add a cheap `SELECT 1` (audit finding, deferred) (2026-07-10)
+- [ ] `/health` doesn't touch the DB — the host (Render) reports healthy while the pool is dead; add a cheap `SELECT 1` (audit finding, deferred) (2026-07-10)
 - [ ] Security headers (CSP, HSTS, etc.) on the Vercel frontend via a `headers` block in `vercel.json` (audit finding, deferred) (2026-07-10)
 - [ ] Move `alembic upgrade head` out of the container CMD into a separate release/pre-deploy step — concurrent replicas/redeploys race migrations; a failing migration crash-loops the API (audit finding, deferred post-pitch) (2026-07-10)
 - [ ] Pin backend dependencies — `pyproject.toml` is all `>=` with no lockfile; `pip-compile` a pinned `requirements.txt` for the Docker build (audit finding, deferred post-pitch) (2026-07-10)
@@ -43,3 +43,7 @@ Format: `- [ ] idea — one line of context (YYYY-MM-DD)`
 ## Marketing / growth
 
 - [ ] Reverse-engineer the school-pilot sales timeline into a dated plan: launch pilot Jul/Aug → pull mid-term efficacy data Oct → pitch the School Management Committee Dec, landing inside the Nov–Feb CBSE procurement window (from the deep-research pilot playbook; not yet turned into calendar dates) (2026-07-05)
+- Node metadata (difficulty prior, question_types) — generate ONLY when a consumer exists; FSRS already measures real difficulty (from syllabus-review discussion 2026-07-12)
+- Dependency-graph VISUALIZATION for syllabus roadmaps (never locking — contradicts "track what you remember"); real value is cross-roadmap edges
+- metric_events table (extraction edit-delta, grader calibration self-report vs ai_recalled, depth-mode retention) — baseline before iterating on question quality
+- Syllabus strict-vs-enhanced extraction mode (strict = only what the syllabus names; one prompt fork + upload-page toggle)

@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "openai/gpt-oss-120b"
     GRADER_ENABLED: bool = False
+    # A generated question set is served for this many review sessions (shuffled
+    # each time) before a fresh set is generated — amortizes the LLM cost and
+    # keeps the quiz stable while the memory is forming.
+    QUESTION_SET_REUSE: int = 2
 
     # Syllabus → roadmap extraction. One-shot, user-visible structuring task.
     # Provider is routed by SYLLABUS_MODEL: a "gemini*" id uses Google (GEMINI_API_KEY),

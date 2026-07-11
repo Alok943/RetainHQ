@@ -15,7 +15,7 @@ RetainHQ is a learning-retention platform: **Log Activity → Capture Key Memory
 ```
 React SPA (Vercel, root=frontend/)  ←  retainhq.app (apex + www)
   ├─ Supabase Auth (Google OAuth) ──► ES256 JWT
-  └─ apiFetch + Bearer JWT ──► FastAPI (Railway Singapore, root=backend/)
+  └─ apiFetch + Bearer JWT ──► FastAPI (Render, root=backend/)
                                   └─ asyncpg ──► Supabase Postgres (Mumbai, transaction pooler :6543)
 GitHub Actions (daily 01:30 UTC) ──X-Cron-Secret──► POST /api/internal/send-reminders ──► Resend (email)
 PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
@@ -30,7 +30,7 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 - Supabase Google OAuth issues an **ES256** JWT; FastAPI verifies it via `PyJWKClient` against Supabase's JWKS (keys cached 1 h). **HS256 is removed** (`algorithms=["ES256"]` only — algorithm-confusion attack closed). JWKS outage → clean 503, not a 500.
 - Claims checked: signature, `exp`, `aud="authenticated"`, `role == "authenticated"`. `sub` (string UUID) is cast to `uuid.UUID` before queries.
 - `get_current_user` → `SupabaseUser` (attribute access). `get_optional_user` powers guest exploration. `get_admin_user` = case-insensitive email match against `ADMIN_EMAIL` (403 otherwise) — interim founder gate, not a role system.
-- **`DEV_AUTH_BYPASS` is boot-guarded**: `config.py`'s model validator raises at startup unless `DEBUG=true` is also set, so a stray flag on Railway crashes the deploy instead of silently handing admin to anonymous requests.
+- **`DEV_AUTH_BYPASS` is boot-guarded**: `config.py`'s model validator raises at startup unless `DEBUG=true` is also set, so a stray flag in the prod env (Render) crashes the deploy instead of silently handing admin to anonymous requests.
 
 ### Backend layout (`backend/app/`)
 
@@ -40,9 +40,9 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 | `core/` | `config.py` (pydantic-settings + the bypass boot guard), `database.py` (async engine: pooler-safe `statement_cache_size=0`, `pool_pre_ping=True`, `echo=DEBUG` only), `security.py` |
 | `api/routes/` | `activities`, `reviews`, `dashboard`, `roadmaps`, `admin`, `feedback`, **`internal`** (cron-only), **`prefs`** (audience), **`tests`** (test banks), **`syllabus`** (PDF → personal roadmap) |
 | `services/` | `scheduler.py` (FSRS-4.5: `apply_fsrs`, `FSRS_WEIGHTS`, `DESIRED_RETENTION=0.9`, `REVIEW_SESSION_CAP=10`), `grader.py` (Groq LLM: recall grading, question mode, capture assist, fill-up grading), **`mailer.py`** (Resend), **`reminders.py`** (claim-then-send daily batch), **`test_scoring.py`**, **`syllabus.py`** (syllabus-PDF → draft roadmap; **provider-routed by `SYLLABUS_MODEL`** — `gemini*` id → Google `google-genai` inline-PDF + `response_schema`, else Anthropic `claude-opus-4-8` document block + structured outputs/streaming; both send the same prompt+schema so the two can be A/B'd on quality) |
-| `models/models.py` | Single source of truth — 12 tables (see §2) |
-| `alembic/versions/` | 22 migrations; head `a1c5e8f2d7b3` (`roadmaps.user_id` — **applied to prod 2026-07-11**) |
-| `tests/` | `test_ownership.py` — cross-tenant isolation suite (SQLite via JSONB→JSON variant); `pytest.ini`, `.dockerignore`, `Dockerfile` |
+| `models/models.py` | Single source of truth — 13 tables (see §2) |
+| `alembic/versions/` | 23 migrations; head `b3d9f1a4c6e2` (`question_sets` — **pending in prod; Dockerfile runs `alembic upgrade head` on deploy**) |
+| `tests/` | `test_ownership.py` (cross-tenant isolation), `test_question_sets.py` (question-set reuse/scoping/reference-answer injection); SQLite via JSONB→JSON variant; `pytest.ini`, `.dockerignore`, `Dockerfile` |
 | `seed_*.py` | **33 seed scripts** (idempotent, fixed UUIDs): 31 roadmap seeds + 2 prereq-edge seeds (`python_swe_prereqs`, `physics_school_prereqs`) |
 
 ### API surface (all verified against route decorators)
@@ -53,10 +53,10 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 | `POST /api/activities/suggest-key-points` | Capture assist (gated `GRADER_ENABLED`, else 404) |
 | `GET /api/reviews/due` | Capped at 10, oldest first |
 | `POST /api/reviews/{id}/complete` | Advances FSRS, schedules next |
-| `POST /api/reviews/{id}/grade`, `/questions`, `/grade-questions` | LLM grader + question mode (all gated) |
+| `POST /api/reviews/{id}/grade`, `/questions`, `/grade-questions` | LLM grader + question mode (all gated on `GRADER_ENABLED`). `/questions` serves a **persisted `question_sets` row** (reused `QUESTION_SET_REUSE`=2 sessions, shuffled each serve, then regenerated; optional body `{depth: 'main'\|'deep'}`); node-linked cards get **topic-grounded** generation (node title+description is the contract, key_memory only biases), free-form cards stay key_memory-grounded. `/grade-questions` injects the set's stored `reference_answer`s server-side (never sent to the client) |
 | `GET /api/dashboard/` + **`/review-metrics`** + **`/heatmap`** | The last two are newer than CLAUDE.md |
 | `GET /api/roadmaps/` (+`{id-or-slug}`, `{id}/blockers`, `PUT nodes/{id}/progress`) | List is **filtered by the caller's `user_prefs.audience`** (career vs school) **plus the caller's own personal roadmaps** (`user_id`); personal roadmaps resolve only for their owner (404 otherwise) |
-| **`POST /api/syllabus/extract` · `POST /api/syllabus/commit` · `DELETE /api/syllabus/{id}`** | Syllabus upload → personal roadmap. Extract = PDF (≤10 MB, ≤5/user/day in-memory limit) → Claude → draft JSON, **nothing saved**; commit = user-edited draft → `roadmaps(user_id)` + nodes; delete = own roadmaps only (activities keep history, links nulled). Extract gated on the selected provider's key — `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` (404 when unset) |
+| **`POST /api/syllabus/extract` · `/extract-text` · `/commit` · `DELETE /api/syllabus/{id}`** | Syllabus upload → personal roadmap. Extract = PDF (≤10 MB) → LLM → draft JSON, **nothing saved**; extract-text = pasted syllabus text (≤40K chars, the token-cheap default in the UI — no per-page document tokens; also how DOCX is handled: user copies the text) → same draft; both share the ≤5/user/day in-memory limit. Commit = user-edited draft → `roadmaps(user_id)` + nodes; delete = own roadmaps only (activities keep history, links nulled). Extraction gated on the selected provider's key — `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` (404 when unset) |
 | `POST /api/feedback/` · `GET /api/admin/funnel` · `GET /api/admin/feedback` | Feedback + founder admin |
 | **`POST /api/internal/send-reminders`** | No user JWT — `X-Cron-Secret` header, `hmac.compare_digest`, closed entirely if `CRON_SECRET` unset. Driven by `.github/workflows/reminders.yml` (01:30 UTC daily + manual dispatch) |
 | **`GET/PUT /api/prefs/`** | Server-side audience preference ('career' \| 'school') |
@@ -78,11 +78,11 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 
 ---
 
-## 2. Data model (12 tables, prod-verified)
+## 2. Data model (13 tables; 12 prod-verified + `question_sets` pending deploy)
 
-`tracks`, `activities` (the FSRS card: `stability`/`difficulty_fsrs` NULL until first graded review; legacy SM-2 columns still written; optional `roadmap_id`/`node_id` links), `reviews` (due/completed + `rating`/`recalled`/`quality` + `ai_*` grader columns), `feedbacks`, `roadmaps` (**+ `slug`, + `audience` 'career'|'school', + `user_id` NULL=catalog / set=personal syllabus-upload roadmap**), `roadmap_nodes` (self-ref `parent_id` subtopics), `roadmap_node_prerequisites` (directed edges, powers "Why am I stuck?"), `user_progress`, **`user_prefs`** (audience, server-side), **`test_attempts`** (JSONB per-question results; `node_title` is the join key), **`reminder_log`** (unique `(user_id, sent_on)` = at-most-once-daily email idempotency), `alembic_version`.
+`tracks`, `activities` (the FSRS card: `stability`/`difficulty_fsrs` NULL until first graded review; legacy SM-2 columns still written; optional `roadmap_id`/`node_id` links), `reviews` (due/completed + `rating`/`recalled`/`quality` + `ai_*` grader columns), `feedbacks`, `roadmaps` (**+ `slug`, + `audience` 'career'|'school', + `user_id` NULL=catalog / set=personal syllabus-upload roadmap**), `roadmap_nodes` (self-ref `parent_id` subtopics), `roadmap_node_prerequisites` (directed edges, powers "Why am I stuck?"), `user_progress`, **`user_prefs`** (audience, server-side), **`test_attempts`** (JSONB per-question results; `node_title` is the join key), **`reminder_log`** (unique `(user_id, sent_on)` = at-most-once-daily email idempotency), **`question_sets`** (persisted LLM question set per card: JSONB `items` [{question, reference_answer}], `depth` 'main'|'deep', `times_used`; reused ≥2 sessions then regenerated; reference answers never leave the server), `alembic_version`.
 
-**Migration chain (21):** `c71d8f31ee19` initial → … → `c2f5a9b3d701` ai-grader → `d4e8a1b2c903` reminder_log → `f4a9c2e1b370` roadmap_id → `a1b2c3d4e5f6` FSRS → `b2c3d4e5f6a7` prereqs → `a3f1c0d4e7b2` slug → `a4b2e9f1c8d3` node_id → `e7f2a4c9b1d5` review invariants (partial unique indexes) → `f8a3b5c2d9e1` RLS → `c4d7e9a2b501` audience+user_prefs → `f2b7d3a9c8e4` test_attempts → **`a1c5e8f2d7b3` roadmaps.user_id (head; applied to prod 2026-07-11 via local `alembic upgrade` against the pooler — the migration file was uncommitted until this change, which crash-looped the deploy on an unresolvable revision)**.
+**Migration chain (22):** `c71d8f31ee19` initial → … → `c2f5a9b3d701` ai-grader → `d4e8a1b2c903` reminder_log → `f4a9c2e1b370` roadmap_id → `a1b2c3d4e5f6` FSRS → `b2c3d4e5f6a7` prereqs → `a3f1c0d4e7b2` slug → `a4b2e9f1c8d3` node_id → `e7f2a4c9b1d5` review invariants (partial unique indexes) → `f8a3b5c2d9e1` RLS → `c4d7e9a2b501` audience+user_prefs → `f2b7d3a9c8e4` test_attempts → `a1c5e8f2d7b3` roadmaps.user_id (applied to prod 2026-07-11 via local `alembic upgrade` against the pooler — the migration file was uncommitted until this change, which crash-looped the deploy on an unresolvable revision) → **`b3d9f1a4c6e2` question_sets (head; RLS enabled; auto-applies on next deploy via the Dockerfile's `alembic upgrade head`)**.
 
 **Prod state (checked 2026-07-11 via Supabase MCP):** `alembic_version = a1c5e8f2d7b3` — **prod is at head** (`roadmaps.user_id` present). All 12 public tables have `relrowsecurity = true`. CLAUDE.md's note that `e7f2a4c9b1d5` + `f8a3b5c2d9e1` are "pending" is **wrong** — they are applied. Live catalog: **30 roadmaps (29 career + 1 school)**, seeded from 33 scripts — CLAUDE.md's "10 seeded roadmaps" is very stale; most of the "backlog" (Data Engineering, LLD, Git/GitHub, Blind 75, Behavioral, DevOps, Linux, TS-adjacent, ML, DL, MLOps, Math-for-ML, Java, C++, Cyber Security, Computer Architecture, Discrete Math…) is now seeded.
 
@@ -134,14 +134,14 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 
 ### Watch-list — FUTURE (not bugs today, will bite at the next stage)
 
-- **Opening signups / any marketing push** → rate limiting (slowapi or Railway edge) becomes blocking, and the Groq spend needs a per-user daily budget + alerting.
+- **Opening signups / any marketing push** → rate limiting (slowapi or a Render edge/proxy) becomes blocking, and the Groq/Gemini/Anthropic spend needs a per-user daily budget + alerting (the syllabus extractor's 5/user/day cap is in-memory and resets on redeploy — not a hard budget guard).
 - **School pilot with minors** → India DPDP Act: parental consent, data-minimization, and a data-processing story for Groq/PostHog/Resend before any real Class 9-10 cohort.
 - **GitHub Actions cron** pauses after 60 days of repo inactivity and can lag ~15 min — reminder emails silently stop if the repo goes quiet; move to a host cron if cadence ever matters.
-- **Transaction pooler limits**: `pool_size=5 + max_overflow=10` per instance is fine now; multiple Railway replicas or heavier traffic can exhaust Supabase pooler slots — revisit before scaling out.
+- **Transaction pooler limits**: `pool_size=5 + max_overflow=10` per instance is fine now; multiple Render instances or heavier traffic can exhaust Supabase pooler slots — revisit before scaling out.
 - **Email deliverability/abuse**: Resend sender reputation once volume grows; unsubscribe/compliance (CAN-SPAM-style) before non-trivial sending.
 - **Content supply chain**: lessons are Antigravity-generated JSON rendered by the app — the validator checks structure, not pedagogy or malice; keep the human/Claude critique step for anything that ships, and never render lesson fields as raw HTML.
 - **PostHog**: once a key is set in prod, it's a third-party script + user-event stream — add it to the privacy story.
-- **Single founder key risk**: Supabase/Railway/Vercel/Groq accounts + `CRON_SECRET`/`GROQ_API_KEY` all hang off one identity; password-manager + 2FA hygiene is the actual security perimeter of this product.
+- **Single founder key risk**: Supabase/Render/Vercel/Groq/Google/Anthropic accounts + `CRON_SECRET`/`GROQ_API_KEY`/`GEMINI_API_KEY`/`ANTHROPIC_API_KEY` all hang off one identity; password-manager + 2FA hygiene is the actual security perimeter of this product.
 
 ---
 
@@ -169,7 +169,7 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 
 ## 6. Operational notes
 
-- **Deploy**: Vercel (frontend, SPA rewrite in `vercel.json` is load-bearing for deep links/OAuth) + Railway Singapore (backend; `Dockerfile` present). Deploys from `main`. Never auto-deploy — the founder pushes.
+- **Deploy**: Vercel (frontend, SPA rewrite in `vercel.json` is load-bearing for deep links/OAuth) + **Render** (backend; `Dockerfile` present). Moved off Railway 2026-07-11 (free tier ended) — **region unverified; keep it close to Supabase Mumbai (Singapore) for latency**. Deploys from `main`. Never auto-deploy — the founder pushes. Prod env vars now include `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `SYLLABUS_MODEL` (set on Render).
 - **DB**: always the transaction pooler URL (`aws-1-ap-south-1…:6543`); direct host is IPv6-only. Engine already sets `statement_cache_size=0` + `pool_pre_ping`. Alphanumeric DB password only; repeated auth failures trip Supabase's circuit breaker (~minutes).
 - **Schema changes**: Alembic only, and **every new table's migration must include `ENABLE ROW LEVEL SECURITY`** (the PostgREST-blocking pattern, migration `f8a3b5c2d9e1`).
 - **Repo hygiene** (post-cleanup 2026-07-10): the repo root and `content/` hold **no** Python except `content/validate.py` and `content/scripts/`; `.gitignore` now enforces this (`/*.py`, `content/*.py`, `content/roadmaps/**/*.py`). One-off patch scripts should be written under the session scratchpad or deleted after use — their output (the JSON) is the artifact, not the script.
@@ -196,6 +196,9 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 
 One line per system-state change, newest first: `YYYY-MM-DD — what changed (sections touched)`.
 
+- 2026-07-12 — Question mode goes persistent + topic-grounded: new `question_sets` table (migration `b3d9f1a4c6e2`, 13th table; RLS) — LLM sets generated with per-question `reference_answer`s, reused ≥2 review sessions shuffled, then regenerated; node-linked cards get topic-grounded generation with a user-facing `depth` choice ('main'|'deep', Review.jsx toggle); `/grade-questions` injects stored references server-side. Superseded key_memory-only `generate_questions` removed from `grader.py`. New tests `test_question_sets.py` (§1–2).
+- 2026-07-12 — Syllabus: added `POST /api/syllabus/extract-text` (pasted text ≤40K chars, token-cheap default; shares the daily limit) + paste-text tab as the primary input in `SyllabusUpload.jsx`; `services/syllabus.py` grew `extract_roadmap_from_text` with shared `_finalize` guardrails (§1).
+- 2026-07-11 — Backend deploy host moved **Railway → Render** (Railway free tier ended); env vars (incl. `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`/`SYLLABUS_MODEL`) re-set on Render. Docs updated across SYSTEM-OVERVIEW §1/§4/§6, CLAUDE.md, README, BACKLOG. **Render region unverified** — keep near Supabase Mumbai (Singapore) for latency (§6, watch-list).
 - 2026-07-11 — Syllabus → personal roadmap feature: `syllabus` router (extract/commit/delete, review-before-commit), `services/syllabus.py` (**provider-routed by `SYLLABUS_MODEL`**: Anthropic `claude-opus-4-8` or Google Gemini via `google-genai`; new `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`/`SYLLABUS_*` env), migration `a1c5e8f2d7b3` `roadmaps.user_id` (**applied to prod 2026-07-11; file committed same day after it crash-looped the deploy while uncommitted**), roadmap visibility = catalog-by-audience + own, `/roadmaps/new` UI (§1, §2).
 - 2026-07-11 — Agent audit vs code + prod DB: prod re-verified (head `f2b7d3a9c8e4`, RLS ×12, 30 roadmaps/1689 nodes); fixed validate.py kind list (was 5, actually 9 branched + base); DSA renderer-feed status precised (4 unfed, backtracking feeds Tree/Grid). Backend §1–2 verified clean.
 - 2026-07-11 — Frontend layout: documented `SchoolRoadmaps.jsx` Class→Subject→Chapter browser + roadmap search (shipped in commit `b94d233` on 07-10 without a doc update; rationale in `DECISIONS.md` D-006).

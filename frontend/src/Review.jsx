@@ -67,6 +67,17 @@ function Review({ onBack }) {
   const [qResult, setQResult] = useState(null);        // grade-questions response | null
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionModeOff, setQuestionModeOff] = useState(false); // session: grader disabled
+  // How the user wants to revise: 'main' = core points, 'deep' = adds apply/derive/
+  // edge-case probes. Explicit choice, remembered across sessions.
+  const [depth, setDepth] = useState(() => {
+    const saved = localStorage.getItem('reviewDepth');
+    return saved === 'deep' ? 'deep' : 'main';
+  });
+  const changeDepth = (d) => {
+    if (d === depth) return;
+    setDepth(d);
+    localStorage.setItem('reviewDepth', d);
+  };
 
   useEffect(() => {
     if (!session) {
@@ -148,8 +159,13 @@ function Review({ onBack }) {
           }
         }
         
-        // Fallback to LLM questions if not a lesson or fetching failed
-        const res = await apiFetch(`/api/reviews/${current.id}/questions`, { method: 'POST' });
+        // Fallback to LLM questions if not a lesson or fetching failed.
+        // Server serves a PERSISTED set for this card (reused across sessions,
+        // shuffled each time); depth picks main-points vs deep probing.
+        const res = await apiFetch(`/api/reviews/${current.id}/questions`, {
+          method: 'POST',
+          body: JSON.stringify({ depth }),
+        });
         if (cancelled) return;
         const qs = res?.questions ?? [];
         if (qs.length) {
@@ -169,7 +185,7 @@ function Review({ onBack }) {
     
     loadQuestions();
     return () => { cancelled = true; };
-  }, [current?.id]);
+  }, [current?.id, depth]);
 
   // "I don't know" is a committed answer — reveal in one click, don't make the
   // failure path cost an extra tap.
@@ -404,6 +420,30 @@ function Review({ onBack }) {
                 Pulling it from memory is the workout — write what you remember before
                 you peek, even if it's rough. That effort is what makes it stick.
               </Hint>
+
+              {/* How do you want to revise? Explicit depth choice (remembered).
+                  Hidden for lesson cards — their recall questions are curated content. */}
+              {!questionModeOff && canonicalAnswers.length === 0 && (
+                <div className="flex items-center gap-2 self-start">
+                  <span className="font-sans text-xs text-[#64748B]">Revise:</span>
+                  <div className="flex items-center gap-0.5 bg-[rgba(15,23,42,0.05)] rounded-lg p-0.5">
+                    {[['main', 'Main points'], ['deep', 'Deep']].map(([key, label]) => (
+                      <button
+                        key={key}
+                        onClick={() => changeDepth(key)}
+                        disabled={loadingQuestions}
+                        className={`font-sans text-xs px-2.5 py-1 rounded-md transition-colors disabled:opacity-60 ${
+                          depth === key
+                            ? 'bg-white text-[#0F172A] font-semibold shadow-sm'
+                            : 'text-[#64748B] hover:text-[#0F172A]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {questionMode ? (
                 /* Question mode: answer each grounded question from memory. */

@@ -115,14 +115,38 @@ _SYSTEM_PROMPT = (
 
 
 _USER_PROMPT = "Convert this syllabus into a roadmap."
+# Cap on pasted/extracted syllabus text (~ generous course syllabus). Guards the
+# token bill and rejects someone pasting a whole textbook. ~40K chars ≈ 10-13K tokens.
+MAX_SYLLABUS_CHARS = 40_000
 
 
-async def _extract_anthropic(pdf_bytes: bytes) -> str:
-    """Anthropic (Claude) path. Returns the raw JSON string."""
+def _text_prompt(text: str) -> str:
+    return f"SYLLABUS:\n\n{text.strip()}\n\n{_USER_PROMPT}"
+
+
+async def _extract_anthropic(pdf_bytes: bytes | None = None, text: str | None = None) -> str:
+    """Anthropic (Claude) path. Returns the raw JSON string. Exactly one of
+    pdf_bytes / text is provided — PDF goes as a document block, text as plain text
+    (much cheaper: no per-page image tokens)."""
     try:
         from anthropic import AsyncAnthropic
     except ImportError as e:
         raise SyllabusError("The 'anthropic' package is not installed (pip install anthropic).") from e
+
+    if pdf_bytes is not None:
+        user_content = [
+            {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": "application/pdf",
+                    "data": base64.standard_b64encode(pdf_bytes).decode("ascii"),
+                },
+            },
+            {"type": "text", "text": _USER_PROMPT},
+        ]
+    else:
+        user_content = [{"type": "text", "text": _text_prompt(text)}]
 
     client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
     try:
@@ -134,22 +158,7 @@ async def _extract_anthropic(pdf_bytes: bytes) -> str:
             thinking={"type": "adaptive"},
             system=_SYSTEM_PROMPT,
             output_config={"format": {"type": "json_schema", "schema": _DRAFT_SCHEMA}},
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "document",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "application/pdf",
-                                "data": base64.standard_b64encode(pdf_bytes).decode("ascii"),
-                            },
-                        },
-                        {"type": "text", "text": _USER_PROMPT},
-                    ],
-                }
-            ],
+            messages=[{"role": "user", "content": user_content}],
         ) as stream:
             message = await stream.get_final_message()
     except Exception as e:  # network / API / rate-limit — surface as one error class
@@ -160,17 +169,22 @@ async def _extract_anthropic(pdf_bytes: bytes) -> str:
     if message.stop_reason == "refusal":
         raise SyllabusError("The model declined to process this document.")
     if message.stop_reason == "max_tokens":
-        raise SyllabusError("This syllabus is too dense to extract in one pass — try a shorter PDF.")
+        raise SyllabusError("This syllabus is too dense to extract in one pass — try a shorter one.")
 
     return next((b.text for b in message.content if b.type == "text"), "")
 
 
-async def _extract_gemini(pdf_bytes: bytes) -> str:
+async def _extract_gemini(pdf_bytes: bytes | None = None, text: str | None = None) -> str:
     """Google (Gemini) path. Returns the raw JSON string.
 
-    Uses the same JSON schema as the Anthropic path via response_schema +
-    response_mime_type='application/json'. The PDF is an inline document part
-    (Gemini's native PDF understanding), so scanned/table syllabi work here too.
+    Structured output via response_schema + response_mime_type='application/json'.
+    We hand Gemini the Pydantic model (NOT the shared _DRAFT_SCHEMA dict): Gemini's
+    REST schema is an OpenAPI subset that rejects `additionalProperties`, which our
+    strict-mode dict sets on every object — the SDK generates a compliant schema
+    from the model instead. Both providers still validate against SyllabusDraft, so
+    the contract is identical. PDF goes as an inline document part (Gemini's native
+    PDF understanding); text goes as a plain string (far fewer tokens — no per-page
+    image cost). Exactly one of pdf_bytes / text is provided.
     """
     try:
         from google import genai
@@ -178,18 +192,20 @@ async def _extract_gemini(pdf_bytes: bytes) -> str:
     except ImportError as e:
         raise SyllabusError("The 'google-genai' package is not installed (pip install google-genai).") from e
 
+    if pdf_bytes is not None:
+        contents = [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), _USER_PROMPT]
+    else:
+        contents = [_text_prompt(text)]
+
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     try:
         resp = await client.aio.models.generate_content(
             model=settings.SYLLABUS_MODEL,
-            contents=[
-                types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-                _USER_PROMPT,
-            ],
+            contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=_SYSTEM_PROMPT,
                 response_mime_type="application/json",
-                response_schema=_DRAFT_SCHEMA,
+                response_schema=SyllabusDraft,
                 max_output_tokens=32000,
             ),
         )
@@ -198,25 +214,21 @@ async def _extract_gemini(pdf_bytes: bytes) -> str:
 
     # A safety/recitation block or an output-token cutoff comes back as no usable
     # text — surface it as our own error rather than an opaque .text AttributeError.
-    text = getattr(resp, "text", None)
-    if not text:
-        raise SyllabusError("The model returned no usable output for this document.")
-    return text
+    out = getattr(resp, "text", None)
+    if not out:
+        raise SyllabusError("The model returned no usable output for this syllabus.")
+    return out
 
 
-async def extract_roadmap_from_pdf(pdf_bytes: bytes) -> SyllabusDraft:
-    """One model call: syllabus PDF in, validated draft roadmap out. Provider is
-    routed by settings.SYLLABUS_MODEL (Gemini vs Anthropic).
-
-    Raises SyllabusError when the feature is unconfigured, the API call fails,
-    or the response can't be validated.
-    """
+def _ensure_configured() -> None:
     if not extraction_configured():
         key = "GEMINI_API_KEY" if _uses_gemini() else "ANTHROPIC_API_KEY"
         raise SyllabusError(f"{key} is not set — syllabus extraction is disabled.")
 
-    raw = await (_extract_gemini(pdf_bytes) if _uses_gemini() else _extract_anthropic(pdf_bytes))
 
+def _finalize(raw: str, empty_msg: str) -> SyllabusDraft:
+    """Validate the model's raw JSON against the contract and apply size caps.
+    Shared by the PDF and text paths so both enforce identical guardrails."""
     try:
         draft = SyllabusDraft.model_validate_json(raw)
     except ValidationError as e:
@@ -234,7 +246,37 @@ async def extract_roadmap_from_pdf(pdf_bytes: bytes) -> SyllabusDraft:
     draft.description = draft.description.strip()[:500]
 
     if not any(u.topics for u in draft.units):
-        raise SyllabusError(
-            "Couldn't find syllabus content in this PDF — make sure it's a course syllabus or curriculum."
-        )
+        raise SyllabusError(empty_msg)
     return draft
+
+
+async def extract_roadmap_from_pdf(pdf_bytes: bytes) -> SyllabusDraft:
+    """One model call: syllabus PDF in, validated draft roadmap out. Provider is
+    routed by settings.SYLLABUS_MODEL (Gemini vs Anthropic).
+
+    Raises SyllabusError when the feature is unconfigured, the API call fails,
+    or the response can't be validated.
+    """
+    _ensure_configured()
+    raw = await (_extract_gemini(pdf_bytes=pdf_bytes) if _uses_gemini() else _extract_anthropic(pdf_bytes=pdf_bytes))
+    return _finalize(
+        raw,
+        "Couldn't find syllabus content in this PDF — make sure it's a course syllabus or curriculum.",
+    )
+
+
+async def extract_roadmap_from_text(text: str) -> SyllabusDraft:
+    """Same as extract_roadmap_from_pdf but from PASTED/extracted syllabus text —
+    the token-cheap path (no per-page document tokens) and the way DOCX is handled
+    (extract text first). Raises SyllabusError on empty/oversized input."""
+    _ensure_configured()
+    text = (text or "").strip()
+    if not text:
+        raise SyllabusError("No syllabus text provided.")
+    if len(text) > MAX_SYLLABUS_CHARS:
+        raise SyllabusError(
+            f"That's a lot of text ({len(text):,} chars) — paste just the units/chapters "
+            f"(limit {MAX_SYLLABUS_CHARS:,})."
+        )
+    raw = await (_extract_gemini(text=text) if _uses_gemini() else _extract_anthropic(text=text))
+    return _finalize(raw, "Couldn't find any syllabus topics in that text.")

@@ -1,13 +1,14 @@
 import React, { useRef, useState } from 'react';
 import {
   ArrowLeft, ArrowRight, FileUp, Loader2, Sparkles, Trash2, Plus,
-  ChevronUp, ChevronDown, GraduationCap, Pencil, Check,
+  ChevronUp, ChevronDown, GraduationCap, Pencil, Check, ClipboardPaste,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { useSeo } from './lib/useSeo';
 
 const MAX_PDF_MB = 10;
+const MAX_TEXT_CHARS = 40000; // mirrors backend MAX_SYLLABUS_CHARS
 
 // Phases: 'upload' → 'extracting' → 'review' → 'saving'
 // The draft is NEVER auto-saved — the user reviews/edits, then commits explicitly.
@@ -122,6 +123,8 @@ function SyllabusUpload() {
   const navigate = useNavigate();
   const fileInput = useRef(null);
   const [phase, setPhase] = useState('upload');
+  const [mode, setMode] = useState('paste'); // 'paste' (token-cheap default) | 'pdf'
+  const [pasteText, setPasteText] = useState('');
   const [error, setError] = useState('');
   const [draft, setDraft] = useState(null);
   const [dragOver, setDragOver] = useState(false);
@@ -147,6 +150,28 @@ function SyllabusUpload() {
       const form = new FormData();
       form.append('file', file);
       const data = await apiFetch('/api/syllabus/extract', { method: 'POST', body: form });
+      setDraft(data);
+      setPhase('review');
+    } catch (err) {
+      setError(err.message || 'Extraction failed — try again.');
+      setPhase('upload');
+    }
+  };
+
+  const handleText = async () => {
+    setError('');
+    const text = pasteText.trim();
+    if (!text) return;
+    if (text.length > MAX_TEXT_CHARS) {
+      setError(`That's a lot of text (${text.length.toLocaleString()} chars) — paste just the units/chapters (limit ${MAX_TEXT_CHARS.toLocaleString()}).`);
+      return;
+    }
+    setPhase('extracting');
+    try {
+      const data = await apiFetch('/api/syllabus/extract-text', {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      });
       setDraft(data);
       setPhase('review');
     } catch (err) {
@@ -218,8 +243,9 @@ function SyllabusUpload() {
           <Sparkles size={22} className="text-[#0891B2]" /> Bring Your Own Path
         </h2>
         <p className="font-sans text-sm text-[#64748B] mt-1">
-          Upload a syllabus PDF — we'll turn it into a topic-by-topic roadmap. You review and edit
-          everything before it's saved; each topic becomes a trackable node you can log and review.
+          Paste your syllabus (or upload the PDF) — we'll turn it into a topic-by-topic roadmap.
+          You review and edit everything before it's saved; each topic becomes a trackable node
+          you can log and review.
         </p>
       </header>
 
@@ -230,30 +256,78 @@ function SyllabusUpload() {
       )}
 
       {phase === 'upload' && (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0]); }}
-          onClick={() => fileInput.current?.click()}
-          className={`bg-white rounded-3xl shadow-sm p-10 md:p-14 flex flex-col items-center text-center cursor-pointer transition-all border-2 border-dashed ${
-            dragOver ? 'border-[#0891B2] bg-[#0891B2]/5' : 'border-[rgba(15,23,42,0.12)] hover:border-[#0891B2]/60'
-          }`}
-        >
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files?.[0])}
-          />
-          <div className="w-14 h-14 rounded-2xl bg-[#0891B2]/10 border border-[#0891B2]/20 flex items-center justify-center mb-4">
-            <FileUp size={24} className="text-[#0891B2]" />
+        <div className="flex flex-col gap-4">
+          {/* Mode tabs — paste-text first: it's the token-cheap path */}
+          <div className="flex items-center gap-1 bg-[rgba(15,23,42,0.04)] rounded-xl p-1 self-start">
+            <button
+              onClick={() => { setMode('paste'); setError(''); }}
+              className={`flex items-center gap-1.5 font-sans text-sm px-3.5 py-1.5 rounded-lg transition-colors ${
+                mode === 'paste' ? 'bg-white text-[#0F172A] font-semibold shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              <ClipboardPaste size={14} /> Paste text
+            </button>
+            <button
+              onClick={() => { setMode('pdf'); setError(''); }}
+              className={`flex items-center gap-1.5 font-sans text-sm px-3.5 py-1.5 rounded-lg transition-colors ${
+                mode === 'pdf' ? 'bg-white text-[#0F172A] font-semibold shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              <FileUp size={14} /> Upload PDF
+            </button>
           </div>
-          <h3 className="font-sans text-lg font-semibold text-[#0F172A] mb-1">Drop your syllabus PDF here</h3>
-          <p className="font-sans text-sm text-[#64748B] mb-4">or click to browse — up to {MAX_PDF_MB} MB</p>
-          <p className="font-mono text-[10px] text-[#94A3B8] uppercase tracking-wider">
-            University syllabus · bootcamp schedule · exam curriculum
-          </p>
+
+          {mode === 'paste' && (
+            <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl shadow-sm p-4 md:p-6">
+              <textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder={'Paste the contents of the PDF here to save tokens.\n\nJust the units/chapters and their topics is enough — you can skip grading policy, textbook lists, and other admin pages.'}
+                rows={12}
+                className="w-full font-sans text-sm text-[#0F172A] bg-transparent resize-y focus:outline-none placeholder:text-[#94A3B8] min-h-[220px]"
+              />
+              <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-[rgba(15,23,42,0.06)]">
+                <span className={`font-mono text-[11px] ${pasteText.length > MAX_TEXT_CHARS ? 'text-red-500' : 'text-[#94A3B8]'}`}>
+                  {pasteText.length.toLocaleString()} / {MAX_TEXT_CHARS.toLocaleString()} chars
+                </span>
+                <button
+                  onClick={handleText}
+                  disabled={!pasteText.trim() || pasteText.trim().length > MAX_TEXT_CHARS}
+                  className="flex items-center gap-1.5 bg-[#0891B2] hover:bg-[#0E7490] text-white font-sans text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-40"
+                >
+                  <Sparkles size={15} /> Build roadmap <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === 'pdf' && (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0]); }}
+              onClick={() => fileInput.current?.click()}
+              className={`bg-white rounded-3xl shadow-sm p-10 md:p-14 flex flex-col items-center text-center cursor-pointer transition-all border-2 border-dashed ${
+                dragOver ? 'border-[#0891B2] bg-[#0891B2]/5' : 'border-[rgba(15,23,42,0.12)] hover:border-[#0891B2]/60'
+              }`}
+            >
+              <input
+                ref={fileInput}
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={(e) => handleFile(e.target.files?.[0])}
+              />
+              <div className="w-14 h-14 rounded-2xl bg-[#0891B2]/10 border border-[#0891B2]/20 flex items-center justify-center mb-4">
+                <FileUp size={24} className="text-[#0891B2]" />
+              </div>
+              <h3 className="font-sans text-lg font-semibold text-[#0F172A] mb-1">Drop your syllabus PDF here</h3>
+              <p className="font-sans text-sm text-[#64748B] mb-4">or click to browse — up to {MAX_PDF_MB} MB</p>
+              <p className="font-mono text-[10px] text-[#94A3B8] uppercase tracking-wider">
+                University syllabus · bootcamp schedule · exam curriculum
+              </p>
+            </div>
+          )}
         </div>
       )}
 

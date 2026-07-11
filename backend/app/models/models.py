@@ -174,6 +174,26 @@ class TestAttempt(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class QuestionSet(SQLModel, table=True):
+    """One persisted LLM-generated question set for a card (activity).
+
+    Generated once, then REUSED for at least QUESTION_SET_REUSE review sessions
+    (served in a fresh random order each time) before a new set is generated —
+    this amortizes the LLM cost across sessions and stops the quiz from changing
+    under the learner every single review. `items` is a JSONB array of
+    {question, reference_answer}; reference answers are the grading ground truth
+    and are NEVER sent to the client. `depth` = 'main' | 'deep' (how the user
+    chose to revise). Migration b3d9f1a4c6e2."""
+    __tablename__ = "question_sets"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    activity_id: uuid.UUID = Field(foreign_key="activities.id", ondelete="CASCADE", index=True)
+    depth: str = Field(default="main")  # 'main' (core points) | 'deep' (derive/apply/edge cases)
+    items: list = Field(sa_column=Column(_JSONB))  # [{question, reference_answer}]
+    times_used: int = Field(default=0)  # sessions this set has been served in
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class ReminderLog(SQLModel, table=True):
     """At-most-once-per-day ledger for due-review reminder emails. The unique
     (user_id, sent_on) constraint is the idempotency guard — a second run on the

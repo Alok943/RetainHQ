@@ -2,15 +2,17 @@
 Syllabus upload → personal roadmap.
 
 Two-step, review-before-commit flow (deliberate — do not collapse into one call):
-  1. POST /extract  — PDF upload → LLM → DRAFT roadmap JSON. Nothing is saved.
+  1. POST /extract       — PDF upload → LLM → DRAFT roadmap JSON. Nothing is saved.
+     POST /extract-text  — pasted syllabus text → same DRAFT (token-cheap path).
   2. POST /commit   — the user-edited draft → Roadmap + RoadmapNodes owned by
                       the caller (roadmaps.user_id). Nodes are plain topics with
                       no lesson content; they exist to be logged against, which
                       feeds the FSRS review loop.
 
 Plus DELETE /{roadmap_id} for personal roadmaps only (official catalog is
-untouchable here). Feature is gated on ANTHROPIC_API_KEY (extract 404s without
-it; commit still works so a drafted-but-unsaved roadmap never strands).
+untouchable here). Extraction is gated on the selected provider's API key
+(extract routes 404 without it; commit still works so a drafted-but-unsaved
+roadmap never strands).
 """
 import uuid
 from datetime import datetime, date
@@ -23,9 +25,10 @@ from app.api.deps import get_db, get_current_user
 from app.core.config import settings
 from app.core.security import SupabaseUser
 from app.models.models import Roadmap, RoadmapNode, Activity, UserPref
-from app.schemas.syllabus import SyllabusCommitIn, SyllabusCommitOut
+from app.schemas.syllabus import SyllabusCommitIn, SyllabusCommitOut, SyllabusTextIn
 from app.services.syllabus import (
     extract_roadmap_from_pdf,
+    extract_roadmap_from_text,
     extraction_configured,
     SyllabusDraft,
     SyllabusError,
@@ -34,7 +37,7 @@ from app.services.syllabus import (
 router = APIRouter()
 
 # Per-user daily extraction counter. In-memory is fine for the single-instance
-# Railway deploy (resets on redeploy, which only ever relaxes the limit) — this
+# Render deploy (resets on redeploy, which only ever relaxes the limit) — this
 # is an API-budget guard, not a security boundary.
 _extract_counts: dict[str, tuple[date, int]] = {}
 
@@ -79,6 +82,25 @@ async def extract_syllabus(
 
     try:
         return await extract_roadmap_from_pdf(pdf_bytes)
+    except SyllabusError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+
+
+@router.post("/extract-text", response_model=SyllabusDraft)
+async def extract_syllabus_text(
+    body: SyllabusTextIn,
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Pasted syllabus text → draft roadmap. Same contract as /extract but far
+    cheaper per call (plain text has no per-page document tokens). Shares the
+    daily limit with the PDF path — it's one API budget, not two."""
+    if not extraction_configured():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Syllabus upload is disabled")
+
+    _check_and_bump_daily_limit(current_user.id)
+
+    try:
+        return await extract_roadmap_from_text(body.text)
     except SyllabusError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
 

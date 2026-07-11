@@ -144,27 +144,18 @@ async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderV
 
 
 # =========================================================================== #
-# QUESTION MODE (PROTOTYPE — gated behind GRADER_ENABLED, same as the grader).
+# QUESTION MODE — gated behind GRADER_ENABLED, same as the grader.
 #
-# Instead of one open "describe the topic" prompt, the LLM turns the stored
-# key_memory into 2-3 targeted short-answer questions and grades the answers.
-# This probes the forgettable EDGES of what the user captured rather than
-# letting them skate by with a two-line summary.
+# The LLM turns a card into targeted short-answer questions and grades the
+# answers, probing the forgettable EDGES instead of letting the learner skate
+# by with a two-line summary.
 #
 # Design guardrails (deliberate — do not "improve" away):
-#   - Questions must be answerable SOLELY from the key_memory. We never quiz
-#     un-captured trivia; an unfair "gotcha" failure is exactly the kind of
-#     friction that breeds review fatigue. Probe edges, don't ambush.
-#   - key_memory remains the single ground truth for grading (same as the free
-#     recall grader) — we do not invent or persist a separate answer key.
 #   - Open-ended short answer, never multiple choice (recognition is weaker
 #     retrieval than recall).
-#   - Two calls total (generate, then grade the whole set) — not one per Q.
+#   - Two calls per fresh set (generate, then grade the whole set) — not one
+#     per question; generation further amortizes via QuestionSet persistence.
 # =========================================================================== #
-
-
-class GeneratedQuestions(BaseModel):
-    questions: List[str]  # 2-3 short-answer questions, each answerable from key_memory
 
 
 class QuestionItemGrade(BaseModel):
@@ -180,44 +171,110 @@ class QuestionSetGrade(BaseModel):
     related_subtopics: List[RelatedSubtopic] = []  # 1-2 adjacent topics to explore next
 
 
-_QGEN_SYSTEM_PROMPT = (
-    "You write short active-recall questions from a student's own KEY MEMORY note.\n"
-    "Rules:\n"
-    "1. Produce 2-3 questions, each answerable SOLELY from the KEY MEMORY. Never ask "
-    "about anything not stated or directly implied by it — no outside trivia, no "
-    "'gotcha' questions on material the student did not capture.\n"
-    "2. Probe DIFFERENT facets/edges of the note (a definition, a why, a distinction, "
-    "an application) so the set tests real understanding, not one fact restated.\n"
-    "3. Each question is ONE sentence, open-ended short-answer — NOT yes/no and NOT "
-    "multiple choice.\n"
-    "4. Force SPECIFIC retrieval (e.g. 'Why does X...', 'What happens when Y...') rather "
-    "than generic padding like 'What are the main points...'. Make them pointed.\n"
-    "5. Keep them plain and direct; no preamble.\n"
-    'Respond ONLY as JSON: {"questions": ["...", "..."]}'
+# =========================================================================== #
+# QUESTION SET GENERATION — persisted, reusable sets ({question, reference_answer}).
+#
+# Two grounding modes, decided by whether the card is linked to a roadmap node:
+#   - TOPIC-grounded (node-linked, e.g. syllabus roadmaps): the node's title +
+#     description is the contract — standard textbook knowledge of THAT topic is
+#     fair game (an exam doesn't care what the student happened to write down),
+#     but never leak into adjacent topics: those are separate cards with their
+#     own schedule. key_memory, if present, biases toward what they studied.
+#   - KEY-MEMORY-grounded (free-form logs): unchanged trust model — questions
+#     answerable solely from what the user captured; no gotcha trivia.
+#
+# Every question carries a REFERENCE_ANSWER written at generation time. That's
+# what makes persistence + strict grading possible without a user rubric: the
+# grader judges against the stored reference, not the model's live knowledge.
+# Reference answers are stored server-side and never sent to the client.
+#
+# depth (user's explicit choice at review time):
+#   'main' = 2-3 questions: the definition and the why.
+#   'deep' = 4-5 questions: adds apply/derive/compare/edge-case probes.
+# =========================================================================== #
+
+
+class QuestionItem(BaseModel):
+    question: str
+    reference_answer: str
+
+
+class GeneratedQuestionItems(BaseModel):
+    questions: List[QuestionItem]
+
+
+_QGEN_SET_SYSTEM_PROMPT = (
+    "You write short active-recall questions WITH reference answers for a spaced-repetition "
+    "review of one topic.\n"
+    "Grounding rules:\n"
+    "1. If the input has a SYLLABUS TOPIC block, that topic (title + description) is the "
+    "contract: use standard, commonly-taught textbook knowledge of exactly that topic. "
+    "Stay STRICTLY inside it — never quiz neighboring topics, prerequisites, or follow-ups. "
+    "If a KEY MEMORY is also given, prefer probing what the student captured, then fill "
+    "with the topic's core facets.\n"
+    "2. If the input has ONLY a KEY MEMORY block, every question must be answerable SOLELY "
+    "from that note — nothing not stated or directly implied by it. No outside trivia.\n"
+    "Question rules:\n"
+    "3. DEPTH=main → 2-3 questions covering the core: the definition/statement and the why. "
+    "DEPTH=deep → 4-5 questions: the core PLUS apply/derive/compare/edge-case probes.\n"
+    "4. Each question is ONE sentence, open-ended short-answer — never yes/no, never "
+    "multiple choice. Force specific retrieval ('Why does X…', 'What happens when Y…'), "
+    "no generic padding.\n"
+    "5. Probe DIFFERENT facets — no two questions testing the same fact reworded.\n"
+    "6. Each reference_answer is 1-3 sentences: the complete, correct expected answer. It is "
+    "the grading ground truth, so it must be self-contained and factually precise — never "
+    "invent specifics you are unsure about.\n"
+    'Respond ONLY as JSON: {"questions": [{"question": "...", "reference_answer": "..."}]}'
 )
 
 
-async def generate_questions(
-    topic: str, key_memory: str, notes: Optional[str] = None, mistake: Optional[str] = None
-) -> GeneratedQuestions:
-    """Generate grounded short-answer questions from the stored key_memory."""
-    extra = ""
-    if notes:
-        extra += f"\n\nADDITIONAL NOTES (context only):\n{notes}"
-    if mistake:
-        extra += f"\n\nA MISTAKE THE STUDENT PREVIOUSLY MADE (good to probe):\n{mistake}"
-    user_msg = f"TOPIC: {topic}\n\nKEY MEMORY:\n{key_memory}{extra}"
+async def generate_question_items(
+    topic: str,
+    depth: str = "main",
+    key_memory: Optional[str] = None,
+    node_title: Optional[str] = None,
+    node_description: Optional[str] = None,
+    unit: Optional[str] = None,
+    mistake: Optional[str] = None,
+) -> List[QuestionItem]:
+    """Generate a persistable question set ({question, reference_answer} items).
 
-    raw = await _groq_json(_QGEN_SYSTEM_PROMPT, user_msg, max_tokens=400)
+    Pass node_* for topic-grounded generation (roadmap-linked cards); otherwise
+    key_memory is required and is the sole ground truth. Raises GraderError.
+    """
+    depth = depth if depth in ("main", "deep") else "main"
+    parts = [f"DEPTH: {depth}"]
+    if node_title:
+        topic_block = f"SYLLABUS TOPIC: {node_title}"
+        if node_description:
+            topic_block += f"\nWHAT TO RECALL: {node_description}"
+        if unit:
+            topic_block += f"\nUNIT: {unit}"
+        parts.append(topic_block)
+        if key_memory and key_memory.strip():
+            parts.append(f"KEY MEMORY (what the student captured):\n{key_memory.strip()}")
+    else:
+        if not key_memory or not key_memory.strip():
+            raise GraderError("No grounding available — need a key memory or a linked topic.")
+        parts.append(f"TOPIC: {topic}\n\nKEY MEMORY:\n{key_memory.strip()}")
+    if mistake and mistake.strip():
+        parts.append(f"A MISTAKE THE STUDENT PREVIOUSLY MADE (good to probe):\n{mistake.strip()}")
+
+    raw = await _groq_json(_QGEN_SET_SYSTEM_PROMPT, "\n\n".join(parts), max_tokens=1200)
     try:
-        result = GeneratedQuestions.model_validate_json(raw)
+        result = GeneratedQuestionItems.model_validate_json(raw)
     except ValidationError as e:
         raise GraderError(f"Question generator returned malformed JSON: {e}") from e
-    # Trim to a sane bound; an empty set means we fall back to free recall.
-    result.questions = [q.strip() for q in result.questions if q and q.strip()][:3]
-    if not result.questions:
+
+    cap = 5 if depth == "deep" else 3
+    items = [
+        QuestionItem(question=q.question.strip(), reference_answer=q.reference_answer.strip())
+        for q in result.questions
+        if q.question.strip() and q.reference_answer.strip()
+    ][:cap]
+    if not items:
         raise GraderError("Question generator returned no usable questions.")
-    return result
+    return items
 
 
 _QGRADE_SYSTEM_PROMPT = (

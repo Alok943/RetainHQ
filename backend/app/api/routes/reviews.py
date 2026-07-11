@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
+import random
 import uuid
 from datetime import datetime
 from typing import List
@@ -9,12 +10,13 @@ from typing import List
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.models.models import Review, Activity, RoadmapNode, Roadmap
+from app.models.models import Review, Activity, RoadmapNode, Roadmap, QuestionSet
 from app.schemas.review import (
     ReviewResponse,
     ReviewComplete,
     ReviewGradeRequest,
     ReviewGradeResponse,
+    ReviewQuestionsRequest,
     ReviewQuestionsResponse,
     ReviewGradeQuestionsRequest,
     ReviewGradeQuestionsResponse,
@@ -27,7 +29,7 @@ from app.services.scheduler import (
 )
 from app.services.grader import (
     grade_recall,
-    generate_questions,
+    generate_question_items,
     grade_question_set,
     GraderError,
 )
@@ -224,33 +226,80 @@ async def _load_open_review(db: AsyncSession, review_id: uuid.UUID, user_id: uui
 @router.post("/{review_id}/questions", response_model=ReviewQuestionsResponse)
 async def get_review_questions(
     review_id: uuid.UUID,
+    body: ReviewQuestionsRequest | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: SupabaseUser = Depends(get_current_user),
 ):
-    """Question mode (PROTOTYPE, gated on GRADER_ENABLED): generate 2-3 short-answer
-    questions from the activity's key_memory. Advisory layer over free recall — the
-    frontend falls back to the single free-recall box if this 404s (disabled) or 503s.
+    """Question mode (gated on GRADER_ENABLED): serve a persisted question set for
+    this card, shuffled. A set is generated once and reused for QUESTION_SET_REUSE
+    sessions before a fresh one is made — LLM cost amortizes, questions stay stable
+    while the memory forms, and the random order stops sequence-memorization.
+
+    Grounding: node-linked cards get TOPIC-grounded questions (title + description
+    is the contract; key_memory only biases); free-form cards keep the
+    key_memory-as-sole-truth model. Frontend falls back to the single free-recall
+    box if this 404s (disabled) or 503s.
     """
     if not settings.GRADER_ENABLED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question mode is disabled")
 
     user_id = uuid.UUID(current_user.id)
     review = await _load_open_review(db, review_id, user_id)
+    activity = review.activity
+    depth = body.depth if body else "main"
 
-    try:
-        generated = await generate_questions(
-            topic=review.activity.topic,
-            key_memory=review.activity.key_memory,
-            notes=review.activity.notes,
-            mistake=review.activity.mistake,
+    # Reuse: newest set for this card + depth that hasn't exhausted its sessions.
+    qset = (
+        await db.execute(
+            select(QuestionSet)
+            .where(
+                QuestionSet.activity_id == activity.id,
+                QuestionSet.user_id == user_id,
+                QuestionSet.depth == depth,
+                QuestionSet.times_used < settings.QUESTION_SET_REUSE,
+            )
+            .order_by(QuestionSet.created_at.desc())
         )
-    except GraderError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Question generation unavailable: {e}",
-        )
+    ).scalars().first()
 
-    return ReviewQuestionsResponse(questions=generated.questions)
+    if not qset:
+        node_title = node_description = unit = None
+        if activity.node_id:
+            node = (
+                await db.execute(select(RoadmapNode).where(RoadmapNode.id == activity.node_id))
+            ).scalars().first()
+            if node:
+                node_title, node_description, unit = node.title, node.description, node.section
+        try:
+            items = await generate_question_items(
+                topic=activity.topic,
+                depth=depth,
+                key_memory=activity.key_memory,
+                node_title=node_title,
+                node_description=node_description,
+                unit=unit,
+                mistake=activity.mistake,
+            )
+        except GraderError as e:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Question generation unavailable: {e}",
+            )
+        qset = QuestionSet(
+            user_id=user_id,
+            activity_id=activity.id,
+            depth=depth,
+            items=[{"question": i.question, "reference_answer": i.reference_answer} for i in items],
+        )
+        db.add(qset)
+
+    # Serving counts as a use; shuffle so the order never becomes the cue.
+    qset.times_used += 1
+    db.add(qset)
+    await db.commit()
+
+    shuffled = random.sample(list(qset.items), len(qset.items))
+    return ReviewQuestionsResponse(questions=[i["question"] for i in shuffled], depth=depth)
 
 
 @router.post("/{review_id}/grade-questions", response_model=ReviewGradeQuestionsResponse)
@@ -270,11 +319,39 @@ async def grade_review_questions(
     user_id = uuid.UUID(current_user.id)
     review = await _load_open_review(db, review_id, user_id)
 
+    # Attach stored reference answers (never sent to the client) so grading judges
+    # against the answer key written at generation time. Client-provided
+    # reference_answer (lesson recall questions ship their own) takes priority.
+    ref_by_question: dict[str, str] = {}
+    recent_sets = (
+        await db.execute(
+            select(QuestionSet)
+            .where(
+                QuestionSet.activity_id == review.activity_id,
+                QuestionSet.user_id == user_id,
+            )
+            .order_by(QuestionSet.created_at.desc())
+            .limit(4)
+        )
+    ).scalars().all()
+    for qs in reversed(recent_sets):  # newest last → newest wins on collisions
+        for item in qs.items or []:
+            q, ref = (item.get("question") or "").strip(), (item.get("reference_answer") or "").strip()
+            if q and ref:
+                ref_by_question[q] = ref
+
     try:
         graded = await grade_question_set(
             topic=review.activity.topic,
             key_memory=review.activity.key_memory,
-            qa_pairs=[{"question": qa.question, "answer": qa.answer} for qa in body.answers],
+            qa_pairs=[
+                {
+                    "question": qa.question,
+                    "answer": qa.answer,
+                    "reference_answer": qa.reference_answer or ref_by_question.get(qa.question.strip()),
+                }
+                for qa in body.answers
+            ],
         )
     except GraderError as e:
         raise HTTPException(

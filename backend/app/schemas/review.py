@@ -50,11 +50,19 @@ class ReviewGradeResponse(BaseModel):
     related_subtopics: list[RelatedSubtopic] = []
 
 
-# --- Question mode (prototype, gated behind GRADER_ENABLED) ----------------- #
+# --- Question mode (gated behind GRADER_ENABLED) ---------------------------- #
+
+class ReviewQuestionsRequest(BaseModel):
+    # How the user chose to revise this session: 'main' = core points only,
+    # 'deep' = adds apply/derive/compare/edge-case probes.
+    depth: Literal["main", "deep"] = "main"
 
 class ReviewQuestionsResponse(BaseModel):
-    # 2-3 LLM-generated short-answer questions grounded in the activity's key_memory.
+    # LLM-generated short-answer questions, served SHUFFLED from a persisted set
+    # (reused across QUESTION_SET_REUSE sessions). Reference answers stay
+    # server-side — only the question text goes to the client.
     questions: list[str]
+    depth: Literal["main", "deep"] = "main"
 
 class QAPair(BaseModel):
     question: str = Field(max_length=600)
