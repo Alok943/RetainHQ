@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
 import { track, EVENTS } from './lib/analytics';
-import { PenLine, RefreshCw, Brain, TrendingUp, Check, ArrowRight, Sparkles, Code2, Eye } from 'lucide-react';
+import { PenLine, RefreshCw, Brain, TrendingUp, ArrowRight, Sparkles, Code2, Eye } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
@@ -51,14 +51,21 @@ function Login() {
   // Subject-neutral breadth chip row — quiet proof the method isn't code-only.
   const subjects = ['DSA', 'Aptitude', 'Core CS', 'SQL', 'System Design', 'Python'];
 
-  // FSRS cadence (illustrative): first recall at +1d, then spacing widens as the
-  // model's predicted recall stays high. Exact days adapt to how well you recall.
-  const timeline = [
-    { day: 'Day 0', label: 'Learn', sub: 'Log a new topic', state: 'done' },
-    { day: 'Day 1', label: 'First recall', sub: 'Pull it from memory', state: 'active' },
-    { day: 'Day 7', label: 'Review', sub: 'Reinforce', state: 'todo' },
-    { day: 'Day 15+', label: 'Mastered', sub: 'Spacing widens as it sticks', state: 'goal' },
+  // FSRS cadence (illustrative): review milestones plotted on the retention
+  // graph. Exact days adapt to how well you recall.
+  const milestones = [
+    { x: 38,  dotY: 30, day: 'Day 0',   label: 'Learn',        delay: 1.2 },
+    { x: 96,  dotY: 34, day: 'Day 1',   label: 'First recall', delay: 1.9 },
+    { x: 186, dotY: 36, day: 'Day 7',   label: 'Review',       delay: 2.7 },
+    { x: 266, dotY: 38, day: 'Day 15+', label: 'Mastered',     delay: 3.5 },
   ];
+
+  // Sawtooth that flattens: decay → review resets it → shallower decay. The
+  // shape IS spaced repetition; the gray curve is what happens without it.
+  const retainPath =
+    'M 38 30 C 55 58, 75 78, 94 88 L 96 34 C 124 46, 154 56, 184 64 L 186 36 C 212 43, 238 48, 264 52 L 266 38 C 287 40, 308 42, 328 43';
+  const forgetPath =
+    'M 38 30 C 58 78, 88 128, 122 152 C 152 172, 190 180, 230 182 L 328 184';
 
   const features = [
     { icon: <PenLine size={22} />, title: 'Capture', body: 'Log a topic in seconds.' },
@@ -67,8 +74,9 @@ function Login() {
     { icon: <TrendingUp size={22} />, title: 'Retain', body: 'See what actually sticks over time.' },
   ];
 
-  // Static frame of the step-through execution showcase (the "learn" pillar shown,
-  // not told). A frozen mid-trace moment — no live runtime on the landing page.
+  // Step-through execution showcase (the "learn" pillar shown, not told).
+  // A looping pre-computed trace of running_total(2) — every step is the real
+  // execution order, no live runtime on the landing page.
   const codeLines = [
     'def running_total(n):',
     '    total = 0',
@@ -76,13 +84,30 @@ function Login() {
     '        total += i',
     '    return total',
     '',
-    'running_total(4)',
+    'running_total(2)',
   ];
-  const activeLine = 3; // 0-indexed → the highlighted "total += i" line
-  const traceState = [
-    { name: 'i', value: '2' },
-    { name: 'total', value: '1', changed: true },
+  const traceSteps = [
+    { line: 6, vars: [] },
+    { line: 1, vars: [{ name: 'total', value: '0', changed: true }] },
+    { line: 2, vars: [{ name: 'total', value: '0' }, { name: 'i', value: '0', changed: true }] },
+    { line: 3, vars: [{ name: 'total', value: '0', changed: true }, { name: 'i', value: '0' }] },
+    { line: 2, vars: [{ name: 'total', value: '0' }, { name: 'i', value: '1', changed: true }] },
+    { line: 3, vars: [{ name: 'total', value: '1', changed: true }, { name: 'i', value: '1' }] },
+    { line: 4, vars: [{ name: 'total', value: '1' }, { name: 'i', value: '1' }], reveal: true },
   ];
+  const [traceStep, setTraceStep] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Hold the reveal frame longer so the predict → answer beat lands.
+    const t = setTimeout(
+      () => setTraceStep((s) => (s + 1) % traceSteps.length),
+      traceStep === traceSteps.length - 1 ? 2800 : 1300
+    );
+    return () => clearTimeout(t);
+  }, [traceStep, traceSteps.length]);
+  const activeLine = traceSteps[traceStep].line;
+  const traceState = traceSteps[traceStep].vars;
+  const revealed = Boolean(traceSteps[traceStep].reveal);
 
   return (
     <div style={{ backgroundColor: '#0B1120' }} className="min-h-screen w-full overflow-y-auto">
@@ -113,23 +138,23 @@ function Login() {
 
         {/* ---------- Hero ---------- */}
         <section className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center pt-8 md:pt-12 pb-10">
-          {/* Left */}
+          {/* Left — problem-first, revealed left → right */}
           <div className="text-center lg:text-left">
-            <h1 className="font-sans text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.08] mb-5">
-              Learn it visually.{' '}
-              <span className="text-[#22D3EE]">Remember it forever.</span>
+            <h1 className="hero-reveal font-sans text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.08] mb-5">
+              Stop watching tutorials you{' '}
+              <span className="text-[#22D3EE]">forget by Friday.</span>
             </h1>
-            <p className="font-sans text-[#9aa3b8] text-lg leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
-              Lessons that show instead of tell, recall that happens before the answer is revealed, and reviews that return right before you'd forget.
+            <p className="hero-reveal font-sans text-[#9aa3b8] text-lg leading-relaxed mb-8 max-w-md mx-auto lg:mx-0" style={{ animationDelay: '140ms' }}>
+              RetainHQ is a spaced-repetition system for engineers. Learn from visual lessons, then short reviews return right before you'd forget — so it stays in your memory.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-6 justify-center lg:justify-start">
+            <div className="hero-reveal flex flex-col sm:flex-row gap-3 mb-6 justify-center lg:justify-start" style={{ animationDelay: '280ms' }}>
               <TryALesson className="w-full sm:w-auto" />
               <GetStartedGhost className="w-full sm:w-auto" />
             </div>
 
             {/* Subject-neutral breadth row — the method, not a single subject */}
-            <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">
+            <div className="hero-reveal flex flex-wrap items-center gap-2 justify-center lg:justify-start" style={{ animationDelay: '420ms' }}>
               {subjects.map((s) => (
                 <span
                   key={s}
@@ -141,64 +166,89 @@ function Login() {
             </div>
           </div>
 
-          {/* Right — spaced-repetition timeline */}
+          {/* Right — animated retention graph: forgetting curve vs spaced reviews */}
           <div className="flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-sm rounded-2xl bg-white/[0.04] border border-white/10 p-6 shadow-2xl backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-5">
+            <div className="relative w-full max-w-md rounded-2xl bg-white/[0.04] border border-white/10 p-6 shadow-2xl backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-4">
                 <span className="font-sans text-xs font-bold text-[#9aa3b8] uppercase tracking-widest">How a topic sticks</span>
                 <span className="font-mono text-[10px] text-[#0891B2] bg-[#0891B2]/10 border border-[#0891B2]/20 rounded px-2 py-0.5">RETENTION</span>
               </div>
 
-              <div className="relative">
-                {/* connecting line */}
-                <div className="absolute left-[15px] top-3 bottom-3 w-px bg-gradient-to-b from-[#0891B2]/60 via-[#0891B2]/30 to-[#22D3EE]/50" />
+              <svg viewBox="0 0 340 212" className="w-full h-auto" role="img" aria-label="Graph: memory decays without reviews, but each spaced review resets it and the curve flattens until the topic is mastered">
+                <defs>
+                  <linearGradient id="rg-area" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
 
-                <div className="flex flex-col gap-4">
-                  {timeline.map((t, i) => {
-                    const done = t.state === 'done';
-                    const active = t.state === 'active';
-                    const goal = t.state === 'goal';
-                    return (
-                      <div
-                        key={`${t.day}-${t.label}`}
-                        className="sr-row flex items-center gap-4 relative"
-                        style={{ animationDelay: `${i * 140 + 150}ms` }}
-                      >
-                        {/* node */}
-                        <div className="relative z-10 shrink-0">
-                          {active && (
-                            <span className="absolute inset-0 rounded-full bg-[#22D3EE]/40 animate-ping" />
-                          )}
-                          <div
-                            className={`relative w-8 h-8 rounded-full flex items-center justify-center border ${
-                              done
-                                ? 'bg-[#0891B2] border-[#0891B2] text-white'
-                                : active
-                                ? 'bg-[#22D3EE] border-[#22D3EE] text-[#0B1120]'
-                                : goal
-                                ? 'bg-[#22D3EE]/15 border-[#22D3EE] text-[#22D3EE]'
-                                : 'bg-white/5 border-white/20 text-[#7c839b]'
-                            }`}
-                          >
-                            {done ? <Check size={15} /> : goal ? <Sparkles size={14} /> : <span className="w-1.5 h-1.5 rounded-full bg-current" />}
-                          </div>
-                        </div>
+                {/* axes */}
+                <line x1="34" y1="188" x2="330" y2="188" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                <text x="30" y="33" textAnchor="end" fill="#7c839b" fontSize="8" fontFamily="monospace">100%</text>
+                <text x="30" y="187" textAnchor="end" fill="#7c839b" fontSize="8" fontFamily="monospace">0%</text>
 
-                        {/* label */}
-                        <div className="flex-1 flex items-center justify-between">
-                          <div>
-                            <div className={`font-sans text-sm font-semibold ${goal ? 'text-[#22D3EE]' : 'text-white'}`}>
-                              {t.label}
-                            </div>
-                            <div className="font-sans text-xs text-[#7c839b]">{t.sub}</div>
-                          </div>
-                          <span className="font-mono text-xs text-[#9aa3b8] shrink-0">{t.day}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                {/* day labels */}
+                {milestones.map((m) => (
+                  <text
+                    key={m.day}
+                    x={m.x} y="202" textAnchor="middle"
+                    fill="#9aa3b8" fontSize="9" fontFamily="monospace"
+                    className="rg-fade" style={{ '--rg-delay': '0.5s' }}
+                  >
+                    {m.day}
+                  </text>
+                ))}
+
+                {/* the problem: unaided forgetting curve */}
+                <path
+                  d={forgetPath} pathLength="1"
+                  fill="none" stroke="#64748B" strokeOpacity="0.55" strokeWidth="1.5" strokeDasharray="1" strokeLinecap="round"
+                  className="rg-curve" style={{ '--rg-dur': '1.6s', '--rg-delay': '0.4s' }}
+                />
+                <text x="326" y="176" textAnchor="end" fill="#7c839b" fontSize="9" fontFamily="sans-serif" className="rg-fade" style={{ '--rg-delay': '2s' }}>
+                  without reviews
+                </text>
+
+                {/* the product: spaced reviews reset the curve */}
+                <path
+                  d={`${retainPath} L 328 188 L 38 188 Z`}
+                  fill="url(#rg-area)" stroke="none"
+                  className="rg-fade" style={{ '--rg-delay': '3.9s', '--rg-opacity': '1' }}
+                />
+                <path
+                  d={retainPath} pathLength="1"
+                  fill="none" stroke="#22D3EE" strokeWidth="2" strokeLinecap="round"
+                  className="rg-curve" style={{ '--rg-dur': '2.8s', '--rg-delay': '1.1s' }}
+                />
+                <text x="326" y="78" textAnchor="end" fill="#22D3EE" fontSize="9" fontWeight="600" fontFamily="sans-serif" className="rg-fade" style={{ '--rg-delay': '4s' }}>
+                  with RetainHQ
+                </text>
+
+                {/* review pings + milestone labels */}
+                {milestones.map((m, i) => (
+                  <g key={m.label}>
+                    {i > 0 && (
+                      <circle cx={m.x} cy={m.dotY} r="5" fill="none" stroke="#22D3EE" strokeWidth="1.5" className="rg-halo" style={{ '--rg-delay': `${m.delay + 2.2}s` }} />
+                    )}
+                    <circle
+                      cx={m.x} cy={m.dotY} r="4"
+                      fill={i === 0 ? '#0891B2' : '#22D3EE'} stroke="#0B1120" strokeWidth="1.5"
+                      className="rg-dot" style={{ '--rg-delay': `${m.delay}s` }}
+                    />
+                    <text
+                      x={m.x} y={m.dotY - 12} textAnchor="middle"
+                      fill={i === milestones.length - 1 ? '#22D3EE' : '#c9d1e3'} fontSize="9" fontWeight="600" fontFamily="sans-serif"
+                      className="rg-fade" style={{ '--rg-delay': `${m.delay + 0.1}s` }}
+                    >
+                      {m.label}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+
+              <p className="font-sans text-[11px] text-[#7c839b] mt-3 leading-relaxed">
+                Each review lands right before you'd forget — and the curve flattens until it barely decays at all.
+              </p>
             </div>
           </div>
         </section>
@@ -208,7 +258,7 @@ function Login() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 mb-5">
               <Code2 size={13} className="text-[#22D3EE]" />
-              <span className="font-sans text-xs text-[#9aa3b8]">The hook: watch code actually run</span>
+              <span className="font-sans text-xs text-[#9aa3b8]">Step 1 — learn it properly</span>
             </div>
             <h2 className="font-sans text-3xl font-bold text-white tracking-tight mb-3">See every line execute</h2>
             <p className="font-sans text-[#9aa3b8] max-w-xl mx-auto">
@@ -225,7 +275,7 @@ function Login() {
                 <span className="w-3 h-3 rounded-full bg-[#27c93f]/70" />
               </div>
               <span className="font-mono text-[10px] text-[#7c839b]">running_total.py</span>
-              <span className="font-mono text-[10px] text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded px-2 py-0.5">STEP 4 / 7</span>
+              <span className="font-mono text-[10px] text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded px-2 py-0.5">STEP {traceStep + 1} / {traceSteps.length}</span>
             </div>
 
             <div className="grid md:grid-cols-[1.5fr_1fr]">
@@ -234,7 +284,7 @@ function Login() {
                 {codeLines.map((line, i) => (
                   <div
                     key={i}
-                    className={`flex gap-3 px-2 -mx-2 rounded ${
+                    className={`flex gap-3 px-2 -mx-2 rounded transition-colors duration-300 ${
                       i === activeLine ? 'bg-[#0891B2]/15 border-l-2 border-[#22D3EE]' : 'border-l-2 border-transparent'
                     }`}
                   >
@@ -247,11 +297,14 @@ function Login() {
               {/* live state + predict-before-reveal */}
               <div className="p-5">
                 <div className="font-sans text-[10px] uppercase tracking-widest text-[#7c839b] mb-3">State now</div>
-                <div className="space-y-2 mb-5">
+                <div className="space-y-2 mb-5 min-h-[52px]">
+                  {traceState.length === 0 && (
+                    <div className="font-mono text-xs text-[#475569]">— no variables yet</div>
+                  )}
                   {traceState.map((v) => (
                     <div key={v.name} className="flex items-center justify-between font-mono text-xs">
                       <span className="text-[#9aa3b8]">{v.name}</span>
-                      <span className={`rounded px-2 py-0.5 ${v.changed ? 'text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20' : 'text-[#c9d1e3] bg-white/5 border border-white/10'}`}>{v.value}</span>
+                      <span className={`rounded px-2 py-0.5 transition-colors duration-300 ${v.changed ? 'text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20' : 'text-[#c9d1e3] bg-white/5 border border-white/10'}`}>{v.value}</span>
                     </div>
                   ))}
                 </div>
@@ -262,8 +315,10 @@ function Login() {
                     <span className="font-sans text-[11px] font-semibold text-[#22D3EE]">Predict before reveal</span>
                   </div>
                   <div className="flex items-center justify-between font-mono text-xs">
-                    <span className="text-[#9aa3b8]">running_total(4)</span>
-                    <span className="text-white bg-white/10 rounded px-2 py-0.5">= 6</span>
+                    <span className="text-[#9aa3b8]">running_total(2)</span>
+                    <span className={`rounded px-2 py-0.5 transition-colors duration-300 ${revealed ? 'text-[#22D3EE] bg-[#22D3EE]/15 border border-[#22D3EE]/30 font-semibold' : 'text-[#7c839b] bg-white/5'}`}>
+                      {revealed ? '= 1' : '= ?'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -274,6 +329,10 @@ function Login() {
         {/* ---------- Features / How it works ---------- */}
         <section id="features" className="scroll-mt-8 pb-6">
           <div id="how" className="scroll-mt-8 text-center mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 mb-5">
+              <RefreshCw size={13} className="text-[#22D3EE]" />
+              <span className="font-sans text-xs text-[#9aa3b8]">Step 2 — never forget it</span>
+            </div>
             <h2 className="font-sans text-3xl font-bold text-white tracking-tight mb-3">Then it sticks — automatically</h2>
             <p className="font-sans text-[#9aa3b8] max-w-lg mx-auto">Every lesson you finish and every topic you capture enters a spaced-repetition loop, resurfacing right before you'd forget — so a one-time study session becomes durable, long-term knowledge.</p>
           </div>
@@ -301,7 +360,7 @@ function Login() {
         <section className="flex flex-col items-center text-center gap-5 py-16 border-t border-white/5">
           <Sparkles size={22} className="text-[#22D3EE]" />
           <h2 className="font-sans text-2xl md:text-3xl font-bold text-white tracking-tight max-w-md">
-            Stop watching tutorials you forget by Friday.
+            Remember it when the interview comes.
           </h2>
           <p className="font-sans text-[#9aa3b8] text-sm">Learn it visually. Remember it for good. Free to start.</p>
           <GetStarted />
