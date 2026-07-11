@@ -11,6 +11,7 @@ class RoadmapListItem(BaseModel):
     slug: Optional[str] = None
     title: str
     description: Optional[str] = None
+    is_custom: bool = False  # True = personal (syllabus-upload) roadmap owned by the caller
     total_nodes: int = 0
     done_nodes: int = 0
     progress_pct: int = 0

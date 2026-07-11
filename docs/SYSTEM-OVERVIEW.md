@@ -36,12 +36,12 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 
 | Piece | Contents |
 |---|---|
-| `main.py` | App, env-driven CORS allow-list, `/health`, `/me`, mounts **9 routers** |
+| `main.py` | App, env-driven CORS allow-list, `/health`, `/me`, mounts **10 routers** |
 | `core/` | `config.py` (pydantic-settings + the bypass boot guard), `database.py` (async engine: pooler-safe `statement_cache_size=0`, `pool_pre_ping=True`, `echo=DEBUG` only), `security.py` |
-| `api/routes/` | `activities`, `reviews`, `dashboard`, `roadmaps`, `admin`, `feedback`, **`internal`** (cron-only), **`prefs`** (audience), **`tests`** (test banks) |
-| `services/` | `scheduler.py` (FSRS-4.5: `apply_fsrs`, `FSRS_WEIGHTS`, `DESIRED_RETENTION=0.9`, `REVIEW_SESSION_CAP=10`), `grader.py` (Groq LLM: recall grading, question mode, capture assist, fill-up grading), **`mailer.py`** (Resend), **`reminders.py`** (claim-then-send daily batch), **`test_scoring.py`** |
+| `api/routes/` | `activities`, `reviews`, `dashboard`, `roadmaps`, `admin`, `feedback`, **`internal`** (cron-only), **`prefs`** (audience), **`tests`** (test banks), **`syllabus`** (PDF → personal roadmap) |
+| `services/` | `scheduler.py` (FSRS-4.5: `apply_fsrs`, `FSRS_WEIGHTS`, `DESIRED_RETENTION=0.9`, `REVIEW_SESSION_CAP=10`), `grader.py` (Groq LLM: recall grading, question mode, capture assist, fill-up grading), **`mailer.py`** (Resend), **`reminders.py`** (claim-then-send daily batch), **`test_scoring.py`**, **`syllabus.py`** (syllabus-PDF → draft roadmap; **provider-routed by `SYLLABUS_MODEL`** — `gemini*` id → Google `google-genai` inline-PDF + `response_schema`, else Anthropic `claude-opus-4-8` document block + structured outputs/streaming; both send the same prompt+schema so the two can be A/B'd on quality) |
 | `models/models.py` | Single source of truth — 12 tables (see §2) |
-| `alembic/versions/` | 21 migrations; head `f2b7d3a9c8e4` |
+| `alembic/versions/` | 22 migrations; head `a1c5e8f2d7b3` (`roadmaps.user_id` — **applied to prod 2026-07-11**) |
 | `tests/` | `test_ownership.py` — cross-tenant isolation suite (SQLite via JSONB→JSON variant); `pytest.ini`, `.dockerignore`, `Dockerfile` |
 | `seed_*.py` | **33 seed scripts** (idempotent, fixed UUIDs): 31 roadmap seeds + 2 prereq-edge seeds (`python_swe_prereqs`, `physics_school_prereqs`) |
 
@@ -55,7 +55,8 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 | `POST /api/reviews/{id}/complete` | Advances FSRS, schedules next |
 | `POST /api/reviews/{id}/grade`, `/questions`, `/grade-questions` | LLM grader + question mode (all gated) |
 | `GET /api/dashboard/` + **`/review-metrics`** + **`/heatmap`** | The last two are newer than CLAUDE.md |
-| `GET /api/roadmaps/` (+`{id-or-slug}`, `{id}/blockers`, `PUT nodes/{id}/progress`) | List is **filtered by the caller's `user_prefs.audience`** (career vs school) |
+| `GET /api/roadmaps/` (+`{id-or-slug}`, `{id}/blockers`, `PUT nodes/{id}/progress`) | List is **filtered by the caller's `user_prefs.audience`** (career vs school) **plus the caller's own personal roadmaps** (`user_id`); personal roadmaps resolve only for their owner (404 otherwise) |
+| **`POST /api/syllabus/extract` · `POST /api/syllabus/commit` · `DELETE /api/syllabus/{id}`** | Syllabus upload → personal roadmap. Extract = PDF (≤10 MB, ≤5/user/day in-memory limit) → Claude → draft JSON, **nothing saved**; commit = user-edited draft → `roadmaps(user_id)` + nodes; delete = own roadmaps only (activities keep history, links nulled). Extract gated on the selected provider's key — `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` (404 when unset) |
 | `POST /api/feedback/` · `GET /api/admin/funnel` · `GET /api/admin/feedback` | Feedback + founder admin |
 | **`POST /api/internal/send-reminders`** | No user JWT — `X-Cron-Secret` header, `hmac.compare_digest`, closed entirely if `CRON_SECRET` unset. Driven by `.github/workflows/reminders.yml` (01:30 UTC daily + manual dispatch) |
 | **`GET/PUT /api/prefs/`** | Server-side audience preference ('career' \| 'school') |
@@ -63,15 +64,15 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 
 ### Frontend layout (`frontend/src/`)
 
-- **Shell/routing** (`App.jsx`): `/dashboard`, `/reviews`, `/log`, `/roadmaps(/:id)(/learn/:slug)`, **`/roadmaps/:slug/numericals/:phase`** (Physics), **`/roadmaps/:slug/test/:phase`** (Tests), `/paths`, `/vault`, `/analytics`, `/profile`, `/admin` (founder-only), `/dsa-dev` (dev player).
-- **Newer than CLAUDE.md**: `Tests.jsx`, `AudiencePicker.jsx` (one-time career/school picker), `PhysicsNumericals.jsx` + `physics/` module, `ReviewHeatmap.jsx`, `SqlFlow/SqlJoinViz/SqlResult.jsx`, `GlossaryTerm.jsx`, `WelcomeModal.jsx`, `ToastContext.jsx`, `lib/analytics.js` (**PostHog** wrapper — autocapture OFF, curated events, silent no-op without key), `lib/useSeo.js` + prebuild sitemap generation (SEO pass), `lib/testGrading.js`.
-- **DSA viz module (`src/dsa/`)** — canonical artifact is the event trace: pure generator (`generators/*.js`, golden-tested `*.golden.mjs`) → `compile.js` folds events into frames → renderers. **Far ahead of CLAUDE.md's claim**: ~29 generators live (through backtracking: `n-queens`, `permutations`, `subsets`, `combination-sum`, plus stacks/queues, sliding windows, `kadane`, `fast-slow-pointers`, `next-greater-element`, bounds…) and **9 renderers** (`ArrayViz`, `StateMachine`, `StackQueueViz`, `ListViz`, `TreeViz`, `GraphViz`, `GridViz`, `IntervalViz`, `BitsViz`) — the renderer gaps CLAUDE.md lists as "still needed" are built.
+- **Shell/routing** (`App.jsx`): `/dashboard`, `/reviews`, `/log`, `/roadmaps(/:id)(/learn/:slug)`, **`/roadmaps/new`** (`SyllabusUpload.jsx` — upload → editable draft → commit; "Bring Your Own Path" card on `/roadmaps` links here; personal roadmaps render in a "Your Roadmaps" group with delete), **`/roadmaps/:slug/numericals/:phase`** (Physics), **`/roadmaps/:slug/test/:phase`** (Tests), `/paths`, `/vault`, `/analytics`, `/profile`, `/admin` (founder-only), `/dsa-dev` (dev player).
+- **Newer than CLAUDE.md**: `Tests.jsx`, `AudiencePicker.jsx` (one-time career/school picker), **`SchoolRoadmaps.jsx`** (Class → Subject → Chapter browser, fully replaces the career catalog when `audience==='school'`; parses `RoadmapNode.phase` "Class 9 · Motion" — no backend change; + roadmap search; commit `b94d233`, D-006), `PhysicsNumericals.jsx` + `physics/` module, `ReviewHeatmap.jsx`, `SqlFlow/SqlJoinViz/SqlResult.jsx`, `GlossaryTerm.jsx`, `WelcomeModal.jsx`, `ToastContext.jsx`, `lib/analytics.js` (**PostHog** wrapper — autocapture OFF, curated events, silent no-op without key), `lib/useSeo.js` + prebuild sitemap generation (SEO pass), `lib/testGrading.js`.
+- **DSA viz module (`src/dsa/`)** — canonical artifact is the event trace: pure generator (`generators/*.js`, golden-tested `*.golden.mjs`) → `compile.js` folds events into frames → renderers. **Far ahead of CLAUDE.md's claim**: ~29 generators live (through backtracking: `n-queens`, `permutations`, `subsets`, `combination-sum`, plus stacks/queues, sliding windows, `kadane`, `fast-slow-pointers`, `next-greater-element`, bounds…) and **9 renderers** (`ArrayViz`, `StateMachine`, `StackQueueViz`, `ListViz`, `TreeViz`, `GraphViz`, `GridViz`, `IntervalViz`, `BitsViz`) — the renderer gaps CLAUDE.md lists as "still needed" are built. Of the 9: 7 are view-dispatched, 2 (`StateMachine`, `StackQueueViz`) are always-on side panels; **4 still have no generator feeding them** (`ListViz`, `GraphViz`, `IntervalViz`, `BitsViz` — no `LIST/GRAPH/INTERVAL/BITS_INIT` emitter yet). Backtracking generators DO feed `TreeViz`/`GridViz` (n-queens → grid; template/permutations/subsets/combination-sum → tree).
 - Dark mode = centralized `html.dark` override layer in `index.css`; Login page intentionally always-dark.
 
 ### Content system (`content/`)
 
 - One JSON per lesson at `content/roadmaps/<key>/<slug>.json`; **9 content folders**: `python-swe`, `sql`, `aptitude`, `core-cs`, `dsa`, `ai-engineering`, `python-backend`, `cpp-swe`, `physics-9-10`.
-- `content/validate.py` is **the gate** (branches by lesson `kind`: `concept` / `aptitude` / `reasoning` / `theory` / `dsa`); `content/scripts/` (glossary injection, prose extraction) is real pipeline code. `sync-content.mjs` copies to `frontend/public/content/` on `predev`/`prebuild` (git-ignored, Vercel regenerates).
+- `content/validate.py` is **the gate**. Allowed `kind`s (its `KIND` set): `concept` (base shape, no explicit branch) + explicit branches for `aptitude` / `theory` / `engineering` / `dsa` / `reasoning` / `physics` / `numericals` / `test` (+ `milestone` allowed but unused in content); `content/scripts/` (glossary injection, prose extraction) is real pipeline code. `sync-content.mjs` copies to `frontend/public/content/` on `predev`/`prebuild` (git-ignored, Vercel regenerates).
 - Test banks live at `content/roadmaps/<key>/_test/*.json` (static content; only attempt outcomes hit the DB).
 - Bulk generation is delegated to Antigravity; Claude owns contracts (`schema.json`, `validate.py`, `PROMPT-*.md`), runtime/renderers, and critique. DSA content handoffs exist through **phase 13** (recursion/viz/prose) — CLAUDE.md's "phases 1–7" is stale.
 
@@ -79,11 +80,11 @@ PostHog (product analytics, frontend-only, no-ops without VITE_POSTHOG_KEY)
 
 ## 2. Data model (12 tables, prod-verified)
 
-`tracks`, `activities` (the FSRS card: `stability`/`difficulty_fsrs` NULL until first graded review; legacy SM-2 columns still written; optional `roadmap_id`/`node_id` links), `reviews` (due/completed + `rating`/`recalled`/`quality` + `ai_*` grader columns), `feedbacks`, `roadmaps` (**+ `slug`, + `audience` 'career'|'school'**), `roadmap_nodes` (self-ref `parent_id` subtopics), `roadmap_node_prerequisites` (directed edges, powers "Why am I stuck?"), `user_progress`, **`user_prefs`** (audience, server-side), **`test_attempts`** (JSONB per-question results; `node_title` is the join key), **`reminder_log`** (unique `(user_id, sent_on)` = at-most-once-daily email idempotency), `alembic_version`.
+`tracks`, `activities` (the FSRS card: `stability`/`difficulty_fsrs` NULL until first graded review; legacy SM-2 columns still written; optional `roadmap_id`/`node_id` links), `reviews` (due/completed + `rating`/`recalled`/`quality` + `ai_*` grader columns), `feedbacks`, `roadmaps` (**+ `slug`, + `audience` 'career'|'school', + `user_id` NULL=catalog / set=personal syllabus-upload roadmap**), `roadmap_nodes` (self-ref `parent_id` subtopics), `roadmap_node_prerequisites` (directed edges, powers "Why am I stuck?"), `user_progress`, **`user_prefs`** (audience, server-side), **`test_attempts`** (JSONB per-question results; `node_title` is the join key), **`reminder_log`** (unique `(user_id, sent_on)` = at-most-once-daily email idempotency), `alembic_version`.
 
-**Migration chain (21):** `c71d8f31ee19` initial → … → `c2f5a9b3d701` ai-grader → `d4e8a1b2c903` reminder_log → `f4a9c2e1b370` roadmap_id → `a1b2c3d4e5f6` FSRS → `b2c3d4e5f6a7` prereqs → `a3f1c0d4e7b2` slug → `a4b2e9f1c8d3` node_id → `e7f2a4c9b1d5` review invariants (partial unique indexes) → `f8a3b5c2d9e1` RLS → `c4d7e9a2b501` audience+user_prefs → **`f2b7d3a9c8e4` test_attempts (head)**.
+**Migration chain (21):** `c71d8f31ee19` initial → … → `c2f5a9b3d701` ai-grader → `d4e8a1b2c903` reminder_log → `f4a9c2e1b370` roadmap_id → `a1b2c3d4e5f6` FSRS → `b2c3d4e5f6a7` prereqs → `a3f1c0d4e7b2` slug → `a4b2e9f1c8d3` node_id → `e7f2a4c9b1d5` review invariants (partial unique indexes) → `f8a3b5c2d9e1` RLS → `c4d7e9a2b501` audience+user_prefs → `f2b7d3a9c8e4` test_attempts → **`a1c5e8f2d7b3` roadmaps.user_id (head; applied to prod 2026-07-11 via local `alembic upgrade` against the pooler — the migration file was uncommitted until this change, which crash-looped the deploy on an unresolvable revision)**.
 
-**Prod state (checked 2026-07-10 via Supabase MCP):** `alembic_version = f2b7d3a9c8e4` — **prod is at head**. All 12 public tables have `relrowsecurity = true`. CLAUDE.md's note that `e7f2a4c9b1d5` + `f8a3b5c2d9e1` are "pending" is **wrong** — they are applied. Live catalog: **30 roadmaps (29 career + 1 school)**, seeded from 33 scripts — CLAUDE.md's "10 seeded roadmaps" is very stale; most of the "backlog" (Data Engineering, LLD, Git/GitHub, Blind 75, Behavioral, DevOps, Linux, TS-adjacent, ML, DL, MLOps, Math-for-ML, Java, C++, Cyber Security, Computer Architecture, Discrete Math…) is now seeded.
+**Prod state (checked 2026-07-11 via Supabase MCP):** `alembic_version = a1c5e8f2d7b3` — **prod is at head** (`roadmaps.user_id` present). All 12 public tables have `relrowsecurity = true`. CLAUDE.md's note that `e7f2a4c9b1d5` + `f8a3b5c2d9e1` are "pending" is **wrong** — they are applied. Live catalog: **30 roadmaps (29 career + 1 school)**, seeded from 33 scripts — CLAUDE.md's "10 seeded roadmaps" is very stale; most of the "backlog" (Data Engineering, LLD, Git/GitHub, Blind 75, Behavioral, DevOps, Linux, TS-adjacent, ML, DL, MLOps, Math-for-ML, Java, C++, Cyber Security, Computer Architecture, Discrete Math…) is now seeded.
 
 Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/rating`, `user_progress.status`, `feedbacks.status`, `ease_factor ≥ 1.3`) and the hot-path indexes (`reviews(user_id,status,scheduled_for)`, `activities(user_id,created_at DESC)`, unique `user_progress(user_id,node_id)`).
 
@@ -99,7 +100,7 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 | 10 seeded roadmaps | 33 seed scripts, 30 live in prod |
 | School platform = "vision / pitch-gated MVP" | Shipped in-product: `audience` split, `user_prefs`, `AudiencePicker`, Physics 9-10 roadmap + numericals route + content folder |
 | Tests section absent | Live: `/api/tests/*`, `test_attempts`, `Tests.jsx`, `_test/` banks, FSRS bridge |
-| DSA viz: renderers for stack/list/tree/graph/grid "still needed"; phases 1–7 | 9 renderers + ~29 generators live incl. backtracking family; content handoffs through phase 13 |
+| DSA viz: renderers for stack/list/tree/graph/grid "still needed"; phases 1–7 | 9 renderers exist BUT 6 are unused (List/Tree/Graph/Grid/Interval/Bits — no generator feeds them); **24 registered generators** (array/string/stack/search/sort only) — **NO backtracking or linked-list generators yet** (audit 2026-07-10); prose handoffs through phase 13 |
 | Dashboard has one endpoint | `/review-metrics` + `/heatmap` added (`ReviewHeatmap.jsx`) |
 | No analytics | PostHog wrapper (`lib/analytics.js`), curated events, key-gated |
 | No backend test suite / CI | `tests/test_ownership.py` (tenant isolation) + `reminders.yml` workflow; `Dockerfile` + `.dockerignore` |
@@ -181,7 +182,8 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 | Doc | Status (2026-07-10) |
 |---|---|
 | `docs/SYSTEM-OVERVIEW.md` (this file) | **Current — verified against code + prod DB** |
-| `CLAUDE.md` | Conventions/gotchas sections: good. Status/"next priorities"/roadmap-count/DSA-viz sections: **stale** (see §3) |
+| `CLAUDE.md` | **Rewritten 2026-07-10** as a lean rules + update-routing file (no status). The old ~450-line version is frozen at `docs/CLAUDE-ARCHIVE-2026-07.md` — its status/roadmap-count/DSA-viz sections were already stale (see §3) |
+| `docs/claude-code-workflow.md`, `docs/DECISIONS.md`, `docs/BACKLOG.md` | Added 2026-07-10 — session playbook, go-forward decision log, idea inbox |
 | `docs/ARCHITECTURE.md` | Topology/auth still broadly right; predates reminders, prefs, tests, audience split, 20+ roadmaps (2026-06-07) |
 | `docs/API.md`, `docs/FLOWS.md` | Predate the 3 new routers + dashboard endpoints — **stale** |
 | `docs/hardening-plan.md` | Tier-0/1 items largely **done in code**; still useful as the rationale + for unfinished items (rate limiting) |
@@ -194,4 +196,8 @@ Hardening migration `73c79267ec74` adds CHECK constraints (`reviews.status/ratin
 
 One line per system-state change, newest first: `YYYY-MM-DD — what changed (sections touched)`.
 
+- 2026-07-11 — Syllabus → personal roadmap feature: `syllabus` router (extract/commit/delete, review-before-commit), `services/syllabus.py` (**provider-routed by `SYLLABUS_MODEL`**: Anthropic `claude-opus-4-8` or Google Gemini via `google-genai`; new `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`/`SYLLABUS_*` env), migration `a1c5e8f2d7b3` `roadmaps.user_id` (**applied to prod 2026-07-11; file committed same day after it crash-looped the deploy while uncommitted**), roadmap visibility = catalog-by-audience + own, `/roadmaps/new` UI (§1, §2).
+- 2026-07-11 — Agent audit vs code + prod DB: prod re-verified (head `f2b7d3a9c8e4`, RLS ×12, 30 roadmaps/1689 nodes); fixed validate.py kind list (was 5, actually 9 branched + base); DSA renderer-feed status precised (4 unfed, backtracking feeds Tree/Grid). Backend §1–2 verified clean.
+- 2026-07-11 — Frontend layout: documented `SchoolRoadmaps.jsx` Class→Subject→Chapter browser + roadmap search (shipped in commit `b94d233` on 07-10 without a doc update; rationale in `DECISIONS.md` D-006).
+- 2026-07-10 — Docs-layer restructure: CLAUDE.md slimmed to rules + update-routing (old version → `docs/CLAUDE-ARCHIVE-2026-07.md`); added `docs/claude-code-workflow.md`, `docs/DECISIONS.md` (D-001), `docs/BACKLOG.md` (Appendix updated).
 - 2026-07-10 — Document created from a full code + prod-DB verification pass; repo cleanup (one-off scripts purged, `.gitignore` hardened); living-doc convention added to CLAUDE.md.

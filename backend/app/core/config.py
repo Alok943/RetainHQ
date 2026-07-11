@@ -42,6 +42,17 @@ class Settings(BaseSettings):
     GROQ_MODEL: str = "openai/gpt-oss-120b"
     GRADER_ENABLED: bool = False
 
+    # Syllabus → roadmap extraction. One-shot, user-visible structuring task.
+    # Provider is routed by SYLLABUS_MODEL: a "gemini*" id uses Google (GEMINI_API_KEY),
+    # anything else uses Anthropic (ANTHROPIC_API_KEY). The feature is a no-op (404)
+    # until the SELECTED provider's key is set, so it's safe to deploy gated-off.
+    # Gemini is wired in to A/B the extraction quality/cost against Opus.
+    ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    SYLLABUS_MODEL: str = "claude-opus-4-8"  # e.g. "gemini-flash-lite-latest" to route to Gemini
+    SYLLABUS_MAX_PDF_MB: int = 10
+    SYLLABUS_DAILY_LIMIT: int = 5  # extractions per user per UTC day (API-budget guard)
+
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
     # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger
     # endpoint — if unset, the endpoint refuses all callers (no open trigger).

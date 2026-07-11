@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  GraduationCap, ListChecks, ArrowRight, Plus, Sparkles,
-  ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown, Search, X,
+  GraduationCap, ListChecks, ArrowRight, Sparkles,
+  ChevronDown, ChevronRight, LayoutGrid, List, ArrowUpDown, Search, X, Trash2, FileUp,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
@@ -214,9 +214,16 @@ function Roadmaps() {
     return copy;
   }, [roadmapsWithMeta, sortBy]);
 
+  // Personal (syllabus-upload) roadmaps get their own section instead of being
+  // forced into a career domain group they don't belong to.
+  const customRoadmaps = useMemo(
+    () => roadmapsWithMeta.filter((rm) => rm.is_custom),
+    [roadmapsWithMeta]
+  );
+
   const grouped = useMemo(() => {
     const map = {};
-    for (const rm of roadmapsWithMeta) {
+    for (const rm of roadmapsWithMeta.filter((r) => !r.is_custom)) {
       const meta = getRoadmapMeta(rm.slug || rm.id);
       const domain = meta.domain;
       if (!map[domain]) map[domain] = [];
@@ -266,6 +273,16 @@ function Roadmaps() {
     });
   }, [roadmapsWithMeta]);
 
+  const deleteCustom = async (rm) => {
+    if (!window.confirm(`Delete "${rm.title}"? Topics and progress for it are removed; your logged activities and review history are kept.`)) return;
+    try {
+      await apiFetch(`/api/syllabus/${rm.id}`, { method: 'DELETE' });
+      setRoadmaps((prev) => prev.filter((r) => r.id !== rm.id));
+    } catch (err) {
+      console.error('Failed to delete roadmap:', err);
+    }
+  };
+
   // School catalog: hand off entirely to the Class -> Subject -> Chapter browser.
   // audience === null means "still resolving" — render nothing rather than flash
   // the career page (and its 'B.Tech Core' fallback header) for a school user.
@@ -309,6 +326,28 @@ function Roadmaps() {
         </section>
       )}
 
+
+      {customRoadmaps.length > 0 && (
+        <section className="mb-4">
+          <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5 mb-3">
+            <Sparkles size={16} className="text-[#0891B2]" /> Your Roadmaps
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {customRoadmaps.map((rm, i) => (
+              <div key={rm.id} className="relative group/custom">
+                <RoadmapCard rm={rm} index={i} meta={null} to={`/roadmaps/${rm.slug || rm.id}`} />
+                <button
+                  onClick={(e) => { e.preventDefault(); deleteCustom(rm); }}
+                  title="Delete roadmap"
+                  className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/90 border border-[rgba(15,23,42,0.08)] text-[#94A3B8] hover:text-red-500 opacity-0 group-hover/custom:opacity-100 transition-all shadow-sm"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         {/* Search — jump straight to a roadmap by name instead of scrolling the list. */}
@@ -421,24 +460,28 @@ function Roadmaps() {
         <h2 className="font-sans text-sm font-semibold text-[#1a1c1b] uppercase tracking-wider flex items-center gap-1.5 mb-4">
           <Sparkles size={16} className="text-[#0F172A]" /> Custom Roadmaps
         </h2>
-        <div className="kinetic-card bg-[rgba(15,23,42,0.02)] p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 border-dashed border-2 border-[rgba(15,23,42,0.1)] justify-between">
+        <Link
+          to="/roadmaps/new"
+          className="kinetic-card bg-[rgba(15,23,42,0.02)] p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 border-dashed border-2 border-[rgba(15,23,42,0.1)] justify-between hover:border-[#0891B2]/50 transition-colors group/byop"
+        >
           <div className="flex-1 text-center md:text-left">
             <h3 className="font-sans text-lg font-semibold text-[#0F172A] mb-2 flex items-center justify-center md:justify-start gap-2">
               Bring Your Own Path
               <span className="bg-[#0891B2]/10 text-[#0891B2] text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">
-                Coming Soon
+                New
               </span>
             </h3>
             <p className="font-sans text-sm text-[#64748B] leading-relaxed max-w-xl">
-              Soon you'll be able to create custom roadmaps or upload your own curriculum (like a university syllabus or bootcamp schedule) and track your retention node-by-node.
+              Upload your own curriculum — a university syllabus, bootcamp schedule, or exam plan —
+              and get a topic-by-topic roadmap you can log against and track with spaced repetition.
             </p>
           </div>
           <div className="shrink-0 flex gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white border border-[rgba(15,23,42,0.08)] flex items-center justify-center shadow-sm">
-              <Plus size={20} className="text-[#94a3b8]" />
+            <div className="w-12 h-12 rounded-xl bg-white border border-[rgba(15,23,42,0.08)] flex items-center justify-center shadow-sm group-hover/byop:border-[#0891B2]/40 transition-colors">
+              <FileUp size={20} className="text-[#0891B2]" />
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       </div>

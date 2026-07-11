@@ -21,6 +21,7 @@ const Home = lazy(() => import('./Home'));
 const Review = lazy(() => import('./Review'));
 const LogActivity = lazy(() => import('./LogActivity'));
 const Roadmaps = lazy(() => import('./Roadmaps'));
+const SyllabusUpload = lazy(() => import('./SyllabusUpload'));
 const CareerPaths = lazy(() => import('./CareerPaths'));
 const Analytics = lazy(() => import('./Analytics'));
 const RoadmapDetail = lazy(() => import('./RoadmapDetail'));
@@ -212,6 +213,7 @@ function AppLayout() {
             <Route path="reviews" element={<Review onBack={() => navigate('/dashboard')} />} />
             <Route path="log" element={<LogActivity />} />
             <Route path="roadmaps" element={<Roadmaps />} />
+            <Route path="roadmaps/new" element={<SyllabusUpload />} />
             <Route path="roadmaps/:id" element={<RoadmapDetail />} />
             <Route path="roadmaps/:id/learn/:slug" element={<LessonView />} />
             <Route path="roadmaps/:roadmapSlug/numericals/:phaseSlug" element={<PhysicsNumericals />} />

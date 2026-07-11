@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func, case, false
+from sqlalchemy import select, func, case, false, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_current_user, get_optional_user
@@ -27,14 +27,19 @@ def _pct(done: int, total: int) -> int:
     return round((done / total) * 100) if total else 0
 
 
-async def _resolve_roadmap(db: AsyncSession, ref: str) -> Roadmap | None:
+async def _resolve_roadmap(db: AsyncSession, ref: str, user_id: uuid.UUID | None = None) -> Roadmap | None:
     """Resolve a roadmap by UUID (if `ref` parses as one) or else by slug.
-    Lets routes accept clean /roadmaps/<slug> URLs while old UUID links keep working."""
+    Lets routes accept clean /roadmaps/<slug> URLs while old UUID links keep working.
+    Personal roadmaps (user_id set) resolve only for their owner — anyone else
+    gets None (surfaces as 404, indistinguishable from not existing)."""
     try:
         rid = uuid.UUID(ref)
-        return (await db.execute(select(Roadmap).where(Roadmap.id == rid))).scalar_one_or_none()
+        roadmap = (await db.execute(select(Roadmap).where(Roadmap.id == rid))).scalar_one_or_none()
     except (ValueError, AttributeError):
-        return (await db.execute(select(Roadmap).where(Roadmap.slug == ref))).scalar_one_or_none()
+        roadmap = (await db.execute(select(Roadmap).where(Roadmap.slug == ref))).scalar_one_or_none()
+    if roadmap and roadmap.user_id is not None and roadmap.user_id != user_id:
+        return None
+    return roadmap
 
 
 @router.get("/", response_model=List[RoadmapListItem])
@@ -55,6 +60,12 @@ async def list_roadmaps(
         if pref:
             audience = pref
 
+    # Visibility: official catalog roadmaps (user_id NULL) for the caller's
+    # audience, plus the caller's own personal (syllabus-upload) roadmaps.
+    visibility = and_(Roadmap.user_id.is_(None), Roadmap.audience == audience)
+    if user_id:
+        visibility = or_(visibility, Roadmap.user_id == user_id)
+
     done_node = case((UserProgress.status == "done", UserProgress.node_id))
     stmt = (
         select(
@@ -62,10 +73,11 @@ async def list_roadmaps(
             Roadmap.slug,
             Roadmap.title,
             Roadmap.description,
+            Roadmap.user_id.label("owner_id"),
             func.count(func.distinct(RoadmapNode.id)).label("total_nodes"),
             func.count(func.distinct(done_node)).label("done_nodes"),
         )
-        .where(Roadmap.audience == audience)
+        .where(visibility)
         .outerjoin(RoadmapNode, RoadmapNode.roadmap_id == Roadmap.id)
         .outerjoin(
             UserProgress,
@@ -73,7 +85,7 @@ async def list_roadmaps(
             & (UserProgress.user_id == user_id)
             if user_id else false(),
         )
-        .group_by(Roadmap.id, Roadmap.slug, Roadmap.title, Roadmap.description)
+        .group_by(Roadmap.id, Roadmap.slug, Roadmap.title, Roadmap.description, Roadmap.user_id)
         .order_by(Roadmap.created_at)
     )
 
@@ -87,6 +99,7 @@ async def list_roadmaps(
                 slug=row.slug,
                 title=row.title,
                 description=row.description,
+                is_custom=row.owner_id is not None,
                 total_nodes=total,
                 done_nodes=done,
                 progress_pct=_pct(done, total),
@@ -105,7 +118,7 @@ async def get_roadmap(
     `roadmap_id` accepts the roadmap slug or its UUID."""
     user_id = uuid.UUID(current_user.id) if current_user else None
 
-    roadmap = await _resolve_roadmap(db, roadmap_id)
+    roadmap = await _resolve_roadmap(db, roadmap_id, user_id)
     if not roadmap:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
     roadmap_id = roadmap.id
@@ -199,7 +212,7 @@ async def get_roadmap_blockers(
     """
     user_id = uuid.UUID(current_user.id) if current_user else None
 
-    roadmap = await _resolve_roadmap(db, roadmap_id)
+    roadmap = await _resolve_roadmap(db, roadmap_id, user_id)
     if not roadmap:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
     roadmap_id = roadmap.id

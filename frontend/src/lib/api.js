@@ -34,8 +34,11 @@ export const apiFetch = async (endpoint, options = {}) => {
   // e.g. roadmaps). The Bearer token is still attached when a session exists.
   const { optionalAuth = false, ...fetchOptions } = options;
 
+  // FormData bodies (file uploads) must NOT get a manual Content-Type — the
+  // browser sets multipart/form-data with the boundary itself.
+  const isFormData = fetchOptions.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...fetchOptions.headers,
   };
 
@@ -90,6 +93,7 @@ export const apiFetch = async (endpoint, options = {}) => {
     throw err;
   }
 
+  if (response.status === 204) return null; // DELETE endpoints — no body to parse
   return response.json();
 };
 

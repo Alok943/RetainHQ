@@ -21,6 +21,9 @@ class Roadmap(SQLModel, table=True):
     # Platform split: 'career' (placement/college roadmaps) | 'school' (Class 9-10 NCERT).
     # GET /api/roadmaps/ filters by the caller's user_prefs.audience. Migration c4d7e9a2b501.
     audience: str = Field(default="career")
+    # NULL = official catalog roadmap. Non-NULL = personal roadmap created by this
+    # user via the syllabus-upload flow — visible only to its owner. Migration a1c5e8f2d7b3.
+    user_id: Optional[uuid.UUID] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     nodes: List["RoadmapNode"] = Relationship(back_populates="roadmap")

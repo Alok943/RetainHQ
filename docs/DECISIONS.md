@@ -177,7 +177,7 @@ Template:
 ## D-017 — Syllabus-upload roadmaps: frontier model, review-before-commit, per-user rows in the same tables (2026-07-11)
 
 **Decision:** The "Bring Your Own Path" feature (PDF syllabus → personal roadmap) is built as:
-- **One Anthropic `claude-opus-4-8` call** (`services/syllabus.py`) taking the raw PDF as a document block (vision path) with structured outputs — no client-side text extraction, no Groq.
+- **One model call** (`services/syllabus.py`) taking the raw PDF as a document/inline part (vision path) with a JSON schema — no client-side text extraction, no Groq. The provider is **routed by `SYLLABUS_MODEL`**: a `gemini*` id calls Google (`google-genai`), anything else calls Anthropic (`claude-opus-4-8`). Both send the identical prompt + schema, so switching providers to compare extraction quality/cost is a config change (Gemini Flash-Lite wired in 2026-07-11 to A/B against Opus).
 - **Two-step review-before-commit API**: `/api/syllabus/extract` returns a draft and saves nothing; the user edits it in the UI; `/api/syllabus/commit` persists it. The draft is never auto-saved.
 - **Personal roadmaps are ordinary `roadmaps`/`roadmap_nodes` rows** with a new nullable `roadmaps.user_id` (NULL = official catalog), inheriting the creator''s `audience`, `slug` NULL (route by UUID). Visibility = catalog-by-audience + own; personal roadmaps resolve only for their owner.
 - The extraction prompt forces **decomposition into atomic, testable topics** (capability-phrased titles), because node granularity determines whether logged activities and their FSRS cards stay sharp.
