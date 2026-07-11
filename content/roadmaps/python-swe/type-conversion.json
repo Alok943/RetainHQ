@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -31,8 +31,8 @@
     }
   ],
   "overview": {
-    "what": "Type conversion turns a value of one type into another. Implicit conversion happens automatically, but ONLY between numeric types — e.g. 5 + 2.0 promotes the int to a float and gives 7.0. Explicit conversion (casting) is when you call a constructor yourself: int('42') -> 42, str(42) -> '42', float('3.5') -> 3.5. Across non-numeric types Python never converts for you — 'id_' + 5 raises a TypeError. Think of implicit conversion as Python quietly widening compatible numbers, and explicit casting as you manually translating — a translation that can fail (int('abc') raises ValueError).",
-    "why": "APIs hand you strings (query params, env vars), so you constantly cast '42' to 42 — and that cast can fail, so it must be guarded. Knowing implicit conversion applies only to numbers explains why concatenating a string and an int throws instead of auto-casting.",
+    "what": "Type conversion turns a value of one type into another. Implicit conversion happens automatically, but ONLY between numeric types. For example, adding an `int` and a `float` quietly widens the `int` to a `float`.\n\n  result = 5 + 2.0\n  print(result) # 7.0\n\nExplicit conversion (casting) requires you to call a constructor yourself. Across non-numeric types, Python never converts for you.\n\n- `int()` parses a number or string into an integer, returns an `int`, and raises `ValueError` on invalid formats.\n- `float()` parses a number or string into a floating-point number, returns a `float`, and raises `ValueError` on invalid formats.\n- `str()` converts a value into a string representation, returns a `str`, and generally does not raise exceptions.\n- `bool()` evaluates the truthiness of a value, returns a `bool`, and never raises an exception.\n\nThink of implicit conversion as Python quietly widening compatible numbers, and explicit casting as you manually translating. This translation can fail if the data is incompatible.\n\n  # This will raise a TypeError:\n  id_string = 'id_' + 5\n  \n  # This will raise a ValueError:\n  number = int('abc')\n\nOne dangerous edge case involves casting strings to booleans. Non-empty strings are always truthy, even if they contain the word 'False'.\n\n  is_active = bool('False')\n  print(is_active)  # True, because the string is not empty!\n\nTo parse boolean strings safely from inputs like environment variables, you must explicitly check the string contents (e.g., `value == 'False'`).",
+    "why": "APIs hand you strings (query params, env vars), so you constantly cast `'42'` to `42` \u2014 and that cast can fail, so it must be guarded. Knowing implicit conversion applies only to numbers explains why concatenating a `str` and an `int` throws instead of auto-casting.",
     "where_used": [
       "FastAPI query/path params",
       "parsing env vars",
@@ -40,51 +40,56 @@
     ]
   },
   "why_learning_this": [
-    "Casting string inputs (query params, env vars) to int/float before use, and handling bad input",
-    "Understanding why 'id_' + 5 raises a TypeError instead of auto-casting"
+    "Casting string inputs (query params, env vars) to `int`/`float` before use, and handling bad input",
+    "Understanding why `'id_' + 5` raises a `TypeError` instead of auto-casting"
   ],
   "common_mistakes": [
     {
-      "title": "Assuming Python auto-casts str and int",
-      "explanation": "'count: ' + 5 raises a TypeError because Python only converts implicitly between numeric types. Fix: str(5) or an f-string like f'count: {5}'."
+      "title": "Assuming Python auto-casts `str` and `int`",
+      "explanation": "`'count: ' + 5` raises a `TypeError` because Python only converts implicitly between numeric types. Fix: `str(5)` or an f-string like `f'count: {5}'`."
     },
     {
-      "title": "Unguarded int() on user input",
-      "explanation": "int('12abc') raises a ValueError. Fix: wrap the cast in try/except (or validate first) when the input is not trusted."
+      "title": "Unguarded `int()` on user input",
+      "explanation": "`int('12abc')` raises a `ValueError`. Fix: wrap the cast in `try`/`except` (or validate first) when the input is not trusted."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the difference between implicit and explicit type conversion?",
-      "answer": "Implicit conversion happens automatically (Python widening numeric types, e.g. int + float -> float); explicit conversion is when you call a constructor like int(), float(), or str() yourself.",
+      "answer": "Implicit conversion happens automatically (Python widening numeric types, e.g. `int` + `float` -> `float`); explicit conversion is when you call a constructor like `int()`, `float()`, or `str()` yourself.",
       "tier": "tier1"
     },
     {
       "q": "Between which kinds of types does Python convert implicitly?",
-      "answer": "Only between numeric types; it does not implicitly convert between, for example, str and int.",
+      "answer": "Only between numeric types; it does not implicitly convert between, for example, `str` and `int`.",
       "tier": "tier1"
     },
     {
       "q": "What can go wrong with explicit casting?",
-      "answer": "It can fail at runtime — for example int('abc') raises a ValueError.",
+      "answer": "It can fail at runtime \u2014 for example `int('abc')` raises a `ValueError`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does `bool('False')` evaluate to `True`?",
+      "answer": "Because `bool()` checks truthiness, and any non-empty string is considered truthy in Python. You must check the string's actual contents (e.g., `value == 'False'`) to evaluate boolean text.",
       "tier": "tier1"
     }
   ],
   "practice_tasks": [
     {
       "title": "Safe integer cast",
-      "prompt": "The to_int function currently just returns the original value without modifying it. Modify its behavior to explicitly cast 'value' to an integer. If the cast fails with a ValueError, catch it and return the 'fallback' value.",
+      "prompt": "The `to_int` function currently just returns the original value without modifying it. Modify its behavior to explicitly cast `value` to an integer. If the cast fails with a `ValueError`, catch it and return the `fallback` value.",
       "starter_code": "def to_int(value, fallback):\n    # TODO: Modify this to cast value to int, catching ValueError and returning fallback\n    return value\n\nprint(to_int('42', 0))\nprint(to_int('abc', 0))",
       "solution": "def to_int(value, fallback):\n    try:\n        return int(value)\n    except ValueError:\n        return fallback\n\nprint(to_int('42', 0))\nprint(to_int('abc', 0))"
     }
   ],
   "code_walkthrough": {
     "code": "total = 5 + 2.0\nprint(total)\n\nage = int('30')\nprint(age + 1)",
-    "focus": "5 + 2.0 auto-promotes the int to a float (implicit — note 7.0, not 7); the string '30' must be cast with int() before arithmetic (explicit)."
+    "focus": "`5 + 2.0` auto-promotes the `int` to a `float` (implicit \u2014 note `7.0`, not `7`); the string `'30'` must be cast with `int()` before arithmetic (explicit)."
   },
   "challenge": {
     "title": "Parse a port from config",
-    "prompt": "Write parse_port(raw) that takes a value from an env var and returns it as an int, defaulting to 8000 when raw is None or not a valid integer. Print calls with '5432', 'abc', and None.",
+    "prompt": "Write `parse_port(raw)` that takes a value from an env var and returns it as an `int`, defaulting to `8000` when `raw` is `None` or not a valid integer. Print calls with `'5432'`, `'abc'`, and `None`.",
     "solution": "def parse_port(raw):\n    if raw is None:\n        return 8000\n    try:\n        return int(raw)\n    except ValueError:\n        return 8000\n\nprint(parse_port('5432'))\nprint(parse_port('abc'))\nprint(parse_port(None))"
   },
   "sources": [
@@ -97,13 +102,13 @@
       "code": "result = 5 + 2.0\nprint(type(result))\n",
       "question": "What is the output of this code?",
       "answer": "<class 'float'>",
-      "why": "Python implicitly converts between numeric types, so it promotes the integer 5 to a float to match 2.0."
+      "why": "Python implicitly converts between numeric types, so it promotes the integer `5` to a `float` to match `2.0`."
     },
     {
       "type": "find-bug",
       "code": "age = 25\nmessage = \"I am \" + age + \" years old.\"",
       "question": "What is the bug in this code?",
-      "answer": "It raises a TypeError because Python doesn't implicitly convert integers to strings.",
+      "answer": "It raises a `TypeError` because Python doesn't implicitly convert integers to strings.",
       "why": "You cannot concatenate a string and an integer. You must explicitly cast the integer using `str(age)` or use an f-string."
     }
   ]

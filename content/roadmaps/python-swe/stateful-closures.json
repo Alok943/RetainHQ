@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -33,8 +33,8 @@
     }
   ],
   "overview": {
-    "what": "A stateful closure is a function that remembers and updates data between calls, without using global variables or a full class. It does this by using the `nonlocal` keyword to modify variables trapped in its enclosing scope. Think of it like a function carrying around a hidden, persistent backpack of data. This allows you to encapsulate state perfectly within a single callable.",
-    "why": "It provides a lightweight alternative to writing a class when you only need a single function that remembers some history, like a counter or an accumulator. It keeps state strictly private and avoids polluting the global namespace.",
+    "what": "A stateful closure is a function that remembers and updates data between calls, without using global variables or a full class. It does this by using the `nonlocal` keyword to modify variables trapped in its enclosing scope. Think of it like a function carrying around a hidden, persistent backpack of data.\n\nThis allows you to encapsulate state perfectly within a single callable. It is commonly used to build lightweight state machines or function factories.\n\nWhen applying stateful closures to wrap multiple functions, reusing the same factory instance accidentally links their internal state. This shared-state trap is covered fully in decorators.\n\n  shared_limiter = make_rate_limiter()\n  @shared_limiter\n  def fetch(): pass\n  @shared_limiter\n  def post(): pass\n  # Trap: fetch and post now share the exact same call count!",
+    "why": "It provides a lightweight alternative to writing a `class` when you only need a single function that remembers some history, like a counter or an accumulator. It keeps state strictly private and avoids polluting the global namespace.",
     "where_used": [
       "FastAPI dependencies",
       "Rate limiters",
@@ -52,7 +52,7 @@
     },
     {
       "title": "Accidental shared state",
-      "explanation": "If multiple functions close over the exact same variable and modify it, they will interfere with each other's state. You must create a new closure instance (by calling the factory function again) for independent state."
+      "explanation": "If multiple functions close over the exact same variable and modify it, they will interfere with each other's state. You must create a new closure instance by calling the factory function again for independent state. This is especially common when wrapping functions with stateful decorators."
     }
   ],
   "recall_questions": [
@@ -63,14 +63,19 @@
     },
     {
       "q": "Why might you use a stateful closure instead of creating a new class?",
-      "answer": "When you only need a single callable function that remembers some history, a stateful closure is much more lightweight and avoids the boilerplate of defining a class with an `__init__` and `__call__` method.",
+      "answer": "When you only need a single callable function that remembers some history, a stateful closure is much more lightweight and avoids the boilerplate of defining a `class` with an `__init__` and `__call__` method.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you use the exact same stateful closure instance to wrap multiple different functions?",
+      "answer": "The wrapped functions will share the exact same internal state. Modifying the state from one function will affect the others, which is a common trap when building stateful decorators.",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "Build a Simple Counter",
-      "prompt": "Write a function `make_counter()` that takes no arguments. It should return a function that, when called, returns an integer starting at 1 and incrementing by 1 on each subsequent call.",
+      "prompt": "Write a function `make_counter()` that takes no arguments. It should return a function that, when called, returns an integer starting at `1` and incrementing by `1` on each subsequent call.",
       "starter_code": "def make_counter():\n  # your code here\n  pass",
       "solution": "def make_counter():\n  count = 0\n  def increment():\n    nonlocal count\n    count += 1\n    return count\n  return increment"
     }
@@ -81,13 +86,13 @@
   },
   "aha_moment": {
     "code": "def make_counter():\n  count = 0\n  def inc():\n    nonlocal count\n    count += 1\n    return count\n  return inc\n\nc1 = make_counter()\nc2 = make_counter()\nc1()\nprint(c2())",
-    "prediction": "What does print(c2()) output?",
+    "prediction": "What does `print(c2())` output?",
     "common_guess": "2",
-    "why": "Each time `make_counter()` is called, it creates a brand new enclosing scope with its own separate `count` variable. `c1` and `c2` have completely independent 'backpacks' of state, so `c2()` returns 1 regardless of what `c1` does."
+    "why": "Each time `make_counter()` is called, it creates a brand new enclosing scope with its own separate `count` variable. `c1` and `c2` have completely independent backpacks of state, so `c2()` returns `1` regardless of what `c1` does."
   },
   "challenge": {
     "title": "Moving Average Closure",
-    "prompt": "Create a function `make_averager()` that returns a function. The returned function should take a single numeric value as an argument, add it to a running series, and return the average (mean) of all values passed to it so far. Hint: You can use a mutable list in the closure without `nonlocal`, or use `nonlocal` with sum and count variables.",
+    "prompt": "Create a function `make_averager()` that returns a function. The returned function should take a single numeric value as an argument, add it to a running series, and return the average (mean) of all values passed to it so far. Hint: You can use a mutable `list` in the closure without `nonlocal`, or use `nonlocal` with `sum` and `count` variables.",
     "solution": "def make_averager():\n  total = 0\n  count = 0\n  def averager(new_value):\n    nonlocal total, count\n    total += new_value\n    count += 1\n    return total / count\n  return averager"
   },
   "sources": [
@@ -99,12 +104,12 @@
       "type": "predict-output",
       "question": "What is printed by this code?",
       "code": "def setup():\n  x = 0\n  def update():\n    nonlocal x\n    x += 2\n    return x\n  return update\n\nf1 = setup()\nf2 = setup()\nprint(f1())\nprint(f1())\nprint(f2())",
-      "answer": "2, 4, 2",
-      "why": "Each call to `setup()` creates an independent closure state. `f1` increments its own `x` twice (2, 4), while `f2` uses a fresh `x` (starting at 0, becoming 2)."
+      "answer": "`2`, `4`, `2`",
+      "why": "Each call to `setup()` creates an independent closure state. `f1` increments its own `x` twice (`2`, `4`), while `f2` uses a fresh `x` (starting at `0`, becoming `2`)."
     },
     {
       "type": "find-bug",
-      "question": "Why does this closure raise an UnboundLocalError?",
+      "question": "Why does this closure raise an `UnboundLocalError`?",
       "code": "def make_wallet():\n  balance = 0\n  def add(amount):\n    balance += amount\n    return balance\n  return add\n\nw = make_wallet()\nw(5)",
       "answer": "It is missing the `nonlocal balance` declaration.",
       "why": "Without `nonlocal`, Python treats the assignment `balance += amount` as creating a new local variable `balance` inside `add`, which hasn't been initialized yet."

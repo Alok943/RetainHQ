@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 15,
+    "estimated_minutes": 20,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -31,7 +31,7 @@
     }
   ],
   "overview": {
-    "what": "Python uses two main dunder methods (special methods starting and ending with double underscores) to convert objects to strings: `__str__` for readable output and `__repr__` for unambiguous developer representations. By default, both print `<__main__.MyClass object at 0x...>`, but overriding them gives meaningful descriptions. Think of `__str__` as the 'display name' for a user and `__repr__` as the 'technical ID card' for a developer.",
+    "what": "Python uses two main dunder methods to convert objects to strings. `__str__` is for readable output, and `__repr__` is for unambiguous developer representations.\n\nBy default, both print `<__main__.MyClass object at 0x...>`, but overriding them gives meaningful descriptions. Think of `__str__` as the 'display name' for a user and `__repr__` as the 'technical ID card' for a developer.\n\nWhen writing `__repr__`, a common trap is forgetting quotes around string attributes, making the output ambiguous. Always use the `!r` conversion flag in f-strings to include quotes automatically.\n\n  class User:\n    def __init__(self, name):\n      self.name = name\n    def __repr__(self):\n      # The !r ensures name prints as 'Alice' instead of Alice\n      return f'User(name={self.name!r})'\n\n",
     "why": "It solves the problem of opaque object representations. Clear string representations make logging, debugging, and user interfaces significantly easier by avoiding memory addresses in terminal output.",
     "where_used": [
       "Logging configuration",
@@ -40,13 +40,13 @@
     ]
   },
   "why_learning_this": [
-    "Makes debugging faster by displaying object state instead of memory addresses in the REPL.",
+    "Makes debugging faster by displaying object state instead of memory addresses in the `REPL`.",
     "Allows custom string formatting in logging or UI without writing extra `to_string()` methods."
   ],
   "common_mistakes": [
     {
-      "title": "Implementing only __str__",
-      "explanation": "If you only implement `__str__`, collections like lists or dicts will still use `__repr__` when printed, showing memory addresses. Fix: Implement `__repr__` first; Python uses it as a fallback for `__str__`."
+      "title": "Implementing only `__str__`",
+      "explanation": "If you only implement `__str__`, collections like `list` or `dict` will still use `__repr__` when printed, showing memory addresses.\n\nFix: Implement `__repr__` first; Python uses it as a fallback for `__str__`."
     }
   ],
   "recall_questions": [
@@ -59,6 +59,11 @@
       "q": "If an object only implements `__repr__`, what happens when you call `str(obj)`?",
       "answer": "Python falls back to using the `__repr__` output. So `str(obj)` and `repr(obj)` will return the same string when only `__repr__` is defined.",
       "tier": "tier2"
+    },
+    {
+      "q": "What does the `!r` conversion flag do when used in an f-string inside `__repr__`?",
+      "answer": "It formats the value using its `__repr__` instead of `__str__`, ensuring strings are enclosed in quotes for unambiguous output.",
+      "tier": "tier1"
     }
   ],
   "practice_tasks": [
@@ -76,8 +81,8 @@
   "aha_moment": {
     "code": "class Task:\n  def __init__(self, name):\n    self.name = name\n  def __str__(self):\n    return self.name\n\nt = Task('build')\nprint([t])",
     "prediction": "What does this print?",
-    "common_guess": "['build']",
-    "why": "Collections like lists always use `__repr__` to format their elements, even if you print the list using `str()`. Since `Task` lacks a `__repr__`, you get the default memory address."
+    "common_guess": "`['build']`",
+    "why": "Collections like `list` always use `__repr__` to format their elements, even if you print the list using `str()`. Since `Task` lacks a `__repr__`, you get the default memory address."
   },
   "challenge": {
     "title": "Logging Context",
@@ -99,8 +104,15 @@
     {
       "type": "explain-behavior",
       "question": "Why is it important to implement `__repr__` for an object instead of only `__str__`?",
-      "answer": "Because collections like lists and dictionaries use `__repr__` to display their elements, even if you print them using `str()`.",
-      "why": "If you only implement `__str__`, printing a list of your objects will still show unhelpful memory addresses."
+      "answer": "Because collections like `list` and `dict` use `__repr__` to display their elements, even if you print them using `str()`.",
+      "why": "If you only implement `__str__`, printing a `list` of your objects will still show unhelpful memory addresses."
+    },
+    {
+      "type": "predict-output",
+      "question": "What does this code output?",
+      "code": "class Node:\n    def __init__(self, val):\n        self.val = val\n    def __repr__(self):\n        return f'Node({self.val!r})'\n\nn = Node('A')\nprint(repr(n))",
+      "answer": "Node('A')",
+      "why": "The `!r` flag calls `repr()` on the string `'A'`, adding the necessary quotes around it."
     }
   ]
 }

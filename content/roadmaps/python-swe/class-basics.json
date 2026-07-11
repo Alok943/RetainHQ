@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 10,
     "interview_frequency": "high",
     "prerequisites": [
@@ -32,11 +32,11 @@
     }
   ],
   "overview": {
-    "what": "A class is a blueprint for creating objects, defining their structure and behavior. When you instantiate a class, you create a unique object (instance) in memory based on that blueprint. Think of a class as a cookie cutter, and the objects as the cookies themselves. In Python, variables are labels, and objects are boxes; instantiation creates a new box, and `self` inside `__init__` is the label pointing to that newly created box. Each instance encapsulates its own independent state; the class is the shared blueprint.",
+    "what": "A class is a blueprint for creating objects, defining their structure and behavior. When you instantiate a class, you create a unique object (instance) in memory based on that blueprint. Think of a class as a cookie cutter, and the objects as the cookies themselves.\n\n  class Server:\n    def __init__(self, host):\n      self.host = host\n\n  app = Server('localhost')\n\nIn Python, variables are labels, and objects are boxes. Instantiation creates a new box in memory. The `self` parameter inside `__init__` is a temporary label pointing to that newly created box during setup.\n\nEach instance encapsulates its own independent state. The class itself remains the shared blueprint.\n\n  class BrokenServer:\n    def __init__(self):\n      return \"Ready\"\n\n  # Trap: __init__ must return None\n  s = BrokenServer()  # Raises TypeError\n\nThe `__init__` method is strictly for initialization and cannot return a value. Attempting to return anything other than `None` raises a `TypeError` at instantiation. The mechanics of `self` and class functions are covered fully in instance-methods.",
     "why": "Classes allow you to group related data and functions together into a single, cohesive unit, making complex code organized and reusable.",
     "where_used": [
-      "FastAPI dependency injection",
-      "Pydantic data models",
+      "`FastAPI` dependency injection",
+      "`Pydantic` data models",
       "Database ORMs"
     ]
   },
@@ -46,8 +46,8 @@
   ],
   "common_mistakes": [
     {
-      "title": "Forgetting self in __init__",
-      "explanation": "Python automatically passes the instance as the first argument to instance methods. Forgetting `self` causes a TypeError when creating the object."
+      "title": "Forgetting `self` in `__init__`",
+      "explanation": "Python automatically passes the instance as the first argument to instance methods. Forgetting `self` causes a `TypeError` when creating the object."
     },
     {
       "title": "Modifying class attributes instead of instance attributes",
@@ -63,6 +63,11 @@
     {
       "q": "What does instantiation do in memory?",
       "answer": "It creates a new unique object in memory based on the class blueprint.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you return a value from `__init__`?",
+      "answer": "Python raises a `TypeError`. The `__init__` method must return `None` because it is strictly for initializing the newly created object, not constructing it.",
       "tier": "tier1"
     }
   ],
@@ -80,8 +85,8 @@
   },
   "aha_moment": {
     "code": "class Config:\n  tags = []\n\nc1 = Config()\nc2 = Config()\nc1.tags.append('prod')\nprint(c2.tags)",
-    "prediction": "What does c2.tags print?",
-    "common_guess": "[]",
+    "prediction": "What does `c2.tags` print?",
+    "common_guess": "`[]`",
     "why": "Variables defined directly in the class body are class attributes, shared by all instances. To give each instance its own list, initialize it inside `__init__` using `self.tags = []`."
   },
   "challenge": {
@@ -98,7 +103,7 @@
       "type": "predict-output",
       "code": "class Server:\n  def __init__(self, port):\n    self.port = port\n\ns1 = Server(8000)\ns2 = Server(9000)\nprint(s1.port == s2.port)",
       "question": "What will this code print?",
-      "answer": "False",
+      "answer": "`False`",
       "why": "Each time a class is instantiated, a new unique object (box) is created in memory. `s1` and `s2` are labels pointing to different boxes, each with its own `port` value."
     },
     {

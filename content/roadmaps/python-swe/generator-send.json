@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "hard",
-    "estimated_minutes": 45,
+    "estimated_minutes": 50,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -34,23 +34,23 @@
     }
   ],
   "overview": {
-    "what": "The `.send()` method allows passing data back IN to a generator. Instead of just yielding values out, `yield` becomes an expression that evaluates to the value sent in. Think of generators as mini-programs paused at `yield`: `.send()` resumes them and hands them a value. This is the foundation of coroutines and asynchronous programming in Python.",
+    "what": "The `.send()` method allows passing data back IN to a generator. Instead of just yielding values out, `yield` becomes an expression that evaluates to the value sent in.\n\nThink of generators as mini-programs paused at `yield`. Calling `.send()` resumes them and hands them a value. This two-way communication is the foundation of coroutines and asynchronous programming in Python.\n\nGenerators provide three methods for two-way communication:\n\n- `.send(value)`: Resumes execution and passes `value` into the `yield` expression. Returns the next yielded value, or raises `StopIteration` if the generator exits.\n- `.throw(type)`: Raises an exception of the given `type` at the paused `yield` expression. Returns the next yielded value, or raises `StopIteration` if it catches the exception and exits.\n- `.close()`: Raises a `GeneratorExit` at the paused `yield`. Returns `None`, and forces the generator to exit.\n\nYou must prime a generator before sending a value. You cannot send a non-`None` value to a newly started generator, because it has not yet reached a `yield` expression to receive it. Doing so raises a `TypeError`.\n\n  def greeter():\n    name = yield\n    print(f\"Hello {name}\")\n\n  g = greeter()\n  g.send(\"Alice\") # TypeError: can't send non-None value to a just-started generator\n\nThis edge case is covered fully in `coroutines`.",
     "why": "It transforms generators from simple data producers (one-way) into stateful coroutines that can receive data, process it, and respond (two-way).",
     "where_used": [
-      "asyncio event loops",
+      "`asyncio` event loops",
       "custom state machines",
       "data streaming pipelines"
     ]
   },
   "why_learning_this": [
-    "Understanding how async/await actually works under the hood",
+    "Understanding how `async`/`await` actually works under the hood",
     "Building memory-efficient data pipelines that react to input",
     "Creating custom coroutines that maintain internal state"
   ],
   "common_mistakes": [
     {
       "title": "Sending to an unprimed generator",
-      "explanation": "You cannot `.send()` a non-None value to a generator that hasn't started yet. You must first prime it with `next(gen)` or `gen.send(None)` to advance it to the first `yield`."
+      "explanation": "You cannot call `.send()` with a non-`None` value on a generator that hasn't started yet. You must first prime it with `next(gen)` or `gen.send(None)` to advance it to the first `yield`."
     },
     {
       "title": "Ignoring the yielded value",
@@ -59,13 +59,18 @@
   ],
   "recall_questions": [
     {
-      "q": "What happens if you try to send a value to a newly created generator before calling next()?",
-      "answer": "It raises a TypeError because the generator hasn't reached a yield statement yet to receive the value.",
+      "q": "What happens if you try to `.send()` a non-`None` value to a newly created generator before calling `next()`?",
+      "answer": "It raises a `TypeError` because the generator hasn't reached a `yield` statement yet to receive the value.",
       "tier": "tier1"
     },
     {
-      "q": "What is the difference between a normal generator and a coroutine using send()?",
-      "answer": "A normal generator only produces values (one-way). A coroutine using send() can both produce values and receive values back at the yield expression (two-way).",
+      "q": "What is the difference between a normal generator and a coroutine using `.send()`?",
+      "answer": "A normal generator only produces values (one-way). A coroutine using `.send()` can both produce values and receive values back at the `yield` expression (two-way).",
+      "tier": "tier2"
+    },
+    {
+      "q": "What do the `.throw()` and `.close()` methods do on a generator?",
+      "answer": "`.throw(type)` raises an exception at the paused `yield` and returns the next yielded value. `.close()` raises a `GeneratorExit` at the paused `yield` and returns `None`.",
       "tier": "tier2"
     }
   ],
@@ -85,11 +90,11 @@
     "code": "def echo():\n  received = yield 'Started'\n  yield f'You said: {received}'\n\ne = echo()\nprint(next(e))\nprint(e.send('Python'))",
     "prediction": "What does the second print output?",
     "common_guess": "You said: Started",
-    "why": "The `yield` evaluates to the value sent IN ('Python'), which is assigned to `received`, and then the generator yields the formatted string back OUT."
+    "why": "The `yield` evaluates to the value sent IN (`'Python'`), which is assigned to `received`, and then the generator yields the formatted string back OUT."
   },
   "challenge": {
     "title": "Stateful Filter Coroutine",
-    "prompt": "Write a generator `threshold_filter(limit)` that receives numbers. If the received number is greater than `limit`, it yields the number. Otherwise, it yields None. Remember to handle the first `yield` which is needed just to prime the generator.",
+    "prompt": "Write a generator `threshold_filter(limit)` that receives numbers. If the received number is greater than `limit`, it yields the number. Otherwise, it yields `None`. Remember to handle the first `yield` which is needed just to prime the generator.",
     "solution": "def threshold_filter(limit):\n    value = yield\n    while True:\n        if value > limit:\n            value = yield value\n        else:\n            value = yield None"
   },
   "sources": [
@@ -99,7 +104,7 @@
   "understanding_checks": [
     {
       "type": "explain-behavior",
-      "question": "Why does calling `.send(5)` on a newly created generator raise a TypeError?",
+      "question": "Why does calling `.send(5)` on a newly created generator raise a `TypeError`?",
       "answer": "Because the generator hasn't reached a `yield` statement yet to receive the value.",
       "why": "A generator must be \"primed\" by advancing it to the first `yield` expression (usually by calling `next(gen)` or `gen.send(None)`) before it can receive data via `.send()`."
     },
@@ -107,7 +112,7 @@
       "type": "predict-output",
       "question": "What is the output of `print(g.send('B'))`?",
       "code": "def echo():\n    val = yield 'A'\n    yield val\n\ng = echo()\nprint(next(g))\nprint(g.send('B'))",
-      "answer": "`B`",
+      "answer": "`'B'`",
       "why": "The first `next(g)` runs until the first `yield` and outputs `'A'`. Then `g.send('B')` resumes execution, assigning `'B'` to `val`, and immediately yields `val`."
     }
   ]

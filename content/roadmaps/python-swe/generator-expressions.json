@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -23,16 +23,16 @@
   "glossary": [
     {
       "term": "lazy evaluation",
-      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance. Example: `(x*2 for x in range(10))` — values are computed one at a time, not all upfront."
+      "definition": "Computing or fetching values only exactly when they are needed, rather than all at once in advance. Example: `(x*2 for x in range(10))` - values are computed one at a time, not all upfront."
     },
     {
       "term": "random-access",
-      "definition": "The ability to instantly retrieve an item at any specific position in a collection, like getting the 5th item in a list. Example: `my_list[4]` fetches the 5th element in constant time."
+      "definition": "The ability to instantly retrieve an item at any specific position in a collection, like getting the 5th item in a `list`. Example: `my_list[4]` fetches the 5th element in constant time."
     }
   ],
   "overview": {
-    "what": "A generator expression looks just like a list comprehension, but uses parentheses `()` instead of square brackets `[]`. Instead of building an entire list in memory all at once, a generator expression uses lazy evaluation. It calculates and yields exactly one item at a time, pausing execution until the next item is requested. This means a generator expression takes up virtually no memory, regardless of how many items it will eventually produce. You can use them directly inside aggregation functions (functions that compute a single result from many values) like `sum()`, `max()`, or `any()`.",
-    "why": "When processing millions of database rows or gigabytes of log files, loading the entire dataset into memory with a list comprehension will crash your application with an OutOfMemory error. Generator expressions allow you to process massive datasets in a constant O(1) memory footprint.",
+    "what": "A generator expression looks just like a list comprehension, but uses parentheses `()` instead of square brackets `[]`. Instead of building an entire `list` in memory all at once, a generator expression uses lazy evaluation.\n\nIt calculates and yields exactly one item at a time, pausing execution until the next item is requested. This means a generator expression takes up virtually no memory, regardless of how many items it will eventually produce.\n\nYou can use them directly inside aggregation functions (functions that compute a single result from many values) like `sum()`, `max()`, or `any()`.\n\n  # The extra parentheses around the generator can be omitted\n  total = sum(x * 2 for x in data)\n\nA major edge case is that generator expressions are single-use iterators. Once an item is yielded, it cannot be visited again.\n\n  gen = (x for x in [1, 2, 3])\n  print(list(gen))  # [1, 2, 3]\n  print(list(gen))  # [] - Trap fired!\n\nIf you attempt to loop over a generator a second time, it will silently yield nothing because it is already exhausted.",
+    "why": "When processing millions of database rows or gigabytes of log files, loading the entire dataset into memory with a list comprehension will crash your application with a `MemoryError`.\n\nGenerator expressions allow you to process massive datasets in a constant `O(1)` memory footprint.",
     "where_used": [
       "Aggregating data directly (e.g. `sum(x for x in data)`)",
       "Reading large files line-by-line",
@@ -47,7 +47,7 @@
   "common_mistakes": [
     {
       "title": "Iterating a generator twice",
-      "explanation": "It is exhausted as it produces items, so a second loop yields nothing because all items have already been consumed. If you need multiple passes, use a list."
+      "explanation": "It is exhausted as it produces items, so a second loop yields nothing because all items have already been consumed. If you need multiple passes, use a `list`."
     },
     {
       "title": "Trying to index or slice",
@@ -57,7 +57,7 @@
   "recall_questions": [
     {
       "q": "What is the primary difference in memory usage between a list comprehension and a generator expression?",
-      "answer": "A list comprehension allocates memory for the entire resulting list at once. A generator expression yields one item at a time (lazy evaluation), taking up minimal memory regardless of the total item count.",
+      "answer": "A list comprehension allocates memory for the entire resulting `list` at once. A generator expression yields one item at a time (lazy evaluation), taking up minimal memory regardless of the total item count.",
       "tier": "tier2"
     },
     {
@@ -87,7 +87,7 @@
     "code": "gen = (x for x in [1, 2, 3])\n\nfirst_pass = list(gen)\nsecond_pass = list(gen)\n\nprint(second_pass)",
     "prediction": "What will `second_pass` contain?",
     "common_guess": "[1, 2, 3]",
-    "why": "A generator expression is consumed as it is read. The `first_pass` exhausted the generator. When `second_pass` tried to read from it, there were no items left, returning an empty list."
+    "why": "A generator expression is consumed as it is read. The `first_pass` exhausted the generator. When `second_pass` tried to read from it, there were no items left, returning an empty `list`."
   },
   "challenge": {
     "title": "Any big numbers?",
@@ -108,9 +108,9 @@
     },
     {
       "type": "debug-misconception",
-      "question": "A junior developer is confused why `my_gen[0]` raises a TypeError when `my_gen` is a generator expression. How do you explain it?",
+      "question": "A junior developer is confused why `my_gen[0]` raises a `TypeError` when `my_gen` is a generator expression. How do you explain it?",
       "answer": "Generator expressions do not support indexing because their items are evaluated lazily one at a time.",
-      "why": "Unlike lists, which hold all their items in memory at once and support random access, generators only know how to produce the next item."
+      "why": "Unlike a `list`, which holds all of its items in memory at once and supports random access, generators only know how to produce the next item."
     }
   ]
 }

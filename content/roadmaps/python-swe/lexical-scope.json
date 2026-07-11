@@ -35,7 +35,7 @@
     }
   ],
   "overview": {
-    "what": "Lexical scope means that a function's access to variables is determined by where the function is defined in the source code, not where it is called. When an inner function references a variable from an outer function, that variable is called a 'free variable'. Even if the outer function finishes executing, the inner function retains access to this free variable. Think of lexical scope like looking through a one-way mirror: the inner function can see out to the environment where it was born, but the outside cannot see in.",
+    "what": "Lexical scope means that a function's access to variables is determined by where the function is DEFINED in the source code, not where it is called.\n\n  def outer():\n      rate = 1.2\n      def inner():\n          return rate      # 'rate' is a free variable, not a local one\n      return inner\n\n  fn = outer()\n  print(fn())   # 1.2 -- inner() still sees 'rate' after outer() has returned\n\nWhen an inner function references a variable from an outer function, that variable is called a 'free variable'. Even after the outer function finishes executing, the inner function retains access to it.\n\nThink of lexical scope like looking through a one-way mirror: the inner function can see out to the environment where it was born, but the outside cannot see in.",
     "why": "Lexical scope is the foundation for closures and decorators. It allows functions to carry state without relying on global variables or classes.",
     "where_used": [
       "React-like state management",

@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 20,
+    "estimated_minutes": 25,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -30,8 +30,8 @@
     }
   ],
   "overview": {
-    "what": "When you apply multiple decorators to a function (stacking them with `@`), they are applied bottom-to-top (closest to the function first). The original function is passed to the bottom decorator, the result of that is passed to the decorator above it, and so on. Think of it like wrapping a gift: the first box (bottom decorator) wraps the item directly, and the next box (top decorator) wraps the inner box.",
-    "why": "It allows composing small, reusable behaviors—like adding both authentication and logging to a single web route without writing a single monolithic decorator.",
+    "what": "When you apply multiple decorators to a function (stacking them with `@`), they are applied bottom-to-top. The original function is passed to the bottom decorator, the result of that is passed to the decorator above it, and so on.\n\nThink of it like wrapping a gift: the first box (bottom decorator) wraps the item directly, and the next box (top decorator) wraps the inner box.\n\n  @top_decorator\n  @bottom_decorator\n  def my_func():\n    pass\n\nThis is exactly equivalent to manually composing them as `my_func = top_decorator(bottom_decorator(my_func))`.\n\n  @app.route('/api')\n  @require_auth\n  def get_data():\n    pass\n\n**The Missing Metadata Trap**: If `@require_auth` forgets to use `@functools.wraps`, `@app.route` will register the endpoint with the name `wrapper` instead of `get_data`. If multiple routes do this, your web framework will crash with duplicate route names.",
+    "why": "It allows composing small, reusable behaviors\u2014like adding both authentication and logging to a single web route without writing a single monolithic decorator.",
     "where_used": [
       "FastAPI routes",
       "Flask views",
@@ -40,16 +40,16 @@
   },
   "why_learning_this": [
     "You will often need to apply multiple middleware-like functions to a single endpoint in web frameworks.",
-    "It helps debug which decorator is breaking your function's signature."
+    "It helps debug which decorator is breaking your function's signature or return value."
   ],
   "common_mistakes": [
     {
       "title": "Order of execution confusion",
-      "explanation": "Decorators are applied bottom-to-top, meaning the bottommost decorator wraps the function first."
+      "explanation": "Decorators are applied bottom-to-top, meaning the bottommost decorator wraps the `def` function first.\n\n  @logger\n  @timer\n  def fetch():\n    pass\n\nIn this example, `@timer` wraps `fetch` directly, and `@logger` wraps the resulting function."
     },
     {
       "title": "Losing function metadata",
-      "explanation": "If any decorator in the stack forgets to use `@functools.wraps`, the final returned function will have the wrong name and docstring."
+      "explanation": "If any decorator in the stack forgets to use `@functools.wraps`, the final returned function will have the wrong `__name__` and `__doc__`."
     }
   ],
   "recall_questions": [
@@ -60,8 +60,13 @@
     },
     {
       "q": "Why would you stack decorators instead of writing one large decorator?",
-      "answer": "To compose small, reusable behaviors, like combining separate authentication and logging decorators on a single function.",
+      "answer": "To compose small, reusable behaviors, like combining separate `@require_auth` and `@log_request` decorators on a single function.",
       "tier": "tier1"
+    },
+    {
+      "q": "What happens if a decorator in the middle of a stack forgets to use `@functools.wraps`?",
+      "answer": "The final returned function will lose the original function's `__name__` and `__doc__`, often causing web frameworks like Flask to crash due to duplicate route names.",
+      "tier": "tier2"
     }
   ],
   "practice_tasks": [
@@ -96,13 +101,13 @@
       "question": "What is the output of this stacked decorator code?",
       "code": "def bold(f):\n    return lambda: f'<b>{f()}</b>'\n\ndef italic(f):\n    return lambda: f'<i>{f()}</i>'\n\n@bold\n@italic\ndef greet():\n    return 'hi'\n\nprint(greet())",
       "answer": "<b><i>hi</i></b>",
-      "why": "The decorators are applied bottom-to-top, so `italic` wraps `greet` first resulting in `<i>hi</i>`, and then `bold` wraps that result, putting `<b>` on the outside."
+      "why": "The decorators are applied bottom-to-top, so `@italic` wraps `greet` first resulting in `<i>hi</i>`, and then `@bold` wraps that result, putting `<b>` on the outside."
     },
     {
       "type": "explain-behavior",
       "question": "Why might a function lose its original name when multiple decorators are stacked?",
       "answer": "Because the decorators return wrapper functions, masking the original function's metadata.",
-      "why": "Unless every decorator in the stack uses `@functools.wraps`, the final returned function will just be the wrapper from the topmost decorator, losing the original name and docstring."
+      "why": "Unless every decorator in the stack uses `@functools.wraps`, the final returned function will just be the `wrapper` from the topmost decorator, losing the original `__name__` and `__doc__`."
     }
   ]
 }

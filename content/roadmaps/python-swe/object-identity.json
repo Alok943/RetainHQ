@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "high",
     "prerequisites": [
@@ -25,16 +25,16 @@
   "glossary": [
     {
       "term": "cached",
-      "definition": "Storing frequently used data in a temporary, fast-access memory area so it doesn't have to be recreated every time. e.g. CPython caches small integers so `a = 5; b = 5; a is b` is `True`."
+      "definition": "Storing frequently used data in a temporary, fast-access memory area so it doesn't have to be recreated every time. For example, CPython caches small integers so `a = 5; b = 5; a is b` evaluates to `True`."
     },
     {
       "term": "CPython",
-      "definition": "The standard, original, and most widely used version of the Python programming language, written in C. Example: `python script.py`."
+      "definition": "The standard, original, and most widely used version of the Python programming language, written in C. For example, running `python script.py`."
     }
   ],
   "overview": {
-    "what": "Every Python object has a unique identity — its location in memory — which you read with id(). The `is` operator compares identity (are these the same object?), while `==` compares value (do they have equal contents?). Two separate lists with the same items are == but not `is`, because they are distinct objects; only a name assigned from another (c = a) shares identity. Think of id() as a house's street address and == as two houses having identical furniture: the same address is literally the same house, identical furniture is not.",
-    "why": "Confusing `is` with `==` causes real bugs. The safe rule: use `is` only for None, True, and False, and use `==` for comparing values. Checking values with `is` (e.g. x is 1000) can pass or fail unpredictably because only some objects are cached.",
+    "what": "Every Python object has a unique identity \u2014 its location in memory \u2014 which you read with `id()`. The `is` operator compares identity (are these the exact same object?), while `==` compares value (do they have equal contents?). Two separate lists with the same items are `==` but not `is`, because they are distinct objects in memory.\n\nOnly a name assigned from another (like `c = a`) shares identity. Think of `id()` as a house's street address and `==` as two houses having identical furniture: the same address is literally the same house, but identical furniture is not.\n\n  # Identity sharing trap\n  a = [1, 2]\n  b = a\n  b.append(3)\n  print(a)  # [1, 2, 3] - 'a' was modified!\n\nWhen multiple variables point to the exact same mutable object in memory, modifying one variable modifies the underlying object for all variables sharing that identity. This is covered fully in `shallow-vs-deep-copy`.",
+    "why": "Confusing `is` with `==` causes real bugs in production code. You should reserve `is` exclusively for checking singletons like `None`, `True`, and `False`. \n\nChecking values with `is` (like `x is 1000`) can pass or fail unpredictably because Python only caches some objects in memory. Always use `==` when comparing values to ensure correct behavior.",
     "where_used": [
       "None checks in API handlers",
       "Pydantic validators",
@@ -42,57 +42,62 @@
     ]
   },
   "why_learning_this": [
-    "Writing correct None checks (if x is None) in FastAPI handlers and Pydantic validators",
-    "Debugging why two 'equal' objects behave differently because they are actually the same object"
+    "Writing correct `None` checks (like `if x is None:`) in FastAPI handlers and Pydantic validators.",
+    "Debugging why two 'equal' objects behave differently because they are actually the same object in memory."
   ],
   "common_mistakes": [
     {
       "title": "Using `is` to compare values",
-      "explanation": "x is 1000 can be False even when x == 1000, because CPython only caches small integers. Fix: use == for values; reserve is for None, True, and False."
+      "explanation": "Checking `x is 1000` can be `False` even when `x == 1000`, because CPython only caches small integers. Fix: use `==` for values, and reserve `is` for `None`, `True`, and `False`."
     },
     {
-      "title": "Assuming == means the same object",
-      "explanation": "Two dicts can be == yet fully independent, so mutating one will not affect the other. Use `is` when you need to know they are literally the same object."
+      "title": "Assuming `==` means the same object",
+      "explanation": "Two dictionaries can evaluate to `True` with `==` yet be fully independent, so mutating one will not affect the other. Use `is` when you need to know they are literally the same object."
     }
   ],
   "recall_questions": [
     {
       "q": "What does the `is` operator compare, versus `==`?",
-      "answer": "is compares identity (whether they are the same object); == compares value (whether the contents are equal).",
+      "answer": "The `is` operator compares identity (whether they are the same object). The `==` operator compares value (whether the contents are equal).",
       "tier": "tier1"
     },
     {
-      "q": "Two lists have identical contents. Are they ==? Are they `is`?",
-      "answer": "They are == (equal value) but not is (they are separate objects).",
+      "q": "Two lists have identical contents. Are they `==`? Are they `is`?",
+      "answer": "They are `==` (equal value) but not `is` (they are separate objects in memory).",
       "tier": "tier2"
     },
     {
       "q": "When should you use `is` rather than `==`?",
-      "answer": "You should use `is` only for singletons (objects that only ever have one instance) like None, True, and False, because they always give the correct result. For everything else, use `==` to compare values.",
+      "answer": "You should use `is` only for singletons (objects that only ever have one instance) like `None`, `True`, and `False`, because they always give the correct result. For everything else, use `==` to compare values.",
       "tier": "tier1"
+    },
+    {
+      "q": "If multiple variables share the exact same mutable object in memory, what happens when you modify the object through one of the variables?",
+      "answer": "The underlying object is modified for all variables that share its identity.",
+      "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "Fixing the Identity Check",
-      "prompt": "The function below incorrectly uses `is` to check if a users input matches a specific integer, and uses `==` to check if a result is `None`. Modify the code to use the correct operators for value comparison and identity checking.",
+      "prompt": "The function below incorrectly uses `is` to check if a user's input matches a specific integer, and uses `==` to check if a result is `None`. Modify the code to use the correct operators for value comparison and identity checking.",
       "starter_code": "def validate(user_id, result):\n    if user_id is 9999:\n        print('Admin')\n    if result == None:\n        print('No result')\n\nvalidate(9999, None)",
       "solution": "def validate(user_id, result):\n    if user_id == 9999:\n        print('Admin')\n    if result is None:\n        print('No result')\n\nvalidate(9999, None)"
     }
   ],
   "code_walkthrough": {
     "code": "a = {'id': 1}\nb = {'id': 1}\nc = a\nprint(a == b)\nprint(a is b)\nprint(a is c)",
-    "focus": "a and b are equal (==) but not identical (is); only c, assigned from a, is the same object."
+    "focus": "The dictionaries `a` and `b` are equal (`==`) but not identical (`is`). Only `c`, assigned from `a`, is the same object in memory."
   },
   "aha_moment": {
     "code": "a = 256\nb = 256\nprint(a is b)\n\nbig = 1000\nprint(big is int('1000'))",
     "prediction": "Both lines compare equal integers with `is`. What does each print?",
     "common_guess": "True for both",
-    "why": "CPython caches small integers (-5 to 256), so 256 is always that one cached object (is is True). 1000 is outside the cache, and int('1000') builds a fresh object at runtime, so it is a different object (is is False). Use == for values; reserve is for None/True/False."
+    "why": "CPython caches small integers (from `-5` to `256`), so `256` is always that one cached object (so `is` evaluates to `True`). The integer `1000` is outside the cache, and `int('1000')` builds a fresh object at runtime, so it is a different object (so `is` evaluates to `False`). Use `==` for values, and reserve `is` for `None`, `True`, and `False`."
   },
   "challenge": {
     "title": "A correct None check",
-    "prompt": "Write get_or_default(value, default) that returns default ONLY when value is None — not when value is 0, '', or an empty list. Use the correct operator, then print three calls to prove 0 and '' are kept.",
+    "prompt": "Write `get_or_default(value, default)` that returns `default` ONLY when `value` is `None` \u2014 not when `value` is `0`, `''`, or an empty list. Use the correct operator, then print three calls to prove `0` and `''` are kept.",
     "solution": "def get_or_default(value, default):\n    return default if value is None else value\n\nprint(get_or_default(None, 'fallback'))\nprint(get_or_default(0, 'fallback'))\nprint(get_or_default('', 'fallback'))"
   },
   "sources": [
@@ -105,14 +110,14 @@
       "question": "What will be printed when this script is run?",
       "code": "a = [1, 2, 3]\nb = [1, 2, 3]\nc = a\nprint(a == b)\nprint(a is b)\nprint(a is c)",
       "answer": "True, False, True",
-      "why": "`a == b` is True because their contents match. `a is b` is False because `b` is a freshly created list with a different memory address. `a is c` is True because `c` is assigned directly from `a`, so they reference the exact same object in memory."
+      "why": "The check `a == b` evaluates to `True` because their contents match. The check `a is b` evaluates to `False` because `b` is a freshly created list with a different memory address. The check `a is c` evaluates to `True` because `c` is assigned directly from `a`, so they reference the exact same object in memory."
     },
     {
       "type": "find-bug",
-      "question": "A developer is writing a validator that ensures a users balance matches exactly 1000. Identify the bug.",
+      "question": "A developer is writing a validator that ensures a user's balance matches exactly `1000`. Identify the bug.",
       "code": "def check_balance(balance):\n    if balance is 1000:\n        return True\n    return False\n\nprint(check_balance(1000))",
-      "answer": "The function uses `is` to check for equality of the value 1000.",
-      "why": "Because CPython only caches small integers, using `is` to compare values like 1000 can fail unpredictably depending on how the object was created in memory. To compare values, you must use `==`. `is` should only be used for `None`, `True`, and `False`."
+      "answer": "The function uses the `is` operator to check for equality of the value `1000`.",
+      "why": "Because CPython only caches small integers, using `is` to compare values like `1000` can fail unpredictably depending on how the object was created in memory. To compare values, you must use `==`. The `is` operator should only be used for `None`, `True`, and `False`."
     }
   ]
 }

@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -34,7 +34,7 @@
     }
   ],
   "overview": {
-    "what": "The `__iter__` and `__next__` dunder methods form the foundation of Python's iteration protocol. `__iter__` returns an iterator object (often `self`), and `__next__` returns the next item in the sequence or raises `StopIteration` when exhausted. Just like a bookmark in a book, the iterator keeps track of your current page (`__next__` turns the page), while `__iter__` is simply the act of grabbing a new bookmark for that book.",
+    "what": "The `__iter__` and `__next__` dunder methods form the foundation of Python's iteration protocol. Just like a bookmark in a book, the iterator keeps track of your current page.\n\nTo support this, your class must implement two methods:\n- `__iter__(self)`: Initializes or returns the iterator instance itself. Returns an object with a `__next__` method (usually `self`).\n- `__next__(self)`: Advances the sequence to the next state. Returns the next item, or raises `StopIteration` when the sequence is exhausted.\n\n  class CountUp:\n    def __init__(self, limit):\n      self.limit = limit\n      self.current = 0\n\n    def __iter__(self):\n      return self\n\n    def __next__(self):\n      if self.current >= self.limit:\n        raise StopIteration\n      self.current += 1\n      return self.current\n\nA common trap is trying to reuse an iterator after it's exhausted. Because `__next__` mutates internal state until it raises `StopIteration`, a second `for` loop will instantly terminate.\n\n  counter = CountUp(2)\n  list(counter)  # [1, 2]\n  list(counter)  # [] - Exhausted!\n\nThis single-pass behavior is a key feature of the protocol, covered fully in `iterator-protocol`.",
     "why": "They allow custom objects to behave like built-in sequences (e.g., lists or strings) in `for` loops, comprehensions, and functions like `sum()` or `list()`.",
     "where_used": [
       "Custom data structures",
@@ -53,7 +53,7 @@
     },
     {
       "title": "Not returning an iterator in __iter__",
-      "explanation": "If `__iter__` returns something that lacks a `__next__` method (like returning a list directly instead of an iterator), iteration will fail."
+      "explanation": "If `__iter__` returns something that lacks a `__next__` method (like returning a `list` directly instead of an iterator), iteration will fail with a `TypeError`."
     }
   ],
   "recall_questions": [
@@ -70,6 +70,11 @@
     {
       "q": "How does a `for` loop know when to stop iterating over an object?",
       "answer": "It catches the `StopIteration` exception raised by the object's `__next__` method.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you try to loop over an exhausted iterator a second time?",
+      "answer": "The loop terminates immediately and yields no values, because `__next__` continues to raise `StopIteration`.",
       "tier": "tier2"
     }
   ],
@@ -92,7 +97,7 @@
   "practice_tasks": [
     {
       "title": "Fix the Infinite Loop",
-      "prompt": "The given `Countdown` iterator correctly implements `__iter__` and `__next__`, but it counts down forever into negative numbers. Modify the `__next__` method to raise `StopIteration` when `self.current` reaches 0.",
+      "prompt": "The given `Countdown` iterator correctly implements `__iter__` and `__next__`, but it counts down forever into negative numbers. Modify the `__next__` method to raise `StopIteration` when `self.current` reaches `0`.",
       "starter_code": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n    def __iter__(self):\n        return self\n    def __next__(self):\n        value = self.current\n        self.current -= 1\n        return value",
       "solution": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n    def __iter__(self):\n        return self\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value"
     }
@@ -109,7 +114,7 @@
   },
   "challenge": {
     "title": "A Repeating Sequence",
-    "prompt": "Create a `Repeater` class initialized with a single value and a maximum count. It should yield that same value `count` times when iterated over. For example, `Repeater('A', 3)` should yield 'A', 'A', 'A' and then stop. Implement this using `__iter__` and `__next__`.",
+    "prompt": "Create a `Repeater` class initialized with a single value and a maximum count. It should yield that same value `count` times when iterated over. For example, `Repeater('A', 3)` should yield `'A'`, `'A'`, `'A'` and then stop. Implement this using `__iter__` and `__next__`.",
     "solution": "class Repeater:\n  def __init__(self, value, count):\n    self.value = value\n    self.count = count\n    self.current = 0\n\n  def __iter__(self):\n    return self\n\n  def __next__(self):\n    if self.current >= self.count:\n      raise StopIteration\n    self.current += 1\n    return self.value"
   },
   "sources": [

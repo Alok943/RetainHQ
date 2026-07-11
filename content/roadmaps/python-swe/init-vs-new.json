@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -33,7 +33,7 @@
     }
   ],
   "overview": {
-    "what": "When creating an object in Python, `__new__` is called first to allocate memory and return an uninitialized instance. `__init__` is then called on that instance to initialize its state. Most developers only use `__init__`. You only need `__new__` when you need to control the creation of a new instance (like returning an existing one for a Singleton) or subclassing immutable types like `tuple` or `str`. It is like building a house: `__new__` lays the foundation and frames the structure, while `__init__` paints the walls and moves the furniture in.",
+    "what": "When creating an object in Python, `__new__` is called first to allocate memory and return an uninitialized instance. `__init__` is then called on that instance to initialize its state. Most developers only use `__init__`.\n\nYou only need `__new__` when you need to control the creation of a new instance. Common use cases include returning an existing instance for a Singleton, or subclassing immutable types like `tuple` or `str`.\n\nIt is like building a house: `__new__` lays the foundation and frames the structure, while `__init__` paints the walls and moves the furniture in.\n\n  class Sneaky:\n    def __new__(cls):\n      return 42\n    def __init__(self):\n      print(\"Never runs!\")\n\n  obj = Sneaky()  # obj is 42\n\nIf `__new__` returns something that is not an instance of `cls`, Python skips calling `__init__` entirely. This is a common trap when overriding object creation.\n\n  class Singleton:\n    _instance = None\n    def __new__(cls):\n      if not cls._instance:\n        cls._instance = super().__new__(cls)\n      return cls._instance\n    def __init__(self):\n      print(\"Init called!\")\n\n  a = Singleton()\n  b = Singleton()  # Prints \"Init called!\" again!\n\nEven if `__new__` returns an already-created instance, Python still automatically calls `__init__` on it every single time. This complicates initialization in some patterns, covered fully in `singleton-pattern`.",
     "why": "Understanding the two-step instantiation process allows you to implement advanced patterns like Singletons, flyweight objects, and custom metaclasses.",
     "where_used": [
       "Django ORM model instantiation",
@@ -43,15 +43,15 @@
   },
   "why_learning_this": [
     "Allows implementation of the Singleton pattern.",
-    "Enables subclassing immutable types like str or tuple."
+    "Enables subclassing immutable types like `str` or `tuple`."
   ],
   "common_mistakes": [
     {
-      "title": "Forgetting to return the instance in __new__",
+      "title": "Forgetting to return the instance in `__new__`",
       "explanation": "If `__new__` doesn't return an instance of the class, `__init__` is never called. Always return `super().__new__(cls)`."
     },
     {
-      "title": "Trying to return a value from __init__",
+      "title": "Trying to return a value from `__init__`",
       "explanation": "`__init__` must return `None`. It modifies the instance in-place. If you want to return a different object, do it in `__new__`."
     }
   ],
@@ -75,7 +75,7 @@
   "practice_tasks": [
     {
       "title": "Subclassing float",
-      "prompt": "The provided code subclasses \float but doesn't change its behavior. Modify it by overriding __new__ so that any value passed to PositiveFloat is converted to its absolute value before initialization.",
+      "prompt": "The provided code subclasses `float` but doesn't change its behavior. Modify it by overriding `__new__` so that any value passed to `PositiveFloat` is converted to its absolute value before initialization.",
       "starter_code": "class PositiveFloat(float):\n    pass\n\np = PositiveFloat(-3.14)\nprint(p)",
       "solution": "class PositiveFloat(float):\n    def __new__(cls, value):\n        return super().__new__(cls, abs(value))\n\np = PositiveFloat(-3.14)\nprint(p)"
     }
@@ -104,14 +104,14 @@
       "question": "What will this code print when executed?",
       "code": "class Custom:\n    def __new__(cls):\n        print('new')\n        return super().__new__(cls)\n    def __init__(self):\n        print('init')\n\nc = Custom()",
       "answer": "new\ninit",
-      "why": "Python first calls __new__ which allocates the instance and returns it, and since the instance returned is of type Custom, Python immediately calls __init__."
+      "why": "Python first calls `__new__` which allocates the instance and returns it, and since the instance returned is of type `Custom`, Python immediately calls `__init__`."
     },
     {
       "type": "predict-output",
       "question": "What will this code print when executed?",
       "code": "class MissingReturn:\n    def __new__(cls):\n        print('new')\n    def __init__(self):\n        print('init')\n\nm = MissingReturn()",
       "answer": "new",
-      "why": "Because __new__ does not explicitly return the newly created instance, it implicitly returns None. Since it didn't return an instance of MissingReturn, __init__ is never called."
+      "why": "Because `__new__` does not explicitly return the newly created instance, it implicitly returns `None`. Since it didn't return an instance of `MissingReturn`, `__init__` is never called."
     }
   ]
 }

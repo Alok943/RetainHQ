@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 35,
+    "estimated_minutes": 40,
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [
@@ -36,17 +36,17 @@
     }
   ],
   "overview": {
-    "what": "A generator function is a function that contains the `yield` keyword. Unlike a normal function that computes a result and returns it all at once, destroying its local state, a generator function pauses its execution at each `yield`, returning a value to the caller but keeping its local variables and execution pointer intact. When `next()` is called on it again, it resumes exactly where it left off. You can think of a generator function as a resumable machine: instead of building the entire product and handing it over at the end, it spits out one piece on demand, pauses, and waits for you to ask for the next piece.",
+    "what": "A generator function is a function that contains the `yield` keyword. Unlike a normal function that computes a result and returns it all at once, a generator function pauses its execution at each `yield`.\n\nThis returns a value to the caller while keeping its local variables and execution pointer intact. When `next()` is called on it again, it resumes exactly where it left off.\n\n  def count_up_to(max_val):\n    count = 1\n    while count <= max_val:\n      yield count\n      count += 1\n\nYou can think of a generator function as a resumable machine. Instead of building the entire product and handing it over at the end, it spits out one piece on demand, pauses, and waits for you to ask for the next piece.\n\n  def return_in_gen():\n    yield 1\n    return \"Finished\"\n\n  g = return_in_gen()\n  next(g)  # Returns 1\n  next(g)  # Raises StopIteration(\"Finished\")\n\nWhen a generator executes a `return` statement, it raises a `StopIteration` exception, and the returned value becomes the exception's argument. This behavior is critical when delegating generators, covered fully in yield-from.",
     "why": "Generators allow you to produce sequences of values over time without having to load all of them into memory at once, enabling efficient processing of large datasets, infinite sequences, or streams.",
     "where_used": [
-      "FastAPI dependency injection (yield for cleanup)",
-      "pytest fixtures (yield for teardown)",
+      "`FastAPI` dependency injection (`yield` for cleanup)",
+      "`pytest` fixtures (`yield` for teardown)",
       "Processing large CSV files or database queries"
     ]
   },
   "why_learning_this": [
     "Processing files larger than your available RAM",
-    "Writing FastAPI dependencies with setup and teardown steps",
+    "Writing `FastAPI` dependencies with setup and teardown steps",
     "Creating efficient data pipelines"
   ],
   "common_mistakes": [
@@ -56,7 +56,7 @@
     },
     {
       "title": "Consuming a generator more than once",
-      "explanation": "Generators are exhausted once they yield all their values. If you try to iterate over the same generator object a second time, it will yield nothing. You must create a new generator object."
+      "explanation": "Generators are exhausted once they `yield` all their values. If you try to iterate over the same generator object a second time, it will `yield` nothing. You must create a new generator object."
     }
   ],
   "understanding_checks": [
@@ -64,14 +64,21 @@
       "type": "predict-output",
       "question": "What does the following code print?",
       "code": "def my_gen():\n    yield 1\n    yield 2\n\ng = my_gen()\nprint(next(g))",
-      "answer": "1",
-      "why": "Calling `next(g)` resumes the generator, executing it until the first `yield` statement, which returns 1."
+      "answer": "`1`",
+      "why": "Calling `next(g)` resumes the generator, executing it until the first `yield` statement, which returns `1`."
     },
     {
       "type": "debug-misconception",
-      "question": "A developer expects calling `process_data()` to immediately execute the first part of the function and print 'Starting...'. Why doesn't it?",
+      "question": "A developer expects calling `process_data()` to immediately execute the first part of the function and print `'Starting...'`. Why doesn't it?",
       "answer": "Because `process_data()` is a generator function, calling it only returns a generator object. It doesn't start executing the body.",
       "why": "A generator function's body only begins running when `next()` is called on the resulting generator object or when it is iterated over."
+    },
+    {
+      "type": "predict-output",
+      "question": "What exception is raised when you call `next(g)` a second time on this generator?",
+      "code": "def my_gen():\n    yield 'a'\n    return 'b'\n\ng = my_gen()\nnext(g)\nnext(g)",
+      "answer": "`StopIteration('b')`",
+      "why": "When a generator hits a `return` statement, it raises a `StopIteration` exception with the returned value attached to it."
     }
   ],
   "recall_questions": [
@@ -81,7 +88,7 @@
       "tier": "tier1"
     },
     {
-      "q": "Why would you choose to write a generator function instead of returning a list?",
+      "q": "Why would you choose to write a generator function instead of returning a `list`?",
       "answer": "To produce values over time without loading the entire sequence into memory at once, which is efficient for large datasets or streams.",
       "tier": "tier1"
     },
@@ -94,7 +101,7 @@
   "practice_tasks": [
     {
       "title": "Convert List to Generator",
-      "prompt": "The `countdown` function currently builds a complete list of numbers in memory and returns it. Modify it to be a generator function that `yield`s each number one by one instead.",
+      "prompt": "The `countdown` function currently builds a complete `list` of numbers in memory and returns it. Modify it to be a generator function that `yield`s each number one by one instead.",
       "starter_code": "def countdown(start):\n    result = []\n    while start > 0:\n        result.append(start)\n        start -= 1\n    return result",
       "solution": "def countdown(start):\n    while start > 0:\n        yield start\n        start -= 1"
     }
@@ -106,12 +113,12 @@
   "aha_moment": {
     "code": "def tricky_gen():\n    print('Starting')\n    yield 1\n    print('Continuing')\n    yield 2\n\ng = tricky_gen()\nprint('Created generator')",
     "prediction": "What does this print when executed?",
-    "common_guess": "'Starting', then 'Created generator'",
-    "why": "Calling `tricky_gen()` only creates the generator object; it doesn't execute the function body at all. The code inside the generator function only runs when `next()` or a loop is used, so 'Starting' is never printed here."
+    "common_guess": "`'Starting'`, then `'Created generator'`",
+    "why": "Calling `tricky_gen()` only creates the generator object; it doesn't execute the function body at all. The code inside the generator function only runs when `next()` or a `for` loop is used, so `'Starting'` is never printed here."
   },
   "challenge": {
     "title": "Batch Processor",
-    "prompt": "Write a generator function `batch_items(items, batch_size)` that takes a list of `items` and yields sub-lists of length `batch_size`. If the remaining items are fewer than `batch_size`, yield them as the final batch. For example, `list(batch_items([1, 2, 3, 4, 5], 2))` should result in `[[1, 2], [3, 4], [5]]`.",
+    "prompt": "Write a generator function `batch_items(items, batch_size)` that takes a `list` of `items` and yields sub-lists of length `batch_size`. If the remaining items are fewer than `batch_size`, `yield` them as the final batch. For example, `list(batch_items([1, 2, 3, 4, 5], 2))` should result in `[[1, 2], [3, 4], [5]]`.",
     "solution": "def batch_items(items, batch_size):\n    for i in range(0, len(items), batch_size):\n        yield items[i:i + batch_size]"
   },
   "sources": [

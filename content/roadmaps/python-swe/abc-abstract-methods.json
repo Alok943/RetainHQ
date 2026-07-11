@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -23,7 +23,7 @@
     ]
   },
   "overview": {
-    "what": "The `abc` module provides the `ABC` class and `@abstractmethod` decorator to define Abstract Base Classes. These classes cannot be instantiated directly and force child classes to implement specific methods before they can be instantiated. Think of it like a strict contract or a blueprint: a 'Vehicle' blueprint says you must build an 'engine', but you can't drive the blueprint itself. In Python, if a child class inherits from `ABC` but forgets to override an `@abstractmethod`, Python raises an error at instantiation time, not when the method is called. A subclass cannot be instantiated until it implements EVERY `@abstractmethod` -- an ABC is an enforced interface contract.",
+    "what": "The `abc` module provides the `ABC` class and `@abstractmethod` decorator to define Abstract Base Classes. These classes cannot be instantiated directly and force child classes to implement specific methods before they can be instantiated.\n\nThink of it like a strict contract or a blueprint: a 'Vehicle' blueprint says you must build an 'engine', but you can't drive the blueprint itself.\n\nIn Python, if a child class inherits from `ABC` but forgets to override an `@abstractmethod`, Python raises a `TypeError` at instantiation time, not when the method is called. A subclass cannot be instantiated until it implements EVERY `@abstractmethod` \u2014 an ABC is an enforced interface contract.\n\nWhen combining `@abstractmethod` with decorators like `@property` or `@classmethod`, it must be the innermost decorator. Placing it on the outside breaks the enforcement:\n\n  class Broken(ABC):\n      @abstractmethod\n      @property\n      def value(self):\n          pass\n\nIn this broken example, Python fails to recognize `value` as an abstract method, allowing subclasses to be instantiated without implementing it.",
     "why": "It prevents developers from accidentally creating incomplete subclasses, enforcing a strict API contract across a codebase and catching bugs early.",
     "where_used": [
       "Django BaseCommand",
@@ -41,13 +41,17 @@
     },
     {
       "title": "Calling the abstract class",
-      "explanation": "Trying to instantiate the abstract base class itself will raise a TypeError if it has any abstract methods."
+      "explanation": "Trying to instantiate the abstract base class itself will raise a `TypeError` if it has any abstract methods."
+    },
+    {
+      "title": "Wrong decorator order with @abstractmethod",
+      "explanation": "When combining decorators, `@abstractmethod` must be the innermost decorator. If placed above `@classmethod` or `@property`, Python will not enforce the abstract method contract, and no `TypeError` will be raised when instantiating an incomplete subclass."
     }
   ],
   "recall_questions": [
     {
       "q": "What happens if you try to instantiate a class that inherits from `ABC` and contains an `@abstractmethod`?",
-      "answer": "Python raises a TypeError immediately at instantiation.",
+      "answer": "Python raises a `TypeError` immediately at instantiation.",
       "tier": "tier1"
     },
     {
@@ -57,8 +61,13 @@
     },
     {
       "q": "When does Python check if the abstract methods have been implemented: at class definition, at instantiation, or when the method is called?",
-      "answer": "At instantiation time — meaning Python checks when you write `obj = MyClass()`, not when you define the class or when the method is actually called.",
+      "answer": "At instantiation time \u2014 meaning Python checks when you write `obj = MyClass()`, not when you define the class or when the method is actually called.",
       "tier": "tier2"
+    },
+    {
+      "q": "What is the correct decorator order when combining `@abstractmethod` with `@classmethod`?",
+      "answer": "The `@abstractmethod` decorator must be the innermost decorator, placed directly above the `def` statement and below `@classmethod`.",
+      "tier": "tier1"
     }
   ],
   "practice_tasks": [
@@ -74,30 +83,37 @@
       "type": "predict-output",
       "code": "from abc import ABC, abstractmethod\nclass Animal:\n    @abstractmethod\n    def speak(self):\n        pass\nclass Dog(Animal):\n    pass\nd = Dog()\nprint('Woof!')",
       "question": "What happens when this code is executed?",
-      "answer": "It prints 'Woof!'.",
+      "answer": "It prints `'Woof!'`.",
       "why": "The `Animal` class does not inherit from `ABC`, so the `@abstractmethod` decorator has no enforcing effect. The `Dog` class can be instantiated normally."
     },
     {
       "type": "predict-output",
       "code": "from abc import ABC, abstractmethod\nclass Animal(ABC):\n    @abstractmethod\n    def speak(self):\n        pass\nclass Dog(Animal):\n    pass\nd = Dog()\nprint('Woof!')",
       "question": "What happens when this code is executed?",
-      "answer": "A TypeError is raised at `d = Dog()`.",
+      "answer": "A `TypeError` is raised at `d = Dog()`.",
       "why": "Because `Animal` inherits from `ABC` and `speak` is decorated with `@abstractmethod`, `Dog` must implement `speak` before it can be instantiated."
+    },
+    {
+      "type": "predict-output",
+      "code": "from abc import ABC, abstractmethod\nclass Base(ABC):\n    @abstractmethod\n    @classmethod\n    def my_method(cls):\n        pass\nclass Child(Base):\n    pass\nc = Child()\nprint('Success')",
+      "question": "What happens when this code is executed?",
+      "answer": "It prints `'Success'`.",
+      "why": "Because `@abstractmethod` is placed outside of `@classmethod`, it is ignored. `Child` can be instantiated without implementing `my_method`. To enforce the contract, `@abstractmethod` must be the innermost decorator."
     }
   ],
   "code_walkthrough": {
     "code": "from abc import ABC, abstractmethod\n\nclass Worker(ABC):\n    @abstractmethod\n    def work(self):\n        pass\n\nclass LazyWorker(Worker):\n    pass\n\ntry:\n    w = LazyWorker()\nexcept TypeError as e:\n    print(e)",
-    "focus": "w = LazyWorker() # Fails because LazyWorker didn't implement work()"
+    "focus": "`w = LazyWorker()` # Fails because `LazyWorker` didn't implement `work()`"
   },
   "aha_moment": {
     "code": "from abc import abstractmethod\n\nclass FakeAbstract:\n    @abstractmethod\n    def do_something(self):\n        pass\n\nobj = FakeAbstract()\nprint('Created successfully!')",
     "prediction": "What happens when we instantiate `FakeAbstract`?",
-    "common_guess": "It raises a TypeError because of the abstract method.",
-    "why": "It prints 'Created successfully!'. The `@abstractmethod` decorator only enforces instantiation rules if the class also inherits from `ABC`. Without `ABC`, the decorator does nothing."
+    "common_guess": "It raises a `TypeError` because of the abstract method.",
+    "why": "It prints `'Created successfully!'`. The `@abstractmethod` decorator only enforces instantiation rules if the class also inherits from `ABC`. Without `ABC`, the decorator does nothing."
   },
   "challenge": {
     "title": "Implement an Exporter Interface",
-    "prompt": "Create an abstract base class `DataExporter` with an abstract method `export(self, data)`. Create a subclass `JSONExporter` that implements `export` by returning the data wrapped in a string like `'JSON: [data]'`. Create another subclass `CSVExporter` that forgets to implement `export`. Attempting to instantiate `CSVExporter` should fail with a TypeError.",
+    "prompt": "Create an abstract base class `DataExporter` with an abstract method `export(self, data)`. Create a subclass `JSONExporter` that implements `export` by returning the data wrapped in a string like `'JSON: [data]'`. Create another subclass `CSVExporter` that forgets to implement `export`. Attempting to instantiate `CSVExporter` should fail with a `TypeError`.",
     "solution": "from abc import ABC, abstractmethod\n\nclass DataExporter(ABC):\n    @abstractmethod\n    def export(self, data):\n        pass\n\nclass JSONExporter(DataExporter):\n    def export(self, data):\n        return f'JSON: {data}'\n\nclass CSVExporter(DataExporter):\n    pass\n"
   },
   "sources": [

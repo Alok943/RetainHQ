@@ -22,7 +22,7 @@
     ]
   },
   "overview": {
-    "what": "Lazy evaluation is a strategy where an expression is not computed until its value is strictly needed. Instead of materializing an entire sequence in memory at once (like a list), Python can yield one item at a time upon request. This acts like a streaming pipeline. The mental model: computing a result 'just in time' rather than 'all in advance', reducing both initial startup time and total memory consumption.",
+    "what": "Lazy evaluation is a strategy where an expression is not computed until its value is strictly needed. Instead of materializing an entire sequence in memory at once (like a list), Python can yield one item at a time upon request.\n\n  nums = [1, 2, 3, 4, 5]\n  lazy = (n * n for n in nums)   # nothing computed yet\n  print(next(lazy))              # 1 -- only the first square is computed\n  print(next(lazy))              # 4 -- computed on demand, one at a time\n\nThis acts like a streaming pipeline: `list(x for x in huge_file)` would load everything into memory at once, while iterating the generator directly processes one item, uses it, and discards it before pulling the next.\n\nThe mental model: computing a result 'just in time' rather than 'all in advance', reducing both initial startup time and total memory consumption.",
     "why": "It prevents memory exhaustion when processing massive datasets (e.g., parsing a 50GB log file or querying millions of database rows) and allows processing to begin immediately without waiting for the full dataset to load.",
     "where_used": [
       "Pandas chunking",

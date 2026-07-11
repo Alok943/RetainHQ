@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "high",
     "prerequisites": [
@@ -31,21 +31,21 @@
     }
   ],
   "overview": {
-    "what": "Python classes support three types of methods. Instance methods (the default) take `self` as the first argument and operate on a specific object instance. Class methods use the `@classmethod` decorator, take `cls` as their first argument, and operate on the class itself (often used for alternative constructors). Static methods use the `@staticmethod` decorator, take neither `self` nor `cls`, and act like regular functions that just happen to live inside a class's namespace for organizational purposes. The key mental model: look at the first parameter. If it needs the specific object, use `self`. If it needs the class (to create instances or read class-level data), use `cls`. If it needs neither, use `@staticmethod`.",
-    "why": "They allow you to logically group related behaviors. Instead of having a bunch of disconnected functions, you can bundle utility functions (static) and alternative constructors (class methods) directly onto the class they relate to.",
+    "what": "Python classes support three distinct types of methods based on what state they need to access. The key mental model is to look at the first parameter to determine the method's scope.\n\n- Instance methods: The default method type. They operate on specific object instances and take `self` as their first argument.\n- Class methods: Decorated with `@classmethod`. They operate on the class itself by taking `cls` as their first argument. They return a new instance when used as alternative constructors.\n- Static methods: Decorated with `@staticmethod`. They act like regular functions that take neither `self` nor `cls`. They live inside a class's namespace purely for organizational purposes.\n\nA common edge case involves modifying class state through an instance method.\n\n  class Counter:\n    count = 0\n\n    def increment(self):\n      # Trap: Creates an instance attribute, shadowing the class attribute!\n      self.count += 1\n\nWriting `self.count += 1` reads the class attribute `count`, adds `1`, and creates a new instance attribute `count` instead of updating `Counter.count` (covered fully in class-attributes). To modify class state safely, use a `@classmethod` and update `cls.count`.\n\nThink of `self` as a single employee, `cls` as the department manager, and `@staticmethod` as the office calculator.",
+    "why": "They allow you to logically group related behaviors. Instead of having a bunch of disconnected functions, you can bundle utility functions (`@staticmethod`) and alternative constructors (`@classmethod`) directly onto the class they relate to.",
     "where_used": [
       "Alternative constructors like `dict.fromkeys()`",
-      "Utility functions attached to models in Pydantic"
+      "Utility functions attached to models in `Pydantic`"
     ]
   },
   "why_learning_this": [
     "Building clean alternative constructors (e.g., `User.from_json()`)",
-    "Organizing utility functions inside related classes instead of polluting module namespace"
+    "Organizing utility functions inside related classes instead of polluting the module namespace"
   ],
   "common_mistakes": [
     {
       "title": "Forgetting the decorator",
-      "explanation": "If you forget `@classmethod`, the method is just a plain instance method. Calling it on the class raises a TypeError because there's no instance to fill `self`, and calling it on an instance passes the instance instead of the class."
+      "explanation": "If you forget `@classmethod`, the method is just a plain instance method. Calling it on the class raises a `TypeError` because there's no instance to fill `self`, and calling it on an instance passes the instance instead of the class."
     },
     {
       "title": "Using staticmethod when classmethod is needed",
@@ -62,6 +62,11 @@
       "q": "How does a static method differ from an instance method?",
       "answer": "A static method does not take `self` (or `cls`) as its first argument and does not have access to instance or class state.",
       "tier": "tier2"
+    },
+    {
+      "q": "Why is it dangerous to update a class attribute using `self.attribute += 1` inside an instance method?",
+      "answer": "It reads the class attribute but creates a new instance attribute with the incremented value, which shadows the class attribute for that specific instance.",
+      "tier": "tier2"
     }
   ],
   "understanding_checks": [
@@ -70,12 +75,12 @@
       "code": "class Counter:\n    count = 0\n    @classmethod\n    def increment(cls):\n        cls.count += 1\n\nCounter.increment()\nCounter.increment()\nprint(Counter.count)",
       "question": "What does this code output?",
       "answer": "2",
-      "why": "The `@classmethod` takes `cls` (the class itself) as the first argument. Modifying `cls.count` updates the class-level attribute `count` directly. Calling it twice increments the class attribute to 2."
+      "why": "The `@classmethod` takes `cls` (the class itself) as the first argument. Modifying `cls.count` updates the class-level attribute `count` directly. Calling it twice increments the class attribute to `2`."
     },
     {
       "type": "debug-misconception",
       "question": "A developer writes a utility function inside a class that doesn't use `self` or `cls`, but they forget to add the `@staticmethod` decorator. Why will this fail when called from an instance?",
-      "answer": "Without `@staticmethod`, Python assumes it is an instance method and automatically passes the instance (`self`) as the first argument, causing a TypeError for receiving too many arguments.",
+      "answer": "Without `@staticmethod`, Python assumes it is an instance method and automatically passes the instance (`self`) as the first argument, causing a `TypeError` for receiving too many arguments.",
       "why": "Python's default behavior for methods inside a class is to pass the instance as the first argument. `@staticmethod` explicitly disables this behavior."
     }
   ],
@@ -93,8 +98,8 @@
   },
   "aha_moment": {
     "code": "class Parent:\n    @classmethod\n    def create(cls):\n        return cls()\n\nclass Child(Parent):\n    pass\n\nprint(type(Child.create()).__name__)",
-    "prediction": "What does this print? (Parent or Child?)",
-    "common_guess": "Parent",
+    "prediction": "What does this print? (`Parent` or `Child`?)",
+    "common_guess": "`Parent`",
     "why": "Because it's a `@classmethod`, `cls` becomes the class it was called on (`Child`), not the class where it was defined (`Parent`). This makes class methods perfect for inheritable constructors."
   },
   "challenge": {

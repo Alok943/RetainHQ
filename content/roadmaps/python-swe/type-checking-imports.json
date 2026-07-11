@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "low",
     "prerequisites": [
@@ -30,7 +30,7 @@
     }
   ],
   "overview": {
-    "what": "In Python, using type hints often requires importing classes from other modules. If two modules import each other just for type hinting, it creates a 'circular import' error at runtime. `typing.TYPE_CHECKING` is a special constant that is `True` when the type checker (like mypy) is running, but `False` at runtime. By placing type-only imports inside an `if TYPE_CHECKING:` block, you hide them from Python at runtime, preventing the circular import.\n\nThe mental model is 'two parallel universes': one universe where the type checker runs (and sees the imports), and another where Python runs the code (and skips the imports).",
+    "what": "In Python, using type hints often requires importing classes from other modules. If two modules import each other just for type hinting, it creates a circular import error at runtime.\n\nTo solve this, Python provides `typing.TYPE_CHECKING`. It is a special constant that is `True` when a static type checker (like `mypy`) analyzes the code, but `False` when Python actually runs it.\n\n  from typing import TYPE_CHECKING\n  \n  if TYPE_CHECKING:\n    from database import UserSession\n  \n  def close_session(session: 'UserSession') -> None:\n    pass\n\nBy placing type-only imports inside an `if TYPE_CHECKING:` block, you hide them from Python at runtime. This cleanly breaks the circular import cycle.\n\nThe mental model is 'two parallel universes': one universe where the type checker runs (and sees the imports), and another where Python runs the code (and skips the imports).\n\n  if TYPE_CHECKING:\n    from models import User\n  \n  def is_admin(obj: object) -> bool:\n    return isinstance(obj, User)  # NameError: name 'User' is not defined\n\n**Edge Case**: Because `User` is never imported at runtime, any attempt to use it as an actual value (like in an `isinstance()` check) will crash.",
     "why": "It solves the catch-22 of needing to import a module to annotate types, but not being able to import it because it would cause a circular import crash.",
     "where_used": [
       "Bidirectional relationships in ORM models",
@@ -55,7 +55,7 @@
   "recall_questions": [
     {
       "q": "What is the value of `typing.TYPE_CHECKING` when a Python script is executed?",
-      "answer": "`False`. Python does not perform type checking when it runs your code; the value is only `True` when a separate static type checker like mypy reads the file.",
+      "answer": "`False`. Python does not perform type checking when it runs your code; the value is only `True` when a separate static type checker like `mypy` reads the file.",
       "tier": "tier1"
     },
     {
@@ -69,15 +69,15 @@
       "type": "predict-output",
       "code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    x = 10\nelse:\n    x = 20\n\nprint(x)",
       "question": "What does this code print when executed by Python?",
-      "answer": "20",
-      "why": "At runtime, TYPE_CHECKING is always False, so the code inside the else block executes."
+      "answer": "`20`",
+      "why": "At runtime, `TYPE_CHECKING` is always `False`, so the code inside the `else` block executes."
     },
     {
       "type": "find-bug",
       "code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class User:\n        pass\n\ndef create_user() -> User:\n    return User()",
       "question": "Where is the runtime bug in this code?",
-      "answer": "return User() raises a NameError.",
-      "why": "The User class is defined inside the TYPE_CHECKING block, so it doesn't exist at runtime. You cannot instantiate it."
+      "answer": "`return User()` raises a `NameError`.",
+      "why": "The `User` class is defined inside the `TYPE_CHECKING` block, so it doesn't exist at runtime. You cannot instantiate it."
     }
   ],
   "code_walkthrough": {
@@ -86,14 +86,14 @@
   },
   "aha_moment": {
     "code": "from typing import TYPE_CHECKING\n\nprint(TYPE_CHECKING)",
-    "prediction": "What is the value of TYPE_CHECKING at runtime?",
-    "common_guess": "True, because type checking type-hints are built into Python.",
-    "why": "It prints False. Python itself does not enforce types at runtime; the static type checker runs entirely separately."
+    "prediction": "What is the value of `TYPE_CHECKING` at runtime?",
+    "common_guess": "`True`, because type checking type-hints are built into Python.",
+    "why": "It prints `False`. Python itself does not enforce types at runtime; the static type checker runs entirely separately."
   },
   "practice_tasks": [
     {
       "title": "Fix the NameError",
-      "prompt": "This code raises a NameError because Database is imported under TYPE_CHECKING but used natively as a type hint. Fix the type hint so it works at runtime by making it a string.",
+      "prompt": "This code raises a `NameError` because `Database` is imported under `TYPE_CHECKING` but used natively as a type hint. Fix the type hint so it works at runtime by making it a string.",
       "starter_code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class Database: pass\n\ndef connect(db: Database) -> None:\n    pass",
       "solution": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    class Database: pass\n\ndef connect(db: 'Database') -> None:\n    pass"
     }

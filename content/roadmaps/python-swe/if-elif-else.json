@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 20,
+    "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -27,73 +27,78 @@
   "glossary": [
     {
       "term": "truthiness",
-      "definition": "How Python decides if a value is considered true or false in an if-statement without you having to explicitly check. Example: `if items:` is True when `items` is a non-empty list and False when it is empty."
+      "definition": "How Python decides if a value is considered true or false in an `if`-statement without you having to explicitly check. Example: `if items:` is `True` when `items` is a non-empty list and `False` when it is empty."
     },
     {
       "term": "falsy",
-      "definition": "Values that Python automatically treats as false, such as zero, empty lists, or None. Example: `if not []:` evaluates to True because an empty list is falsy."
+      "definition": "Values that Python automatically treats as false, such as zero, empty lists, or `None`. Example: `if not []:` evaluates to `True` because an empty list is falsy."
     }
   ],
   "overview": {
-    "what": "Python evaluates an if/elif/else chain top-down and runs the FIRST block whose condition is truthy, then skips all remaining branches — elif and else are optional.\n\n  status = 404\n  if status == 200:\n      print('ok')\n  elif status == 404:\n      print('not found')\n  else:\n      print('other')\n\nPython's truthiness rules determine what counts as truthy or falsy without an explicit comparison. Falsy values: False, None, 0, 0.0, '' (empty string), [] (empty list), {} (empty dict), set(). Everything else is truthy. So if response: works when response is a non-empty list, and if not user: works when user is None.\n\nThink of truthiness as Python asking 'does this value carry meaningful content?' — zero-quantities and empty containers say no.",
-    "why": "Truthiness lets you write concise guards (if items: instead of if len(items) > 0:). The danger is when 0 or '' are valid values that must NOT be treated as 'missing' — a naked truthiness check would silently skip them.",
+    "what": "Python evaluates an `if`/`elif`/`else` chain top-down and runs the FIRST block whose condition is truthy, then skips all remaining branches.\n\nBoth `elif` and `else` are optional.\n\n  status = 404\n  if status == 200:\n      print('ok')\n  elif status == 404:\n      print('not found')\n  else:\n      print('other')\n\nPython's truthiness rules determine what counts as truthy or falsy without an explicit comparison. Falsy values include:\n\n- `False` and `None`\n- Numeric zeros (`0`, `0.0`)\n- Empty sequences (`\"\"`, `[]`)\n- Empty collections (`{}`, `set()`)\n\nEverything else is truthy. So `if response:` works when `response` is a non-empty list, and `if not user:` works when `user` is `None`. Think of truthiness as Python asking \"does this value carry meaningful content?\" \u2014 zero-quantities and empty containers say no.\n\nA common trap is using separate `if` statements when you meant to use `elif`. This causes multiple branches to execute when conditions overlap:\n\n  status = 404\n  if status >= 400:\n      print('error')      # Executes!\n  if status == 404:\n      print('not found')  # Also executes!\n\nAnother trap is writing multi-line blocks just to assign a single variable based on a condition:\n\n  if config.get('debug'):\n      level = 'DEBUG'\n  else:\n      level = 'INFO'\n\nThis verbose pattern obscures intent and is replaced by inline conditional evaluation (covered fully in `ternary-expressions`).\n\nFinally, when checking a single variable against many exact values, long `elif` chains become hard to maintain:\n\n  if status == 400:\n      return 'Bad Request'\n  elif status == 404:\n      return 'Not Found'\n  elif status == 500:\n      return 'Internal Error'\n\nThis anti-pattern is solved using structural pattern matching (covered fully in `match-case`).",
+    "why": "Truthiness lets you write concise guards (`if items:` instead of `if len(items) > 0:`). The danger is when `0` or `\"\"` are valid values that must NOT be treated as \"missing\" \u2014 a naked truthiness check would silently skip them.",
     "where_used": [
-      "FastAPI route guards (if not current_user: raise 401)",
+      "FastAPI route guards (`if not current_user: raise 401`)",
       "Pydantic field validators",
       "CLI argument presence checks"
     ]
   },
   "why_learning_this": [
-    "Writing correct guards in FastAPI handlers that distinguish None from 0 or an empty string",
-    "Understanding why if value: can silently hide a valid 0 — the foundation of safe API input validation"
+    "Writing correct guards in FastAPI handlers that distinguish `None` from `0` or an empty string",
+    "Understanding why `if value:` can silently hide a valid `0` \u2014 the foundation of safe API input validation"
   ],
   "common_mistakes": [
     {
-      "title": "Using truthiness when 0 or '' are valid inputs",
-      "explanation": "if count: returns False for count=0, silently skipping valid data. Fix: use explicit checks (if count is None:) when 0 is a meaningful value."
+      "title": "Using truthiness when `0` or `\"\"` are valid inputs",
+      "explanation": "`if count:` returns `False` for `count=0`, silently skipping valid data. Fix: use explicit checks (`if count is None:`) when `0` is a meaningful value."
     },
     {
-      "title": "Forgetting elif stops the chain",
-      "explanation": "Using separate if statements instead of elif means multiple branches can execute. Use elif when conditions are mutually exclusive."
+      "title": "Forgetting `elif` stops the chain",
+      "explanation": "Using separate `if` statements instead of `elif` means multiple branches can execute. Use `elif` when conditions are mutually exclusive."
     }
   ],
   "recall_questions": [
     {
       "q": "Which values does Python treat as falsy?",
-      "answer": "False, None, 0, 0.0, empty string, empty list, empty dict, and empty set.",
+      "answer": "`False`, `None`, `0`, `0.0`, empty string, empty list, empty dict, and empty set.",
       "tier": "tier1"
     },
     {
-      "q": "If the first branch of an if/elif chain matches, what happens to the remaining elif and else branches?",
-      "answer": "They are all skipped — only the first matching branch executes.",
+      "q": "If the first branch of an `if`/`elif` chain matches, what happens to the remaining `elif` and `else` branches?",
+      "answer": "They are all skipped \u2014 only the first matching branch executes.",
       "tier": "tier1"
     },
     {
       "q": "When is using `if value:` unsafe?",
-      "answer": "When 0 or an empty string are valid values that should not be treated as missing — a truthiness check would silently skip them.",
+      "answer": "When `0` or an empty string are valid values that should not be treated as missing \u2014 a truthiness check would silently skip them.",
       "tier": "tier2"
     },
     {
-      "q": "What is the difference between chaining elif vs using separate if statements?",
-      "answer": "elif is part of the same chain — only the first match runs. Separate if statements are independent — multiple can run if multiple conditions are true.",
+      "q": "What is the difference between chaining `elif` vs using separate `if` statements?",
+      "answer": "`elif` is part of the same chain \u2014 only the first match runs. Separate `if` statements are independent \u2014 multiple can run if multiple conditions are true.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is a more maintainable alternative to a long `if`/`elif` chain checking a single variable against many exact values?",
+      "answer": "Structural pattern matching (using `match`/`case`).",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "HTTP status classifier",
-      "prompt": "Modify `classify_status(code)` to return 'success' for 2xx codes, 'client_error' for 4xx, 'server_error' for 5xx, and 'unknown' for anything else. Use if/elif/else.",
+      "prompt": "Modify `classify_status(code)` to return `'success'` for 2xx codes, `'client_error'` for 4xx, `'server_error'` for 5xx, and `'unknown'` for anything else. Use `if`/`elif`/`else`.",
       "starter_code": "def classify_status(code):\n    # TODO: Implement classification logic\n    pass",
       "solution": "def classify_status(code):\n    if 200 <= code <= 299:\n        return 'success'\n    elif 400 <= code <= 499:\n        return 'client_error'\n    elif 500 <= code <= 599:\n        return 'server_error'\n    else:\n        return 'unknown'"
     }
   ],
   "code_walkthrough": {
     "code": "items = []\ncount = 0\nname = 'alice'\n\nif items:\n    print('has items')\nif count:\n    print('count nonzero')\nif name:\n    print('has name')\nprint('done')",
-    "focus": "items (empty list) and count (zero) are falsy so their blocks are skipped; name ('alice') is truthy so only 'has name' prints before 'done'."
+    "focus": "`items` (empty list) and `count` (zero) are falsy so their blocks are skipped; `name` (`'alice'`) is truthy so only `'has name'` prints before `'done'`."
   },
   "challenge": {
     "title": "Config timeout guard",
-    "prompt": "Write `get_timeout(config, default)` that returns `config['timeout']` when it is present, not None, and a positive integer. Return `default` in all other cases. Use explicit checks, not truthiness.",
+    "prompt": "Write `get_timeout(config, default)` that returns `config['timeout']` when it is present, not `None`, and a positive integer. Return `default` in all other cases. Use explicit checks, not truthiness.",
     "solution": "def get_timeout(config, default):\n    value = config.get('timeout')\n    if value is None or not isinstance(value, int) or value <= 0:\n        return default\n    return value"
   },
   "sources": [
@@ -106,14 +111,14 @@
       "question": "What will this code print?",
       "code": "status = 404\nif status >= 400:\n    print('error')\nelif status == 404:\n    print('not found')\nelse:\n    print('ok')",
       "answer": "`error`",
-      "why": "Python evaluates an if/elif chain top-down and executes only the FIRST matching block. Since `404 >= 400` is true, it prints 'error' and skips the remaining branches, even though `status == 404` is also true."
+      "why": "Python evaluates an `if`/`elif` chain top-down and executes only the FIRST matching block. Since `404 >= 400` is true, it prints `'error'` and skips the remaining branches, even though `status == 404` is also true."
     },
     {
       "type": "find-bug",
-      "question": "This code is intended to use the `timeout` from the config, but falls back to 10 if missing. It fails when `timeout=0` is passed in (which is a valid setting). Why?",
+      "question": "This code is intended to use the `timeout` from the `config`, but falls back to `10` if missing. It fails when `timeout=0` is passed in (which is a valid setting). Why?",
       "code": "config = {'timeout': 0}\ntimeout = config.get('timeout')\nif not timeout:\n    timeout = 10\nprint(timeout)",
       "answer": "It evaluates truthiness, and `0` is falsy, so it incorrectly falls back to `10`.",
-      "why": "Truthiness checks like `not timeout` treat `0` as falsy. When 0 is a valid meaningful value, you must use an explicit check like `if timeout is None:`."
+      "why": "Truthiness checks like `not timeout` treat `0` as falsy. When `0` is a valid meaningful value, you must use an explicit check like `if timeout is None:`."
     }
   ]
 }

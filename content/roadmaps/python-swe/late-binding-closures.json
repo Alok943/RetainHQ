@@ -30,7 +30,7 @@
     }
   ],
   "overview": {
-    "what": "Python's closures bind to variables (names), not their values at the time the closure is created. When you create functions inside a loop (like a list of lambdas), they all keep a reference to the same loop variable. When the loop finishes, that variable holds its final value, so all the closures see that final value when called. Think of it like giving a group of people a link to a live Google Doc (the variable) instead of handing each person a printed PDF (the value) at different times. When they look at the doc later, they all see the latest version.",
+    "what": "Python's closures bind to variables (names), not their values at the time the closure is created. When you create functions inside a loop (like a list of lambdas), they all keep a reference to the SAME loop variable — not a separate snapshot each time round.\n\n  funcs = [lambda: i for i in range(3)]\n  print(funcs[0]())   # 2, not 0!\n  print(funcs[1]())   # 2\n  print(funcs[2]())   # 2\n\nWhen the loop finishes, that variable holds its final value (`2`), so every closure sees that same final value when called — none of them remember `0` or `1`.\n\nThink of it like giving a group of people a link to a live Google Doc (the variable) instead of handing each person a printed PDF (the value) at different times. When they look at the doc later, they all see the latest version.",
     "why": "This is a very common bug when dynamically generating callbacks, event listeners, or routes in a loop, leading to all callbacks executing with the arguments intended for the final iteration.",
     "where_used": [
       "FastAPI route generation",

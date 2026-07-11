@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "hard",
-    "estimated_minutes": 35,
+    "estimated_minutes": 40,
     "importance": 6,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -22,20 +22,20 @@
   "glossary": [
     {
       "term": "Mixins",
-      "definition": "Small, focused classes designed to provide specific features to other classes, rather than standing on their own, e.g. `class LogMixin` that adds a `log()` method to any class that inherits it."
+      "definition": "Small, focused classes designed to provide specific features to other classes, rather than standing on their own. For example, `class LogMixin` adds a `log()` method to any class that inherits it."
     },
     {
       "term": "composition",
-      "definition": "A design principle where complex objects are built by combining simpler, independent parts together, e.g. `class Service(AuthMixin, LogMixin)` composes two independent behaviors."
+      "definition": "A design principle where complex objects are built by combining simpler, independent parts together. For example, `class Service(AuthMixin, LogMixin)` composes two independent behaviors."
     }
   ],
   "overview": {
-    "what": "Multiple inheritance allows a subclass to inherit from more than one parent class. Python resolves method calls using the Method Resolution Order (MRO), which follows the C3 linearization algorithm. The 'diamond problem' occurs when a subclass inherits from two classes that share a common ancestor; MRO ensures the common ancestor is visited exactly once, and only after all its descendants have been checked. Think of MRO as a priority queue: Python builds an ordered list of parent classes from left to right, depth-first, while guaranteeing that a parent is never checked before its children.",
-    "why": "It enables composition-like patterns via 'Mixins', allowing classes to combine independent sets of behaviors (like logging, serialization, and authentication) without deep, rigid single-inheritance hierarchies.",
+    "what": "Multiple inheritance allows a subclass to inherit from more than one parent class. Python resolves method calls using the Method Resolution Order (`MRO`), which follows the C3 linearization algorithm.\n\nThe \"diamond problem\" occurs when a subclass inherits from two classes that share a common ancestor. `MRO` ensures the common ancestor is visited exactly once, and only after all its descendants have been checked.\n\nThink of `MRO` as a priority queue: Python builds an ordered list of parent classes from left to right, depth-first, while guaranteeing that a parent is never checked before its children.\n\n  class X: pass\n  class Y(X): pass\n  class Z(X, Y): pass  # TypeError: Cannot create a consistent method resolution order (MRO)\n\nPython will raise a `TypeError` at class definition time if you create an impossible inheritance graph. The C3 linearization algorithm enforces that a base class like `X` must appear after its child `Y` in the `MRO`, which conflicts with the left-to-right order specified by `(X, Y)`.",
+    "why": "It enables composition-like patterns via \"Mixins\". This allows classes to combine independent sets of behaviors without deep, rigid single-inheritance hierarchies.\n\nCommon behaviors extracted into mixins include:\n- Logging: Adding standardized output tracing\n- Serialization: Converting object state to JSON or XML\n- Authentication: Enforcing access control before methods execute",
     "where_used": [
-      "Django Mixins",
+      "Django `Mixin` classes",
       "FastAPI dependency structures",
-      "GUI frameworks"
+      "GUI frameworks like PyQt"
     ]
   },
   "why_learning_this": [
@@ -45,27 +45,32 @@
   "common_mistakes": [
     {
       "title": "Calling parent `__init__` explicitly",
-      "explanation": "Calling `Parent.__init__(self)` explicitly bypasses the MRO, leading to duplicate initialization of common ancestors. Always use `super().__init__()` so Python's MRO handles the initialization chain safely."
+      "explanation": "Calling `Parent.__init__(self)` explicitly bypasses the `MRO`, leading to duplicate initialization of common ancestors. Always use `super().__init__()` so Python's `MRO` handles the initialization chain safely."
     },
     {
       "title": "Incompatible super calls",
-      "explanation": "If mixins in the MRO have different method signatures for `__init__` or other shared methods, `super()` will fail when forwarding arguments. Kwargs must be carefully popped or passed along."
+      "explanation": "If mixins in the `MRO` have different method signatures for `__init__()` or other shared methods, `super()` will fail when forwarding arguments. Keyword arguments must be carefully popped or passed along using `**kwargs`."
     }
   ],
   "recall_questions": [
     {
       "q": "What algorithm does Python use to determine the order of method resolution in multiple inheritance?",
-      "answer": "The C3 linearization algorithm, which determines the Method Resolution Order (MRO).",
+      "answer": "The C3 linearization algorithm, which determines the Method Resolution Order (`MRO`).",
       "tier": "tier1"
     },
     {
       "q": "How does Python's Method Resolution Order (MRO) handle the 'diamond problem' where a common ancestor is shared by two parents?",
-      "answer": "MRO ensures the common ancestor is visited exactly once, and only after all of its descendants in the inheritance tree have been checked.",
+      "answer": "`MRO` ensures the common ancestor is visited exactly once, and only after all of its descendants in the inheritance tree have been checked.",
       "tier": "tier2"
     },
     {
       "q": "Why is `super()` preferred over explicitly calling a parent class's method by name in multiple inheritance?",
-      "answer": "`super()` correctly follows the MRO, ensuring that all ancestor classes are initialized exactly once and in the correct order, avoiding the diamond problem.",
+      "answer": "`super()` correctly follows the `MRO`, ensuring that all ancestor classes are initialized exactly once and in the correct order, avoiding the diamond problem.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you define a class that inherits from a base class and then a subclass of that base class, like `class Z(X, Y):` where `Y` inherits from `X`?",
+      "answer": "Python raises a `TypeError` because it cannot construct a consistent Method Resolution Order (`MRO`) that satisfies both left-to-right ordering and the rule that children must be checked before parents.",
       "tier": "tier2"
     }
   ],
@@ -85,11 +90,11 @@
     "code": "class Request:\n    def process(self):\n        print('Base Request')\n\nclass ValidateMixin(Request):\n    def process(self):\n        print('Validating')\n        super().process()\n\nclass LogMixin(Request):\n    def process(self):\n        print('Logging')\n        super().process()\n\nclass SecureRequest(ValidateMixin, LogMixin):\n    pass\n\nSecureRequest().process()",
     "prediction": "What will SecureRequest().process() print?",
     "common_guess": "Validating\nBase Request",
-    "why": "Because `ValidateMixin` inherits from `Request`, beginners assume `super()` inside `ValidateMixin` goes straight to `Request`. However, `super()` follows the MRO of the *calling object* (`SecureRequest`). The MRO is `[SecureRequest, ValidateMixin, LogMixin, Request]`, so `super()` inside `ValidateMixin` actually calls `LogMixin.process()`!"
+    "why": "Because `ValidateMixin` inherits from `Request`, beginners assume `super()` inside `ValidateMixin` goes straight to `Request`.\n\nHowever, `super()` follows the `MRO` of the calling object, which is `SecureRequest`. The `MRO` is `[SecureRequest, ValidateMixin, LogMixin, Request]`.\n\nBecause of this order, `super()` inside `ValidateMixin` actually delegates the call to `LogMixin.process()`."
   },
   "challenge": {
     "title": "Cooperative Middleware Initialization",
-    "prompt": "Write a `BaseMiddleware` class whose `__init__` prints 'Base initialized'. Write a `TracingMiddleware` that inherits from `BaseMiddleware`, prints 'Tracing initialized', and safely calls `super().__init__()`. Write a `MetricsMiddleware` that inherits from `BaseMiddleware`, prints 'Metrics initialized', and safely calls `super().__init__()`. Finally, create a `ProductionMiddleware` class that inherits from `TracingMiddleware` and `MetricsMiddleware` (in that order), prints 'Production initialized', and calls `super().__init__()`. Instantiate `ProductionMiddleware` to observe the MRO in action.",
+    "prompt": "Write a `BaseMiddleware` class whose `__init__()` prints `Base initialized`. Write a `TracingMiddleware` that inherits from `BaseMiddleware`, prints `Tracing initialized`, and safely calls `super().__init__()`.\n\nWrite a `MetricsMiddleware` that inherits from `BaseMiddleware`, prints `Metrics initialized`, and safely calls `super().__init__()`.\n\nFinally, create a `ProductionMiddleware` class that inherits from `TracingMiddleware` and `MetricsMiddleware` (in that order), prints `Production initialized`, and calls `super().__init__()`. Instantiate `ProductionMiddleware` to observe the `MRO` in action.",
     "solution": "class BaseMiddleware:\n    def __init__(self):\n        print('Base initialized')\n\nclass TracingMiddleware(BaseMiddleware):\n    def __init__(self):\n        print('Tracing initialized')\n        super().__init__()\n\nclass MetricsMiddleware(BaseMiddleware):\n    def __init__(self):\n        print('Metrics initialized')\n        super().__init__()\n\nclass ProductionMiddleware(TracingMiddleware, MetricsMiddleware):\n    def __init__(self):\n        print('Production initialized')\n        super().__init__()\n\np = ProductionMiddleware()"
   },
   "sources": [
@@ -102,13 +107,13 @@
       "code": "class A:\n    def ping(self): print('A')\nclass B(A):\n    def ping(self): print('B'); super().ping()\nclass C(A):\n    def ping(self): print('C'); super().ping()\nclass D(B, C): pass\n\nD().ping()",
       "question": "What will be printed when this code is executed?",
       "answer": "B\nC\nA",
-      "why": "The MRO for D is [D, B, C, A, object]. When D().ping() is called, it resolves to B.ping(). B prints 'B', then calls super().ping(). Because the instance is of type D, the next class in D's MRO after B is C, so C.ping() is called. C prints 'C' and calls super().ping(), which goes to A, printing 'A'."
+      "why": "The `MRO` for `D` is `[D, B, C, A, object]`. When `D().ping()` is called, it resolves to `B.ping()`.\n\n`B` prints `B`, then calls `super().ping()`. Because the instance is of type `D`, the next class in `D`'s `MRO` after `B` is `C`, so `C.ping()` is called.\n\n`C` prints `C` and calls `super().ping()`, which delegates to `A`, printing `A`."
     },
     {
       "type": "debug-misconception",
       "question": "A developer states: 'When `super()` is used inside a class method, it always calls the method of the class that was specified as its parent in the class definition.' Why is this false in Python?",
-      "answer": "`super()` delegates to the next class in the Method Resolution Order (MRO) of the *calling instance*, which may be a sibling class in a multiple inheritance hierarchy, rather than the static parent.",
-      "why": "Python's MRO is dynamically built based on the class of the object that initiated the method call. This allows mixins to cooperatively call each other even if they don't explicitly inherit from one another."
+      "answer": "`super()` delegates to the next class in the Method Resolution Order (`MRO`) of the calling instance, which may be a sibling class in a multiple inheritance hierarchy, rather than the static parent.",
+      "why": "Python's `MRO` is dynamically built based on the class of the object that initiated the method call. This allows mixins to cooperatively call each other even if they don't explicitly inherit from one another."
     }
   ]
 }

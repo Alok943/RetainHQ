@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [
@@ -32,36 +32,36 @@
     }
   ],
   "overview": {
-    "what": "In Python, functions are objects — they can be assigned to variables, stored in collections, passed as arguments, and returned from other functions. This is called first-class function support.\n\nAssigning and passing:\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions (function factory pattern):\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function add_prefix remembers prefix from the outer scope even after make_prefixer has returned — this is a closure.",
-    "why": "Higher-order functions (functions that take or return functions) are the foundation of decorators, middleware pipelines, retry wrappers, and dependency injection (passing objects as arguments instead of creating them internally). Without first-class functions, each of these patterns would require explicit subclassing instead of composable functions.",
+    "what": "In Python, functions are objects. This is called first-class function support. Because functions are objects, they can be:\n\n- Assigned to variables\n- Stored in collections\n- Passed as arguments to other functions\n- Returned from other functions\n\nAssigning a function to a variable lets you call the function through that variable name. You can also pass a function by name to another function as an argument.\n\n  def normalize(text):\n      return text.strip().lower()\n\n  transform = normalize           # assign function to a variable\n  result = transform('  Alice ')  # call via the variable\n\n  def apply(fn, value):           # accept a function as an argument\n      return fn(value)\n\n  apply(normalize, '  Bob ')      # pass a function by name\n\nReturning functions enables the function factory pattern. The outer function creates and configures an inner function, then returns it.\n\n  def make_prefixer(prefix):\n      def add_prefix(text):\n          return f'{prefix}: {text}'\n      return add_prefix         # return the inner function\n\n  error = make_prefixer('ERROR')\n  print(error('disk full'))     # ERROR: disk full\n\nThe inner function `add_prefix` remembers `prefix` from the outer scope even after `make_prefixer` has returned. This is called a closure.\n\nA common trap with closures is late binding of variables inside a loop.\n\n  def make_multipliers():\n      # all returned functions will capture the final value of i (which is 2)\n      return [lambda x: x * i for i in range(3)]\n\n  multipliers = make_multipliers()\n  print(multipliers[0](10)) # prints 20, not 0!\n\nThe closure captures the variable itself, not its value at the time the function was created.",
+    "why": "Higher-order functions (functions that take or return functions) are the foundation of decorators, middleware pipelines, retry wrappers, and dependency injection. Without first-class functions, each of these patterns would require explicit `subclassing` instead of composable functions.",
     "where_used": [
-      "FastAPI middleware and dependency injection (Depends receives a function)",
+      "FastAPI middleware and dependency injection (`Depends` receives a function)",
       "Retry decorator wrapping route handlers",
-      "Pydantic field_validator receiving a validation function"
+      "Pydantic `field_validator` receiving a validation function"
     ]
   },
   "why_learning_this": [
-    "Understanding how FastAPI's Depends() and decorator @app.get() work — both receive functions as arguments",
+    "Understanding how FastAPI's `Depends()` and decorator `@app.get()` work \u2014 both receive functions as arguments",
     "Writing retry wrappers and middleware that accept a handler function and return an augmented version"
   ],
   "common_mistakes": [
     {
       "title": "Calling the function when you mean to pass it",
-      "explanation": "apply(normalize(), value) calls normalize immediately and passes its RETURN VALUE (a string), not the function itself. Pass without parentheses: apply(normalize, value)."
+      "explanation": "`apply(normalize(), value)` calls `normalize` immediately and passes its RETURN VALUE (a string), not the function itself. Pass without parentheses: `apply(normalize, value)`."
     },
     {
       "title": "Losing __name__ when wrapping",
-      "explanation": "A wrapper function that returns a new function hides the original's name and docstring. Fix: use @functools.wraps(fn) inside the wrapper to copy that metadata."
+      "explanation": "A wrapper function that returns a new function hides the original's `__name__` and `__doc__`. Fix: use `@functools.wraps(fn)` inside the wrapper to copy that metadata."
     },
     {
       "title": "Forgetting the closure captures the variable, not the value",
-      "explanation": "If a factory captures a loop variable without a default argument trick, all returned functions see the variable's final value. Use def f(x=x): to capture the current value."
+      "explanation": "If a factory captures a loop variable without a default argument trick, all returned functions see the variable's final value. Use `def f(x=x):` to capture the current value."
     }
   ],
   "recall_questions": [
     {
       "q": "What does it mean for functions to be 'first-class' objects in Python?",
-      "answer": "Functions can be assigned to variables, passed as arguments to other functions, and returned from functions — just like any other value.",
+      "answer": "Functions can be assigned to variables, passed as arguments to other functions, and returned from functions \u2014 just like any other value.",
       "tier": "tier1"
     },
     {
@@ -75,8 +75,13 @@
       "tier": "tier2"
     },
     {
-      "q": "What is wrong with apply(normalize(), value) when you intend to pass normalize as a callback?",
-      "answer": "normalize() calls the function immediately and passes its return value, not the function object itself. Remove the parentheses: apply(normalize, value).",
+      "q": "What is wrong with `apply(normalize(), value)` when you intend to pass `normalize` as a callback?",
+      "answer": "`normalize()` calls the function immediately and passes its return value, not the function object itself. Remove the parentheses: `apply(normalize, value)`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why might a list of functions created inside a loop using a lambda unexpectedly return the same result?",
+      "answer": "Closures in Python use late binding. The functions capture the loop variable itself, not its value at the time the function was created, so they all see the final value of the loop variable.",
       "tier": "tier2"
     }
   ],
@@ -94,23 +99,30 @@
       "code": "def multiply_by(factor):\n    def multiplier(n):\n        return n * factor\n    return multiplier\n\ndouble = multiply_by(2)\ntriple = multiply_by(3)\nprint(double(4), triple(4))",
       "question": "What is the output of this code?",
       "answer": "8 12",
-      "why": "multiply_by is a function factory. It creates closures that remember the 'factor' variable. double remembers 2, triple remembers 3. double(4) is 4 * 2 = 8, triple(4) is 4 * 3 = 12."
+      "why": "`multiply_by` is a function factory. It creates closures that remember the `factor` variable. `double` remembers `2`, `triple` remembers `3`. `double(4)` is `4 * 2 = 8`, `triple(4)` is `4 * 3 = 12`."
     },
     {
       "type": "find-bug",
       "code": "def apply_twice(fn, value):\n    return fn(fn(value))\n\ndef add_one(x):\n    return x + 1\n\nresult = apply_twice(add_one(), 5)",
       "question": "Why does this code fail with an error?",
-      "answer": "It calls add_one() immediately instead of passing the function object.",
-      "why": "By adding parentheses in apply_twice(add_one(), 5), we call add_one without arguments (which raises a TypeError) and pass its return value. We should pass the function itself: apply_twice(add_one, 5)."
+      "answer": "It calls `add_one()` immediately instead of passing the function object.",
+      "why": "By adding parentheses in `apply_twice(add_one(), 5)`, we call `add_one` without arguments (which raises a `TypeError`) and pass its return value. We should pass the function itself: `apply_twice(add_one, 5)`."
+    },
+    {
+      "type": "predict-output",
+      "code": "def make_adders():\n    adders = []\n    for i in range(2):\n        adders.append(lambda x: x + i)\n    return adders\n\nadders = make_adders()\nprint(adders[0](10), adders[1](10))",
+      "question": "What is the output of this code?",
+      "answer": "11 11",
+      "why": "Due to late binding, both lambda functions capture the variable `i`, which has a final value of `1` when the loop finishes. Therefore, both adders add `1` to `10`."
     }
   ],
   "code_walkthrough": {
     "code": "def make_prefixer(prefix):\n    def add_prefix(text):\n        return f'{prefix}: {text}'\n    return add_prefix\n\nerror = make_prefixer('ERROR')\nwarn = make_prefixer('WARN')\nprint(error('disk full'))\nprint(warn('high memory'))",
-    "focus": "make_prefixer returns a new function each time; each returned function closes over its own prefix value — two independent prefixers from one factory."
+    "focus": "`make_prefixer` returns a new function each time; each returned function closes over its own `prefix` value \u2014 two independent prefixers from one factory."
   },
   "challenge": {
     "title": "Retry wrapper",
-    "prompt": "Write with_retry(fn, attempts) that returns a new function. When the new function is called with any arguments, it tries fn(*args, **kwargs) up to attempts times, printing 'attempt <n>' each try. On success it returns the result; if all attempts fail it raises the last exception. Test by wrapping a function that raises on the first two calls but succeeds on the third.",
+    "prompt": "Write `with_retry(fn, attempts)` that returns a new function. When the new function is called with any arguments, it tries `fn(*args, **kwargs)` up to `attempts` times, printing `'attempt <n>'` each try. On success it returns the result; if all attempts fail it raises the last exception. Test by wrapping a function that raises on the first two calls but succeeds on the third.",
     "solution": "def with_retry(fn, attempts):\n    def wrapper(*args, **kwargs):\n        last_exc = None\n        for i in range(1, attempts + 1):\n            print(f'attempt {i}')\n            try:\n                return fn(*args, **kwargs)\n            except Exception as e:\n                last_exc = e\n        raise last_exc\n    return wrapper\n\ncall_count = [0]\ndef flaky():\n    call_count[0] += 1\n    if call_count[0] < 3:\n        raise RuntimeError('not ready')\n    return 'ok'\n\nretried = with_retry(flaky, 3)\nprint(retried())"
   },
   "sources": [

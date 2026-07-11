@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [
@@ -35,12 +35,12 @@
     }
   ],
   "overview": {
-    "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure, which is a function that retains access to its enclosing scope) that replaces the original function. It acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.",
+    "what": "A decorator is a function that takes another function and extends its behavior without explicitly modifying it. The `@decorator` syntax is syntactic sugar for `func = decorator(func)`. Under the hood, a decorator returns a wrapper function (a closure) that replaces the original function.\n\nIt acts like gift wrapping a box: the original box is still inside, but it now has a shiny exterior.\n\nWhen writing decorators, you must be careful because the wrapper replaces the original function entirely. This causes the function to lose its original metadata, such as its name and docstring.\n\n  def simple_decorator(func):\n    def wrapper():\n      return func()\n    return wrapper\n\n  @simple_decorator\n  def greet():\n    pass\n\n  print(greet.__name__)  # Prints 'wrapper', not 'greet'\n\nThis metadata loss can break debugging tools or web frameworks that rely on function names. This trap is fixed using `@wraps`, which is covered fully in functools-wraps.",
     "why": "Decorators allow you to cleanly extract reusable cross-cutting concerns—like logging, authentication, or timing—away from the core business logic of your functions.",
     "where_used": [
-      "FastAPI route definitions (@app.get)",
-      "Flask routes (@app.route)",
-      "Built-in class properties (@property)"
+      "FastAPI route definitions (`@app.get`)",
+      "Flask routes (`@app.route`)",
+      "Built-in class properties (`@property`)"
     ]
   },
   "why_learning_this": [
@@ -72,6 +72,11 @@
       "q": "Why use decorators instead of just writing the logic inside the function?",
       "answer": "They separate cross-cutting concerns (like logging or timing) from the core logic. This keeps the core functions clean and allows you to reuse the same behavior across many functions.",
       "tier": "tier1"
+    },
+    {
+      "q": "What happens to a function's metadata (like `__name__`) when it is wrapped by a simple decorator?",
+      "answer": "The metadata is overwritten by the wrapper function's metadata. For example, the function's `__name__` becomes `'wrapper'`. This is typically fixed using `@wraps` from the `functools` module.",
+      "tier": "tier1"
     }
   ],
   "understanding_checks": [
@@ -80,7 +85,7 @@
       "question": "What will this code print?",
       "code": "def make_bold(func):\n    def wrapper():\n        return f\"<b>{func()}</b>\"\n    return wrapper\n\n@make_bold\ndef get_text():\n    return \"Hello\"\n\nprint(get_text())",
       "answer": "<b>Hello</b>",
-      "why": "The decorator `make_bold` wraps `get_text`. When `get_text()` is called, it actually calls `wrapper()`, which evaluates `func()` (returning 'Hello'), wraps it in `<b>` tags, and returns the result."
+      "why": "The decorator `make_bold` wraps `get_text`. When `get_text()` is called, it actually calls `wrapper()`, which evaluates `func()` (returning `'Hello'`), wraps it in `<b>` tags, and returns the result."
     },
     {
       "type": "find-bug",
@@ -92,10 +97,10 @@
   ],
   "practice_tasks": [
     {
-      "name": "Add Logging to a Decorator",
-      "description": "The current `log_call` decorator doesn't do anything yet. Modify it so that it prints 'Calling function' before executing the decorated function, and 'Function finished' after. Apply it to the `say_hello` function.",
       "starter_code": "def log_call(func):\n    def wrapper():\n        # TODO: Print 'Calling function', call func(), print 'Function finished'\n        return func()\n    return wrapper\n\n# TODO: Decorate this function\ndef say_hello():\n    print('Hello!')\n\nsay_hello()",
-      "solution_code": "def log_call(func):\n    def wrapper():\n        print('Calling function')\n        func()\n        print('Function finished')\n    return wrapper\n\n@log_call\ndef say_hello():\n    print('Hello!')\n\nsay_hello()"
+      "title": "Add Logging to a Decorator",
+      "prompt": "The current `log_call` decorator doesn't do anything yet. Modify it so that it prints `'Calling function'` before executing the decorated function, and `'Function finished'` after. Apply it to the `say_hello` function.",
+      "solution": "def log_call(func):\n    def wrapper():\n        print('Calling function')\n        func()\n        print('Function finished')\n    return wrapper\n\n@log_call\ndef say_hello():\n    print('Hello!')\n\nsay_hello()"
     }
   ],
   "code_walkthrough": {
@@ -105,8 +110,8 @@
   "aha_moment": {
     "code": "def no_op(func):\n  pass\n\n@no_op\ndef greet():\n  return 'hello'\n\nprint(greet())",
     "prediction": "What does this code print?",
-    "common_guess": "It prints 'hello', assuming the decorator does nothing.",
-    "why": "It throws a TypeError. Since `no_op` doesn't explicitly return anything, it returns `None`. The decorator syntax does `greet = no_op(greet)`, so `greet` is now `None`."
+    "common_guess": "It prints `'hello'`, assuming the decorator does nothing.",
+    "why": "It throws a `TypeError`. Since `no_op` doesn't explicitly return anything, it returns `None`. The decorator syntax does `greet = no_op(greet)`, so `greet` is now `None`."
   },
   "challenge": {
     "title": "Write a timing decorator that accepts arguments",

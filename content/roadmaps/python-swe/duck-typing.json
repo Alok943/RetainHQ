@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 40,
     "importance": 9,
     "interview_frequency": "medium",
     "prerequisites": [],
@@ -32,7 +32,7 @@
     }
   ],
   "overview": {
-    "what": "Duck typing is a programming concept where the type or the class of an object is less important than the methods it defines. When you use duck typing, you do not check types at all. Instead, you check for the presence of a given method or attribute. If it walks like a duck and quacks like a duck, it must be a duck.\n\nFor example, if a function expects a file-like object, it doesn't need an actual `file` object; it just needs any object that has a `.read()` method. The mental model is: Python doesn't care *what* an object is, only *what it can do*.",
+    "what": "Duck typing is a programming concept where the type of an object is less important than the methods it defines. When you use duck typing, you do not check types at all. Instead, you check for the presence of a given method or attribute.\n\nIf it walks like a duck and quacks like a duck, it must be a duck. For example, if a function expects a file-like object, it doesn't need an actual `file` object. It just needs any object that implements a `read()` method.\n\n  def process_file(file_like):\n    data = file_like.read()\n    print(data)\n\nThe mental model is that Python doesn't care what an object is, only what it can do. This avoids rigid `isinstance()` checks and makes your functions dramatically more flexible.\n\nHowever, a common trap is assuming that a matching method name is enough. Duck typing requires matching method signatures, not just matching names.\n\n  class BrokenDuck:\n    def quack(self, volume):  # Requires an argument!\n      pass\n\n  def make_quack(thing):\n    thing.quack()  # TypeError: quack() missing 1 required positional argument: 'volume'\n\nIf the expected interface takes zero arguments but the object's method requires one, your code will crash at runtime with a `TypeError`.",
     "why": "It allows for highly flexible and reusable code. You can pass completely different objects into the same function, as long as they implement the expected interface.",
     "where_used": [
       "FastAPI",
@@ -48,33 +48,41 @@
   ],
   "common_mistakes": [
     {
-      "title": "Unintended type errors",
-      "explanation": "Assuming an object has a method just because it's named similarly, causing an `AttributeError` at runtime."
+      "title": "Assuming method names are enough",
+      "explanation": "Just because an object has a `quack()` method doesn't mean it works. If the signature doesn't match (e.g., requires arguments you aren't passing), Python raises a `TypeError` at runtime."
     },
     {
       "title": "Over-checking types",
-      "explanation": "Using `isinstance()` everywhere defeats the purpose of Python's dynamic nature. The fix is to use `hasattr()` or `try/except` (EAFP)."
+      "explanation": "Using `isinstance()` everywhere defeats the purpose of Python's dynamic nature. Instead of type checking, use `hasattr()` or rely on `try/except` for `AttributeError` (the `EAFP` paradigm)."
     }
   ],
   "understanding_checks": [
     {
       "type": "explain-behavior",
       "question": "If you use duck typing, how do you handle cases where an object passed to a function does not have the required method?",
-      "answer": "You rely on standard Python exceptions (like `AttributeError`) or handle them using a `try/except` block (EAFP paradigm).",
-      "why": "With duck typing, Python doesn't check the type upfront, so if a method is missing, the code fails dynamically at runtime."
+      "answer": "You rely on standard Python exceptions (like `AttributeError`) or handle them using a `try/except` block (the `EAFP` paradigm).",
+      "why": "With duck typing, Python doesn't check the type upfront. If a method is missing, the code fails dynamically at runtime."
     },
     {
       "type": "find-bug",
       "question": "What is wrong with the following attempt at using duck typing?",
-      "code": "def parse_data(parser, text):\n    if type(parser) == JSONParser:\n        return parser.parse(text)\n    elif type(parser) == XMLParser:\n        return parser.parse(text)",
-      "answer": "It explicitly checks the type of the `parser` argument instead of just invoking `.parse()`, which defeats the purpose of duck typing.",
+      "code": "def parse_data(parser, text):\n  if type(parser) == JSONParser:\n    return parser.parse(text)\n  elif type(parser) == XMLParser:\n    return parser.parse(text)",
+      "answer": "It explicitly checks the type of the `parser` argument instead of just invoking `parser.parse()`, which defeats the purpose of duck typing.",
       "why": "Duck typing means relying on the presence of a method or attribute, rather than checking the class type. The code should simply be `return parser.parse(text)`."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the core idea of duck typing in Python?",
-      "answer": "The type or class of an object is less important than the methods it defines. Python checks for the presence of a method rather than enforcing strict type checks."
+      "answer": "The type or class of an object is less important than the methods it defines. Python checks for the presence of a method rather than enforcing strict `type()` or `isinstance()` checks."
+    },
+    {
+      "q": "What happens if a duck-typed object has the right method name, but a different method signature?",
+      "answer": "The code will crash at runtime with a `TypeError` when the method is called with incorrect arguments."
+    },
+    {
+      "q": "Instead of checking types with `isinstance()`, what does the `EAFP` paradigm suggest you do?",
+      "answer": "Just try the operation and catch the resulting exception (e.g. `AttributeError`) if the object doesn't support it, rather than checking upfront. This fits duck typing's philosophy of caring what an object can do, not what it is."
     }
   ],
   "practice_tasks": [
@@ -92,7 +100,7 @@
   "aha_moment": {
     "code": "def get_length(item):\n    return len(item)\n\nprint(get_length('hello'))\nprint(get_length([1, 2, 3]))\nprint(get_length({'a': 1, 'b': 2}))",
     "prediction": "What happens when we pass different types (string, list, dict) to `get_length`?",
-    "common_guess": "It will throw a TypeError because `item` doesn't have a specific type.",
+    "common_guess": "It will throw a `TypeError` because `item` doesn't have a specific type.",
     "why": "Python uses duck typing for the `len()` function. As long as the object implements the `__len__` method, it works perfectly, regardless of the object's actual type."
   },
   "challenge": {

@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 35,
     "importance": 5,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -22,15 +22,15 @@
   "glossary": [
     {
       "term": "memory footprint",
-      "definition": "The total amount of computer memory or RAM that a program or object uses while running. For example, a class using slots uses less memory per instance. Example: `__slots__ = ('x', 'y')`."
+      "definition": "The total amount of computer memory or RAM that a program or object uses while running. For example, a class using `__slots__` uses less memory per instance. Example: `__slots__ = ('x', 'y')`."
     },
     {
       "term": "rigidly",
-      "definition": "In a strict, inflexible way that cannot be easily changed or bent. A slotted object holds its attributes rigidly, raising an error for undeclared attributes. Example: `obj.new_attr = 1`."
+      "definition": "In a strict, inflexible way that cannot be easily changed or bent. A slotted object holds its attributes rigidly, raising an `AttributeError` for undeclared attributes. Example: `obj.new_attr = 1`."
     }
   ],
   "overview": {
-    "what": "By default, Python objects store their instance attributes in a dynamic dictionary (`__dict__`). The `__slots__` attribute allows you to explicitly declare which attributes an instance can have. When you define `__slots__`, Python suppresses the creation of `__dict__` and allocates a fixed amount of space for the specified attributes. Think of `__dict__` as a flexible, expanding cargo container that takes up a lot of space, whereas `__slots__` is like a custom-molded foam insert that perfectly and rigidly fits only the tools you need.",
+    "what": "By default, Python objects store their instance attributes in a dynamic dictionary (`__dict__`). The `__slots__` attribute allows you to explicitly declare which attributes an instance can have.\n\nWhen you define `__slots__`, Python suppresses the creation of `__dict__` and allocates a fixed amount of space for the specified attributes. Think of `__dict__` as a flexible, expanding cargo container that takes up a lot of space, whereas `__slots__` is like a custom-molded foam insert that perfectly and rigidly fits only the tools you need.\n\nPython enforces a strict layout constraint when combining multiple slotted classes. You cannot inherit from multiple classes that define non-empty `__slots__`:\n\n  class BaseA:\n      __slots__ = ('a',)\n\n  class BaseB:\n      __slots__ = ('b',)\n\n  class Child(BaseA, BaseB):  # TypeError: multiple bases have instance lay-out conflict\n      pass\n\nThis limitation exists because Python must calculate a single, fixed memory layout for the instance structure.",
     "why": "Using `__slots__` drastically reduces the memory footprint of objects, which is critical when creating millions of instances. It also provides faster attribute access.",
     "where_used": [
       "Pydantic",
@@ -44,12 +44,12 @@
   ],
   "common_mistakes": [
     {
-      "title": "Inheritance without slots",
+      "title": "Inheritance without `__slots__`",
       "explanation": "If a subclass does not define `__slots__` but inherits from a class that does, the subclass will still get a `__dict__`. To maintain the memory savings, every subclass must define `__slots__` (even an empty tuple `()`)."
     },
     {
       "title": "Inability to add new attributes",
-      "explanation": "Because `__dict__` is not created, you cannot assign attributes that are not declared in `__slots__`. Trying to set `obj.new_attr = 5` will raise an AttributeError."
+      "explanation": "Because `__dict__` is not created, you cannot assign attributes that are not declared in `__slots__`. Trying to set `obj.new_attr = 5` will raise an `AttributeError`."
     }
   ],
   "recall_questions": [
@@ -60,7 +60,17 @@
     },
     {
       "q": "What happens if you try to assign a new, undeclared attribute to an object that uses `__slots__`?",
-      "answer": "Python raises an AttributeError because the flexible `__dict__` container does not exist to store it.",
+      "answer": "Python raises an `AttributeError` because the flexible `__dict__` container does not exist to store it.",
+      "tier": "tier3"
+    },
+    {
+      "q": "What happens if a subclass attempts to inherit from multiple base classes that each define non-empty `__slots__`?",
+      "answer": "Python raises a `TypeError` because the multiple bases have conflicting instance layouts, making it impossible to calculate a single fixed memory layout.",
+      "tier": "tier3"
+    },
+    {
+      "q": "What happens if a subclass attempts to inherit from multiple base classes that each define non-empty `__slots__`?",
+      "answer": "Python raises a `TypeError` because the multiple bases have conflicting instance layouts, making it impossible to calculate a single fixed memory layout.",
       "tier": "tier3"
     }
   ],
@@ -97,6 +107,20 @@
       "code": "class Point:\n    __slots__ = ('x', 'y')\n\nclass Point3D(Point):\n    def __init__(self, x, y, z):\n        self.x = x\n        self.y = y\n        self.z = z",
       "answer": "`Point3D` does not define `__slots__`.",
       "why": "If a subclass doesn't define `__slots__`, Python will create a `__dict__` for it, defeating the memory optimization. `Point3D` should define `__slots__ = ('z',)`."
+    },
+    {
+      "type": "find-bug",
+      "question": "Identify why this class definition fails to compile.",
+      "code": "class BaseX:\n    __slots__ = ('x',)\n\nclass BaseY:\n    __slots__ = ('y',)\n\nclass Point(BaseX, BaseY):\n    __slots__ = ('z',)",
+      "answer": "A class cannot inherit from multiple base classes that define non-empty `__slots__`.",
+      "why": "Python raises a `TypeError` because it cannot resolve the layout conflict between multiple fixed-memory bases. Only one parent can have non-empty `__slots__`."
+    },
+    {
+      "type": "find-bug",
+      "question": "Identify why this class definition fails to compile.",
+      "code": "class BaseX:\n    __slots__ = ('x',)\n\nclass BaseY:\n    __slots__ = ('y',)\n\nclass Point(BaseX, BaseY):\n    __slots__ = ('z',)",
+      "answer": "A class cannot inherit from multiple base classes that define non-empty `__slots__`.",
+      "why": "Python raises a `TypeError` because it cannot resolve the layout conflict between multiple fixed-memory bases. Only one parent can have non-empty `__slots__`."
     }
   ]
 }

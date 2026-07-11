@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 15,
+    "estimated_minutes": 20,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -32,47 +32,56 @@
     }
   ],
   "overview": {
-    "what": "A ternary expression (also called a conditional expression) evaluates to one of two values based on a condition, all in a single line:\n\n  value_if_true if condition else value_if_false\n\nExamples:\n\n  label = 'admin' if user['role'] == 'superuser' else 'member'\n  display = name if name else 'Anonymous'\n  status_text = 'enabled' if config.get('debug') else 'disabled'\n\nThe expression evaluates the condition first, then returns exactly ONE of the two branches — the other is never evaluated. It is an expression, not a statement, so it can appear anywhere a value is expected: assignment, function argument, f-string, list element. Think of it as a compressed two-branch decision that returns a value — not a replacement for multi-branch logic.",
-    "why": "Ternary expressions compress routine two-outcome decisions (present vs missing, enabled vs disabled, role A vs role B) into one readable line. They become unreadable when nested or when the condition or branches are complex — those cases still call for a full if/else block.",
+    "what": "A ternary expression (also called a conditional expression) evaluates to one of two values based on a condition, all in a single line.\n\n  value_if_true if condition else value_if_false\n\nExamples:\n\n  label = 'admin' if user['role'] == 'superuser' else 'member'\n  display = name if name else 'Anonymous'\n  status_text = 'enabled' if config.get('debug') else 'disabled'\n\nThe expression evaluates the condition first, then returns exactly ONE of the two branches — the other is never evaluated.\nIt is an expression, not a statement, so it can appear anywhere a value is expected.\nCommon places include:\n\n- Variable assignments\n- Function arguments\n- `f-strings`\n- List elements\n\nThink of it as a compressed two-branch decision that returns a value — not a replacement for multi-branch logic.\n\n  success = False\n  # WRONG: Evaluates as (\"Status: \" + \"OK\") if success else \"Error\"\n  msg = \"Status: \" + \"OK\" if success else \"Error\"\n  \n  # RIGHT: Parentheses force the ternary to evaluate first\n  msg = \"Status: \" + (\"OK\" if success else \"Error\")\n\nTernary expressions have very low precedence.\nAlways wrap them in parentheses when combining them with other operations like string concatenation.",
+    "why": "Ternary expressions compress routine two-outcome decisions into one readable line.\nCommon examples include:\n\n- Present vs missing\n- Enabled vs disabled\n- Role A vs role B\n\nThey become unreadable when nested or when the condition or branches are complex.\nThose cases still call for a full `if`/`else` block.",
     "where_used": [
-      "FastAPI response field serialization",
-      "Pydantic computed_field values",
+      "`FastAPI` response field serialization",
+      "`Pydantic` `computed_field` values",
       "log message formatting"
     ]
   },
   "why_learning_this": [
-    "Compressing simple two-branch assignments in FastAPI serializers and Pydantic models to a single readable line",
+    "Compressing simple two-branch assignments in `FastAPI` serializers and `Pydantic` models to a single readable line",
     "Reading library code and open-source projects that use conditional expressions extensively"
   ],
   "common_mistakes": [
     {
       "title": "Nesting ternary expressions",
-      "explanation": "a if x else b if y else c is legal but hard to read. Replace with a full if/elif/else block when there are more than two outcomes."
+      "explanation": "`a if x else b if y else c` is legal but hard to read. Replace with a full `if`/`elif`/`else` block when there are more than two outcomes."
     },
     {
       "title": "Confusing the syntax order",
-      "explanation": "Python's order is value_if_true if condition else value_if_false — the opposite of C's `condition ? true : false`. Write it as 'give me X, IF this is true, ELSE Y'."
+      "explanation": "Python's order is `value_if_true if condition else value_if_false` — the opposite of C's `condition ? true : false`. Write it as 'give me X, IF this is true, ELSE Y'."
     },
     {
       "title": "Using a ternary when the branches have side effects",
-      "explanation": "Ternary expressions are for selecting values, not for branching on actions. If either branch calls a function for its side effect, a full if/else block is clearer."
+      "explanation": "Ternary expressions are for selecting values, not for branching on actions. If either branch calls a function for its side effect, a full `if`/`else` block is clearer."
+    },
+    {
+      "title": "Forgetting parentheses in complex expressions",
+      "explanation": "Ternary expressions have very low precedence. When combined with string concatenation or math, `\"A\" + \"B\" if True else \"C\"` evaluates as `(\"A\" + \"B\") if True else \"C\"`. Always wrap the ternary in parentheses: `\"A\" + (\"B\" if True else \"C\")`."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the syntax of a Python ternary expression?",
-      "answer": "value_if_true if condition else value_if_false.",
+      "answer": "`value_if_true if condition else value_if_false`.",
       "tier": "tier1"
     },
     {
-      "q": "When the condition is False, which branch is evaluated — the true branch or the false branch?",
-      "answer": "Only the false branch (after else) is evaluated; the true branch is skipped entirely.",
+      "q": "When the condition is `False`, which branch is evaluated — the true branch or the false branch?",
+      "answer": "Only the false branch (after `else`) is evaluated; the true branch is skipped entirely.",
       "tier": "tier1"
     },
     {
-      "q": "When should you prefer a full if/else block over a ternary expression?",
+      "q": "When should you prefer a full `if`/`else` block over a ternary expression?",
       "answer": "When there are more than two outcomes, when the branches have side effects, or when the expression would need to be nested — all of which hurt readability.",
       "tier": "tier2"
+    },
+    {
+      "q": "Why should you wrap a ternary expression in parentheses when combining it with string concatenation?",
+      "answer": "Because ternary expressions have very low precedence. Without parentheses, operations like string concatenation will evaluate before the ternary condition.",
+      "tier": "tier1"
     }
   ],
   "practice_tasks": [
@@ -85,7 +94,7 @@
   ],
   "code_walkthrough": {
     "code": "user = {'name': 'alice', 'role': 'admin'}\nlabel = 'Super User' if user['role'] == 'admin' else 'Regular User'\nprint(label)",
-    "focus": "The ternary evaluates the condition (role == 'admin') and returns exactly one of the two string values — the other branch is never touched."
+    "focus": "The ternary evaluates the condition (`role == 'admin'`) and returns exactly one of the two string values — the other branch is never touched."
   },
   "challenge": {
     "title": "Response status line builder",
@@ -101,13 +110,13 @@
       "code": "x = 5\ny = 10\nresult = \"High\" if x > y else \"Low\"\nprint(result)",
       "question": "What does this code print?",
       "answer": "Low",
-      "why": "The condition x > y (5 > 10) is False, so the expression evaluates the branch after the 'else', skipping the True branch entirely."
+      "why": "The condition `x > y` (`5 > 10`) is `False`, so the expression evaluates the branch after the `else`, skipping the `True` branch entirely."
     },
     {
       "type": "explain-behavior",
       "question": "Why shouldn't you nest ternary expressions like `a if x else b if y else c`?",
-      "answer": "Because it makes the code very difficult to read and understand. Use a full `if/elif/else` block whenever you have more than two possible outcomes.",
-      "why": "Ternary expressions compress simple two-branch decisions into one line. For anything more complex or with multiple outcomes, a full if/elif/else block is much clearer."
+      "answer": "Because it makes the code very difficult to read and understand. Use a full `if`/`elif`/`else` block whenever you have more than two possible outcomes.",
+      "why": "Ternary expressions compress simple two-branch decisions into one line. For anything more complex or with multiple outcomes, a full `if`/`elif`/`else` block is much clearer."
     }
   ]
 }

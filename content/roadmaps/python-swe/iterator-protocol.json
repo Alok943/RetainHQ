@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -26,7 +26,7 @@
   "glossary": [
     {
       "term": "state",
-      "definition": "The current condition, data, or position that an object remembers at a specific point in time. Example: an iterator tracking its state to know which item to yield next."
+      "definition": "The current condition, data, or position that an object remembers at a specific point in time. Example: an iterator tracking its state to know which item to `yield` next."
     },
     {
       "term": "unified interface",
@@ -34,7 +34,7 @@
     }
   ],
   "overview": {
-    "what": "The Iterator Protocol is Python's standard mechanism for looping over collections. It consists of two steps: getting an iterator (an object that tracks state) from an iterable (like a list), and repeatedly asking the iterator for its next value until it raises a `StopIteration` exception to signal it is empty. Think of an iterable as a book, and an iterator as a bookmark that remembers which page you are on. When a `for` loop runs, it secretly catches `StopIteration` to know when to terminate.",
+    "what": "The Iterator Protocol is Python's standard mechanism for looping over collections. Think of an iterable as a book, and an iterator as a bookmark that remembers which page you are on. When a `for` loop runs, it relies on two core built-in functions.\n\n- `iter(iterable)`: Gets an iterator from a collection. Returns a stateful iterator object, and raises a `TypeError` if the object does not support iteration.\n- `next(iterator, default)`: Asks the iterator for its next value. Returns the next item in the sequence. Raises a `StopIteration` exception if the iterator is empty, unless a `default` is provided (which it returns instead).\n\nWhen a `for` loop runs, it secretly calls these functions and catches `StopIteration` to know when to terminate.\n\n  numbers = iter([1, 2])\n  print(next(numbers, 99))\n  print(next(numbers, 99))\n  print(next(numbers, 99))  # Prints 99 instead of crashing\n\nYou can pass a default value to `next()` to safely prevent it from crashing when the iterator is empty. This is extremely useful for finding the first matching item in a sequence, covered fully in generator-expressions.",
     "why": "It provides a unified interface for iteration, meaning a `for` loop works identically on lists, files, network streams, or infinite sequences without needing to know their internal structure.",
     "where_used": [
       "File reading",
@@ -50,17 +50,17 @@
   "common_mistakes": [
     {
       "title": "Exhausted Iterators",
-      "explanation": "Iterators can only be consumed once, so attempting to loop a second time yields nothing. The fix is to recreate the iterator or convert it to a list."
+      "explanation": "Iterators can only be consumed once, so attempting to loop a second time yields nothing. The fix is to recreate the iterator or convert it to a `list` using `list(iterator)`."
     },
     {
       "title": "Confusing Iterable and Iterator",
-      "explanation": "An iterable (like a list) can spawn multiple iterators, but it is not an iterator itself. Calling `next()` directly on a list fails; you must call `iter()` on it first."
+      "explanation": "An iterable (like a `list`) can spawn multiple iterators, but it is not an iterator itself. Calling `next()` directly on a `list` fails; you must call `iter()` on it first."
     }
   ],
   "recall_questions": [
     {
       "q": "What exception is raised to signal the end of an iterator?",
-      "answer": "StopIteration.",
+      "answer": "`StopIteration`.",
       "tier": "tier1"
     },
     {
@@ -70,7 +70,12 @@
     },
     {
       "q": "How does a standard `for` loop know when to stop looping?",
-      "answer": "It automatically catches the StopIteration exception raised by the iterator.",
+      "answer": "It automatically catches the `StopIteration` exception raised by the iterator.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How can you prevent `next()` from raising `StopIteration` when an iterator is empty?",
+      "answer": "By providing a second argument as a default value, like `next(my_iter, None)`.",
       "tier": "tier2"
     }
   ],
@@ -112,8 +117,8 @@
     {
       "type": "explain-behavior",
       "question": "Why does calling `next([1, 2, 3])` result in a `TypeError`?",
-      "answer": "Because a list is an iterable, not an iterator.",
-      "why": "`next()` can only be called on iterators. You must first create an iterator from the list by calling `iter([1, 2, 3])`, and then you can pass that iterator to `next()`."
+      "answer": "Because a `list` is an iterable, not an iterator.",
+      "why": "`next()` can only be called on iterators. You must first create an iterator from the `list` by calling `iter([1, 2, 3])`, and then you can pass that iterator to `next()`."
     }
   ]
 }

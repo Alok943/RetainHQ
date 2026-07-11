@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "hard",
-    "estimated_minutes": 45,
+    "estimated_minutes": 50,
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [
@@ -34,8 +34,8 @@
     }
   ],
   "overview": {
-    "what": "The Dependency Inversion Principle (DIP) states that high-level modules should not depend on low-level modules; both should depend on abstractions. Furthermore, abstractions should not depend on details; details should depend on abstractions. In Python, this means your core business logic (high-level) shouldn't import concrete database or API classes (low-level). Instead, both should depend on an interface (like an abstract base class or Protocol, which defines expected methods). For example, instead of a `PaymentProcessor` instantiating a `StripeAPI` directly, it accepts any object that satisfies a `PaymentGateway` abstraction. Analogy: When you plug a lamp into a wall, the lamp (high-level) depends on a standard outlet interface (abstraction), not the specific wiring in the wall (low-level detail).",
-    "why": "It decouples your system's core logic from volatile implementation details, making it significantly easier to swap out components, mock dependencies for testing, and maintain code without breaking existing functionality.",
+    "what": "The Dependency Inversion Principle (DIP) states that high-level modules should not depend on low-level modules; both should depend on abstractions. Furthermore, abstractions should not depend on details; details should depend on abstractions. In Python, this means your core business logic (high-level) shouldn't import concrete database or API classes (low-level).\n\nInstead, both should depend on an interface (like an abstract base class or `Protocol`, which defines expected methods). For example, instead of a `PaymentProcessor` instantiating a `StripeAPI` directly, it accepts any object that satisfies a `PaymentGateway` abstraction.\n\nAnalogy: When you plug a lamp into a wall, the lamp (high-level) depends on a standard outlet interface (abstraction), not the specific wiring in the wall (low-level detail).\n\n  class PaymentProcessor:\n      def __init__(self, gateway: PaymentGateway = StripeAPI()):\n          self.gateway = gateway\n\nA common sharp edge is binding a concrete class as a default argument, which tightly couples the modules and instantiates the dependency at module load time. Instead, default to `None` or use a dependency injection framework (covered fully in `dependency-injection`).",
+    "why": "It decouples your system's core logic from volatile implementation details. This provides several major benefits:\n\n- Swap out components without rewriting business logic\n- Mock dependencies effortlessly during unit testing\n- Maintain code without breaking existing functionality",
     "where_used": [
       "FastAPI dependency injection",
       "Unit testing with mocks",
@@ -54,14 +54,18 @@
     },
     {
       "title": "Leaking implementation details into abstractions",
-      "explanation": "Avoid naming methods after specific technologies (like `save_to_sql`) in your interfaces. Keep method names generic (like `save`) so they apply to any implementation."
+      "explanation": "Avoid naming methods after specific technologies (like `save_to_sql()`) in your interfaces. Keep method names generic (like `save()`) so they apply to any implementation."
+    },
+    {
+      "title": "Using concrete classes as default arguments",
+      "explanation": "Assigning `gateway: PaymentGateway = StripeAPI()` binds the concrete dependency at module load time. This completely defeats the decoupling DIP provides. Instead, default to `None` and instantiate if missing, or use a dependency injection container."
     }
   ],
   "understanding_checks": [
     {
       "type": "explain-behavior",
       "question": "If high-level modules should not depend on low-level modules, how do they get access to the actual functionality they need?",
-      "answer": "High-level modules depend on abstractions (like an interface or protocol), and the low-level modules implement those abstractions. The specific implementation is then passed to the high-level module, usually via dependency injection.",
+      "answer": "High-level modules depend on abstractions (like an interface or `Protocol`), and the low-level modules implement those abstractions. The specific implementation is then passed to the high-level module, usually via dependency injection.",
       "why": "This is the essence of Dependency Inversion. The abstraction acts as a contract between the core logic and the details, without tightly coupling them."
     },
     {
@@ -70,12 +74,23 @@
       "code": "from database import MySQLDatabase\n\nclass UserManager:\n    def __init__(self):\n        self.db = MySQLDatabase()\n        \n    def get_user(self, id):\n        return self.db.find(id)",
       "answer": "The `UserManager` directly instantiates the low-level `MySQLDatabase` concrete class, tightly coupling the core logic to the database implementation.",
       "why": "By directly calling `MySQLDatabase()`, the high-level module (`UserManager`) depends on the low-level module, rather than an abstraction. To fix this, it should accept the database instance as an argument in `__init__`."
+    },
+    {
+      "type": "find-bug",
+      "question": "Why does this `__init__` method violate the Dependency Inversion Principle despite using a type hint?",
+      "code": "def __init__(self, api: WeatherAPI = OpenWeatherMapAPI()):\n    self.api = api",
+      "answer": "It provides a concrete class (`OpenWeatherMapAPI`) as the default argument. This creates a hard dependency on the low-level module.",
+      "why": "Even though the parameter is typed as the `WeatherAPI` abstraction, the default value instantiates a specific detail. This forces the module to import and depend on `OpenWeatherMapAPI`, defeating the decoupling."
     }
   ],
   "recall_questions": [
     {
       "q": "What does the Dependency Inversion Principle state regarding high-level and low-level modules?",
-      "answer": "High-level modules (your core business logic) should not depend on low-level modules (like a specific database class); both should depend on abstractions (like a shared interface or Protocol). This way, you can swap the database without rewriting the business logic."
+      "answer": "High-level modules (your core business logic) should not depend on low-level modules (like a specific database class); both should depend on abstractions (like a shared interface or `Protocol`).\n\nThis way, you can swap the database without rewriting the business logic."
+    },
+    {
+      "q": "Why does `def __init__(self, gateway: PaymentGateway = StripeAPI()):` violate DIP even though the parameter is typed as the abstraction?",
+      "answer": "The type hint is only documentation — the default value `StripeAPI()` still instantiates a concrete class at module load time, tightly coupling the module to that implementation. Default to `None` and instantiate if missing, or use dependency injection, instead of a concrete default."
     }
   ],
   "practice_tasks": [
@@ -93,8 +108,8 @@
   "aha_moment": {
     "code": "class FakeDB:\n    def save(self, data):\n        print('Fake saved:', data)\n\nclass RealDB:\n    def save(self, data):\n        print('Real saved to disk:', data)\n\nclass UserCreator:\n    def __init__(self, db):\n        self.db = db\n    def create(self):\n        self.db.save('user1')\n\ntest_creator = UserCreator(FakeDB())\ntest_creator.create()",
     "prediction": "What happens when `test_creator.create()` is called? Which DB is used?",
-    "common_guess": "It saves to the real DB because UserCreator needs a database.",
-    "why": "Because `UserCreator` depends on the *abstraction* of a database (anything with a `save` method) rather than instantiating `RealDB` itself, we can inject `FakeDB` during tests, completely bypassing the disk."
+    "common_guess": "It saves to the real DB because `UserCreator` needs a database.",
+    "why": "Because `UserCreator` depends on the abstraction of a database (anything with a `save()` method) rather than instantiating `RealDB` itself, we can inject `FakeDB` during tests, completely bypassing the disk."
   },
   "challenge": {
     "title": "Implement an Abstract Data Store",

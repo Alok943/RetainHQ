@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "hard",
-    "estimated_minutes": 35,
+    "estimated_minutes": 40,
     "importance": 7,
     "interview_frequency": "low",
     "prerequisites": [
@@ -31,25 +31,29 @@
     }
   ],
   "overview": {
-    "what": "Async context managers allow you to manage resources that require asynchronous setup or teardown (like network connections). They use `async with` instead of `with`, and are implemented via the `__aenter__` and `__aexit__` dunder methods (special built-in methods with double underscores before and after their name), both of which must be `async def`. Alternatively, you can use the `@asynccontextmanager` decorator from `contextlib` on an async generator. `__aexit__` is guaranteed to run (awaited) even if the block raises.",
-    "why": "Regular context managers block the event loop if their setup/teardown performs I/O. Async context managers let you await network calls or database operations safely while ensuring cleanup.",
+    "what": "Async context managers allow you to manage resources that require asynchronous setup or teardown, such as network connections or database transactions.\n\nThey use `async with` instead of `with` and must be run inside an `async def` function. The event loop awaits the setup before the block starts and awaits the teardown after it finishes.\n\nClass-based async context managers require two dunder methods:\n\n- `__aenter__(self)`: Awaited before the block executes to perform setup. RETURNS the object bound to the `as` variable (often `self`), or `None`. Raises an exception (like `ConnectionError`) if setup fails.\n- `__aexit__(self, exc_type, exc_val, tb)`: Awaited after the block executes to perform cleanup. RETURNS a boolean indicating if an exception should be suppressed (`True`), or propagated (`False` or `None`). Raises an exception if cleanup fails.\n\n  @asynccontextmanager\n  async def get_connection():\n    conn = await connect()\n    yield conn\n    await conn.close() # TRAP: Skipped if block raises!\n\n**The Generator Teardown Trap**: When using the `@asynccontextmanager` decorator, exceptions raised inside the `async with` block are thrown back into the generator at the `yield` statement. If you do not wrap the `yield` in a `try...finally` block, your teardown code will never execute.",
+    "why": "Regular context managers block the event loop if their setup or teardown performs I/O. Async context managers let you `await` network calls or database operations safely while ensuring cleanup.",
     "where_used": [
-      "Database connection pools (asyncpg)",
-      "HTTP sessions (httpx/aiohttp)"
+      "Database connection pools (`asyncpg`)",
+      "HTTP sessions (`httpx` or `aiohttp`)"
     ]
   },
   "why_learning_this": [
-    "Prevent blocking the asyncio event loop during resource setup and teardown.",
-    "Correctly use modern async HTTP clients and database drivers."
+    "Prevent blocking the `asyncio` event loop during resource setup and teardown.",
+    "Correctly use modern `async` HTTP clients and database drivers."
   ],
   "common_mistakes": [
     {
-      "title": "Using 'with' instead of 'async with'",
-      "explanation": "If you use a regular `with` statement on an async context manager, Python will raise an AttributeError because it looks for `__enter__` instead of `__aenter__`."
+      "title": "Using `with` instead of `async with`",
+      "explanation": "If you use a regular `with` statement on an async context manager, Python will raise an `AttributeError` because it looks for `__enter__` instead of `__aenter__`."
     },
     {
       "title": "Forgetting async def on dunder methods",
-      "explanation": "If you define `__aenter__` or `__aexit__` as regular functions instead of `async def`, Python cannot `await` them, resulting in a TypeError."
+      "explanation": "If you define `__aenter__` or `__aexit__` as regular functions instead of `async def`, Python cannot `await` them, resulting in a `TypeError`."
+    },
+    {
+      "title": "Omitting try/finally in @asynccontextmanager",
+      "explanation": "If you do not wrap the `yield` in a `try...finally` block, exceptions raised inside the `async with` block will crash the generator. Any teardown code placed after the `yield` will be skipped, leading to resource leaks."
     }
   ],
   "recall_questions": [
@@ -67,6 +71,11 @@
       "q": "Which decorator from `contextlib` is used to create an async context manager from a generator?",
       "answer": "You can use the `@asynccontextmanager` decorator to transform a generator into an async context manager.",
       "tier": "tier1"
+    },
+    {
+      "q": "What happens to exceptions raised in the `async with` block when using `@asynccontextmanager`?",
+      "answer": "They are thrown into the generator at the `yield` statement. You must use a `try...finally` block to ensure teardown code runs.",
+      "tier": "tier2"
     }
   ],
   "understanding_checks": [
@@ -75,14 +84,21 @@
       "code": "import asyncio\n\nclass AsyncLog:\n  async def __aenter__(self):\n    print('A')\n  async def __aexit__(self, *args):\n    print('C')\n\nasync def main():\n  async with AsyncLog():\n    print('B')\n\nasyncio.run(main())",
       "question": "What is printed to the console?",
       "answer": "A\nB\nC",
-      "why": "`async with` awaits `__aenter__` printing 'A', runs the block printing 'B', and then awaits `__aexit__` printing 'C'."
+      "why": "`async with` awaits `__aenter__` printing `A`, runs the block printing `B`, and then awaits `__aexit__` printing `C`."
     },
     {
       "type": "predict-output",
       "code": "import asyncio\nfrom contextlib import asynccontextmanager\n\n@asynccontextmanager\nasync def lock():\n  print('Acquire')\n  yield\n  print('Release')\n\nasync def main():\n  async with lock():\n    print('Work')\n\nasyncio.run(main())",
       "question": "What is printed to the console?",
       "answer": "Acquire\nWork\nRelease",
-      "why": "Using `@asynccontextmanager`, the code before `yield` runs first ('Acquire'), then the block runs ('Work'), and finally the code after `yield` runs ('Release')."
+      "why": "Using `@asynccontextmanager`, the code before `yield` runs first (`Acquire`), then the block runs (`Work`), and finally the code after `yield` runs (`Release`)."
+    },
+    {
+      "type": "predict-output",
+      "code": "import asyncio\nfrom contextlib import asynccontextmanager\n\n@asynccontextmanager\nasync def lock():\n  print('Acquire')\n  yield\n  print('Release')\n\nasync def main():\n  try:\n    async with lock():\n      print('Work')\n      raise ValueError()\n  except ValueError:\n    print('Caught')\n\nasyncio.run(main())",
+      "question": "What is printed to the console?",
+      "answer": "Acquire\nWork\nCaught",
+      "why": "The `ValueError` raised inside the block is thrown into the `lock` generator at the `yield` statement. Because `yield` is not wrapped in a `try...finally` block, the exception halts the generator, skipping `Release`."
     }
   ],
   "code_walkthrough": {
@@ -91,21 +107,21 @@
   },
   "aha_moment": {
     "code": "import asyncio\n\nclass SyncInAsync:\n  def __enter__(self):\n    print('Sync Enter')\n  def __exit__(self, *args):\n    print('Sync Exit')\n\nasync def run():\n  with SyncInAsync():\n    print('Inside')\n\nasyncio.run(run())",
-    "prediction": "Is this code valid, or will it raise an error because `with` is used inside an async function?",
+    "prediction": "Is this code valid, or will it raise an error because `with` is used inside an `async` function?",
     "common_guess": "It will raise an error.",
-    "why": "It is valid! You can use regular `with` context managers inside async functions. You only need `async with` if the context manager itself is asynchronous (i.e., performs I/O)."
+    "why": "It is valid! You can use regular `with` context managers inside `async` functions. You only need `async with` if the context manager itself is asynchronous (i.e., performs I/O)."
   },
   "practice_tasks": [
     {
       "title": "Migrate to Async",
-      "prompt": "Given this synchronous context manager using `@contextmanager`, convert it to an async context manager using `@asynccontextmanager`.",
+      "prompt": "Given this synchronous context manager using `@contextmanager`, convert it to an `async` context manager using `@asynccontextmanager`.",
       "starter_code": "from contextlib import contextmanager\n\n@contextmanager\ndef delay():\n  print('Wait')\n  yield\n  print('Done')",
       "solution": "from contextlib import asynccontextmanager\nimport asyncio\n\n@asynccontextmanager\nasync def delay():\n  print('Wait')\n  yield\n  print('Done')"
     }
   ],
   "challenge": {
     "title": "An Async Error Suppressor",
-    "prompt": "Write an async context manager class `AsyncSuppressor` that catches and suppresses `ValueError`. Both `__aenter__` and `__aexit__` must be implemented correctly.",
+    "prompt": "Write an `async` context manager class `AsyncSuppressor` that catches and suppresses `ValueError`. Both `__aenter__` and `__aexit__` must be implemented correctly.",
     "solution": "class AsyncSuppressor:\n  async def __aenter__(self):\n    return self\n  async def __aexit__(self, exc_type, exc_val, tb):\n    return exc_type is ValueError"
   },
   "sources": [

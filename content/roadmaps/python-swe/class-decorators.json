@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "low",
     "prerequisites": [
@@ -23,30 +23,30 @@
   "glossary": [
     {
       "term": "boilerplate",
-      "definition": "Standard pieces of code that have to be written over and over again with little alteration, e.g. `def __init__(self, x): self.x = x`."
+      "definition": "Standard pieces of code that have to be written over and over again with little alteration, e.g., `def __init__(self, x): self.x = x`."
     },
     {
       "term": "mutate",
-      "definition": "To change or alter the internal state or data of an object, e.g. `user.age += 1`."
+      "definition": "To change or alter the internal state or data of an object, e.g., `user.age += 1`."
     }
   ],
   "overview": {
-    "what": "A class decorator is a function that takes a class object as an argument and returns a modified class. Instead of modifying instances, it alters the class definition itself, such as adding properties, methods, or registering the class. Think of it like a car factory adding a custom spoiler to every car model before any cars are actually produced. The class name is rebound to whatever the decorator returns, applied once at definition time.",
-    "why": "It reduces boilerplate when you need to apply the same structural changes (like adding standard methods or registering to a central store) across many classes.",
+    "what": "A class decorator is a function that takes a class object as an argument and returns a modified class. Instead of modifying instances, it alters the class definition itself. The class name is rebound to whatever the decorator returns, applied once at definition time.\n\nThink of it like a car factory adding a custom spoiler to every car model before any cars are actually produced.\n\nWhen writing a class decorator, you can:\n- Mutate the class directly to add attributes or methods\n- Register the class in a global registry\n- Return an entirely new wrapper class\n\nReturning a wrapper class creates an identity trap that hides the original class metadata (like `__name__` and `__doc__`).\n\n  def wrap(cls):\n    class Wrapper: pass\n    return Wrapper\n\n  @wrap\n  class Job: pass\n  print(Job.__name__) # Prints 'Wrapper'\n\n",
+    "why": "It reduces boilerplate when you need to apply the same structural changes across many classes.\n\nCommon use cases include:\n- Adding standard methods like `__init__` or `__repr__`\n- Registering classes to a central store or registry\n- Enforcing class-level constraints",
     "where_used": [
-      "dataclasses (@dataclass)",
-      "pytest (@pytest.mark)",
-      "SQLAlchemy"
+      "`dataclasses` (`@dataclass`)",
+      "`pytest` (`@pytest.mark`)",
+      "`SQLAlchemy`"
     ]
   },
   "why_learning_this": [
-    "Understand how @dataclass magically adds __init__ and __repr__ to your classes",
+    "Understand how `@dataclass` magically adds `__init__` and `__repr__` to your classes",
     "Learn to register classes automatically upon definition"
   ],
   "common_mistakes": [
     {
       "title": "Forgetting to return the class",
-      "explanation": "If your class decorator doesn't return the class object, the class name will be bound to None (or whatever you returned)."
+      "explanation": "If your class decorator does not return the class object, the class name will be bound to `None` (or whatever you returned). This causes an unexpected `TypeError` when you try to instantiate it."
     },
     {
       "title": "Mutating the original class unexpectedly",
@@ -61,32 +61,37 @@
     },
     {
       "q": "Why would you use a class decorator instead of standard inheritance?",
-      "answer": "Class decorators are useful for applying standard modifications (like adding boilerplate methods or registering the class) without enforcing a rigid inheritance hierarchy.",
+      "answer": "Class decorators are useful for applying standard modifications without enforcing a rigid inheritance hierarchy.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if a class decorator returns a new wrapper class instead of mutating the original class?",
+      "answer": "The class loses its original identity metadata, meaning `__name__` and `__doc__` will reflect the wrapper class instead of the original one.",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "Modify Plugin Registration",
-      "prompt": "The `register_plugin` decorator currently appends the class name to `PLUGINS`. Modify it so that it appends the actual class object to `PLUGINS` instead, and ensure it returns the class.",
-      "starter_code": "PLUGINS = []\n\ndef register_plugin(cls):\n    PLUGINS.append(cls.__name__)\n    return cls\n\n@register_plugin\nclass MyPlugin:\n    pass",
-      "solution": "PLUGINS = []\n\ndef register_plugin(cls):\n    PLUGINS.append(cls)\n    return cls\n\n@register_plugin\nclass MyPlugin:\n    pass"
+      "prompt": "The `register_plugin` decorator currently appends the class name to `PLUGINS`. Modify it so that it appends the actual class object to `PLUGINS` instead, and ensure it returns the `cls` object.",
+      "starter_code": "PLUGINS = []\n\ndef register_plugin(cls):\n  PLUGINS.append(cls.__name__)\n  return cls\n\n@register_plugin\nclass MyPlugin:\n  pass",
+      "solution": "PLUGINS = []\n\ndef register_plugin(cls):\n  PLUGINS.append(cls)\n  return cls\n\n@register_plugin\nclass MyPlugin:\n  pass"
     }
   ],
   "code_walkthrough": {
-    "code": "def add_id(cls):\n    cls.id_field = 'default_id'\n    return cls\n\n@add_id\nclass User:\n    pass\n\nprint(User.id_field)",
+    "code": "def add_id(cls):\n  cls.id_field = 'default_id'\n  return cls\n\n@add_id\nclass User:\n  pass\n\nprint(User.id_field)",
     "focus": "cls.id_field = 'default_id' # The class object is mutated directly"
   },
   "aha_moment": {
-    "code": "def oops_decorator(cls):\n    print('Decorated!')\n    # forgot to return cls\n\n@oops_decorator\nclass App:\n    pass\n\nprint(type(App))",
-    "prediction": "What is the type of App?",
-    "common_guess": "<class 'type'>",
+    "code": "def oops_decorator(cls):\n  print('Decorated!')\n  # forgot to return cls\n\n@oops_decorator\nclass App:\n  pass\n\nprint(type(App))",
+    "prediction": "What is the type of `App`?",
+    "common_guess": "`<class 'type'>`",
     "why": "Because `oops_decorator` didn't return anything, it implicitly returned `None`. The name `App` is now bound to `None`, not the class."
   },
   "challenge": {
     "title": "Adding a class-level timestamp",
     "prompt": "Create a class decorator `add_timestamp` that adds a class attribute `created_at` to the decorated class. Set its value to `'2023-01-01'`. Apply this decorator to a class `Record` and print `Record.created_at`.",
-    "solution": "def add_timestamp(cls):\n    cls.created_at = '2023-01-01'\n    return cls\n\n@add_timestamp\nclass Record:\n    pass\n\nprint(Record.created_at)\n"
+    "solution": "def add_timestamp(cls):\n  cls.created_at = '2023-01-01'\n  return cls\n\n@add_timestamp\nclass Record:\n  pass\n\nprint(Record.created_at)"
   },
   "sources": [
     "https://docs.python.org/3/reference/compound_stmts.html#class-definitions",
@@ -98,7 +103,7 @@
       "code": "def double_decorator(cls):\n  cls.value = 20\n  return cls\n\n@double_decorator\nclass Config:\n  value = 10\n\nprint(Config.value)",
       "question": "What does this code print?",
       "answer": "20",
-      "why": "The class decorator receives the class object, modifies its `value` attribute directly to 20, and returns it."
+      "why": "The class decorator receives the class object, modifies its `value` attribute directly to `20`, and returns it."
     },
     {
       "type": "explain-behavior",

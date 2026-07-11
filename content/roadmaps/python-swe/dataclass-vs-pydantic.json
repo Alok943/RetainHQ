@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [
@@ -22,7 +22,7 @@
   "glossary": [
     {
       "term": "type coercion",
-      "definition": "Automatically converting a value from one data type to another, like turning the string 5 into the integer 5, e.g. `int('5')`."
+      "definition": "Automatically converting a value from one data type to another, like turning the string `'5'` into the integer `5`, e.g. `int('5')`."
     },
     {
       "term": "overhead",
@@ -30,22 +30,22 @@
     }
   ],
   "overview": {
-    "what": "Standard library `@dataclass` generates boilerplate methods (like `__init__`, `__repr__`) for storing structured data, but it does not strictly enforce types at runtime. Pydantic's `BaseModel` does data parsing, type coercion, and strict validation. Mental model: Dataclasses are lightweight 'storage boxes' trusting the developer to provide correct types; Pydantic models are 'bouncers' that actively inspect, cast, and reject invalid data coming from the outside world.",
+    "what": "Standard library `@dataclass` generates boilerplate methods (like `__init__`, `__repr__`) for storing structured data, but it does not strictly enforce types at runtime.\n\nPydantic's `BaseModel` does data parsing, type coercion, and strict validation.\n\nMental model: Dataclasses are lightweight 'storage boxes' trusting the developer to provide correct types. Pydantic models are 'bouncers' that actively inspect, cast, and reject invalid data coming from the outside world.\n\nA common edge-case trap is that Pydantic only validates data during initialization. Mutating fields later bypasses checks:\n\n  class User(BaseModel):\n    age: int\n\n  u = User(age=20)\n  u.age = 'twenty'  # Silently breaks the type contract!\n\nTo catch this, you must explicitly enable `validate_assignment` in the model configuration.",
     "why": "Choosing the right tool prevents performance overhead when validation isn't needed, and prevents bugs when dealing with untrusted I/O data (like JSON from a web request).",
     "where_used": [
       "FastAPI request bodies (Pydantic)",
-      "Internal application state (Dataclasses)",
+      "Internal application state (`@dataclass`)",
       "Environment variable parsing (Pydantic)"
     ]
   },
   "why_learning_this": [
     "You will know when to pay the performance cost of Pydantic validation.",
-    "You will avoid the false sense of security that standard dataclasses type hints give."
+    "You will avoid the false sense of security that standard `@dataclass` type hints give."
   ],
   "common_mistakes": [
     {
       "title": "Assuming dataclasses enforce types",
-      "explanation": "If you define `age: int` in a dataclass, passing `age='twenty'` will silently succeed at runtime. Dataclasses only store what they are given unless checked by a static type checker like mypy."
+      "explanation": "If you define `age: int` in a dataclass, passing `age='twenty'` will silently succeed at runtime. Dataclasses only store what they are given unless checked by a static type checker like `mypy`."
     },
     {
       "title": "Using Pydantic everywhere",
@@ -67,6 +67,11 @@
       "q": "When is it better to use a standard `@dataclass` over a Pydantic `BaseModel`?",
       "answer": "When storing internal state or trusted data where validation is unnecessary and performance/minimal overhead is desired.",
       "tier": "tier3"
+    },
+    {
+      "q": "Does a Pydantic `BaseModel` validate data when you reassign an attribute after the object is created?",
+      "answer": "Not by default. It only validates during instantiation unless `validate_assignment` is enabled in the model configuration.",
+      "tier": "tier2"
     }
   ],
   "understanding_checks": [
@@ -81,18 +86,18 @@
       "type": "explain-behavior",
       "question": "If you receive a JSON payload from an external API, which library should you use to load it into a Python object, and why?",
       "answer": "Pydantic.",
-      "why": "Because external APIs are untrusted I/O. Pydantic will validate the types and coerce data (e.g., parsing ISO datetime strings into datetime objects) or raise a validation error, whereas a dataclass will blindly accept bad data."
+      "why": "Because external APIs are untrusted I/O. Pydantic will validate the types and coerce data (e.g., parsing ISO datetime strings into `datetime` objects) or raise a `ValidationError`, whereas a dataclass will blindly accept bad data."
     }
   ],
   "code_walkthrough": {
     "code": "from pydantic import BaseModel\n\nclass Settings(BaseModel):\n    port: int\n\ns = Settings(port='8080')\nprint(repr(s.port))",
-    "focus": "s = Settings(port='8080') causes Pydantic to parse the string '8080' and coerce it into the integer 8080."
+    "focus": "`s = Settings(port='8080')` causes Pydantic to parse the string `'8080'` and coerce it into the integer `8080`."
   },
   "aha_moment": {
     "code": "from pydantic import BaseModel, ValidationError\n\nclass Config(BaseModel):\n    timeout: int\n\ntry:\n    c = Config(timeout='five')\n    print(c.timeout)\nexcept ValidationError:\n    print('Validation Failed!')",
     "prediction": "Will this code crash with a standard Python TypeError or print a message?",
-    "common_guess": "It will crash with a TypeError.",
-    "why": "It prints 'Validation Failed!'. Unlike standard python types or dataclasses, Pydantic actively intercepts the instantiation, catches the type mismatch, and raises its own rich `ValidationError`."
+    "common_guess": "It will crash with a `TypeError`.",
+    "why": "It prints `'Validation Failed!'`. Unlike standard Python types or dataclasses, Pydantic actively intercepts the instantiation, catches the type mismatch, and raises its own rich `ValidationError`."
   },
   "practice_tasks": [
     {

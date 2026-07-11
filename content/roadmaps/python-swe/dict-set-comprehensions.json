@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -26,7 +26,7 @@
   "glossary": [
     {
       "term": "comprehension",
-      "definition": "A concise and highly readable way to create a new list, dictionary, or set by transforming or filtering an existing collection. Example: `{w: len(w) for w in words}`"
+      "definition": "A concise and highly readable way to create a new `list`, `dict`, or `set` by transforming or filtering an existing collection. Example: `{w: len(w) for w in words}`"
     },
     {
       "term": "hashable",
@@ -34,27 +34,27 @@
     }
   ],
   "overview": {
-    "what": "Just like list comprehensions, Python allows you to build dictionaries and sets using a concise one-line syntax. A dictionary comprehension uses curly braces with a key-value mapping: `{key: value for item in iterable}`. A set comprehension uses curly braces with just a single expression: `{expression for item in iterable}`. Think of them as a fast, readable factory pipeline that maps or filters data directly into a hashed lookup structure instead of a flat list.",
-    "why": "When processing database rows or API results, you frequently need to index data by ID for fast O(1) lookups (instant retrieval regardless of size) later, or invert a mapping. Doing this with a standard `for` loop requires initializing an empty dict and repeatedly assigning keys. A comprehension does this in a single, highly readable expression.",
+    "what": "Just like `list` comprehensions, Python allows you to build dictionaries and sets using a concise one-line syntax.\n\nA dictionary comprehension uses curly braces with a key-value mapping:\n\n  {key: value for item in iterable}\n\nA set comprehension uses curly braces with just a single expression:\n\n  {expression for item in iterable}\n\nThink of them as a fast, readable factory pipeline that maps or filters data directly into a hashed lookup structure instead of a flat `list`.\n\nWhen creating a dictionary, if multiple items generate the same key, the last one evaluated overwrites previous values.\n\n  pairs = [(\"a\", 1), (\"b\", 2), (\"a\", 3)]\n  # The second \"a\" overwrites the first\n  merged = {k: v for k, v in pairs}\n  print(merged)  # {'a': 3, 'b': 2}\n\nThis behavior is consistent with standard dictionary assignment. Overriding nested data structures during comprehensions is covered fully in nested-comprehensions.",
+    "why": "When processing database rows or API results, you frequently need to index data by ID for fast `O(1)` lookups (instant retrieval regardless of size) later, or invert a mapping.\n\nDoing this with a standard `for` loop requires initializing an empty `dict` and repeatedly assigning keys.\n\nA comprehension does this in a single, highly readable expression.",
     "where_used": [
-      "Indexing list of ORM objects by their primary key",
+      "Indexing a `list` of ORM objects by their primary key",
       "Inverting mappings (swapping keys and values)",
-      "Extracting unique tags from a list"
+      "Extracting unique tags from a `list`"
     ]
   },
   "why_learning_this": [
-    "Quickly converting a list of API results into a dictionary indexed by ID",
+    "Quickly converting a `list` of API results into a dictionary indexed by ID",
     "Inverting an existing dictionary mapping in one line",
     "Filtering out duplicate values while transforming them"
   ],
   "common_mistakes": [
     {
       "title": "Confusing set and dict comprehensions",
-      "explanation": "If you provide a colon `key: value`, it's a dict. If you just provide a single expression, it generates a set."
+      "explanation": "If you provide a colon (`key: value`), it's a `dict`. If you just provide a single expression, it generates a `set`."
     },
     {
       "title": "Un-hashable keys in dict comprehensions",
-      "explanation": "The `key` expression in your loop must evaluate to an immutable type (like a string or int). If it evaluates to a list or dict, Python raises a `TypeError`."
+      "explanation": "The `key` expression in your loop must evaluate to an immutable type (like a `str` or `int`). If it evaluates to a `list` or `dict`, Python raises a `TypeError`."
     }
   ],
   "understanding_checks": [
@@ -63,25 +63,36 @@
       "question": "What is the output of the following dictionary comprehension?",
       "code": "words = ['apple', 'bat', 'cat']\nlengths = {w: len(w) for w in words}\nprint(lengths['bat'])",
       "answer": "3",
-      "why": "The dictionary comprehension maps each word to its length. Therefore, `lengths['bat']` evaluates to 3."
+      "why": "The dictionary comprehension maps each word to its length. Therefore, `lengths['bat']` evaluates to `3`."
     },
     {
       "type": "debug-misconception",
       "question": "A developer writes `{x for x in range(5)}` and thinks this evaluates to a dictionary because they used curly braces. Why are they incorrect?",
-      "answer": "Because the expression doesn't contain key-value pairs separated by a colon, it evaluates to a set comprehension, not a dictionary.",
-      "why": "Curly braces denote both dictionaries and sets. If the comprehension has `key: value`, it's a dict. If it just has an expression, it's a set."
+      "answer": "Because the expression doesn't contain key-value pairs separated by a colon, it evaluates to a `set` comprehension, not a `dict`.",
+      "why": "Curly braces denote both dictionaries and sets. If the comprehension has `key: value`, it's a `dict`. If it just has an expression, it's a `set`."
+    },
+    {
+      "type": "predict-output",
+      "question": "What is the output of this dictionary comprehension?",
+      "code": "data = [(\"x\", 10), (\"y\", 20), (\"x\", 30)]\nresult = {k: v for k, v in data}\nprint(result[\"x\"])",
+      "answer": "30",
+      "why": "When a dictionary comprehension encounters duplicate keys, the last key-value pair evaluated overwrites previous values. The first value `10` is replaced by `30`."
     }
   ],
   "recall_questions": [
     {
       "q": "What distinguishes a dict comprehension from a set comprehension syntactically?",
-      "answer": "A dict comprehension uses key-value pairs separated by a colon (`key: value`), while a set comprehension only has a single expression. Both use curly braces, so the colon is the defining difference."
+      "answer": "A `dict` comprehension uses key-value pairs separated by a colon (`key: value`), while a `set` comprehension only has a single expression. Both use curly braces, so the colon is the defining difference."
+    },
+    {
+      "q": "What happens if a dictionary comprehension generates the same key multiple times?",
+      "answer": "The last value evaluated overwrites any previous values associated with that key."
     }
   ],
   "practice_tasks": [
     {
       "title": "Index users and extract unique domains",
-      "prompt": "Modify the `user_lookup` loop into a single dictionary comprehension that maps a user's `id` to the whole dictionary, and the `unique_domains` loop into a single set comprehension.",
+      "prompt": "Modify the `user_lookup` loop into a single dictionary comprehension that maps a user's `id` to the whole dictionary, and the `unique_domains` loop into a single `set` comprehension.",
       "starter_code": "users = [{'id': 101, 'name': 'Alice', 'email': 'a@gmail.com'}, {'id': 102, 'name': 'Bob', 'email': 'b@yahoo.com'}]\n\nuser_lookup = {}\nfor u in users:\n    user_lookup[u['id']] = u\n\nunique_domains = set()\nfor u in users:\n    unique_domains.add(u['email'].split('@')[1])",
       "solution": "users = [{'id': 101, 'name': 'Alice', 'email': 'a@gmail.com'}, {'id': 102, 'name': 'Bob', 'email': 'b@yahoo.com'}]\n\nuser_lookup = {u['id']: u for u in users}\nunique_domains = {u['email'].split('@')[1] for u in users}"
     }
@@ -92,7 +103,7 @@
   },
   "challenge": {
     "title": "Filter and index products",
-    "prompt": "You are given a list of products. Create a dict mapping `product_id` to `name`, but ONLY for products that have `in_stock` set to True. Use a single dict comprehension with an `if` clause.",
+    "prompt": "You are given a `list` of products. Create a `dict` mapping `product_id` to `name`, but ONLY for products that have `in_stock` set to `True`. Use a single `dict` comprehension with an `if` clause.",
     "solution": "products = [\n    {'id': 1, 'name': 'Laptop', 'in_stock': True},\n    {'id': 2, 'name': 'Mouse', 'in_stock': False},\n    {'id': 3, 'name': 'Keyboard', 'in_stock': True}\n]\n\navailable = {p['id']: p['name'] for p in products if p['in_stock']}\nprint(available)"
   },
   "sources": [

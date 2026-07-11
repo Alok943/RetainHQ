@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "high",
     "prerequisites": [
@@ -26,46 +26,51 @@
     },
     {
       "term": "Strategy and Factory",
-      "definition": "Common design patterns; Strategy lets you swap out behaviors on the fly, while Factory helps create new objects without exposing construction logic. Example: `EmailNotifier()`."
+      "definition": "Common design patterns; `Strategy` lets you swap out behaviors on the fly, while `Factory` helps create new objects without exposing construction logic. Example: `EmailNotifier()`."
     }
   ],
   "overview": {
-    "what": "The Open/Closed Principle (OCP) states that software entities should be open for extension, but closed for modification. You should be able to add new functionality without changing existing code. In Python, this is typically achieved using inheritance, composition, or duck typing (determining object suitability by its methods rather than its type).\n\nFor example, instead of a single function checking types:\n\n  def process(item):\n    if isinstance(item, Text):\n      item.read()\n    elif isinstance(item, Image):\n      item.render()\n\nYou rely on a common interface:\n\n  def process(item):\n    item.handle()\n\nNow, adding a `Video` class doesn't require modifying `process`. Think of a power strip: it is closed for modification (you don't rewire it to plug in a new device) but open for extension (you just plug a new adapter into an existing socket).",
+    "what": "The `Open/Closed Principle` (`OCP`) states that software entities should be open for extension, but closed for modification. You should be able to add new functionality without changing existing code.\n\nIn Python, this is typically achieved using:\n\n- `Inheritance`: Extending base classes.\n- `Composition`: Injecting different behaviors.\n- `Duck typing`: Determining object suitability by its methods rather than its type.\n\nFor example, instead of a single function checking types:\n\n  def process(item):\n    if isinstance(item, Text):\n      item.read()\n    elif isinstance(item, Image):\n      item.render()\n\nYou rely on a common interface:\n\n  def process(item):\n    item.handle()\n\nNow, adding a `Video` class doesn't require modifying `process`.\n\nThink of a power strip: it is closed for modification (you don't rewire it to plug in a new device) but open for extension (you just plug a new adapter into an existing socket).\n\n  class Video:\n    pass # Forgot to implement handle()\n  def process(item):\n    item.handle() # Traps! Raises AttributeError\n  process(Video())\n\nBecause Python uses duck typing, extending functionality without a strict interface risks an `AttributeError` at runtime if the new class forgets a required method. Using `abc.ABC` or `typing.Protocol` is the standard way to enforce these contracts (covered fully in protocols).",
     "why": "It prevents bugs from being introduced into tested, working code when requirements change. It also reduces coupling and makes codebases easier to maintain as they grow.",
     "where_used": [
-      "FastAPI dependencies",
-      "Django views",
+      "`FastAPI` dependencies",
+      "`Django` views",
       "Plugin architectures"
     ]
   },
   "why_learning_this": [
     "Write systems that don't require rewriting core logic every time a new feature is requested",
-    "Understand the underlying philosophy behind many design patterns like Strategy and Factory"
+    "Understand the underlying philosophy behind many design patterns like `Strategy` and `Factory`"
   ],
   "common_mistakes": [
     {
-      "title": "Using endless if-elif chains",
+      "title": "Using endless `if-elif` chains",
       "explanation": "Adding a new condition means modifying the existing function. The fix is to extract the conditional logic into separate classes or functions that share an interface."
     },
     {
       "title": "Over-engineering prematurely",
-      "explanation": "Applying OCP before the need for extension is proven can lead to unnecessary abstraction. Only abstract when you actually need to add a second or third variant."
+      "explanation": "Applying `OCP` before the need for extension is proven can lead to unnecessary abstraction. Only abstract when you actually need to add a second or third variant."
     }
   ],
   "recall_questions": [
     {
-      "q": "What does it mean for code to be 'closed for modification'?",
+      "q": "What does it mean for code to be \"closed for modification\"?",
       "answer": "It means the existing, tested source code of a component should not need to be changed to add new behaviors or features.",
       "tier": "tier1"
     },
     {
-      "q": "What is a common sign that a function violates the Open/Closed Principle?",
-      "answer": "A function with many if-elif statements checking the type or category of an object is a strong indicator.",
+      "q": "What is a common sign that a function violates the `Open/Closed Principle`?",
+      "answer": "A function with many `if-elif` statements checking the type or category of an object is a strong indicator.",
       "tier": "tier2"
     },
     {
-      "q": "How does OCP improve the stability of a codebase?",
+      "q": "How does `OCP` improve the stability of a codebase?",
       "answer": "By not changing existing code, you avoid introducing new bugs into functionality that is already tested and working.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the primary risk of using duck typing to implement `OCP` in Python?",
+      "answer": "If a new extension class forgets to implement a required method, it will cause an `AttributeError` at runtime rather than failing early.",
       "tier": "tier2"
     }
   ],
@@ -83,9 +88,9 @@
   },
   "aha_moment": {
     "code": "class Formatter:\n  def format(self, text):\n    return text\n\nclass UpperFormatter(Formatter):\n  def format(self, text):\n    return text.upper()\n\ndef print_message(text, formatter=Formatter()):\n  print(formatter.format(text))\n\nprint_message('hello', UpperFormatter())",
-    "prediction": "What will print_message output?",
-    "common_guess": "'hello'",
-    "why": "Because we passed `UpperFormatter()`, the function delegates to it, resulting in 'HELLO'. We changed the function's behavior without altering its source code."
+    "prediction": "What will `print_message` output?",
+    "common_guess": "`'hello'`",
+    "why": "Because we passed `UpperFormatter()`, the function delegates to it, resulting in `'HELLO'`. We changed the function's behavior without altering its source code."
   },
   "challenge": {
     "title": "Implement an OCP-compliant Notification System",
@@ -98,16 +103,16 @@
   "understanding_checks": [
     {
       "type": "explain-behavior",
-      "question": "In a notification system, what happens to the core `NotificationService` when a new `SlackNotification` class is added in an OCP-compliant design?",
+      "question": "In a notification system, what happens to the core `NotificationService` when a new `SlackNotification` class is added in an `OCP`-compliant design?",
       "answer": "The core `NotificationService` does not need to be modified at all. Because new notification types implement the same shared interface, they plug in as extensions rather than requiring changes to existing tested code.",
       "why": "Because the system is \"closed for modification\" but \"open for extension\". The `NotificationService` relies on a shared interface. Adding a new `SlackNotification` simply extends the system by introducing a new adapter, without touching the existing, tested service code."
     },
     {
       "type": "find-bug",
-      "question": "A developer created this code to process different file types. Why does it violate the Open/Closed Principle?",
+      "question": "A developer created this code to process different file types. Why does it violate the `Open/Closed Principle`?",
       "code": "def process_file(file_obj):\n    if file_obj.type == \"csv\":\n        parse_csv(file_obj)\n    elif file_obj.type == \"json\":\n        parse_json(file_obj)\n    else:\n        raise ValueError(\"Unknown type\")",
-      "answer": "It uses an if-elif chain that checks `file_obj.type`. Adding any new file type requires editing the `process_file` function itself, which violates OCP's rule that existing code should not need to change.",
-      "why": "To support a new file type (like \"xml\"), you must modify the `process_file` function itself. This violates OCP, which states that code should be closed for modification. Instead, this should be refactored to use polymorphism, where each file object shares a common `parse()` interface."
+      "answer": "It uses an `if-elif` chain that checks `file_obj.type`. Adding any new file type requires editing the `process_file` function itself, which violates `OCP`'s rule that existing code should not need to change.",
+      "why": "To support a new file type (like `xml`), you must modify the `process_file` function itself. This violates `OCP`, which states that code should be closed for modification. Instead, this should be refactored to use polymorphism, where each file object shares a common `parse()` interface."
     }
   ]
 }

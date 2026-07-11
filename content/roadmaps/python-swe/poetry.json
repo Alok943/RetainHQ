@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "low",
     "prerequisites": [
@@ -30,8 +30,8 @@
     }
   ],
   "overview": {
-    "what": "Poetry is a dependency management and packaging tool for Python. It strictly manages environments by reading `pyproject.toml`, resolving a mathematically complete dependency graph, and generating a `poetry.lock` file. Think of it like `npm` or `yarn` for Python; it guarantees that everyone on your team (and your production server) installs the exact same versions of all packages and their sub-dependencies.",
-    "why": "Using `pip install` with `requirements.txt` can lead to the 'it works on my machine' problem because it doesn't strictly lock sub-dependencies. Poetry's lockfile ensures deterministic builds, meaning a deployment today will use the exact same code as a deployment six months from now.",
+    "what": "`Poetry` is a strict dependency management and packaging tool for Python. It isolates environments by reading `pyproject.toml`, resolving a mathematically complete dependency graph, and generating a `poetry.lock` file. Think of it like `npm` or `yarn` for Python; it guarantees that everyone on your team installs the exact same versions of all packages.\n\nCore commands used in typical workflows:\n- `poetry init`: Initializes a new `pyproject.toml` file interactively.\n- `poetry add <package>`: Resolves dependencies, updates the lockfile, and installs the package.\n- `poetry install`: Reads `poetry.lock` to install all locked dependencies into the virtual environment.\n\nA common sharp edge occurs when two packages require conflicting versions of a shared sub-dependency. `Poetry` strictly enforces these constraints and will refuse to install, raising a solver error.\n\n  [tool.poetry.dependencies]\n  python = \"^3.10\"\n  package-a = \"1.0.0\"  # Requires sub-package < 2.0\n  package-b = \"2.0.0\"  # Requires sub-package >= 2.0\n\nTo fix this dependency resolution conflict, you must manually find compatible versions of `package-a` and `package-b` that share overlapping constraints.",
+    "why": "Using `pip install` with `requirements.txt` can lead to the 'it works on my machine' problem because it doesn't strictly lock sub-dependencies. `Poetry` uses a lockfile to ensure deterministic builds, meaning a deployment today will use the exact same code as a deployment six months from now.",
     "where_used": [
       "Application dependency management",
       "Python package publishing",
@@ -39,18 +39,22 @@
     ]
   },
   "why_learning_this": [
-    "Ensure deterministic and reproducible builds in production",
+    "Ensure deterministic and reproducible builds in production environments",
     "Separate development dependencies (like `pytest`) from production dependencies",
     "Automatically handle virtual environment creation and management"
   ],
   "common_mistakes": [
     {
       "title": "Forgetting to commit the lockfile",
-      "explanation": "If you add a dependency but don't commit `poetry.lock` to Git, other developers won't get the deterministic versions. Always commit both `pyproject.toml` and `poetry.lock`."
+      "explanation": "If you add a dependency but don't commit `poetry.lock` to `Git`, other developers won't get the deterministic versions. Always commit both `pyproject.toml` and `poetry.lock`."
     },
     {
       "title": "Using pip alongside Poetry",
-      "explanation": "Running `pip install package` inside a Poetry environment bypasses Poetry's dependency resolver and lockfile. Always use `poetry add package` instead."
+      "explanation": "Running `pip install <package>` inside a `Poetry` environment bypasses the dependency resolver and lockfile. Always use `poetry add <package>` instead."
+    },
+    {
+      "title": "Ignoring solver errors",
+      "explanation": "When `poetry add` fails due to conflicting sub-dependencies, forcing the installation with `pip` breaks the environment. You must resolve the conflict by adjusting the version constraints in `pyproject.toml`."
     }
   ],
   "recall_questions": [
@@ -61,7 +65,7 @@
     },
     {
       "q": "Why is Poetry generally preferred over a plain `requirements.txt` file for complex applications?",
-      "answer": "Because `requirements.txt` typically only lists top-level dependencies, while Poetry resolves and locks the entire dependency graph, preventing conflicts and unexpected updates.",
+      "answer": "Because `requirements.txt` typically only lists top-level dependencies, while `Poetry` resolves and locks the entire dependency graph, preventing conflicts and unexpected updates.",
       "tier": "tier1"
     }
   ],
@@ -69,8 +73,8 @@
     {
       "type": "explain-behavior",
       "question": "A developer runs `poetry add requests`. They notice that not only `requests` but also packages like `urllib3` and `certifi` are added to the lockfile. Why?",
-      "answer": "Poetry resolves and locks the entire dependency tree. It walks through every package's own requirements recursively so that all sub-dependencies are pinned to exact versions in `poetry.lock`.",
-      "why": "`requests` depends on other packages like `urllib3`. Poetry calculates all sub-dependencies recursively and locks their exact versions to guarantee reproducible behavior."
+      "answer": "`Poetry` resolves and locks the entire dependency tree. It walks through every package's own requirements recursively so that all sub-dependencies are pinned to exact versions in `poetry.lock`.",
+      "why": "`requests` depends on other packages like `urllib3`. `Poetry` calculates all sub-dependencies recursively and locks their exact versions to guarantee reproducible behavior."
     },
     {
       "type": "predict-output",
@@ -88,7 +92,7 @@
     "code": "import tomllib\n\ntoml_content = '''\n[tool.poetry.dependencies]\npython = '^3.10'\nhttpx = '^0.24.0'\n'''\n\ndata = tomllib.loads(toml_content)\nprint(data['tool']['poetry']['dependencies']['httpx'])",
     "prediction": "What string is printed representing the dependency requirement?",
     "common_guess": "'0.24.0'",
-    "why": "It prints `'^0.24.0'`. The caret (`^`) means 'allow minor/patch updates that do not break backward compatibility' (e.g., up to < 0.25.0). The lockfile, however, will contain the exact version."
+    "why": "It prints `'^0.24.0'`. The caret (`^`) means 'allow minor/patch updates that do not break backward compatibility' (e.g., up to `< 0.25.0`). The lockfile, however, will contain the exact version."
   },
   "practice_tasks": [
     {

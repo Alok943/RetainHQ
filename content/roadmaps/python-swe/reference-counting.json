@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "hard",
-    "estimated_minutes": 45,
+    "estimated_minutes": 50,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -31,12 +31,12 @@
     }
   ],
   "overview": {
-    "what": "In CPython, every object keeps a count of how many labels (variables, list elements, attributes) point to it. This is called the reference count. When a reference count drops to zero, the object is immediately destroyed and its memory is reclaimed. Think of an object as a balloon and references as strings holding it down. Every time you assign a variable or append it to a list, you tie a new string to the balloon. Every time a variable goes out of scope, you cut a string. When the last string is cut, the balloon flies away.",
-    "why": "Understanding reference counting explains when Python cleans up objects, why `__del__` is called (or not called), and how circular references can cause memory leaks.",
+    "what": "In CPython, every object keeps a count of how many labels (variables, list elements, attributes) point to it. This is called the reference count. When a reference count drops to zero, the object is immediately destroyed and its memory is reclaimed.\n\n  import sys\n\n  my_list = [1, 2, 3]\n  # Returns 2 (1 for my_list, 1 for getrefcount argument)\n  print(sys.getrefcount(my_list))\n\nThink of an object as a balloon and references as strings holding it down. Every time you assign a variable or append it to a list, you tie a new string to the balloon. Every time a variable goes out of scope, you cut a string.\n\nWhen the last string is cut, the balloon flies away. This deterministic memory management ensures resources are freed the exact moment they are no longer needed.\n\n  node_a = {}\n  node_b = {}\n  node_a['next'] = node_b\n  node_b['prev'] = node_a\n  del node_a, node_b\n\n**Edge Case**: Circular references prevent the reference count from ever reaching zero. The objects keep each other alive until the generational garbage collector eventually intervenes.",
+    "why": "Understanding reference counting explains:\n\n- When Python cleans up objects\n- Why `__del__` is called (or not called)\n- How circular references can cause memory leaks",
     "where_used": [
       "Memory optimization",
       "Writing C extensions",
-      "Debugging with objgraph"
+      "Debugging with `objgraph`"
     ]
   },
   "why_learning_this": [
@@ -45,12 +45,12 @@
   ],
   "common_mistakes": [
     {
-      "title": "Assuming del deletes the object",
+      "title": "Assuming `del` deletes the object",
       "explanation": "`del x` only removes the variable name `x` and decrements the object's reference count. The object itself is only deleted if its reference count reaches zero."
     },
     {
       "title": "Creating circular references",
-      "explanation": "If object A points to object B, and object B points to A, their reference counts will never drop to zero even if no variables point to them. The garbage collector eventually cleans this up, but it delays memory release."
+      "explanation": "If object `A` points to object `B`, and object `B` points to `A`, their reference counts will never drop to zero even if no variables point to them. The garbage collector eventually cleans this up, but it delays memory release."
     }
   ],
   "recall_questions": [
@@ -75,20 +75,20 @@
       "type": "predict-output",
       "question": "What does this script print?",
       "code": "class DBConnection:\n    def __del__(self):\n        print('Closed!')\n\nconn = DBConnection()\nbackup = conn\ndel conn\nprint('Done!')",
-      "answer": "It prints 'Done!' followed by 'Closed!'.",
-      "why": "`del conn` only removes the label `conn` and drops the reference count by 1. Since `backup` still points to the object, its reference count is not zero. The object is finally destroyed and prints 'Closed!' when the script ends and `backup` is cleaned up."
+      "answer": "It prints `'Done!'` followed by `'Closed!'`.",
+      "why": "`del conn` only removes the label `conn` and drops the reference count by `1`. Since `backup` still points to the object, its reference count is not zero. The object is finally destroyed and prints `'Closed!'` when the script ends and `backup` is cleaned up."
     },
     {
       "type": "explain-behavior",
       "question": "Why might memory not be freed immediately when two objects hold references to each other, even if no variables point to them?",
       "answer": "They form a circular reference, preventing their reference counts from ever reaching zero.",
-      "why": "Reference counting only reclaims an object when its count hits exactly zero. In a circular reference, each object keeps the other's count at 1, so the memory won't be freed until the generational garbage collector runs."
+      "why": "Reference counting only reclaims an object when its count hits exactly `0`. In a circular reference, each object keeps the other's count at `1`, so the memory won't be freed until the generational garbage collector runs."
     }
   ],
   "practice_tasks": [
     {
-      "title": "Observe reference counting with sys.getrefcount",
-      "prompt": "Modify the starter code to create a list `[1, 2, 3]` and assign it to a variable `a`. Print the reference count of `a` using `sys.getrefcount(a)`. Then, create a second variable `b` that points to `a`, and print the reference count again. Note: `sys.getrefcount` temporarily increases the count by 1 because the function argument itself creates a reference.",
+      "title": "Observe reference counting with `sys.getrefcount`",
+      "prompt": "Modify the starter code to create a list `[1, 2, 3]` and assign it to a variable `a`. Print the reference count of `a` using `sys.getrefcount(a)`. Then, create a second variable `b` that points to `a`, and print the reference count again. Note: `sys.getrefcount` temporarily increases the count by `1` because the function argument itself creates a reference.",
       "starter_code": "import sys\n\n# Your code here\n",
       "solution": "import sys\n\na = [1, 2, 3]\nprint(sys.getrefcount(a))\n\nb = a\nprint(sys.getrefcount(a))"
     }
@@ -99,13 +99,13 @@
   },
   "aha_moment": {
     "code": "class Tracked:\n    def __del__(self):\n        print('Destroyed!')\n\nobj = Tracked()\nalias = obj\ndel obj\nprint('End of script')",
-    "prediction": "When does 'Destroyed!' print? Before or after 'End of script'?",
-    "common_guess": "Before 'End of script', because we called `del obj`.",
-    "why": "It prints AFTER 'End of script'. `del obj` removes the name `obj` and decrements the reference count to 1 (because `alias` still points to it). The object isn't destroyed until the script ends and `alias` is cleaned up."
+    "prediction": "When does `'Destroyed!'` print? Before or after `'End of script'`?",
+    "common_guess": "Before `'End of script'`, because we called `del obj`.",
+    "why": "It prints AFTER `'End of script'`. `del obj` removes the name `obj` and decrements the reference count to `1` (because `alias` still points to it). The object isn't destroyed until the script ends and `alias` is cleaned up."
   },
   "challenge": {
     "title": "Tracking Object Destruction",
-    "prompt": "Create a class `Resource` with an `__init__` method that prints 'Created' and a `__del__` method that prints 'Destroyed'. Write a short script where you instantiate a `Resource` and assign it to a variable `x`. Then assign `x` to another variable `y`. Delete `x` and print 'x deleted'. Finally, delete `y` and print 'y deleted'. Observe exactly when 'Destroyed' is printed.",
+    "prompt": "Create a class `Resource` with an `__init__` method that prints `'Created'` and a `__del__` method that prints `'Destroyed'`. Write a short script where you instantiate a `Resource` and assign it to a variable `x`. Then assign `x` to another variable `y`. Delete `x` and print `'x deleted'`. Finally, delete `y` and print `'y deleted'`. Observe exactly when `'Destroyed'` is printed.",
     "solution": "class Resource:\n    def __init__(self):\n        print('Created')\n    def __del__(self):\n        print('Destroyed')\n\nx = Resource()\ny = x\nprint('Deleting x')\ndel x\nprint('x deleted')\nprint('Deleting y')\ndel y\nprint('y deleted')"
   },
   "sources": [

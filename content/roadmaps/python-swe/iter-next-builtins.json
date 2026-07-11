@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 20,
+    "estimated_minutes": 25,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -32,7 +32,7 @@
     }
   ],
   "overview": {
-    "what": "The `iter()` builtin calls an object's `__iter__()` method to get an iterator, while `next()` calls the iterator's `__next__()` method to get the next value. It's the user-facing interface for the iterator protocol. Think of `iter()` as 'give me a bookmark' and `next()` as 'turn to the next page'. This mechanism powers every `for` loop under the hood.",
+    "what": "The `iter()` and `next()` builtins act as the user-facing interface for the iterator protocol in Python.\nThe `iter()` function takes an iterable object and returns an iterator by calling the object's `__iter__()` method behind the scenes.\nThe `next()` function takes an iterator and returns the next value by calling its `__next__()` method.\n\nThink of `iter()` as \"give me a bookmark\" and `next()` as \"turn to the next page\".\nThis mechanism is what powers every `for` loop under the hood.\n\n- `iter(object)`: Requests an iterator from the provided iterable. Returns an iterator. Raises a `TypeError` if the object does not support the iterator protocol.\n- `next(iterator, default)`: Retrieves the next item from the iterator. Returns the optional `default` value if the iterator is exhausted. Raises a `StopIteration` exception if exhausted and no default is provided.\n\n  names = ['Alice', 'Bob']\n  it = iter(names)\n  \n  print(next(it))\n  print(next(it))\n\nIf you call `next()` on an exhausted iterator without a default value, Python raises a `StopIteration` exception.\n\n  # The trap: Exhausting an iterator without a default\n  it = iter([42])\n  print(next(it))  # 42\n  print(next(it))  # Raises StopIteration\n\nProviding a default value to `next()` prevents the exception crash by returning the fallback value instead.\nCustom iteration flows and exception handling are covered fully in `custom-iterator`.",
     "why": "It allows manual traversal of iterables. This is critical when you need more control than a standard `for` loop provides, such as advancing conditionally or passing the iterator across different functions.",
     "where_used": [
       "Parsing large CSV files line-by-line",
@@ -45,11 +45,11 @@
   ],
   "common_mistakes": [
     {
-      "title": "Calling next() on an iterable",
-      "explanation": "You cannot call `next()` directly on a list or string; you must first obtain an iterator using `iter()`, and then call `next()` on that iterator."
+      "title": "Calling `next()` on an iterable",
+      "explanation": "You cannot call `next()` directly on a `list` or `str`; you must first obtain an iterator using `iter()`, and then call `next()` on that iterator."
     },
     {
-      "title": "Not handling StopIteration",
+      "title": "Not handling `StopIteration`",
       "explanation": "If you call `next()` until the iterator is exhausted, it raises a `StopIteration` exception. You must catch this or provide a default value via `next(iterator, default)`."
     }
   ],
@@ -76,20 +76,20 @@
       "question": "What happens when you run this code?",
       "code": "nums = [1, 2]\nprint(next(nums))",
       "answer": "A `TypeError` is raised.",
-      "why": "You cannot call `next()` directly on a list (which is an iterable, not an iterator). You must first get an iterator by calling `iter(nums)`."
+      "why": "You cannot call `next()` directly on a `list` (which is an iterable, not an iterator). You must first get an iterator by calling `iter(nums)`."
     },
     {
       "type": "predict-output",
       "question": "What will the following code output?",
       "code": "it = iter([10, 20])\nnext(it)\nprint(next(it, 99))\nprint(next(it, 99))",
       "answer": "`20` followed by `99`",
-      "why": "The first `next(it)` advances past 10. The first `print` consumes 20. The second `print` tries to get the next item, but the iterator is exhausted, so it returns the default value `99` instead of raising `StopIteration`."
+      "why": "The first `next(it)` advances past `10`. The first `print` consumes `20`. The second `print` tries to get the next item, but the iterator is exhausted, so it returns the default value `99` instead of raising `StopIteration`."
     }
   ],
   "practice_tasks": [
     {
       "title": "Manual List Traversal",
-      "prompt": "The given code creates an iterator but extracts the first two items instead of the first and third. Modify the code to return a tuple of the first and third items, manually ignoring the second item using the iterator.",
+      "prompt": "The given code creates an iterator but extracts the first two items instead of the first and third. Modify the code to return a `tuple` of the first and third items, manually ignoring the second item using the iterator.",
       "starter_code": "def first_and_third(items):\n    it = iter(items)\n    first = next(it)\n    second = next(it)\n    return (first, second)",
       "solution": "def first_and_third(items):\n    it = iter(items)\n    first = next(it)\n    next(it)\n    third = next(it)\n    return (first, third)"
     }
@@ -102,7 +102,7 @@
     "code": "nums = [10, 20]\nit1 = iter(nums)\nit2 = iter(nums)\n\nnext(it1)\nprint(next(it2))",
     "prediction": "What does this print?",
     "common_guess": "20",
-    "why": "Calling `iter()` creates a NEW iterator object each time. `it1` and `it2` are independent bookmarks in the same list, so advancing `it1` does not affect `it2`."
+    "why": "Calling `iter()` creates a NEW iterator object each time. `it1` and `it2` are independent bookmarks in the same `list`, so advancing `it1` does not affect `it2`."
   },
   "challenge": {
     "title": "Safe Advancement",

@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 9,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -33,7 +33,7 @@
     }
   ],
   "overview": {
-    "what": "Dynamic typing means variable names are bound to objects at runtime, rather than being locked to a specific data type at compile time. Think of variables as sticky notes with names written on them that can be peeled off an integer and slapped onto a string, while type() is the barcode scanner that reveals the actual object's underlying nature.",
+    "what": "Dynamic typing means variable names are bound to objects at runtime, rather than being locked to a specific data type at compile time. Think of variables as sticky notes with names written on them that can be peeled off an `int` and slapped onto a `str`. The `type()` function acts as a barcode scanner that reveals the actual object's underlying nature.\n\n  user_id = 42\n  print(type(user_id))  # <class 'int'>\n  user_id = \"admin\"\n  print(type(user_id))  # <class 'str'>\n\nA sharp edge arises when mixing dynamic reassignment with mutable objects. Reassigning a variable moves its reference to a completely new object, but calling methods on the object mutates it in place for all references.\n\n  x = [1, 2]\n  y = x\n  x = \"new type\"  # Reassignment: y is unaffected\n  x = y\n  x.append(3)     # Mutation: y becomes [1, 2, 3]\n\nBecause the underlying type dictates whether an object can be mutated in place, this trap is covered fully in `mutable-vs-immutable`.",
     "why": "It enables rapid prototyping and highly flexible code since you do not need to declare types upfront. However, this flexibility requires discipline, as a variable unexpectedly pointing to a different type can crash your application deep in the call stack.",
     "where_used": [
       "Data validation pipelines",
@@ -42,34 +42,34 @@
     ]
   },
   "why_learning_this": [
-    "Debugging type errors in JSON payloads where an API expects an integer but receives a numeric string",
+    "Debugging type errors in JSON payloads where an API expects an `int` but receives a numeric `str`",
     "Writing type-safe Pydantic models by understanding how Python's runtime handles dynamic reassignment"
   ],
   "common_mistakes": [
     {
       "title": "Assuming variables have types",
-      "explanation": "Developers from strictly typed languages often think the variable itself holds the type, leading to confusion when user_id = 123 later becomes user_id = '123_abc'. Fix: Remember that types live on the object in memory, not on the variable name."
+      "explanation": "Developers from strictly typed languages often think the variable itself holds the type, leading to confusion when `user_id = 123` later becomes `user_id = '123_abc'`. Fix: Remember that types live on the object in memory, not on the variable name."
     },
     {
       "title": "Misusing type() for inheritance checks",
-      "explanation": "Checking types with type(obj) == dict fails if the object is a subclass of dict, like an OrderedDict. Fix: Use isinstance(obj, dict) instead when validating object types to safely account for inheritance."
+      "explanation": "Checking types with `type(obj) == dict` fails if the object is a subclass of `dict`, like an `OrderedDict`. Fix: Use `isinstance(obj, dict)` instead when validating object types to safely account for inheritance."
     }
   ],
   "practice_tasks": [
     {
       "title": "Runtime Type Logger",
-      "prompt": "Modify the `log_payload_type(payload)` function so it returns a formatted string like 'Processed payload <value> of type <type_name>'. Use `type(payload).__name__` to get the type's name.",
+      "prompt": "Modify the `log_payload_type(payload)` function so it returns a formatted string like `'Processed payload <value> of type <type_name>'`. Use `type(payload).__name__` to get the type's name.",
       "starter_code": "def log_payload_type(payload):\n    # TODO: Identify the payload type and return the formatted string\n    return 'Processed payload X of type Y'",
       "solution": "def log_payload_type(payload):\n    type_name = type(payload).__name__\n    return f'Processed payload {payload} of type {type_name}'"
     }
   ],
   "code_walkthrough": {
     "code": "api_response = 404\nprint('Value:', api_response, '| type:', type(api_response).__name__)\n\napi_response = {'error': 'Not Found'}\nprint('Value:', api_response, '| type:', type(api_response).__name__)",
-    "focus": "Same name, different type: api_response goes from int to dict, and type().__name__ follows the object, not the name."
+    "focus": "Same name, different type: `api_response` goes from `int` to `dict`, and `type().__name__` follows the object, not the name."
   },
   "challenge": {
     "title": "API Response Normalizer",
-    "prompt": "Build a webhook receiver helper normalize_webhook_data(data) that inspects the dynamic type of data. If it is a str, return it converted to int (assume a valid numeric string). If it is already an int, return it as-is. If it is a float, return it cast to int. Otherwise return 0. Use isinstance() here to practice safe runtime type checking.",
+    "prompt": "Build a webhook receiver helper `normalize_webhook_data(data)` that inspects the dynamic type of `data`. If it is a `str`, return it converted to `int` (assume a valid numeric string). If it is already an `int`, return it as-is. If it is a `float`, return it cast to `int`. Otherwise return `0`. Use `isinstance()` here to practice safe runtime type checking.",
     "solution": "def normalize_webhook_data(data):\n    if isinstance(data, str):\n        return int(data)\n    elif isinstance(data, int):\n        return data\n    elif isinstance(data, float):\n        return int(data)\n    else:\n        return 0"
   },
   "sources": [
@@ -83,7 +83,7 @@
     },
     {
       "q": "In Python, are types bound to the variable name or the object itself?",
-      "answer": "Types are bound to the object itself, not the variable name. So when you write `x = 42` and then `x = 'hello'`, the variable `x` just points to a new object — the integer `42` still exists as an `int` in memory."
+      "answer": "Types are bound to the object itself, not the variable name. So when you write `x = 42` and then `x = 'hello'`, the variable `x` just points to a new object \u2014 the integer `42` still exists as an `int` in memory."
     }
   ],
   "understanding_checks": [
@@ -99,6 +99,13 @@
       "question": "A developer claims that `x = 10` permanently restricts `x` to holding integers. Why is this incorrect in Python?",
       "answer": "Variables are merely references to objects in memory. They do not have fixed types.",
       "why": "This is the essence of dynamic typing: the type information lives on the object, not on the variable name."
+    },
+    {
+      "type": "predict-output",
+      "question": "What will be printed when this code is executed?",
+      "code": "items = [1, 2]\nbackup = items\nitems.append(3)\nitems = \"empty\"\nprint(backup)",
+      "answer": "[1, 2, 3]",
+      "why": "Calling `items.append(3)` mutates the shared `list` object, so `backup` sees the change. Reassigning `items = \"empty\"` points the `items` label to a new `str` object, but leaves `backup` pointing to the mutated `list`."
     }
   ]
 }

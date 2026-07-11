@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -31,7 +31,7 @@
     }
   ],
   "overview": {
-    "what": "In Python, operators like `+`, `==`, and `<` are syntactic sugar for method calls on objects. When you run `a + b`, Python translates it to `a.__add__(b)`. Operator overloading allows you to define these double-underscore (dunder) methods in your own classes, giving your objects custom behaviour for built-in operators. For instance, defining `__eq__` lets you compare two separate instances by their data rather than their memory identity, and defining `__lt__` (less than) is required for built-in functions like `sorted()` to work. Think of operators as universal remotes: the button `+` is standard, but the specific device (the object) decides what action is taken when the button is pressed. When a dunder method doesn't know how to handle the other operand's type, it must return the singleton (an object with only one instance) `NotImplemented`, which tells Python to try the reverse operation (like `__radd__`) on the other object. Lastly, operators like `+` should return a completely new instance, leaving the original operands unchanged.",
+    "what": "In Python, operators like `+`, `==`, and `<` are syntactic sugar for method calls on objects. When you run `a + b`, Python translates it to `a.__add__(b)`. Operator overloading allows you to define these double-underscore (dunder) methods in your own classes.\n\n  class Point:\n    def __init__(self, x, y):\n      self.x = x\n      self.y = y\n\n    def __add__(self, other):\n      return Point(self.x + other.x, self.y + other.y)\n\nThink of operators as universal remotes: the button `+` is standard, but the specific device (the object) decides what action is taken when the button is pressed. This integration lets custom objects work seamlessly with built-in functions like `sorted()`, which requires `__lt__` (less than) to be defined.\n\nTo implement operator overloading properly, you must follow specific rules for each method:\n- `__eq__(self, other)`: Compares two objects for equality. Returns a boolean, or `NotImplemented` if the type is unknown. It does not raise exceptions on type mismatch.\n- `__lt__(self, other)`: Compares if `self` is less than `other`. Returns a boolean, or `NotImplemented`. Python raises a `TypeError` if the fallback fails.\n- `__add__(self, other)`: Adds two objects. Returns a completely new instance of the object. Python raises a `TypeError` if neither operand supports the addition.\n\nWhen a dunder method doesn't recognize the other operand's type, it must return the singleton `NotImplemented`. This acts as a signal for Python to try the reverse operation (like `__radd__` or `__req__`) on the right-hand operand, enabling seamless interoperability between different types.\n\n  # Trap: Raising an error prevents the fallback mechanism\n  def __add__(self, other):\n    if not isinstance(other, Point):\n      raise TypeError(\"Expected Point\")\n    return Point(self.x + other.x, self.y + other.y)\n\nRaising an error instead of returning `NotImplemented` is a common edge case that breaks Python's fallback mechanism. If your method hard-fails, the right-hand operand never gets a chance to resolve the operation using its own dunder methods.",
     "why": "It allows custom objects to integrate seamlessly with Python's built-in syntax and functions, making code cleaner and more expressive. It also enables objects to be sorted or compared for equality without writing custom method names.",
     "where_used": [
       "Pandas",
@@ -46,11 +46,11 @@
   ],
   "common_mistakes": [
     {
-      "title": "Returning NotImplemented vs NotImplementedError",
+      "title": "Returning `NotImplemented` vs `NotImplementedError`",
       "explanation": "When an operator method doesn't know how to handle the other operand's type, it should return the singleton `NotImplemented`, not raise `NotImplementedError`. Returning `NotImplemented` signals Python to try the reverse operation on the other object."
     },
     {
-      "title": "Mutating self instead of returning a new object",
+      "title": "Mutating `self` instead of returning a new object",
       "explanation": "For operations like `+`, beginners sometimes mutate `self` and return it. Operators like `+` should return a completely new instance, leaving the original operands unchanged."
     }
   ],
@@ -74,7 +74,7 @@
   "practice_tasks": [
     {
       "title": "Refactor User Equality",
-      "prompt": "The `User` class currently uses the default equality behavior (comparing memory identity). Modify the `__eq__` method so that two `User` instances are considered equal (`==`) if they have the same `user_id`. Also ensure that comparing a `User` with a non-User object returns `NotImplemented` instead of raising an error or returning False.",
+      "prompt": "The `User` class currently uses the default equality behavior (comparing memory identity). Modify the `__eq__` method so that two `User` instances are considered equal (`==`) if they have the same `user_id`. Also ensure that comparing a `User` with a non-`User` object returns `NotImplemented` instead of raising an error or returning `False`.",
       "starter_code": "class User:\n    def __init__(self, user_id, username):\n        self.user_id = user_id\n        self.username = username\n\n    def __eq__(self, other):\n        return self is other",
       "solution": "class User:\n    def __init__(self, user_id, username):\n        self.user_id = user_id\n        self.username = username\n\n    def __eq__(self, other):\n        if not isinstance(other, User):\n            return NotImplemented\n        return self.user_id == other.user_id"
     }
@@ -86,12 +86,12 @@
   "aha_moment": {
     "code": "class Box:\n  def __init__(self, value):\n    self.value = value\n\nb1 = Box(10)\nb2 = Box(10)\nprint(b1 == b2)",
     "prediction": "What does this print?",
-    "common_guess": "True",
-    "why": "By default, custom classes use object identity for equality (like `is`), so two separate instances evaluate to False. You must explicitly implement `__eq__` to compare their values."
+    "common_guess": "`True`",
+    "why": "By default, custom classes use object identity for equality (like `is`), so two separate instances evaluate to `False`. You must explicitly implement `__eq__` to compare their values."
   },
   "challenge": {
     "title": "Vector Mathematics",
-    "prompt": "Write a `Vector` class that initializes with `x` and `y` components. Implement `__add__` to add two vectors together returning a new `Vector`. Also implement `__eq__` so that two vectors are equal if their `x` and `y` components are identical. Ensure that if `__add__` or `__eq__` is used with a non-Vector object, it returns `NotImplemented`.",
+    "prompt": "Write a `Vector` class that initializes with `x` and `y` components. Implement `__add__` to add two vectors together returning a new `Vector`. Also implement `__eq__` so that two vectors are equal if their `x` and `y` components are identical. Ensure that if `__add__` or `__eq__` is used with a non-`Vector` object, it returns `NotImplemented`.",
     "solution": "class Vector:\n  def __init__(self, x, y):\n    self.x = x\n    self.y = y\n\n  def __add__(self, other):\n    if not isinstance(other, Vector):\n      return NotImplemented\n    return Vector(self.x + other.x, self.y + other.y)\n\n  def __eq__(self, other):\n    if not isinstance(other, Vector):\n      return NotImplemented\n    return self.x == other.x and self.y == other.y"
   },
   "sources": [

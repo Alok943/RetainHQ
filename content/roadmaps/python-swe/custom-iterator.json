@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -33,8 +33,8 @@
     }
   ],
   "overview": {
-    "what": "A custom iterator class is a class that implements both the `__iter__()` and `__next__()` dunder methods, allowing its instances to be looped over with a `for` loop. `__iter__()` returns the iterator object itself (usually `self`), and `__next__()` returns the next value in the sequence or raises `StopIteration` when the sequence is exhausted. Think of it like a Pez dispenser: the dispenser is the iterator (handling `__iter__`), and each time you push the head back, you call `__next__` to get a candy. Once empty, it raises a signal that there's no more candy.",
-    "why": "It allows you to create custom, memory-efficient data streams that compute or fetch values lazily, instead of loading everything into memory at once.",
+    "what": "A custom iterator class is a class that implements both the `__iter__()` and `__next__()` dunder methods. This allows its instances to be looped over directly with a `for` loop.\n\n- `__iter__()`: Returns the iterator object itself (usually `self`).\n- `__next__()`: Computes and returns the next value in the sequence. Raises `StopIteration` when exhausted.\n\nThink of it like a Pez dispenser: the dispenser is the iterator (handling `__iter__()`), and each time you push the head back, you call `__next__()` to get a candy. Once empty, it raises a signal that there's no more candy.\n\nA common trap is assuming an iterator resets. Because iterators hold state, they are completely exhausted after a single pass:\n\n  iterator = CountTwo()\n  list(iterator)  # [1, 2]\n  list(iterator)  # [] (Trap: already exhausted)\n\nThis behavior is covered fully in generator-expressions where similar lazy evaluation patterns are used.",
+    "why": "It allows you to create custom, memory-efficient data streams that compute or fetch values lazily, instead of loading a massive `list` into memory at once.",
     "where_used": [
       "FastAPI",
       "Django ORM",
@@ -43,17 +43,17 @@
   },
   "why_learning_this": [
     "Build memory-efficient paginators for APIs.",
-    "Understand how Python's 'for' loop actually works under the hood.",
+    "Understand how Python's `for` loop actually works under the hood.",
     "Create streaming data processors."
   ],
   "common_mistakes": [
     {
-      "title": "Forgetting to raise StopIteration",
+      "title": "Forgetting to raise `StopIteration`",
       "explanation": "If `__next__()` does not raise `StopIteration`, a `for` loop over the object will run infinitely."
     },
     {
-      "title": "Not returning self in __iter__",
-      "explanation": "If `__iter__()` does not return `self` on an iterator, passing the iterator itself into a loop or `iter()` will fail."
+      "title": "Not returning `self` in `__iter__()`",
+      "explanation": "If `__iter__()` does not return `self` on an iterator, passing the iterator itself into a `for` loop or `iter()` will fail with a `TypeError`."
     }
   ],
   "recall_questions": [
@@ -78,23 +78,23 @@
       "type": "predict-output",
       "question": "What is the output of this code?",
       "code": "class Count:\n    def __init__(self): self.num = 0\n    def __iter__(self): return self\n    def __next__(self):\n        if self.num >= 2: raise StopIteration\n        self.num += 1\n        return self.num\n\nc = Count()\nprint(list(c))\nprint(list(c))",
-      "answer": "[1, 2] followed by []",
-      "why": "Iterators hold state. Once the first `list(c)` exhausts the iterator by raising `StopIteration`, its internal state (`self.num`) remains at 2. The second `list(c)` immediately hits the `StopIteration` condition."
+      "answer": "`[1, 2]` followed by `[]`",
+      "why": "Iterators hold state. Once the first `list(c)` exhausts the iterator by raising `StopIteration`, its internal state (`self.num`) remains at `2`. The second `list(c)` immediately hits the `StopIteration` condition."
     },
     {
       "type": "find-bug",
-      "question": "This custom iterator is supposed to yield numbers 1, 2, 3 but it causes a crash. Why?",
+      "question": "This custom iterator is supposed to yield numbers `1`, `2`, `3` but it causes a crash. Why?",
       "code": "class MyIter:\n    def __init__(self): self.val = 0\n    def __iter__(self): pass\n    def __next__(self):\n        self.val += 1\n        if self.val > 3: raise StopIteration\n        return self.val\n\nfor i in MyIter(): print(i)",
-      "answer": "The `__iter__` method is missing `return self`.",
-      "why": "A standard `for` loop first calls `iter()` on the object, which invokes `__iter__()`. `iter()` expects an iterator object (one with a `__next__` method) to be returned. Because `__iter__` implicitly returns `None`, `iter()` immediately rejects it and raises a `TypeError`."
+      "answer": "The `__iter__()` method is missing `return self`.",
+      "why": "A standard `for` loop first calls `iter()` on the object, which invokes `__iter__()`. The `iter()` function expects an iterator object (one with a `__next__()` method) to be returned. Because `__iter__()` implicitly returns `None`, `iter()` immediately rejects it and raises a `TypeError`."
     }
   ],
   "practice_tasks": [
     {
-      "name": "Limit Iterator Output",
-      "description": "The `CycleList` iterator infinitely loops over a list. Modify it to accept a `max_yields` argument in its constructor. Update `__next__` to raise `StopIteration` once it has yielded that many items.",
       "starter_code": "class CycleList:\n    def __init__(self, items):\n        self.items = items\n        self.index = 0\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        # TODO: Raise StopIteration if max_yields is reached\n        item = self.items[self.index % len(self.items)]\n        self.index += 1\n        return item\n\nfor item in CycleList(['A', 'B']): # Modify this to pass max_yields=3\n    print(item)",
-      "solution_code": "class CycleList:\n    def __init__(self, items, max_yields):\n        self.items = items\n        self.index = 0\n        self.max_yields = max_yields\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.index >= self.max_yields:\n            raise StopIteration\n        item = self.items[self.index % len(self.items)]\n        self.index += 1\n        return item\n\nfor item in CycleList(['A', 'B'], max_yields=3):\n    print(item)"
+      "title": "Limit Iterator Output",
+      "prompt": "The `CycleList` iterator infinitely loops over a `list`. Modify it to accept a `max_yields` argument in its constructor. Update `__next__()` to raise `StopIteration` once it has yielded that many items.",
+      "solution": "class CycleList:\n    def __init__(self, items, max_yields):\n        self.items = items\n        self.index = 0\n        self.max_yields = max_yields\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.index >= self.max_yields:\n            raise StopIteration\n        item = self.items[self.index % len(self.items)]\n        self.index += 1\n        return item\n\nfor item in CycleList(['A', 'B'], max_yields=3):\n    print(item)"
     }
   ],
   "code_walkthrough": {
@@ -103,13 +103,13 @@
   },
   "aha_moment": {
     "code": "class Exhaustible:\n    def __init__(self):\n        self.val = 2\n    def __iter__(self):\n        return self\n    def __next__(self):\n        if self.val == 0: raise StopIteration\n        self.val -= 1\n        return self.val\n\niterator = Exhaustible()\nprint(list(iterator))\nprint(list(iterator))",
-    "prediction": "What will the two print statements output?",
-    "common_guess": "[1, 0] followed by [1, 0]",
-    "why": "Iterators maintain their internal state. Once `val` reaches 0 and raises `StopIteration`, the iterator is exhausted. A second attempt to iterate over it does nothing and returns an empty list."
+    "prediction": "What will the two `print()` statements output?",
+    "common_guess": "`[1, 0]` followed by `[1, 0]`",
+    "why": "Iterators maintain their internal state. Once `self.val` reaches `0` and raises `StopIteration`, the iterator is exhausted. A second attempt to iterate over it does nothing and returns an empty `list`."
   },
   "challenge": {
     "title": "Pagination Iterator",
-    "prompt": "Create an iterator class `Paginator` that takes a list of `items` and a `page_size`. Each iteration should return the next slice of the list of size `page_size`. When no items remain, raise `StopIteration`."
+    "prompt": "Create an iterator class `Paginator` that takes a `list` of `items` and a `page_size`. Each iteration should return the next slice of the `list` of size `page_size`. When no items remain, raise `StopIteration`."
   },
   "sources": [
     "https://docs.python.org/3/tutorial/classes.html#iterators",

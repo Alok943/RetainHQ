@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -30,8 +30,8 @@
     }
   ],
   "overview": {
-    "what": "Python's exception handling includes two optional blocks: `else` and `finally`. The `else` block runs ONLY if the `try` block completes successfully without raising any exceptions. The `finally` block ALWAYS runs, regardless of whether an exception occurred, whether it was caught, or even if the `try` block contains a `return` statement. The standard pattern is: try to do something dangerous, except handle the error, else do the happy-path continuation, finally clean up resources.",
-    "why": "The `finally` block guarantees that critical cleanup—like closing a database connection or releasing a lock—happens even if your code crashes halfway through. The `else` block improves readability by separating the code that might fail from the code that should only run if the dangerous operation succeeded, keeping your `try` blocks perfectly minimized.",
+    "what": "Python's exception handling includes two optional blocks: `else` and `finally`. The `else` block runs ONLY if the `try` block completes successfully without raising any exceptions.\n\nThe `finally` block ALWAYS runs. It executes regardless of whether an exception occurred, whether it was caught, or even if the `try` block contains a `return` statement.\n\nThe standard pattern assigns specific responsibilities to each block:\n\n- `try`: Attempts a single dangerous operation that might fail.\n- `except`: Handles the specific error if the operation fails.\n- `else`: Executes the happy-path continuation only if the operation succeeded.\n- `finally`: Cleans up resources unconditionally at the end.\n\nExceptions raised inside the `else` block are not caught by the preceding `except` blocks. If your happy-path code fails, the error bubbles up:\n\n  try:\n      data = fetch_data()\n  except NetworkError:\n      print(\"Fetch failed\")\n  else:\n      # If process() raises NetworkError, it will NOT be caught!\n      process(data)\n\nThis behavior prevents accidentally swallowing errors that occur outside the strictly dangerous operation you meant to protect.",
+    "why": "The `finally` block guarantees that critical cleanup happens even if your code crashes halfway through. This is essential for closing database connections, closing file handles, or releasing threading locks.\n\nThe `else` block improves readability by separating the code that might fail from the rest of the logic. This keeps your `try` blocks perfectly minimized, so you only catch exceptions from the exact line you expect might fail.",
     "where_used": [
       "Ensuring database cursors are closed",
       "Cleaning up temporary files after an upload",
@@ -45,18 +45,18 @@
   ],
   "common_mistakes": [
     {
-      "title": "Putting everything in the try block",
+      "title": "Putting everything in the `try` block",
       "explanation": "If you put 10 lines of code in a `try` block, and a `ValueError` happens, you don't know which line caused it. Put only the one risky line in `try`, and the remaining 9 lines in `else`."
     },
     {
-      "title": "Returning from finally",
+      "title": "Returning from `finally`",
       "explanation": "If you put a `return` statement in a `finally` block, it overrides any `return` or raised exceptions from the `try` or `except` blocks. This leads to extremely confusing bugs where exceptions silently vanish. Never return from `finally`."
     }
   ],
   "practice_tasks": [
     {
       "title": "Guaranteed Cleanup",
-      "prompt": "Modify `process_data(data)` so that it catches `ZeroDivisionError` if `100 / data` fails (printing 'Failed'), prints 'Success' ONLY if it succeeds, and ALWAYS prints 'Cleanup done'.",
+      "prompt": "Modify `process_data(data)` so that it catches `ZeroDivisionError` if `100 / data` fails (printing `'Failed'`), prints `'Success'` ONLY if it succeeds, and ALWAYS prints `'Cleanup done'`.",
       "starter_code": "def process_data(data):\n    # TODO: Wrap this logic in try/except/else/finally\n    result = 100 / data\n    print('Success')\n    print('Cleanup done')",
       "solution": "def process_data(data):\n    try:\n        result = 100 / data\n    except ZeroDivisionError:\n        print('Failed')\n    else:\n        print('Success')\n    finally:\n        print('Cleanup done')"
     }
@@ -68,8 +68,8 @@
   "aha_moment": {
     "code": "def test_return():\n    try:\n        return \"Trying\"\n    finally:\n        print(\"Finally runs anyway!\")\n\nprint(test_return())",
     "prediction": "What prints first: 'Trying' or 'Finally runs anyway!'?",
-    "common_guess": "'Trying', because the function returns immediately.",
-    "why": "Python intercepts the `return` statement in the `try` block. It executes the `finally` block FIRST, and only after the `finally` block completes does it actually return the value 'Trying' to the caller."
+    "common_guess": "`'Trying'`, because the function returns immediately.",
+    "why": "Python intercepts the `return` statement in the `try` block. It executes the `finally` block FIRST, and only after the `finally` block completes does it actually return the value `'Trying'` to the caller."
   },
   "challenge": {
     "title": "Safe file reader",
@@ -82,12 +82,16 @@
   ],
   "recall_questions": [
     {
-      "q": "In a try/except statement, when does the `else` block execute?",
+      "q": "In a `try`/`except` statement, when does the `else` block execute?",
       "answer": "It only executes if the `try` block completes successfully without raising any exceptions. If an exception occurs, the `else` block is completely skipped."
     },
     {
       "q": "Will the `finally` block execute even if the `try` block contains a `return` statement?",
       "answer": "Yes, the `finally` block is guaranteed to run. Python intercepts the `return` statement, executes the `finally` block, and then completes the return."
+    },
+    {
+      "q": "If an exception is raised inside the `else` block, will the `except` block of the same `try` statement catch it?",
+      "answer": "No. Exceptions raised in the `else` block bubble up and are not caught by the preceding `except` blocks. This prevents accidentally swallowing unexpected errors."
     }
   ],
   "understanding_checks": [
@@ -96,13 +100,13 @@
       "question": "What is the output of this function when called with `divide_and_clean(10, 2)`?",
       "code": "def divide_and_clean(a, b):\n    try:\n        res = a / b\n    except ZeroDivisionError:\n        print('Error')\n    else:\n        print(res)\n    finally:\n        print('Done')\n\ndivide_and_clean(10, 2)",
       "answer": "5.0\nDone",
-      "why": "The try block succeeds, so the `except` block is skipped and the `else` block executes, printing the result. Then, the `finally` block ALWAYS executes, printing 'Done'."
+      "why": "The `try` block succeeds, so the `except` block is skipped and the `else` block executes, printing the result. Then, the `finally` block ALWAYS executes, printing `'Done'`."
     },
     {
       "type": "explain-behavior",
       "question": "If a `return` statement is executed inside a `try` block, does the `finally` block still run?",
-      "answer": "Yes, Python ensures the `finally` block is executed before the actual return takes place.",
-      "why": "The `finally` block guarantees cleanup. Python intercepts the return, runs the `finally` block, and then hands the return value back to the caller."
+      "answer": "Yes, Python ensures the `finally` block is executed before the actual `return` takes place.",
+      "why": "The `finally` block guarantees cleanup. Python intercepts the `return`, runs the `finally` block, and then hands the `return` value back to the caller."
     }
   ]
 }

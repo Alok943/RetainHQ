@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "high",
     "prerequisites": [
@@ -36,8 +36,8 @@
     }
   ],
   "overview": {
-    "what": "Type hints explicitly declare the expected data types of variables, arguments, and return values. For example, `def greet(name: str) -> str:` signals that `name` must be a string and the function returns a string. Crucially, Python ignores these at runtime — they are only a mental model for developers and static analysis tools (like mypy or your IDE). Variables are like boxes; type hints are just labels describing what should go in the box, but the box doesn't actually stop you from putting something else inside.",
-    "why": "They drastically improve developer experience by enabling IDE autocomplete, catching type-related bugs before the code runs, and self-documenting APIs.",
+    "what": "Type hints explicitly declare the expected data types of variables, arguments, and return values. They serve as a mental model for developers and static analysis tools, rather than strict rules for the Python interpreter. Variables are like boxes; type hints are just labels describing what should go in the box, but the box doesn't actually stop you from putting something else inside.\n\n  def greet(name: str) -> str:\n    return f\"Hello, {name}\"\n\nCrucially, Python ignores these annotations at runtime. If you pass an `int` to a parameter hinted as a `str`, the code will still execute unless an external tool like `mypy` flags the mismatch.\n\n  def set_username(name: str) -> None:\n    pass\n\n  set_username(None)  # Static tools will flag this error!\n\nA common trap is passing `None` to a parameter hinted with a basic type like `str`. While Python allows this at runtime, static analysis tools will flag it as an error because `None` is not a `str`. This scenario is covered fully in `optional-union-types`.",
+    "why": "Type hints drastically improve developer experience by providing three major benefits:\n\n- Enabling IDE autocomplete to speed up development.\n- Catching type-related bugs before the code ever runs.\n- Self-documenting APIs, making functions easier to read and use.",
     "where_used": [
       "FastAPI",
       "Pydantic",
@@ -45,14 +45,14 @@
     ]
   },
   "why_learning_this": [
-    "Catching bugs like adding an integer to a string before running the code.",
-    "Enabling powerful framework features like FastAPI's automatic request validation.",
+    "Catching bugs like adding an `int` to a `str` before running the code.",
+    "Enabling powerful framework features like `FastAPI`'s automatic request validation.",
     "Improving code readability and maintainability for large projects."
   ],
   "common_mistakes": [
     {
       "title": "Assuming runtime enforcement",
-      "explanation": "Type hints do not enforce types at runtime by default. `def add(x: int):` can still be called with `add('hello')` unless validated by an external tool."
+      "explanation": "Type hints do not enforce types at runtime by default. A function defined as `def add(x: int):` can still be called with `add('hello')` unless validated by an external tool."
     },
     {
       "title": "Using `list` instead of `list[int]`",
@@ -62,12 +62,17 @@
   "recall_questions": [
     {
       "q": "Do type hints stop you from passing the wrong type at runtime?",
-      "answer": "No. Python ignores type hints at runtime; they are only enforced by static analysis tools or specific frameworks like Pydantic.",
+      "answer": "No. Python ignores type hints at runtime; they are only enforced by static analysis tools or specific frameworks like `Pydantic`.",
       "tier": "tier1"
     },
     {
-      "q": "How do you specify that a dictionary should have string keys and integer values?",
+      "q": "How do you specify that a `dict` should have `str` keys and `int` values?",
       "answer": "By using the syntax `dict[str, int]`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you pass `None` to a parameter type hinted as `str` during static analysis?",
+      "answer": "Static analysis tools like `mypy` will flag it as an error, because `None` is not a valid `str`.",
       "tier": "tier1"
     }
   ],
@@ -77,12 +82,12 @@
       "code": "def double(x: int) -> int:\n  return x * 2\n\nprint(double('3'))",
       "question": "What happens when this code is executed?",
       "answer": "It prints '33'.",
-      "why": "Python ignores the `int` type hint at runtime. The function receives the string `'3'`, and multiplying a string by 2 duplicates it."
+      "why": "Python ignores the `int` type hint at runtime. The function receives the string `'3'`, and multiplying a `str` by `2` duplicates it."
     },
     {
       "type": "explain-behavior",
-      "question": "If type hints aren't enforced at runtime, why do frameworks like FastAPI use them so heavily?",
-      "answer": "FastAPI introspects the type hints at startup to automatically build runtime validation and documentation.",
+      "question": "If type hints aren't enforced at runtime, why do frameworks like `FastAPI` use them so heavily?",
+      "answer": "`FastAPI` introspects the type hints at startup to automatically build runtime validation and documentation.",
       "why": "Type hints provide metadata that clever libraries can read using Python's `typing.get_type_hints()` to build powerful features."
     }
   ],
@@ -93,20 +98,20 @@
   "aha_moment": {
     "code": "age: int = 'twenty'\nprint(type(age))",
     "prediction": "What does `type(age)` print?",
-    "common_guess": "<class 'int'> or it raises a TypeError.",
-    "why": "It prints `<class 'str'>`. The `: int` annotation is completely ignored at runtime, so `age` just binds to the string object."
+    "common_guess": "`<class 'int'>` or it raises a `TypeError`.",
+    "why": "It prints `<class 'str'>`. The `: int` annotation is completely ignored at runtime, so `age` just binds to the `str` object."
   },
   "practice_tasks": [
     {
       "title": "Add basic type hints",
-      "prompt": "Given this working code, change it so that the arguments and return value are fully typed. `items` is a list of strings, and `price_map` is a dictionary with string keys and float values. The function returns a float.",
+      "prompt": "Given this working code, change it so that the arguments and return value are fully typed. `items` is a `list` of `str`, and `price_map` is a `dict` with `str` keys and `float` values. The function returns a `float`.",
       "starter_code": "def calculate_total(items, price_map):\n  return sum(price_map[item] for item in items)",
       "solution": "def calculate_total(items: list[str], price_map: dict[str, float]) -> float:\n  return sum(price_map[item] for item in items)"
     }
   ],
   "challenge": {
     "title": "Type a configuration merger",
-    "prompt": "Write a function `merge_configs` that takes two dictionaries with string keys and string values. It should return a new dictionary of the same type containing all keys from both, with the second dictionary's values overriding the first's on conflicts.",
+    "prompt": "Write a function `merge_configs` that takes two dictionaries with `str` keys and `str` values. It should return a new `dict` of the same type containing all keys from both, with the second dictionary's values overriding the first's on conflicts.",
     "solution": "def merge_configs(base: dict[str, str], override: dict[str, str]) -> dict[str, str]:\n  merged = base.copy()\n  merged.update(override)\n  return merged"
   },
   "sources": [

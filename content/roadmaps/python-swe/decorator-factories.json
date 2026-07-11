@@ -6,7 +6,7 @@
   "tier": "tier3",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -24,15 +24,15 @@
   "glossary": [
     {
       "term": "decorator",
-      "definition": "A special function that wraps another function to modify or enhance its behavior without changing its code, e.g. `@retry(max_retries=3)`."
+      "definition": "A special function that wraps another function to modify or enhance its behavior without changing its code, e.g. @retry(max_retries=3)."
     },
     {
       "term": "wrapper",
-      "definition": "An inner function that surrounds the original function, allowing it to run extra code before or after the original function runs, e.g. `def wrapper(*args): return func(*args)`."
+      "definition": "An inner function that surrounds the original function, allowing it to run extra code before or after the original function runs, e.g. def wrapper(*args): return func(*args)."
     }
   ],
   "overview": {
-    "what": "A decorator factory is a function that returns a decorator. Standard decorators only accept one argument (the function being decorated). To pass custom arguments to a decorator, we create an outer function that receives those arguments and returns the actual decorator.\n\n  @retry(max_retries=3)\n  def fetch_data():\n      pass\n\nThis forms three nested levels: the factory (takes config), the decorator (takes the target function), and the wrapper (takes the function's arguments). Think of the factory as a machine that configures and builds a custom decorator based on the specs you give it.",
+    "what": "A decorator factory is a function that returns a decorator. Standard decorators only accept one argument, which is the function being decorated. To pass custom arguments, you create an outer function that receives those arguments and returns the actual decorator.\n\n  @retry(max_retries=3)\n  def fetch_data():\n    pass\n\nThis architecture requires exactly three nested levels of functions:\n\n- Factory: Receives the configuration arguments.\n- Decorator: Receives the target function.\n- Wrapper: Receives the target function's runtime arguments.\n\nThink of the factory as a machine that configures and builds a custom decorator based on the specs you give it.\n\nA sharp edge arises when you forget the parentheses on a factory, or try to support both @retry and @retry(max=3). If you omit the parentheses, Python passes the target function as the first configuration argument.\n\n  @retry  # Passes fetch_data into max_retries!\n  def fetch_data():\n    pass\n\nSupporting both syntaxes requires checking if the first argument is callable(), which adds significant complexity to your factory.",
     "why": "It enables configurable decorators. Instead of writing separate decorators for different behaviors, you write one configurable factory.",
     "where_used": [
       "Flask routing (@app.route('/login'))",
@@ -51,7 +51,7 @@
     },
     {
       "title": "Applying the factory without calling it",
-      "explanation": "Writing `@retry` instead of `@retry()`. Even if the factory has default arguments, you must call it with parentheses so it executes and returns the actual decorator."
+      "explanation": "Writing @retry instead of @retry(). Even if the factory has default arguments, you must call it with parentheses so it executes and returns the actual decorator."
     }
   ],
   "recall_questions": [
@@ -71,8 +71,8 @@
       "type": "predict-output",
       "question": "What happens when you run this code?",
       "code": "def prefix(p):\n    def decorator(func):\n        def wrapper():\n            return f\"{p} {func()}\"\n        return wrapper\n    return decorator\n\n@prefix\ndef say_hello():\n    return \"Alice\"\n\nprint(say_hello())",
-      "answer": "A TypeError is raised, or it behaves completely incorrectly (it actually returns the `decorator` function).",
-      "why": "The syntax `@prefix` means `say_hello = prefix(say_hello)`. `prefix` is a factory expecting the string `p`, but it receives the function `say_hello`. It returns `decorator`, meaning `say_hello` is now the `decorator` function itself. Decorator factories must be called: `@prefix('Hello')`."
+      "answer": "A `TypeError` is raised when `say_hello()` is called: `say_hello` is now bound to `decorator` (since `@prefix` passed the function itself as `p`), and calling `decorator()` with no arguments fails because `decorator` requires the `func` parameter.",
+      "why": "The syntax @prefix means say_hello = prefix(say_hello). prefix is a factory expecting the string p, but it receives the function say_hello. It returns decorator, meaning say_hello is now the decorator function itself. Decorator factories must be called: @prefix('Hello')."
     },
     {
       "type": "explain-behavior",
@@ -83,10 +83,10 @@
   ],
   "practice_tasks": [
     {
-      "name": "Add Configuration to a Decorator",
-      "description": "We have a basic `@repeat` decorator that repeats a function 3 times. Modify it into a decorator factory `repeat(times)` so we can configure the number of repeats per function.",
       "starter_code": "import functools\n\ndef repeat(func): # TODO: Change to a factory taking `times`\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        for _ in range(3): # TODO: Use times\n            result = func(*args, **kwargs)\n        return result\n    return wrapper\n\n# TODO: Update this to @repeat(times=2)\n@repeat\ndef fetch():\n    return 'data'",
-      "solution_code": "import functools\n\ndef repeat(times):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for _ in range(times):\n                result = func(*args, **kwargs)\n            return result\n        return wrapper\n    return decorator\n\n@repeat(times=2)\ndef fetch():\n    return 'data'"
+      "title": "Add Configuration to a Decorator",
+      "prompt": "We have a basic `@repeat` decorator that repeats a function 3 times. Modify it into a decorator factory `repeat(times)` so we can configure the number of repeats per function.",
+      "solution": "import functools\n\ndef repeat(times):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for _ in range(times):\n                result = func(*args, **kwargs)\n            return result\n        return wrapper\n    return decorator\n\n@repeat(times=2)\ndef fetch():\n    return 'data'"
     }
   ],
   "code_walkthrough": {

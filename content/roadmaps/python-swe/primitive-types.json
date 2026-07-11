@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 10,
     "interview_frequency": "low",
     "prerequisites": [],
@@ -27,12 +27,12 @@
     },
     {
       "term": "cast",
-      "definition": "To explicitly convert a value from one data type to another, like changing the integer 12 into the string 12. Example: `str(12)`."
+      "definition": "To explicitly convert a value from one data type to another, like changing the `int` `12` into the `str` `'12'`. Example: `str(12)`."
     }
   ],
   "overview": {
-    "what": "Primitive types represent the foundational data structures in Python: integers for whole numbers, floats for decimals, booleans for truth values, and strings for text. Think of them as the elemental building blocks—like bricks, steel, and glass—used to construct complex architectural software systems.",
-    "why": "Understanding these primitives is critical because every complex data structure or conditional logic ultimately evaluates down to these basic forms. Misunderstanding their boundaries, such as float precision or string immutability, introduces subtle, hard-to-trace bugs in production systems.",
+    "what": "Primitive types represent the foundational data structures in Python. Think of them as the elemental building blocks\u2014like bricks, steel, and glass\u2014used to construct complex architectural software systems.\n\n- `int`: Integers for whole numbers.\n- `float`: Floats for decimals.\n- `bool`: Booleans for truth values.\n- `str`: Strings for text.\n\nStrings are immutable, meaning they cannot be modified in-place. Attempting to change a character directly will crash your program.\n\n  name = \"Alice\"\n  name[0] = \"M\"  # Raises TypeError\n\nThis strict immutability ensures safety when passing strings across functions. It is covered fully in `mutable-vs-immutable`.\n\nAdditionally, `float` types harbor subtle precision edge cases. They cannot represent all decimal fractions perfectly.\n\n  total = 0.1 + 0.2\n  print(total == 0.3)  # False\n  print(total)         # 0.30000000000000004\n\nThis trap causes financial calculations to drift unpredictably.",
+    "why": "Understanding these primitives is critical because every complex data structure or conditional logic ultimately evaluates down to these basic forms. Misunderstanding their boundaries, such as `float` precision or `str` immutability, introduces subtle, hard-to-trace bugs in production systems.",
     "where_used": [
       "FastAPI",
       "Pydantic",
@@ -40,52 +40,57 @@
     ]
   },
   "why_learning_this": [
-    "Defining strict type hints for Pydantic models in API request validation",
+    "Defining strict type hints for `Pydantic` models in API request validation",
     "Writing safe state checks and numerical calculations in backend business logic"
   ],
   "common_mistakes": [
     {
       "title": "Floating Point Precision",
-      "explanation": "Floats cannot exactly represent all decimal fractions natively, making `0.1 + 0.2 == 0.3` evaluate to False. Fix: Use the standard library `decimal` module for currency or high-precision math."
+      "explanation": "Floats cannot exactly represent all decimal fractions natively, making `0.1 + 0.2 == 0.3` evaluate to `False`. Fix: Use the standard library `decimal` module for currency or high-precision math."
     },
     {
       "title": "Implicit String Concatenation Fails",
-      "explanation": "Attempting to add a string and an integer (e.g. `'User_' + 12`) throws a TypeError instead of casting automatically. Fix: Explicitly cast using `str()` or leverage f-strings like `f'User_{12}'`."
+      "explanation": "Attempting to add a `str` and an `int` (e.g., `'User_' + 12`) throws a `TypeError` instead of casting automatically. Fix: Explicitly cast using `str()` or leverage f-strings like `f'User_{12}'`."
     }
   ],
   "recall_questions": [
     {
       "q": "What are the four primary primitive data types in Python?",
-      "answer": "Integers (int), floating-point numbers (float), booleans (bool), and strings (str).",
+      "answer": "Integers (`int`), floating-point numbers (`float`), booleans (`bool`), and strings (`str`).",
       "tier": "tier1"
     },
     {
-      "q": "Why is it dangerous to use the float type for financial transaction calculations?",
-      "answer": "Because floating-point numbers are imprecise when representing certain decimal fractions, which can lead to calculation errors.",
+      "q": "Why is it dangerous to use the `float` type for financial transaction calculations?",
+      "answer": "Because floating-point numbers (`float`) are imprecise when representing certain decimal fractions, which can lead to calculation errors.",
       "tier": "tier1"
     },
     {
-      "q": "What happens if you try to combine a string and an integer using the plus operator without casting?",
-      "answer": "Python will raise a TypeError because it does not implicitly convert integers to strings during concatenation.",
+      "q": "What happens if you try to combine a `str` and an `int` using the `+` operator without casting?",
+      "answer": "Python will raise a `TypeError` because it does not implicitly convert an `int` to a `str` during concatenation.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why will `name[0] = 'M'` crash if `name` is a `str`?",
+      "answer": "Because strings (`str`) are immutable, meaning they cannot be modified in-place after creation.",
       "tier": "tier1"
     }
   ],
   "practice_tasks": [
     {
       "title": "Fix the API Response Formatter",
-      "prompt": "The function below currently returns a basic string, but it crashes if `balance` is appended directly and it ignores the other parameters. Modify it to return an f-string: if active, return \"Active user {username} (Age: {age}) has ${balance:.2f}\". If inactive, replace \"Active\" with \"Inactive\".",
+      "prompt": "The function below currently returns a basic `str`, but it crashes if `balance` is appended directly and it ignores the other parameters. Modify it to return an f-string: if active, return `'Active user {username} (Age: {age}) has ${balance:.2f}'`. If inactive, replace `'Active'` with `'Inactive'`.",
       "starter_code": "def format_user_status(age: int, balance: float, is_active: bool, username: str) -> str:\n    return \"User \" + username + \" has balance \" + str(balance)",
       "solution": "def format_user_status(age: int, balance: float, is_active: bool, username: str) -> str:\n    status = \"Active\" if is_active else \"Inactive\"\n    return f\"{status} user {username} (Age: {age}) has ${balance:.2f}\""
     }
   ],
   "challenge": {
     "title": "E-commerce Discount Calculator",
-    "prompt": "Create a function `calculate_final_price` simulating an e-commerce checkout. It receives a base price (float) and a discount code valid status (bool). If the code is valid, apply a 15% discount. Ensure the final price is returned as a formatted string representing currency: 'Total: $'.",
+    "prompt": "Create a function `calculate_final_price` simulating an e-commerce checkout. It receives a `base_price` (`float`) and an `is_discount_valid` status (`bool`). If the code is valid, apply a 15% discount. Ensure the final price is returned as a formatted `str` representing currency: `'Total: $'`.",
     "solution": "def calculate_final_price(base_price: float, is_discount_valid: bool) -> str:\n    multiplier = 0.85 if is_discount_valid else 1.0\n    final_price = base_price * multiplier\n    return f'Total: ${final_price:.2f}'"
   },
   "code_walkthrough": {
     "code": "total = 0.1 + 0.2\nprint(total)\nprint(total == 0.3)\nname = \"User_\"\ncount = 12\nprint(name + str(count))",
-    "focus": "Watch 0.1 + 0.2 land on 0.30000000000000004, and why the int needs str() to concatenate."
+    "focus": "Watch `0.1 + 0.2` land on `0.30000000000000004`, and why the `int` needs `str()` to concatenate."
   },
   "sources": [
     "https://docs.python.org/3/library/stdtypes.html",
@@ -97,13 +102,13 @@
       "question": "What happens when this script is run?",
       "code": "amount = 100\nmessage = \"The total is: \"\nprint(message + amount)",
       "answer": "A TypeError is raised.",
-      "why": "Python does not implicitly coerce integers into strings during concatenation. You must explicitly cast the integer using `str(amount)` or use formatted string literals (f-strings) like `f\"The total is: {amount}\"`."
+      "why": "Python does not implicitly coerce an `int` into a `str` during concatenation. You must explicitly cast the integer using `str(amount)` or use formatted string literals (f-strings) like `f'The total is: {amount}'`."
     },
     {
       "type": "find-bug",
       "question": "A developer wrote this code to calculate exact currency values. Identify the conceptual bug.",
       "code": "price1 = 0.1\nprice2 = 0.2\ntotal = price1 + price2\nif total == 0.3:\n    print(\"Correct total\")\nelse:\n    print(\"Incorrect total\")",
-      "answer": "Using floating-point numbers for precise monetary calculations.",
+      "answer": "Using `float` types for precise monetary calculations.",
       "why": "Because floats cannot exactly represent all decimal fractions, `0.1 + 0.2` evaluates to `0.30000000000000004`, causing the `== 0.3` check to fail. For financial calculations requiring exact precision, you should use the `decimal` module instead of `float`."
     }
   ]

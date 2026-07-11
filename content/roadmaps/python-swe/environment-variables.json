@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "easy",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 10,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -28,11 +28,11 @@
     },
     {
       "term": "cast",
-      "definition": "To explicitly convert a value from one data type to another, like changing the string 1 into the integer 1. Example: `int('1')`"
+      "definition": "To explicitly convert a value from one data type to another, like changing the string `'1'` into the integer `1`. Example: `int('1')`"
     }
   ],
   "overview": {
-    "what": "Environment variables are key-value pairs managed by the operating system, passed into a program when it starts. In Python, you access them using `os.environ`, which behaves exactly like a dictionary. Think of them as a set of sticky notes given to your program on launch; the program can read the notes (e.g., 'DATABASE_URL=postgres://...') to know how to behave in different environments.",
+    "what": "Environment variables are key-value pairs managed by the operating system, passed into a program when it starts. In Python, you access them using `os.environ`, which behaves exactly like a dictionary.\n\nThink of them as a set of sticky notes given to your program on launch. The program can read the notes (e.g., `DATABASE_URL=postgres://...`) to know how to behave in different environments.\n\n- `os.environ[key]`: Fetches the variable. Returns the value as a string. Raises a `KeyError` if the key is missing.\n- `os.environ.get(key, default)`: Fetches the variable safely. Returns the string value, or `None` (or the provided `default`) if missing. Does not raise an exception.\n\nWhen working locally, you might expect Python to automatically read variables from a `.env` file. This will silently fail because `os.environ` only reads from the active shell's environment.\n\n  import os\n\n  # This trap fires when developers assume .env files load automatically\n  # The variable will be None unless explicitly exported in the terminal\n  secret = os.environ.get('MY_SECRET')\n\nThis `.env` file loading behavior is covered fully in dotenv.",
     "why": "They allow you to configure an application without changing its code. This is essential for securely passing secrets (passwords, API keys) and configuring the app for different servers (local, testing, production) without hardcoding them in version control.",
     "where_used": [
       "Docker Containers",
@@ -56,7 +56,7 @@
     },
     {
       "title": "Forgetting that all values are strings",
-      "explanation": "The operating system passes all variables as strings. You must explicitly convert them to integers or booleans in your code."
+      "explanation": "The operating system passes all variables as strings (`str`). You must explicitly convert them to `int` or `bool` in your code."
     }
   ],
   "recall_questions": [
@@ -67,13 +67,18 @@
     },
     {
       "q": "How does `os.environ.get()` differ from accessing `os.environ['KEY']` directly?",
-      "answer": "`os.environ.get()` returns `None` (or a specified default) if the key is missing, while `os.environ['KEY']` raises a KeyError.",
+      "answer": "`os.environ.get()` returns `None` (or a specified default) if the key is missing, while `os.environ['KEY']` raises a `KeyError`.",
       "tier": "tier1"
     },
     {
       "q": "What data type are the values inside `os.environ`?",
-      "answer": "They are always strings. The operating system does not know about integers or booleans.",
+      "answer": "They are always strings (`str`). The operating system does not know about integers or booleans.",
       "tier": "tier2"
+    },
+    {
+      "q": "If you create a .env file in your project directory, will os.environ automatically read the variables inside it?",
+      "answer": "No. os.environ only reads from the active shell's environment. You need a third-party library (like dotenv) to load a .env file.",
+      "tier": "tier1"
     }
   ],
   "understanding_checks": [
@@ -81,15 +86,15 @@
       "type": "predict-output",
       "code": "import os\n\nos.environ['PORT'] = '8080'\nport = os.environ.get('PORT', 3000)\nprint(type(port).__name__)",
       "question": "What is printed to the console?",
-      "answer": "str",
+      "answer": "`str`",
       "why": "Even though our fallback is the integer `3000`, the variable was successfully found in `os.environ`, and all environment variables are strings (`'8080'`)."
     },
     {
       "type": "find-bug",
       "code": "import os\n\nos.environ['ENABLE_FEATURE'] = 'False'\n\nif os.environ.get('ENABLE_FEATURE'):\n    print('Feature is ON')\nelse:\n    print('Feature is OFF')",
       "question": "Why does this print 'Feature is ON'?",
-      "answer": "The value in the environment is the string `'False'`, which is a truthy value in Python. Only empty strings are falsy.",
-      "why": "All environment variables are strings. You must explicitly check `== 'True'` or cast the string to a boolean correctly."
+      "answer": "The value in the environment is the string `'False'`, which is a truthy value in Python. Only empty strings (`''`) are falsy.",
+      "why": "All environment variables are strings. You must explicitly check == 'True' or cast the string to a boolean correctly."
     }
   ],
   "code_walkthrough": {
@@ -100,7 +105,7 @@
     "code": "import os\n\nos.environ['RETRIES'] = '5'\ntries = os.environ.get('RETRIES', 3)\n\ntry:\n    result = tries + 2\nexcept TypeError as e:\n    print('TypeError')",
     "prediction": "What will print?",
     "common_guess": "7",
-    "why": "It prints 'TypeError'. Environment variables are ALWAYS strings, so `'5' + 2` fails."
+    "why": "It prints TypeError. Environment variables are ALWAYS strings, so '5' + 2 fails."
   },
   "practice_tasks": [
     {

@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -32,17 +32,17 @@
     }
   ],
   "overview": {
-    "what": "The `@property` decorator transforms a class method so it can be accessed like a normal attribute, evaluating its logic on-the-fly. If you have an `User` object, you can compute `user.full_name` dynamically rather than storing it. You can also define `.setter` and `.deleter` methods under the same property name to intercept assignment (`user.full_name = 'Alice Smith'`) or deletion. The mental model: variables are usually direct labels to objects, but a property is a 'computed label' that secretly runs a function whenever you read, write, or delete it. Analogy: a property is like an automatic sliding door—it looks like a regular wall (an attribute), but approaching it triggers a hidden motor (a function call).",
+    "what": "The `@property` decorator transforms a class method so it can be accessed like a normal attribute, evaluating its logic on-the-fly. If you have a `User` object, you can compute `user.full_name` dynamically rather than storing it.\n\nYou can also define `@property_name.setter` and `@property_name.deleter` methods under the same property name to intercept assignment or deletion.\n\n  class User:\n      def __init__(self, first_name, last_name):\n          self.first = first_name\n          self.last = last_name\n\n      @property\n      def full_name(self):\n          return f\"{self.first} {self.last}\"\n  \n      @full_name.setter\n      def full_name(self, name):\n          self.first, self.last = name.split()\n\nThe mental model: variables are usually direct labels to objects, but a property is a \"computed label\" that secretly runs a function whenever you read, write, or delete it. Analogy: a property is like an automatic sliding door\u2014it looks like a regular wall (an attribute), but approaching it triggers a hidden motor (a function call).\n\nProperties are designed to work on class instances, not the class itself. Accessing a property directly on the class returns the property object rather than evaluating the method.\n\n  class Settings:\n      @property\n      def timeout(self):\n          return 30\n  \n  # Returns <property object at 0x...>, not 30!\n  print(Settings.timeout)",
     "why": "It allows you to safely change internal implementation without breaking the external API. You can start with a simple attribute, and later add validation or computation without forcing everyone to rewrite `obj.attr` to `obj.get_attr()`.",
     "where_used": [
-      "SQLAlchemy models",
-      "Pydantic computed fields",
-      "Django models"
+      "`SQLAlchemy` models",
+      "`Pydantic` computed fields",
+      "`Django` models"
     ]
   },
   "why_learning_this": [
     "You can add validation to class attributes without changing the public API.",
-    "It makes objects cleaner to use, avoiding Java-style get_foo() and set_foo() sprawl."
+    "It makes objects cleaner to use, avoiding Java-style `get_foo()` and `set_foo()` sprawl."
   ],
   "common_mistakes": [
     {
@@ -62,12 +62,17 @@
     },
     {
       "q": "What happens if you try to assign a value to a property that only has a getter defined?",
-      "answer": "Python raises an AttributeError, effectively making the property read-only from the outside.",
+      "answer": "Python raises an `AttributeError`, effectively making the property read-only from the outside.",
       "tier": "tier2"
     },
     {
       "q": "What is the correct mental model for how a property functions when accessed?",
-      "answer": "A property is a 'computed label' that secretly triggers a function call whenever it is read, written to, or deleted.",
+      "answer": "A property is a \"computed label\" that secretly triggers a function call whenever it is read, written to, or deleted.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the result of accessing a `@property` directly on the class rather than an instance?",
+      "answer": "It returns the underlying `property` object itself, instead of executing the getter method.",
       "tier": "tier2"
     }
   ],
@@ -76,7 +81,7 @@
       "type": "predict-output",
       "question": "What happens when you run this code?",
       "code": "class Config:\n    def __init__(self):\n        self._env = 'dev'\n\n    @property\n    def env(self):\n        return self._env\n\ncfg = Config()\ncfg.env = 'prod'\nprint(cfg.env)",
-      "answer": "It raises an AttributeError.",
+      "answer": "It raises an `AttributeError`.",
       "why": "The `env` property only has a getter defined. Attempting to assign to a property without a corresponding `@env.setter` raises an `AttributeError`."
     },
     {

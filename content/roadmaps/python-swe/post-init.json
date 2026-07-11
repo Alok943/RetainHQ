@@ -6,13 +6,15 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
       "dataclasses"
     ],
-    "unlocks": [],
+    "unlocks": [
+      "frozen-dataclasses"
+    ],
     "project_usage": [
       "Data validation",
       "Derived fields",
@@ -30,7 +32,7 @@
     }
   ],
   "overview": {
-    "what": "The `__post_init__` method is a special method in dataclasses that runs immediately after the auto-generated `__init__` finishes. It allows you to execute custom logic like validating data, normalizing inputs (e.g., lowercasing strings), or computing dependent fields (fields whose values depend on other fields). Mental model: `__init__` puts the raw data into the box, and `__post_init__` inspects or modifies the box before handing it back to the caller.",
+    "what": "The `__post_init__` method is a special hook in dataclasses that runs immediately after the auto-generated `__init__` finishes. It allows you to execute custom logic before the caller receives the new instance. Mental model: `__init__` puts the raw data into the box, and `__post_init__` inspects or modifies the box before handing it back.\n\nCommon use cases for this hook include:\n- Validating data to ensure it meets constraints, raising `ValueError` if it fails\n- Normalizing inputs by formatting or casting them to standardized forms\n- Computing dependent fields whose values rely on other provided arguments\n\nTo compute a field dynamically without requiring the caller to provide it, you must declare it with `field(init=False)`.\n\n  @dataclass\n  class User:\n    username: str\n    is_admin: bool = field(init=False)\n    \n    def __post_init__(self):\n      self.is_admin = self.username.startswith(\"admin_\")\n\nWhen working with frozen dataclasses, normal attribute assignment inside `__post_init__` will raise a `FrozenInstanceError`. To bypass the freeze during initialization, you must use `object.__setattr__`.\n\n  @dataclass(frozen=True)\n  class Config:\n    path: str\n    \n    def __post_init__(self):\n      normalized = self.path.lower()\n      object.__setattr__(self, \"path\", normalized)\n\nThis rule and its implications are covered fully in frozen-dataclasses.",
     "why": "Because `@dataclass` generates `__init__` for you, you can't easily add validation or compute fields inside the constructor. `__post_init__` provides a hook to perform these actions automatically every time an instance is created.",
     "where_used": [
       "Configuration parsing",
@@ -81,19 +83,26 @@
       "type": "find-bug",
       "code": "from dataclasses import dataclass\n\n@dataclass\nclass Circle:\n    radius: float\n    area: float\n\n    def __post_init__(self):\n        self.area = 3.14 * (self.radius ** 2)\n\nc = Circle(2.0)\nprint(c.area)",
       "question": "Why does this code fail to run as intended?",
-      "answer": "TypeError: __init__() missing 1 required positional argument: 'area'",
+      "answer": "`TypeError: __init__() missing 1 required positional argument: 'area'`",
       "why": "Because `area` is defined as a normal field, the auto-generated `__init__` requires it to be passed. To compute it in `__post_init__` without requiring it, it should be defined with `field(init=False)`."
+    },
+    {
+      "type": "find-bug",
+      "code": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Point:\n    x: int\n    y: int\n\n    def __post_init__(self):\n        if self.x < 0:\n            self.x = 0",
+      "question": "What happens when you try to instantiate `Point(-5, 10)`?",
+      "answer": "It raises a `FrozenInstanceError`.",
+      "why": "Because `Point` is a frozen dataclass, normal attribute assignment (like `self.x = 0`) fails, even inside `__post_init__`. You must use `object.__setattr__(self, 'x', 0)` to modify fields during initialization."
     }
   ],
   "code_walkthrough": {
     "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass User:\n    username: str\n    is_admin: bool = field(init=False)\n\n    def __post_init__(self):\n        self.is_admin = self.username.startswith('admin_')\n\nu = User('admin_alice')\nprint(u.is_admin)",
-    "focus": "self.is_admin = ... calculates the dependent field after username is set."
+    "focus": "`self.is_admin = ...` calculates the dependent field after `username` is set."
   },
   "aha_moment": {
     "code": "from dataclasses import dataclass\n\n@dataclass\nclass Rectangle:\n    width: int\n    height: int\n\n    def __post_init__(self):\n        print(f'Validating {self.width}x{self.height}')\n        if self.width <= 0:\n            raise ValueError('Width must be positive')\n\nRectangle(10, 5)",
-    "prediction": "Will the 'Validating...' print statement execute if you create a valid Rectangle?",
-    "common_guess": "No, or I have to call validate() manually.",
-    "why": "Yes, it prints 'Validating 10x5'. `__post_init__` is guaranteed to run automatically at the very end of instantiation, intercepting and verifying the data before the caller receives the object."
+    "prediction": "Will the `'Validating...'` print statement execute if you create a valid `Rectangle`?",
+    "common_guess": "No, or I have to call `validate()` manually.",
+    "why": "Yes, it prints `'Validating 10x5'`. `__post_init__` is guaranteed to run automatically at the very end of instantiation, intercepting and verifying the data before the caller receives the object."
   },
   "practice_tasks": [
     {

@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 40,
     "importance": 6,
     "interview_frequency": "low",
     "prerequisites": [
@@ -23,16 +23,16 @@
   "glossary": [
     {
       "term": "structural pattern matching",
-      "definition": "Checking data against a specific layout or structure, rather than just comparing simple values, e.g. `case {'type': 'login', 'user': u}:` matches any dict with those two keys."
+      "definition": "Checking data against a specific layout or structure, rather than just comparing simple values. For example, `case {'type': 'login', 'user': u}:` matches any dict with those two keys."
     },
     {
       "term": "wildcard",
-      "definition": "A special symbol (like _) that acts as a catch-all, matching anything that hasn't been specifically caught by other rules, e.g. `case _: return 'unknown'`."
+      "definition": "A special symbol (like `_`) that acts as a catch-all, matching anything that hasn't been specifically caught by other rules. For example, `case _: return 'unknown'`."
     }
   ],
   "overview": {
-    "what": "match-case (Python 3.10+) is structural pattern matching — it compares a subject against the STRUCTURE of each case, not just its equality. A capture pattern binds a name from inside the matched structure:\n\n  def route(event):\n      match event:\n          case {'type': 'login', 'user': user}:\n              return f'login by {user}'\n          case {'type': 'logout'}:\n              return 'logout'\n          case _:\n              return 'unknown'\n\nThe first case matches any dict that has both a 'type' key equal to 'login' AND a 'user' key; the value under 'user' is captured into the variable user. The wildcard _ is the catch-all — it matches anything and binds nothing. Like if/elif, only the FIRST matching case runs. You can also OR literal values with |: case 'GET' | 'HEAD': matches either string.",
-    "why": "match-case replaces cascading isinstance checks and multi-key dict lookups when dispatching on message types or API events. Without it, routing a dozen event types requires a long if/elif chain full of repeated dict.get() calls.",
+    "what": "`match-case` (Python 3.10+) provides structural pattern matching. It compares a subject against the STRUCTURE of each `case`, not just its equality. A capture pattern binds a name directly from inside the matched structure:\n\n  def route(event):\n      match event:\n          case {'type': 'login', 'user': user}:\n              return f'login by {user}'\n          case {'type': 'logout'}:\n              return 'logout'\n          case _:\n              return 'unknown'\n\nThe first `case` matches any `dict` containing both a `'type'` key equal to `'login'` and a `'user'` key. The value under `'user'` is captured into the variable `user`. The wildcard `_` is the catch-all \u2014 it matches anything and binds nothing.\n\nLike `if`/`elif`, only the first matching `case` runs. You can also OR literal values using the `|` operator, like `case 'GET' | 'HEAD':` to match either string.\n\nA major trap is that a bare variable name in a `case` always captures the subject; it never compares against an existing variable:\n\n  STATUS_OK = 200\n  match response_code:\n      case STATUS_OK: # TRAP! Captures response_code into new variable STATUS_OK\n          pass\n      case code if code == STATUS_OK: # CORRECT: Uses a guard\n          pass\n\nTo match against an existing variable's value, you must use a guard (`if`) or use a dotted name (like `http.HTTPStatus.OK`).\n\nAnother sharp edge is that sequence patterns require an exact length match by default. If your list has extra items, the match will fail:\n\n  event = ['drop', 'table', 'users', 'cascade']\n  match event:\n      case ['drop', 'table']:\n          pass # Fails: sequence length must match exactly\n      case ['drop', 'table', *rest]:\n          pass # Works: *rest captures remaining items\n\nTo match a prefix and ignore or capture the rest, you must use a starred expression like `*rest`.",
+    "why": "`match-case` replaces cascading `isinstance` checks and multi-key `dict` lookups when dispatching on message types or API events. Without it, routing a dozen event types requires a long `if`/`elif` chain full of repeated `dict.get()` calls.",
     "where_used": [
       "JSON webhook event routing",
       "CLI subcommand dispatch",
@@ -40,42 +40,57 @@
     ]
   },
   "why_learning_this": [
-    "Replacing cascading isinstance/dict-key if/elif chains with declarative structural dispatch on API payloads",
-    "Reading modern Python 3.10+ code that uses pattern matching on JSON events and command structs"
+    "Replacing cascading `isinstance` / `dict`-key `if`/`elif` chains with declarative structural dispatch on API payloads",
+    "Reading modern Python 3.10+ code that uses pattern matching on JSON events and command `struct`s"
   ],
   "common_mistakes": [
     {
       "title": "Expecting a bare variable name to compare, not capture",
-      "explanation": "case status_code: does NOT compare against an existing variable — it captures the subject into a new name status_code. To compare against a variable, use a guard: case x if x == status_code:."
+      "explanation": "`case status_code:` does NOT compare against an existing variable \u2014 it captures the subject into a new name `status_code`. To compare against a variable, use a guard: `case x if x == status_code:` or a dotted name."
     },
     {
       "title": "Forgetting the wildcard and getting no match",
-      "explanation": "If no case matches and there is no _ catch-all, match silently does nothing — there is no error. Always add a case _: branch for unexpected values."
+      "explanation": "If no `case` matches and there is no `_` catch-all, `match` silently does nothing \u2014 there is no error. Always add a `case _:` branch for unexpected values."
     },
     {
       "title": "Using match for simple equality dispatch",
-      "explanation": "match is most valuable for structural patterns (dicts, nested objects). For plain value equality on a string or int, a dict lookup or if/elif is simpler and more readable."
+      "explanation": "`match` is most valuable for structural patterns (`dict`s, nested objects). For plain value equality on a string or `int`, a `dict` lookup or `if`/`elif` is simpler and more readable."
     }
   ],
   "recall_questions": [
     {
-      "q": "What does the wildcard `_` do in a match-case statement?",
-      "answer": "It matches anything and is the catch-all branch; unlike other patterns it does not bind the matched value to a variable.",
+      "q": "What does the wildcard `_` do in a `match`-`case` statement?",
+      "answer": "It matches anything and is the catch-all branch. Unlike other patterns, it does not bind the matched value to a variable.",
       "tier": "tier1"
     },
     {
       "q": "What happens when a capture pattern like `user` appears inside a dict pattern?",
-      "answer": "The value at that key in the matched dict is bound to the variable user, making it available inside that case block.",
+      "answer": "The value at that key in the matched `dict` is bound to the variable `user`, making it available inside that `case` block.",
       "tier": "tier2"
     },
     {
-      "q": "What happens if no case branch matches and there is no wildcard?",
-      "answer": "match silently does nothing — there is no error or exception.",
+      "q": "What happens if no `case` branch matches and there is no wildcard?",
+      "answer": "`match` silently does nothing \u2014 there is no error or exception.",
       "tier": "tier2"
     },
     {
-      "q": "How do you match either of two literal values in a single case?",
-      "answer": "Use the | operator between literals, e.g. case 'GET' | 'HEAD':.",
+      "q": "How do you match either of two literal values in a single `case`?",
+      "answer": "Use the `|` operator between literals, e.g., `case 'GET' | 'HEAD':`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you compare a subject against the value of an existing variable in a `match` statement?",
+      "answer": "You must use a guard (e.g., `case x if x == my_var:`) or use a dotted name (like `MyEnum.VALUE`). A bare variable name in a `case` will always capture the subject instead of comparing.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you compare a subject against the value of an existing variable in a `match` statement?",
+      "answer": "You must use a guard (e.g., `case x if x == my_var:`) or use a dotted name (like `MyEnum.VALUE`). A bare variable name in a `case` will always capture the subject instead of comparing.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you match a sequence pattern against a list that has an unknown number of extra items at the end?",
+      "answer": "You must use a starred expression like `*rest` (e.g., `case [first, *rest]:`), because sequence patterns require an exact length match by default.",
       "tier": "tier1"
     }
   ],
@@ -84,32 +99,32 @@
       "type": "predict-output",
       "code": "event = {'type': 'login', 'user': 'alok'}\nmatch event:\n    case {'type': 'login'}:\n        print('A')\n    case {'type': 'login', 'user': user}:\n        print('B')",
       "question": "What does this print, and why?",
-      "answer": "A",
-      "why": "Two rules combine: the first matching case wins, AND a mapping pattern matches any dict that CONTAINS the given keys (extra keys are allowed). So {'type': 'login'} already matches the event, and the broader case fires first — the more specific case is never reached. Most people guess B."
+      "answer": "`A`",
+      "why": "Two rules combine: the first matching `case` wins, AND a mapping pattern matches any `dict` that CONTAINS the given keys (extra keys are allowed). So `{'type': 'login'}` already matches the event, and the broader `case` fires first \u2014 the more specific `case` is never reached. Most people guess `B`."
     },
     {
       "type": "predict-output",
       "code": "status = 500\nmatch status:\n    case 200:\n        print('ok')\n    case 404:\n        print('missing')\nprint('done')",
       "question": "What does this print?",
-      "answer": "done",
-      "why": "No case matches 500 and there is no wildcard case _, so the match statement simply does nothing — it is not an error. Execution continues to the print after the match."
+      "answer": "`done`",
+      "why": "No `case` matches `500` and there is no wildcard `case _`, so the `match` statement simply does nothing \u2014 it is not an error. Execution continues to the `print` after the `match`."
     }
   ],
   "practice_tasks": [
     {
       "title": "HTTP method dispatcher",
-      "prompt": "Modify the given `dispatch(method)` function. Replace the `pass` statement with a `match-case` block that returns 'read' for 'GET', 'write' for 'POST' or 'PUT', 'delete' for 'DELETE', and 'unsupported' for anything else.",
+      "prompt": "Modify the given `dispatch(method)` function. Replace the `pass` statement with a `match`-`case` block that returns `'read'` for `'GET'`, `'write'` for `'POST'` or `'PUT'`, `'delete'` for `'DELETE'`, and `'unsupported'` for anything else.",
       "starter_code": "def dispatch(method):\n    # TODO: Modify this function using match-case\n    pass\n\nprint(dispatch('GET'))\nprint(dispatch('POST'))\nprint(dispatch('PATCH'))",
       "solution": "def dispatch(method):\n    match method:\n        case 'GET':\n            return 'read'\n        case 'POST' | 'PUT':\n            return 'write'\n        case 'DELETE':\n            return 'delete'\n        case _:\n            return 'unsupported'\n\nprint(dispatch('GET'))\nprint(dispatch('POST'))\nprint(dispatch('PATCH'))"
     }
   ],
   "code_walkthrough": {
     "code": "def handle(event):\n    match event:\n        case {'type': 'signup', 'email': email}:\n            return f'new user: {email}'\n        case {'type': 'logout'}:\n            return 'logged out'\n        case _:\n            return 'unknown'\n\nprint(handle({'type': 'signup', 'email': 'a@b.com'}))\nprint(handle({'type': 'logout'}))\nprint(handle({'type': 'ping'}))",
-    "focus": "The first case matches the dict's structure AND binds the 'email' value to a variable; the second matches on type alone; _ catches anything unmatched."
+    "focus": "The first `case` matches the dict's structure AND binds the `'email'` value to a variable; the second matches on type alone; `_` catches anything unmatched."
   },
   "challenge": {
     "title": "API event router",
-    "prompt": "Write route_event(event) that handles dict payloads. If type='db_query' and a 'table' key is present, return 'querying <table>'. If type='cache_clear', return 'clearing cache'. If type='healthcheck', return 'ok'. For any other type, return 'unhandled: <type>'. Test all four patterns.",
+    "prompt": "Write `route_event(event)` that handles `dict` payloads. If `type='db_query'` and a `'table'` key is present, return `'querying <table>'`. If `type='cache_clear'`, return `'clearing cache'`. If `type='healthcheck'`, return `'ok'`. For any other type, return `'unhandled: <type>'`. Test all four patterns.",
     "solution": "def route_event(event):\n    match event:\n        case {'type': 'db_query', 'table': table}:\n            return f'querying {table}'\n        case {'type': 'cache_clear'}:\n            return 'clearing cache'\n        case {'type': 'healthcheck'}:\n            return 'ok'\n        case {'type': t}:\n            return f'unhandled: {t}'\n\nprint(route_event({'type': 'db_query', 'table': 'users'}))\nprint(route_event({'type': 'cache_clear'}))\nprint(route_event({'type': 'healthcheck'}))\nprint(route_event({'type': 'unknown'}))"
   },
   "sources": [

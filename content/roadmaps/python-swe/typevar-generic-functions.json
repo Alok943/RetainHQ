@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 40,
+    "estimated_minutes": 45,
     "importance": 7,
     "interview_frequency": "low",
     "prerequisites": [
@@ -25,14 +25,14 @@
     },
     {
       "term": "placeholder",
-      "definition": "A temporary symbol or variable (like T) that stands in for an actual, concrete data type until the function is called. Example: `T = TypeVar('T')`."
+      "definition": "A temporary symbol or variable (like `T`) that stands in for an actual, concrete data type until the function is called. Example: `T = TypeVar('T')`."
     }
   ],
   "overview": {
-    "what": "A `TypeVar` creates a generic function that adapts its return type based on the input type. If you have `T = TypeVar('T')` and a function `def get_first(items: list[T]) -> T:`, it tells the type checker: 'Whatever type `T` is in the input list, that exact same type `T` will be returned.' If you pass a `list[int]`, `T` becomes `int`. In Python 3.12+, you can skip the `TypeVar` import and write `def get_first[T](items: list[T]) -> T:` directly.",
+    "what": "A `TypeVar` creates a generic function that adapts its return type based on the input type. By using a placeholder like `T`, you tell the type checker to track the specific type passing through the function.\n\n  def get_first(items: list[T]) -> T:\n    return items[0]\n\nWhatever type `T` is in the input list, that exact same type `T` will be returned. If you pass a `list[int]`, `T` becomes `int`, preserving full IDE autocomplete.\n\n  # Python 3.12+ syntax\n  def get_first[T](items: list[T]) -> T:\n    return items[0]\n\nIn Python 3.12+, you can skip the `TypeVar` import and declare the generic parameter directly in square brackets.\n\n  def choose[T](a: T, b: T) -> T:\n    return a\n\n  # Trap: Conflicting types for the same TypeVar\n  val = choose(1, \"apple\")\n\nWhen multiple arguments share the same `TypeVar`, passing different types forces the type checker to resolve a common base class or union. This can accidentally weaken your type safety if you expected strict matching.",
     "why": "Without `TypeVar`, you'd have to use `Any` or `Union` for a function that works on many types, but that destroys autocomplete. `TypeVar` preserves the exact type information passing *through* the function.",
     "where_used": [
-      "Utility functions like 'first_or_default'",
+      "Utility functions like `first_or_default`",
       "Decorators that preserve the decorated function's signature"
     ]
   },
@@ -49,6 +49,10 @@
     {
       "title": "Forgetting that T is bound per-call",
       "explanation": "`T` is not a specific type like `int`; it's a placeholder that resolves to a concrete type *when the function is called*. It can be `int` on line 10 and `str` on line 12."
+    },
+    {
+      "title": "Passing mismatched types to the same TypeVar",
+      "explanation": "If a function is defined as `def add[T](a: T, b: T) -> T:`, calling `add(5, \"five\")` forces the type checker to compromise. Depending on your type checker settings, it will either throw an error or infer a loose type like `object`, losing strict type safety."
     }
   ],
   "recall_questions": [
@@ -85,12 +89,12 @@
   "aha_moment": {
     "code": "from typing import TypeVar\nT = TypeVar('T')\nprint(type(T))",
     "prediction": "What does this print?",
-    "common_guess": "It prints something like <class 'type'> or it fails because T isn't a real class.",
+    "common_guess": "It prints something like `<class 'type'>` or it fails because `T` isn't a real class.",
     "why": "It prints `<class 'typing.TypeVar'>`. `TypeVar` is just an object created at runtime to hold metadata for static analysis tools; it has no magical behavior when the program executes."
   },
   "practice_tasks": [
     {
-      "title": "Use a TypeVar",
+      "title": "Use a `TypeVar`",
       "prompt": "Given this working code, replace the `Any` type hints with a `TypeVar` named `T` so the type checker knows the return type matches the input type.",
       "starter_code": "from typing import Any\n\ndef echo(value: Any) -> Any:\n  return value",
       "solution": "from typing import TypeVar\n\nT = TypeVar('T')\n\ndef echo(value: T) -> T:\n  return value"

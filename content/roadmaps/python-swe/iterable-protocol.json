@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 9,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -32,8 +32,8 @@
     }
   ],
   "overview": {
-    "what": "The Iterable Protocol is Python's mechanism for traversing containers. An object is an *iterable* if it implements `__iter__()` returning an *iterator*. An *iterator* implements `__next__()` to yield elements one at a time and raises `StopIteration` when exhausted. When you run a `for` loop, Python automatically calls `iter()` to get an iterator, then repeatedly calls `next()` until the exception is caught. Think of an iterable as a book (a collection of pages) and an iterator as a bookmark (the current reading state); you can have many bookmarks in the same book.",
-    "why": "It allows Python to loop over any object uniformly (lists, strings, files, or custom streams) without needing to know its internal structure, enabling infinite sequences and lazy evaluation to save memory.",
+    "what": "The Iterable Protocol is Python's mechanism for traversing containers. Think of an iterable as a book (a collection of pages) and an iterator as a bookmark (the current reading state); you can have many bookmarks in the same book.\n\nTo support this protocol, objects implement two specific magic methods:\n\n- `__iter__()`: Makes an object an iterable. Returns a new iterator object, or raises `TypeError` if not implemented when passed to `iter()`.\n- `__next__()`: Makes an object an iterator. Returns the next item in the sequence, or raises `StopIteration` to signal the sequence is exhausted.\n\nWhen you run a `for` loop, Python automatically calls `iter()` to get an iterator, then repeatedly calls `next()` until the exception is caught.\n\n  gen = (x for x in range(3))\n  list(gen)\n  list(gen) # Returns []\n\nGenerator expressions return iterators, not independent iterables, meaning they are completely exhausted after one pass. This memory-saving feature is covered fully in `generator-expressions`.",
+    "why": "It allows Python to loop over any object uniformly (such as `list`, `str`, `file`, or custom streams) without needing to know its internal structure.\n\nThis abstraction enables infinite sequences and `lazy evaluation` to save memory.",
     "where_used": [
       "SQLAlchemy query results",
       "Streaming file lines",
@@ -42,17 +42,17 @@
   },
   "why_learning_this": [
     "Allows you to create custom collections that behave like built-in lists in `for` loops.",
-    "Explains why iterators are exhausted after one pass, unlike lists.",
-    "Underpins how lazy evaluation saves memory when processing massive datasets."
+    "Explains why iterators are exhausted after one pass, unlike a `list`.",
+    "Underpins how `lazy evaluation` saves memory when processing massive datasets."
   ],
   "common_mistakes": [
     {
       "title": "Exhausted Iterators",
-      "explanation": "Trying to iterate over an iterator twice yields nothing the second time. Fix: Convert it to a list if you need multiple passes, or create a fresh iterator by calling `iter()` again."
+      "explanation": "Trying to iterate over an iterator twice yields nothing the second time because it retains its exhausted state.\n\nConvert it to a `list` if you need multiple passes, or create a fresh iterator by calling `iter()` on the original iterable again."
     },
     {
       "title": "Confusing Iterable and Iterator",
-      "explanation": "Returning `self` in `__iter__` for a container that shouldn't hold state. Fix: An iterable's `__iter__` should return a *new* iterator object, while an iterator's `__iter__` returns `self`."
+      "explanation": "Returning `self` in `__iter__()` for a container that should not hold state.\n\nAn iterable's `__iter__()` should return a *new* iterator object. Conversely, an iterator's `__iter__()` must return `self`."
     }
   ],
   "recall_questions": [
@@ -68,14 +68,14 @@
     },
     {
       "q": "Why can you loop over a list multiple times, but an iterator only once?",
-      "answer": "A list is an iterable that creates a fresh iterator every time `iter()` is called on it. An iterator returns itself, so once it raises `StopIteration`, it remains exhausted.",
+      "answer": "A `list` is an iterable that creates a fresh iterator every time `iter()` is called on it. An iterator returns `self`, so once it raises `StopIteration`, it remains exhausted.",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "Fix the Exhausting Iterable",
-      "prompt": "The `Countdown` class below acts as both an iterable and an iterator, meaning it can only be looped over once. Modify the code by splitting it into two classes: `CountdownIterator` (which holds the state and implements `__next__`) and `Countdown` (which returns a new `CountdownIterator` in its `__iter__` method) so that it can be looped over multiple times.",
+      "prompt": "The `Countdown` class below acts as both an iterable and an iterator, meaning it can only be looped over once. Modify the code by splitting it into two classes: `CountdownIterator` (which holds the state and implements `__next__()`) and `Countdown` (which returns a new `CountdownIterator` in its `__iter__()` method) so that it can be looped over multiple times.",
       "starter_code": "class Countdown:\n    def __init__(self, start):\n        self.current = start\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value\n\n# Test:\nc = Countdown(2)\nprint(list(c)) # [2, 1]\nprint(list(c)) # Expected: [2, 1], Actual: []",
       "solution": "class CountdownIterator:\n    def __init__(self, start):\n        self.current = start\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self.current <= 0:\n            raise StopIteration\n        value = self.current\n        self.current -= 1\n        return value\n\nclass Countdown:\n    def __init__(self, start):\n        self.start = start\n\n    def __iter__(self):\n        return CountdownIterator(self.start)\n"
     }
@@ -87,7 +87,7 @@
   "aha_moment": {
     "code": "nums = [1, 2]\niterator = iter(nums)\nfor x in iterator:\n    print(x)\nfor x in iterator:\n    print('Again:', x)",
     "prediction": "What will be printed by the second `for` loop?",
-    "common_guess": "It will print 'Again: 1' and 'Again: 2'.",
+    "common_guess": "It will print `Again: 1` and `Again: 2`.",
     "why": "The first `for` loop exhausts the iterator. The second `for` loop calls `iter(iterator)`, which returns the exhausted iterator itself, immediately raising `StopIteration`."
   },
   "challenge": {
@@ -111,8 +111,8 @@
       "type": "find-bug",
       "code": "class MyNumbers:\n    def __init__(self):\n        self.current = 1\n    def __iter__(self):\n        return self\n    def __next__(self):\n        self.current += 1\n        return self.current",
       "question": "Why doesn't this class act as a proper iterable that can be reused?",
-      "answer": "It returns `self` in `__iter__`, meaning it acts as its own iterator and gets exhausted.",
-      "why": "To allow multiple passes, `__iter__` must return a *new* iterator object each time, instead of returning the same exhausted object (`self`)."
+      "answer": "It returns `self` in `__iter__()`, meaning it acts as its own iterator and gets exhausted.",
+      "why": "To allow multiple passes, `__iter__()` must return a *new* iterator object each time, instead of returning the same exhausted object (`self`)."
     }
   ]
 }

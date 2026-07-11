@@ -6,7 +6,7 @@
   "tier": "tier1",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -31,31 +31,35 @@
     },
     {
       "term": "base classes",
-      "definition": "The original or parent classes that other classes are built upon and inherit features from. Example: in `class Dog(Animal):`, `Animal` is the base class."
+      "definition": "The original or parent classes that other classes are built upon and inherit features from. Example: in `class Admin(User):`, `User` is the base class."
     }
   ],
   "overview": {
-    "what": "Inheritance allows a new class to inherit attributes and methods from an existing class, establishing an 'is-a' relationship. The `super()` function returns a proxy object that delegates method calls to a parent or sibling class. Think of inheritance like a master template and `super()` as a phone line explicitly calling the master template to avoid repeating setup logic. When overriding `__init__`, calling `super().__init__()` ensures the parent's initialization runs.",
+    "what": "Inheritance allows a new class to inherit attributes and methods from an existing class, establishing an `is-a` relationship.\n\nThe `super()` function returns a proxy object that delegates method calls to a parent or sibling class. Think of inheritance like a master template and `super()` as a phone line explicitly calling the master template to avoid repeating setup logic.\n\nWhen overriding `__init__`, calling `super().__init__()` ensures the parent's initialization runs.\n\n  class BaseWorker:\n    def __init__(self, name):\n      self.name = name\n\n  class CeleryWorker(BaseWorker):\n    def __init__(self, name, queue):\n      super().__init__(name)\n      self.queue = queue\n\n⚠️ **Trap: Signature Mismatch**\n\nIf your subclass `__init__` takes different arguments than the parent, you must explicitly pass only what the parent expects to `super().__init__()`. Passing all arguments blindly raises a `TypeError`.\n\n  class User:\n    def __init__(self, username):\n      pass\n\n  class Admin(User):\n    def __init__(self, username, role):\n      super().__init__(username, role)  # TypeError: __init__() takes 2 positional arguments but 3 were given\n\n⚠️ **Trap: Multiple Inheritance & MRO**\n\nUsing `super()` in complex hierarchies does not just call the direct parent, it follows the Method Resolution Order (MRO). This can cause unexpected arguments to be passed to siblings. This is covered fully in `mro`.",
     "why": "It reduces code duplication by centralizing shared logic in base classes, making it easier to maintain and extend functionality.",
     "where_used": [
       "Django models (`models.Model`)",
-      "Pydantic BaseModels",
+      "Pydantic `BaseModel`s",
       "FastAPI API routers"
     ]
   },
   "why_learning_this": [
-    "Understanding how third-party framework classes (like Django Views) work under the hood",
+    "Understanding how third-party framework classes (like Django `View`s) work under the hood",
     "Extending existing exceptions by subclassing `Exception`",
     "Avoiding duplicated boilerplate across related data structures"
   ],
   "common_mistakes": [
     {
-      "title": "Forgetting to call super() in __init__",
+      "title": "Forgetting to call `super()` in `__init__`",
       "explanation": "The parent's attributes are never initialized, leading to an `AttributeError` when those attributes are accessed."
     },
     {
       "title": "Redefining parent behavior instead of extending it",
       "explanation": "Completely overwriting a parent method without calling `super()` drops the parent's original functionality when you only meant to add to it."
+    },
+    {
+      "title": "Passing subclass arguments directly to `super()`",
+      "explanation": "When calling `super().__init__()`, you must only pass the arguments that the parent class expects. Blindly passing all of the subclass's parameters will raise a `TypeError`."
     }
   ],
   "recall_questions": [
@@ -71,14 +75,14 @@
     },
     {
       "q": "What kind of relationship does inheritance establish between a parent and child class?",
-      "answer": "An 'is-a' relationship — meaning the child class is a more specific type of the parent. For example, a `Dog` class inheriting from `Animal` means every `Dog` is an `Animal`.",
+      "answer": "An `is-a` relationship — meaning the child class is a more specific type of the parent. For example, an `Admin` class inheriting from `User` means every `Admin` is a `User`.",
       "tier": "tier1"
     }
   ],
   "practice_tasks": [
     {
       "title": "Extend an API Request class",
-      "prompt": "Modify the `SecureRequest` class so it takes a `url` and a `token`. Call `super().__init__(url)` to handle the URL, then store the `token` as an instance variable.",
+      "prompt": "Modify the `SecureRequest` class so it takes a `url` and a `token`. Call `super().__init__(url)` to handle the `url`, then store the `token` as an instance variable.",
       "starter_code": "class BaseRequest:\n    def __init__(self, url):\n        self.url = url\n\nclass SecureRequest(BaseRequest):\n    def __init__(self, url, token):\n        # TODO: call super and set self.token\n        pass",
       "solution": "class BaseRequest:\n    def __init__(self, url):\n        self.url = url\n\nclass SecureRequest(BaseRequest):\n    def __init__(self, url, token):\n        super().__init__(url)\n        self.token = token"
     }
@@ -89,13 +93,13 @@
   },
   "aha_moment": {
     "code": "class APIError(Exception):\n    def __init__(self, code):\n        self.code = code\n\nclass NotFoundError(APIError):\n    def __init__(self, code):\n        pass\n\nerr = NotFoundError(404)\nprint(hasattr(err, 'code'))",
-    "prediction": "What does this print: True or False?",
-    "common_guess": "True",
+    "prediction": "What does this print: `True` or `False`?",
+    "common_guess": "`True`",
     "why": "Because `NotFoundError` overrides `__init__` and does NOT call `super().__init__(code)`, the `APIError`'s `__init__` is skipped, so `self.code` is never set."
   },
   "challenge": {
     "title": "Implement a Database Model hierarchy",
-    "prompt": "Create a base class `Model` with a `save` method printing 'saving to db'. Create a `UserModel` inheriting from `Model` whose `save` prints 'validating user' then calls the parent's `save` using `super()`.",
+    "prompt": "Create a base class `Model` with a `save` method printing `'saving to db'`. Create a `UserModel` inheriting from `Model` whose `save` prints `'validating user'` then calls the parent's `save` using `super()`.",
     "solution": "class Model:\n    def save(self):\n        print('saving to db')\n\nclass UserModel(Model):\n    def save(self):\n        print('validating user')\n        super().save()"
   },
   "sources": [
@@ -113,8 +117,15 @@
       "type": "predict-output",
       "question": "What does this code print?",
       "code": "class A:\n    def ping(self):\n        print('A')\n\nclass B(A):\n    def ping(self):\n        super().ping()\n        print('B')\n\nb = B()\nb.ping()",
-      "answer": "It prints `A` followed by `B`.",
-      "why": "The call to `b.ping()` runs the `ping` method in `B`. Inside `B.ping`, `super().ping()` delegates to the parent class `A`, printing 'A'. Then it resumes in `B` and prints 'B'."
+      "answer": "It prints `'A'` followed by `'B'`.",
+      "why": "The call to `b.ping()` runs the `ping` method in `B`. Inside `B.ping`, `super().ping()` delegates to the parent class `A`, printing `'A'`. Then it resumes in `B` and prints `'B'`."
+    },
+    {
+      "type": "predict-output",
+      "question": "What does this code do?",
+      "code": "class Model:\n    def __init__(self, table):\n        self.table = table\n\nclass UserModel(Model):\n    def __init__(self, table, db_url):\n        super().__init__(table, db_url)\n        self.db_url = db_url\n\nu = UserModel('users', 'sqlite://')",
+      "answer": "It raises a `TypeError`.",
+      "why": "The subclass `UserModel` passes both `table` and `db_url` to `super().__init__()`, but the parent class `Model` only expects the `table` argument."
     }
   ]
 }

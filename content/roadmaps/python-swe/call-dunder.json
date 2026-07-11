@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 8,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -32,7 +32,7 @@
     }
   ],
   "overview": {
-    "what": "The `__call__` dunder method allows an instance of a class to be executed exactly like a function. Variables are labels, objects are boxes; when you add `()` to a label, Python looks for `__call__` on the box. This means an object can maintain internal state (like a database connection or a counter) while exposing a simple, function-like interface. For example, PyTorch models use `__call__` to run the forward pass, and FastAPI uses it for dependency injection classes. Defining `__call__` makes instances invocable with `()` syntax, which dispatches to `__call__`.",
+    "what": "The `__call__` dunder method allows an instance of a class to be executed exactly like a function. Variables are labels, objects are boxes; when you add `()` to a label, Python looks for `__call__` on the box. \n\nThis means an object can maintain internal state (like a database connection or a counter) while exposing a simple, function-like interface. Defining `__call__` makes instances invocable with `()` syntax, which directly dispatches to the `__call__` method.\n\nFor example, PyTorch models use `__call__` to run the forward pass, and FastAPI uses it for dependency injection classes.\n\n  class Counter:\n    def __init__(self):\n      self.count = 0\n\n    def __call__(self):\n      self.count += 1\n      return self.count\n\n  my_counter = Counter()\n  my_counter()  # Returns 1\n\nA common trap is trying to make an object callable by assigning a function to `self.__call__` dynamically. Python ignores instance-level dunder methods and only looks them up on the class definition.\n\n  class Dummy:\n    pass\n\n  obj = Dummy()\n  obj.__call__ = lambda: print(\"Hello\")\n  obj()  # TypeError: 'Dummy' object is not callable\n\nAnother sharp edge is using classes as decorators. The signature of `__call__` drastically changes depending on whether you include parentheses during decoration, a trap covered fully in decorators-with-state.",
     "why": "It lets you combine the statefulness of a class with the clean syntax of a function call. It is the foundation for stateful decorators (decorators that remember data across calls) and many framework APIs.",
     "where_used": [
       "FastAPI",
@@ -42,7 +42,7 @@
   },
   "why_learning_this": [
     "Building stateful decorators",
-    "Understanding PyTorch model execution (model(x))",
+    "Understanding PyTorch model execution (`model(x)`)",
     "Writing FastAPI dependencies that require configuration"
   ],
   "common_mistakes": [
@@ -53,6 +53,10 @@
     {
       "title": "Forgetting to return a value",
       "explanation": "Just like a regular function, `__call__` must explicitly `return` a value if you want the caller to receive one. Otherwise, it implicitly returns `None`."
+    },
+    {
+      "title": "Assigning `__call__` to an instance",
+      "explanation": "Because of how Python implements dunder method lookup, assigning `obj.__call__ = my_func` does not make `obj` callable. You must define `__call__` on the class itself."
     }
   ],
   "recall_questions": [
@@ -80,15 +84,22 @@
       "type": "predict-output",
       "code": "class Adder:\n    def __init__(self, val):\n        self.val = val\n    def __call__(self, x):\n        return self.val + x\n\nadd_five = Adder(5)\nprint(add_five(10))",
       "question": "What is the output of this code?",
-      "answer": "15",
-      "why": "The instance `add_five` is created with `val = 5`. Calling it with `10` invokes the `__call__` method, which adds 5 and 10."
+      "answer": "`15`",
+      "why": "The instance `add_five` is created with `val = 5`. Calling it with `10` invokes the `__call__` method, which adds `5` and `10`."
     },
     {
       "type": "predict-output",
       "code": "class Counter:\n    def __init__(self):\n        self.count = 0\n    def __call__(self):\n        self.count += 1\n        return self.count\n\nCounter()()\nprint(Counter()())",
       "question": "What is the output of this code?",
-      "answer": "1",
-      "why": "The code creates two *separate* instances of `Counter`. The first `Counter()()` creates an instance and immediately calls it, then discards it. The `print(Counter()())` creates a completely new instance with a fresh `count = 0` and calls it, so it returns 1."
+      "answer": "`1`",
+      "why": "The code creates two separate instances of `Counter`. The first `Counter()()` creates an instance and immediately calls it, then discards it. The `print(Counter()())` creates a completely new instance with a fresh `count = 0` and calls it, so it returns `1`."
+    },
+    {
+      "type": "predict-output",
+      "code": "class Printer:\n    pass\n\np = Printer()\np.__call__ = lambda: print('Printing...')\np()",
+      "question": "What happens when this code is executed?",
+      "answer": "It raises a `TypeError`.",
+      "why": "Python looks up dunder methods like `__call__` on the class, not the instance. Adding `__call__` to `p` dynamically does not make `p` callable."
     }
   ],
   "code_walkthrough": {
@@ -98,8 +109,8 @@
   "aha_moment": {
     "code": "class Multiplier:\n  def __init__(self, factor):\n    self.factor = factor\n\n  def __call__(self, value):\n    return self.factor * value\n\ndouble = Multiplier(2)\ntriple = Multiplier(3)\nprint(double(5) + triple(4))",
     "prediction": "What does the final print statement output?",
-    "common_guess": "It raises a TypeError because you cannot call an object.",
-    "why": "Since `Multiplier` defines `__call__`, the instances `double` and `triple` act exactly like functions. `double(5)` returns 10, `triple(4)` returns 12, so the sum is 22."
+    "common_guess": "It raises a `TypeError` because you cannot call an object.",
+    "why": "Since `Multiplier` defines `__call__`, the instances `double` and `triple` act exactly like functions. `double(5)` returns `10`, `triple(4)` returns `12`, so the sum is `22`."
   },
   "challenge": {
     "title": "A Configurable Caching Decorator",

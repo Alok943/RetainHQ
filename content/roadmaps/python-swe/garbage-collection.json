@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 30,
+    "estimated_minutes": 35,
     "importance": 7,
     "interview_frequency": "medium",
     "prerequisites": [
@@ -26,11 +26,11 @@
     },
     {
       "term": "memory leaks",
-      "definition": "When a program fails to release memory that it no longer needs, eventually causing the system to run out of memory. Example: `storing unused data in a cache`"
+      "definition": "When a program fails to release memory that it no longer needs, eventually causing the system to run out of memory. Example: storing unused data in a global cache."
     }
   ],
   "overview": {
-    "what": "Python manages memory automatically using reference counting: every object keeps a count of how many labels point to it. When the count drops to zero, the object is immediately destroyed. A 'cyclic reference' occurs when objects point to each other (e.g., node A points to B, and B points to A). Reference counting cannot clean these up because their counts never reach zero. To solve this, a background process called the 'garbage collector' periodically scans for unreachable cycles and destroys them. Think of reference counting as returning a library book as soon as you finish reading it, and the garbage collector as the librarian sweeping the building at night for abandoned books.",
+    "what": "Python manages memory automatically using reference counting. Every object keeps a count of how many labels point to it, and when the count drops to zero, the object is immediately destroyed. Think of reference counting as returning a library book as soon as you finish reading it, and the garbage collector as the librarian sweeping the building at night for abandoned books.\n\nA cyclic reference occurs when objects point to each other (e.g., node `A` points to `B`, and `B` points to `A`). Reference counting cannot clean these up because their counts never reach zero even when no external variables point to them. To solve this, a background process called the garbage collector (using the `gc` module) periodically scans for unreachable cycles and destroys them.\n\nWhen testing memory management, you can use `sys.getrefcount()` to inspect an object's current reference count. Be aware of this common debugging trap: the count is always one higher than you expect because passing the object to the function creates a temporary reference.\n\n  import sys\n\n  my_list = [1, 2, 3]\n  # Returns 2, not 1. The 'my_list' argument creates a temporary reference!\n  print(sys.getrefcount(my_list))\n\n",
     "why": "It prevents memory leaks in long-running applications without requiring developers to manually allocate and free memory.",
     "where_used": [
       "FastAPI background tasks",
@@ -40,7 +40,7 @@
   },
   "why_learning_this": [
     "You can avoid creating memory leaks in long-running servers.",
-    "You understand why the gc module exists and when to use it."
+    "You understand why the `gc` module exists and when to use it."
   ],
   "common_mistakes": [
     {
@@ -49,25 +49,30 @@
     },
     {
       "title": "Assuming del deletes objects",
-      "explanation": "The del statement only deletes the variable name (the label), not the object. The object is only destroyed if that was the last label pointing to it."
+      "explanation": "The `del` statement only deletes the variable name (the label), not the object. The object is only destroyed if that was the last label pointing to it."
     }
   ],
   "recall_questions": [
     {
       "q": "What is the primary mechanism Python uses to know when to delete an object?",
-      "answer": "Reference counting. Python tracks how many labels point to an object, and destroys it when the count reaches zero.",
+      "answer": "Reference counting. Python tracks how many labels point to an object, and destroys it when the count reaches `0`.",
       "tier": "tier1"
     },
     {
       "q": "Why is a secondary garbage collection process needed in addition to reference counting?",
-      "answer": "It cleans up cyclic references, where objects point to each other. In this case, their reference counts never reach zero even when no variables point to them.",
+      "answer": "It cleans up cyclic references, where objects point to each other. In this case, their reference counts never reach `0` even when no variables point to them.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does `sys.getrefcount(obj)` return a number that is one higher than the number of active variables pointing to it?",
+      "answer": "Passing the object as an argument into `sys.getrefcount()` creates a temporary reference for the duration of the function call.",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "Break a cycle",
-      "prompt": "The provided code creates a cyclic reference between a parent and child node. Modify the code to manually break the cycle before the end of the script so that reference counting alone can clean them up.",
+      "prompt": "The provided code creates a cyclic reference between a `parent` and `child` node. Modify the code to manually break the cycle before the end of the script so that reference counting alone can clean them up.",
       "starter_code": "class Node:\n    def __init__(self, name):\n        self.name = name\n        self.child = None\n        self.parent = None\n\nparent = Node('parent')\nchild = Node('child')\n\nparent.child = child\nchild.parent = parent\n\n# Break the cycle here\n",
       "solution": "class Node:\n    def __init__(self, name):\n        self.name = name\n        self.child = None\n        self.parent = None\n\nparent = Node('parent')\nchild = Node('child')\n\nparent.child = child\nchild.parent = parent\n\n# Break the cycle here\nparent.child = None"
     }
@@ -79,21 +84,21 @@
   "understanding_checks": [
     {
       "type": "predict-output",
-      "code": "import gc\nclass Data: pass\na, b = Data(), Data()\na.friend, b.friend = b, a\ndel a, b\nprint(gc.collect() > 0)",
+      "code": "import gc\n\nclass Data:\n    pass\n\na, b = Data(), Data()\na.friend, b.friend = b, a\ndel a, b\nprint(gc.collect() > 0)",
       "question": "What is the output of this code?",
       "answer": "True",
-      "why": "When a and b are deleted, their reference counts drop to 1 (because they point to each other). `gc.collect()` finds this unreachable cycle, cleans it up, and returns the number of collected objects, which is greater than 0."
+      "why": "When `a` and `b` are deleted, their reference counts drop to `1` (because they point to each other). `gc.collect()` finds this unreachable cycle, cleans it up, and returns the number of collected objects, which is greater than `0`."
     },
     {
       "type": "explain-behavior",
       "question": "If you delete a variable using `del x`, does it immediately free the memory?",
       "answer": "Not necessarily. It only decrements the reference count.",
-      "why": "`del x` removes the label 'x' and decrements the object's reference count by 1. The object is only destroyed and its memory freed if that count reaches 0."
+      "why": "`del x` removes the label `x` and decrements the object's reference count by `1`. The object is only destroyed and its memory freed if that count reaches `0`."
     }
   ],
   "challenge": {
     "title": "Analyze Reference Counts",
-    "prompt": "Create a list a and append it to itself. Then delete the label a. This creates a cyclic reference. Use the gc module to force a collection and print the number of collected objects.",
+    "prompt": "Create a list `a` and append it to itself. Then delete the label `a`. This creates a cyclic reference. Use the `gc` module to force a collection and print the number of collected objects.",
     "solution": "import gc\n\na = []\na.append(a)\ndel a\n\ncollected = gc.collect()\nprint(collected)"
   },
   "sources": [

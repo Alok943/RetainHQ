@@ -6,7 +6,7 @@
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 25,
+    "estimated_minutes": 35,
     "importance": 5,
     "interview_frequency": "low",
     "prerequisites": [
@@ -23,35 +23,35 @@
   "glossary": [
     {
       "term": "flatten",
-      "definition": "To convert a complex, layered structure (like a list containing other lists) into a single, simple, one-dimensional list. e.g. `[[1,2],[3,4]]` flattened becomes `[1,2,3,4]`."
+      "definition": "To convert a complex, layered structure (like a `list` containing other `list`s) into a single, simple, one-dimensional `list`. e.g. `[[1, 2], [3, 4]]` flattened becomes `[1, 2, 3, 4]`."
     },
     {
       "term": "combinatorial cross-products",
-      "definition": "Every possible combination formed by matching each item in one list with every item in another list. e.g. `[x+y for x in 'AB' for y in '12']` gives `['A1','A2','B1','B2']`."
+      "definition": "Every possible combination formed by matching each item in one `list` with every item in another `list`. e.g. `[x + y for x in 'AB' for y in '12']` gives `['A1', 'A2', 'B1', 'B2']`."
     }
   ],
   "overview": {
-    "what": "A nested comprehension allows you to put multiple `for` clauses in a single comprehension, or place a comprehension completely inside another one. When combining multiple `for` clauses like `[x for row in matrix for x in row]`, the order reads left-to-right exactly as the loops would be nested top-to-bottom in standard code. Alternatively, you can nest the comprehensions themselves: `[[0 for _ in range(3)] for _ in range(3)]` creates a grid of lists.",
-    "why": "Nested data structures like lists of lists are common (e.g. database rows containing JSON arrays, paginated API endpoints returning pages of results). Nested comprehensions provide a concise way to flatten those structures or generate combinatorial cross-products without verbose loop boilerplate.",
+    "what": "A nested comprehension allows you to put multiple `for` clauses in a single comprehension, or place a comprehension completely inside another one. Think of it like reading a book: you iterate through the chapters (outer loop), and then through the pages within each chapter (inner loop). When combining multiple `for` clauses, the order reads left-to-right exactly as the loops would be nested top-to-bottom in standard code.\n\n  matrix = [[1, 2], [3, 4]]\n  flat = [x for row in matrix for x in row]\n  grid = [[x for x in row] for row in matrix]\n\nThe first example flattens the structure because the multiple `for` clauses are in the same comprehension. The second example retains the two-dimensional structure because one comprehension is nested entirely inside the result expression of the other.\n\n  # Trap: Getting the loop order backwards\n  matrix = [[1, 2], [3, 4]]\n  flat = [x for x in row for row in matrix]  # Raises NameError\n\nThe loop order in a flattened comprehension is evaluated strictly from left to right. This edge case raises a `NameError` when the inner loop tries to reference a variable that has not been bound yet by the outer loop.\n\n  # Trap: Confusing filter placement\n  matrix = [[1, 2], [3, 4, 5]]\n  evens = [x for row in matrix if len(row) > 2 for x in row if x % 2 == 0]\n\nYou can attach `if` conditions to any of the `for` clauses. The condition filters the variables immediately available to its left, meaning the outer `if len(row) > 2` evaluates before the inner loop even runs.",
+    "why": "Nested data structures like `list`s of `list`s are common (e.g. database rows containing JSON arrays, paginated API endpoints returning pages of results). Nested comprehensions provide a concise way to flatten those structures or generate combinatorial cross-products without verbose `for` loop boilerplate.",
     "where_used": [
-      "Flattening nested lists into a single flat list",
+      "Flattening nested `list`s into a single flat `list`",
       "Generating combinations or Cartesian products",
       "Initialising 2D matrices"
     ]
   },
   "why_learning_this": [
-    "Flattening a list of pages returned by an API into a single list of items",
+    "Flattening a `list` of pages returned by an API into a single `list` of items",
     "Understanding the execution order of multiple `for` clauses",
-    "Knowing when a nested comprehension becomes too complex and should be rewritten as standard loops"
+    "Knowing when a nested comprehension becomes too complex and should be rewritten as standard `for` loops"
   ],
   "common_mistakes": [
     {
       "title": "Getting the loop order backwards",
-      "explanation": "When flattening, developers often write `[x for x in sublist for sublist in matrix]`, which raises a NameError. The correct order matches nested `for` loops exactly: the outer loop (`for sublist in matrix`) comes first, then the inner loop (`for x in sublist`)."
+      "explanation": "When flattening, developers often write `[x for x in sublist for sublist in matrix]`, which raises a `NameError`. The correct order matches nested `for` loops exactly. The outer loop (`for sublist in matrix`) comes first, then the inner loop (`for x in sublist`)."
     },
     {
       "title": "Ignoring readability",
-      "explanation": "Nesting three or more loops inside a single comprehension makes the code nearly unreadable. If the comprehension requires mental gymnastics to parse, use standard `for` loops."
+      "explanation": "Nesting three or more `for` loops inside a single comprehension makes the code nearly unreadable. If the comprehension requires mental gymnastics to parse, use standard `for` loops."
     }
   ],
   "recall_questions": [
@@ -62,25 +62,25 @@
     },
     {
       "q": "What is the primary use case for `[item for sublist in matrix for item in sublist]`?",
-      "answer": "It is used to flatten a list of lists (a matrix) into a single, one-dimensional list.",
+      "answer": "It is used to flatten a `list` of `list`s (a matrix) into a single, one-dimensional `list`.",
       "tier": "tier2"
     }
   ],
   "practice_tasks": [
     {
       "title": "Flatten a list of tuples",
-      "prompt": "Modify the provided code to use a nested list comprehension instead of nested `for` loops to flatten the list of tuples.",
+      "prompt": "Modify the provided code to use a nested `list` comprehension instead of nested `for` loops to flatten the `list` of `tuple`s.",
       "starter_code": "coords = [(1, 2), (3, 4), (5, 6)]\nflat = []\nfor pair in coords:\n    for num in pair:\n        flat.append(num)\nprint(flat)",
       "solution": "coords = [(1, 2), (3, 4), (5, 6)]\nflat = [num for pair in coords for num in pair]\nprint(flat)"
     }
   ],
   "code_walkthrough": {
     "code": "pages = [['item1', 'item2'], ['item3']]\n\n# Equivalent to:\n# for page in pages:\n#     for item in page:\nflat_items = [item for page in pages for item in page]\n\nprint(flat_items)",
-    "focus": "The outer loop `for page in pages` appears first on the left, followed immediately by the inner loop `for item in page`, successfully flattening the nested list."
+    "focus": "The outer loop `for page in pages` appears first on the left, followed immediately by the inner loop `for item in page`, successfully flattening the nested `list`."
   },
   "challenge": {
     "title": "Extract positive values",
-    "prompt": "Given a matrix `[[-1, 2], [3, -4]]`, write a nested list comprehension that flattens it AND filters it to only include positive numbers `> 0`.",
+    "prompt": "Given a matrix `[[-1, 2], [3, -4]]`, write a nested `list` comprehension that flattens it AND filters it to only include positive numbers `> 0`.",
     "solution": "matrix = [[-1, 2], [3, -4]]\npositives = [num for row in matrix for num in row if num > 0]\nprint(positives)"
   },
   "sources": [
@@ -92,14 +92,21 @@
       "code": "matrix = [[1, 2], [3, 4]]\nflat = [num for num in row for row in matrix]",
       "question": "Why does this code raise a `NameError: name 'row' is not defined`?",
       "answer": "Because the multiple `for` clauses in a comprehension are evaluated from left to right. The code attempts to iterate over `row` (`for num in row`) before `row` has been defined by the outer loop (`for row in matrix`).",
-      "why": "The correct order must match how standard nested loops are written top-to-bottom: the outer loop comes first. It should be `[num for row in matrix for num in row]`."
+      "why": "The correct order must match how standard nested `for` loops are written top-to-bottom. The outer loop comes first, so it should be `[num for row in matrix for num in row]`."
     },
     {
       "type": "predict-output",
       "code": "matrix = [[1, 2], [3, 4]]\nsquared_matrix = [[num * num for num in row] for row in matrix]\nprint(squared_matrix)",
       "question": "What is the output of this code?",
       "answer": "[[1, 4], [9, 16]]",
-      "why": "This is a list comprehension nested *inside* another list comprehension, not multiple `for` clauses in a single comprehension. The outer comprehension iterates over rows in the matrix, and for each row, the inner comprehension creates a new list with squared numbers, thus retaining the 2D structure."
+      "why": "This is a `list` comprehension nested inside another `list` comprehension, not multiple `for` clauses in a single comprehension. The outer comprehension iterates over rows in the matrix. For each row, the inner comprehension creates a new `list` with squared numbers, thus retaining the 2D structure."
+    },
+    {
+      "type": "predict-output",
+      "code": "matrix = [[1, 2], [3, 4, 5]]\nres = [x for row in matrix if len(row) > 2 for x in row if x % 2 == 0]",
+      "question": "What is the value of `res` after this code executes?",
+      "answer": "[4]",
+      "why": "The outer loop filters for rows with a length greater than `2`, keeping only `[3, 4, 5]`. The inner loop then iterates through that row and filters for even numbers, returning `4`."
     }
   ]
 }
