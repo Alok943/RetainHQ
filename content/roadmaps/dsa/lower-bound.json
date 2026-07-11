@@ -3,7 +3,7 @@
   "title": "Lower Bound",
   "roadmap": "dsa",
   "kind": "dsa",
-  "tier": "tier1",
+  "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
     "estimated_minutes": 20,
@@ -15,6 +15,23 @@
     "unlocks": [
       "upper-bound",
       "binary-search-on-the-answer"
+    ]
+  },
+  "viz": {
+    "generator": "lower-bound",
+    "default_input": [2, 4, 4, 4, 7, 9, 11],
+    "invariants": {
+      "inv-window": "The lower-bound index (the first element >= target) always lies within the current [lo, hi) window.",
+      "inv-lower": "We never stop on equality: a value >= target stays in range, so the search keeps narrowing toward the FIRST such index.",
+      "inv-land": "When lo == hi the window is empty and lo is the landing index -- possibly one past the end if every element is smaller."
+    },
+    "steps": [
+      { "id": "start", "label": "lo = 0, hi = n" },
+      { "id": "window", "label": "answer lies in [lo, hi)" },
+      { "id": "probe", "label": "compare arr[mid] to target" },
+      { "id": "discard", "label": "arr[mid] >= target -> hi = mid, else lo = mid + 1" },
+      { "id": "land", "label": "first index with arr[i] >= target" },
+      { "id": "done", "label": "search finished" }
     ]
   },
   "glossary": [

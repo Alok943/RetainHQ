@@ -3,7 +3,7 @@
   "title": "Upper Bound",
   "roadmap": "dsa",
   "kind": "dsa",
-  "tier": "tier1",
+  "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
     "estimated_minutes": 20,
@@ -14,6 +14,23 @@
     ],
     "unlocks": [
       "binary-search-on-the-answer"
+    ]
+  },
+  "viz": {
+    "generator": "upper-bound",
+    "default_input": [2, 4, 4, 4, 7, 9, 11],
+    "invariants": {
+      "inv-window": "The upper-bound index (the first element strictly > target) always lies within the current [lo, hi) window.",
+      "inv-upper": "A value EQUAL to target is not the answer, so equal values get pushed left too -- the only change from lower-bound.",
+      "inv-land": "When lo == hi, lo is the landing index -- it sits AFTER any run of values equal to target."
+    },
+    "steps": [
+      { "id": "start", "label": "lo = 0, hi = n" },
+      { "id": "window", "label": "answer lies in [lo, hi)" },
+      { "id": "probe", "label": "compare arr[mid] to target" },
+      { "id": "discard", "label": "arr[mid] > target -> hi = mid, else lo = mid + 1" },
+      { "id": "land", "label": "first index with arr[i] > target" },
+      { "id": "done", "label": "search finished" }
     ]
   },
   "glossary": [
