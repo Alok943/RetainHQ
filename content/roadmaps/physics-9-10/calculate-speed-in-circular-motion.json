@@ -76,7 +76,35 @@
           "math": "v = 263893 / 24 \\approx 10995"
         }
       ],
-      "answer": "10995 km/h"
+      "answer": "10995 km/h",
+      "diagram3d": {
+        "schema_version": 1,
+        "scene": "orbit",
+        "central": { "label": "Earth", "mass": 6e24 },
+        "satellite": { "label": "Satellite", "mass": 2000 },
+        "radius_km": 42000,
+        "show_force_vector": false,
+        "prediction": {
+          "question": "Speed nikaalne ke liye total distance kaise milega?",
+          "choices": ["Earth se satellite ki doori (r)", "Orbit ka pura chakkar (2\u03c0r)", "Doori aur time ka multiply (r*t)"],
+          "answer": 1,
+          "explains": "Satellite jab orbit poora karta hai toh wo ek circle ka circumference travel karta hai, jo 2\u03c0r hota hai."
+        },
+        "reflection": {
+          "prompt": "Kyun 'r' ko direct distance ki tarah use nahi kar sakte?",
+          "answer": "Kyunki 'r' sirf circle ka radius (bich ki doori) hai. Satellite ko poora chakkar lagane ke liye circle ke border par chalna padta hai, jo 2\u03c0r hota hai."
+        },
+        "caption": "Communication satellite 24 ghante me ek pura chakkar (2\u03c0r) lagata hai.",
+        "poster": {
+          "type": "schematic",
+          "bodies": [
+            { "id": "earth", "x": 30, "y": 30, "r": 18, "label": "Earth", "color": "#2563EB" },
+            { "id": "satellite", "x": 75, "y": 30, "r": 3, "label": "Satellite", "color": "#94A3B8" }
+          ],
+          "distance": { "from": "earth", "to": "satellite", "label": "r = 42000 km" },
+          "caption": "Distance covered in one revolution = 2\u03c0r."
+        }
+      }
     }
   ],
   "common_mistakes": [

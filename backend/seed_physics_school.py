@@ -171,6 +171,8 @@ NODES = [
     ("Class 10 · Magnetic Effects", "Magnetic field due to current", "Describe field of a solenoid", "medium", "Inside is uniform and parallel (like a bar magnet). Used to make electromagnets."),
     ("Class 10 · Magnetic Effects", "Force on current conductor", "Identify conditions for magnetic force", "medium", "A current carrying conductor in a magnetic field experiences a force, maximum when perpendicular."),
     ("Class 10 · Magnetic Effects", "Force on current conductor", "Apply Fleming's Left-Hand Rule", "hard", "Thumb=Force, Forefinger=Field, Middle=Current. All three mutually perpendicular."),
+    ("Class 10 · Magnetic Effects", "Electromagnetic induction", "Describe electromagnetic induction", "medium", "Moving a magnet in/out of a coil (or vice versa) induces a current — Faraday's discovery."),
+    ("Class 10 · Magnetic Effects", "Electromagnetic induction", "Apply Fleming's Right-Hand Rule", "hard", "Thumb=Motion, Forefinger=Field, Middle=induced Current. Used for generators, not motors."),
     ("Class 10 · Magnetic Effects", "Domestic circuits", "Distinguish live, neutral, and earth wires", "easy", "Live (red/brown, 220V), Neutral (black/blue, 0V), Earth (green/yellow, safety)."),
     ("Class 10 · Magnetic Effects", "Domestic circuits", "Explain role of a fuse", "easy", "Melts to break circuit if current exceeds safe limit, preventing fire/damage."),
 ]

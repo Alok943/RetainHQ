@@ -49,6 +49,7 @@ CURRENT_DIRECTIONS = {"into", "out", "n/a"}
 FLEMING_RULES = {"left", "right"}
 INDUCTION_MOTIONS = {"insert", "withdraw"}
 INDUCTION_POLES = {"N", "S"}
+AMPLITUDE_VALUES = {"soft", "loud"}
 
 errors = []
 warnings = []
@@ -236,6 +237,8 @@ def _validate_diagram3d(diag, path, rel):
     elif scene == "longitudinal-wave":
         if not isinstance(diag.get("frequency"), (int, float)) or diag.get("frequency") <= 0:
             err(rel, f"{path}.frequency must be a positive number")
+        if "amplitude" in diag and diag.get("amplitude") not in AMPLITUDE_VALUES:
+            err(rel, f"{path}.amplitude, if present, must be one of {sorted(AMPLITUDE_VALUES)}")
 
     pred = diag.get("prediction")
     if pred is not None:
