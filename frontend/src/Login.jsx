@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
@@ -101,10 +101,39 @@ function Login() {
     // Hold the reveal frame longer so the predict → answer beat lands.
     const t = setTimeout(
       () => setTraceStep((s) => (s + 1) % traceSteps.length),
-      traceStep === traceSteps.length - 1 ? 2800 : 1300
+      traceStep === traceSteps.length - 1 ? 2400 : 1100
     );
     return () => clearTimeout(t);
   }, [traceStep, traceSteps.length]);
+
+  // The graph animates only while the user is actually looking at it: the
+  // first viewport entry starts it (on mobile it sits below the fold, so a
+  // mount-time start would finish before anyone scrolls to it), and each
+  // re-entry replays it — bumping the key remounts the SVG, restarting its
+  // CSS animations. Reduced-motion users get the final frame via CSS.
+  const graphRef = useRef(null);
+  const [graphPlay, setGraphPlay] = useState(false);
+  const [graphRun, setGraphRun] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const el = graphRef.current;
+    if (!el || !('IntersectionObserver' in window)) {
+      setGraphPlay(true);
+      return;
+    }
+    let wasOut = false;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) {
+        setGraphPlay(true);
+        if (wasOut) setGraphRun((n) => n + 1);
+        wasOut = false;
+      } else {
+        wasOut = true;
+      }
+    }, { threshold: 0.35 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
   const activeLine = traceSteps[traceStep].line;
   const traceState = traceSteps[traceStep].vars;
   const revealed = Boolean(traceSteps[traceStep].reveal);
@@ -168,13 +197,13 @@ function Login() {
 
           {/* Right — animated retention graph: forgetting curve vs spaced reviews */}
           <div className="flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-md rounded-2xl bg-white/[0.04] border border-white/10 p-6 shadow-2xl backdrop-blur-sm">
+            <div ref={graphRef} className="relative w-full max-w-md rounded-2xl bg-white/[0.04] border border-white/10 p-6 shadow-2xl backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-sans text-xs font-bold text-[#9aa3b8] uppercase tracking-widest">How a topic sticks</span>
                 <span className="font-mono text-[10px] text-[#0891B2] bg-[#0891B2]/10 border border-[#0891B2]/20 rounded px-2 py-0.5">RETENTION</span>
               </div>
 
-              <svg viewBox="0 0 340 212" className="w-full h-auto" role="img" aria-label="Graph: memory decays without reviews, but each spaced review resets it and the curve flattens until the topic is mastered">
+              <svg key={graphRun} viewBox="0 0 340 212" className={`w-full h-auto ${graphPlay ? 'rg-play' : ''}`} role="img" aria-label="Graph: memory decays without reviews, but each spaced review resets it and the curve flattens until the topic is mastered">
                 <defs>
                   <linearGradient id="rg-area" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.22" />
@@ -316,7 +345,7 @@ function Login() {
                   </div>
                   <div className="flex items-center justify-between font-mono text-xs">
                     <span className="text-[#9aa3b8]">running_total(2)</span>
-                    <span className={`rounded px-2 py-0.5 transition-colors duration-300 ${revealed ? 'text-[#22D3EE] bg-[#22D3EE]/15 border border-[#22D3EE]/30 font-semibold' : 'text-[#7c839b] bg-white/5'}`}>
+                    <span className={`rounded px-2 py-0.5 border transition-colors duration-300 ${revealed ? 'text-[#22D3EE] bg-[#22D3EE]/15 border-[#22D3EE]/30 font-semibold' : 'text-[#7c839b] bg-white/5 border-transparent'}`}>
                       {revealed ? '= 1' : '= ?'}
                     </span>
                   </div>

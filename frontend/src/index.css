@@ -123,9 +123,13 @@ html.dark [class~="text-[#0F766E]"] { color: #2dd4bf; }
 @keyframes rg-draw {
   to { stroke-dashoffset: 0; }
 }
+/* Elements hold their pre-animation state until .rg-play lands on the SVG —
+   the graph only starts once it is actually visible in the viewport. */
 .rg-curve {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
+}
+.rg-play .rg-curve {
   animation: rg-draw var(--rg-dur, 2s) cubic-bezier(0.4, 0, 0.2, 1) var(--rg-delay, 0s) forwards;
 }
 @keyframes rg-pop {
@@ -137,6 +141,8 @@ html.dark [class~="text-[#0F766E]"] { color: #2dd4bf; }
   opacity: 0;
   transform-origin: center;
   transform-box: fill-box;
+}
+.rg-play .rg-dot {
   animation: rg-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) var(--rg-delay, 0s) forwards;
 }
 @keyframes rg-pulse {
@@ -148,6 +154,8 @@ html.dark [class~="text-[#0F766E]"] { color: #2dd4bf; }
   opacity: 0;
   transform-origin: center;
   transform-box: fill-box;
+}
+.rg-play .rg-halo {
   animation: rg-pulse 2.8s ease-out var(--rg-delay, 0s) infinite;
 }
 @keyframes rg-fade {
@@ -156,14 +164,16 @@ html.dark [class~="text-[#0F766E]"] { color: #2dd4bf; }
 }
 .rg-fade {
   opacity: 0;
+}
+.rg-play .rg-fade {
   animation: rg-fade 0.6s ease var(--rg-delay, 0s) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-reveal, .rg-dot { animation: none; opacity: 1; transform: none; }
-  .rg-curve { animation: none; stroke-dashoffset: 0; }
-  .rg-fade { animation: none; opacity: var(--rg-opacity, 1); }
-  .rg-halo { animation: none; opacity: 0; }
+  .hero-reveal, .rg-dot, .rg-play .rg-dot { animation: none; opacity: 1; transform: none; }
+  .rg-curve, .rg-play .rg-curve { animation: none; stroke-dashoffset: 0; }
+  .rg-fade, .rg-play .rg-fade { animation: none; opacity: var(--rg-opacity, 1); }
+  .rg-halo, .rg-play .rg-halo { animation: none; opacity: 0; }
 }
 
 /* --- Borders (dark hairlines → light hairlines) --- */
