@@ -1,0 +1,23 @@
+name: Keep Render backend awake
+
+# Render's free tier spins the service down after 15 min of inactivity, which
+# costs the first request after a nap ~30-50s (cold boot). Ping /health often
+# enough that it never sees a 15-min gap.
+#
+# Note: GitHub Actions cron can lag a few minutes and pauses after 60 days of
+# repo inactivity. Fine here since the repo is actively pushed to.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch: {}       # allow manual runs from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" https://retainhq.onrender.com/health)
+          echo "HTTP $code"
+          test "$code" = "200"
