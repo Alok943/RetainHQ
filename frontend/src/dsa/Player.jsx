@@ -252,72 +252,125 @@ export default function Player({
   // no-future-leak: never reveal upcoming information while a prediction is open
   const gateOpen = !!activeGate && !gateResult;
 
+  // EXPLAIN THIS FRAME — always inline, derived from the frame + lesson model; nothing authored
+  // per-frame. Post-miss: a brief ring flash draws the eye instead of needing to be opened.
+  // Rendered twice, visibility-toggled: in the lg right rail beside the viz (the narration is
+  // the point of the single-screen layout), and full-width below the controls when stacked.
+  const renderExplain = (extra) => capFrame && (
+    <div className={`px-5 py-3.5 border-t bg-[#f9f9f6] flex-col gap-2 transition-shadow ${extra} ${
+      gateResult?.correct === false ? 'border-[#B45309]/30 ring-1 ring-inset ring-[#B45309]/40' : 'border-[rgba(15,23,42,0.06)]'}`}>
+      <div className="flex items-start gap-2.5">
+        <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0891B2] shrink-0 mt-0.5 w-24">What happened</span>
+        <span className="font-sans text-[13px] text-[#0F172A] leading-snug"><span className="font-mono text-[11px] font-bold text-[#7C3AED]">{capFrame.activeOp}</span> — {capFrame.caption}</span>
+      </div>
+      {invariantText && (
+        <div className="flex items-start gap-2.5">
+          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] shrink-0 mt-0.5 w-24">Why it's correct</span>
+          <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{invariantText}</span>
+        </div>
+      )}
+      {repeatedDecision && (
+        <div className="flex items-start gap-2.5">
+          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] shrink-0 mt-0.5 w-24">The decision</span>
+          <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{repeatedDecision}</span>
+        </div>
+      )}
+      {/* no-future-leak: the next row would answer an open prediction — hold it until committed */}
+      {nextFrame && !gateOpen && (
+        <div className="flex items-start gap-2.5">
+          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B45309] shrink-0 mt-0.5 w-24">Next</span>
+          <span className="font-sans text-[13px] text-[#475569] leading-snug">{nextFrame.caption}</span>
+        </div>
+      )}
+      {gateOpen && (
+        <div className="flex items-start gap-2.5">
+          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B45309] shrink-0 mt-0.5 w-24">Next</span>
+          <span className="font-sans text-[13px] text-[#94a3b8] italic leading-snug">commit your prediction first</span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="rounded-xl border border-[rgba(15,23,42,0.12)] bg-white overflow-hidden">
-      {/* COMMENTARY — on top. Updates immediately; visual animates after the read pause. */}
-      <div className="px-5 py-3 bg-[#0F172A] text-white">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7C3AED] text-white shrink-0">{capFrame?.activeOp}</span>
-          {reading && <span className="font-sans text-[10px] text-[#94a3b8] animate-pulse">reading…</span>}
-          <span className="font-mono text-[11px] text-[#64748B] ml-auto shrink-0">{Math.min(step, last) + 1}/{frames.length}</span>
-        </div>
-        <p className="font-sans text-[15px] font-semibold leading-snug">{capFrame?.caption}</p>
-        {invariantText && (
-          <p className="font-sans text-[12.5px] text-[#a5b4fc] leading-snug mt-1">
-            <span className="font-bold">Invariant: </span>{invariantText}
-          </p>
-        )}
-      </div>
-
-      {/* PREDICTION GATE — commit before the reveal. Stepping onward shows the real trace. */}
-      {activeGate && !gateResult && (
-        <div className="px-5 py-3.5 bg-[#7C3AED]/[0.06] border-b border-[#7C3AED]/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Lock size={13} className="text-[#7C3AED] shrink-0" />
-            <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED]">Predict before you reveal</span>
-            <span className="font-mono text-[10px] text-[#64748B] ml-auto uppercase">{activeGate.level}</span>
+      {/* Single-screen layout (lg+): visualization occupies its own column on the LEFT;
+          the RIGHT rail (one flex column, height-capped) holds commentary + prediction gate +
+          the explain-frame narration + pseudocode/call stack, with the pseudocode block
+          absorbing any overflow via internal scroll — so the whole "watch it happen while
+          reading why" experience fits one viewport with no page scroll. Below lg the rail
+          wrapper is `display: contents` and the outer container a flex column, so `order-*`
+          restores the ORIGINAL stacked order (commentary -> gate -> feedback -> viz ->
+          pseudocode/call stack) without duplicating markup. */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-0 lg:items-stretch">
+        <div className="contents lg:flex lg:flex-col lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100vh-180px)] lg:min-h-0">
+        {/* COMMENTARY — on top (mobile) / top of the right rail (lg). Updates immediately;
+            visual animates after the read pause. */}
+        <div className="px-5 py-3 bg-[#0F172A] text-white order-1 lg:shrink-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7C3AED] text-white shrink-0">{capFrame?.activeOp}</span>
+            {reading && <span className="font-sans text-[10px] text-[#94a3b8] animate-pulse">reading…</span>}
+            <span className="font-mono text-[11px] text-[#64748B] ml-auto shrink-0">{Math.min(step, last) + 1}/{frames.length}</span>
           </div>
-          <p className="font-sans text-sm font-semibold text-[#0F172A] leading-snug mb-2.5">{activeGate.prompt}</p>
-          {activeGate.type === 'choice' ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {(activeGate.choices || []).map((c) => (
-                <button key={c} className={btn} onClick={() => commitGate(c)}>{c}</button>
-              ))}
-              <button className="font-sans text-[12px] text-[#64748B] underline ml-auto" onClick={showMe}>show me</button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                value={answerDraft}
-                onChange={(e) => setAnswerDraft(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && commitTyped()}
-                className="flex-1 min-w-[120px] font-mono text-[13px] rounded-md border border-[#7C3AED]/30 px-2.5 py-1.5 bg-white"
-                placeholder={activeGate.type === 'values' || activeGate.type === 'pair' ? 'e.g. 3, 7' : 'your answer'}
-                autoFocus
-              />
-              <button className={btn} onClick={commitTyped}>Commit</button>
-              <button className="font-sans text-[12px] text-[#64748B] underline" onClick={showMe}>show me</button>
-            </div>
+          <p className="font-sans text-[15px] font-semibold leading-snug">{capFrame?.caption}</p>
+          {invariantText && (
+            <p className="font-sans text-[12.5px] text-[#a5b4fc] leading-snug mt-1">
+              <span className="font-bold">Invariant: </span>{invariantText}
+            </p>
           )}
         </div>
-      )}
 
-      {/* Gate feedback — after commit/show-me; stepping clears it and reveals the trace. */}
-      {gateResult && (
-        <div className={`px-5 py-2.5 border-b text-[13px] font-sans font-semibold leading-snug ${
-          gateResult.correct === true ? 'bg-[#0F766E]/[0.07] border-[#0F766E]/20 text-[#0F766E]'
-          : gateResult.correct === false ? 'bg-[#B91C1C]/[0.06] border-[#B91C1C]/20 text-[#B91C1C]'
-          : 'bg-[#f9f9f6] border-[rgba(15,23,42,0.08)] text-[#475569]'}`}>
-          {gateResult.correct === true && <>Correct — the trace shows: {gateResult.gate.display}. Step through to watch it happen.</>}
-          {gateResult.correct === false && <>Not quite — the trace shows: {gateResult.gate.display}. See the explanation below, then step through it.</>}
-          {gateResult.correct === null && <>The trace shows: {gateResult.gate.display}. Step through to watch it happen.</>}
-        </div>
-      )}
+        {/* PREDICTION GATE — commit before the reveal. Stepping onward shows the real trace. */}
+        {activeGate && !gateResult && (
+          <div className="px-5 py-3.5 bg-[#7C3AED]/[0.06] border-b border-[#7C3AED]/20 order-2 lg:shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Lock size={13} className="text-[#7C3AED] shrink-0" />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED]">Predict before you reveal</span>
+              <span className="font-mono text-[10px] text-[#64748B] ml-auto uppercase">{activeGate.level}</span>
+            </div>
+            <p className="font-sans text-sm font-semibold text-[#0F172A] leading-snug mb-2.5">{activeGate.prompt}</p>
+            {activeGate.type === 'choice' ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {(activeGate.choices || []).map((c) => (
+                  <button key={c} className={btn} onClick={() => commitGate(c)}>{c}</button>
+                ))}
+                <button className="font-sans text-[12px] text-[#64748B] underline ml-auto" onClick={showMe}>show me</button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={answerDraft}
+                  onChange={(e) => setAnswerDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && commitTyped()}
+                  className="flex-1 min-w-[120px] font-mono text-[13px] rounded-md border border-[#7C3AED]/30 px-2.5 py-1.5 bg-white"
+                  placeholder={activeGate.type === 'values' || activeGate.type === 'pair' ? 'e.g. 3, 7' : 'your answer'}
+                  autoFocus
+                />
+                <button className={btn} onClick={commitTyped}>Commit</button>
+                <button className="font-sans text-[12px] text-[#64748B] underline" onClick={showMe}>show me</button>
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* VISUALIZATION — lags the comment by READ_DELAY */}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_240px] gap-4 p-5">
-        <div><MainViz frame={visFrame} invariants={invariants} /></div>
-        <div className="md:border-l md:pl-4 border-[rgba(15,23,42,0.08)]">
+        {/* Gate feedback — after commit/show-me; stepping clears it and reveals the trace. */}
+        {gateResult && (
+          <div className={`px-5 py-2.5 border-b text-[13px] font-sans font-semibold leading-snug order-3 lg:shrink-0 ${
+            gateResult.correct === true ? 'bg-[#0F766E]/[0.07] border-[#0F766E]/20 text-[#0F766E]'
+            : gateResult.correct === false ? 'bg-[#B91C1C]/[0.06] border-[#B91C1C]/20 text-[#B91C1C]'
+            : 'bg-[#f9f9f6] border-[rgba(15,23,42,0.08)] text-[#475569]'}`}>
+            {gateResult.correct === true && <>Correct — the trace shows: {gateResult.gate.display}. Step through to watch it happen.</>}
+            {gateResult.correct === false && <>Not quite — the trace shows: {gateResult.gate.display}. See the explanation below, then step through it.</>}
+            {gateResult.correct === null && <>The trace shows: {gateResult.gate.display}. Step through to watch it happen.</>}
+          </div>
+        )}
+
+        {/* EXPLAIN THIS FRAME (lg only) — the step narration lives in the rail, right under
+            the commentary/gate strips and above the pseudocode, so it's read beside the viz. */}
+        {renderExplain('hidden lg:flex lg:shrink-0 order-4')}
+
+        {/* Pseudocode + call stack — beside the commentary on lg, absorbing the rail's
+            overflow via internal scroll; below the viz on mobile/tablet. */}
+        <div className="px-5 pb-5 pt-4 border-t border-[rgba(15,23,42,0.08)] order-5 lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
           <PseudoSteps steps={steps} frames={frames} activeStepId={capFrame?.step_id} />
           {visFrame && (visFrame.stack || visFrame.queue) && (
             <div className="border-t border-[rgba(15,23,42,0.08)] mt-3 pt-3">
@@ -325,6 +378,13 @@ export default function Player({
             </div>
           )}
           <div className="border-t border-[rgba(15,23,42,0.08)] mt-3 pt-3"><StateMachine frame={visFrame} /></div>
+        </div>
+        </div>
+
+        {/* VISUALIZATION — lags the comment by READ_DELAY. On lg it's the full-height left
+            column; below lg it's a normal stacked block, right after the gate/feedback. */}
+        <div className="p-5 order-4 lg:order-none lg:col-start-1 lg:row-start-1 lg:border-r border-[rgba(15,23,42,0.08)] lg:flex lg:items-center lg:justify-center lg:max-h-[calc(100vh-180px)] lg:overflow-y-auto">
+          <MainViz frame={visFrame} invariants={invariants} />
         </div>
       </div>
 
@@ -342,42 +402,9 @@ export default function Player({
           syncs to capFrame.step_id (the commentary-leading step), not the lagged visual step. */}
       <CodePanel code={code} activeStepId={capFrame?.step_id} />
 
-      {/* EXPLAIN THIS FRAME — always inline, derived from the frame + lesson model; nothing authored
-          per-frame. Post-miss: a brief ring flash draws the eye instead of needing to be opened. */}
-      {capFrame && (
-        <div className={`px-5 py-3.5 border-t bg-[#f9f9f6] flex flex-col gap-2 transition-shadow ${
-          gateResult?.correct === false ? 'border-[#B45309]/30 ring-1 ring-inset ring-[#B45309]/40' : 'border-[rgba(15,23,42,0.06)]'}`}>
-          <div className="flex items-start gap-2.5">
-            <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0891B2] shrink-0 mt-0.5 w-24">What happened</span>
-            <span className="font-sans text-[13px] text-[#0F172A] leading-snug"><span className="font-mono text-[11px] font-bold text-[#7C3AED]">{capFrame.activeOp}</span> — {capFrame.caption}</span>
-          </div>
-          {invariantText && (
-            <div className="flex items-start gap-2.5">
-              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#0F766E] shrink-0 mt-0.5 w-24">Why it's correct</span>
-              <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{invariantText}</span>
-            </div>
-          )}
-          {repeatedDecision && (
-            <div className="flex items-start gap-2.5">
-              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] shrink-0 mt-0.5 w-24">The decision</span>
-              <span className="font-sans text-[13px] text-[#0F172A] leading-snug">{repeatedDecision}</span>
-            </div>
-          )}
-          {/* no-future-leak: the next row would answer an open prediction — hold it until committed */}
-          {nextFrame && !gateOpen && (
-            <div className="flex items-start gap-2.5">
-              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B45309] shrink-0 mt-0.5 w-24">Next</span>
-              <span className="font-sans text-[13px] text-[#475569] leading-snug">{nextFrame.caption}</span>
-            </div>
-          )}
-          {gateOpen && (
-            <div className="flex items-start gap-2.5">
-              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B45309] shrink-0 mt-0.5 w-24">Next</span>
-              <span className="font-sans text-[13px] text-[#94a3b8] italic leading-snug">commit your prediction first</span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* EXPLAIN THIS FRAME (below lg only) — stacked layout keeps the narration full-width
+          below the controls; on lg it renders inside the right rail instead (see above). */}
+      {renderExplain('flex lg:hidden')}
 
       {/* tweak the values */}
       <div className="px-5 py-3 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6] flex items-center gap-2">

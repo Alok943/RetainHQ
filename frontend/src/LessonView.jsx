@@ -238,9 +238,9 @@ export default function LessonView() {
         <ArrowLeft size={16} /> Back to roadmap
       </Link>
 
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <h1 className="font-sans text-2xl md:text-3xl font-semibold text-[#0F172A] leading-tight">
+      <div className="mb-8">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h1 className="font-sans text-3xl md:text-4xl font-semibold text-[#0F172A] leading-tight">
             {lesson.title}
           </h1>
           {location.state?.nodeId && <AddToReviews lesson={lesson} nodeId={location.state.nodeId} />}
@@ -338,7 +338,7 @@ export default function LessonView() {
 
       {/* --- Predict & reveal (the aha moment) --- */}
       {lesson.aha_moment && (
-        <Section icon={<Sparkles size={16} />} title="Predict the output" accent="#7C3AED">
+        <Section icon={<Sparkles size={16} />} title="Predict the output" accent="#7C3AED" variant="card">
           <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed mb-3">{lesson.aha_moment.prediction}</p>
           <pre className="m-0 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[12.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0 mb-3">{lesson.aha_moment.code}</pre>
           {!ahaRevealed ? (
@@ -373,7 +373,7 @@ export default function LessonView() {
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0891B2]/10 text-[#0891B2] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">
                   {i + 1}
                 </span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed">
+                <span className="font-sans text-base text-[#0F172A] leading-relaxed">
                   {linkifyGlossary(item, lesson.glossary, usedGlossaryTerms)}
                 </span>
               </li>
@@ -384,7 +384,7 @@ export default function LessonView() {
 
       {/* --- §3 Watch it run — SQL (query result table) or Python (CodeTrace) --- */}
       {lesson.runtime === 'sql' && lesson.query_walkthrough ? (
-        <Section icon={<Database size={16} />} title="Run the query" accent="#0891B2">
+        <Section icon={<Database size={16} />} title="Run the query" accent="#0891B2" wide>
           {lesson.query_walkthrough.visualization === 'join-diagram' && lesson.query_walkthrough.join ? (
             <SqlJoinViz spec={lesson.query_walkthrough.join} focus={lesson.query_walkthrough.focus} />
           ) : (
@@ -397,7 +397,7 @@ export default function LessonView() {
           )}
         </Section>
       ) : lesson.code_walkthrough ? (
-        <Section icon={<Code2 size={16} />} title="Watch it run">
+        <Section icon={<Code2 size={16} />} title="Watch it run" wide>
           <CodeTrace code={lesson.code_walkthrough.code} focus={lesson.code_walkthrough.focus} />
         </Section>
       ) : null}
@@ -411,7 +411,7 @@ export default function LessonView() {
                 <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1.5 flex items-center gap-2">
                   <AlertTriangle size={13} /> {m.title}
                 </div>
-                <p className="font-sans text-sm text-[#475569] leading-relaxed">
+                <p className="font-sans text-base text-[#475569] leading-relaxed">
                   {linkifyGlossary(m.explanation, lesson.glossary, usedGlossaryTerms)}
                 </p>
               </div>
@@ -426,7 +426,7 @@ export default function LessonView() {
           <div className="flex flex-col gap-3">
             {lesson.recall_questions.map((rq, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3.5">
-                <div className="font-sans text-sm font-semibold text-[#0F172A] mb-2">{rq.q}</div>
+                <div className="font-sans text-base font-semibold text-[#0F172A] mb-2">{rq.q}</div>
                 <button
                   onClick={() => toggleReveal(i)}
                   className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
@@ -436,7 +436,7 @@ export default function LessonView() {
                 </button>
                 {revealed.has(i) && (
                   <div className="mt-2 pt-2 border-t border-[rgba(15,23,42,0.06)]">
-                    <p className="font-sans text-sm text-[#0F766E] leading-relaxed">{rq.answer}</p>
+                    <p className="font-sans text-base text-[#0F766E] leading-relaxed">{rq.answer}</p>
                   </div>
                 )}
               </div>
@@ -447,7 +447,7 @@ export default function LessonView() {
 
       {/* --- §5b Understanding checks (mental-model probes) --- */}
       {lesson.understanding_checks?.length > 0 && (
-        <Section icon={<Brain size={16} />} title="Check your understanding" accent="#7C3AED">
+        <Section icon={<Brain size={16} />} title="Check your understanding" accent="#7C3AED" variant="card">
           <p className="font-sans text-xs text-[#64748B] mb-3">Predict before you reveal — a correct prediction proves you understand the model.</p>
           <div className="flex flex-col gap-3">
             {lesson.understanding_checks.map((c, i) => {
@@ -504,8 +504,8 @@ export default function LessonView() {
           <div className="flex flex-col gap-4">
             {lesson.practice_tasks.map((task, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-4">
-                <div className="font-sans text-sm font-semibold text-[#0F172A] mb-2">{task.title}</div>
-                <p className="font-sans text-sm text-[#475569] leading-relaxed mb-3">{task.prompt}</p>
+                <div className="font-sans text-base font-semibold text-[#0F172A] mb-2">{task.title}</div>
+                <p className="font-sans text-base text-[#475569] leading-relaxed mb-3">{task.prompt}</p>
                 {task.starter_code && (
                   <details className="group mb-2">
                     <summary className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] cursor-pointer hover:text-[#0F172A] transition-colors select-none">
@@ -534,8 +534,8 @@ export default function LessonView() {
       {lesson.challenge && (
         <Section icon={<Trophy size={16} />} title="Challenge" accent="#B45309">
           <div className="rounded-lg border border-[#B45309]/20 bg-[#B45309]/[0.03] p-4">
-            <div className="font-sans text-sm font-semibold text-[#B45309] mb-2">{lesson.challenge.title}</div>
-            <p className="font-sans text-sm text-[#475569] leading-relaxed mb-3">{lesson.challenge.prompt}</p>
+            <div className="font-sans text-base font-semibold text-[#B45309] mb-2">{lesson.challenge.title}</div>
+            <p className="font-sans text-base text-[#475569] leading-relaxed mb-3">{lesson.challenge.prompt}</p>
             {lesson.challenge.solution && (
               <details className="group">
                 <summary className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#B45309] cursor-pointer hover:text-[#0F172A] transition-colors select-none">
@@ -877,7 +877,7 @@ function RichText({ text, tone = 'ink', glossary, used }) {
           const min = indents.length ? Math.min(...indents) : 0;
           const code = lines.map((l) => l.slice(min)).join('\n').trim();
           return (
-            <pre key={i} className="m-0 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[12.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0">{code}</pre>
+            <pre key={i} className="m-0 p-3 rounded-md bg-[#0b1220] text-[#e2e8f0] font-mono text-[13.5px] leading-relaxed overflow-x-auto whitespace-pre min-w-0">{code}</pre>
           );
         }
         // A block where every line is a `- ` bullet becomes a real list. A wrapped
@@ -892,9 +892,9 @@ function RichText({ text, tone = 'ink', glossary, used }) {
             else if (items.length) items[items.length - 1] += ' ' + t;
           }
           return (
-            <ul key={i} className="m-0 pl-1 flex flex-col gap-1.5 list-none">
+            <ul key={i} className="m-0 pl-1 flex flex-col gap-2 list-none">
               {items.map((item, j) => (
-                <li key={j} className={`font-sans text-sm ${color} leading-relaxed flex items-start gap-2`}>
+                <li key={j} className={`font-sans text-base ${color} leading-relaxed flex items-start gap-2`}>
                   <span className="text-[#0F766E] font-bold shrink-0 mt-px select-none">›</span>
                   <span className="min-w-0">{linkifyGlossary(item, glossary, used)}</span>
                 </li>
@@ -903,7 +903,7 @@ function RichText({ text, tone = 'ink', glossary, used }) {
           );
         }
         return (
-          <p key={i} className={`font-sans text-sm ${color} leading-relaxed`}>
+          <p key={i} className={`font-sans text-base ${color} leading-relaxed`}>
             {linkifyGlossary(block.trim(), glossary, used)}
           </p>
         );
@@ -925,9 +925,9 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Hook (optional) */}
       {lesson.hook?.scenario && (
         <Section icon={<Lightbulb size={16} />} title="The setup" accent="#B45309">
-          <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{lesson.hook.scenario}</p>
+          <p className="font-sans text-base text-[#0F172A] leading-relaxed">{lesson.hook.scenario}</p>
           {lesson.hook.question && (
-            <p className="font-sans text-sm font-semibold text-[#B45309] leading-relaxed mt-2">{lesson.hook.question}</p>
+            <p className="font-sans text-base font-semibold text-[#B45309] leading-relaxed mt-2">{lesson.hook.question}</p>
           )}
         </Section>
       )}
@@ -935,9 +935,9 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Q1 — Why it exists (problem → naive → better idea) */}
       {(wie.problem || wie.better_idea) && (
         <Section icon={<HelpCircle size={16} />} title="Why it exists" accent="#0891B2">
-          {wie.problem && <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(wie.problem, lesson.glossary, usedGlossaryTerms)}</p>}
+          {wie.problem && <p className="font-sans text-base text-[#0F172A] leading-relaxed">{linkifyGlossary(wie.problem, lesson.glossary, usedGlossaryTerms)}</p>}
           {wie.naive_solution && (
-            <div className="mt-2 rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
+            <div className="mt-3 rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
               <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#B91C1C] mb-1">The naive way</div>
               <p className="font-sans text-sm text-[#475569] leading-relaxed">{linkifyGlossary(wie.naive_solution, lesson.glossary, usedGlossaryTerms)}</p>
             </div>
@@ -954,8 +954,8 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Q2/Q3 — Mental model: the intuition + the one repeated decision */}
       {mm.intuition && (
         <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
-          <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{linkifyGlossary(mm.intuition, lesson.glossary, usedGlossaryTerms)}</p>
-          {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
+          <p className="font-sans text-lg font-semibold text-[#0F172A] leading-snug">{linkifyGlossary(mm.intuition, lesson.glossary, usedGlossaryTerms)}</p>
+          {mm.description && <div className="mt-3"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
           {mm.repeated_decision && (
             <div className="mt-3 flex items-start gap-2.5 rounded-md bg-[#7C3AED]/[0.06] border-l-2 border-[#7C3AED] px-3 py-2">
               <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] shrink-0 mt-0.5">Each step</span>
@@ -967,7 +967,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
 
       {/* The execution trace — predict, then watch it run step by step (lazy-loaded). */}
       {viz?.generator && (
-        <Section icon={<Sparkles size={16} />} title="Trace the execution" accent="#7C3AED">
+        <Section icon={<Sparkles size={16} />} title="Trace the execution" accent="#7C3AED" wide>
           <Suspense fallback={<div className="rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-8 text-center font-sans text-sm text-[#64748B]">Loading visualizer…</div>}>
             <DsaPlayer
               generatorKey={viz.generator}
@@ -995,11 +995,11 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Key points (optional) — complexity, invariants, preconditions */}
       {Array.isArray(lesson.key_points) && lesson.key_points.length > 0 && (
         <Section icon={<Target size={16} />} title="Key points" accent="#0F766E">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {lesson.key_points.map((p, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {p.detail}</span>
+                <span className="font-sans text-base text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {p.detail}</span>
               </div>
             ))}
           </div>
@@ -1009,11 +1009,11 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Q5 — Recognize the pattern */}
       {lesson.pattern?.name && (
         <Section icon={<GitBranch size={16} />} title="Recognize the pattern" accent="#0891B2">
-          <p className="font-sans text-sm font-semibold text-[#0F172A] leading-relaxed">{lesson.pattern.name}</p>
+          <p className="font-sans text-base font-semibold text-[#0F172A] leading-relaxed">{lesson.pattern.name}</p>
           {Array.isArray(lesson.pattern.recognition_cues) && lesson.pattern.recognition_cues.length > 0 && (
-            <ul className="flex flex-col gap-1.5 mt-2">
+            <ul className="flex flex-col gap-2 mt-3">
               {lesson.pattern.recognition_cues.map((cue, i) => (
-                <li key={i} className="flex items-start gap-2 font-sans text-sm text-[#475569] leading-relaxed">
+                <li key={i} className="flex items-start gap-2 font-sans text-base text-[#475569] leading-relaxed">
                   <span className="text-[#0891B2] mt-0.5 shrink-0">→</span> {cue}
                 </li>
               ))}
@@ -1025,9 +1025,9 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* When to reach for it — failure signals */}
       {Array.isArray(lesson.failure_signals) && lesson.failure_signals.length > 0 && (
         <Section icon={<Zap size={16} />} title="Signals you need this" accent="#B45309">
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-2">
             {lesson.failure_signals.map((s, i) => (
-              <li key={i} className="flex items-start gap-2 font-sans text-sm text-[#0F172A] leading-relaxed">
+              <li key={i} className="flex items-start gap-2 font-sans text-base text-[#0F172A] leading-relaxed">
                 <Zap size={13} className="text-[#B45309] mt-1 shrink-0" /> {s}
               </li>
             ))}
@@ -1041,9 +1041,9 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
           <div className="flex flex-col gap-3">
             {lesson.engineering_examples.map((e, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
-                <div className="font-sans text-sm font-semibold text-[#0F172A] mb-1">{e.title}</div>
-                {e.problem && <p className="font-sans text-[13px] text-[#64748B] leading-relaxed mb-1">{e.problem}</p>}
-                <p className="font-sans text-sm text-[#475569] leading-relaxed">{e.why_this_algorithm}</p>
+                <div className="font-sans text-base font-semibold text-[#0F172A] mb-1">{e.title}</div>
+                {e.problem && <p className="font-sans text-sm text-[#64748B] leading-relaxed mb-1">{e.problem}</p>}
+                <p className="font-sans text-base text-[#475569] leading-relaxed">{e.why_this_algorithm}</p>
               </div>
             ))}
           </div>
@@ -1055,7 +1055,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
         <Section icon={<AlertTriangle size={16} />} title="When not to use it" accent="#B45309">
           <div className="flex flex-col gap-2.5">
             {lesson.when_not_to_use.map((w, i) => (
-              <div key={i} className="font-sans text-sm leading-relaxed">
+              <div key={i} className="font-sans text-base leading-relaxed">
                 <span className="font-semibold text-[#0F172A]">{w.scenario}</span>
                 <span className="text-[#475569]"> — {w.reason}</span>
               </div>
@@ -1071,7 +1071,7 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
             {lesson.common_mistakes.map((m, i) => (
               <div key={i} className="rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
                 <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1">{m.title}</div>
-                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{m.explanation}</p>
+                <p className="font-sans text-base text-[#0F172A] leading-relaxed">{m.explanation}</p>
               </div>
             ))}
           </div>
@@ -1081,12 +1081,12 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
       {/* Active recall (required) — predict-before-reveal */}
       {Array.isArray(lesson.recall_questions) && lesson.recall_questions.length > 0 && (
         <Section icon={<HelpCircle size={16} />} title="Active recall" accent="#0891B2">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {lesson.recall_questions.map((rq, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
-                <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{rq.q}</p>
+                <p className="font-sans text-base font-medium text-[#0F172A] leading-relaxed">{rq.q}</p>
                 {revealed.has(i) ? (
-                  <p className="font-sans text-sm text-[#0F766E] leading-relaxed mt-2">{rq.answer}</p>
+                  <p className="font-sans text-base text-[#0F766E] leading-relaxed mt-2">{rq.answer}</p>
                 ) : (
                   <button onClick={() => toggleReveal(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] mt-2 transition-colors">
                     <Eye size={13} /> Show answer
@@ -1105,13 +1105,13 @@ function DsaBody({ lesson, revealed, toggleReveal, oaRevealed, toggleOa, usedGlo
             {lesson.oa_questions.map((q, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
+                  <p className="font-sans text-base font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
                   {(q.source || q.company) && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.source || q.company}</span>}
                 </div>
                 {oaRevealed.has(i) ? (
                   <div className="mt-2">
-                    <p className="font-sans text-sm font-semibold text-[#0F766E] leading-relaxed">{q.answer}</p>
-                    {q.approach && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-1">{q.approach}</p>}
+                    <p className="font-sans text-base font-semibold text-[#0F766E] leading-relaxed">{q.answer}</p>
+                    {q.approach && <p className="font-sans text-base text-[#475569] leading-relaxed mt-1">{q.approach}</p>}
                   </div>
                 ) : (
                   <button onClick={() => toggleOa(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#B45309] hover:text-[#0F172A] mt-2 transition-colors">
@@ -1159,22 +1159,22 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Hook (optional) */}
       {lesson.hook?.scenario && (
         <Section icon={<Lightbulb size={16} />} title="The setup" accent="#B45309">
-          <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{lesson.hook.scenario}</p>
+          <p className="font-sans text-base text-[#0F172A] leading-relaxed">{lesson.hook.scenario}</p>
           {lesson.hook.question && (
-            <p className="font-sans text-sm font-semibold text-[#B45309] leading-relaxed mt-2">{lesson.hook.question}</p>
+            <p className="font-sans text-base font-semibold text-[#B45309] leading-relaxed mt-2">{lesson.hook.question}</p>
           )}
         </Section>
       )}
 
       {/* Mental model (required) — the intuition anchor */}
       <Section icon={<Brain size={16} />} title="Mental model" accent="#7C3AED">
-        <p className="font-sans text-base font-semibold text-[#0F172A] leading-snug">{linkifyGlossary(mm.intuition, lesson.glossary, usedGlossaryTerms)}</p>
-        {mm.description && <div className="mt-2"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
+        <p className="font-sans text-lg font-semibold text-[#0F172A] leading-snug">{linkifyGlossary(mm.intuition, lesson.glossary, usedGlossaryTerms)}</p>
+        {mm.description && <div className="mt-3"><RichText text={mm.description} tone="muted" glossary={lesson.glossary} used={usedGlossaryTerms} /></div>}
       </Section>
 
       {/* Hero illustration (optional) — a single picture right after the mental model */}
       {lesson.illustration?.asset && (
-        <Section icon={<ImageIcon size={16} />} title="Picture it" accent="#7C3AED">
+        <Section icon={<ImageIcon size={16} />} title="Picture it" accent="#7C3AED" wide>
           <LessonImage image={lesson.illustration} />
         </Section>
       )}
@@ -1187,7 +1187,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
         <>
           {/* Animation (optional). vector-space = embeddings/RAG geometry; sequence/cycle = box-flow. */}
           {lesson.animation && (
-            <Section icon={<Sparkles size={16} />} title="Watch it work" accent="#0891B2">
+            <Section icon={<Sparkles size={16} />} title="Watch it work" accent="#0891B2" wide>
               {lesson.animation.type === 'vector-space'
                 ? <VectorSpaceAnimation animation={lesson.animation} />
                 : <ProcessAnimation animation={lesson.animation} />}
@@ -1196,7 +1196,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
           {/* Analogy (theory, optional) */}
           {lesson.analogy && (
             <Section icon={<Lightbulb size={16} />} title="Analogy" accent="#7C3AED">
-              <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(lesson.analogy, lesson.glossary, usedGlossaryTerms)}</p>
+              <p className="font-sans text-base text-[#0F172A] leading-relaxed">{linkifyGlossary(lesson.analogy, lesson.glossary, usedGlossaryTerms)}</p>
             </Section>
           )}
           {/* Explanation — the concept, plainly */}
@@ -1211,7 +1211,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Diagram (physics, optional) — the lesson's main figure (ray/circuit/graph),
           or a `diagram3d` interactive simulator (mutually optional with `diagram`). */}
       {(lesson.diagram || lesson.diagram3d) && (
-        <Section icon={<Sparkles size={16} />} title="Diagram" accent="#0891B2">
+        <Section icon={<Sparkles size={16} />} title="Diagram" accent="#0891B2" wide>
           {lesson.diagram3d ? (
             <Suspense fallback={<Physics3DFallback />}>
               <Physics3D diagram3d={lesson.diagram3d} />
@@ -1225,11 +1225,11 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Key points (theory, optional) — the component breakdown */}
       {Array.isArray(lesson.key_points) && lesson.key_points.length > 0 && (
         <Section icon={<Target size={16} />} title="Key points" accent="#0F766E">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {lesson.key_points.map((p, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {linkifyGlossary(p.detail, lesson.glossary, usedGlossaryTerms)}</span>
+                <span className="font-sans text-base text-[#0F172A] leading-relaxed"><strong className="font-semibold">{p.title}:</strong> {linkifyGlossary(p.detail, lesson.glossary, usedGlossaryTerms)}</span>
               </div>
             ))}
           </div>
@@ -1238,7 +1238,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
 
       {/* Code snippets (engineering, required) — illustrative, NOT runnable in-browser */}
       {Array.isArray(lesson.code_snippets) && lesson.code_snippets.length > 0 && (
-        <Section icon={<Code2 size={16} />} title="In code" accent="#7C3AED">
+        <Section icon={<Code2 size={16} />} title="In code" accent="#7C3AED" wide>
           <div className="flex flex-col gap-4">
             {lesson.code_snippets.map((c, i) => (
               <div key={i}>
@@ -1246,8 +1246,8 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
                   <span className="font-sans text-sm font-semibold text-[#0F172A]">{c.title}</span>
                   {c.language && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#7C3AED]/10 font-mono text-[10px] font-semibold text-[#7C3AED] lowercase">{c.language}</span>}
                 </div>
-                <pre className="overflow-x-auto rounded-lg bg-[#0F172A] text-[#E2E8F0] p-3.5 font-mono text-[12.5px] leading-relaxed"><code>{c.code}</code></pre>
-                {c.explanation && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2">{c.explanation}</p>}
+                <pre className="overflow-x-auto rounded-lg bg-[#0F172A] text-[#E2E8F0] p-3.5 font-mono text-[13.5px] leading-relaxed"><code>{c.code}</code></pre>
+                {c.explanation && <p className="font-sans text-base text-[#475569] leading-relaxed mt-2">{c.explanation}</p>}
               </div>
             ))}
           </div>
@@ -1256,7 +1256,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
 
       {/* Pattern discovery (aptitude, optional) — discover the rule, THEN reveal it */}
       {pd && (
-        <Section icon={<Sparkles size={16} />} title="Spot the pattern" accent="#0891B2">
+        <Section icon={<Sparkles size={16} />} title="Spot the pattern" accent="#0891B2" variant="card">
           {pd.setup && <p className="font-sans text-sm text-[#475569] leading-relaxed mb-3">{pd.setup}</p>}
           {Array.isArray(pd.cases) && (
             <div className="flex flex-col gap-1.5 mb-3">
@@ -1282,11 +1282,11 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Method (reasoning, required) — the transferable procedure */}
       {Array.isArray(lesson.method) && lesson.method.length > 0 && (
         <Section icon={<Target size={16} />} title="The method" accent="#0891B2">
-          <ol className="flex flex-col gap-2">
+          <ol className="flex flex-col gap-3">
             {lesson.method.map((step, i) => (
               <li key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-[#0891B2]/10 text-[#0891B2] font-mono text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                <span className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(step, lesson.glossary, usedGlossaryTerms)}</span>
+                <span className="font-sans text-base text-[#0F172A] leading-relaxed">{linkifyGlossary(step, lesson.glossary, usedGlossaryTerms)}</span>
               </li>
             ))}
           </ol>
@@ -1296,8 +1296,8 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Formula (aptitude, required) */}
       {lesson.formula?.statement && (
         <Section icon={<Target size={16} />} title="The rule" accent="#0F766E">
-          <p className="font-mono text-[13px] text-[#0F172A] bg-[#0F766E]/[0.06] rounded px-3 py-2 leading-relaxed">{linkifyGlossary(lesson.formula.statement, lesson.glossary, usedGlossaryTerms)}</p>
-          {lesson.formula.explain && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-2">{linkifyGlossary(lesson.formula.explain, lesson.glossary, usedGlossaryTerms)}</p>}
+          <p className="font-mono text-sm text-[#0F172A] bg-[#0F766E]/[0.06] rounded px-3 py-2 leading-relaxed">{linkifyGlossary(lesson.formula.statement, lesson.glossary, usedGlossaryTerms)}</p>
+          {lesson.formula.explain && <p className="font-sans text-base text-[#475569] leading-relaxed mt-2">{linkifyGlossary(lesson.formula.explain, lesson.glossary, usedGlossaryTerms)}</p>}
         </Section>
       )}
 
@@ -1305,7 +1305,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
           Physics = a LIST of {problem, steps[]({narration,math}), answer, diagram?}.
           Normalise to an array and render both step shapes + optional diagram. */}
       {(Array.isArray(we) ? we.length > 0 : we?.problem) && (
-        <Section icon={<Sparkles size={16} />} title={Array.isArray(we) && we.length > 1 ? 'Worked examples' : 'Worked example'} accent="#7C3AED">
+        <Section icon={<Sparkles size={16} />} title={Array.isArray(we) && we.length > 1 ? 'Worked examples' : 'Worked example'} accent="#7C3AED" variant="card">
           {!ahaRevealed ? (
             <>
               {(Array.isArray(we) ? we : [we]).map((ex, i) => (
@@ -1367,7 +1367,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.shortcuts.map((s, i) => (
               <div key={i} className="rounded-lg border border-[#B45309]/20 bg-[#B45309]/[0.03] p-3">
                 <div className="font-sans text-sm font-semibold text-[#B45309] mb-1">{s.title}</div>
-                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{s.trick}</p>
+                <p className="font-sans text-base text-[#0F172A] leading-relaxed">{s.trick}</p>
                 {s.example && <p className="font-mono text-[12px] text-[#475569] mt-1.5">{s.example}</p>}
               </div>
             ))}
@@ -1382,7 +1382,7 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.common_mistakes.map((m, i) => (
               <div key={i} className="rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
                 <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1">{m.title}</div>
-                <p className="font-sans text-sm text-[#0F172A] leading-relaxed">{linkifyGlossary(m.explanation, lesson.glossary, usedGlossaryTerms)}</p>
+                <p className="font-sans text-base text-[#0F172A] leading-relaxed">{linkifyGlossary(m.explanation, lesson.glossary, usedGlossaryTerms)}</p>
               </div>
             ))}
           </div>
@@ -1392,12 +1392,12 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
       {/* Recall (required) — predict-before-reveal */}
       {Array.isArray(lesson.recall_questions) && lesson.recall_questions.length > 0 && (
         <Section icon={<HelpCircle size={16} />} title="Active recall" accent="#0891B2">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {lesson.recall_questions.map((rq, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
-                <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{rq.q}</p>
+                <p className="font-sans text-base font-medium text-[#0F172A] leading-relaxed">{rq.q}</p>
                 {revealed.has(i) ? (
-                  <p className="font-sans text-sm text-[#0F766E] leading-relaxed mt-2">{rq.answer}</p>
+                  <p className="font-sans text-base text-[#0F766E] leading-relaxed mt-2">{rq.answer}</p>
                 ) : (
                   <button onClick={() => toggleReveal(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] mt-2 transition-colors">
                     <Eye size={13} /> Show answer
@@ -1416,13 +1416,13 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
             {lesson.oa_questions.map((q, i) => (
               <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
+                  <p className="font-sans text-base font-medium text-[#0F172A] leading-relaxed">{q.question}</p>
                   {(q.source || q.company) && <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#B45309]/10 font-sans text-[10px] font-semibold text-[#B45309]">{q.source || q.company}</span>}
                 </div>
                 {oaRevealed.has(i) ? (
                   <div className="mt-2">
-                    <p className="font-sans text-sm font-semibold text-[#0F766E] leading-relaxed">{q.answer}</p>
-                    {q.approach && <p className="font-sans text-sm text-[#475569] leading-relaxed mt-1">{q.approach}</p>}
+                    <p className="font-sans text-base font-semibold text-[#0F766E] leading-relaxed">{q.answer}</p>
+                    {q.approach && <p className="font-sans text-base text-[#475569] leading-relaxed mt-1">{q.approach}</p>}
                   </div>
                 ) : (
                   <button onClick={() => toggleOa(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#B45309] hover:text-[#0F172A] mt-2 transition-colors">
@@ -1439,16 +1439,37 @@ function AptitudeReasoningBody({ lesson, revealed, toggleReveal, ahaRevealed, se
   );
 }
 
-/** Consistent section card with icon + title. */
-function Section({ icon, title, accent, children }) {
+/** Shared section chrome. Two variants:
+ *  - "plain" (default): open on the page background — a real heading (18-20px, sentence-case,
+ *    semibold, accent icon), generous top spacing, no card. This is the reading-first default;
+ *    because Section is shared, every lesson kind gets it for free.
+ *  - "card": the section itself is a callout/interactive block (predict-before-reveal, quiz
+ *    gates) and earns the old bg-white/border/shadow chrome, with the compact uppercase label.
+ *  `wide`: skip the prose-measure constraint on children (viz players, code/query panels,
+ *  diagrams already carry their own chrome and should use the full container width). */
+function Section({ icon, title, accent, children, variant = 'plain', wide = false }) {
   const color = accent || '#0891B2';
+  const body = wide ? children : <div className="max-w-2xl">{children}</div>;
+
+  if (variant === 'card') {
+    return (
+      <section className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm mb-4 p-5">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[rgba(15,23,42,0.06)]">
+          <span style={{ color }}>{icon}</span>
+          <h2 className="font-sans text-sm font-bold text-[#0F172A] uppercase tracking-wider">{title}</h2>
+        </div>
+        {children}
+      </section>
+    );
+  }
+
   return (
-    <section className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg shadow-sm mb-4 p-5">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[rgba(15,23,42,0.06)]">
+    <section className="mt-10 mb-5 first:mt-0">
+      <div className="flex items-center gap-2.5 mb-5">
         <span style={{ color }}>{icon}</span>
-        <h2 className="font-sans text-sm font-bold text-[#0F172A] uppercase tracking-wider">{title}</h2>
+        <h2 className="font-sans text-lg md:text-xl font-semibold text-[#0F172A]">{title}</h2>
       </div>
-      {children}
+      {body}
     </section>
   );
 }
