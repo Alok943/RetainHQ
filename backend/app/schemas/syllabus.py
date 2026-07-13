@@ -31,3 +31,10 @@ class SyllabusCommitIn(BaseModel):
 class SyllabusCommitOut(BaseModel):
     roadmap_id: uuid.UUID
     total_nodes: int
+
+
+class SyllabusQuotaOut(BaseModel):
+    """Lifetime personal-roadmap quota — deleting a roadmap does not refund it."""
+    used: int
+    limit: int
+    remaining: int

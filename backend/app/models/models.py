@@ -150,6 +150,9 @@ class UserPref(SQLModel, table=True):
     __tablename__ = "user_prefs"
     user_id: uuid.UUID = Field(primary_key=True)
     audience: str = Field(default="career")  # 'career' | 'school'
+    # Lifetime count of syllabus→roadmap commits — NEVER decremented (deleting a
+    # roadmap doesn't refund quota). Enforces SYLLABUS_LIFETIME_LIMIT. Migration c8e2a7f5d1b9.
+    custom_roadmaps_created: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

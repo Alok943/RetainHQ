@@ -128,6 +128,15 @@ function SyllabusUpload() {
   const [error, setError] = useState('');
   const [draft, setDraft] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  // Lifetime quota (3 per user, delete ≠ refund). null while loading; fail-open
+  // so a quota-endpoint hiccup never blocks the page — commit still enforces it.
+  const [quota, setQuota] = useState(null);
+
+  React.useEffect(() => {
+    apiFetch('/api/syllabus/quota')
+      .then(setQuota)
+      .catch(() => setQuota(null));
+  }, []);
 
   useSeo(
     'Upload a Syllabus · Build Your Own Roadmap | RetainHQ',
@@ -247,6 +256,11 @@ function SyllabusUpload() {
           You review and edit everything before it's saved; each topic becomes a trackable node
           you can log and review.
         </p>
+        {quota && (
+          <p className={`font-mono text-[11px] mt-2 ${quota.remaining === 0 ? 'text-red-500' : 'text-[#94A3B8]'}`}>
+            {quota.remaining} of {quota.limit} custom roadmaps left — the limit is lifetime, deleting doesn't refund it.
+          </p>
+        )}
       </header>
 
       {error && (
@@ -255,7 +269,22 @@ function SyllabusUpload() {
         </div>
       )}
 
-      {phase === 'upload' && (
+      {phase === 'upload' && quota && quota.remaining === 0 && (
+        <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl shadow-sm p-10 flex flex-col items-center text-center">
+          <h3 className="font-sans text-lg font-semibold text-[#0F172A] mb-1">
+            You've used all {quota.limit} custom roadmaps
+          </h3>
+          <p className="font-sans text-sm text-[#64748B] max-w-sm">
+            The lifetime limit keeps extraction costs sane. Your existing custom roadmaps
+            keep working — including their reviews.
+          </p>
+          <Link to="/roadmaps" className="mt-4 font-sans text-sm text-[#0891B2] hover:text-[#0F172A]">
+            Back to your roadmaps →
+          </Link>
+        </div>
+      )}
+
+      {phase === 'upload' && !(quota && quota.remaining === 0) && (
         <div className="flex flex-col gap-4">
           {/* Mode tabs — paste-text first: it's the token-cheap path */}
           <div className="flex items-center gap-1 bg-[rgba(15,23,42,0.04)] rounded-xl p-1 self-start">

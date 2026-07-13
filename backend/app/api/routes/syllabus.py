@@ -25,7 +25,7 @@ from app.api.deps import get_db, get_current_user
 from app.core.config import settings
 from app.core.security import SupabaseUser
 from app.models.models import Roadmap, RoadmapNode, Activity, UserPref
-from app.schemas.syllabus import SyllabusCommitIn, SyllabusCommitOut, SyllabusTextIn
+from app.schemas.syllabus import SyllabusCommitIn, SyllabusCommitOut, SyllabusQuotaOut, SyllabusTextIn
 from app.services.syllabus import (
     extract_roadmap_from_pdf,
     extract_roadmap_from_text,
@@ -105,18 +105,68 @@ async def extract_syllabus_text(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
 
 
+async def _ensure_pref_row(db: AsyncSession, user_id: uuid.UUID) -> None:
+    """Make sure a user_prefs row exists so the atomic quota UPDATE has a target."""
+    exists = (
+        await db.execute(select(UserPref.user_id).where(UserPref.user_id == user_id))
+    ).scalar_one_or_none()
+    if not exists:
+        db.add(UserPref(user_id=user_id))
+        await db.flush()
+
+
+@router.get("/quota", response_model=SyllabusQuotaOut)
+async def get_syllabus_quota(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Lifetime personal-roadmap quota for the caller (drives the upload-page UI)."""
+    user_id = uuid.UUID(current_user.id)
+    used = (
+        await db.execute(
+            select(UserPref.custom_roadmaps_created).where(UserPref.user_id == user_id)
+        )
+    ).scalar_one_or_none() or 0
+    limit = settings.SYLLABUS_LIFETIME_LIMIT
+    return SyllabusQuotaOut(used=used, limit=limit, remaining=max(0, limit - used))
+
+
 @router.post("/commit", response_model=SyllabusCommitOut, status_code=status.HTTP_201_CREATED)
 async def commit_syllabus(
     body: SyllabusCommitIn,
     db: AsyncSession = Depends(get_db),
     current_user: SupabaseUser = Depends(get_current_user),
 ):
-    """Persist the user-edited draft as a personal roadmap (+ nodes)."""
+    """Persist the user-edited draft as a personal roadmap (+ nodes).
+
+    Enforces the LIFETIME cap (SYLLABUS_LIFETIME_LIMIT): the counter on
+    user_prefs is claimed atomically (UPDATE … WHERE count < limit) so two
+    concurrent commits can't both slip under it, and it never decrements —
+    deleting a roadmap doesn't refund quota.
+    """
     user_id = uuid.UUID(current_user.id)
 
     units = [u for u in body.units if u.topics]
     if not units:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The roadmap has no topics.")
+
+    await _ensure_pref_row(db, user_id)
+    claimed = await db.execute(
+        update(UserPref)
+        .where(
+            UserPref.user_id == user_id,
+            UserPref.custom_roadmaps_created < settings.SYLLABUS_LIFETIME_LIMIT,
+        )
+        .values(custom_roadmaps_created=UserPref.custom_roadmaps_created + 1)
+    )
+    if claimed.rowcount == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"You've used all {settings.SYLLABUS_LIFETIME_LIMIT} of your custom roadmaps — "
+                "that limit is lifetime, so make each one count."
+            ),
+        )
 
     # Personal roadmaps inherit the creator's audience so they appear in the
     # catalog view they actually use. slug stays NULL (globally unique column;
