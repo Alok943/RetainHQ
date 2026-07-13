@@ -48,12 +48,16 @@ export const EVENTS = {
   ROADMAP_OPENED: 'roadmap_opened',
   TEST_STARTED: 'test_started',
   TEST_COMPLETED: 'test_completed', // carries { score, max_score, roadmap, phase }
+  SYLLABUS_COMMITTED: 'syllabus_committed', // syllabus → personal roadmap saved
 
   // --- Cross-cutting ---
   AUTH_WALL_HIT: 'auth_wall_hit',
   API_ERROR: 'api_error', // a server/network failure the user actually hit
   PUSH_SUBSCRIBED: 'push_subscribed',
   PUSH_UNSUBSCRIBED: 'push_unsubscribed',
+  PWA_INSTALLED: 'pwa_installed',
+  REVIEW_SKIPPED: 'review_skipped', // "I don't know" — a distinct friction signal from a completed miss
+  FEEDBACK_SENT: 'feedback_sent',
 };
 
 export function initAnalytics() {

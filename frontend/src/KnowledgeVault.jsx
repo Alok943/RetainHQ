@@ -5,6 +5,7 @@ import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
 import { useAuth } from './lib/AuthContext';
 import { useToast } from './lib/ToastContext';
+import { track, EVENTS } from './lib/analytics';
 
 const SOURCE_LABELS = {
   problem: 'Problem', lecture: 'Lecture', video: 'Video', book: 'Book',
@@ -185,6 +186,7 @@ function FeedbackModal({ onClose }) {
         method: 'POST',
         body: JSON.stringify({ message: msg })
       });
+      track(EVENTS.FEEDBACK_SENT);
       setDone(true);
       setTimeout(onClose, 2000);
     } catch (e) {

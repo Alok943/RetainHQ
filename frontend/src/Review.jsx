@@ -258,6 +258,7 @@ function Review({ onBack }) {
     setSkipped(true);
     setAnswer('');
     setRevealed(true);
+    track(EVENTS.REVIEW_SKIPPED, { mode: questionMode ? 'question' : 'free' });
   };
 
   const handleReveal = () => {

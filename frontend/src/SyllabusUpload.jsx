@@ -6,6 +6,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { useSeo } from './lib/useSeo';
+import { track, EVENTS } from './lib/analytics';
 
 const MAX_PDF_MB = 10;
 const MAX_TEXT_CHARS = 40000; // mirrors backend MAX_SYLLABUS_CHARS
@@ -255,6 +256,11 @@ function SyllabusUpload() {
           units,
           edit_delta: editDelta,
         }),
+      });
+      track(EVENTS.SYLLABUS_COMMITTED, {
+        total_nodes: res.total_nodes,
+        units: units.length,
+        edited: !!(editDelta && (editDelta.topics_added || editDelta.topics_removed)),
       });
       navigate(`/roadmaps/${res.roadmap_id}`);
     } catch (err) {

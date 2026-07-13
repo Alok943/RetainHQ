@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
-import { trackOnce, EVENTS } from './lib/analytics';
+import { track, trackOnce, EVENTS } from './lib/analytics';
 import FirstCapture from './FirstCapture';
 import AudiencePicker from './AudiencePicker';
 import { useAuth } from './lib/AuthContext';
@@ -658,6 +658,7 @@ function FeedbackModal({ onClose }) {
         method: 'POST',
         body: JSON.stringify({ message: msg })
       });
+      track(EVENTS.FEEDBACK_SENT);
       setDone(true);
       setTimeout(onClose, 2000);
     } catch (e) {

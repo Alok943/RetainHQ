@@ -15,7 +15,7 @@ import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './ErrorBoundary.jsx'
 import { ThemeProvider } from './lib/theme'
-import { initAnalytics } from './lib/analytics'
+import { initAnalytics, track, EVENTS } from './lib/analytics'
 import { initErrorTracking } from './lib/errors'
 import { registerSW, isPushSupported } from './lib/push'
 
@@ -28,6 +28,10 @@ initErrorTracking() // no-op unless VITE_SENTRY_DSN is set
 if (isPushSupported() && Notification.permission === 'granted') {
   registerSW();
 }
+
+// Fires once, whenever the browser actually installs the PWA (Add to Home
+// Screen / desktop install) — a real intent signal, not just a manifest check.
+window.addEventListener('appinstalled', () => track(EVENTS.PWA_INSTALLED));
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
