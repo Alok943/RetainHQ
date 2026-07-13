@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.services.mailer import send_email, is_configured, MailerError
+from app.services import analytics
 
 
 # Candidates: users with ≥1 due review now, who have an email and haven't been
@@ -59,7 +60,9 @@ def _estimate_minutes(due_count: int) -> int:
 
 def build_email(due_count: int, sample_topics: list[str]) -> tuple[str, str]:
     """Return (subject, html) for a reminder. Plain, one accent, one CTA."""
-    review_url = f"{settings.APP_BASE_URL.rstrip('/')}/reviews"
+    # ?src=reminder lets the app attribute the visit to this email (reminder_clicked),
+    # which pairs with the server's reminder_sent to give email CTR.
+    review_url = f"{settings.APP_BASE_URL.rstrip('/')}/reviews?src=reminder"
     mins = _estimate_minutes(due_count)
     noun = "review" if due_count == 1 else "reviews"
     subject = f"{due_count} {noun} due on RetainHQ"
@@ -135,6 +138,9 @@ async def send_due_reminders(db: AsyncSession) -> dict:
         try:
             await asyncio.to_thread(send_email, email, subject, html)
             sent += 1
+            # Server-truth email metric — the retention re-engagement channel.
+            # Pair with the client's reminder_clicked (one-tap link) for CTR.
+            analytics.capture(user_id, "reminder_sent", {"due_count": due_count, "channel": "email"})
         except MailerError as e:
             errors += 1
             if len(error_samples) < 5:

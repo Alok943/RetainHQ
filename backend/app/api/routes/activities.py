@@ -14,6 +14,7 @@ from app.schemas.activity import (
 )
 from app.services.scheduler import initial_review_for_activity
 from app.services.grader import suggest_key_points, GraderError
+from app.services import analytics
 
 router = APIRouter()
 
@@ -142,6 +143,14 @@ async def log_activity(
 
     await db.commit()
     await db.refresh(activity)
+
+    # Server-truth: a card entered the FSRS rotation. `immediate` first cards are
+    # the activation demo; every other is a normal +1d schedule.
+    analytics.capture(
+        user_id,
+        "review_scheduled",
+        {"first_review": True, "immediate": is_first, "source_type": activity.source_type},
+    )
 
     # Build response schema manually to include the custom review count
     return ActivityResponse(

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Sparkles, PenLine, Brain, TrendingUp } from 'lucide-react';
+import { track, trackOnce, EVENTS } from './lib/analytics';
 
 // Shown once per browser, wherever the visitor first lands (marketing landing
 // OR the in-app dashboard) — a guest who clicks "Get Started" hits an empty app
@@ -48,13 +49,23 @@ export default function WelcomeModal({ onDone, ctaLabel = 'Got it — let\'s go'
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(SEEN_KEY)) setVisible(true);
+      if (!localStorage.getItem(SEEN_KEY)) {
+        setVisible(true);
+        trackOnce('onboarding_started:welcome_modal', EVENTS.ONBOARDING_STARTED, { surface: 'welcome_modal' });
+      }
     } catch (e) {
       /* private mode etc. — just don't show */
     }
   }, []);
 
   const close = () => {
+    // `finished` = reached the last step (real completion) vs dismissed early.
+    track(EVENTS.ONBOARDING_COMPLETED, {
+      surface: 'welcome_modal',
+      finished: step === STEPS.length - 1,
+      last_step: step + 1,
+      total_steps: STEPS.length,
+    });
     setVisible(false);
     try {
       localStorage.setItem(SEEN_KEY, '1');

@@ -10,6 +10,7 @@ function Login() {
 
   const handleGoogleLogin = async () => {
     track(EVENTS.LANDING_CTA, { action: 'login' });
+    track(EVENTS.SIGNUP_STARTED, { source: 'landing_nav' });
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },

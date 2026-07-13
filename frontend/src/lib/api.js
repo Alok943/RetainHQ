@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { emitToast } from './toastBus';
+import { track, EVENTS } from './analytics';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -72,6 +73,7 @@ export const apiFetch = async (endpoint, options = {}) => {
     err.status = 0;
     err.isNetworkError = true;
     emitToast({ type: 'offline', message: err.message });
+    track(EVENTS.API_ERROR, { endpoint, status: 0, kind: 'network' });
     throw err;
   }
 
@@ -83,6 +85,11 @@ export const apiFetch = async (endpoint, options = {}) => {
 
     if (shouldAutoToast(response.status)) {
       emitToast({ type: 'error', message });
+    }
+    // Only server-side breakage is a real friction signal. 4xx are used as
+    // feature gates (404 = grader off) and validation, so they'd be noise.
+    if (response.status >= 500) {
+      track(EVENTS.API_ERROR, { endpoint, status: response.status, kind: 'server' });
     }
     if (response.status === 401) {
       // Session expired mid-use (as opposed to never having one) — let

@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import AuthModal from '../AuthModal';
-import { identifyUser, resetAnalytics, track, EVENTS } from './analytics';
+import { identifyUser, resetAnalytics, track, trackOnce, EVENTS } from './analytics';
+
+// A sign-in is a brand-new signup when the account was created essentially now
+// (Supabase stamps created_at at first OAuth). Returning logins have an older
+// created_at. 2-min window absorbs redirect/clock skew without catching day-2 logins.
+function isFirstSignup(user) {
+  if (!user?.created_at) return false;
+  return Date.now() - new Date(user.created_at).getTime() < 2 * 60 * 1000;
+}
 
 const AuthContext = createContext({
   session: null,
@@ -39,7 +47,14 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
-      if (_event === 'SIGNED_IN') track(EVENTS.SIGNED_IN);
+      if (_event === 'SIGNED_IN') {
+        track(EVENTS.SIGNED_IN);
+        // Fire signed_up once per new account (SIGNED_IN also fires on tab focus /
+        // token refresh, so dedupe on the user id to avoid re-counting).
+        if (isFirstSignup(session?.user)) {
+          trackOnce(`signed_up:${session.user.id}`, EVENTS.SIGNED_UP);
+        }
+      }
       if (session && isModalOpen) {
         setIsModalOpen(false);
         if (pendingAction) {

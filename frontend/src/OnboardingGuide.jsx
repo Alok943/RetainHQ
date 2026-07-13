@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, ChevronLeft, Sparkles, PenLine, Brain, CalendarClock, Vault } from 'lucide-react';
+import { track, trackOnce, EVENTS } from './lib/analytics';
 
 const DISMISSED_KEY = 'retainhq_onboarding_dismiss_count';
 const MIN_DISMISS_COUNT = 2; // show at least on first 2 visits
@@ -67,11 +68,20 @@ export default function OnboardingGuide() {
 
   useEffect(() => {
     const count = parseInt(localStorage.getItem(DISMISSED_KEY) || '0', 10);
-    if (count < MIN_DISMISS_COUNT) setVisible(true);
+    if (count < MIN_DISMISS_COUNT) {
+      setVisible(true);
+      trackOnce('onboarding_started:home_guide', EVENTS.ONBOARDING_STARTED, { surface: 'home_guide' });
+    }
   }, []);
 
   // Explicit dismiss (X button or "Get started!") — increments counter
   const dismiss = () => {
+    track(EVENTS.ONBOARDING_COMPLETED, {
+      surface: 'home_guide',
+      finished: currentStep === STEPS.length - 1,
+      last_step: currentStep + 1,
+      total_steps: STEPS.length,
+    });
     setVisible(false);
     const count = parseInt(localStorage.getItem(DISMISSED_KEY) || '0', 10);
     localStorage.setItem(DISMISSED_KEY, String(count + 1));

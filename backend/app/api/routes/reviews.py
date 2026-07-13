@@ -33,6 +33,7 @@ from app.services.grader import (
     grade_question_set,
     GraderError,
 )
+from app.services import analytics
 
 router = APIRouter()
 
@@ -130,6 +131,19 @@ async def complete_review(
 
     await db.commit()
     await db.refresh(review)
+
+    # Server-truth: the spaced-repetition loop advanced this card. `interval_days`
+    # is the new spacing — a rising interval across a cohort means memory is sticking.
+    analytics.capture(
+        user_id,
+        "review_scheduled",
+        {
+            "first_review": False,
+            "rating": review_in.rating,
+            "recalled": review_in.recalled,
+            "interval_days": review.activity.interval_days,
+        },
+    )
 
     return review
 

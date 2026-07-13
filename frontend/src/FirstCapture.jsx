@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, AlertTriangle, CalendarDays } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import { track, trackOnce, EVENTS } from './lib/analytics';
 import RoadmapMini from './RoadmapMini';
 import ReviewHeatmap from './ReviewHeatmap';
 
@@ -27,6 +28,12 @@ export default function FirstCapture({ onSkip }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [roadmaps, setRoadmaps] = useState([]);
+
+  // The zero-activity gate rendered — the exact point our funnel shows people
+  // bouncing, so it's worth its own event (distinct from a generic pageview).
+  useEffect(() => {
+    trackOnce('first_capture_shown', EVENTS.FIRST_CAPTURE_SHOWN);
+  }, []);
 
   // A few roadmaps to explore — gives a brand-new user a path beyond the empty form.
   useEffect(() => {
@@ -58,6 +65,10 @@ export default function FirstCapture({ onSkip }) {
           needed_hint: false,
         }),
       });
+      // This gate only renders for a zero-activity user, so this capture is always
+      // their first — the activation milestone (North-Star precondition).
+      track(EVENTS.ACTIVITY_LOGGED, { source_type: 'first_capture', first_activity: true });
+      track(EVENTS.ACTIVATED, { via: 'first_capture' });
       // First-ever activity: the backend scheduled its review due now. Drop them
       // straight into that one-time demo review — the activation aha moment.
       navigate('/reviews');

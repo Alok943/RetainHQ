@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     SYLLABUS_MODEL: str = "claude-opus-4-8"  # e.g. "gemini-flash-lite-latest" to route to Gemini
     SYLLABUS_MAX_PDF_MB: int = 10
     SYLLABUS_DAILY_LIMIT: int = 5  # extractions per user per UTC day (API-budget guard)
+    SYLLABUS_LIFETIME_LIMIT: int = 3  # personal roadmaps per user, LIFETIME (delete ≠ refund)
 
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
     # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger
@@ -64,6 +65,12 @@ class Settings(BaseSettings):
     RESEND_FROM: str = "RetainHQ <reviews@retainhq.app>"
     CRON_SECRET: str = ""
     APP_BASE_URL: str = "https://retainhq.app"  # used to build the one-tap review link
+
+    # Server-side PostHog (app.services.analytics). Same project as the frontend
+    # (posthog-js), keyed by the Supabase user id so client + server events unify.
+    # No-op until POSTHOG_API_KEY is set, so it's safe to deploy gated-off.
+    POSTHOG_API_KEY: str = ""
+    POSTHOG_HOST: str = "https://us.i.posthog.com"  # EU: https://eu.i.posthog.com
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

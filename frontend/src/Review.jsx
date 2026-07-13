@@ -89,6 +89,9 @@ function Review({ onBack }) {
         setReviews(data);
         if (Array.isArray(data) && data.length > 0) {
           track(EVENTS.REVIEW_STARTED, { due_count: data.length });
+        } else {
+          // Arrived at /reviews with nothing due — a dead-end for an eager user.
+          track(EVENTS.REVIEW_QUEUE_EMPTY);
         }
       })
       .catch((err) => setError(err.message))

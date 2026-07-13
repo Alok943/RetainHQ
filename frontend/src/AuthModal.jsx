@@ -2,9 +2,11 @@ import React from 'react';
 import { supabase } from './lib/supabase';
 import { X, ArrowRight, Brain } from 'lucide-react';
 import Logo from './Logo';
+import { track, EVENTS } from './lib/analytics';
 
 export default function AuthModal({ onClose }) {
   const handleGoogleLogin = async () => {
+    track(EVENTS.SIGNUP_STARTED, { source: 'auth_wall' });
     // Clean redirect target: keep the current PATH (so guests return to where they
     // were, e.g. /log) but strip any existing hash/query. Using window.location.href
     // re-appends the OAuth token hash every round-trip, growing the URL past the

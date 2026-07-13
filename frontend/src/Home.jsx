@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
+import { trackOnce, EVENTS } from './lib/analytics';
 import FirstCapture from './FirstCapture';
 import AudiencePicker from './AudiencePicker';
 import { useAuth } from './lib/AuthContext';
@@ -195,7 +196,9 @@ function Home({ onStartReviews }) {
   // so the section is never empty for a new user.
   const inProgress = roadmaps.filter((r) => (r.progress_pct ?? 0) > 0)
     .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
-  const roadmapTiles = (inProgress.length > 0 ? inProgress : roadmaps).slice(0, 4);
+  // Three roadmap tiles + the always-last "Customize your own" tile keeps the
+  // grid at 4 cells (one row on desktop).
+  const roadmapTiles = (inProgress.length > 0 ? inProgress : roadmaps).slice(0, 3);
   const roadmapsHeading = inProgress.length > 0 ? 'ROADMAPS' : 'EXPLORE';
 
   const topReview = dueReviews[0] ?? null;
@@ -204,6 +207,15 @@ function Home({ onStartReviews }) {
   const consistency = dashboard?.consistency_window ?? 0;
   const totalActivities = dashboard?.total_activities ?? 0;
   const nextReviewAt = dashboard?.next_review_at ?? null;
+
+  // Retention return-trigger: the user landed on Home and had reviews waiting.
+  // Once per load (trackOnce) — the pairing of this with review_started/completed
+  // is what measures whether the spaced-repetition loop actually pulls people back.
+  useEffect(() => {
+    if (!loadingDashboard && dueCount > 0) {
+      trackOnce('reviews_due_shown', EVENTS.REVIEWS_DUE_SHOWN, { due_count: dueCount });
+    }
+  }, [loadingDashboard, dueCount]);
 
   // First-run gate: a signed-in user with zero activities gets the full-screen
   // first-capture flow instead of an empty dashboard — that's where our funnel
@@ -329,6 +341,7 @@ function Home({ onStartReviews }) {
                 {roadmapTiles.map((rm) => (
                   <RoadmapTile key={rm.id} rm={rm} to={`/roadmaps/${rm.slug || rm.id}`} />
                 ))}
+                <CustomRoadmapTile />
               </div>
             )}
           </section>
@@ -522,6 +535,25 @@ function StartLearningCard({ roadmaps }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// Always-last tile in the Home roadmaps grid: syllabus → personal roadmap.
+// Dashed like the "Bring Your Own Path" card on /roadmaps (same destination).
+function CustomRoadmapTile() {
+  return (
+    <Link
+      to="/roadmaps/new"
+      className="border-2 border-dashed border-[rgba(15,23,42,0.12)] hover:border-[#0891B2]/60 rounded-lg p-3 flex items-center gap-2.5 text-left hover:-translate-y-0.5 transition-all"
+    >
+      <div className="w-7 h-7 rounded-full bg-[#0891B2]/10 flex items-center justify-center shrink-0">
+        <Sparkles size={13} className="text-[#0891B2]" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-sans text-[13px] font-medium text-[#0F172A] truncate">Customize your own</div>
+        <div className="font-mono text-[11px] text-[#64748B] truncate">syllabus → roadmap</div>
+      </div>
+    </Link>
   );
 }
 

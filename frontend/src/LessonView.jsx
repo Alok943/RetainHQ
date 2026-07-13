@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react';
+import React, { useEffect, useState, useCallback, useRef, Suspense, lazy } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Clock, BarChart2, Zap, AlertTriangle, HelpCircle, Code2, Trophy, ExternalLink, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Target, Sparkles, Brain, Bug, GitBranch, Database, Table, Check, Plus, Image as ImageIcon } from 'lucide-react';
 import { apiFetch } from './lib/api';
@@ -8,7 +8,7 @@ import { useSeo } from './lib/useSeo';
 import CodeTrace from './CodeTrace';
 import { prewarmPython } from './lib/pyodideRunner';
 import { useAuth } from './lib/AuthContext';
-import { track, EVENTS } from './lib/analytics';
+import { track, trackOnce, EVENTS } from './lib/analytics';
 import SqlResult from './SqlResult';
 import SqlFlow from './SqlFlow';
 import SqlJoinViz from './SqlJoinViz';
@@ -16,6 +16,8 @@ import { linkifyGlossary } from './lib/glossary';
 import RayDiagram from './physics/RayDiagram';
 import GraphDiagram from './physics/GraphDiagram';
 import SchematicDiagram from './physics/SchematicDiagram';
+import DerivationPlayer from './maths/DerivationPlayer';
+import GraphPlay from './maths/GraphPlay';
 
 // The DSA execution-trace player (Framer Motion + renderers) is heavy and only needed on
 // dsa-kind lessons that carry a `viz` — lazy-load it so every other lesson stays light.
@@ -79,6 +81,26 @@ export default function LessonView() {
   useEffect(() => {
     track(EVENTS.LESSON_OPENED, { roadmap: id, slug });
   }, [id, slug]);
+
+  // Completion = the end-of-lesson sentinel scrolls into view. "Opened" alone
+  // can't tell a bounce from a finish; the opened→completed ratio is the lesson
+  // funnel. Fires once per (roadmap, slug) per session via trackOnce.
+  const endRef = useRef(null);
+  useEffect(() => {
+    const el = endRef.current;
+    if (!el || !('IntersectionObserver' in window)) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          trackOnce(`lesson_completed:${id}/${slug}`, EVENTS.LESSON_COMPLETED, { roadmap: id, slug });
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [id, slug, lesson]);
 
   // Predict-before-reveal gate for the aha_moment block.
   const [ahaRevealed, setAhaRevealed] = useState(false);
@@ -276,6 +298,21 @@ export default function LessonView() {
       </div>
     </>
   );
+
+  // Maths — mathematical rigor + DerivationPlayer + GraphPlay
+  if (lesson.kind === 'maths') {
+    return (
+      <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-24">
+        {header}
+        <MathsBody
+          lesson={lesson}
+          revealed={revealed}
+          toggleReveal={toggleReveal}
+          usedGlossaryTerms={usedGlossaryTerms}
+        />
+      </div>
+    );
+  }
 
   // DSA (Algorithms Visualized) — five-questions lesson built around an execution trace.
   // Its own shape (why_it_exists, mental_model, the lazy Player for `viz`, recognition cues);
@@ -549,6 +586,8 @@ export default function LessonView() {
         </Section>
       )}
 
+      {/* End-of-lesson sentinel — drives the lesson_completed event (see effect above). */}
+      <div ref={endRef} aria-hidden="true" className="h-px w-full" />
     </div>
   );
 }
@@ -583,6 +622,7 @@ function AddToReviews({ lesson, nodeId }) {
           node_id: nodeId,
         }),
       });
+      track(EVENTS.CARD_CREATED_FROM_LESSON, { title: lesson.title });
       setState('added');
     } catch (e) {
       setState('error');
@@ -1471,5 +1511,80 @@ function Section({ icon, title, accent, children, variant = 'plain', wide = fals
       </div>
       {body}
     </section>
+  );
+}
+
+function MathsBody({ lesson, revealed, toggleReveal, usedGlossaryTerms }) {
+  return (
+    <div className="space-y-12 pb-16">
+      {/* 1. Mental Model */}
+      <section className="bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-xl p-6 md:p-8">
+        <h2 className="font-serif text-2xl font-semibold text-[#0F172A] mb-4 flex items-center gap-3">
+          <Brain className="text-[#0891B2]" size={28} />
+          Mental Model
+        </h2>
+        <div className="space-y-4">
+          <p className="font-sans text-lg font-medium text-[#0F172A] leading-relaxed">
+            {linkifyGlossary(lesson.mental_model.intuition, usedGlossaryTerms)}
+          </p>
+          {lesson.mental_model.description && (
+            <p className="font-sans text-[#334155] leading-relaxed">
+              {linkifyGlossary(lesson.mental_model.description, usedGlossaryTerms)}
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* 2. GraphPlay (if any) */}
+      {lesson.graph_play && lesson.graph_play.map((gp, i) => (
+        <GraphPlay key={`gp-${i}`} block={gp} />
+      ))}
+
+      {/* 3. Explanation or Sections */}
+      {lesson.explanation && (
+        <section className="prose prose-slate max-w-none prose-p:font-sans prose-p:text-[#334155] prose-headings:font-serif prose-headings:text-[#0F172A]">
+          <p>{linkifyGlossary(lesson.explanation, usedGlossaryTerms)}</p>
+        </section>
+      )}
+
+      {/* 4. Derivations */}
+      {lesson.derivation && lesson.derivation.map((der, i) => (
+        <DerivationPlayer key={`der-${i}`} block={der} />
+      ))}
+
+      {/* 5. Common Mistakes */}
+      {Array.isArray(lesson.common_mistakes) && lesson.common_mistakes.length > 0 && (
+        <Section icon={<AlertTriangle size={16} />} title="Common mistakes" accent="#B91C1C">
+          <div className="flex flex-col gap-3">
+            {lesson.common_mistakes.map((m, i) => (
+              <div key={i} className="rounded-lg border border-[#B91C1C]/15 bg-[#B91C1C]/[0.03] p-3">
+                <div className="font-sans text-sm font-semibold text-[#B91C1C] mb-1">{m.title}</div>
+                <p className="font-sans text-base text-[#0F172A] leading-relaxed">{m.explanation}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* 6. Active Recall */}
+      {Array.isArray(lesson.recall_questions) && lesson.recall_questions.length > 0 && (
+        <Section icon={<HelpCircle size={16} />} title="Active recall" accent="#0891B2">
+          <div className="flex flex-col gap-3">
+            {lesson.recall_questions.map((rq, i) => (
+              <div key={i} className="rounded-lg border border-[rgba(15,23,42,0.1)] p-3">
+                <p className="font-sans text-base font-medium text-[#0F172A] leading-relaxed">{rq.q}</p>
+                {revealed.has(i) ? (
+                  <p className="font-sans text-base text-[#0F766E] leading-relaxed mt-2">{rq.answer}</p>
+                ) : (
+                  <button onClick={() => toggleReveal(i)} className="flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] mt-2 transition-colors">
+                    <Eye size={13} /> Show answer
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+    </div>
   );
 }

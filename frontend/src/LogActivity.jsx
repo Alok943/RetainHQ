@@ -168,6 +168,10 @@ function LogActivity() {
         difficulty,
         first_activity: !!res?.review_due_now,
       });
+      // review_due_now is the backend's first-ever-activity signal — the activation
+      // milestone. Fire it here too (a user can activate from the normal Log page,
+      // not just the FirstCapture gate).
+      if (res?.review_due_now) track(EVENTS.ACTIVATED, { via: 'log_activity' });
       // A user's first-ever activity gets a demo review due now — send them
       // straight into it so they see the recall loop. Every later activity's
       // first review waits until tomorrow (recall after a delay builds memory),

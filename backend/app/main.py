@@ -4,8 +4,15 @@ from app.api.deps import get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
 from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback, internal, prefs, tests, syllabus
+from app.services import analytics
 
 app = FastAPI(title="RetainHQ API", version="1.0.0")
+
+
+@app.on_event("shutdown")
+async def _flush_analytics():
+    # Flush any buffered server-side PostHog events before the worker exits.
+    analytics.shutdown()
 
 # Env-driven CORS allow-list (comma-separated in CORS_ORIGINS env var)
 origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
