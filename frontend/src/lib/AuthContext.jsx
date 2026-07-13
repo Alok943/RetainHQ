@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import AuthModal from '../AuthModal';
 import { identifyUser, resetAnalytics, track, trackOnce, EVENTS } from './analytics';
+import { setErrorUser, clearErrorUser } from './errors';
 
 // A sign-in is a brand-new signup when the account was created essentially now
 // (Supabase stamps created_at at first OAuth). Returning logins have an older
@@ -76,10 +77,15 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('retainhq:unauthorized', onUnauthorized);
   }, []);
 
-  // Tie the PostHog person to the (pseudonymous) user id; reset on sign-out.
+  // Tie the PostHog person + Sentry user to the (pseudonymous) user id; reset on sign-out.
   useEffect(() => {
-    if (session?.user?.id) identifyUser(session.user.id);
-    else resetAnalytics();
+    if (session?.user?.id) {
+      identifyUser(session.user.id);
+      setErrorUser(session.user.id);
+    } else {
+      resetAnalytics();
+      clearErrorUser();
+    }
   }, [session?.user?.id]);
 
   const requireAuth = (callback) => {
