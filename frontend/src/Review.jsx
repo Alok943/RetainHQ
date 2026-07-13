@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb, Bell, X } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
@@ -160,6 +160,13 @@ function Review({ onBack }) {
     ? (skipped || qAnswers.some((a) => a.trim().length > 0))
     : (answer.trim().length > 0 || skipped);
 
+  // performance.now() (not Date.now()) so this is immune to clock skew/changes —
+  // a ref, not state, so stamping it never triggers a re-render.
+  const cardShownAtRef = useRef(null);
+  useEffect(() => {
+    if (current) cardShownAtRef.current = performance.now();
+  }, [current?.id]);
+
   const resetCard = () => {
     setRevealed(false);
     setAnswer('');
@@ -303,10 +310,13 @@ function Review({ onBack }) {
   const handleOutcome = async (outcome) => {
     if (!current || submitting) return;
     setSubmitting(true);
+    const durationMs = cardShownAtRef.current != null
+      ? Math.round(performance.now() - cardShownAtRef.current)
+      : undefined;
     try {
       await apiFetch(`/api/reviews/${current.id}/complete`, {
         method: 'POST',
-        body: JSON.stringify({ rating: outcome.rating, recalled: outcome.recalled }),
+        body: JSON.stringify({ rating: outcome.rating, recalled: outcome.recalled, duration_ms: durationMs }),
       });
       track(EVENTS.REVIEW_COMPLETED, {
         outcome: outcome.key,
@@ -314,6 +324,7 @@ function Review({ onBack }) {
         recalled: outcome.recalled,
         mode: questionMode ? 'question' : 'free',
         ai_assisted: !!aiResult || questionMode,
+        duration_ms: durationMs,
       });
       if (index < total - 1) {
         setIndex((i) => i + 1);

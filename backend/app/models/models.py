@@ -129,6 +129,10 @@ class Review(SQLModel, table=True):
     ai_verdict: Optional[str] = None   # 'correct' | 'partial' | 'incorrect'
     ai_recalled: Optional[bool] = None # machine judgement of whether they reconstructed the key idea
     ai_feedback: Optional[str] = None  # one short sentence shown after reveal
+    # Wall-clock time from card-shown to outcome-submitted, per performance.now()
+    # on the client (immune to clock skew). Clamped server-side; garbage/absent
+    # values land as NULL rather than failing the completion.
+    duration_ms: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     activity: Optional[Activity] = Relationship(back_populates="reviews")

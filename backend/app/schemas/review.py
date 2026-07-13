@@ -19,6 +19,7 @@ class ReviewResponse(BaseModel):
     ai_verdict: Optional[str] = None
     ai_recalled: Optional[bool] = None
     ai_feedback: Optional[str] = None
+    duration_ms: Optional[int] = None
     created_at: datetime
     
     # Attached fields for lesson card resolution
@@ -32,6 +33,10 @@ class ReviewComplete(BaseModel):
     rating: Literal["easy", "medium", "hard"]
     # Objective signal: did they actually reconstruct the answer? (got-it / missed-it)
     recalled: Optional[bool] = None
+    # Client-measured wall-clock (performance.now() delta, card-shown to
+    # outcome-submitted). Server clamps to (0, 1_800_000] — anything outside
+    # that lands as NULL rather than failing the completion.
+    duration_ms: Optional[int] = None
 
 class ReviewGradeRequest(BaseModel):
     # The user's free-recall attempt. Capped to bound LLM cost/latency.

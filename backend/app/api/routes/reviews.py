@@ -91,6 +91,13 @@ async def complete_review(
     quality = quality_from_outcome(review_in.rating, review_in.recalled)
     fsrs_rating = fsrs_rating_from_outcome(review_in.rating, review_in.recalled)
 
+    # A client-measured timer is trust-but-verify: clamp to a plausible single-
+    # card range (30 min ceiling) rather than reject the completion outright —
+    # a garbage/absent value just means no duration metric for this card.
+    duration_ms = review_in.duration_ms
+    if duration_ms is not None and not (0 < duration_ms <= 1_800_000):
+        duration_ms = None
+
     # Atomic: only transition due→completed once. Prevents double-completion race
     # where two concurrent requests both schedule a next review.
     atomic_stmt = (
@@ -106,6 +113,7 @@ async def complete_review(
             rating=review_in.rating,
             recalled=review_in.recalled,
             quality=quality,
+            duration_ms=duration_ms,
         )
     )
     result = await db.execute(atomic_stmt)
