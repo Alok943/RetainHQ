@@ -17,9 +17,17 @@ import ErrorBoundary from './ErrorBoundary.jsx'
 import { ThemeProvider } from './lib/theme'
 import { initAnalytics } from './lib/analytics'
 import { initErrorTracking } from './lib/errors'
+import { registerSW, isPushSupported } from './lib/push'
 
 initAnalytics() // no-op unless VITE_POSTHOG_KEY is set
 initErrorTracking() // no-op unless VITE_SENTRY_DSN is set
+
+// Re-register the push SW on load if permission was already granted in a
+// prior session. Never prompt here — that's an explicit user action
+// (Profile.jsx toggle / Review.jsx done-screen card, see B4).
+if (isPushSupported() && Notification.permission === 'granted') {
+  registerSW();
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
