@@ -41,6 +41,16 @@ async def _dev_bypass_user() -> SupabaseUser:
     return _dev_user_cache
 
 
+def _set_sentry_user(user: SupabaseUser) -> None:
+    # Pseudonymous only (id, never email) — matches analytics.js's identifyUser.
+    # Gated on SENTRY_DSN so this is a no-op import/call when Sentry is off.
+    if not settings.SENTRY_DSN:
+        return
+    import sentry_sdk
+
+    sentry_sdk.set_user({"id": user.id})
+
+
 async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)) -> SupabaseUser:
     """
     Extract the Bearer token and validate it against the Supabase JWKS.
@@ -48,14 +58,18 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
     and return the dev account (see _dev_bypass_user).
     """
     if settings.DEV_AUTH_BYPASS:
-        return await _dev_bypass_user()
+        user = await _dev_bypass_user()
+        _set_sentry_user(user)
+        return user
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return verify_token(credentials.credentials)
+    user = verify_token(credentials.credentials)
+    _set_sentry_user(user)
+    return user
 
 async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)) -> Optional[SupabaseUser]:
     """

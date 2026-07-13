@@ -1,3 +1,6 @@
+import logging
+import os
+
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import get_current_user
@@ -5,6 +8,25 @@ from app.core.security import SupabaseUser
 from app.core.config import settings
 from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback, internal, prefs, tests, syllabus
 from app.services import analytics
+
+# So Render's log stream carries tracebacks even with Sentry off — logging is
+# the floor, Sentry is the upgrade.
+logging.basicConfig(level=logging.INFO)
+
+# Gated on SENTRY_DSN so this is a safe no-op until the founder sets it (Render
+# env). No custom @app.exception_handler(Exception): sentry-sdk's FastAPI
+# integration captures unhandled exceptions itself, and a custom handler risks
+# swallowing them before Sentry sees the exception.
+if settings.SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.SENTRY_ENVIRONMENT,
+        release=os.environ.get("RENDER_GIT_COMMIT"),
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        send_default_pii=False,  # pseudonymous only — matches analytics.js
+    )
 
 app = FastAPI(title="RetainHQ API", version="1.0.0")
 

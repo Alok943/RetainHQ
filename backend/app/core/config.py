@@ -72,6 +72,13 @@ class Settings(BaseSettings):
     POSTHOG_API_KEY: str = ""
     POSTHOG_HOST: str = "https://us.i.posthog.com"  # EU: https://eu.i.posthog.com
 
+    # Sentry error tracking. No-op until SENTRY_DSN is set (main.py gates init on
+    # it). Pseudonymous only — send_default_pii stays False; deps.get_current_user
+    # sets only the Supabase user id, never email.
+    SENTRY_DSN: str = ""
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @model_validator(mode="after")
