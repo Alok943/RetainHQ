@@ -10,6 +10,11 @@ Design:
     A failed send leaves the claim in place: we'd rather a user miss one day's email
     (they still see it in-app) than risk spamming. Transient outages self-heal next day.
   - Email send is sync (Resend SDK), run off the event loop via asyncio.to_thread.
+  - Push fans out through the SAME claim: one ReminderLog row per user/day gates
+    both channels (identical content/cadence — the "miss a day rather than spam"
+    stance applies to push too). A user gets email if mailer is configured, push
+    for each of their subscriptions if VAPID is configured — independently; a
+    push failure never blocks or retries the email and vice versa.
 """
 import asyncio
 import html as _html
@@ -19,8 +24,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.services.mailer import send_email, is_configured, MailerError
-from app.services import analytics
+from app.services.mailer import send_email, is_configured as mailer_is_configured, MailerError
+from app.services import analytics, push
 
 
 # Candidates: users with ≥1 due review now, who have an email and haven't been
@@ -51,6 +56,10 @@ _CLAIM_SQL = text("""
     on conflict (user_id, sent_on) do nothing
     returning id
 """)
+
+_PUSH_SUBS_SQL = text("select id, user_id, endpoint, p256dh, auth from push_subscriptions where user_id = :user_id")
+
+_DELETE_PUSH_SUB_SQL = text("delete from push_subscriptions where id = :id")
 
 
 def _estimate_minutes(due_count: int) -> int:
@@ -108,8 +117,15 @@ def build_email(due_count: int, sample_topics: list[str]) -> tuple[str, str]:
 
 async def send_due_reminders(db: AsyncSession) -> dict:
     """Run one reminder pass. Returns a summary dict (safe to log/return)."""
-    if not is_configured():
-        return {"status": "disabled", "reason": "RESEND_API_KEY not set", "sent": 0, "errors": 0, "candidates": 0}
+    mailer_on = mailer_is_configured()
+    push_on = push.is_configured()
+    if not mailer_on and not push_on:
+        return {
+            "status": "disabled",
+            "reason": "Neither RESEND_API_KEY nor VAPID keys are set",
+            "sent": 0, "errors": 0, "candidates": 0,
+            "push_sent": 0, "push_errors": 0, "push_pruned": 0,
+        }
 
     # Pin to UTC so the claim's sent_on matches the candidates SQL's
     # (now() at time zone 'utc')::date regardless of the host's process timezone.
@@ -119,6 +135,9 @@ async def send_due_reminders(db: AsyncSession) -> dict:
     sent = 0
     errors = 0
     error_samples: list[str] = []
+    push_sent = 0
+    push_errors = 0
+    push_pruned = 0
 
     for row in rows:
         user_id = row["user_id"]
@@ -126,25 +145,52 @@ async def send_due_reminders(db: AsyncSession) -> dict:
         due_count = row["due_count"]
         sample_topics = list(row["sample_topics"] or [])
 
-        # Claim first — only proceed if we won the day for this user.
+        # Claim first — only proceed if we won the day for this user. One claim
+        # gates BOTH channels: identical content/cadence, same "miss a day
+        # rather than spam" stance.
         claimed = (await db.execute(
             _CLAIM_SQL, {"user_id": user_id, "sent_on": today, "due_count": due_count}
         )).first()
         if not claimed:
             continue
-        await db.commit()  # persist the claim before the (slow, external) send
+        await db.commit()  # persist the claim before the (slow, external) sends
 
-        subject, html = build_email(due_count, sample_topics)
-        try:
-            await asyncio.to_thread(send_email, email, subject, html)
-            sent += 1
-            # Server-truth email metric — the retention re-engagement channel.
-            # Pair with the client's reminder_clicked (one-tap link) for CTR.
-            analytics.capture(user_id, "reminder_sent", {"due_count": due_count, "channel": "email"})
-        except MailerError as e:
-            errors += 1
-            if len(error_samples) < 5:
-                error_samples.append(str(e))
+        if mailer_on:
+            subject, html = build_email(due_count, sample_topics)
+            try:
+                await asyncio.to_thread(send_email, email, subject, html)
+                sent += 1
+                # Server-truth email metric — the retention re-engagement channel.
+                # Pair with the client's reminder_clicked (one-tap link) for CTR.
+                analytics.capture(user_id, "reminder_sent", {"due_count": due_count, "channel": "email"})
+            except MailerError as e:
+                errors += 1
+                if len(error_samples) < 5:
+                    error_samples.append(str(e))
+
+        if push_on:
+            noun = "review" if due_count == 1 else "reviews"
+            payload = {
+                "title": f"{due_count} {noun} due",
+                "body": "A quick recall pass now is what keeps these from fading.",
+                "url": f"{settings.APP_BASE_URL.rstrip('/')}/reviews",
+            }
+            subs = (await db.execute(_PUSH_SUBS_SQL, {"user_id": user_id})).all()
+            for sub in subs:
+                try:
+                    await asyncio.to_thread(push.send_push, sub, payload)
+                    push_sent += 1
+                    analytics.capture(user_id, "reminder_sent", {"due_count": due_count, "channel": "push"})
+                except push.PushGone:
+                    # Dead endpoint (browser unsubscribed, uninstalled, etc.) —
+                    # prune so future runs don't keep retrying it.
+                    await db.execute(_DELETE_PUSH_SUB_SQL, {"id": sub.id})
+                    await db.commit()
+                    push_pruned += 1
+                except push.PushError as e:
+                    push_errors += 1
+                    if len(error_samples) < 5:
+                        error_samples.append(str(e))
 
     return {
         "status": "ok",
@@ -152,4 +198,7 @@ async def send_due_reminders(db: AsyncSession) -> dict:
         "sent": sent,
         "errors": errors,
         "error_samples": error_samples,
+        "push_sent": push_sent,
+        "push_errors": push_errors,
+        "push_pruned": push_pruned,
     }
