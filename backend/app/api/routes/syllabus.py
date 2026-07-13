@@ -33,6 +33,7 @@ from app.services.syllabus import (
     SyllabusDraft,
     SyllabusError,
 )
+from app.services.metrics import record_metric_event
 
 router = APIRouter()
 
@@ -200,6 +201,13 @@ async def commit_syllabus(
             )
             order += 1
             total += 1
+
+    if body.edit_delta:
+        await record_metric_event(
+            db, user_id, "extraction_edit_delta",
+            payload=body.edit_delta.model_dump(),
+            entity_id=roadmap.id,
+        )
 
     await db.commit()
     return SyllabusCommitOut(roadmap_id=roadmap.id, total_nodes=total)

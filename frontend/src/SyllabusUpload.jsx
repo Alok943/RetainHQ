@@ -10,6 +10,35 @@ import { useSeo } from './lib/useSeo';
 const MAX_PDF_MB = 10;
 const MAX_TEXT_CHARS = 40000; // mirrors backend MAX_SYLLABUS_CHARS
 
+// Normalized (trim + lowercase) topic titles, flattened across all units —
+// the comparison key for the extraction_edit_delta metric.
+function flattenTopicTitles(draftData) {
+  return (draftData?.units || [])
+    .flatMap((u) => (u.topics || []).map((t) => (t.title || '').trim().toLowerCase()))
+    .filter(Boolean);
+}
+
+// Multiset diff (no per-topic identity to detect a true rename, so this is
+// added/removed only — a title edit reads as one remove + one add, which is
+// an honest description of what happened from the data we have).
+function computeEditDelta(originalTitles, finalTitles) {
+  const remaining = new Map();
+  for (const t of originalTitles) remaining.set(t, (remaining.get(t) || 0) + 1);
+  let added = 0;
+  for (const t of finalTitles) {
+    const n = remaining.get(t) || 0;
+    if (n > 0) remaining.set(t, n - 1);
+    else added += 1;
+  }
+  const removed = [...remaining.values()].reduce((a, b) => a + b, 0);
+  return {
+    topics_original: originalTitles.length,
+    topics_final: finalTitles.length,
+    topics_added: added,
+    topics_removed: removed,
+  };
+}
+
 // Phases: 'upload' → 'extracting' → 'review' → 'saving'
 // The draft is NEVER auto-saved — the user reviews/edits, then commits explicitly.
 
@@ -128,6 +157,10 @@ function SyllabusUpload() {
   const [error, setError] = useState('');
   const [draft, setDraft] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  // Frozen snapshot of the LLM's extraction, captured once at extract time —
+  // never mutated — so save() can diff the user's final edit against it
+  // (extraction_edit_delta metric). Title-only, case/whitespace-normalized.
+  const [originalTopicTitles, setOriginalTopicTitles] = useState(null);
   // Lifetime quota (3 per user, delete ≠ refund). null while loading; fail-open
   // so a quota-endpoint hiccup never blocks the page — commit still enforces it.
   const [quota, setQuota] = useState(null);
@@ -160,6 +193,7 @@ function SyllabusUpload() {
       form.append('file', file);
       const data = await apiFetch('/api/syllabus/extract', { method: 'POST', body: form });
       setDraft(data);
+      setOriginalTopicTitles(flattenTopicTitles(data));
       setPhase('review');
     } catch (err) {
       setError(err.message || 'Extraction failed — try again.');
@@ -182,6 +216,7 @@ function SyllabusUpload() {
         body: JSON.stringify({ text }),
       });
       setDraft(data);
+      setOriginalTopicTitles(flattenTopicTitles(data));
       setPhase('review');
     } catch (err) {
       setError(err.message || 'Extraction failed — try again.');
@@ -210,12 +245,15 @@ function SyllabusUpload() {
     setError('');
     setPhase('saving');
     try {
+      const finalTitles = flattenTopicTitles({ units });
+      const editDelta = originalTopicTitles ? computeEditDelta(originalTopicTitles, finalTitles) : undefined;
       const res = await apiFetch('/api/syllabus/commit', {
         method: 'POST',
         body: JSON.stringify({
           title: draft.title.trim(),
           description: (draft.description || '').trim(),
           units,
+          edit_delta: editDelta,
         }),
       });
       navigate(`/roadmaps/${res.roadmap_id}`);

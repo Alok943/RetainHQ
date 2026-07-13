@@ -214,6 +214,20 @@ class ReminderLog(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class MetricEvent(SQLModel, table=True):
+    """Generic learning-analytics event store — heterogeneous/exploratory
+    signals that don't warrant a dedicated table (extraction edit-deltas,
+    future ad-hoc metrics). `entity_id` is a loose FK (no constraint — the
+    referenced table varies by event_type) for joining back to the source row."""
+    __tablename__ = "metric_events"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    event_type: str = Field(index=True)
+    entity_id: Optional[uuid.UUID] = None
+    payload: dict = Field(default_factory=dict, sa_column=Column(_JSONB))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class PushSubscription(SQLModel, table=True):
     """One row per browser/device Web Push subscription. `endpoint` is unique —
     it's the browser push service's per-registration URL, so it's the natural
