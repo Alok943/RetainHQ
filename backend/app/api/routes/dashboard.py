@@ -255,16 +255,22 @@ async def get_source_retention(
     'Retention by Source' banner. Each group needs its own SOURCE_RETENTION_MIN
     completed reviews to be shown — a source with 1 review isn't a rate."""
     user_id = uuid.UUID(current_user.id)
+    # Built once, reused in both select() and group_by() — two SEPARATE
+    # func.coalesce(...) calls compile to textually-distinct bound-parameter
+    # expressions ($1 vs $2, same value), which Postgres's GROUP BY validity
+    # check does NOT treat as equivalent (unlike SQLite, which let this slide —
+    # caught testing against a real Postgres DB, not the SQLite test harness).
+    source_type_expr = func.coalesce(Activity.source_type, "other").label("source_type")
     stmt = (
         select(
-            func.coalesce(Activity.source_type, "other").label("source_type"),
+            source_type_expr,
             func.count(Review.id).label("completed"),
             func.count(Review.id).filter(Review.recalled == True).label("recalled"),
         )
         .select_from(Review)
         .join(Activity, Review.activity_id == Activity.id)
         .where(Review.user_id == user_id, Review.status == "completed")
-        .group_by(func.coalesce(Activity.source_type, "other"))
+        .group_by(source_type_expr)
     )
     rows = (await db.execute(stmt)).all()
     sources = [
