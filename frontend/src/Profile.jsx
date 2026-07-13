@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Shield, LogOut, Trash2, Sun, Moon, GraduationCap, School } from 'lucide-react';
+import { User, Mail, Shield, LogOut, Trash2, Sun, Moon, GraduationCap, School, Bell, BellOff } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from './lib/theme';
 import { apiFetch } from './lib/api';
+import { useToast } from './lib/ToastContext';
+import { getPushState, subscribePush, unsubscribePush, isPushSupported } from './lib/push';
+import { track, EVENTS } from './lib/analytics';
 
 function Profile() {
   const navigate = useNavigate();
@@ -12,13 +15,45 @@ function Profile() {
   const [user, setUser] = useState(null);
   const [audience, setAudience] = useState(null);
   const [savingAudience, setSavingAudience] = useState(false);
+  const [pushState, setPushState] = useState(null); // null = loading
+  const [pushBusy, setPushBusy] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
     apiFetch('/api/prefs/').then((p) => setAudience(p.audience)).catch(() => {});
+    getPushState().then(setPushState);
   }, []);
+
+  const togglePush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (pushState === 'subscribed') {
+        await unsubscribePush();
+        track(EVENTS.PUSH_UNSUBSCRIBED);
+        setPushState('prompt');
+      } else {
+        await subscribePush();
+        track(EVENTS.PUSH_SUBSCRIBED);
+        setPushState('subscribed');
+      }
+    } catch (e) {
+      // Notification.requestPermission resolving 'denied' throws from
+      // pushManager.subscribe — reflect the real browser state, don't guess.
+      const state = await getPushState();
+      setPushState(state);
+      if (state === 'denied') {
+        toast.error("Notifications are blocked for RetainHQ — enable them in your browser's site settings to turn this on.");
+      } else {
+        toast.error("Couldn't turn on notifications — try again.");
+      }
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const switchAudience = async (value) => {
     if (value === audience || savingAudience) return;
@@ -208,6 +243,61 @@ function Profile() {
             />
           </button>
         </div>
+      </div>
+
+      {/* Push notifications */}
+      <div className="kinetic-card bg-white p-6">
+        <h3 className="font-sans text-sm font-semibold text-[#0F172A] mb-4 uppercase tracking-widest">Notifications</h3>
+        {!isPushSupported() ? (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[rgba(15,23,42,0.05)] flex items-center justify-center text-[#64748B]">
+              <BellOff size={16} />
+            </div>
+            <div>
+              <p className="font-sans text-sm font-semibold text-[#0F172A]">Daily reminder notifications</p>
+              <p className="font-sans text-xs text-[#64748B] mt-0.5">
+                Not supported in this browser. On iPhone, add RetainHQ to your Home Screen first (Share → Add to Home Screen), then enable notifications from there.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-[rgba(15,23,42,0.05)] flex items-center justify-center text-[#0891B2]">
+                {pushState === 'subscribed' ? <Bell size={16} /> : <BellOff size={16} />}
+              </div>
+              <div>
+                <p className="font-sans text-sm font-semibold text-[#0F172A]">Daily reminder notifications</p>
+                <p className="font-sans text-xs text-[#64748B] mt-0.5">
+                  {pushState === 'denied'
+                    ? 'Blocked — enable in your browser\'s site settings for retainhq.app.'
+                    : pushState === 'subscribed'
+                      ? 'On. Mirrors your daily reminder email.'
+                      : 'Get a notification when reviews are due, same content as the daily email.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={pushState === 'subscribed'}
+              aria-label="Toggle push notifications"
+              onClick={togglePush}
+              disabled={pushState === null || pushState === 'denied' || pushBusy}
+              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0891B2] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                pushState === 'subscribed' ? 'bg-[#0891B2]' : 'bg-slate-200'
+              }`}
+            >
+              <span
+                style={{ backgroundColor: '#ffffff' }}
+                className={`inline-block h-5 w-5 transform rounded-full shadow transition-transform duration-200 ${
+                  pushState === 'subscribed' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Learning catalog (career vs school) */}

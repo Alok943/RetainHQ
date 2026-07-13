@@ -52,6 +52,8 @@ export const EVENTS = {
   // --- Cross-cutting ---
   AUTH_WALL_HIT: 'auth_wall_hit',
   API_ERROR: 'api_error', // a server/network failure the user actually hit
+  PUSH_SUBSCRIBED: 'push_subscribed',
+  PUSH_UNSUBSCRIBED: 'push_unsubscribed',
 };
 
 export function initAnalytics() {

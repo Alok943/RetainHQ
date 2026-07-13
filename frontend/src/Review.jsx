@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb, Bell, X } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { track, EVENTS } from './lib/analytics';
+import { isPushSupported, subscribePush } from './lib/push';
 import Hint from './Hint';
 import { CONTENT_KEY_BY_TITLE } from './lib/contentRoadmaps';
 
@@ -32,6 +33,60 @@ const OUTCOMES = [
   { key: 'good',   label: 'Good',      desc: "Recalled with minor effort", rating: 'medium', recalled: true,  color: '#0891B2' },
   { key: 'easy',   label: 'Easy',      desc: "Instantly knew it", rating: 'easy',   recalled: true,  color: '#0F766E' },
 ];
+
+const PUSH_PROMPT_DISMISSED_KEY = 'retainhq_push_prompt_dismissed';
+
+// One-time nudge on the done-screen — right after finishing reviews is the
+// moment the value of "get notified next time" is most obvious. Shows once
+// ever (localStorage flag), only while permission is still askable.
+function PushPromptCard() {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY) === '1'
+  );
+  const [subscribing, setSubscribing] = useState(false);
+
+  const dismiss = () => {
+    localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, '1');
+    setDismissed(true);
+  };
+
+  const enable = async () => {
+    setSubscribing(true);
+    try {
+      await subscribePush();
+      track(EVENTS.PUSH_SUBSCRIBED, { source: 'review_done_card' });
+    } catch (e) {
+      // Denied or failed — either way, don't keep asking.
+    } finally {
+      setSubscribing(false);
+      dismiss();
+    }
+  };
+
+  if (dismissed || !isPushSupported() || Notification.permission !== 'default') return null;
+
+  return (
+    <div className="max-w-sm w-full rounded-xl border border-[#0891B2]/25 bg-[#0891B2]/[0.05] p-4 flex items-start gap-3 text-left">
+      <div className="w-8 h-8 rounded-full bg-[#0891B2]/10 flex items-center justify-center text-[#0891B2] shrink-0">
+        <Bell size={15} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-sans text-sm font-semibold text-[#0F172A]">Get notified when reviews are due</p>
+        <p className="font-sans text-xs text-[#64748B] mt-0.5 mb-2.5">Same as the daily email, just faster to act on.</p>
+        <button
+          onClick={enable}
+          disabled={subscribing}
+          className="font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0e7490] disabled:opacity-60"
+        >
+          {subscribing ? 'Enabling…' : 'Turn on notifications'}
+        </button>
+      </div>
+      <button onClick={dismiss} aria-label="Dismiss" className="shrink-0 text-[#64748B] hover:text-[#0F172A]">
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
 
 // Map the AI grader's verdict to a suggested outcome chip. Advisory only —
 // the user still clicks to confirm, so a wrong grade never auto-submits.
@@ -362,6 +417,7 @@ function Review({ onBack }) {
             </Hint>
           </div>
         )}
+        {done && <PushPromptCard />}
         <button onClick={onBack} className="kinetic-btn kinetic-accent-gradient px-6 py-2.5 text-sm mt-2">
           Back to Dashboard
         </button>
