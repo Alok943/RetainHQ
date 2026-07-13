@@ -208,3 +208,17 @@ class ReminderLog(SQLModel, table=True):
     sent_on: date  # UTC date the reminder was sent
     due_count: int = Field(default=0)  # how many were due at send time (for later analysis)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PushSubscription(SQLModel, table=True):
+    """One row per browser/device Web Push subscription. `endpoint` is unique —
+    it's the browser push service's per-registration URL, so it's the natural
+    upsert key (a re-subscribe from the same device/browser updates in place)."""
+    __tablename__ = "push_subscriptions"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    endpoint: str = Field(unique=True)
+    p256dh: str
+    auth: str
+    user_agent: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)

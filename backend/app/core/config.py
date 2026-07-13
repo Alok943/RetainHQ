@@ -79,6 +79,15 @@ class Settings(BaseSettings):
     SENTRY_ENVIRONMENT: str = "development"
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
 
+    # Web Push (VAPID). No-op until both keys are set — generate once locally
+    # with `vapid --gen` (py-vapid, installs with pywebpush); both keys live in
+    # Render only. The public key is served to the frontend via
+    # GET /api/push/vapid-public-key (single source of truth, avoids a
+    # Vercel/Render key-sync hazard).
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_SUBJECT: str = "mailto:reviews@retainhq.app"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @model_validator(mode="after")
