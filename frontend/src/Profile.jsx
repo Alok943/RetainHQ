@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Shield, LogOut, Trash2, Sun, Moon, GraduationCap, School, Bell, BellOff } from 'lucide-react';
+import { User, Mail, Shield, LogOut, Trash2, Sun, Moon, GraduationCap, School, Bell, BellOff, Presentation, ChevronRight } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from './lib/theme';
@@ -17,7 +17,12 @@ function Profile() {
   const [savingAudience, setSavingAudience] = useState(false);
   const [pushState, setPushState] = useState(null); // null = loading
   const [pushBusy, setPushBusy] = useState(false);
+  const [classrooms, setClassrooms] = useState(null); // { teaching, enrolled }
   const toast = useToast();
+
+  const loadClassrooms = () => {
+    apiFetch('/api/classrooms/mine').then(setClassrooms).catch(() => {});
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -25,7 +30,19 @@ function Profile() {
     });
     apiFetch('/api/prefs/').then((p) => setAudience(p.audience)).catch(() => {});
     getPushState().then(setPushState);
+    loadClassrooms();
   }, []);
+
+  const handleLeaveClassroom = async (classroomId, name) => {
+    if (!window.confirm(`Leave "${name}"? Your teacher loses visibility into your progress immediately — nothing else changes.`)) return;
+    try {
+      await apiFetch(`/api/classrooms/${classroomId}/membership`, { method: 'DELETE' });
+      toast.success(`Left ${name}.`);
+      loadClassrooms();
+    } catch {
+      // apiFetch already toasts server-side failures
+    }
+  };
 
   const togglePush = async () => {
     if (pushBusy) return;
@@ -334,6 +351,58 @@ function Profile() {
           ))}
         </div>
       </div>
+
+      {/* Teach entry point — discoverable before the nav item appears (which only
+          shows once GET /api/classrooms/mine.teaching is non-empty) */}
+      <div className="kinetic-card bg-white p-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[rgba(15,23,42,0.05)] flex items-center justify-center text-[#0891B2] shrink-0">
+            <Presentation size={16} />
+          </div>
+          <div>
+            <p className="font-sans text-sm font-semibold text-[#0F172A]">Set up your class</p>
+            <p className="font-sans text-xs text-[#64748B] mt-0.5">
+              {classrooms?.teaching?.length
+                ? `You teach ${classrooms.teaching.length} class${classrooms.teaching.length === 1 ? '' : 'es'}.`
+                : 'Run a live gap map and roster for a class of students.'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/teach')}
+          className="shrink-0 flex items-center gap-1 font-sans text-sm font-semibold text-[#0891B2] hover:text-[#06B6D4] transition-colors"
+        >
+          {classrooms?.teaching?.length ? 'Manage' : 'Get started'} <ChevronRight size={15} />
+        </button>
+      </div>
+
+      {/* My Class — school-audience students see the classroom(s) they've joined */}
+      {audience === 'school' && classrooms?.enrolled?.length > 0 && (
+        <div className="kinetic-card bg-white p-6">
+          <h3 className="font-sans text-sm font-semibold text-[#0F172A] mb-1 uppercase tracking-widest">My Class</h3>
+          <p className="font-sans text-xs text-[#64748B] mb-4">
+            Classes you've joined — your teacher sees your activity, review outcomes, and mastery on these subjects only.
+          </p>
+          <div className="flex flex-col gap-2">
+            {classrooms.enrolled.map((c) => (
+              <div key={c.id} className="flex items-center justify-between gap-3 py-2.5 border-b border-[rgba(15,23,42,0.05)] last:border-b-0">
+                <div className="min-w-0">
+                  <p className="font-sans text-sm font-semibold text-[#0F172A] truncate">{c.name}</p>
+                  <p className="font-sans text-xs text-[#64748B] mt-0.5 truncate">
+                    {c.school_name || 'No school name set'} · joined as "{c.display_name}"
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleLeaveClassroom(c.id, c.name)}
+                  className="shrink-0 text-xs font-semibold text-[#B91C1C] hover:text-[#ba1a1a] transition-colors"
+                >
+                  Leave
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Danger Zone */}
       <div className="mt-4 p-6 border border-[#B91C1C]/20 bg-[#B91C1C]/5 rounded">

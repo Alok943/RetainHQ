@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal, Presentation } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -16,6 +16,7 @@ import { pageview, trackOnce, EVENTS } from './lib/analytics';
 import Login from './Login';
 import Logo from './Logo';
 import WelcomeModal from './WelcomeModal';
+import JoinClassroom from './JoinClassroom';
 
 const Home = lazy(() => import('./Home'));
 const Review = lazy(() => import('./Review'));
@@ -32,6 +33,8 @@ const Admin = lazy(() => import('./Admin'));
 const DsaDev = lazy(() => import('./dsa/DsaDev')); // TEMP: DSA pilot harness (/dsa-dev)
 const PhysicsNumericals = lazy(() => import('./PhysicsNumericals'));
 const Tests = lazy(() => import('./Tests'));
+const Teach = lazy(() => import('./Teach'));
+const TeachClassroom = lazy(() => import('./TeachClassroom'));
 
 const ADMIN_EMAIL = 'aloksingh98541@gmail.com';
 
@@ -62,6 +65,20 @@ function AppLayout() {
       .catch(() => {});
   }, [session, location.pathname]);
 
+  // "Teach" nav entry only shows once the caller actually teaches a class
+  // (no role column — spec §2: "is a teacher" == "owns >=1 classroom").
+  // Same fetch-on-route-change pattern as dueCount above.
+  const [teachingCount, setTeachingCount] = useState(0);
+  useEffect(() => {
+    if (!session) {
+      setTeachingCount(0);
+      return;
+    }
+    apiFetch('/api/classrooms/mine')
+      .then((d) => setTeachingCount(d?.teaching?.length ?? 0))
+      .catch(() => {});
+  }, [session, location.pathname]);
+
   const logoVariant = theme === 'dark' ? 'light' : 'dark';
 
   const handleSignOut = async () => {
@@ -77,12 +94,13 @@ function AppLayout() {
     if (path.startsWith('/paths')) return 'paths';
     if (path.startsWith('/vault')) return 'vault';
     if (path.startsWith('/analytics')) return 'analytics';
+    if (path.startsWith('/teach')) return 'teach';
     if (path.startsWith('/admin')) return 'admin';
     return 'dashboard';
   };
-  
+
   const activeTab = getActiveTab();
-  const isMoreActive = ['paths', 'vault', 'analytics', 'admin'].includes(activeTab);
+  const isMoreActive = ['paths', 'vault', 'analytics', 'teach', 'admin'].includes(activeTab);
 
   const email = session?.user?.email || '';
   const initials = email ? email.substring(0, 2).toUpperCase() : '?';
@@ -120,6 +138,7 @@ function AppLayout() {
             <SidebarItem isCollapsed={isCollapsed} icon={<RouteIcon size={20} />} label="Career Paths" active={activeTab === 'paths'} to="/paths" />
             <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} to="/vault" />
             <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} to="/analytics" />
+            {teachingCount > 0 && <SidebarItem isCollapsed={isCollapsed} icon={<Presentation size={20} />} label="Teach" active={activeTab === 'teach'} to="/teach" />}
             {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} to="/admin" />}
           </nav>
           
@@ -222,6 +241,8 @@ function AppLayout() {
             <Route path="dsa-dev" element={<DsaDev />} />
             <Route path="vault" element={<KnowledgeVault />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="teach" element={<Teach />} />
+            <Route path="teach/:id" element={<TeachClassroom />} />
             <Route path="profile" element={<Profile />} />
             {isAdmin && <Route path="admin" element={<Admin />} />}
             {/* Fallback internal route — absolute path: a relative "dashboard" inside
@@ -267,6 +288,7 @@ function AppLayout() {
                   <MenuButton icon={<RouteIcon size={16} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => setShowMoreMenu(false)} to="/paths" />
                   <MenuButton icon={<Library size={16} />} label="Vault" active={activeTab === 'vault'} onClick={() => setShowMoreMenu(false)} to="/vault" />
                   <MenuButton icon={<TrendingUp size={16} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => setShowMoreMenu(false)} to="/analytics" />
+                  {teachingCount > 0 && <MenuButton icon={<Presentation size={16} />} label="Teach" active={activeTab === 'teach'} onClick={() => setShowMoreMenu(false)} to="/teach" />}
                   {isAdmin && <MenuButton icon={<ShieldCheck size={16} />} label="Admin" active={activeTab === 'admin'} onClick={() => setShowMoreMenu(false)} to="/admin" />}
                 </div>
               </>
@@ -381,10 +403,13 @@ function Root() {
 
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
+      <Route
+        path="/"
+        element={session ? <Navigate to="/dashboard" replace /> : <Login />}
       />
+      {/* Top-level (outside AppLayout) — a student may follow a join code before
+          ever signing in, so this can't sit behind the authed shell's routing. */}
+      <Route path="/join/:code" element={<JoinClassroom />} />
       <Route path="/*" element={<AppLayout />} />
     </Routes>
   );

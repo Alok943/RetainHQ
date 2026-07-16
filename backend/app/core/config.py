@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     SYLLABUS_DAILY_LIMIT: int = 5  # extractions per user per UTC day (API-budget guard)
     SYLLABUS_LIFETIME_LIMIT: int = 3  # personal roadmaps per user, LIFETIME (delete ≠ refund)
 
+    # Teacher dashboard (SPEC-teacher-dashboard.md). Abuse bound on classroom
+    # creation, same spirit as the syllabus caps above — not a pricing tier.
+    MAX_CLASSROOMS_PER_TEACHER: int = 20
+
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
     # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger
     # endpoint — if unset, the endpoint refuses all callers (no open trigger).

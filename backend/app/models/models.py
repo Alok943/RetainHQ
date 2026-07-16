@@ -240,3 +240,47 @@ class PushSubscription(SQLModel, table=True):
     auth: str
     user_agent: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Classroom(SQLModel, table=True):
+    """One teacher-owned classroom (SPEC-teacher-dashboard.md §2). "Is a teacher"
+    == "owns >=1 classroom" — there is deliberately no user_prefs.role column.
+    `join_code` is the student enrollment key (8 chars, unambiguous alphabet —
+    no 0/O/1/I). `school_name` is free text for now: no school entity in v1.
+    `archived_at` is a soft archive — hides the classroom from lists but keeps
+    its history for analytics."""
+    __tablename__ = "classrooms"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    teacher_user_id: uuid.UUID = Field(index=True)
+    name: str
+    school_name: Optional[str] = None
+    join_code: str = Field(unique=True, index=True)
+    archived_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ClassroomMember(SQLModel, table=True):
+    """One student's membership in a classroom.
+
+    Roll-call name shown to the teacher. Captured at join (student types it,
+    e.g. "Priya Sharma, Roll 14") and editable by the teacher afterward. We do
+    NOT surface the student's Google account name/email to the teacher — see
+    SPEC-teacher-dashboard.md §5."""
+    __tablename__ = "classroom_members"
+    __table_args__ = (UniqueConstraint("classroom_id", "student_user_id", name="uq_class_student"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    classroom_id: uuid.UUID = Field(foreign_key="classrooms.id", ondelete="CASCADE")
+    student_user_id: uuid.UUID = Field(index=True)
+    display_name: str
+    joined_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ClassroomRoadmap(SQLModel, table=True):
+    """Which catalog roadmaps (subjects/chapters) this classroom tracks. The gap
+    map and all class aggregates are scoped to these — a teacher never sees
+    signals from a student's personal/career roadmaps."""
+    __tablename__ = "classroom_roadmaps"
+    __table_args__ = (UniqueConstraint("classroom_id", "roadmap_id", name="uq_class_roadmap"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    classroom_id: uuid.UUID = Field(foreign_key="classrooms.id", ondelete="CASCADE")
+    roadmap_id: uuid.UUID = Field(foreign_key="roadmaps.id", ondelete="CASCADE")
