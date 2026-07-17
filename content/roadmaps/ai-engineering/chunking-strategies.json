@@ -23,126 +23,127 @@
   "glossary": [
     {
       "term": "chunking",
-      "definition": "The process of breaking a large document into smaller, digestible pieces so an AI can understand and retrieve specific details easily."
+      "definition": "Splitting a large document into smaller pieces called chunks so that each piece can be embedded and searched individually."
     },
     {
       "term": "overlap",
-      "definition": "A technique where chunks share a bit of text at their edges to ensure sentences are not cut in half and context is not lost."
+      "definition": "A technique where the end of one chunk is repeated at the start of the next chunk, so important context at the boundary is not lost."
     },
     {
       "term": "recursive character chunking",
-      "definition": "A smart way of splitting text that tries to keep natural boundaries like paragraphs and sentences intact."
+      "definition": "A splitting method that tries to keep natural boundaries — paragraphs and sentences — intact, only cutting inside a sentence as a last resort."
     }
   ],
   "hook": {
-    "scenario": "You have a 50-page PDF. You slice it into fixed 100-word blocks. A user asks about 'pricing'. The retriever finds a block saying 'It costs $50 per month', but misses the previous sentence that specifies 'For the Enterprise tier:'. The context was sliced cleanly in half.",
-    "question": "How do you split a document so that each piece still makes sense on its own?"
+    "scenario": "You have a 50-page PDF. You slice it into fixed 100-word blocks. A user asks about 'pricing'. The retriever returns a block that says 'It costs $50 per month' — but misses the previous sentence: 'For the Enterprise tier:'. The price has no context.",
+    "question": "Before you read on, predict: what simple change to the splitting strategy would prevent this problem?"
   },
   "mental_model": {
-    "intuition": "Chunking is like framing photographs of a landscape. If the frame is too small, you can't tell what you're looking at. If it's too big, the detail is lost.",
-    "description": "Before you embed documents, you have to cut them into smaller, digestible pieces called 'chunks'. A chunk needs to be large enough to contain full context (so the LLM understands it) but small enough that retrieving it is precise and cheap. To prevent losing context at the boundaries, we intentionally overlap the edges."
+    "intuition": "Chunking is like framing photographs of a landscape. A frame too small shows nothing. A frame too large loses all detail.",
+    "description": "Before you embed documents, you must cut them into smaller pieces called chunks. A chunk must be large enough to contain full context — so the LLM understands it — but small enough that retrieving it is precise and affordable. To prevent losing context at boundaries, chunks intentionally overlap at their edges."
   },
   "sections": [
     {
-      "body": "You cannot embed an entire 50-page manual as a single vector. A single vector representing 50 pages is too diluted — it averages out all the specific details. If you search for 'reset password', that entire document won't rank highly because 'password' is only 0.1% of its content. We must split it into chunks.",
-      "recap": "Documents must be split into chunks so their embeddings remain specific and retrievable."
+      "body": "You cannot embed an entire 50-page manual as a single vector. A single vector for 50 pages is too diluted — it averages out all the specific details. If you search for 'reset password', that entire document will not rank highly because 'password' is only 0.1% of its content. You must split it into chunks.",
+      "recap": "Documents must be split into chunks so their embeddings stay specific and retrievable."
     },
     {
-      "body": "The simplest method is 'fixed-size chunking'. You literally count characters or tokens (e.g. 512 tokens) and slice the text. It's fast and easy, but it blindly cuts through the middle of sentences and paragraphs, destroying the meaning right at the boundary.",
-      "recap": "Fixed-size chunking is fast but aggressively breaks context."
+      "body": "The simplest method is fixed-size chunking: count a set number of characters or tokens and slice the text at that count. It is fast and easy, but it cuts blindly through sentences and paragraphs, destroying context at the boundary.",
+      "recap": "Fixed-size chunking is fast but breaks sentences in half without warning."
     },
     {
-      "body": "To fix the boundary problem, we use 'overlap'. We slide the window forward by a smaller amount than the chunk size. If chunks are 500 characters, we might overlap them by 100 characters. That way, if a crucial sentence falls on a boundary, it will be fully captured in either the preceding or succeeding chunk.",
+      "body": "To fix the boundary problem, use overlap. Instead of starting the next chunk exactly where the last one ended, go back a little and repeat some text. If chunks are 500 characters, overlap them by 50 characters. A sentence that falls on a boundary will be fully included in either the chunk before or the chunk after.",
       "image": {
         "asset": "ai-engineering/chunking-strategies/overlap.png",
         "alt": "A document split into four chunks that overlap at their edges, the shared regions highlighted."
       },
-      "recap": "Overlap ensures sentences aren't cleanly cut in half across boundaries."
+      "recap": "Overlap ensures sentences at the boundary appear whole in at least one chunk."
     },
     {
-      "body": "A smarter approach is 'recursive character chunking'. Instead of blindly counting tokens, it tries to split on natural boundaries: double newlines (paragraphs), then single newlines, then spaces. It only resorts to slicing words if a single paragraph is longer than your maximum chunk size.",
+      "body": "A smarter approach is recursive character chunking. Instead of counting tokens blindly, it tries to split on natural boundaries first: double newlines (paragraphs), then single newlines, then spaces. It only cuts inside a word if a single paragraph is longer than your maximum chunk size. This is the standard starting point for most RAG systems.",
       "recap": "Recursive chunking respects paragraph and sentence boundaries where possible."
     },
     {
-      "body": "Chunk size is a tightrope. Small chunks (100 tokens) are highly precise but lack surrounding context. Large chunks (1000 tokens) have great context but add noise, consume more prompt space, and cost more. Most systems start around 500 tokens with a 10% overlap and tune from there.",
-      "recap": "Pipeline: Docs → Chunk → Embed → Store. Chunking determines the exact text the LLM will eventually read."
+      "body": "**Chunk size is a trade-off.** Small chunks (100 tokens) are precise but lack surrounding context. Large chunks (1,000 tokens) have great context but add noise, use more prompt tokens, and cost more. Most systems start at about 500 tokens with 10% overlap and tune from there. The right size depends on the data — a dense legal contract may need sentence-level chunks, while a blog post may work fine with paragraph-level chunks.",
+      "recap": "Pipeline: Docs → Chunk → Embed → Store. Chunking determines exactly what text the LLM will eventually read."
     }
   ],
   "code_snippets": [
     {
-      "title": "Naive fixed-size chunking (usually a bad idea)",
+      "title": "Naive fixed-size chunking — shown so you know what to avoid",
       "language": "python",
-      "code": "def fixed_size_chunk(text: str, chunk_size=500):\n    # Blindly slices by character count, breaking sentences in half.\n    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]\n\nchunks = fixed_size_chunk(\"This is a very long document...\")",
-      "explanation": "This method has no awareness of sentences or paragraphs. It will routinely slice a critical word or sentence right down the middle, ruining its embedding."
+      "code": "def fixed_chunk(text: str, size=500) -> list[str]:\n    return [text[i:i + size] for i in range(0, len(text), size)]\n\nchunks = fixed_chunk('This is a very long document...')",
+      "explanation": "This method has no awareness of sentences or paragraphs. It will often cut an important word right in the middle, producing a chunk with broken context at both ends."
     },
     {
-      "title": "Recursive chunking with overlap (standard practice)",
+      "title": "Recursive chunking with overlap — standard practice",
       "language": "python",
-      "code": "from langchain_text_splitters import RecursiveCharacterTextSplitter\n\n# Split by paragraphs, then sentences, keeping chunks under 500 chars.\n# Overlap by 50 chars so concepts at the boundary aren't lost.\nsplitter = RecursiveCharacterTextSplitter(\n    chunk_size=500,\n    chunk_overlap=50,\n    separators=[\"\\n\\n\", \"\\n\", \" \", \"\"]\n)\n\nchunks = splitter.split_text(long_document_string)",
-      "explanation": "This is the default starting point for most RAG systems. It respects natural language boundaries (like paragraphs) before it resorts to brute-force splitting."
+      "code": "from langchain_text_splitters import RecursiveCharacterTextSplitter\n\n# Split by paragraphs, then sentences, keeping chunks under 500 chars.\n# Overlap by 50 chars so context at the boundary is not lost.\nsplitter = RecursiveCharacterTextSplitter(\n    chunk_size=500,\n    chunk_overlap=50,\n    separators=[\"\\n\\n\", \"\\n\", \" \", \"\"]\n)\n\nchunks = splitter.split_text(long_document_string)",
+      "explanation": "This is the default starting point for most RAG systems. It respects natural language boundaries (paragraphs, then sentences) before it resorts to splitting words."
     }
   ],
   "key_points": [
     {
-      "title": "Why we chunk",
-      "detail": "Large documents dilute embeddings. We need smaller chunks so the meaning is concentrated."
+      "title": "Why chunk",
+      "detail": "Large documents dilute embeddings. Smaller chunks keep the meaning concentrated and retrievable."
     },
     {
-      "title": "Overlap is mandatory",
-      "detail": "Always overlap chunks by 10-20% to prevent losing context when a sentence straddles a boundary."
+      "title": "Overlap is not optional",
+      "detail": "Always overlap chunks by 10–20% to prevent losing context when a sentence sits exactly on a boundary."
     },
     {
-      "title": "Recursive > Fixed",
+      "title": "Recursive > fixed",
       "detail": "Splitting by paragraphs and sentences preserves meaning far better than blindly splitting by character count."
     },
     {
-      "title": "The Goldilocks size",
-      "detail": "Too small = lacks context. Too large = too much noise and high token cost. 250-500 tokens is a standard starting point."
+      "title": "The right size depends on the data",
+      "detail": "250–500 tokens is a common starting point, but tune based on your actual documents and retrieval quality."
     }
   ],
   "common_mistakes": [
     {
-      "title": "Thinking there's a perfect universal chunk size",
-      "explanation": "Optimal chunk size depends on the data. A dense legal contract might need sentence-level chunks, while a blog post might need paragraph-level chunks."
+      "title": "Thinking there is a perfect universal chunk size",
+      "explanation": "The right size depends on the data. A dense legal contract may need sentence-level chunks. A blog post may work at paragraph level. Always measure retrieval quality on your actual documents."
     },
     {
-      "title": "Forgetting to overlap",
-      "explanation": "Without overlap, a sentence that gets cut in half will have two separate, nonsensical embeddings. Neither will match the user's query."
-    },
-    {
-      "title": "Chunking code like text",
-      "explanation": "Standard text splitters destroy source code by splitting functions in half. Code requires specialized AST-aware chunking to keep functions and classes intact."
+      "title": "Forgetting to set overlap",
+      "explanation": "Without overlap, a sentence cut in half across two chunks produces two broken embeddings. Neither half will match a user's query well. Overlap of 10–20% is standard practice."
     }
   ],
   "recall_questions": [
     {
-      "q": "Why can't you just embed a 50-page document as a single vector?",
-      "answer": "A single embedding averages out the entire document's meaning. The specific details get diluted, making it impossible to retrieve for a specific, narrow query.",
+      "q": "Explain to a classmate why you cannot just embed an entire 50-page document as a single vector.",
+      "answer": "A single embedding for 50 pages averages out all the specific details. The meaning of any one topic — like password reset — gets diluted by everything else in the document. You need smaller chunks so that each embedding captures one specific topic.",
       "tier": "tier1"
     },
     {
-      "q": "What is the purpose of 'chunk overlap'?",
-      "answer": "It ensures that if a sentence or concept falls exactly on the boundary between two chunks, it is fully preserved in at least one of them rather than being cut in half.",
+      "q": "What is the purpose of chunk overlap?",
+      "answer": "It ensures that if a sentence or key phrase falls exactly on the boundary between two chunks, it appears fully in at least one of them rather than being cut in half.",
       "tier": "tier1"
     },
     {
-      "q": "How does Recursive Character chunking improve upon fixed-size chunking?",
-      "answer": "Instead of blindly slicing text at a specific character count, it attempts to split on natural boundaries (like double newlines for paragraphs, then single newlines) to preserve semantic meaning.",
+      "q": "How does recursive character chunking improve upon fixed-size chunking?",
+      "answer": "Instead of cutting at a fixed character count, it tries to split on natural boundaries first — double newlines for paragraphs, then single newlines — and only cuts inside a sentence as a last resort. This keeps more context intact.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you increase the chunk size from 200 tokens to 800 tokens — what do you gain and what do you lose?",
+      "answer": "You gain more surrounding context per chunk, which helps when the answer depends on nearby sentences. You lose precision: the embedding is diluted by more text, so retrieval may return chunks that are only loosely relevant. You also use more prompt tokens per retrieved chunk, which increases cost.",
       "tier": "tier2"
     }
   ],
   "oa_questions": [
     {
-      "question": "A developer reports that their RAG system often retrieves the right paragraph, but the LLM still gives poor answers because the paragraph relies on a pronoun defined in the previous, unretrieved paragraph. How do you fix this?",
+      "question": "A developer reports that their RAG system often retrieves the right paragraph, but the LLM still gives poor answers because the paragraph relies on a pronoun defined in the previous unretrieved paragraph. How do you fix this?",
       "company": "RAG system design",
-      "answer": "Increase the chunk size or increase the chunk overlap. If the chunk overlap is large enough, the preceding sentence defining the pronoun will be included in the retrieved chunk. Alternatively, use more advanced chunking like semantic chunking or metadata injection.",
-      "approach": "Identify that the issue is a loss of context across chunk boundaries. Overlap is the canonical, immediate fix for missing adjacent context."
+      "answer": "The problem is a loss of context across chunk boundaries. Increase the chunk overlap so the preceding sentence — which defines the pronoun — is included in the retrieved chunk. Alternatively, increase the chunk size to naturally include the surrounding context.",
+      "approach": "Identify the root cause as missing adjacent context. Overlap is the immediate fix. Larger chunk size is the alternative."
     },
     {
-      "question": "You are building a RAG pipeline for a massive codebase to help developers search for functions. Standard recursive character chunking is returning chunks that don't compile. What's wrong?",
+      "question": "You are building a RAG pipeline for a large codebase to help developers search for functions. Standard recursive character chunking is returning chunks that do not compile. What is wrong?",
       "company": "GenAI Engineer interview",
-      "answer": "Text chunkers split on newlines and spaces, which destroys code structure (like splitting a function body away from its definition). You must use a code-specific chunker (often AST-based) that splits natively by classes or functions.",
-      "approach": "Recognize that code has structural boundaries that natural language splitters ignore. Propose AST (Abstract Syntax Tree) parsing."
+      "answer": "Text splitters split on newlines and spaces, which destroys code structure — a function body can be separated from its definition. Code requires a specialized chunker that splits on code boundaries, such as an AST-aware splitter that keeps each function or class intact.",
+      "approach": "Recognize that code has structural boundaries that text splitters ignore. Propose AST-based splitting that respects function and class definitions."
     }
   ],
   "sources": [

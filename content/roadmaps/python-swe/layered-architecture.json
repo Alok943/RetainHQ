@@ -1,0 +1,94 @@
+{
+  "slug": "layered-architecture",
+  "title": "Layered architecture",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "package-structure-and-init-py"
+    ],
+    "unlocks": [
+      "service-repository-pattern"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Flask"
+    ]
+  },
+  "overview": {
+    "what": "Layered architecture is a way to organize your code into separate levels, like a multi-story building. Each layer has a specific job and only talks to the layer directly below it.\n\n```python\n# Layer 1: Presentation (handles user requests)\ndef handle_user_request(user_id):\n    return get_user_logic(user_id)\n\n# Layer 2: Business Logic (makes decisions)\ndef get_user_logic(user_id):\n    if user_id < 0: return 'Invalid'\n    return fetch_from_db(user_id)\n\n# Layer 3: Data (talks to database)\ndef fetch_from_db(user_id):\n    return f'User {user_id} data'\n```\n\nThe rule: **A layer can only call functions in the layer below it.** The presentation layer cannot talk directly to the database. Think of it like a restaurant: the waiter (presentation) takes your order to the chef (logic), and the chef gets ingredients from the pantry (data). The waiter never goes to the pantry.",
+    "why": "It keeps code from becoming a tangled mess. If you change your database, you only rewrite the data layer, not the whole app.",
+    "where_used": [
+      "Backend web applications",
+      "Enterprise software"
+    ]
+  },
+  "why_learning_this": [
+    "Most real-world companies use this to keep their code organized.",
+    "It makes finding and fixing bugs much easier because every job has a specific place."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Skipping layers",
+      "explanation": "Making the presentation layer call the database directly. This defeats the purpose and makes the code hard to test."
+    },
+    {
+      "title": "Mixing logic",
+      "explanation": "Putting complex business rules (like calculating discounts) inside the database layer or the presentation layer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain layered architecture in your own words, as if to a classmate.",
+      "answer": "It is a way to organize code into different levels where each level has a specific job, and levels only talk to the one right below them.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Can the presentation layer talk directly to the data layer?",
+      "answer": "No, it must go through the business logic layer first. Layers can only call the layer directly below them.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is this better than putting all the code in one place?",
+      "answer": "It keeps the code organized, so if you need to change one part (like the database), you don't have to rewrite everything.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def ui_layer():\n    return logic_layer()\n\ndef logic_layer():\n    return 'processed ' + db_layer()\n\ndef db_layer():\n    return 'data'\n\nprint(ui_layer())",
+      "question": "What does this print?",
+      "answer": "processed data",
+      "why": "The request goes from the UI, to the logic, to the DB, and then the DB returns 'data' which the logic layer modifies before giving it to the UI."
+    },
+    {
+      "type": "find-bug",
+      "code": "def web_route():\n    return db_query()\n\ndef logic_rules():\n    return 'rules'\n\ndef db_query():\n    return 'raw data'",
+      "question": "What architectural rule does this code break?",
+      "answer": "The presentation layer (`web_route`) calls the data layer (`db_query`) directly.",
+      "why": "In a layered architecture, the top layer must go through the middle business logic layer, not skip it to talk to the DB directly."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def api(req):\n    return logic(req)\n\ndef logic(req):\n    return data(req) + ' updated'\n\ndef data(req):\n    return 'record'\n\nprint(api('get'))",
+    "focus": "return logic(req)"
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix the skipped layer",
+      "prompt": "Modify this code so that the `handle_click` function calls `process_click` instead of talking to the database directly.",
+      "starter_code": "def handle_click():\n    return save_to_db()\n\ndef process_click():\n    return save_to_db()\n\ndef save_to_db():\n    return 'saved'\n\nprint(handle_click())",
+      "solution": "def handle_click():\n    return process_click()\n\ndef process_click():\n    return save_to_db()\n\ndef save_to_db():\n    return 'saved'\n\nprint(handle_click())"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/tutorial/modules.html"
+  ]
+}

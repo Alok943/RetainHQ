@@ -1,0 +1,96 @@
+{
+  "slug": "pre-commit-hooks-setup",
+  "title": "Pre-commit hooks setup",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "environment-variables"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pre-commit",
+      "black",
+      "flake8"
+    ]
+  },
+  "overview": {
+    "what": "A pre-commit hook is an automatic check that runs right before you save a commit in Git.\n\nImagine a security guard at a mall entrance. They check your bag before you walk in. If you have something banned, they stop you. A pre-commit hook is a security guard for your code. If your code has messy formatting or errors, the hook stops the commit.\n\n```python\n# This is the code you want to commit.\ndef get_marks( student_name ):\n    return 85\n```\n\n```python\n# When you run 'git commit', a hook like 'black' runs automatically.\n# It fixes the spaces before it allows the commit.\ndef get_marks(student_name):\n    return 85\n```\n\nThe rule is: **pre-commit hooks catch sloppy mistakes before they reach the main codebase.** You set them up once using a `.pre-commit-config.yaml` file, and they run automatically every time you commit.",
+    "why": "It stops you from pushing code with extra spaces, missing imports, or syntax errors. This keeps the whole team's code clean without anyone having to remember the rules manually.",
+    "where_used": [
+      "Git repositories",
+      "Python backend projects"
+    ]
+  },
+  "why_learning_this": [
+    "You will not push embarrassing formatting errors to your team's code.",
+    "You save time because the computer fixes spaces and quotes for you automatically."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to install the hooks",
+      "explanation": "You write the config file but forget to run `pre-commit install`. The checks never run when you commit."
+    },
+    {
+      "title": "Committing again without adding fixes",
+      "explanation": "A hook fixes a file but leaves it unstaged. You must `git add` the file again before you run git commit."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain what a pre-commit hook is in your own words, as if to a classmate.",
+      "answer": "It is an automatic check that runs when you try to commit code. It stops the commit if the code has basic errors or bad formatting.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What must you do if a pre-commit hook finds a formatting mistake and fixes it?",
+      "answer": "You must stage the fixed file using git add, and then try to commit again.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A teammate says, 'I put black in my pre-commit config, so it will automatically format and push my code to GitHub.' What is wrong with this?",
+      "answer": "Pre-commit only formats the code locally and stops the commit. It never pushes code to GitHub.",
+      "why": "Pre-commit hooks catch sloppy mistakes before they reach the main codebase. They run locally on your machine during the commit step, not during the push step."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "You run git commit. The pre-commit hook fails, but it says 'files were modified by this hook'. You immediately type git commit again. What happens?",
+      "answer": "The hook fails again because you did not run git add on the modified files.",
+      "why": "When a hook fixes a file, it modifies your working directory. You must stage those changes with git add before the commit can see them."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def check_commit(code):\n  if '  ' in code:\n    print('Failed: Extra spaces found')\n    return False\n  print('Passed: Committing code')\n  return True\n\nbad_code = 'def  get_marks(): pass'\ncheck_commit(bad_code)",
+    "focus": "if '  ' in code:"
+  },
+  "aha_moment": {
+    "code": "code = 'def get_marks():\\n  return 85'\ndef hook(c):\n  return c.replace('  ', '    ')\n\nfixed = hook(code)\nprint(fixed == code)",
+    "prediction": "What does this simulator print when the hook modifies the code?",
+    "common_guess": "True",
+    "why": "The hook changes the code format, making the fixed code different from the original. This is why you must stage the changes again."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a strict check",
+      "prompt": "Given this simulated pre-commit hook, change it so that it fails (returns False) if the code contains the word 'print'.",
+      "starter_code": "def hook(code):\n    if '  ' in code:\n        return False\n    return True",
+      "solution": "def hook(code):\n    if '  ' in code or 'print' in code:\n        return False\n    return True"
+    }
+  ],
+  "challenge": {
+    "title": "Write a simulated hook",
+    "prompt": "Write a Python function called `check_code(code_string)` that acts as a simple hook. It should return True if the code is safe, and False if it contains the word 'breakpoint'.",
+    "solution": "def check_code(code_string):\n    if 'breakpoint' in code_string:\n        return False\n    return True"
+  },
+  "sources": [
+    "https://pre-commit.com/"
+  ]
+}

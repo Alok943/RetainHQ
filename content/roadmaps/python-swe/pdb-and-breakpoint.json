@@ -1,0 +1,97 @@
+{
+  "slug": "pdb-and-breakpoint",
+  "title": "pdb and breakpoint()",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "functions",
+      "scope"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "debugging",
+      "pdb"
+    ]
+  },
+  "overview": {
+    "what": "The `breakpoint()` function pauses your Python code while it is running and lets you inspect the variables inside it.\n\nImagine watching a movie and pressing pause during a confusing scene. You can zoom in and look at the background details before you press play again. `breakpoint()` is the pause button for your code. When Python hits it, it opens an interactive terminal (called `pdb`) where you can see the exact values of your variables.\n\n```python\ndef calculate_discount(price):\n    discount = price * 0.2\n    # The code pauses here.\n    # You can type 'price' or 'discount' in the terminal to see their values.\n    breakpoint()\n    return price - discount\n```\n\nThe rule is: **`breakpoint()` pauses execution and drops you into a debugger.** From there, you can type `n` (next) to run the next line, or `c` (continue) to run until the end.",
+    "why": "It lets you find bugs instantly. Instead of adding ten `print()` statements and guessing what went wrong, you pause the code and look directly at the memory.",
+    "where_used": [
+      "Local debugging",
+      "Testing scripts",
+      "Data processing"
+    ]
+  },
+  "why_learning_this": [
+    "You will solve bugs in 5 minutes instead of 50 minutes.",
+    "You avoid polluting your code with temporary print statements."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Leaving breakpoints in production code",
+      "explanation": "You forget to remove `breakpoint()` before pushing your code. The server pauses indefinitely waiting for someone to type a command."
+    },
+    {
+      "title": "Confusing next and continue",
+      "explanation": "You type `n` when you want the code to finish running. `n` only runs one line; `c` runs the rest of the code."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain what breakpoint() does in your own words, as if to a classmate.",
+      "answer": "It acts as a pause button for your code. It stops the code from running and opens a terminal where you can check the values of your variables.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you type 'c' inside the debugger?",
+      "answer": "The code continues running normally until it finishes or hits another breakpoint.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A teammate pushes code with `breakpoint()` to the live web server. What happens when a user loads that page?",
+      "answer": "The server pauses execution on that line and waits forever for someone to type a debugger command. The user's page will time out and crash.",
+      "why": "`breakpoint()` pauses execution and drops you into a debugger. If there is no human at the keyboard to type 'c', the code hangs forever."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "You hit a breakpoint and want to check the value of a variable named 'c'. You type 'c' in the debugger. Why doesn't it show the variable's value?",
+      "answer": "Because 'c' is the built-in debugger command for 'continue'. The debugger resumes the code instead of showing the variable.",
+      "why": "The debugger terminal has special reserved commands like 'n' (next) and 'c' (continue). If your variable shares a name with a command, the command wins."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def run_debugger_simulator():\n    print('Line 1 runs')\n    print('Code pauses here (breakpoint)')\n    # User types 'c' to continue\n    print('Line 3 runs')\n\nrun_debugger_simulator()",
+    "focus": "print('Code pauses here (breakpoint)')"
+  },
+  "aha_moment": {
+    "code": "def test():\n    c = 10\n    # If you type 'c' in the debugger, what does the debugger do?\n    print('Finished')\n\ntest()",
+    "prediction": "If you pause the code here and type 'c' in the debugger, does it print 10 or resume the code?",
+    "common_guess": "It prints 10.",
+    "why": "The debugger commands (like 'c' for continue) take priority over your variable names. It will resume the code."
+  },
+  "practice_tasks": [
+    {
+      "title": "Simulate removing a breakpoint",
+      "prompt": "Given this code, remove the simulated pause so that it runs straight through.",
+      "starter_code": "def process():\n    print('Start')\n    print('PAUSE')\n    print('End')",
+      "solution": "def process():\n    print('Start')\n    print('End')"
+    }
+  ],
+  "challenge": {
+    "title": "Fix the variable name",
+    "prompt": "You are writing code that you plan to debug. Rename the variable `c` to something that will not conflict with the debugger's 'continue' command.",
+    "solution": "def calculate():\n    count = 10\n    return count"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/pdb.html"
+  ]
+}

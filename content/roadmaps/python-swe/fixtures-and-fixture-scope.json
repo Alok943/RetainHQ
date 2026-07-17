@@ -1,0 +1,98 @@
+{
+  "slug": "fixtures-and-fixture-scope",
+  "title": "Fixtures and fixture scope",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "test-discovery-and-naming-conventions"
+    ],
+    "unlocks": [
+      "conftest-py-shared-fixtures"
+    ],
+    "project_usage": [
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "A **fixture** is a function that sets up data or state before a test runs. We use the `@pytest.fixture` decorator to mark it. **Scope** controls how often the fixture runs: once per test (the default), or once per entire session.\n\nHere is a worked example creating a student dictionary:\n\n```python\nimport pytest\n\n@pytest.fixture\ndef student_data():\n  print('Creating student')\n  return {'name': 'Arjun', 'marks': 85}\n\ndef test_name(student_data):\n  assert student_data['name'] == 'Arjun'\n\ndef test_marks(student_data):\n  assert student_data['marks'] == 85\n```\n\npytest runs `student_data` before `test_name`, and then runs it again before `test_marks`. It provides fresh data every time because its scope is function-level by default.\n\nNow, look at this faded example where one step is blank:\n\n```python\nimport pytest\n\n@pytest._______\ndef empty_cart():\n  return []\n\ndef test_cart_empty(empty_cart):\n  assert len(empty_cart) == 0\n```\n\nTo turn `empty_cart` into a fixture, we fill in the blank with `fixture`.",
+    "why": "Without fixtures, you repeat setup code in every single test. Fixtures keep test files clean and ensure each test gets a fresh, predictable starting state.",
+    "where_used": [
+      "pytest test suites",
+      "Database connections in tests"
+    ]
+  },
+  "why_learning_this": [
+    "Reusing setup data across many tests without copy-pasting.",
+    "Speeding up tests by sharing heavy setup (like database connections) using session scope."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to request the fixture",
+      "explanation": "If your test function does not include the fixture name in its arguments (like `def test_name():`), pytest will not run the fixture and you cannot use its data."
+    },
+    {
+      "title": "Mutating shared session fixtures",
+      "explanation": "If a fixture has `scope='session'` and one test changes the data, the next test gets the changed data. Only use session scope for read-only data."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain fixtures and fixture scope in your own words, as if to a classmate.",
+      "answer": "A fixture is a setup function that runs before tests to provide data. Scope decides if it runs fresh for every test, or just once for all tests.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the default scope of a pytest fixture?",
+      "answer": "The default scope is 'function', meaning it runs once for every test that requests it.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "import pytest\n\nruns = 0\n\n@pytest.fixture\ndef count_fixture():\n  global runs\n  runs += 1\n  return runs\n\ndef test_one(count_fixture):\n  assert count_fixture == 1\n\ndef test_two(count_fixture):\n  print(count_fixture)\n\n# What does test_two print if pytest runs them in order?",
+      "question": "What does test_two print?",
+      "answer": "2",
+      "why": "The default scope is 'function', so the fixture runs a second time before `test_two`, incrementing the global counter to 2."
+    },
+    {
+      "type": "explain-behavior",
+      "code": "import pytest\n\n@pytest.fixture(scope='session')\ndef database():\n  print('Connecting to DB')\n  return 'DB'\n\ndef test_a(database):\n  pass\n\ndef test_b(database):\n  pass",
+      "question": "How many times does 'Connecting to DB' print when these tests run?",
+      "answer": "Exactly once.",
+      "why": "Because the scope is 'session', pytest runs the fixture only once for the entire test run, and shares the result with both tests."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import pytest\n\n@pytest.fixture\ndef config():\n  return {'mode': 'test'}\n\ndef test_config(config):\n  print(config['mode'])\n  assert config['mode'] == 'test'\n\ntest_config({'mode': 'test'})",
+    "focus": "def test_config(config):"
+  },
+  "aha_moment": {
+    "code": "import pytest\n\n@pytest.fixture\ndef user():\n  return {'name': 'Rahul'}\n\ndef test_change(user):\n  user['name'] = 'Amit'\n\ndef test_check(user):\n  print(user['name'])\n\n# Simulating what pytest does:\nt1_user = user()\ntest_change(t1_user)\nt2_user = user()\ntest_check(t2_user)",
+    "prediction": "What does test_check print?",
+    "common_guess": "Amit",
+    "why": "It prints 'Rahul'. The default scope is 'function', so pytest creates a completely fresh dictionary for `test_check`. The mutation in `test_change` is forgotten."
+  },
+  "practice_tasks": [
+    {
+      "title": "Set the scope",
+      "prompt": "Given this code, change the fixture so it only runs once per test session.",
+      "starter_code": "import pytest\n\n@pytest.fixture\ndef heavy_setup():\n  return 'Done'",
+      "solution": "import pytest\n\n@pytest.fixture(scope='session')\ndef heavy_setup():\n  return 'Done'"
+    }
+  ],
+  "challenge": {
+    "title": "Create and use a fixture",
+    "prompt": "Create a fixture named `my_list` that returns `[1, 2]`. Then write a test function named `test_list` that requests the fixture and asserts its length is 2.",
+    "solution": "import pytest\n\n@pytest.fixture\ndef my_list():\n  return [1, 2]\n\ndef test_list(my_list):\n  assert len(my_list) == 2"
+  },
+  "sources": [
+    "https://docs.pytest.org/en/7.4.x/explanation/fixtures.html"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "slug": "conventional-commits-spec",
+  "title": "Conventional commits spec",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": [
+      "Git hooks",
+      "Semantic release"
+    ]
+  },
+  "overview": {
+    "what": "Conventional Commits is a strict set of rules for writing git commit messages. It forces you to write messages that both humans and machines can understand easily.\n\n```python\n# Without conventional commits:\nmsg_bad = 'fixed the thing'\n\n# With conventional commits:\nmsg_good = 'fix: resolve login crash'\n```\n\nThe structure is always `<type>: <description>`. The `type` tells you what kind of change it is. Common types are `feat` (new feature), `fix` (bug fix), and `docs` (documentation updates).\n\n```python\n# Example of checking if a message is valid\ndef is_valid(msg):\n    # A simple check for the required format\n    return msg.startswith('feat: ') or msg.startswith('fix: ')\n\nprint(is_valid('feat: add user profile')) # True\nprint(is_valid('added profile')) # False\n```\n\nThe golden rule: **Always start your message with a valid type, followed by a colon and a space.** Think of it like putting a label on a tiffin box so you know exactly what is inside without opening it.",
+    "why": "It makes the project history clean and readable. Automated tools can use these messages to generate release notes automatically.",
+    "where_used": [
+      "Open source projects",
+      "Automated release pipelines"
+    ]
+  },
+  "why_learning_this": [
+    "It makes your commit history look professional.",
+    "Many companies enforce this rule before allowing you to merge code."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Missing the space",
+      "explanation": "Writing `feat:add login` instead of `feat: add login`. The space after the colon is strictly required."
+    },
+    {
+      "title": "Using made-up types",
+      "explanation": "Using a type like `update: changed button` instead of a standard type like `feat` or `fix`. Tools will fail to read it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain conventional commits in your own words, as if to a classmate.",
+      "answer": "Conventional commits is a standard way to write commit messages using a specific format like type: description, so they are easy to read and process.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the correct structure of a conventional commit message?",
+      "answer": "The structure is <type>: <description>, where type is usually something like feat or fix.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it useful to follow this strict format?",
+      "answer": "It keeps the project history clean and allows automated tools to generate release notes.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def check_commit(msg):\n    return msg.startswith('fix: ')\n\nprint(check_commit('fix:crashed app'))",
+      "question": "What does this print?",
+      "answer": "False",
+      "why": "The space after the colon is missing in the input string. The rule strictly requires a space after the colon."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you write a commit message `Fix: solve the crash`, will automated tools accept it?",
+      "answer": "No, because the type should typically be lowercase `fix`, not `Fix`.",
+      "why": "Conventional commit types are strictly lowercase. Case matters when machines read the text."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "commit_msg = 'feat: add payment gateway'\nparts = commit_msg.split(': ')\ncommit_type = parts[0]\ncommit_desc = parts[1]\nprint(commit_type)",
+    "focus": "parts = commit_msg.split(': ')"
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix the commit message",
+      "prompt": "Given this invalid commit message string, change it to be a valid conventional commit for a bug fix.",
+      "starter_code": "msg = 'fixed the login error'\nprint(msg)",
+      "solution": "msg = 'fix: resolve the login error'\nprint(msg)"
+    }
+  ],
+  "sources": [
+    "https://www.conventionalcommits.org/en/v1.0.0/"
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "slug": "reading-stack-traces",
+  "title": "Reading stack traces",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "try-except",
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "debugging",
+      "logging"
+    ]
+  },
+  "overview": {
+    "what": "A stack trace is a detailed error report that Python prints when your code crashes. It shows the exact path the code took before it failed.\n\nImagine tracking a package delivery. The history shows exactly which cities the package passed through before it got lost. A stack trace shows exactly which functions your code called before the error happened.\n\n```python\ndef divide(a, b):\n    return a / b\n\ndef calculate_marks(total):\n    # The error actually happens inside divide(),\n    # but we called it from here.\n    return divide(total, 0)\n\ncalculate_marks(100)\n```\n\nThe rule is: **read a stack trace from the bottom up.** The very last line tells you the exact error (e.g., `ZeroDivisionError`). The lines immediately above it tell you exactly which file and line number caused it.",
+    "why": "It tells you exactly where to look to fix a crash. Without a stack trace, you would have to guess which function failed.",
+    "where_used": [
+      "All Python code",
+      "Web servers",
+      "Data pipelines"
+    ]
+  },
+  "why_learning_this": [
+    "You will stop panicking when you see a massive block of red error text.",
+    "You will instantly know which line of code to fix."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Reading from the top",
+      "explanation": "You start reading the top of the stack trace and get confused by deep library files. The actual error name and your specific code are usually at the bottom."
+    },
+    {
+      "title": "Ignoring the error type",
+      "explanation": "You stare at the line numbers but don't read the very last line. The last line (like `TypeError: expected str`) tells you exactly what you did wrong."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain what a stack trace is in your own words, as if to a classmate.",
+      "answer": "It is an error report that shows the path your code took before it crashed, highlighting the exact functions and line numbers involved.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In which direction should you read a Python stack trace?",
+      "answer": "You should read it from the bottom up. The bottom line tells you the exact error that occurred.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "A stack trace shows an error happening inside `fastapi/routing.py`. Should you go edit `fastapi/routing.py` to fix the bug?",
+      "answer": "No. You should look slightly higher in the stack trace for a file that YOU wrote. You probably passed bad data to FastAPI.",
+      "why": "Read a stack trace from the bottom up. The error often happens inside a library because your code gave it invalid data. Fix your code, not the library."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "Your code crashes and prints 50 lines of error text. A classmate says, 'This is a huge error, your whole app is broken.' Is this true?",
+      "answer": "No. A long stack trace just means the code passed through many functions before the single failure occurred.",
+      "why": "The length of the stack trace only shows how deeply nested the function calls were. It does not mean the error is hard to fix."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def func_a():\n    return func_b()\n\ndef func_b():\n    print('Trace shows: func_a called func_b')\n    print('Error happens here')\n\nfunc_a()",
+    "focus": "print('Error happens here')"
+  },
+  "aha_moment": {
+    "code": "def a(): b()\ndef b(): c()\ndef c(): print('Crash!')\n\na()",
+    "prediction": "If `c()` crashes, will the stack trace mention `a()`?",
+    "common_guess": "No, because the crash is in c().",
+    "why": "The stack trace shows the full path. It will show `a()` called `b()`, and `b()` called `c()`. This helps you trace the origin of the bad data."
+  },
+  "practice_tasks": [
+    {
+      "title": "Simulate tracing up",
+      "prompt": "Given this code, change the final print statement to state the name of the function that originally started the chain.",
+      "starter_code": "def start():\n    middle()\n\ndef middle():\n    print('Started by: unknown')",
+      "solution": "def start():\n    middle()\n\ndef middle():\n    print('Started by: start')"
+    }
+  ],
+  "challenge": {
+    "title": "Trigger an error chain",
+    "prompt": "Write two functions. `first()` should call `second()`. `second()` should trigger a `ZeroDivisionError` by dividing 1 by 0. Call `first()`.",
+    "solution": "def first():\n    second()\n\ndef second():\n    return 1 / 0\n\nfirst()"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/traceback.html"
+  ]
+}

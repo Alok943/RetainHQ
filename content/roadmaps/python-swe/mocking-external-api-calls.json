@@ -1,0 +1,91 @@
+{
+  "slug": "mocking-external-api-calls",
+  "title": "Mocking external API calls",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "patch-as-decorator-and-context-manager"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "**Memorizable line:** Mocking an API means replacing a slow internet request with a fake, instant response.\n\nWhen we write tests, we do not want to actually call outside APIs like Google or Stripe. It is slow, costs money, and requires internet. Instead, we `mock` the API call.\n\nHere is a function that gets a user profile from an API.\n\n```python\nimport requests\n\ndef get_profile(user_id):\n  response = requests.get(f'http://api.com/{user_id}')\n  return response.json()\n```\n\nWe can use `patch` to mock `requests.get`. We give it a fake response that acts like the real one.\n\n```python\nfrom unittest.mock import patch, Mock\n\n@patch('__main__.requests.get')\ndef test_profile(mock_get):\n  fake_response = Mock()\n  fake_response.json.return_value = {'name': 'Rahul'}\n  mock_get.return_value = fake_response\n  \n  assert get_profile(1)['name'] == 'Rahul'\n```\n\n**Analogy:** Think of a fire drill. You do not start a real fire to test the alarm. You use a smoke machine to fake the fire. Mocking is the smoke machine for your code.",
+    "why": "It keeps tests fast, free, and reliable. Your tests will pass even without internet.",
+    "where_used": [
+      "pytest",
+      "unittest"
+    ]
+  },
+  "why_learning_this": [
+    "Allows you to test code that uses the requests library safely."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to mock the JSON method",
+      "explanation": "APIs return a response object. You must mock both the response object AND its `.json()` method."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain mocking an API in your own words, as if to a classmate.",
+      "answer": "It means faking a network request during a test. We return fake data instantly instead of waiting for a real server.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do we mock external APIs in tests?",
+      "answer": "To make tests fast, save money, and allow tests to run without an internet connection.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from unittest.mock import Mock\n\nfake_resp = Mock()\nfake_resp.json.return_value = {'status': 'ok'}\n\nprint(fake_resp.json()['status'])",
+      "question": "What prints, and why?",
+      "answer": "ok",
+      "why": "The fake response was set up so its `.json()` method returns a dictionary with 'status': 'ok'."
+    },
+    {
+      "type": "find-bug",
+      "code": "from unittest.mock import Mock\nfake_resp = Mock()\nfake_resp.return_value = {'status': 'ok'}\nprint(fake_resp.json())",
+      "question": "Where is the bug?",
+      "answer": "fake_resp.return_value is set, but it should be fake_resp.json.return_value.",
+      "why": "The real code calls `.json()`, so we must mock the return value of the `json` method, not the response object itself."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from unittest.mock import Mock\n\ndef get_data(api_call):\n    resp = api_call()\n    return resp.json()\n\nfake_api = Mock()\nfake_api.return_value.json.return_value = 'data'\nprint(get_data(fake_api))",
+    "focus": "fake_api.return_value.json.return_value = 'data'"
+  },
+  "aha_moment": {
+    "code": "from unittest.mock import Mock\nmock_obj = Mock()\nmock_obj.some_method.return_value = 42\nprint(mock_obj.some_method())",
+    "prediction": "What does this print?",
+    "common_guess": "An error, because some_method does not exist.",
+    "why": "A Mock object magically accepts any method call you invent and returns what you tell it to."
+  },
+  "practice_tasks": [
+    {
+      "title": "Mock a response",
+      "prompt": "Given this working code, change `fake_resp.json.return_value` so that the printed name is 'Amit'.",
+      "starter_code": "from unittest.mock import Mock\nfake_resp = Mock()\nfake_resp.json.return_value = {'name': 'Rahul'}\nprint(fake_resp.json()['name'])",
+      "solution": "from unittest.mock import Mock\nfake_resp = Mock()\nfake_resp.json.return_value = {'name': 'Amit'}\nprint(fake_resp.json()['name'])"
+    }
+  ],
+  "challenge": {
+    "title": "Create a fake response",
+    "prompt": "Create a `Mock` object called `response`. Set its `status_code` attribute to `200` and make its `.json()` method return `['apple']`.",
+    "solution": "from unittest.mock import Mock\nresponse = Mock()\nresponse.status_code = 200\nresponse.json.return_value = ['apple']"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/unittest.mock.html"
+  ]
+}

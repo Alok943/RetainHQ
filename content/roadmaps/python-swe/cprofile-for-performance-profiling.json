@@ -1,0 +1,97 @@
+{
+  "slug": "cprofile-for-performance-profiling",
+  "title": "cProfile for performance profiling",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 6,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "functions",
+      "loops"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "cProfile",
+      "optimization"
+    ]
+  },
+  "overview": {
+    "what": "cProfile is a built-in Python tool that measures exactly how long each function in your code takes to run.\n\nImagine taking a long road trip that took 10 hours instead of 5. You look at your GPS history to see exactly where you spent the most time (3 hours at a restaurant, 2 hours in traffic). cProfile is the GPS history for your code. It shows you which functions are the slow 'traffic jams'.\n\n```python\nimport cProfile\n\ndef slow_task():\n    # A loop that does a lot of work\n    total = 0\n    for i in range(1000000):\n        total += i\n    return total\n\n# This runs the function and prints a speed report\n# cProfile.run('slow_task()')\n```\n\nThe rule is: **never guess what makes your code slow; use cProfile to measure it.** It gives you a report showing the number of times a function was called (`ncalls`) and the total time spent inside it (`tottime`).",
+    "why": "It prevents you from wasting hours optimizing the wrong part of your code. You find the exact bottleneck instantly.",
+    "where_used": [
+      "Performance tuning",
+      "Data science scripts",
+      "Backend APIs"
+    ]
+  },
+  "why_learning_this": [
+    "You will know exactly which 5 lines of code are making your entire application slow.",
+    "You will sound professional when you say, 'I profiled the code and found the bottleneck'."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Guessing instead of measuring",
+      "explanation": "You assume a database query is slow and spend days fixing it, when cProfile would have shown you the real delay was a slow `for` loop."
+    },
+    {
+      "title": "Ignoring the call count",
+      "explanation": "A function might be very fast, but if `ncalls` shows it was called 1 million times, it becomes the bottleneck."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain what cProfile does in your own words, as if to a classmate.",
+      "answer": "It measures how long your code takes to run, breaking down the time spent in each individual function.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it important to look at the 'ncalls' column in a cProfile report?",
+      "answer": "Because a function might be fast on its own, but calling it thousands of times can make the whole program slow.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "You profile your code. Function A takes 0.001 seconds per call but is called 10,000 times. Function B takes 2.0 seconds but is called once. Which one takes more total time?",
+      "answer": "Function A takes 10 seconds total (0.001 * 10,000). Function B takes 2 seconds. Function A is the real bottleneck.",
+      "why": "Never guess what makes your code slow; use cProfile to measure it. The total time spent in a function is what actually slows down your app."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A teammate says, 'My code is slow, so I will rewrite every single function to make it faster.' What is a better approach?",
+      "answer": "Use cProfile to find the one or two slowest functions, and only rewrite those.",
+      "why": "Most of the execution time is usually spent in a very small portion of the code. Profiling prevents you from wasting time optimizing fast code."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def fast():\n    return sum(range(10))\n\ndef slow():\n    return sum(range(1000000))\n\nprint('cProfile would show slow() taking 99% of the time.')",
+    "focus": "print('cProfile would show slow() taking 99% of the time.')"
+  },
+  "aha_moment": {
+    "code": "def process_data():\n    total = 0\n    for i in range(1000):\n        total += i\n    return total\n\nprint('Total time is calls * time_per_call')",
+    "prediction": "If a function is extremely simple and fast, can it ever be the main bottleneck in a cProfile report?",
+    "common_guess": "No, because it is simple.",
+    "why": "Yes, if it is called millions of times in a loop. `ncalls` matters just as much as `tottime`."
+  },
+  "practice_tasks": [
+    {
+      "title": "Simulate profiling choice",
+      "prompt": "Given this code, change the returned string to state which function you would optimize first based on the simulated times.",
+      "starter_code": "def analyze():\n    time_a = 0.5\n    time_b = 8.0\n    return 'I would optimize A'",
+      "solution": "def analyze():\n    time_a = 0.5\n    time_b = 8.0\n    return 'I would optimize B'"
+    }
+  ],
+  "challenge": {
+    "title": "Write a slow function",
+    "prompt": "Write a simple function called `heavy_work()` that uses a `for` loop to add the numbers from 0 to 500000 into a total, returning the total. This is the kind of function cProfile easily catches.",
+    "solution": "def heavy_work():\n    total = 0\n    for i in range(500000):\n        total += i\n    return total"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/profile.html"
+  ]
+}

@@ -58,8 +58,19 @@ Output of Phase 1: the lost-here list, the mental-model/arc verdicts, and your a
    contract names as canonical (e.g. shallow copy for lists). Rank these after correctness errors
    and teaching holes.
 
+6. **Beginner-batch checks (ONLY for lessons authored under `PROMPT-beginner-overlay.md` — the
+   batch handoff says which).** Each is a hard finding, ranked with teaching holes:
+   - **Stacked unknowns** — any example containing 2+ things this roadmap hasn't yet taught (overlay B2).
+   - **Register breach** — idioms, culture-bound metaphors, or 30+-word sentences in prose (B1).
+   - **Term-before-definition** — a technical term used before its plain-words definition (B8; more
+     than 7 new terms in one lesson is the same finding).
+   - **Cold-open prediction** — any predict-style probe placed before the lesson's first worked
+     example (B3).
+   - **Synonym rotation** — one concept named two different ways in the same lesson (B10).
+
 Output of Phase 2: correctness issues (with corrections), the per-question grade + teaching-hole vs
-beginner-error classification, the five-questions gaps, and example/source flags.
+beginner-error classification, the five-questions gaps, example/source flags, and (beginner batches)
+the overlay findings.
 
 ---
 

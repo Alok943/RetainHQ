@@ -1,0 +1,98 @@
+{
+  "slug": "unittest-mock-mock-and-magicmock",
+  "title": "unittest.mock: Mock and MagicMock",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "functions",
+      "class-basics"
+    ],
+    "unlocks": [
+      "patch-as-decorator-and-context-manager"
+    ],
+    "project_usage": [
+      "unittest.mock"
+    ]
+  },
+  "overview": {
+    "what": "**Mock** objects are fake objects used in testing. They record how they are used and can pretend to return any value. **MagicMock** is a version of Mock that also supports Python's special dunder methods like `__len__` or `__str__`.\n\nHere is a worked example faking a payment gateway:\n\n```python\nfrom unittest.mock import Mock\n\n# Create a fake gateway\ngateway = Mock()\ngateway.charge.return_value = 'Success'\n\n# Use it as if it was real\nresult = gateway.charge(100)\n\n# Check what happened\nassert result == 'Success'\ngateway.charge.assert_called_with(100)\n```\n\nThe `Mock` let us set a `return_value`. It also recorded that `charge` was called with `100`, which we verified using `assert_called_with`.\n\nNow, look at this faded example where one step is blank:\n\n```python\nfrom unittest.mock import Mock\n\napi = Mock()\napi.fetch_user.___________ = {'name': 'Arjun'}\n\nassert api.fetch_user(1) == {'name': 'Arjun'}\n```\n\nTo make the mock return the dictionary, we fill in the blank with `return_value`.",
+    "why": "Testing code that depends on slow, broken, or expensive things (like real payment APIs or databases) is bad. Mocks let you test your logic safely by faking the outside world.",
+    "where_used": [
+      "Unit tests with external dependencies"
+    ]
+  },
+  "why_learning_this": [
+    "Testing API calls without actually hitting the internet.",
+    "Isolating your own code from parts of the system you don't control."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using Mock instead of MagicMock for dunders",
+      "explanation": "If you try to call `len()` on a regular `Mock()`, it crashes. You must use `MagicMock()` if your code relies on built-in magic methods like `__len__` or `__getitem__`."
+    },
+    {
+      "title": "Calling the mock to set a return value",
+      "explanation": "Writing `api.fetch(1).return_value = 'Data'` does not work. You must set it on the function itself: `api.fetch.return_value = 'Data'`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain Mock and MagicMock in your own words, as if to a classmate.",
+      "answer": "Mocks are fake objects for tests that return whatever we want and remember how they were called. MagicMock is exactly the same, but it also understands Python's special built-in methods.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you check if a Mock was called with the number 50?",
+      "answer": "You use the method `my_mock.assert_called_with(50)`.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "from unittest.mock import Mock\n\nmy_api = Mock()\nmy_api.get_data(id=5).return_value = 'Done'\nresult = my_api.get_data(id=5)",
+      "question": "Where is the bug in setting the return value?",
+      "answer": "The code calls `get_data(id=5)` before setting the return value.",
+      "why": "You must attach `return_value` directly to the method reference (`my_api.get_data.return_value = 'Done'`). Calling the method creates a new mock object, so the setup is lost."
+    },
+    {
+      "type": "explain-behavior",
+      "code": "from unittest.mock import Mock\n\nfake = Mock()\nfake.do_something()\nfake.assert_called_with(10)",
+      "question": "What happens when this code runs?",
+      "answer": "It raises an AssertionError because the mock was called with no arguments, not 10.",
+      "why": "`assert_called_with` strictly checks the exact arguments used in the last call. Since `do_something()` had no arguments, the assertion fails."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from unittest.mock import Mock\n\nworker = Mock()\nworker.compute.return_value = 42\n\nans = worker.compute('hard_math')\nprint(ans)\nworker.compute.assert_called_with('hard_math')",
+    "focus": "worker.compute.return_value = 42"
+  },
+  "aha_moment": {
+    "code": "from unittest.mock import Mock\n\nobj = Mock()\nresult = obj.this_method_does_not_exist()\nprint(type(result))",
+    "prediction": "What does this print?",
+    "common_guess": "An AttributeError, because the method doesn't exist.",
+    "why": "It prints `<class 'unittest.mock.Mock'>`. Mocks automatically create new child mocks when you access any attribute or method, even if they don't exist. They never raise an AttributeError by default."
+  },
+  "practice_tasks": [
+    {
+      "title": "Verify the call",
+      "prompt": "Given this code, add a line at the end to assert that the email service was called with `'admin@test.com'`.",
+      "starter_code": "from unittest.mock import Mock\n\nemail_service = Mock()\nemail_service.send('admin@test.com')\n# Add your assertion below\n",
+      "solution": "from unittest.mock import Mock\n\nemail_service = Mock()\nemail_service.send('admin@test.com')\nemail_service.send.assert_called_with('admin@test.com')"
+    }
+  ],
+  "challenge": {
+    "title": "Set a return value and call it",
+    "prompt": "Create a `Mock` called `db`. Make its `get_user` method return `'Admin'`. Then call `db.get_user(1)` and assign it to `user`.",
+    "solution": "from unittest.mock import Mock\n\ndb = Mock()\ndb.get_user.return_value = 'Admin'\nuser = db.get_user(1)"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock"
+  ]
+}

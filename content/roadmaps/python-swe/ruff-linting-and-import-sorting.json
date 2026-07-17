@@ -1,0 +1,91 @@
+{
+  "slug": "ruff-linting-and-import-sorting",
+  "title": "Ruff: linting and import sorting",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Django"
+    ]
+  },
+  "overview": {
+    "what": "**Memorizable line:** Ruff is an extremely fast tool that finds mistakes in your code and sorts your imports.\n\nWhile Black fixes spaces, Ruff fixes logic mistakes and bad practices. This is called `linting`.\n\nHere is code with mistakes:\n\n```python\nimport os\nimport sys\n\ndef calculate():\n  x = 10\n  return 5\n```\n\nRuff will yell at you because `os` and `sys` are imported but never used. It will also warn you that the variable `x` is created but never used.\n\nRuff also sorts your imports alphabetically and groups them cleanly. You run it from your terminal: `ruff check my_file.py`.\n\n**Analogy:** If Black is the person who irons your shirt, Ruff is the person who tells you your shirt is inside-out and missing a button.",
+    "why": "It catches bugs before you even run your code. It is written in Rust, making it hundreds of times faster than older tools.",
+    "where_used": [
+      "FastAPI",
+      "Django"
+    ]
+  },
+  "why_learning_this": [
+    "Helps you find unused variables and imports instantly."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Ignoring warnings",
+      "explanation": "If Ruff gives a warning, fix it. Do not leave unused imports in your file."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain Ruff in your own words, as if to a classmate.",
+      "answer": "It is a fast tool that reads your code to find mistakes, like unused variables, and sorts your imports automatically.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between Ruff and Black?",
+      "answer": "Black fixes how the code looks (spacing and quotes). Ruff fixes bad practices and mistakes (like unused variables).",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "Which tool would complain that you wrote `import math` but never used it? A: Black, or B: Ruff?",
+      "answer": "B",
+      "why": "Ruff is a linter that finds unused imports. Black only formats spacing."
+    },
+    {
+      "type": "find-bug",
+      "code": "def process():\n    total = 100\n    return 'Done'\nprint(process())",
+      "question": "What mistake would Ruff find in this code?",
+      "answer": "The variable `total` is assigned but never used.",
+      "why": "Linters check for variables that are created but ignored, as it often means a bug."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def run():\n    unused_var = 42\n    return 'Success'\nprint(run())",
+    "focus": "unused_var = 42"
+  },
+  "aha_moment": {
+    "code": "import math\ndef calc(): return 5\nprint(calc())",
+    "prediction": "Will this code crash when we run it in Python?",
+    "common_guess": "Yes, because math is not used.",
+    "why": "Python will run it perfectly. Ruff is the tool that complains about unused imports, not Python."
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix a linting error",
+      "prompt": "Given this code, fix the issue that Ruff would complain about by removing the unused variable.",
+      "starter_code": "def get_name():\n    first = 'Amit'\n    last = 'Sharma'\n    return first",
+      "solution": "def get_name():\n    first = 'Amit'\n    return first"
+    }
+  ],
+  "challenge": {
+    "title": "Write clean code",
+    "prompt": "Write a function `say_hi()` that returns 'hi'. Do not import anything. Do not create any unused variables.",
+    "solution": "def say_hi():\n    return 'hi'"
+  },
+  "sources": [
+    "https://docs.astral.sh/ruff/"
+  ]
+}

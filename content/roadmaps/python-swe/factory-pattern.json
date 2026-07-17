@@ -1,0 +1,97 @@
+{
+  "slug": "factory-pattern",
+  "title": "Factory pattern",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Django",
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "A Factory is a function or class that creates objects for you. Instead of creating objects directly, you ask the Factory for what you need.\n\nImagine a restaurant kitchen. You do not go into the kitchen and make a pizza yourself. You give an order to the kitchen staff, and they give you a finished pizza. A Factory works the same way. You give it a name, and it gives you the right object.\n\nHere is a Factory for a food app:\n\n```python\nclass Pizza:\n    def serve(self): return \"Serving Pizza\"\n\nclass Burger:\n    def serve(self): return \"Serving Burger\"\n\n# This is the Factory function\ndef create_food(food_type):\n    if food_type == \"pizza\":\n        return Pizza()\n    elif food_type == \"burger\":\n        return Burger()\n```\n\nNow, we ask the Factory to create the food for us:\n\n```python\nmy_food = create_food(\"pizza\")\nprint(my_food.serve())\n```\n\nThe code that uses `create_food` does not need to know how `Pizza` or `Burger` are made. \n\nLet us practice. Here is a faded example. Fill in the blank to ask the Factory for a burger.\n\n```python\n# We want a burger object\nmy_lunch = ____(\"burger\")\n```\n\nThe rule to remember: **A Factory takes a simple input (like a string) and returns a complex object.**\n\nThere is a sharp edge to this pattern. Every time you invent a new food (like \"Pasta\"), you must remember to open the Factory function and add a new `elif` line. If your app has 100 foods, this function becomes very long and messy.",
+    "why": "If object creation is complex (like reading database settings first), a Factory hides that mess. Your main code stays clean because it only calls the Factory.",
+    "where_used": [
+      "Building user interface buttons",
+      "Loading different database types",
+      "Parsing different file formats (CSV, JSON)"
+    ]
+  },
+  "why_learning_this": [
+    "You will understand how large apps create objects cleanly.",
+    "You will write code that is easier to update when new features are added."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a Factory for everything",
+      "explanation": "If a class is very simple and has no complex setup, you do not need a Factory. Just create the object directly."
+    },
+    {
+      "title": "Factory doing too much work",
+      "explanation": "A Factory should only create objects. If it also saves data to the database or sends emails, it is doing too much and will break easily."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the Factory pattern in your own words, as if to a classmate.",
+      "answer": "A Factory is a function that creates objects for you. You give it a simple input, and it gives you back the object you need.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you use a Factory instead of creating objects directly?",
+      "answer": "You use it to hide complex setup steps, so your main code stays clean and does not need to know the details of how objects are made.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens to a simple Factory function if you add 50 new types of objects?",
+      "answer": "The function gets very long because you have to add a new `elif` line for every new type.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class Bike:\n    def ride(self): return \"Riding bike\"\n\nclass Car:\n    def ride(self): return \"Driving car\"\n\ndef vehicle_factory(wheels):\n    if wheels == 2:\n        return Bike()\n    return Car()\n\nmy_ride = vehicle_factory(2)\nprint(my_ride.ride())",
+      "question": "What does this code print?",
+      "answer": "Riding bike",
+      "why": "The Factory receives the input `2`. It checks the condition, creates a `Bike` object, and returns it. The main code then calls `ride()` on the `Bike`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A developer is writing code to parse a file. The file can be a `.csv` or a `.json`. How does a Factory help here?",
+      "answer": "A Factory can take the file extension as input and return the correct parser object.",
+      "why": "This keeps the main code clean. The main code just asks the Factory for a parser and does not need to know the complex steps to build each specific parser."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class TextMsg:\n    type = \"text\"\n\nclass ImageMsg:\n    type = \"image\"\n\ndef message_factory(msg_type):\n    if msg_type == \"image\":\n        return ImageMsg()\n    return TextMsg()\n\nmsg = message_factory(\"image\")\nprint(msg.type)",
+    "focus": "return ImageMsg()"
+  },
+  "aha_moment": {
+    "code": "class Admin:\n    role = \"Admin\"\n\nclass Guest:\n    role = \"Guest\"\n\ndef create_user(is_admin):\n    if is_admin:\n        return Admin\n    return Guest\n\nuser = create_user(True)\nprint(user.role)",
+    "prediction": "What does this print? Look closely at what the factory returns.",
+    "common_guess": "It crashes or prints an error.",
+    "why": "A Factory can return the CLASS itself, not just an object! In Python, classes are just objects too. The factory returns the `Admin` class, and we access `.role` directly."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a new format",
+      "prompt": "Given this Factory, modify the function so that if `format` is `'pdf'`, it returns a `PdfDocument()` object.",
+      "starter_code": "class WordDocument:\n    pass\n\nclass PdfDocument:\n    pass\n\ndef document_factory(format):\n    if format == 'word':\n        return WordDocument()",
+      "solution": "class WordDocument:\n    pass\n\nclass PdfDocument:\n    pass\n\ndef document_factory(format):\n    if format == 'word':\n        return WordDocument()\n    elif format == 'pdf':\n        return PdfDocument()"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/json.html"
+  ]
+}

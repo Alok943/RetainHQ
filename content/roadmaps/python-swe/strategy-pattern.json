@@ -1,0 +1,98 @@
+{
+  "slug": "strategy-pattern",
+  "title": "Strategy pattern",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics",
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Django",
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "The Strategy pattern lets you change how a piece of code works without changing the code itself. You do this by passing a function or an object (the \"Strategy\") that contains the rule you want to use.\n\nImagine traveling to work. Your goal is always the same: reach the office. But your strategy changes. On a rainy day, you take a taxi. On a sunny day, you walk. You swap your strategy based on the situation.\n\nHere is a simple example in a shopping app. We want to calculate the final price after a discount:\n\n```python\n# These are our strategies (rules)\ndef no_discount(price):\n    return price\n\ndef student_discount(price):\n    return price - 50\n\n# This is our main code (context)\ndef checkout(price, discount_strategy):\n    # We call whichever strategy was passed in\n    return discount_strategy(price)\n```\n\nNow we can swap the strategy when we check out:\n\n```python\n# Using different strategies\nprint(checkout(200, no_discount))\nprint(checkout(200, student_discount))\n```\n\nNotice that the `checkout` function never changes. If we want to add a `festival_discount` tomorrow, we just write a new small function and pass it in.\n\nLet us practice. Here is a faded example. Fill in the blank to use the festival strategy.\n\n```python\ndef festival_discount(price):\n    return price / 2\n\n# Fill the blank to apply the festival discount\nfinal_price = checkout(500, ____)\n```\n\nThe rule to remember: **The Strategy pattern lets you swap out the behavior of an object or function at runtime.**\n\nThere is a sharp edge here. Every strategy must accept the exact same arguments. If `student_discount` suddenly needs a `student_id`, but `no_discount` does not, the `checkout` function will crash. All strategies must look exactly the same to the caller.",
+    "why": "If you use many `if/elif` statements to handle different rules, your code becomes messy. The Strategy pattern splits each rule into its own small, clean function or class.",
+    "where_used": [
+      "Payment processing (Credit Card vs UPI)",
+      "Sorting lists (Alphabetical vs Date)",
+      "Applying discounts"
+    ]
+  },
+  "why_learning_this": [
+    "You will know how to write code that is easy to extend without breaking existing logic.",
+    "You will understand how Python's built-in `sort()` function uses this pattern."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Different arguments",
+      "explanation": "If one strategy requires two arguments but another requires only one, the code that calls them will break. All strategies must accept the exact same parameters."
+    },
+    {
+      "title": "Too many simple strategies",
+      "explanation": "If your rule is just one simple math operation that never changes, a Strategy might be too much extra code. Sometimes a simple `if` is enough."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the Strategy pattern in your own words, as if to a classmate.",
+      "answer": "The Strategy pattern is when you pass a rule (like a function) into another function so you can change how it works without rewriting it.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the Strategy pattern better than writing a long list of `if/elif` statements?",
+      "answer": "Because if you add a new rule, you do not have to open and edit the main code. You just write a new small function and pass it in.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if one of your discount strategies requires a `user_age` argument, but the other strategies do not?",
+      "answer": "The main code will break because it tries to call all strategies exactly the same way. All strategies must accept the exact same arguments.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def fast_route():\n    return \"Highway\"\n\ndef scenic_route():\n    return \"Mountain road\"\n\ndef navigate(strategy):\n    return strategy()\n\nmy_route = navigate(scenic_route)\nprint(my_route)",
+      "question": "What does this code print?",
+      "answer": "Mountain road",
+      "why": "The `navigate` function receives the `scenic_route` function. It calls it and returns the result. The behavior was swapped without changing `navigate`."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A developer writes a sorting function and passes a `highest_first` rule to it. Why is this an example of the Strategy pattern?",
+      "answer": "Because the rule for sorting (the strategy) is passed in from the outside, allowing the sort behavior to change without rewriting the sort function.",
+      "why": "The core sorting logic stays the same, but the comparison rule is swapped out at runtime."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def uppercase_rule(text):\n    return text.upper()\n\ndef lowercase_rule(text):\n    return text.lower()\n\ndef format_text(text, rule):\n    return rule(text)\n\nresult = format_text(\"Hello\", uppercase_rule)\nprint(result)",
+    "focus": "return rule(text)"
+  },
+  "aha_moment": {
+    "code": "def add(a, b): return a + b\ndef multiply(a, b): return a * b\n\ndef calculate(x, y, math_strategy):\n    return math_strategy(x, y)\n\n# Passing the built-in 'max' function!\nprint(calculate(10, 20, max))",
+    "prediction": "What does this print? Look closely at the strategy being passed.",
+    "common_guess": "It crashes or prints an error.",
+    "why": "Any function that takes the correct number of arguments can be a strategy. Here, Python's built-in `max` function takes two numbers, so it works perfectly as our strategy!"
+  },
+  "practice_tasks": [
+    {
+      "title": "Swap the strategy",
+      "prompt": "Given this code, change the `print` line so that it uses the `upi_payment` strategy instead of `cash_payment`.",
+      "starter_code": "def cash_payment(amount):\n    return f\"Paid {amount} in cash\"\n\ndef upi_payment(amount):\n    return f\"Paid {amount} via UPI\"\n\ndef pay(amount, strategy):\n    return strategy(amount)\n\nprint(pay(100, cash_payment))",
+      "solution": "def cash_payment(amount):\n    return f\"Paid {amount} in cash\"\n\ndef upi_payment(amount):\n    return f\"Paid {amount} via UPI\"\n\ndef pay(amount, strategy):\n    return strategy(amount)\n\nprint(pay(100, upi_payment))"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/howto/sorting.html#key-functions"
+  ]
+}

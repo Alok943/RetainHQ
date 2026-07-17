@@ -1,0 +1,91 @@
+{
+  "slug": "package-structure-and-init-py",
+  "title": "Package structure and __init__.py",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 40,
+    "importance": 10,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "layered-architecture"
+    ],
+    "project_usage": [
+      "FastAPI",
+      "Django",
+      "Any Python Project"
+    ]
+  },
+  "overview": {
+    "what": "A package is simply a folder that contains Python files. To tell Python that the folder is a package, you usually place a special file named `__init__.py` inside it.\n\n```python\n# A simple file structure:\n# my_app/\n# \u251c\u2500\u2500 __init__.py\n# \u2514\u2500\u2500 calculator.py\n```\n\nWhen you import a package, Python actually runs the code inside `__init__.py` first. This makes `__init__.py` act like a front door to your package.\n\n```python\n# Inside my_app/__init__.py\nprint('The package is being imported!')\nVERSION = '1.0'\n\n# In another file, when you import the package:\n# import my_app\n# Output: The package is being imported!\n```\n\nThe rule: **`__init__.py` marks a folder as a package and runs automatically upon import.** Think of it like a receptionist at an office. When you enter the building (import the package), the receptionist (`__init__.py`) greets you first.",
+    "why": "It organizes your code into neat folders, preventing you from putting thousands of lines into one massive file.",
+    "where_used": [
+      "Organizing large projects",
+      "Creating open-source libraries"
+    ]
+  },
+  "why_learning_this": [
+    "Every real-world project uses folders to separate code.",
+    "It helps you avoid ModuleNotFoundError when trying to import your own files."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Putting too much code in __init__.py",
+      "explanation": "If you write all your logic inside `__init__.py`, the file gets too large. It should only be used to import things from other files, not to write full functions."
+    },
+    {
+      "title": "Forgetting __init__.py in older versions",
+      "explanation": "While modern Python allows folders without `__init__.py` (called namespace packages), tools often get confused without it. Always include it to be safe."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain what a package is in your own words, as if to a classmate.",
+      "answer": "A package is just a folder containing Python files, usually with an __init__.py file inside to tell Python it is a package.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens automatically when you import a package?",
+      "answer": "Python runs the code inside the __init__.py file of that package.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why should you avoid putting too much code inside __init__.py?",
+      "answer": "Because it makes the file too large. It should only act as a front door to import things from other files.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "# Assume my_pkg/__init__.py contains: x = 10\n# import my_pkg\n# print(my_pkg.x)\nprint('10')",
+      "question": "If you imported `my_pkg` and printed `my_pkg.x`, what would it print?",
+      "answer": "10",
+      "why": "Importing a package runs its `__init__.py` file, so the variable `x` becomes available directly on the package."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If your folder `my_app` has an empty `__init__.py` file, will Python crash when you `import my_app`?",
+      "answer": "No",
+      "why": "`__init__.py` can be completely empty. Its mere presence is enough to tell Python that the folder is a package."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "# Simulate what Python does internally when importing\npackage_namespace = {}\n# Python reads __init__.py and executes it\nexec(\"VERSION = '2.0'\", package_namespace)\n# Now the package has the variable\nprint(package_namespace['VERSION'])",
+    "focus": "exec(\"VERSION = '2.0'\", package_namespace)"
+  },
+  "practice_tasks": [
+    {
+      "title": "Expose a variable",
+      "prompt": "Modify this simulated `__init__.py` content so that it exposes an `APP_NAME` variable set to 'RetainHQ'.",
+      "starter_code": "init_content = \"\"\"\n# Empty init\n\"\"\"\nprint(init_content)",
+      "solution": "init_content = \"\"\"\nAPP_NAME = 'RetainHQ'\n\"\"\"\nprint(init_content)"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/tutorial/modules.html#packages"
+  ]
+}

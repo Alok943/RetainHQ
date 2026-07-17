@@ -1,0 +1,97 @@
+{
+  "slug": "provider-abstraction-pattern",
+  "title": "Provider abstraction pattern",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics",
+      "interface-patterns"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "The Provider abstraction pattern hides the messy details of how a job is done. It gives you a clean, simple object (the Provider) to use, so you do not have to worry about the complicated steps inside.\n\nImagine using an ATM. You just push a button to get cash. You do not know if the bank uses a slow computer or a fast one to check your balance. The ATM hides those details. It \"provides\" a simple way to get cash.\n\nIn our code, sending an SMS can be complicated. We can hide it inside a Provider:\n\n```python\nclass FastSMSProvider:\n    def send(self, phone, message):\n        # Messy network code is hidden here\n        return f\"Sent '{message}' to {phone} quickly\"\n\nclass CheapSMSProvider:\n    def send(self, phone, message):\n        # Different messy code hidden here\n        return f\"Sent '{message}' to {phone} cheaply\"\n```\n\nOur main code does not care which provider it uses. It just calls `.send()`:\n\n```python\ndef alert_user(provider):\n    # We just trust the provider knows how to send it\n    result = provider.send(\"9876543210\", \"Your OTP is 1234\")\n    print(result)\n\nmy_provider = FastSMSProvider()\nalert_user(my_provider)\n```\n\nLet us practice. Here is a faded example. Fill in the blank to call the provider's standard method.\n\n```python\nclass DatabaseProvider:\n    def save(self, data):\n        print(f\"Saving {data} to database\")\n\ndef backup_data(provider):\n    # Ask the provider to save\n    ____.save(\"User list\")\n```\n\nThe rule to remember: **A Provider hides complex work behind a simple, standard method.**\n\nThere is a sharp edge to watch out for. What if `FastSMSProvider` needs a password to send, but `CheapSMSProvider` does not? If you put the password directly in the `send()` method, the methods will look different, and `alert_user` will break. Providers must always keep their public methods looking exactly the same.",
+    "why": "It keeps your main application clean. If the SMS company changes how their system works, you only update the Provider class. The rest of your app stays untouched.",
+    "where_used": [
+      "Sending emails or SMS",
+      "Saving files to different places (local disk vs cloud storage)",
+      "Processing payments"
+    ]
+  },
+  "why_learning_this": [
+    "You will know how to write code that can easily switch between different services (like switching from AWS to Google Cloud).",
+    "You will understand how large apps keep their main logic simple and easy to read."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Leaking details",
+      "explanation": "If your provider returns a specific AWS error code instead of a generic error, the main code now has to know about AWS. The provider failed to hide the details."
+    },
+    {
+      "title": "Different method names",
+      "explanation": "If one provider uses `.send_sms()` and another uses `.deliver_text()`, the main code cannot easily swap between them. They must use the exact same method names."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the Provider abstraction pattern in your own words, as if to a classmate.",
+      "answer": "The Provider pattern creates a simple object that hides all the complicated steps of doing a job. Your main code just calls a simple method on the provider.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it important that all SMS providers use the exact same method name (like `.send()`)?",
+      "answer": "Because the main code needs to be able to use any provider without changing its own logic. If the names are different, the main code will break.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if one provider requires a password in its `.send()` method, but the other does not?",
+      "answer": "The main code will break because it expects all providers to take the exact same arguments. The password should be hidden inside the provider's setup, not the `.send()` method.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class LocalStorageProvider:\n    def store(self, item): return \"Saved locally\"\n\nclass CloudStorageProvider:\n    def store(self, item): return \"Saved to cloud\"\n\ndef save_profile(user, provider):\n    print(provider.store(user))\n\naws = CloudStorageProvider()\nsave_profile(\"Alice\", aws)",
+      "question": "What does this code print?",
+      "answer": "Saved to cloud",
+      "why": "The `save_profile` function uses the `CloudStorageProvider`. It calls the `.store()` method on the provider, which returns the cloud message."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A developer writes an email system. The `GmailProvider` returns a `GoogleNetworkError` when it fails. Why is this a bad Provider abstraction?",
+      "answer": "Because the provider is leaking specific details about Google to the main code.",
+      "why": "A good provider hides the messy details. It should catch the `GoogleNetworkError` and return a generic `EmailFailedError` so the main code does not need to know it is using Google."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class MockWeatherProvider:\n    def get_temp(self):\n        return 25\n\ndef display_weather(provider):\n    temp = provider.get_temp()\n    print(f\"Temp is {temp}\")\n\nfake_api = MockWeatherProvider()\ndisplay_weather(fake_api)",
+    "focus": "temp = provider.get_temp()"
+  },
+  "aha_moment": {
+    "code": "class FastPrinter:\n    def print_doc(self, text): print(\"Fast:\", text)\n\nclass SlowPrinter:\n    def print_doc(self, text, ink_level): print(\"Slow:\", text)\n\ndef print_report(provider):\n    provider.print_doc(\"Annual Report\")\n\nprint_report(FastPrinter())\n# print_report(SlowPrinter()) # This would crash!",
+    "prediction": "If we uncomment the last line, what happens?",
+    "common_guess": "It prints 'Slow: Annual Report'.",
+    "why": "It crashes! The main code `print_report` only passes ONE argument. `SlowPrinter` demands two arguments. Providers must have the exact same method rules, or the abstraction fails."
+  },
+  "practice_tasks": [
+    {
+      "title": "Standardize the provider",
+      "prompt": "Given this code, fix the `StripeProvider` so that its method matches the `PayPalProvider`, allowing `process_cart` to use it without crashing.",
+      "starter_code": "class PayPalProvider:\n    def charge(self, amount):\n        return f\"Charged {amount} on PayPal\"\n\nclass StripeProvider:\n    def make_payment(self, amount):\n        return f\"Charged {amount} on Stripe\"\n\ndef process_cart(provider):\n    return provider.charge(500)",
+      "solution": "class PayPalProvider:\n    def charge(self, amount):\n        return f\"Charged {amount} on PayPal\"\n\nclass StripeProvider:\n    def charge(self, amount):\n        return f\"Charged {amount} on Stripe\"\n\ndef process_cart(provider):\n    return provider.charge(500)"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/abc.html"
+  ]
+}

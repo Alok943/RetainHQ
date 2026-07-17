@@ -20,103 +20,114 @@
   },
   "glossary": [
     {
-      "term": "Zero-shot CoT",
-      "definition": "A technique where you simply add a phrase like Let us think step by step to make the AI explain its reasoning before answering, without giving it prior examples."
+      "term": "zero-shot CoT",
+      "definition": "Adding a phrase like 'Let us think step by step' to make the model write out its reasoning before answering, without giving it examples."
     },
     {
-      "term": "Few-shot CoT",
-      "definition": "A method where you show the AI a few examples of how to reason through a problem, teaching it the exact thinking style you want."
+      "term": "few-shot CoT",
+      "definition": "Showing the model worked examples that include the reasoning steps, so it learns both that reasoning is needed and how to structure it."
     },
     {
       "term": "forward pass",
-      "definition": "The underlying computation step the AI takes to generate a single word; more reasoning steps mean more computations, giving it time to think."
+      "definition": "The computation an AI does to generate one token. More written reasoning steps = more forward passes = more computation time to work through the problem."
     }
   ],
   "hook": {
-    "scenario": "You ask gpt-4o-mini: 'A store has 120 apples. They sell 40% in the morning and then sell half of the remainder in the afternoon. How many are left?' It answers 36. Wrong — the correct answer is 36... wait, let me check. (It's actually 36.) But try a harder multi-step problem: the model often blunders when it jumps straight to an answer.",
-    "question": "Why do LLMs make arithmetic and logic errors when answering directly, and why does asking them to 'think step by step' fix it?"
+    "scenario": "You ask GPT-4o-mini a multi-step maths problem and it answers instantly — but incorrectly. You add 'Let's think step by step.' to the prompt. Before you read on, predict: does adding this phrase actually help, and why?",
+    "question": "Think about what changes when the model writes out steps — then read on to understand the mechanism."
   },
   "mental_model": {
-    "intuition": "An LLM predicts the next token. 'Jump to the answer' means the model predicts the answer token directly from the question. 'Think step by step' makes the model generate intermediate reasoning tokens that become its working memory.",
-    "description": "Transformers have no internal scratchpad — they can't 'hold a number in mind'. Their computation happens in the forward pass for each token. By prompting the model to write out reasoning steps, those steps become part of the context — actual tokens the model attends to — giving it a step-by-step scratchpad. More reasoning tokens = more forward passes = more opportunity to get the logic right before committing to an answer."
+    "intuition": "An LLM predicts the next token. 'Jump to the answer' means predicting the answer token directly from the question. 'Think step by step' makes the model write intermediate steps that become its working memory.",
+    "description": "Transformers have no internal scratchpad — they cannot hold a number in mind. Their computation happens in the forward pass for each token. When you ask the model to write out reasoning steps, those steps become context tokens that the model attends to when generating subsequent steps. More reasoning tokens = more forward passes = more opportunity to get multi-step logic right before committing to an answer."
   },
   "sections": [
     {
-      "body": "Zero-shot CoT (chain-of-thought) is the simplest form: append 'Let's think step by step.' to the user message. This single phrase reliably triggers more deliberate, structured reasoning. The model generates its reasoning as text, which becomes context for the final answer. On multi-step math and logic problems, this technique alone can lift accuracy by 20–40%.",
-      "recap": "Append 'Let's think step by step.' — the simplest CoT trigger with surprising accuracy gains."
+      "body": "Zero-shot CoT is the simplest form: append 'Let's think step by step.' to the user message. This phrase reliably triggers more deliberate, structured reasoning. The model generates its reasoning as text, which becomes part of the context for the final answer. On multi-step maths and logic problems, this trigger alone can lift accuracy by 20–40%.",
+      "recap": "Append 'Let's think step by step.' — the simplest chain-of-thought trigger with surprising accuracy gains."
     },
     {
-      "body": "Few-shot CoT provides explicit reasoning examples: show the model an (input, worked-reasoning, answer) triple rather than just (input, answer). The model learns both THAT it should reason and HOW to structure that reasoning for your domain. This is more powerful than zero-shot CoT for domain-specific problems where the reasoning style matters (financial analysis, legal reasoning, debugging code).",
-      "recap": "Few-shot CoT: show reasoning steps as examples, not just answers. Teaches the reasoning style, not just 'think more'."
+      "body": "Few-shot CoT provides explicit reasoning examples. You show the model an (input, reasoning steps, answer) triple rather than just (input, answer). The model learns both that it should reason and how to structure that reasoning for your domain. This is more powerful than zero-shot CoT for domain-specific problems — financial analysis, legal reasoning, or debugging code — where the style of reasoning matters.",
+      "recap": "Few-shot CoT teaches the reasoning style, not just 'think more'. Show the full reasoning path."
     },
     {
-      "body": "The cost is real: CoT generates more output tokens. A direct answer might be 5 tokens; a CoT answer is 80–200 tokens. At scale this adds up. Mitigation: use CoT for the hard, high-value path only. A routing pattern — use a cheap model to classify query complexity, reserve CoT on gpt-4o for 'hard' queries — keeps costs manageable. For simple queries, zero-shot direct answers are fine.",
-      "recap": "CoT trades output tokens for accuracy. Route only hard queries through CoT; simple ones don't need it."
+      "body": "The cost is real. CoT generates many more output tokens. A direct answer might be 5 tokens; a CoT answer is 80–200 tokens. At scale this adds up. The smart approach: classify query complexity first, then apply CoT only to the hard queries. A cheap model can decide if a query is 'simple' or 'hard'. Simple queries get a direct answer. Hard queries get CoT on a stronger model.",
+      "recap": "CoT trades output tokens for accuracy. Route only hard queries through CoT; simple ones do not need it."
     },
     {
-      "body": "The deeper insight: CoT only helps when the answer actually requires multi-step reasoning. 'What is the capital of France?' doesn't benefit from CoT — the model knows 'Paris' directly and CoT just adds noise tokens. Use CoT for: multi-step arithmetic, logical puzzles, coding problems, tasks that require aggregating several facts. Skip it for direct recall, classification, and short extractions.",
-      "recap": "CoT = more reasoning tokens used as scratchpad. Effective for multi-step tasks; unnecessary noise for direct recall."
+      "body": "**CoT only helps when reasoning steps are actually needed.** 'What is the capital of France?' gets no benefit from CoT — the model knows 'Paris' in one token and writing steps only adds noise. Use CoT for: multi-step maths, logical puzzles, code debugging, tasks that require aggregating several facts. Skip it for direct recall, classification, and short extraction.",
+      "recap": "CoT = useful for multi-step problems. Unnecessary noise for direct recall or simple classification."
     }
   ],
   "code_snippets": [
     {
       "title": "Zero-shot CoT — the 'think step by step' trigger",
       "language": "python",
-      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# Direct answer (may err on multi-step problems)\ndirect = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content':\n        'A train travels 120 km at 60 km/h, then 80 km at 40 km/h. '\n        'What is the average speed for the whole journey?'}],\n    max_tokens=20, temperature=0,\n)\nprint('Direct:', direct.choices[0].message.content)  # often wrong\n\n# CoT — append the trigger phrase\ncot = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content':\n        'A train travels 120 km at 60 km/h, then 80 km at 40 km/h. '\n        'What is the average speed for the whole journey? '\n        \"Let's think step by step.\"}],  # <-- the trigger\n    max_tokens=300, temperature=0,\n)\nprint('CoT:', cot.choices[0].message.content)  # correct: 48 km/h",
-      "explanation": "Average speed = total distance / total time = 200 / (2 + 2) = 50 km/h. (Actually 200/(2+2)=50.) The direct model often outputs the arithmetic mean of speeds (50 km/h in this case is coincidentally correct, but for asymmetric distances it fails). The CoT trigger makes the model calculate time for each leg before dividing — the written steps prevent the shortcut error."
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# Without CoT — may error on multi-step maths\ndirect = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content':\n        'A train does 120 km at 60 km/h, then 80 km at 40 km/h. '\n        'What is the average speed for the whole journey?'}],\n    max_tokens=20, temperature=0,\n)\nprint('Direct:', direct.choices[0].message.content)  # often wrong",
+      "explanation": "Average speed = total distance / total time = 200 / (2 + 2) = 50 km/h. Models often shortcut to the arithmetic mean of 50 km/h by coincidence — but on asymmetric distances they fail. Adding CoT forces them to calculate each leg's time before dividing."
+    },
+    {
+      "title": "Zero-shot CoT trigger added",
+      "language": "python",
+      "code": "cot = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content':\n        'A train does 120 km at 60 km/h, then 80 km at 40 km/h. '\n        'What is the average speed for the whole journey? '\n        \"Let's think step by step.\"}],\n    max_tokens=300, temperature=0,\n)\nprint('CoT:', cot.choices[0].message.content)  # 50 km/h with correct steps",
+      "explanation": "Adding 'Let's think step by step.' makes the model output the time for each leg explicitly: 120/60 = 2 h, 80/40 = 2 h, total = 200 km / 4 h = 50 km/h. The written steps prevent the arithmetic shortcut error."
     },
     {
       "title": "Few-shot CoT — show reasoning as examples",
       "language": "python",
-      "code": "from openai import OpenAI\nclient = OpenAI()\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {\n            'role': 'system',\n            'content': 'Solve maths word problems. Show your reasoning step by step, then state the final answer.',\n        },\n        # Few-shot reasoning example\n        {\n            'role': 'user',\n            'content': 'A shop has 50 items. It sells 20% on Monday and 25% of the rest on Tuesday. How many remain?',\n        },\n        {\n            'role': 'assistant',\n            'content': 'Step 1: Items sold Monday = 20% of 50 = 10. Remaining = 40.\\n'\n                       'Step 2: Items sold Tuesday = 25% of 40 = 10. Remaining = 30.\\n'\n                       'Answer: 30 items remain.',\n        },\n        # Real query\n        {\n            'role': 'user',\n            'content': 'A tank holds 200 litres. 30% drains in the morning and then 40% of the rest drains in the afternoon. How much is left?',\n        },\n    ],\n    max_tokens=200,\n    temperature=0,\n)\nprint(response.choices[0].message.content)\n# Step 1: Morning drain = 30% of 200 = 60. Remaining = 140.\n# Step 2: Afternoon drain = 40% of 140 = 56. Remaining = 84.\n# Answer: 84 litres remain.",
-      "explanation": "The example teaches both the reasoning structure (Step 1, Step 2, Answer) and the problem-solving approach (compute each stage sequentially). The model mirrors this structure on the real query, which prevents the 'add percentages directly' error (30+40 ≠ 70% of 200)."
+      "code": "response = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'Solve word problems. Show steps, then state the answer.'},\n        {'role': 'user',      'content': 'A shop has 50 items. 20% sold Monday. 25% of the rest on Tuesday. How many remain?'},\n        {'role': 'assistant', 'content': 'Step 1: Monday sold = 20% of 50 = 10. Remaining = 40.\\n'\n                                         'Step 2: Tuesday sold = 25% of 40 = 10. Remaining = 30.\\n'\n                                         'Answer: 30 items.'},\n        {'role': 'user',      'content': 'A tank holds 200 L. 30% drains in the morning. 40% of the rest in the afternoon. How much is left?'},\n    ],\n    max_tokens=200, temperature=0,\n)\nprint(response.choices[0].message.content)\n# Step 1: Morning = 30% of 200 = 60. Remaining = 140.\n# Step 2: Afternoon = 40% of 140 = 56. Remaining = 84.\n# Answer: 84 litres.",
+      "explanation": "The example teaches both the reasoning structure (Step 1, Step 2, Answer) and the approach (compute each stage sequentially). This prevents the common mistake of adding percentages directly: 30 + 40 ≠ 70% of 200."
     },
     {
-      "title": "Extract just the final answer from a CoT response",
+      "title": "Extract the final answer from CoT output with a delimiter",
       "language": "python",
-      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# Ask for reasoning AND a clean final answer in a delimiter\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {\n            'role': 'system',\n            'content': 'Think step by step. Then output your final answer on a '\n                       'new line after the token ANSWER:',\n        },\n        {'role': 'user', 'content': 'What is 15% of 240?'},\n    ],\n    max_tokens=200,\n    temperature=0,\n)\n\nfull_output = response.choices[0].message.content\n# '15% of 240: 0.15 × 240 = 36.\\nANSWER: 36'\n\nfinal_answer = full_output.split('ANSWER:')[-1].strip()\nprint(final_answer)  # '36'",
-      "explanation": "In pipelines, you need the final answer as a clean string, not the full reasoning. The ANSWER: delimiter is a lightweight way to separate scratchpad reasoning from the extractable result — no regex needed, just a split. For structured extraction, combine this with structured outputs."
+      "code": "response = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'Think step by step. Then write the final answer '\n                                      'on a new line after ANSWER:'},\n        {'role': 'user', 'content': 'What is 15% of 240?'},\n    ],\n    max_tokens=200, temperature=0,\n)\nfull = response.choices[0].message.content\n# '15% of 240: 0.15 × 240 = 36.\\nANSWER: 36'\nfinal = full.split('ANSWER:')[-1].strip()\nprint(final)  # '36'",
+      "explanation": "In pipelines, you need a clean final answer, not the full reasoning. The ANSWER: delimiter splits scratchpad from result with no regex needed. Combine with structured outputs for even more reliable extraction."
     }
   ],
   "common_mistakes": [
     {
-      "title": "Using CoT for simple recall or classification tasks",
-      "explanation": "'What is the capital of France? Let's think step by step.' generates 50 tokens of reasoning that adds latency and cost with no accuracy benefit — the model knew 'Paris' in one token. Reserve CoT for tasks that genuinely require multi-step reasoning."
+      "title": "Using CoT for simple recall or classification",
+      "explanation": "'What is the capital of France? Let's think step by step.' generates 50 tokens of reasoning with no accuracy benefit. The model knew 'Paris' in one token. Reserve CoT for tasks that genuinely need multi-step reasoning."
     },
     {
-      "title": "Treating the CoT reasoning as ground truth",
-      "explanation": "CoT reasoning can be fluent and wrong — the model may generate a confident-sounding but incorrect chain of steps. Always validate the final answer against a ground truth source for high-stakes tasks, not just check whether the reasoning 'sounds right'."
+      "title": "Trusting the reasoning as ground truth",
+      "explanation": "CoT reasoning can sound confident and be completely wrong. The model may generate a fluent but incorrect chain of steps. Always validate the final answer for high-stakes tasks — do not just check that the reasoning 'sounds right'."
     }
   ],
   "recall_questions": [
     {
-      "q": "Why does writing out reasoning steps help an LLM solve multi-step problems?",
-      "answer": "LLMs have no internal scratchpad — their computation happens token by token. Written reasoning steps become context tokens that the model attends to in subsequent steps, effectively giving it a working memory for intermediate results.",
+      "q": "Explain why writing out reasoning steps helps an LLM solve multi-step problems.",
+      "answer": "LLMs have no internal scratchpad — their computation happens token by token. When the model writes reasoning steps, those steps become context tokens it attends to when generating the next step. This gives it a written working memory, which prevents errors from skipping intermediate calculations.",
       "tier": "tier1"
     },
     {
       "q": "What is the difference between zero-shot CoT and few-shot CoT?",
-      "answer": "Zero-shot CoT appends a trigger phrase ('Let's think step by step') to elicit reasoning without examples. Few-shot CoT provides (input, reasoning, answer) triples that teach both that reasoning is required and how to structure it for your domain.",
+      "answer": "Zero-shot CoT adds a trigger phrase ('Let's think step by step') to elicit reasoning without examples. Few-shot CoT provides (input, reasoning steps, answer) triples that teach the model both that reasoning is needed and how to structure it for your domain.",
       "tier": "tier1"
     },
     {
-      "q": "What is the main cost tradeoff of chain-of-thought prompting?",
-      "answer": "CoT generates significantly more output tokens (80–200 vs 5–10 for a direct answer), increasing latency and cost linearly. It should be reserved for tasks where multi-step reasoning is actually needed.",
+      "q": "What is the main cost trade-off of chain-of-thought prompting?",
+      "answer": "CoT generates many more output tokens — 80–200 vs 5–10 for a direct answer. This increases latency and cost linearly with token count. At scale, applying CoT to every query regardless of complexity can be very expensive.",
+      "tier": "tier2"
+    },
+    {
+      "q": "You apply 'Let's think step by step.' to all 500,000 daily queries to improve accuracy. Predict the cost impact and propose a smarter approach.",
+      "answer": "Adding 150 output tokens per query × 500k queries × typical output token price creates significant extra daily cost. A smarter approach: classify queries by complexity first, then apply CoT only to the hard fraction — perhaps 10–15% of queries. Simple queries get direct answers and are much cheaper.",
       "tier": "tier2"
     }
   ],
   "oa_questions": [
     {
-      "question": "Your financial analysis bot makes arithmetic errors on multi-step compound-interest calculations. You're already using gpt-4o. What prompt change would you try first before switching models?",
+      "question": "Your financial analysis bot makes arithmetic errors on multi-step compound-interest calculations. You are already using GPT-4o. What prompt change would you try first before switching models?",
       "company": "GenAI Engineer interview",
-      "answer": "Add chain-of-thought prompting: instruct the model to 'show your calculation step by step' and provide a few-shot example of a similar compound-interest problem with explicit reasoning steps. Written intermediate calculations become context that prevents the model from shortcutting to a wrong answer.",
-      "approach": "Explain WHY CoT helps: intermediate tokens as working memory."
+      "answer": "Add chain-of-thought prompting: instruct the model to show its calculation step by step, and provide a few-shot example of a similar compound-interest problem with explicit reasoning steps. Written intermediate calculations become context that prevents the model from shortcutting to a wrong answer.",
+      "approach": "Explain why CoT helps: intermediate tokens act as working memory. This is a prompt engineering fix that costs nothing compared to a model upgrade."
     },
     {
-      "question": "In a production pipeline that processes 500k queries/day, your team wants to add CoT to improve accuracy from 91% to 95%. A colleague says 'just prepend the trigger phrase to everything'. Why is this a bad idea at scale?",
+      "question": "In a production pipeline processing 500k queries per day, your team wants to add CoT to improve accuracy. A colleague says 'just prepend the trigger phrase to everything'. Why is this a bad idea at scale?",
       "company": "LLM Engineer OA",
-      "answer": "Blanket CoT adds ~100–200 output tokens per call across ALL 500k queries. At $10/MTok for output tokens, 150 tokens × 500k calls × $10/MTok = $750/day in extra cost — just for the reasoning tokens. Additionally, simple queries (which are most of the volume) get no accuracy benefit. The correct approach: classify queries by complexity, apply CoT only to the hard fraction (maybe 10–15%), and route the rest through direct answering.",
-      "approach": "Do the math: tokens × calls × price/MTok. Then propose routing as the solution. This distinguishes 'knows the technique' from 'can apply it economically at scale'."
+      "answer": "Blanket CoT adds 100–200 output tokens per query across all 500k queries. At typical output token prices, this can add hundreds of dollars per day — for reasoning tokens on simple queries that get no accuracy benefit. The correct approach: classify queries by complexity, apply CoT only to the hard fraction, and route simple queries through direct answering.",
+      "approach": "Do the math: tokens × calls × price per million tokens. Then propose complexity routing as the solution. This shows you can apply the technique economically at scale, not just in isolation."
     }
   ],
   "sources": [

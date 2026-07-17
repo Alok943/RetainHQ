@@ -12,6 +12,18 @@ You generate **one JSON per node** for the `ai-engineering` roadmap, `kind: "eng
 slugs are in `content/_TODO-engineering.md`. Validate with `python content/validate.py` (engineering
 branch). Write to `content/roadmaps/ai-engineering/<slug>.json` (filename = slug).
 
+**AUDIENCE & OVERLAYS:** for beginner-first batches (all P0 per `docs/PLAN-lesson-generation.md`),
+compose this contract with `content/PROMPT-beginner-overlay.md` — paste it after this document;
+**the overlay wins on conflict**. Everything not overridden (schema, validator fields, JSON rules,
+docs-as-truth) applies unchanged.
+
+**PREDICTION RUNG (all audiences).** This kind has no `understanding_checks` field, so the
+predict-before-reveal rung — the platform's highest-value probe — must live in the fields it DOES
+have: (a) prefer a `hook` whose `question` asks the reader to PREDICT something concrete before
+reading ("what do you think this retrieval returns?"), and (b) at least ONE `recall_questions` item
+per lesson must be predict-style — "what happens if <concrete change>?" (tier2) — not a state-it
+question. Do not invent new JSON fields for this; the validator won't render them.
+
 **Gold reference (copy its shape + depth):** `content/roadmaps/ai-engineering/embed-and-retrieve-top-k.json`.
 
 ---
@@ -158,6 +170,8 @@ These rules came out of reviewing the gold reference — they apply to EVERY les
 ## Quality bar (self-sufficiency is the gate)
 - **Could a learner answer EVERY one of your `oa_questions` using only what THIS lesson teaches plus its
   listed prerequisites?** If an OA needs a concept you never taught, either teach it or cut the question.
+- Is there a prediction rung? (`hook.question` phrased as a prediction, and ≥1 predict-style
+  `recall_questions` item — see PREDICTION RUNG above.)
 - Does `mental_model` make it feel **obvious**? Generic analogies ("it's like a database") fail — sharpen.
 - Is the teach (across `sections`, or the `explanation`) a real **teach-from-scratch**, not a summary?
   Chunking into `sections` must not thin the depth — a beginner should still learn it fully. (engineering ≠ thin aptitude.)

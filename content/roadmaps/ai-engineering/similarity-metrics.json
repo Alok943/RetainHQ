@@ -23,108 +23,114 @@
   },
   "glossary": [
     {
-      "term": "Cosine Similarity",
-      "definition": "A mathematical formula that checks if two pieces of text mean the same thing by seeing if their vectors point in the same direction."
+      "term": "cosine similarity",
+      "definition": "A number between 0 and 1 that measures how similar two pieces of text are by comparing the direction of their vectors. 1 means identical meaning, 0 means unrelated."
     },
     {
-      "term": "Euclidean Distance",
-      "definition": "A method that measures the physical straight-line gap between two points in space to see how different they are."
+      "term": "euclidean distance",
+      "definition": "A number that measures the straight-line gap between two points in a vector space. Smaller distance means more similar."
     },
     {
-      "term": "Dot Product",
-      "definition": "A very fast mathematical shortcut that databases use to compare vectors, which works perfectly if all the vectors are the same length."
+      "term": "dot product",
+      "definition": "A fast math operation that multiplies matching numbers in two vectors and sums the results. For normalized vectors, it gives the same ranking as cosine similarity but runs faster."
     }
   ],
   "hook": {
-    "scenario": "Your embedding model turns 'dog' and 'puppy' into two arrays of 1,536 floats. How does the vector database actually calculate that they mean the same thing?",
-    "question": "When everything is just numbers, what is the mathematical definition of 'semantic similarity'?"
+    "scenario": "Your embedding model turns 'dog' and 'puppy' into two arrays of 1,536 numbers. Before you read on, predict: which metric would a vector database use to decide which is closer to a query — the angle between the arrays, the straight-line distance, or both?",
+    "question": "Think about what 'similar meaning' means geometrically, then read on."
   },
   "mental_model": {
-    "intuition": "Similarity is just geometry—measuring how close two points are, or if two arrows point in the exact same direction.",
-    "description": "Once text becomes a vector, comparing meaning means measuring distance or angle. Cosine similarity checks if two vectors point in the same direction, ignoring how 'long' they are. Euclidean distance measures the physical gap between them. You don't need to memorize the formulas, but you must know which one your model and database are using."
+    "intuition": "Similarity is geometry — measuring how closely two arrows point in the same direction, or how far apart two points are in space.",
+    "description": "Once text becomes a vector, comparing meaning means measuring distance or angle. Cosine similarity checks if two vectors point in the same direction, ignoring how 'long' they are. Euclidean distance measures the physical gap between the two points. You do not need to memorize the formulas, but you must know which metric your model and database are using — because mixing them causes silent errors."
   },
   "sections": [
     {
-      "body": "Once text is embedded, it is just a point in high-dimensional space. To retrieve the best answers for a user's query, we need a mathematical way to score how 'close' the query vector is to every chunk vector. The metric you choose dictates what 'close' means.",
-      "recap": "We need a math formula to convert two arrays of floats into a single 'closeness' score."
+      "body": "Once text is embedded, it is a point in high-dimensional space. To find the best answers for a user's question, you need a math formula that turns two arrays of numbers into a single score saying how 'close' they are. The metric you choose defines what 'close' means.",
+      "recap": "You need a formula to turn two vectors into one closeness score."
     },
     {
-      "body": "The gold standard is **Cosine Similarity**. It measures the *angle* between two vectors. If they point the exact same way, the angle is 0, and the cosine is 1 (identical meaning). If they are perpendicular, the cosine is 0. It cares entirely about direction and completely ignores vector length.",
+      "body": "The standard choice is cosine similarity. It measures the angle between two vectors. If they point in exactly the same direction, the angle is 0 and the cosine is 1 — identical meaning. If they point in perpendicular directions, the cosine is 0 — unrelated. **Cosine cares entirely about direction and ignores vector length.**",
       "image": {
         "asset": "ai-engineering/similarity-metrics/cosine-vs-distance.png",
         "alt": "Left: two vectors with the angle between them. Right: two points with the distance between them."
       },
-      "recap": "Cosine = direction/angle. Pointing the same way means similar meaning."
+      "recap": "Cosine = direction only. Two vectors pointing the same way = same meaning, regardless of length."
     },
     {
-      "body": "**Euclidean Distance (L2)** measures the straight-line physical distance between the two points. It cares about both direction AND magnitude. If two vectors point the same way but one is twice as long, Euclidean says they are far apart, while Cosine says they are perfectly identical.",
-      "recap": "Euclidean = straight-line distance, sensitive to vector length."
+      "body": "Euclidean distance (L2) measures the straight-line gap between two points in space. It cares about both direction AND length. If two vectors point in the same direction but one is twice as long, Euclidean says they are far apart — while cosine says they are perfectly identical. For embeddings where length varies, this difference matters.",
+      "recap": "Euclidean = straight-line gap, sensitive to vector length."
     },
     {
-      "body": "**Dot Product** just multiplies the coordinates and sums them. Here's the industry secret: if your embeddings are *normalized* (forced to have a length of exactly 1), Dot Product is mathematically identical to Cosine Similarity, but vastly faster for chips to compute.",
-      "recap": "Dot Product is faster. If vectors are normalized, Dot Product = Cosine."
+      "body": "The dot product multiplies matching numbers in two vectors and sums the results. Here is the key insight: if your vectors are normalized (forced to have exactly length 1), the dot product gives the same ranking as cosine similarity. But dot product is faster for hardware to compute. This is why databases default to dot product when they know vectors are normalized.",
+      "recap": "Dot product is faster. For normalized vectors, dot product = cosine similarity for ranking purposes."
     },
     {
-      "body": "Most modern models (like OpenAI's text-embedding-3) output normalized vectors by default. Because length is fixed at 1, Cosine, Euclidean, and Dot Product will all perfectly rank your search results in the exact same order. You just configure your database to use whichever is fastest (usually Dot Product).",
-      "recap": "Pipeline recap: Text → Embed → Score (Similarity Metric) → Retrieve."
+      "body": "**Most modern models output normalized vectors by default**, including OpenAI's `text-embedding-3` family. Because all vectors have length 1, cosine, Euclidean, and dot product all rank your results in the same order. In practice: configure your database to use dot product (inner product) for speed, and the ranking will be identical to cosine.",
+      "recap": "Pipeline: Text → Embed → Score (similarity metric) → Retrieve. For normalized embeddings, dot product is the fastest choice."
     }
   ],
   "code_snippets": [
     {
-      "title": "The three metrics in raw Python (numpy)",
+      "title": "The three metrics in plain Python",
       "language": "python",
-      "code": "import numpy as np\nfrom numpy.linalg import norm\n\ndef cosine_similarity(a, b):\n    # Angle only: dot product divided by lengths\n    return np.dot(a, b) / (norm(a) * norm(b))\n\ndef euclidean_distance(a, b):\n    # Straight line distance (L2)\n    return norm(np.array(a) - np.array(b))\n\ndef dot_product(a, b):\n    # Fast, and equals cosine if a and b are normalized to length 1\n    return np.dot(a, b)",
-      "explanation": "If norm(a) and norm(b) are exactly 1, the division in cosine similarity does nothing. The two functions become mathematically identical, but np.dot() runs much faster on hardware."
+      "code": "import numpy as np\nfrom numpy.linalg import norm\n\ndef cosine_similarity(a, b):\n    return np.dot(a, b) / (norm(a) * norm(b))\n\ndef euclidean_distance(a, b):\n    return norm(np.array(a) - np.array(b))\n\ndef dot_product(a, b):\n    return np.dot(a, b)",
+      "explanation": "If both vectors are normalized (length = 1), the division in cosine similarity does nothing. `cosine_similarity` and `dot_product` return the same value. `np.dot()` runs faster on hardware because it skips the division."
     },
     {
-      "title": "Configuring the metric in pgvector",
+      "title": "Choosing a metric in pgvector",
       "language": "sql",
-      "code": "-- Cosine distance operator (<=>)\nSELECT text FROM docs ORDER BY embedding <=> :query_vector LIMIT 5;\n\n-- Euclidean distance operator (<->)\nSELECT text FROM docs ORDER BY embedding <-> :query_vector LIMIT 5;\n\n-- Inner product / Dot product operator (<#>)\nSELECT text FROM docs ORDER BY embedding <#> :query_vector LIMIT 5;",
-      "explanation": "Vector databases like pgvector let you choose the metric via operators. For normalized embeddings, using inner product (<#>) is computationally cheapest and yields the exact same top-k results."
+      "code": "-- Cosine distance (<=>): ORDER BY ascending = most similar first\nSELECT text FROM docs ORDER BY embedding <=> :query_vector LIMIT 5;\n\n-- Euclidean distance (<->)\nSELECT text FROM docs ORDER BY embedding <-> :query_vector LIMIT 5;\n\n-- Inner product / dot product (<#>)\nSELECT text FROM docs ORDER BY embedding <#> :query_vector LIMIT 5;",
+      "explanation": "pgvector exposes three operators. For normalized OpenAI embeddings, the inner product (`<#>`) is the fastest and gives the same top-k results as cosine. Note: all three return distance, so ORDER BY ascending = most similar first."
     }
   ],
   "common_mistakes": [
     {
-      "title": "Using Euclidean distance on unnormalized embeddings",
-      "explanation": "If a model's embeddings vary in length, an embedding of magnitude 5 and magnitude 2 might point in the exact same direction (same meaning), but Euclidean distance will say they are far apart. Cosine handles this safely."
+      "title": "Using Euclidean distance on vectors that are not normalized",
+      "explanation": "If embedding vectors vary in length, two vectors with identical meaning but different lengths will score poorly under Euclidean distance. Cosine handles this correctly because it ignores length entirely."
     },
     {
-      "title": "Forgetting that 'distance' is inverted from 'similarity'",
-      "explanation": "If you use a distance metric but mistakenly sort descending (as you would for similarity), you will retrieve the vectors that are furthest away."
+      "title": "Sorting by distance in descending order",
+      "explanation": "Vector database operators return distance (smaller = more similar). If you sort descending (`DESC`), you get the most dissimilar vectors first. For similarity search, sort ascending (`ASC`), or use a similarity operator if one is available."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the core difference between what Cosine Similarity and Euclidean Distance measure?",
-      "tier": "tier1",
-      "answer": "Cosine measures the angle/direction between vectors, ignoring their length. Euclidean measures the straight-line physical distance between the points in space, which is sensitive to length."
+      "q": "Explain the difference between cosine similarity and Euclidean distance to a classmate.",
+      "answer": "Cosine similarity measures the angle between two vectors — it only cares about direction and ignores length. Euclidean distance measures the physical straight-line gap between two points, which depends on both direction and length.",
+      "tier": "tier1"
     },
     {
-      "q": "If you are using normalized embeddings, why might you configure your database to use Dot Product instead of Cosine Similarity?",
-      "tier": "tier2",
-      "answer": "When vectors are normalized (length of 1), Dot Product yields the exact same mathematical ranking as Cosine Similarity, but it requires fewer operations, making it faster to compute at scale."
+      "q": "If you use normalized embeddings, why might you configure your database to use dot product instead of cosine similarity?",
+      "answer": "When vectors are normalized (length = 1), dot product gives the same ranking as cosine similarity but runs faster because it skips the length-division step. The results are identical, so you pay less CPU cost.",
+      "tier": "tier2"
     },
     {
-      "q": "If vector A and vector B point in the exact same direction, but vector A is twice as long, what is their Cosine Similarity?",
-      "tier": "tier2",
-      "answer": "1 (or a perfect match). Cosine ignores vector magnitude entirely and only looks at the angle, which in this case is 0 degrees."
+      "q": "If vector A and vector B point in exactly the same direction but vector A is twice as long, what is their cosine similarity?",
+      "answer": "1 — a perfect match. Cosine ignores vector length entirely and only looks at direction. Identical direction means identical meaning, regardless of magnitude.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you sort pgvector results using the <=> (cosine distance) operator in descending order?",
+      "answer": "You retrieve the vectors with the highest distance — the least similar ones. Distance operators in pgvector return how far apart two vectors are, so ascending order gives the most similar results. Descending order gives the worst matches.",
+      "tier": "tier2"
     }
   ],
   "oa_questions": [
     {
-      "question": "You migrate from an open-source embedding model (variable vector length) to OpenAI's embeddings (normalized to length 1). Your vector database is currently configured to sort by Cosine Distance. A coworker suggests switching it to Dot Product to save CPU cycles. Is this safe?",
+      "question": "You migrate from an open-source embedding model (variable vector length) to OpenAI's embeddings (normalized to length 1). Your vector database sorts by cosine distance. A coworker suggests switching to dot product to save CPU cycles. Is this safe?",
       "company": "GenAI Engineer interview",
-      "answer": "Yes. Because OpenAI's embeddings are normalized, the length/magnitude of all vectors is 1. In this state, Dot Product ranks vectors in the exact same order as Cosine Similarity, but executes faster. You just need to ensure your ORDER BY direction is correct (descending for dot product).",
-      "approach": "Identify the relationship between normalization, cosine, and dot product. State clearly that normalization makes them equivalent for ranking purposes."
+      "answer": "Yes. OpenAI's embeddings are normalized, so all vectors have length 1. For normalized vectors, dot product ranks results in exactly the same order as cosine similarity, but runs faster. You only need to make sure the ORDER BY direction is correct — ascending for both distance metrics.",
+      "approach": "Identify the relationship between normalization, cosine, and dot product. State clearly that normalization makes them equivalent for ranking, so the switch is safe."
     },
     {
-      "question": "Your retrieval system is returning the worst possible matches for every user query. You are using `ORDER BY embedding <=> query_vector DESC` in pgvector (`<=>` is cosine distance). What's the bug?",
+      "question": "Your retrieval system returns the worst possible matches for every query. You are using `ORDER BY embedding <=> query_vector DESC` in pgvector. What is the bug?",
       "company": "RAG system design",
-      "answer": "You are sorting by distance descending, meaning you are requesting the vectors that are the furthest away (maximum distance). You need to sort distance ascending (`ASC`) to get the smallest distance, which corresponds to the highest similarity.",
-      "approach": "Spot the distinction between similarity (higher is better) and distance (lower is better). Vector DB operators usually return distance."
+      "answer": "The `<=>` operator in pgvector returns cosine distance — smaller values are more similar. Sorting DESC means you are ordering from largest distance to smallest, which gives you the least similar vectors first. Change `DESC` to `ASC` to get the most similar results.",
+      "approach": "Spot the distance vs similarity inversion. pgvector operators return distance (lower is better), so you must sort ascending for similarity search."
     }
   ],
   "sources": [
-    "https://example.com/vector-dbs"
+    "https://github.com/pgvector/pgvector",
+    "https://platform.openai.com/docs/guides/embeddings"
   ]
 }

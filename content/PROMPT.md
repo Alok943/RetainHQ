@@ -1,8 +1,17 @@
-# Golden Gemini Prompt — RetainHQ topic content
+# Golden authoring prompt — RetainHQ topic content
 
-> Copy everything in the fenced block below into Gemini 3.1 Pro. Replace the three
-> `{{...}}` placeholders first. Gemini must return **exactly one JSON object** and
+> Copy everything in the fenced block below into the writer model (Gemini or Claude
+> Sonnet — any strong model that did NOT run the critic pass). Replace the three
+> `{{...}}` placeholders first. The model must return **exactly one JSON object** and
 > nothing else.
+>
+> **AUDIENCE & OVERLAYS:** this contract's default audience is the intermediate
+> AI-assisted developer described in its first sentence. For batches tagged
+> beginner-first (all P0 batches per `docs/PLAN-lesson-generation.md`), paste
+> `content/PROMPT-beginner-overlay.md` AFTER this block. **Where the overlay
+> conflicts with a rule below, the overlay wins** — it names the base rules it
+> overrides (rules 2, 22, 28, and the arc's opening rung). Everything else here
+> still applies unchanged: schema shape, JSON rules, docs-as-truth, formatting grammar.
 
 ---
 

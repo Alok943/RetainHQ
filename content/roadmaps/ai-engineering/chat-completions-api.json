@@ -26,91 +26,92 @@
   "glossary": [
     {
       "term": "stateless",
-      "definition": "Means the system does not remember previous interactions, so you must send the entire conversation history every time you ask a new question."
+      "definition": "The API does not remember previous calls. You must send the full conversation history every time you make a new request."
     },
     {
       "term": "max_tokens",
-      "definition": "A safety limit you set to stop the AI from generating excessively long and expensive responses."
+      "definition": "A limit you set on how many tokens the model can generate in its reply. Use it to control cost and prevent very long responses."
     },
     {
-      "term": "temperature",
-      "definition": "A dial that controls how creative the AI is; a low setting makes it factual, while a higher setting makes it more imaginative."
+      "term": "finish_reason",
+      "definition": "A field in the response that tells you why the model stopped generating — for example, it finished naturally, hit the token limit, or wants to call a tool."
     }
   ],
   "hook": {
-    "scenario": "You copy an LLM code example from a blog post. The API call shape looks slightly different from what you see in the docs. Now there are three different ways 'on the internet' to call GPT — which one is actually current?",
-    "question": "What is the canonical shape of a chat completions call, and which response fields matter?"
+    "scenario": "You see three different code shapes for calling GPT in three different blog posts. Before reading further, predict: which field in the response object contains the text you actually want?",
+    "question": "Hold your guess, then read on to learn the one canonical shape and the two response fields that matter most."
   },
   "mental_model": {
-    "intuition": "One function call with a messages list in, one message object out. Everything else — streaming, tools, structured output — is a parameter on top of this single shape.",
-    "description": "The chat completions API is the single interface for almost all LLM work: text generation, extraction, classification, agents, RAG answer generation. It takes a list of role-tagged messages, sends them to a model, and returns the model's reply as another message object. Mastering this shape means every other feature (streaming, tools, JSON mode) is just one more parameter."
+    "intuition": "One function call with a `messages[]` list in, one message object out. Every other feature — streaming, tools, structured output — is just one more parameter on top of this single shape.",
+    "description": "The chat completions API is the single interface for almost all LLM work: text generation, extraction, classification, agents, and RAG answer generation. It takes a list of role-tagged messages, sends them to a model, and returns the model's reply as another message object. Once you know this shape, every other feature is just one extra parameter."
   },
   "sections": [
     {
-      "body": "The request has three required things: a model name, a messages list, and your API key (passed via the client). The messages list is ordered: system first (optional but standard), then alternating user/assistant turns. Every call is stateless — you re-send the full history each time. The model sees only what's in this list.",
-      "recap": "Request: model + messages[]. Stateless — full history re-sent every call."
+      "body": "The request has three required things: a model name, a `messages[]` list, and your API key (passed when you create the client). The messages list is ordered: system first (optional but standard), then alternating user and assistant turns. Every call is stateless — you resend the full history each time. The model only sees what is in this list.",
+      "recap": "Request = model + `messages[]`. Stateless — send the full history on every call."
     },
     {
-      "body": "The response object has a predictable shape. choices[0].message.content is the text you want. choices[0].finish_reason tells you why generation stopped: 'stop' means the model finished naturally; 'length' means you hit max_tokens; 'tool_calls' means the model wants to call a tool (and message.content will be None). usage.total_tokens is what you were billed. Ignore everything else for 90% of use cases.",
-      "recap": "Response: choices[0].message.content = text. finish_reason + usage.total_tokens are the two other useful fields."
+      "body": "The response object has a predictable shape. `choices[0].message.content` is the text you want. `choices[0].finish_reason` tells you why the model stopped: `'stop'` means it finished naturally; `'length'` means it hit `max_tokens`; `'tool_calls'` means it wants to call a tool (and `message.content` will be `None`). `usage.total_tokens` is what you were billed. Ignore everything else for 90% of use cases.",
+      "recap": "Response: `.message.content` = text. `finish_reason` and `usage.total_tokens` are the two other useful fields."
     },
     {
-      "body": "The key optional parameters: max_tokens caps the output length (set this — uncapped outputs can be very long and expensive). temperature controls randomness (0 for factual, 0.7 for creative). n=2 gets you two independent completions for the same prompt (doubles the cost). response_format={type: 'json_object'} asks for JSON — but doesn't validate schema (more on that in the structured-output node).",
-      "recap": "Always set max_tokens. Temperature and response_format are the two other everyday levers."
+      "body": "Key optional parameters: `max_tokens` caps output length — always set this, because uncapped replies can be very long and expensive. `temperature` controls randomness (0 for factual, 0.7 for creative). `n=2` gives you two independent completions for the same prompt, but doubles the cost. `response_format={type: 'json_object'}` asks for JSON output — but does not validate the schema (more on that in the structured-output lesson).",
+      "recap": "Always set `max_tokens`. Temperature and `response_format` are the two other everyday levers."
     },
     {
-      "body": "Error handling is non-negotiable in production. The API returns HTTP errors: 400 (bad request — your messages[] list is malformed or over the context limit), 401 (bad API key), 429 (rate limit — back off and retry), 500/503 (server error — retry with backoff). The openai SDK raises typed exceptions; catch them specifically rather than swallowing all errors.",
-      "recap": "Catch 400 (your bug), 429 (rate limit — retry), 500 (server — retry). Never swallow all errors."
+      "body": "Error handling is not optional in production. The API returns HTTP error codes: 400 (your messages list is wrong or over the context limit), 401 (bad API key), 429 (rate limit — wait and retry), 500/503 (server error — retry with backoff). The `openai` SDK raises typed exceptions. Catch them specifically rather than catching all errors silently.",
+      "recap": "400 = your bug (do not retry). 429 = rate limit (retry with backoff). 500 = server (retry with backoff)."
     }
   ],
   "code_snippets": [
     {
-      "title": "The minimal canonical call — learn this shape cold",
+      "title": "The minimal canonical call — learn this shape by heart",
       "language": "python",
-      "code": "from openai import OpenAI\n\nclient = OpenAI()  # reads OPENAI_API_KEY from env\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'You are a concise assistant.'},\n        {'role': 'user',   'content': 'What is idempotency in REST APIs?'},\n    ],\n    max_tokens=200,    # always cap output length\n    temperature=0.2,   # factual task — lean deterministic\n)\n\ntext = response.choices[0].message.content\nprint(text)",
-      "explanation": "This is the shape every other feature builds on. Note: OPENAI_API_KEY is read from the environment — never hardcode keys. max_tokens prevents runaway expensive completions. The response's .content is a plain string."
+      "code": "from openai import OpenAI\n\nclient = OpenAI()  # reads OPENAI_API_KEY from environment\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role': 'user', 'content': 'What is idempotency?'}],\n    max_tokens=200,\n)\ntext = response.choices[0].message.content\nprint(text)",
+      "explanation": "This is the shape every other feature builds on. `OPENAI_API_KEY` is read from the environment — never hardcode keys. `max_tokens` prevents expensive runaway replies. The response `.content` is a plain string."
     },
     {
       "title": "Inspect what you were billed and why the model stopped",
       "language": "python",
-      "code": "response = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role': 'user', 'content': 'List 50 countries in Europe.'}],\n    max_tokens=100,   # intentionally short to demo truncation\n)\n\nprint(response.choices[0].finish_reason)   # 'length' — hit max_tokens, not done\nprint(response.usage.prompt_tokens)        # tokens in the input\nprint(response.usage.completion_tokens)    # tokens in the output\nprint(response.usage.total_tokens)         # what you're billed",
-      "explanation": "finish_reason='length' means the model was cut off mid-answer — increase max_tokens or redesign the prompt. finish_reason='stop' means it finished naturally. Always log usage.total_tokens in production to detect runaway costs."
+      "code": "response = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role': 'user', 'content': 'List 50 countries in Europe.'}],\n    max_tokens=100,   # intentionally short to show truncation\n)\n\nprint(response.choices[0].finish_reason)   # 'length' — hit max_tokens, not done\nprint(response.usage.prompt_tokens)        # tokens in the input\nprint(response.usage.completion_tokens)    # tokens in the output\nprint(response.usage.total_tokens)         # what you are billed",
+      "explanation": "`finish_reason='length'` means the model was cut off mid-answer — raise `max_tokens` or redesign the prompt. `finish_reason='stop'` means it finished naturally. Log `usage.total_tokens` in production to catch runaway costs early."
     },
     {
-      "title": "Production wrapper: error handling + basic retry",
+      "title": "Production wrapper: error handling and retry logic",
       "language": "python",
-      "code": "import time\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef call_with_retry(messages: list[dict], retries=3) -> str:\n    for attempt in range(retries):\n        try:\n            resp = client.chat.completions.create(\n                model='gpt-4o',\n                messages=messages,\n                max_tokens=500,\n            )\n            return resp.choices[0].message.content\n        except RateLimitError:\n            wait = 2 ** attempt          # 1s, 2s, 4s\n            print(f'Rate limited — waiting {wait}s')\n            time.sleep(wait)\n        except APIStatusError as e:\n            if e.status_code >= 500:     # server error — retry\n                time.sleep(2 ** attempt)\n            else:\n                raise                    # 400/401 — our bug, don't retry\n    raise RuntimeError('Max retries exceeded')",
-      "explanation": "Exponential backoff on 429 and 5xx is standard practice. Never retry 4xx (except 429) — those are client errors that won't fix themselves. The openai SDK exposes typed exception classes so you can target specific errors without catching everything."
+      "code": "import time\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef call_with_retry(messages: list[dict], retries=3) -> str:\n    for attempt in range(retries):\n        try:\n            resp = client.chat.completions.create(\n                model='gpt-4o',\n                messages=messages,\n                max_tokens=500,\n            )\n            return resp.choices[0].message.content\n        except RateLimitError:\n            wait = 2 ** attempt          # 1s, 2s, 4s\n            print(f'Rate limited — waiting {wait}s')\n            time.sleep(wait)\n        except APIStatusError as e:\n            if e.status_code >= 500:     # server error — retry\n                time.sleep(2 ** attempt)\n            else:\n                raise                    # 400/401 — your bug, do not retry\n    raise RuntimeError('Max retries exceeded')",
+      "explanation": "Use exponential backoff on 429 and 5xx errors — wait a little longer after each failed attempt. Never retry 4xx errors (except 429) — those are problems with your request that will not fix themselves on their own."
     }
   ],
   "common_mistakes": [
     {
       "title": "Not setting max_tokens",
-      "explanation": "Without max_tokens the model can generate a very long response, which is slow and expensive. For tasks where you know the output size (classification = 1 word, summary = 3 sentences), cap it aggressively."
+      "explanation": "Without `max_tokens` the model can generate a very long response. This is slow and expensive. For tasks where you know the output size (classification = 1 word, summary = 3 sentences), cap it tightly."
     },
     {
-      "title": "Checking response.choices[0].text instead of .message.content",
-      "explanation": "The .text field is from the old /v1/completions endpoint. The chat completions response has response.choices[0].message.content. Using the wrong field returns None or AttributeError."
-    },
-    {
-      "title": "Retrying on 400 errors",
-      "explanation": "A 400 (context_length_exceeded, invalid messages) is your code's fault — retrying won't fix it and wastes quota. Only retry 429 (rate limit) and 5xx (server errors)."
+      "title": "Reading response.choices[0].text instead of .message.content",
+      "explanation": "The `.text` field is from the old `/v1/completions` endpoint. The chat completions response uses `.message.content`. Reading the wrong field returns `None` or raises an `AttributeError`."
     }
   ],
   "recall_questions": [
     {
-      "q": "What are the three required elements of a chat completions API call?",
-      "answer": "model name, messages[] list, and API key (via client). Everything else — max_tokens, temperature, tools — is optional.",
+      "q": "Explain the chat completions API to a classmate who has never used it before.",
+      "answer": "You send a list of messages — each with a role (system, user, or assistant) and some text. The model reads them and replies with a new message. Every call is independent; the model only knows what you include in this list.",
       "tier": "tier1"
     },
     {
       "q": "What does finish_reason='length' mean and how do you fix it?",
-      "answer": "The model hit the max_tokens cap and was cut off mid-answer. Fix: increase max_tokens or redesign the prompt to elicit a shorter answer.",
+      "answer": "The model hit the `max_tokens` cap and was cut off before finishing. Fix: raise `max_tokens` or redesign the prompt to get a shorter answer.",
       "tier": "tier1"
     },
     {
       "q": "Which HTTP status codes should trigger a retry, and which should not?",
-      "answer": "Retry: 429 (rate limit) and 5xx (server errors) with exponential backoff. Do NOT retry 400 (bad request — your bug) or 401 (bad key).",
+      "answer": "Retry: 429 (rate limit) and 5xx (server errors) with exponential backoff. Do not retry 400 (bad request — your bug) or 401 (bad key) — those will not fix themselves.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you remove max_tokens from your production call?",
+      "answer": "The model can generate a very long reply. This raises your cost and increases response time. Some inputs may trigger very long outputs without warning, making your app slow and expensive.",
       "tier": "tier2"
     }
   ],
@@ -118,14 +119,14 @@
     {
       "question": "A production LLM pipeline occasionally returns None for the response text. Logs show no exceptions were raised. What are two likely causes?",
       "company": "GenAI Engineer interview",
-      "answer": "1) Code is reading response.choices[0].text (old completions field) instead of response.choices[0].message.content — returns None silently. 2) The model returned a tool_call response instead of a text response (finish_reason='tool_calls') — message.content is None when the model wants to call a tool. Fix: check finish_reason before reading content.",
-      "approach": "Two classic None sources: wrong field name (text vs message.content) and tool_calls finish_reason. Check finish_reason defensively."
+      "answer": "The response text is `None` in two known cases. First: the code is reading `response.choices[0].text` (the old completions field) instead of `response.choices[0].message.content`. Second: the model returned a tool call response (`finish_reason='tool_calls'`), and `.message.content` is `None` when the model wants to call a tool. Always check `finish_reason` before reading content.",
+      "approach": "Two classic `None` causes: wrong field name (`text` vs `message.content`) and `tool_calls` finish reason. Check `finish_reason` defensively in production code."
     },
     {
-      "question": "Your pipeline's average response time doubles overnight. Token usage spiked alongside latency. What API parameter might explain this?",
+      "question": "Your pipeline's average response time doubles overnight. Token usage also spiked. What API parameter might explain this?",
       "company": "LLM Engineer OA",
-      "answer": "max_tokens was likely removed or increased dramatically. Without a cap, the model can generate very long responses on some inputs, inflating both average token usage and latency. Check max_tokens is set and appropriate for the task to guard against runaway generations.",
-      "approach": "Latency for LLMs scales with output tokens, not just input. Missing max_tokens is the most common cause of sudden latency spikes on text generation tasks."
+      "answer": "`max_tokens` was likely removed or raised to a very high value. LLM response time grows with output token count, not just input. Without a cap, some inputs can trigger very long replies, inflating average time and cost. Check that `max_tokens` is set to a reasonable value for your task.",
+      "approach": "LLM latency scales with output tokens. Missing `max_tokens` is the most common cause of sudden latency and cost spikes."
     }
   ],
   "sources": [

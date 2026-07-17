@@ -1,0 +1,91 @@
+{
+  "slug": "dependency-isolation-strategies",
+  "title": "Dependency isolation strategies",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pytest",
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "**Memorizable line:** Dependency isolation means separating your core logic from outside services.\n\nWhen your code directly calls a database or an API, it is hard to test. We call these outside services `dependencies`. If the database is down, your test fails even if your logic is correct.\n\nHere is a function that checks if a student passed. It gets marks directly from a database.\n\n```python\ndef check_pass(student_id):\n  # Direct dependency on an external database\n  marks = db.get_marks(student_id)\n  return marks > 40\n```\n\nWe isolate the dependency by passing the marks into the function instead. This is called Dependency Injection.\n\n```python\ndef check_pass(marks):\n  # Now it does not depend on a database\n  return marks > 40\n```\n\n**Analogy:** Think of a chef making tea. If the chef goes to the farm to milk the cow, that is a hard dependency. If someone hands the chef a bottle of milk, that is isolation.",
+    "why": "It makes your code easy to test. You can pass simple inputs instead of setting up a whole database.",
+    "where_used": [
+      "pytest",
+      "FastAPI"
+    ]
+  },
+  "why_learning_this": [
+    "Allows you to write clean tests without needing real databases or APIs."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Hardcoding external calls",
+      "explanation": "Putting API requests directly inside logic functions. Pass the data in instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain dependency isolation in your own words, as if to a classmate.",
+      "answer": "It means moving outside services, like databases, out of your core logic functions. You pass the data into the function instead.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it bad for a logic function to directly call a database?",
+      "answer": "It makes the function hard to test. The test will fail if the database is unavailable.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def calculate_tax(amount, get_rate):\n    return amount * get_rate()\n\ndef fake_get_rate():\n    return 0.1\n\nprint(calculate_tax(100, fake_get_rate))",
+      "question": "What prints, and why?",
+      "answer": "10.0",
+      "why": "The `calculate_tax` function is isolated. It uses the `fake_get_rate` function passed into it."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Which function is easier to test? A: `def get_discount(): price = api.get_price(); return price * 0.9` or B: `def get_discount(price): return price * 0.9`",
+      "answer": "B",
+      "why": "Function B takes the price as an argument. You do not need to fake the API to test it."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def process_payment(amount, charge_card):\n    if amount > 0:\n        return charge_card(amount)\n    return False\n\ndef fake_charge(amt):\n    return f'Charged {amt}'\n\nprint(process_payment(50, fake_charge))",
+    "focus": "return charge_card(amount)"
+  },
+  "aha_moment": {
+    "code": "def run_task(task_func):\n    return task_func()\n\ndef fake_task():\n    return 'Done'\n\nprint(run_task(fake_task))",
+    "prediction": "What does this print?",
+    "common_guess": "It crashes because there is no real task.",
+    "why": "Because we pass a fake function in, the code runs perfectly without needing a real task."
+  },
+  "practice_tasks": [
+    {
+      "title": "Isolate a dependency",
+      "prompt": "Given this working code, change it so that `send_sms` is passed in as a parameter to `notify_user`.",
+      "starter_code": "def send_sms(msg): return 'Sent'\ndef notify_user():\n    return send_sms('Alert')",
+      "solution": "def notify_user(sms_func):\n    return sms_func('Alert')"
+    }
+  ],
+  "challenge": {
+    "title": "Pass a fake dependency",
+    "prompt": "Write a function `get_total(price, add_tax_func)`. It should return price plus the result of calling `add_tax_func(price)`.",
+    "solution": "def get_total(price, add_tax_func):\n    return price + add_tax_func(price)"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/unittest.mock.html"
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "slug": "pytest-mark-parametrize",
+  "title": "@pytest.mark.parametrize",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "test-discovery-and-naming-conventions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "**Parametrize** is a decorator that runs the exact same test multiple times with different inputs. It takes a string of argument names, and a list of values.\n\nHere is a worked example testing if numbers are even:\n\n```python\nimport pytest\n\ndef is_even(n):\n  return n % 2 == 0\n\n@pytest.mark.parametrize('num, expected', [\n  (2, True),\n  (4, True),\n  (5, False)\n])\ndef test_is_even(num, expected):\n  assert is_even(num) == expected\n```\n\npytest runs `test_is_even` three times. The first time, `num` is 2 and `expected` is True. The third time, `num` is 5 and `expected` is False.\n\nNow, look at this faded example where one step is blank:\n\n```python\nimport pytest\n\n@pytest.mark._______('word', ['apple', 'banana'])\ndef test_words(word):\n  assert len(word) > 0\n```\n\nTo run this test twice (once for 'apple', once for 'banana'), we fill in the blank with `parametrize`.",
+    "why": "Without parametrize, you have to write many identical test functions or use a for-loop inside a single test (which stops testing on the first failure). Parametrize treats each input as an independent test.",
+    "where_used": [
+      "pytest test suites"
+    ]
+  },
+  "why_learning_this": [
+    "Testing many edge cases without writing boilerplate code.",
+    "Keeping test files short and readable."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Mismatched argument names",
+      "explanation": "If the string says `'a, b'` but your test function takes `def test_func(x, y):`, pytest will crash. The names in the string must exactly match the function arguments."
+    },
+    {
+      "title": "Missing the tuple structure",
+      "explanation": "When testing multiple arguments, the list must contain tuples like `[(1, 2), (3, 4)]`. Writing a flat list like `[1, 2, 3, 4]` will fail."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain @pytest.mark.parametrize in your own words, as if to a classmate.",
+      "answer": "It is a decorator that lets us run one test function multiple times using a list of different inputs and expected outputs.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is parametrize better than using a normal for-loop inside a test function?",
+      "answer": "If a for-loop fails on the first item, the test stops and ignores the rest. Parametrize runs every item as a separate test, so a failure does not stop the others.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "import pytest\n\n@pytest.mark.parametrize('x, y', [\n  (10, 5),\n  (20, 10)\n])\ndef test_greater(val1, val2):\n  assert val1 > val2",
+      "question": "Where is the bug in this test?",
+      "answer": "The arguments in the string ('x, y') do not match the function parameters (val1, val2).",
+      "why": "The argument names declared in the `parametrize` string must perfectly match the variable names in the test function signature."
+    },
+    {
+      "type": "predict-output",
+      "code": "import pytest\n\ncount = 0\n@pytest.mark.parametrize('item', ['A', 'B', 'C'])\ndef test_count(item):\n  global count\n  count += 1\n  print(count)",
+      "question": "What is the final value of the global count after pytest finishes?",
+      "answer": "3",
+      "why": "The test runs exactly once for each item in the list. There are three items, so the test runs three times, incrementing count to 3."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import pytest\n\n@pytest.mark.parametrize('x', [10, 20])\ndef test_values(x):\n  print(f'Testing {x}')\n  assert x > 0\n\n# Simulated run:\ntest_values(10)\ntest_values(20)",
+    "focus": "@pytest.mark.parametrize('x', [10, 20])"
+  },
+  "aha_moment": {
+    "code": "import pytest\n\n@pytest.mark.parametrize('chars', ['ab'])\ndef test_string(chars):\n  print(f'Chars: {chars}')\n\n# Simulated run:\ntest_string('ab')",
+    "prediction": "How many times does this test run?",
+    "common_guess": "Twice: once for 'a' and once for 'b'.",
+    "why": "It runs only once. The list `['ab']` has exactly one item (the string 'ab'). pytest counts the items in the list, it does not split strings into characters."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a new test case",
+      "prompt": "Given this code, add a third test case where `a=5`, `b=5`, and `total=10`.",
+      "starter_code": "import pytest\n\n@pytest.mark.parametrize('a, b, total', [\n  (1, 2, 3),\n  (2, 2, 4)\n])\ndef test_add(a, b, total):\n  assert a + b == total",
+      "solution": "import pytest\n\n@pytest.mark.parametrize('a, b, total', [\n  (1, 2, 3),\n  (2, 2, 4),\n  (5, 5, 10)\n])\ndef test_add(a, b, total):\n  assert a + b == total"
+    }
+  ],
+  "challenge": {
+    "title": "Write a parametrized test",
+    "prompt": "Write a parametrized test named `test_type` that checks if `type(val) == int`. Use a single parameter `val` and run it with the values `10` and `20`.",
+    "solution": "import pytest\n\n@pytest.mark.parametrize('val', [10, 20])\ndef test_type(val):\n  assert type(val) == int"
+  },
+  "sources": [
+    "https://docs.pytest.org/en/7.4.x/how-to/parametrize.html"
+  ]
+}

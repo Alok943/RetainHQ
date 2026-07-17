@@ -1,0 +1,91 @@
+{
+  "slug": "black-auto-formatting",
+  "title": "Black: auto-formatting",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "functions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Django"
+    ]
+  },
+  "overview": {
+    "what": "**Memorizable line:** Black is a tool that automatically fixes your code spacing and quotes to look perfect.\n\nWhen many people work on a project, everyone types differently. Some use single quotes, some use double quotes. Some use extra spaces.\n\nHere is messy code:\n\n```python\ndef   add ( a ,b): return a+ b\n```\n\nIf you run Black on this file, it automatically changes it to:\n\n```python\ndef add(a, b):\n    return a + b\n```\n\nBlack is `uncompromising`. This means it does not ask for your opinion. It has one strict set of rules, and it applies them to everyone's code. You run it from your terminal: `black my_file.py`.\n\n**Analogy:** Think of Black as a strict school uniform. You do not get to choose the colors, but everyone looks neat, and no one argues about fashion.",
+    "why": "It stops arguments about code style. Developers save time because they never have to manually fix spaces again.",
+    "where_used": [
+      "FastAPI",
+      "Django",
+      "pytest"
+    ]
+  },
+  "why_learning_this": [
+    "Makes your code look professional instantly without manual effort."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Fighting the formatter",
+      "explanation": "Trying to manually fix spaces after Black runs. Just let Black do its job."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain Black in your own words, as if to a classmate.",
+      "answer": "It is a tool that reads your Python code and automatically fixes all the spaces, quotes, and line breaks to match a standard style.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does it mean that Black is uncompromising?",
+      "answer": "It means it has strict rules that you cannot change easily. It enforces one universal style.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "Which of these is true about Black? A: It finds logic bugs in your code. B: It only changes spacing and formatting.",
+      "answer": "B",
+      "why": "Black is a formatter. It only changes how the code looks, not how it runs."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you write `name = 'Rahul'` (with single quotes) and run Black, what happens?",
+      "answer": "Black changes it to `name = \"Rahul\"` (double quotes).",
+      "why": "Black strictly prefers double quotes for strings."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def run():\n    x = { 'a':1,'b':2 }\n    return x\nprint(run())",
+    "focus": "x = { 'a':1,'b':2 }"
+  },
+  "aha_moment": {
+    "code": "def func(): return 1\nprint(func())",
+    "prediction": "If Black formats this, how many lines will it become?",
+    "common_guess": "One line.",
+    "why": "Black expands one-liners. It will become two lines: one for `def func():` and one for `return 1`."
+  },
+  "practice_tasks": [
+    {
+      "title": "Format code mentally",
+      "prompt": "Given this messy code, change it to match what Black would output (fix spaces and quotes).",
+      "starter_code": "def greet( name):\n    return 'hello '+name",
+      "solution": "def greet(name):\n    return \"hello \" + name"
+    }
+  ],
+  "challenge": {
+    "title": "Format a dictionary",
+    "prompt": "Write a dictionary called `data` with keys 'x' and 'y' mapping to 1 and 2. Format it exactly as Black would (spaces after colons, double quotes for keys).",
+    "solution": "data = {\"x\": 1, \"y\": 2}"
+  },
+  "sources": [
+    "https://black.readthedocs.io/en/stable/"
+  ]
+}

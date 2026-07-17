@@ -1,0 +1,88 @@
+{
+  "slug": "pull-request-workflow",
+  "title": "Pull request workflow",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [],
+    "unlocks": [],
+    "project_usage": [
+      "GitHub",
+      "GitLab"
+    ]
+  },
+  "overview": {
+    "what": "A Pull Request (PR) is a request to merge your code changes into the main project. Instead of adding your code directly to the final project, you ask the team to review it first.\n\n```python\n# Step 1: You make a copy (branch) of the project.\nmain_project = ['homepage']\nmy_branch = main_project.copy()\n\n# Step 2: You add your new feature.\nmy_branch.append('login_page')\n\n# Step 3: You create a PR. The team reviews it. If approved, it is merged.\nmain_project = my_branch\nprint(main_project) # Output: ['homepage', 'login_page']\n```\n\nA PR acts like a security gate. It stops bad code from breaking the main project. The most important rule: **A PR is a conversation, not just a merge button.** You push your code, the team checks it, you fix any issues, and then it gets merged.",
+    "why": "It keeps the main codebase safe. It allows the team to spot errors before they reach users.",
+    "where_used": [
+      "GitHub pull requests",
+      "GitLab merge requests"
+    ]
+  },
+  "why_learning_this": [
+    "Every modern software team uses pull requests to manage changes.",
+    "It is how you will submit your work in your first job."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Huge pull requests",
+      "explanation": "Putting too many changes in one PR makes it impossible to review. Keep PRs small and focused on one feature."
+    },
+    {
+      "title": "Ignoring feedback",
+      "explanation": "A PR is a discussion. If a reviewer asks for a change, you must update your branch and reply. Do not just close it or merge anyway."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain a pull request in your own words, as if to a classmate.",
+      "answer": "A pull request is a way to ask your team to review your code before it gets added to the main project.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it important to create a pull request instead of adding code directly?",
+      "answer": "It acts as a security gate to keep the main code safe and lets the team catch errors before they affect users.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if the team finds an issue in your pull request?",
+      "answer": "You fix the issue by updating your branch. A PR is a conversation, so you make the changes and reply.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "project = ['v1']\nmy_work = project.copy()\nmy_work.append('v2')\nprint(project)",
+      "question": "What does this print? (This simulates a PR that is NOT merged yet.)",
+      "answer": "['v1']",
+      "why": "Because `my_work` is a copy (a branch), changes to it do not affect the main `project` until they are officially merged."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you push 3 new commits to your branch after opening a PR, what happens to the PR?",
+      "answer": "The PR updates automatically to include the new commits.",
+      "why": "A PR tracks the branch, not just a static set of commits. Any new commits on that branch become part of the ongoing PR."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "main_branch = ['v1']\nmy_branch = main_branch.copy()\nmy_branch.append('v2')\n# PR is reviewed and approved\nmain_branch = my_branch\nprint(main_branch)",
+    "focus": "main_branch = my_branch"
+  },
+  "practice_tasks": [
+    {
+      "title": "Simulate a rejected PR",
+      "prompt": "Given this code that simulates a PR, modify it so that the PR is REJECTED and the main branch is not updated.",
+      "starter_code": "main_branch = ['v1']\nmy_branch = main_branch.copy()\nmy_branch.append('bad_code')\n# Merge happens here\nmain_branch = my_branch\nprint(main_branch)",
+      "solution": "main_branch = ['v1']\nmy_branch = main_branch.copy()\nmy_branch.append('bad_code')\n# PR is rejected, merge does not happen\nprint(main_branch)"
+    }
+  ],
+  "sources": [
+    "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests"
+  ]
+}

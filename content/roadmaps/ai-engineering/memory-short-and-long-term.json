@@ -1,95 +1,17 @@
 {
   "slug": "memory-short-and-long-term",
   "title": "Agent Memory: Short vs. Long Term",
-  "kind": "engineering",
-  "prerequisites": [
-    "tool-use-and-the-call-loop"
-  ],
-  "mental_model": {
-    "intuition": "Short-term memory is RAM (the context window); long-term memory is a hard drive (a database).",
-    "description": "An LLM is inherently stateless. 'Memory' is just data you choose to inject into its prompt. Short-term memory is the literal array of recent chat messages sent in the current request. Long-term memory involves saving important facts to a database (often a vector DB) and actively retrieving them in future sessions."
-  },
-  "sections": [
-    {
-      "body": "Because LLMs have no internal memory across API calls, to have a 'conversation', you must send the entire history of messages back to the model every single time. This running list of messages is the agent's short-term memory.",
-      "recap": "So far: Short-term memory is just appending messages to an array and resending them."
-    },
-    {
-      "body": "Eventually, short-term memory hits the model's token limit, or becomes too expensive and slow to process. You must trim it. A common strategy is a 'sliding window'—keeping only the last 10 messages and discarding the rest. But this gives the agent amnesia for older details.",
-      "recap": "So far: The context window is finite, so old messages must be dropped."
-    },
-    {
-      "body": "To remember things across weeks or dropped sessions, you need long-term memory. Instead of keeping everything in the prompt, you write important facts (like 'user prefers Python') to a database. When a new session starts, you query the database and inject only the relevant facts into the system prompt.",
-      "recap": "Long-term memory is just a database retrieval pipeline (RAG) applied to user facts."
-    }
-  ],
-  "code_snippets": [
-    {
-      "title": "Short-term memory (Sliding Window)",
-      "language": "python",
-      "code": "MAX_MESSAGES = 10\n\ndef chat_with_memory(new_user_text, message_history):\n    # Append new message\n    message_history.append({'role': 'user', 'content': new_user_text})\n    \n    # Sliding window: keep only the system prompt + last N messages\n    system_prompt = message_history[0]\n    recent_history = message_history[-MAX_MESSAGES:]\n    truncated_history = [system_prompt] + recent_history\n    \n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=truncated_history\n    )\n    \n    message_history.append(response.choices[0].message)\n    return response",
-      "explanation": "This keeps the token count stable. We slice the array to drop old messages, but always preserve the system prompt at index 0 so the agent doesn't forget its core instructions."
-    },
-    {
-      "title": "Extracting facts for Long-term memory",
-      "language": "python",
-      "code": "# We give the agent a specific tool to save facts to the database\ntools = [{\n    'type': 'function',\n    'function': {\n        'name': 'save_user_fact',\n        'description': 'Save a fact about the user for long-term retention across sessions.',\n        'parameters': {\n            'type': 'object',\n            'properties': {\n                'fact': {'type': 'string'},\n                'category': {'type': 'string', 'enum': ['preference', 'background', 'project']}\n            }\n        }\n    }\n}]\n\n# Later, on a new session:\n# facts = db.query(\"SELECT fact FROM long_term_memory WHERE user_id = ?\")\n# system_prompt += f\"\\nRemember this about the user: {facts}\"",
-      "explanation": "Long-term memory isn't magic; it's just a tool call. The agent decides to save a fact, your app writes it to Postgres, and on the next login, your app reads it and stuffs it into the system prompt."
-    }
-  ],
-  "common_mistakes": [
-    {
-      "mistake": "Thinking the model 'remembers' previous API calls.",
-      "correction": "Models are perfectly stateless. If you don't explicitly pass a fact in the `messages` array of the current HTTP request, the model literally cannot know it.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
-    },
-    {
-      "mistake": "Letting the short-term memory array grow infinitely.",
-      "correction": "Appending messages forever will eventually crash with a context length exceeded error, and will cost a fortune in input tokens along the way. You must truncate or summarize.",
-      "title": "Placeholder mistake title",
-      "explanation": "Placeholder explanation"
-    }
-  ],
-  "recall_questions": [
-    {
-      "q": "What is the primary limitation of short-term memory in LLM applications?",
-      "answer": "It is constrained by the model's maximum context window and token costs.",
-      "tier": "tier1"
-    },
-    {
-      "q": "How do AI agents typically implement long-term memory?",
-      "answer": "By saving data to an external database and injecting relevant facts into future prompts.",
-      "tier": "tier1"
-    },
-    {
-      "q": "When implementing a sliding window for short-term memory, which message must you be careful NEVER to discard?",
-      "answer": "The system prompt containing the core instructions.",
-      "tier": "tier2"
-    }
-  ],
-  "oa_questions": [
-    {
-      "question": "Your chatbot works great for 10 minutes, but then API requests start failing with a 400 error about 'context length'. How do you fix this?",
-      "company": "GenAI Engineer interview",
-      "answer": "The `messages` array is growing infinitely and hitting the token limit. Implement a memory management strategy: either a sliding window (drop messages older than N), or summarize the conversation history (use the LLM to compress older messages into a short summary paragraph) and prepend that summary to the recent messages.",
-      "approach": "Identify the stateless nature of LLMs and the hard limit of the context window. Propose truncation or summarization as the standard fixes."
-    },
-    {
-      "question": "Design a long-term memory system for a personal assistant agent that needs to remember user preferences across sessions.",
-      "company": "RAG system design",
-      "answer": "1. Equip the agent with a `save_fact(fact_string)` tool. 2. When the user states a preference, the agent calls the tool. 3. The app embeds the fact and stores it in a Vector DB tied to the user's ID. 4. On future queries, run a semantic search on the Vector DB using the new user message, and inject the retrieved facts into the system prompt.",
-      "approach": "Combine tool-calling (for writing memory) with RAG (for retrieving memory). Emphasize that long-term memory is just a specialized database integration."
-    }
-  ],
   "roadmap": "ai-engineering",
+  "kind": "engineering",
   "tier": "tier1",
   "metadata": {
     "difficulty": "hard",
     "estimated_minutes": 15,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": [],
+    "prerequisites": [
+      "tool-use-and-the-call-loop"
+    ],
     "unlocks": [],
     "appears_in": [
       "GenAI Engineer interview"
@@ -97,16 +19,98 @@
   },
   "glossary": [
     {
-      "term": "Short-term memory",
-      "definition": "The recent chat messages you send back to the AI in every request so it remembers the current conversation."
+      "term": "short-term memory",
+      "definition": "The recent messages you send back to the model on every API call so it remembers the current conversation. It lives only in the messages array."
     },
     {
-      "term": "Long-term memory",
-      "definition": "A system where you save important facts about a user to a database and retrieve them weeks later so the AI remembers them."
+      "term": "long-term memory",
+      "definition": "A system where you save important facts about a user to an external database and retrieve them in future sessions to inject into the model's context."
     },
     {
       "term": "sliding window",
-      "definition": "A simple memory trick where you only keep the last 10 messages of a conversation and throw away the rest to save space and money."
+      "definition": "A simple memory management strategy where you keep only the last N messages and discard older ones to prevent the context window from overflowing."
+    }
+  ],
+  "hook": {
+    "scenario": "You build a personal assistant chatbot. On Monday, the user says 'I prefer Python over JavaScript.' On Friday, the user asks 'What language should I use for this script?' The bot says 'It depends on your preferences.' Before you read on, predict: why does the bot not remember Monday's conversation?",
+    "question": "Think about how the API works per request — then read on to understand what 'memory' really means for an LLM."
+  },
+  "mental_model": {
+    "intuition": "Short-term memory is RAM — fast and temporary, lost when you restart. Long-term memory is a hard drive — persistent, but you have to explicitly write and read from it.",
+    "description": "An LLM is completely stateless. It has no memory between API calls. 'Memory' is just data you choose to inject into its prompt. Short-term memory is the messages array you append to and resend on every call — it holds the current conversation. Long-term memory is saving important facts to a database and actively retrieving them in future sessions to inject into the system prompt."
+  },
+  "sections": [
+    {
+      "body": "Every LLM API call is independent — the model knows nothing from previous calls unless you include that history in the current request. To have a 'conversation', you must send the entire array of past messages back on every call. This running list of messages is the agent's short-term memory. If you do not include a message, the model literally cannot know it happened.",
+      "recap": "Short-term memory is the messages array you resend on every call. The model has no other memory."
+    },
+    {
+      "body": "Short-term memory has two limits: the model's token limit and cost. A conversation that includes 100 past messages sends hundreds of tokens of history on every single call. Eventually you hit a `context_length_exceeded` error. The fix is a **sliding window** — keep only the last N messages plus the system prompt. Older messages are dropped. This gives the agent amnesia about early conversation details.",
+      "recap": "The context window is finite. Use a sliding window to keep the messages array from growing forever — but always preserve the system prompt."
+    },
+    {
+      "body": "To remember facts across sessions, weeks, or after the sliding window drops them, you need **long-term memory**. The pattern: equip the agent with a `save_fact(fact)` tool. When the user reveals important information ('I prefer Python'), the agent calls the tool. Your app writes the fact to a database. In future sessions, you query the database with the user's new message as a search key, and inject relevant retrieved facts into the system prompt.",
+      "recap": "Long-term memory is RAG applied to user facts — save to a database, retrieve on future sessions."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Short-term memory with a sliding window",
+      "language": "python",
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nMAX_MESSAGES = 10\n\ndef chat_with_memory(new_user_text: str, message_history: list[dict]) -> str:\n    message_history.append({'role': 'user', 'content': new_user_text})\n\n    # Sliding window: always keep system prompt + last MAX_MESSAGES messages\n    system_prompt = message_history[0]  # index 0 is always the system prompt\n    recent = message_history[-MAX_MESSAGES:]\n    truncated = [system_prompt] + recent\n\n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=truncated\n    )\n    reply = response.choices[0].message\n    message_history.append({'role': 'assistant', 'content': reply.content})\n    return reply.content",
+      "explanation": "The sliding window keeps token count stable. The system prompt at index 0 is always preserved — without it, the agent forgets its core instructions. Messages older than MAX_MESSAGES are dropped silently."
+    },
+    {
+      "title": "Long-term memory — saving and retrieving user facts",
+      "language": "python",
+      "code": "# Equip the agent with a tool to save facts\ntools = [{\n    'type': 'function',\n    'function': {\n        'name': 'save_user_fact',\n        'description': 'Save a fact about the user for long-term retention across sessions.',\n        'parameters': {\n            'type': 'object',\n            'properties': {\n                'fact': {'type': 'string'},\n                'category': {'type': 'string', 'enum': ['preference', 'background', 'project']}\n            },\n            'required': ['fact', 'category']\n        }\n    }\n}]\n\n# On a new session, retrieve and inject relevant facts:\n# facts = db.query('SELECT fact FROM long_term_memory WHERE user_id = ?', user_id)\n# system_prompt += f'\\nRemember about this user: {facts}'",
+      "explanation": "Long-term memory is not magic — it is a tool call combined with a database read. The agent calls `save_user_fact` when it learns something important. On the next session, your app reads relevant facts from the database and injects them into the system prompt before the first message."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking the model remembers previous API calls",
+      "explanation": "Models are perfectly stateless. If you do not explicitly include a fact in the `messages` array of the current API call, the model cannot know it. There is no hidden memory on the server between requests."
+    },
+    {
+      "title": "Letting the message history array grow without limit",
+      "explanation": "Appending messages forever causes a `context_length_exceeded` error once the total token count exceeds the model's limit. More subtly, it also makes every call increasingly expensive because more history is billed as input tokens. Always implement a sliding window or summarization strategy."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain why an LLM chatbot cannot remember Monday's conversation on Friday, as if to a classmate.",
+      "answer": "LLMs are completely stateless — each API call is independent. The model only knows what you include in the current request's messages array. If you do not send Monday's conversation as part of Friday's request, the model literally cannot know it happened. 'Memory' in an LLM app means your code is responsible for managing and sending that history.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary limitation of short-term memory in LLM applications?",
+      "answer": "It is constrained by the model's context window token limit and costs money on every call. A long conversation must eventually be truncated — old messages are dropped, causing the agent to 'forget' earlier details.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When implementing a sliding window, which message must you always keep and never discard?",
+      "answer": "The system prompt at index 0. Dropping it means the agent forgets its core instructions, persona, and behavioral rules — which breaks its fundamental behavior.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A user tells the bot 'I prefer Python' on Monday. On Friday, a new session starts with an empty messages array. Predict how you would ensure the bot still knows this preference.",
+      "answer": "On Monday, the agent calls `save_user_fact('I prefer Python')` and your app writes it to a database. On Friday, before starting the new session, your app queries the database for this user's saved facts and injects them into the system prompt — 'Remember about this user: prefers Python.' The model now has the preference without the user needing to repeat it.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Your chatbot works great for 10 minutes, but then requests start failing with a 400 error about 'context length'. How do you fix this?",
+      "company": "GenAI Engineer interview",
+      "answer": "The messages array is growing infinitely and hitting the token limit. Two fixes: implement a sliding window — keep only the last N messages, always preserving the system prompt. Or implement summarization — use the LLM to compress older messages into a short summary paragraph and prepend it to the recent messages. The sliding window is simpler; summarization preserves more context.",
+      "approach": "Identify the stateless nature of LLMs and the hard context window limit. Propose truncation or summarization as the standard strategies."
+    },
+    {
+      "question": "Design a long-term memory system for a personal assistant agent that needs to remember user preferences across sessions.",
+      "company": "RAG system design",
+      "answer": "Three parts: (1) Equip the agent with a `save_fact(fact, category)` tool. When the user states a preference, the agent calls the tool and your app writes the fact to a database keyed by user ID. (2) On future sessions, query the database using the new user message as a search key — embed the message and retrieve semantically similar stored facts. (3) Inject the retrieved facts into the system prompt before the first call. This is RAG applied to user facts.",
+      "approach": "Combine tool calling (writing memory) with RAG (reading memory). Long-term memory is a specialized database integration — not a built-in model feature."
     }
   ],
   "sources": [

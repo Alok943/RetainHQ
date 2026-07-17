@@ -1,0 +1,97 @@
+{
+  "slug": "singleton-pattern",
+  "title": "Singleton pattern",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Django",
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "A Singleton is a design pattern that ensures a class creates only one object (an instance). If you ask for the object again, you get the exact same one.\n\nImagine a family watching TV. There is only one TV remote. If the brother changes the volume, and the sister presses mute, they are pressing buttons on the exact same remote. A Singleton works the same way. It gives every part of your code the same shared object.\n\nHere is a simple Singleton using a module. In Python, files (modules) are natural Singletons. If you import a module twice, Python only creates it once.\n\n```python\n# settings.py\nclass MatchScoreboard:\n    def __init__(self):\n        self.score = 0\n\n# We create the only instance right here.\n# We will import this specific instance in other files.\nboard = MatchScoreboard()\n```\n\nNow we use it in different parts of our app:\n\n```python\n# app.py\nfrom settings import board\n\nboard.score = 50\nprint(\"Current score:\", board.score)\n```\n\nIf another file imports `board`, it sees the score as `50`. \n\nLet us practice. Here is a faded example. Fill in the blank to make `settings` a Singleton instance.\n\n```python\nclass DatabaseConfig:\n    def __init__(self):\n        self.port = 5432\n\n# Fill the blank so other files can import 'config'\n____ = DatabaseConfig()\n```\n\nThe rule to remember: **A Singleton provides exactly one shared instance for the whole application.**\n\nThis pattern is common for database connections, logging setups, or global settings. However, it has a trap. Because the state is shared, changing it in one file changes it everywhere. This can make bugs hard to find.",
+    "why": "Sometimes creating multiple objects causes problems. For example, opening many connections to a database can crash it. A Singleton prevents this by reusing one connection.",
+    "where_used": [
+      "Database connections",
+      "Configuration settings",
+      "Logging systems"
+    ]
+  },
+  "why_learning_this": [
+    "You will understand how Python modules share data.",
+    "You will know how to manage global application settings safely."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Unexpected shared state",
+      "explanation": "Because a Singleton is shared, modifying a variable in one place affects the whole program. If a test changes the Singleton, the next test might fail."
+    },
+    {
+      "title": "Hiding dependencies",
+      "explanation": "If many functions use a Singleton hidden inside them, it is hard to know what data they need. It is often better to pass the data as an argument."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the Singleton pattern in your own words, as if to a classmate.",
+      "answer": "A Singleton is a rule that makes sure a class only creates one object. Every time you ask for the object, you get the same shared one.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why would you use a Singleton instead of creating a new object every time?",
+      "answer": "You use it when having many objects is bad, like making too many connections to a database or wasting memory on the same configuration data.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the simplest way to create a Singleton in Python without writing complex class logic?",
+      "answer": "You can create an object inside a module (a Python file). When other files import that object, they all share the exact same instance.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class AppSettings:\n    def __init__(self):\n        self.theme = 'dark'\n\nsettings = AppSettings()\n\n# File 1 does this:\nfile1_settings = settings\nfile1_settings.theme = 'light'\n\n# File 2 does this:\nfile2_settings = settings\nprint(file2_settings.theme)",
+      "question": "What does this code print?",
+      "answer": "light",
+      "why": "The rule is: A Singleton provides exactly one shared instance. Both variables point to the same object. When file 1 changes the theme, file 2 sees the change."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A developer writes a game where three functions need to write to the same log file. Which pattern helps ensure they do not open three separate files?",
+      "answer": "The Singleton pattern.",
+      "why": "A Singleton ensures only one logger object is created and shared, keeping the single file open safely."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Config:\n    def __init__(self):\n        self.mode = 'test'\n\nshared_config = Config()\n\nshared_config.mode = 'production'\n\nconfig_b = shared_config\nprint(config_b.mode)",
+    "focus": "config_b = shared_config"
+  },
+  "aha_moment": {
+    "code": "class UserData:\n    pass\n\nuser1 = UserData()\nuser2 = UserData()\n\nprint(user1 is user2)",
+    "prediction": "What does this print? True or False?",
+    "common_guess": "True",
+    "why": "By default, calling a class creates a BRAND NEW object every time. To get a Singleton, you must create the object once and share that specific instance, instead of calling the class again."
+  },
+  "practice_tasks": [
+    {
+      "title": "Use the shared instance",
+      "prompt": "Given this code, modify `task_two` so it uses the exact same `system_cache` instance as `task_one`, instead of creating a new cache.",
+      "starter_code": "class Cache:\n    def __init__(self):\n        self.data = {}\n\nsystem_cache = Cache()\n\ndef task_one():\n    system_cache.data['user'] = 'Alice'\n\ndef task_two():\n    # Modify this line to use the Singleton\n    my_cache = Cache()\n    return my_cache.data",
+      "solution": "class Cache:\n    def __init__(self):\n        self.data = {}\n\nsystem_cache = Cache()\n\ndef task_one():\n    system_cache.data['user'] = 'Alice'\n\ndef task_two():\n    # Use the shared instance\n    my_cache = system_cache\n    return my_cache.data"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/faq/programming.html#how-do-i-share-global-variables-across-modules"
+  ]
+}

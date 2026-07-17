@@ -1,0 +1,91 @@
+{
+  "slug": "mypy-static-type-checking",
+  "title": "Mypy: static type checking",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "type-hints-basic"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "Django"
+    ]
+  },
+  "overview": {
+    "what": "**Memorizable line:** Mypy reads your type hints and warns you if you pass the wrong data type.\n\nPython allows you to add type hints to your functions, like `def add(a: int, b: int) -> int:`. But Python itself does not enforce them. If you pass a string to `add`, Python still tries to run it.\n\nMypy is an external tool you run from your terminal: `mypy my_file.py`.\n\n```python\ndef add(a: int, b: int) -> int:\n    return a + b\n\nadd(10, '20')\n```\n\nMypy acts like a spell-checker for your types. It reads your code without running it (this is called `static checking`). It warns you that `'20'` is a string, not an integer.\n\n**Analogy:** Think of Mypy as a traffic cop checking tickets before you board a train. Python lets you board without checking, but Mypy stops you at the gate if your ticket type is wrong.",
+    "why": "It catches errors before you even run your program. This prevents your app from crashing in production.",
+    "where_used": [
+      "FastAPI",
+      "Pydantic"
+    ]
+  },
+  "why_learning_this": [
+    "Helps you find bugs before running your code by checking variable types."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming Python enforces types",
+      "explanation": "Type hints do nothing when you just run `python script.py`. You MUST run `mypy script.py` to check them."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain Mypy in your own words, as if to a classmate.",
+      "answer": "It is a tool that checks your code for type errors. It warns you if you pass a string to a function that expects an integer.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does Python itself enforce type hints when running code?",
+      "answer": "No. Python ignores type hints. Only a tool like Mypy enforces them.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "def greet(name: str) -> str:\n    return 'Hi ' + name\n\nprint(greet(123))",
+      "question": "If you run this code normally in Python, what happens?",
+      "answer": "It crashes with a TypeError because you cannot add a string and an integer.",
+      "why": "Python tries to run the code and fails. Mypy would have warned you about this before you even ran it."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why do we run Mypy before running our tests?",
+      "answer": "Because Mypy catches type mismatches quickly without needing to execute any code.",
+      "why": "Mypy reads the code statically, finding type bugs instantly."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def double(x: int) -> int:\n    return x * 2\n\nval: str = '5'\nprint(double(val))",
+    "focus": "print(double(val))"
+  },
+  "aha_moment": {
+    "code": "def add(x: int, y: int) -> int:\n    return x + y\nprint(add(1, 2.5))",
+    "prediction": "Will Mypy complain about this code?",
+    "common_guess": "No, because 2.5 is a number.",
+    "why": "Mypy WILL complain because 2.5 is a float, and the function explicitly asked for an int."
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix a type error",
+      "prompt": "Given this code that Mypy complains about, change the function call so Mypy is happy.",
+      "starter_code": "def set_age(age: int) -> str:\n    return f'Age is {age}'\n\nprint(set_age('25'))",
+      "solution": "def set_age(age: int) -> str:\n    return f'Age is {age}'\n\nprint(set_age(25))"
+    }
+  ],
+  "challenge": {
+    "title": "Write a typed function",
+    "prompt": "Write a function `is_adult(age: int) -> bool` that returns True if age is 18 or older.",
+    "solution": "def is_adult(age: int) -> bool:\n    return age >= 18"
+  },
+  "sources": [
+    "https://mypy.readthedocs.io/en/stable/"
+  ]
+}

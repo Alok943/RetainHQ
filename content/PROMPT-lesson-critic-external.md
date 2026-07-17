@@ -59,6 +59,14 @@ Now adopt the persona of a senior engineer + interview coach who knows this topi
 4. Example/source integrity -- are engineering_examples real engineering problems (not "Company X uses
    it" folklore)? Are sources plausibly real and authoritative? For `engineering`/code lessons: is each
    code_snippet correct and compilable-by-inspection?
+5. BEGINNER-BATCH CHECKS -- run ONLY if told these lessons were authored under the beginner overlay
+   (`PROMPT-beginner-overlay.md`). Each is a hard finding, ranked with teaching holes:
+   - Stacked unknowns: an example containing 2+ things this roadmap hasn't yet taught.
+   - Register breach: idioms, culture-bound metaphors, or 30+-word sentences in prose fields.
+   - Term-before-definition: a technical term used before its plain-words definition (or >7 new
+     terms in one lesson).
+   - Cold-open prediction: a predict-style probe placed before the lesson's first worked example.
+   - Synonym rotation: one concept named two different ways in the same lesson.
 
 PHASE 3 -- VERDICT + FIXES (output format -- emit exactly this per lesson, nothing else):
 

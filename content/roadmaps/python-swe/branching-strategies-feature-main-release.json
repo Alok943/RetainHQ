@@ -1,0 +1,97 @@
+{
+  "slug": "branching-strategies-feature-main-release",
+  "title": "Branching strategies: feature, main, release",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [],
+    "unlocks": [
+      "rebase-vs-merge"
+    ],
+    "project_usage": [
+      "git",
+      "github",
+      "teamwork"
+    ]
+  },
+  "overview": {
+    "what": "A branching strategy is a set of rules a team follows for organizing their Git branches. The most common branches are `main`, feature branches, and release branches.\n\nImagine a large Google Doc that 10 people are editing. Instead of everyone typing over each other, each person gets a private copy (a feature branch). When they finish, their copy is reviewed and carefully merged into the master copy (the `main` branch).\n\n- `main` \u2014 The master copy. This code is always stable and ready for users.\n- `feature/login` \u2014 A temporary branch created by one developer to build the login page. It branches off `main`.\n- `release/v1.0` \u2014 A branch created right before launch to freeze the code and fix final bugs.\n\nThe rule is: **never write code directly on the `main` branch.** You always create a feature branch, do your work there, and merge it back only when it is finished and tested.",
+    "why": "It keeps the main codebase stable. If your new feature breaks completely, the main project is safe because your broken code is isolated on your feature branch.",
+    "where_used": [
+      "Git",
+      "GitHub",
+      "Team projects"
+    ]
+  },
+  "why_learning_this": [
+    "You will not accidentally break the code that thousands of users are relying on.",
+    "You can work on your own features peacefully without teammates overwriting your changes."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Committing directly to main",
+      "explanation": "You forget to create a new branch and write all your code on `main`. If it has a bug, the live product immediately breaks."
+    },
+    {
+      "title": "Keeping a feature branch alive too long",
+      "explanation": "You work on a feature branch for two months without merging. By the time you try to merge, `main` has changed completely, causing massive merge conflicts."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the purpose of a feature branch in your own words, as if to a classmate.",
+      "answer": "It is a private copy of the code where a developer can build a new feature without breaking the stable main codebase.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it dangerous to write code directly on the 'main' branch?",
+      "answer": "Because the main branch holds the stable, live code. Any bug you write there will immediately affect the final product.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "You are building a shopping cart. Halfway through, the boss asks you to quickly fix a typo on the homepage. Should you fix it on your shopping cart branch?",
+      "answer": "No. You should switch back to main, create a new branch just for the typo fix, merge that, and then return to your shopping cart branch.",
+      "why": "Never write code directly on the main branch, and keep feature branches focused on one task. Mixing a typo fix with an unfinished feature means the typo won't be fixed live until the cart is fully done."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A teammate says, 'I created a release branch for version 2.0, so I will start building all the version 3.0 features on this release branch.' What is wrong with this?",
+      "answer": "Release branches are strictly for final bug fixes before launch, not for building new features.",
+      "why": "A release branch freezes the code for a specific launch. New features should always go on new feature branches that branch off main."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def git_workflow_simulator():\n    main_branch = ['stable code']\n    feature_branch = main_branch.copy()\n    \n    feature_branch.append('new login feature')\n    # feature is tested, now merge:\n    main_branch = feature_branch.copy()\n    print('Main now has:', main_branch)\n\ngit_workflow_simulator()",
+    "focus": "feature_branch = main_branch.copy()"
+  },
+  "aha_moment": {
+    "code": "main_code = 'stable'\nmy_branch = main_code\nmy_branch = 'broken login'\nprint(main_code)",
+    "prediction": "In this analogy, if you break your feature branch, does the main branch break too?",
+    "common_guess": "Yes.",
+    "why": "No, because a branch is a completely isolated copy. Breaking your feature branch leaves the main branch completely safe."
+  },
+  "practice_tasks": [
+    {
+      "title": "Isolate the feature",
+      "prompt": "Given this simulation, change the code so the new feature is added to the feature branch, NOT the main branch.",
+      "starter_code": "main = ['core']\nfeature = main.copy()\nmain.append('half-finished feature')",
+      "solution": "main = ['core']\nfeature = main.copy()\nfeature.append('half-finished feature')"
+    }
+  ],
+  "challenge": {
+    "title": "Simulate a merge",
+    "prompt": "Write a Python function `merge_code(main_list, feature_list)` that takes two lists of strings. It should add all items from the feature list into the main list, and return the updated main list.",
+    "solution": "def merge_code(main_list, feature_list):\n    main_list.extend(feature_list)\n    return main_list"
+  },
+  "sources": [
+    "https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows"
+  ]
+}

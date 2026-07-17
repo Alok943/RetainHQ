@@ -1,0 +1,96 @@
+{
+  "slug": "rebase-vs-merge",
+  "title": "Rebase vs merge",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 35,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "branching-strategies-feature-main-release"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "git",
+      "github",
+      "teamwork"
+    ]
+  },
+  "overview": {
+    "what": "Merge and rebase are two different ways to combine code from one Git branch into another.\n\nImagine you are writing a chapter for a book. While you are writing, the editor adds a new introduction to the master copy. You need to combine your chapter with the new introduction.\n\n- **Merge**: You take the new introduction, put it at the very end of your work, and staple a note saying \"I combined the two versions here.\" (This creates a 'merge commit').\n- **Rebase**: You take your chapter, magically rewind time to *after* the editor added the introduction, and cleanly attach your chapter to the end. (This rewrites history to make it a straight line).\n\nThe rule is: **merge preserves history exactly as it happened, while rebase rewrites history to make it look like a clean, straight line.**",
+    "why": "Teams use `merge` because it is safe and never deletes history. Advanced teams use `rebase` because a straight-line history is much easier to read when hunting for bugs later.",
+    "where_used": [
+      "Git",
+      "GitHub Pull Requests"
+    ]
+  },
+  "why_learning_this": [
+    "You will understand why senior engineers ask you to 'rebase your branch' before merging a pull request.",
+    "You will avoid destroying your team's code history with bad rebases."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Rebasing a public branch",
+      "explanation": "You rebase a branch that other teammates are already using. Because rebase rewrites history, their local copies become instantly broken and out of sync."
+    },
+    {
+      "title": "Panicking during rebase conflicts",
+      "explanation": "Rebase applies your commits one by one. If you hit a conflict, you might have to fix it multiple times. Beginners often panic and abort."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the difference between merge and rebase in your own words, as if to a classmate.",
+      "answer": "Merge combines two branches and creates a special merge commit to tie them together. Rebase takes your changes and cleanly replays them on top of the other branch, creating a straight line with no merge commit.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it dangerous to rebase a branch that other people are using?",
+      "answer": "Because rebase rewrites history. If you rewrite history that others rely on, their local branches will become permanently out of sync with yours.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "You want to update your private feature branch with the latest code from `main`. You use `git rebase main`. Will this create a new 'merge commit'?",
+      "answer": "No. Rebase rewrites your commits to sit neatly on top of main, creating a straight line of history without a merge commit.",
+      "why": "Merge preserves history exactly as it happened (with a merge commit), while rebase rewrites history to make it look like a clean, straight line."
+    },
+    {
+      "type": "choose-model",
+      "question": "You and a teammate are both committing directly to the `shared-fixes` branch. You pull the latest code. Should you use merge or rebase?",
+      "answer": "You should use merge.",
+      "why": "Never rebase a public branch. Because your teammate is also using the branch, rebasing would rewrite the history they rely on, breaking their local repository."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def show_history():\n    print('Merge history: A -> B -> (Merge C+B)')\n    print('Rebase history: A -> B -> C (Straight line)')\n\nshow_history()",
+    "focus": "print('Rebase history: A -> B -> C (Straight line)')"
+  },
+  "aha_moment": {
+    "code": "history = ['commit1', 'commit2']\n# Rebase rewrites the past:\nhistory = ['commit1', 'new_main', 'commit2_rewritten']\nprint(history)",
+    "prediction": "In a rebase, do your old commits stay exactly the same?",
+    "common_guess": "Yes, they just move.",
+    "why": "No, rebase literally creates brand new commits with new ID numbers to replace the old ones. That is why it 'rewrites history'."
+  },
+  "practice_tasks": [
+    {
+      "title": "Identify the strategy",
+      "prompt": "Given this simulator, change the string to state whether this represents a 'merge' or a 'rebase' based on the straight line.",
+      "starter_code": "def strategy():\n    return 'This straight line history is a ___'",
+      "solution": "def strategy():\n    return 'This straight line history is a rebase'"
+    }
+  ],
+  "challenge": {
+    "title": "Simulate history rewriting",
+    "prompt": "Write a Python function `simulate_rebase(main_commits, feature_commits)` that takes two lists. It should return a new list containing all `main_commits` followed by all `feature_commits`, mimicking how rebase places your work at the very tip of history.",
+    "solution": "def simulate_rebase(main_commits, feature_commits):\n    return main_commits + feature_commits"
+  },
+  "sources": [
+    "https://git-scm.com/book/en/v2/Git-Branching-Rebasing"
+  ]
+}

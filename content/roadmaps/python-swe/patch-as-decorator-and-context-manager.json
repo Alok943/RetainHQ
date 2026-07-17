@@ -1,0 +1,93 @@
+{
+  "slug": "patch-as-decorator-and-context-manager",
+  "title": "patch as decorator and context manager",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "decorators",
+      "with-statement"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pytest",
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "**Memorizable line:** `patch` replaces a real object with a fake one during a test, then puts the real one back.\n\nIt is a tool from the `unittest.mock` library. We use it to stop tests from doing real work, like sending emails or saving to a database.\n\nWe can use it in two ways. First, as a decorator (using `@`). It applies to the whole test function.\n\n```python\nfrom unittest.mock import patch\n\n@patch('__main__.send_sms')\ndef test_sms(mock_send):\n  mock_send.return_value = True\n  assert send_sms() == True\n```\n\nSecond, we can use it as a context manager (using `with`). It applies only to the code block inside it. This is useful when you only want to fake an object for one line.\n\n```python\nfrom unittest.mock import patch\n\ndef test_sms():\n  with patch('__main__.send_sms') as mock_send:\n    mock_send.return_value = True\n    assert send_sms() == True\n```\n\n**Analogy:** Think of an understudy in a play. When the main actor (the real function) is absent, the director (the test) calls the understudy (the mock) to step in. After the scene, the main actor returns.",
+    "why": "It keeps tests fast and safe. You do not want a test to send real data over the internet.",
+    "where_used": [
+      "pytest",
+      "unittest"
+    ]
+  },
+  "why_learning_this": [
+    "Allows testing code that talks to databases or APIs without actually calling them."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Patching the wrong location",
+      "explanation": "You must patch where the object is looked up, not where it is defined. If `moduleA` imports a function from `moduleB`, patch it in `moduleA`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain `patch` in your own words, as if to a classmate.",
+      "answer": "It is a tool that swaps a real function with a fake one for testing. It restores the real function after the test finishes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between using `patch` as a decorator and using it as a context manager?",
+      "answer": "A decorator applies the patch to the entire function. A context manager applies it only to the lines inside the `with` block.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "from unittest.mock import patch\n\ndef get_status():\n    return 'online'\n\n@patch('__main__.get_status')\ndef check(mock_get):\n    mock_get.return_value = 'offline'\n    print(get_status())\n\ncheck()",
+      "question": "What prints, and why?",
+      "answer": "offline",
+      "why": "The decorator replaces the real `get_status` with a fake one that returns 'offline' for the entire function."
+    },
+    {
+      "type": "predict-output",
+      "code": "from unittest.mock import patch\n\ndef get_status():\n    return 'online'\n\ndef check():\n    with patch('__main__.get_status') as mock_get:\n        mock_get.return_value = 'offline'\n    print(get_status())\n\ncheck()",
+      "question": "What prints, and why?",
+      "answer": "online",
+      "why": "The context manager puts the real `get_status` back after the `with` block ends, so the real function runs."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from unittest.mock import patch\n\ndef get_weather():\n    return 'Sunny'\n\ndef test_weather():\n    with patch('__main__.get_weather') as mock_get:\n        mock_get.return_value = 'Rainy'\n        print(get_weather())\n\ntest_weather()",
+    "focus": "with patch('__main__.get_weather') as mock_get:"
+  },
+  "aha_moment": {
+    "code": "from unittest.mock import patch\ndef connect(): return 'Real DB'\ndef test():\n    with patch('__main__.connect') as m:\n        m.return_value = 'Fake DB'\n    print(connect())\ntest()",
+    "prediction": "What does this print?",
+    "common_guess": "Fake DB",
+    "why": "The patch only lasts inside the `with` block. Outside it, the real function is restored, so it prints 'Real DB'."
+  },
+  "practice_tasks": [
+    {
+      "title": "Use patch as a context manager",
+      "prompt": "Given this working test, change it so that `fetch_data` is patched using a context manager (`with patch(...)`) instead of a decorator.",
+      "starter_code": "from unittest.mock import patch\ndef fetch_data(): return 'real'\n\n@patch('__main__.fetch_data')\ndef test_fetch(mock_fetch):\n    mock_fetch.return_value = 'fake'\n    print(fetch_data())",
+      "solution": "from unittest.mock import patch\ndef fetch_data(): return 'real'\n\ndef test_fetch():\n    with patch('__main__.fetch_data') as mock_fetch:\n        mock_fetch.return_value = 'fake'\n        print(fetch_data())"
+    }
+  ],
+  "challenge": {
+    "title": "Patch a function",
+    "prompt": "Write a test function called `test_payment` that uses the `patch` decorator to mock `charge_card` so it returns True. Call `charge_card` inside.",
+    "solution": "from unittest.mock import patch\n\ndef charge_card():\n    return False\n\n@patch('__main__.charge_card')\ndef test_payment(mock_charge):\n    mock_charge.return_value = True\n    return charge_card()"
+  },
+  "sources": [
+    "https://docs.python.org/3/library/unittest.mock.html#patch"
+  ]
+}

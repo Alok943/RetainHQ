@@ -1,0 +1,90 @@
+{
+  "slug": "service-repository-pattern",
+  "title": "Service-repository pattern",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "layered-architecture"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "FastAPI",
+      "SQLAlchemy"
+    ]
+  },
+  "overview": {
+    "what": "The Service-Repository pattern splits your logic layer and data layer into two specific roles. The **Service** handles the business rules, while the **Repository** handles saving and finding data.\n\n```python\n# Repository: Only talks to the database\nclass UserRepository:\n    def save(self, user):\n        print(f'Saved {user} to DB')\n\n# Service: Only handles business rules\nclass UserService:\n    def __init__(self, repo):\n        self.repo = repo\n\n    def create_user(self, name):\n        if len(name) < 3:\n            return 'Name too short'\n        self.repo.save(name)\n        return 'Success'\n```\n\nThe rule: **Services make decisions, Repositories fetch data.** Think of the Service as a manager making decisions, and the Repository as a filing clerk who only retrieves or stores folders when asked.",
+    "why": "It makes testing much easier. You can test the Service's rules without needing a real database by giving it a fake Repository.",
+    "where_used": [
+      "Domain-Driven Design (DDD)",
+      "Large web applications"
+    ]
+  },
+  "why_learning_this": [
+    "It is the industry standard for writing maintainable backend code.",
+    "It allows you to switch databases easily in the future without changing business logic."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Putting logic in the Repository",
+      "explanation": "Checking if a user's name is long enough inside the repository. The repository should be dumb; it just saves data."
+    },
+    {
+      "title": "Writing SQL in the Service",
+      "explanation": "Writing database queries directly in the service class. The service should call `repo.get_user()` instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the Service-Repository pattern in your own words, as if to a classmate.",
+      "answer": "It is a way to split jobs: the Service makes business decisions, and the Repository only handles saving and finding data in the database.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it bad to put business logic inside the Repository?",
+      "answer": "Because the repository's only job is to interact with the database, like a filing clerk. The service should make the decisions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does this pattern help with testing?",
+      "answer": "You can test the Service's business rules by using a fake repository, so you don't need a real database running.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class Repo:\n    def save(self, item): return f'DB saved {item}'\n\nclass Service:\n    def __init__(self, repo):\n        self.repo = repo\n    def run(self):\n        return self.repo.save('apple')\n\ns = Service(Repo())\nprint(s.run())",
+      "question": "What does this print?",
+      "answer": "DB saved apple",
+      "why": "The Service calls the `save` method on the Repository object it was given, which returns the string."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If we want to change our app from a SQL database to a MongoDB database, which class do we rewrite?",
+      "answer": "The Repository.",
+      "why": "Because the Repository handles all data storage. The Service does not know or care what type of database is used."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class FakeRepo:\n    def get(self): return 'fake data'\n\nclass Service:\n    def run(self, repo):\n        data = repo.get()\n        return data.upper()\n\nprint(Service().run(FakeRepo()))",
+    "focus": "data = repo.get()"
+  },
+  "practice_tasks": [
+    {
+      "title": "Move logic out of the repo",
+      "prompt": "Modify this code so the age check (business logic) happens in the Service, not the Repository.",
+      "starter_code": "class Repo:\n    def save(self, age):\n        if age < 18: return 'Too young'\n        return 'Saved'\n\nclass Service:\n    def __init__(self, repo):\n        self.repo = repo\n    def run(self, age):\n        return self.repo.save(age)",
+      "solution": "class Repo:\n    def save(self, age):\n        return 'Saved'\n\nclass Service:\n    def __init__(self, repo):\n        self.repo = repo\n    def run(self, age):\n        if age < 18: return 'Too young'\n        return self.repo.save(age)"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/tutorial/classes.html"
+  ]
+}

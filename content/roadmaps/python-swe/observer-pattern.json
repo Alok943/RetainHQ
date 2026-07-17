@@ -1,0 +1,98 @@
+{
+  "slug": "observer-pattern",
+  "title": "Observer pattern",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "class-basics"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Django",
+      "FastAPI"
+    ]
+  },
+  "overview": {
+    "what": "The Observer pattern lets one object automatically notify other objects when something happens. \n\nImagine a YouTube channel. When a creator uploads a video, millions of subscribers get a notification. The subscribers do not have to check the channel every five minutes. The channel (the Subject) keeps a list of subscribers (the Observers) and alerts them all at once.\n\nHere is a simple example for a news alert system:\n\n```python\nclass NewsAgency:\n    def __init__(self):\n        self.subscribers = []\n        \n    def subscribe(self, person):\n        self.subscribers.append(person)\n        \n    def notify_all(self, news):\n        for person in self.subscribers:\n            person.receive(news)\n```\n\nNow, we create subscribers and the agency. When news breaks, everyone gets it:\n\n```python\nclass Person:\n    def __init__(self, name):\n        self.name = name\n    def receive(self, news):\n        print(f\"{self.name} received: {news}\")\n\nagency = NewsAgency()\nagency.subscribe(Person(\"Rahul\"))\nagency.subscribe(Person(\"Anjali\"))\n\nagency.notify_all(\"Rain tomorrow!\")\n```\n\nBoth Rahul and Anjali will print the message. The `NewsAgency` does not care who they are, as long as they have a `receive` method.\n\nLet us practice. Here is a faded example. Fill in the blank to alert all the observers.\n\n```python\nclass GroupChat:\n    def __init__(self):\n        self.members = []\n    \n    def send_message(self, text):\n        for m in self.members:\n            ____(text) # Call the member's receive method\n```\n\nThe rule to remember: **The Observer pattern is a publisher keeping a list of subscribers and looping through them to send updates.**\n\nThere is a sharp edge here. If you subscribe an object but forget to remove it later, the publisher keeps holding onto it forever. This is called a memory leak. If a user logs out, you must remove them from the list.",
+    "why": "It keeps your code uncoupled. The publisher does not need to know the exact details of every subscriber. It just sends the message. You can add 100 new subscribers without changing the publisher code.",
+    "where_used": [
+      "User interface buttons (clicking a button notifies the app)",
+      "Sending emails when a database record changes",
+      "Real-time chat applications"
+    ]
+  },
+  "why_learning_this": [
+    "You will understand how event-driven systems (like clicking buttons) work.",
+    "You will know how to separate the code that creates data from the code that displays it."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to unsubscribe",
+      "explanation": "If an object is no longer needed but is still in the publisher's list, Python will never delete it. This wastes memory and can cause weird bugs where deleted users still receive messages."
+    },
+    {
+      "title": "Slow observers blocking everything",
+      "explanation": "The publisher updates observers one by one. If one observer takes 10 seconds to process the news, everyone else has to wait. Keep observer methods fast."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the Observer pattern in your own words, as if to a classmate.",
+      "answer": "The Observer pattern is when one central object keeps a list of other objects. When something new happens, it loops through the list and sends a message to everyone.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is this better than having the subscribers constantly ask \"is there new data?\"",
+      "answer": "Because constantly asking wastes time and computer power. With this pattern, they just wait, and the data comes to them immediately when it is ready.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you delete a subscriber in your code but forget to remove it from the publisher's list?",
+      "answer": "The publisher still holds a reference to it. The subscriber will not be fully deleted from memory (a memory leak) and will keep receiving updates.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "class Store:\n    def __init__(self):\n        self.customers = []\n    def add(self, c):\n        self.customers.append(c)\n    def sale(self):\n        for c in self.customers:\n            c.notify()\n\nclass Shopper:\n    def notify(self):\n        print(\"Buying now!\")\n\nshop = Store()\nshop.add(Shopper())\nshop.add(Shopper())\nshop.sale()",
+      "question": "What does this code print?",
+      "answer": "Buying now!\nBuying now!",
+      "why": "The Store has two Shoppers in its list. When `sale()` is called, it loops through the list and calls `notify()` on both of them."
+    },
+    {
+      "type": "find-bug",
+      "code": "class WeatherStation:\n    def __init__(self):\n        self.screens = []\n    def update(self, temp):\n        for screen in self.screens:\n            screen(temp)\n\nclass Display:\n    def show(self, temp):\n        print(temp)\n\nstation = WeatherStation()\nstation.screens.append(Display())\nstation.update(25)",
+      "question": "Why does this code crash?",
+      "answer": "Because it tries to call the `Display` object like a function `screen(temp)` instead of calling its method `screen.show(temp)`.",
+      "why": "The publisher must call a specific method on the observer. Objects cannot usually be called directly with parentheses unless they have special magic methods."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "class Alarm:\n    def __init__(self):\n        self.listeners = []\n    def trigger(self):\n        for listener in self.listeners:\n            listener.sound()\n\nclass Siren:\n    def sound(self): print(\"WEE WOO\")\n\nclass Phone:\n    def sound(self): print(\"Beep beep\")\n\nalarm = Alarm()\nalarm.listeners = [Siren(), Phone()]\nalarm.trigger()",
+    "focus": "for listener in self.listeners:"
+  },
+  "aha_moment": {
+    "code": "class Publisher:\n    def __init__(self):\n        self.subs = []\n    def alert(self):\n        for sub in self.subs:\n            sub()\n\ndef print_hello():\n    print(\"Hello!\")\n\npub = Publisher()\npub.subs.append(print_hello)\npub.alert()",
+    "prediction": "What does this print? Look closely at what we appended to the list.",
+    "common_guess": "It crashes because `print_hello` is not an object.",
+    "why": "In Python, functions ARE objects! You do not always need a class to be an observer. You can just append a simple function to the list, and the publisher can call it."
+  },
+  "practice_tasks": [
+    {
+      "title": "Add a new observer",
+      "prompt": "Given this code, create a new `EmailLogger` object and subscribe it to the `system` so that it also receives the error.",
+      "starter_code": "class System:\n    def __init__(self):\n        self.obs = []\n    def error(self, msg):\n        for o in self.obs: o.log(msg)\n\nclass FileLogger:\n    def log(self, msg): print(f\"File: {msg}\")\n\nclass EmailLogger:\n    def log(self, msg): print(f\"Email: {msg}\")\n\nsystem = System()\nsystem.obs.append(FileLogger())\n# Subscribe the EmailLogger here\n\nsystem.error(\"Disk full\")",
+      "solution": "class System:\n    def __init__(self):\n        self.obs = []\n    def error(self, msg):\n        for o in self.obs: o.log(msg)\n\nclass FileLogger:\n    def log(self, msg): print(f\"File: {msg}\")\n\nclass EmailLogger:\n    def log(self, msg): print(f\"Email: {msg}\")\n\nsystem = System()\nsystem.obs.append(FileLogger())\n# Subscribe the EmailLogger here\nsystem.obs.append(EmailLogger())\n\nsystem.error(\"Disk full\")"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event"
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "slug": "test-discovery-and-naming-conventions",
+  "title": "Test discovery and naming conventions",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "functions"
+    ],
+    "unlocks": [
+      "assertions-and-pytest-raises"
+    ],
+    "project_usage": [
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "Before testing code, we need a way to find and run those tests. **Test discovery is how tools like pytest find your test files and functions automatically.**\n\nTo see this, imagine we have a function that checks if a student passed their exams. Here is a working test file:\n\n```python\n# File: test_marks.py\ndef has_passed(marks):\n  return marks > 40\n\ndef test_has_passed():\n  assert has_passed(50) == True\n```\n\nWhen we run the command `pytest`, it looks for files starting with `test_` or ending with `_test.py`. Inside those files, it looks for functions starting with `test_`. Because our file is named `test_marks.py` and our function is named `test_has_passed`, pytest finds and runs it.\n\nNow, let us look at a similar test, but one step is blank:\n\n```python\n# File: test_attendance.py\ndef is_present(days):\n  return days > 75\n\ndef _______is_present():\n  assert is_present(80) == True\n```\n\nTo make pytest find this test automatically, we must name the function `test_is_present`.",
+    "why": "Without a naming rule, you would have to manually list every test file you want to run. Discovery rules save time and keep projects organized.",
+    "where_used": [
+      "Pytest setups",
+      "CI/CD pipelines"
+    ]
+  },
+  "why_learning_this": [
+    "Running all tests in a project with one simple command."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the test_ prefix",
+      "explanation": "If you name your function `check_passed` instead of `test_check_passed`, pytest will ignore it. Always start test function names with `test_`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain test discovery and naming conventions in your own words, as if to a classmate.",
+      "answer": "Test discovery is how a testing tool automatically finds and runs our tests by looking for specific file and function names, usually starting with 'test_'.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What prefix must a test file have for pytest to find it automatically?",
+      "answer": "It must start with 'test_' or end with '_test.py'.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "code": "# File: test_math.py\ndef add(a, b):\n  return a + b\n\ndef verify_add():\n  assert add(2, 3) == 5\n\n# What does pytest do with verify_add?",
+      "question": "What happens when you run pytest on this file?",
+      "answer": "pytest runs zero tests because verify_add does not start with test_.",
+      "why": "Test discovery relies strictly on the `test_` prefix. Since `verify_add` does not start with `test_`, pytest ignores it entirely."
+    },
+    {
+      "type": "explain-behavior",
+      "code": "# File: calc_test.py\ndef test_subtract():\n  assert 5 - 2 == 3",
+      "question": "Will pytest find and run this test?",
+      "answer": "Yes, because the file ends with _test.py and the function starts with test_.",
+      "why": "Files ending in `_test.py` are also valid for test discovery, and the function correctly starts with `test_`."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "# File: test_logic.py\ndef is_even(n):\n  return n % 2 == 0\n\ndef test_is_even():\n  result = is_even(4)\n  print('Test running')\n  assert result == True\n\ntest_is_even()",
+    "focus": "def test_is_even():"
+  },
+  "aha_moment": {
+    "code": "# File: my_tests.py\ndef test_logic():\n  print('Checking logic')\n  assert True\n\nprint('Done')",
+    "prediction": "If you run `pytest` in the folder containing this file, will it run `test_logic`?",
+    "common_guess": "Yes, because the function starts with test_.",
+    "why": "The file name `my_tests.py` does not start with `test_` or end with `_test.py`. pytest will not look inside it, so the test is skipped."
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix the naming",
+      "prompt": "Given this code, change the names so that pytest will find and run the test.",
+      "starter_code": "# File: user_tests.py\n\ndef check_user_age():\n  assert True",
+      "solution": "# File: test_user.py\n\ndef test_check_user_age():\n  assert True"
+    }
+  ],
+  "challenge": {
+    "title": "Name a test file and function",
+    "prompt": "Write a test file named correctly for pytest. Inside it, write a test function named correctly that asserts `True`.",
+    "solution": "# File: test_example.py\n\ndef test_example():\n  assert True"
+  },
+  "sources": [
+    "https://docs.pytest.org/en/7.4.x/explanation/goodpractices.html#test-discovery"
+  ]
+}

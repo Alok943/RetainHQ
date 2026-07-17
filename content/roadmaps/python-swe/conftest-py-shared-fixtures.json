@@ -1,0 +1,95 @@
+{
+  "slug": "conftest-py-shared-fixtures",
+  "title": "conftest.py: shared fixtures",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "fixtures-and-fixture-scope"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "**conftest.py** is a special pytest file used to share fixtures across multiple test files. Any fixture placed in `conftest.py` is automatically available to all tests in that folder, without needing to import it.\n\nHere is a worked example showing two files in a folder:\n\n```python\n# File: conftest.py\nimport pytest\n\n@pytest.fixture\ndef fake_user():\n  return {'name': 'Amit'}\n```\n\n```python\n# File: test_profile.py\n# Notice there is no import statement for fake_user!\n\ndef test_user_name(fake_user):\n  assert fake_user['name'] == 'Amit'\n```\n\npytest automatically discovers `conftest.py` and loads `fake_user`. `test_profile.py` can use it instantly.\n\nNow, look at this faded example where one step is blank:\n\n```python\n# File: test_orders.py\n\ndef test_cart(_______):\n  assert fake_user['name'] == 'Amit'\n```\n\nTo use the fixture from `conftest.py`, we fill in the blank with `fake_user`. We do not need an import statement.",
+    "why": "When projects grow, you will have many test files needing the same setups (like test databases or fake users). `conftest.py` prevents you from copying the same fixtures everywhere.",
+    "where_used": [
+      "pytest setups across multiple directories"
+    ]
+  },
+  "why_learning_this": [
+    "Scaling tests across multiple files efficiently.",
+    "Centralizing expensive setup code like database connections."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Importing conftest",
+      "explanation": "Writing `from conftest import fake_user` will cause errors or duplicate runs. Never import from `conftest.py`; pytest handles it automatically."
+    },
+    {
+      "title": "Putting tests in conftest.py",
+      "explanation": "Test functions (like `def test_something():`) should not go in `conftest.py`. It is only for shared fixtures and configuration."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain conftest.py in your own words, as if to a classmate.",
+      "answer": "It is a special file where we put pytest fixtures so they can be automatically shared with all test files in the same folder, without needing to import them.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Should you use an import statement to use a fixture from conftest.py?",
+      "answer": "No. pytest automatically discovers fixtures in conftest.py. Importing them will cause problems.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "# File: test_data.py\nfrom conftest import db_fixture\n\ndef test_db(db_fixture):\n  assert db_fixture == 'connected'",
+      "question": "Where is the bug in this file?",
+      "answer": "The line `from conftest import db_fixture` is incorrect.",
+      "why": "Fixtures in `conftest.py` are injected automatically by pytest. Explicitly importing from `conftest.py` breaks pytest's magic and leads to errors."
+    },
+    {
+      "type": "explain-behavior",
+      "code": "# File: folderA/conftest.py\n# Fixture: secret_key\n\n# File: folderA/test_app.py\n# File: folderB/test_api.py",
+      "question": "Can test_api.py in folderB use the secret_key fixture from folderA?",
+      "answer": "No, it cannot.",
+      "why": "`conftest.py` only shares fixtures with tests in its own folder and subfolders. `folderB` is outside `folderA`'s scope."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "# Simulated behavior of pytest\n\ndef conftest_fixture():\n  return 'SharedData'\n\ndef test_my_func(data):\n  print(f'Using {data}')\n\n# pytest automatically does this:\ntest_my_func(conftest_fixture())",
+    "focus": "test_my_func(conftest_fixture())"
+  },
+  "aha_moment": {
+    "code": "# File: conftest.py\nimport pytest\n@pytest.fixture\ndef config(): return 'Global'\n\n# File: test_local.py\nimport pytest\n@pytest.fixture\ndef config(): return 'Local'\n\ndef test_mode(config):\n  print(config)",
+    "prediction": "What does test_mode print? 'Global' or 'Local'?",
+    "common_guess": "'Global', because conftest.py affects everything.",
+    "why": "It prints 'Local'. If a test file defines a fixture with the same name as one in `conftest.py`, the local file's fixture overrides the shared one for those tests."
+  },
+  "practice_tasks": [
+    {
+      "title": "Use the shared fixture",
+      "prompt": "Given a `conftest.py` that provides a `test_client` fixture, write the test function to use it without importing it.",
+      "starter_code": "# File: test_routes.py\n\ndef test_home():\n  # We want to use test_client here\n  assert test_client == 'client'",
+      "solution": "# File: test_routes.py\n\ndef test_home(test_client):\n  assert test_client == 'client'"
+    }
+  ],
+  "challenge": {
+    "title": "Create a shared fixture",
+    "prompt": "Write the exact contents of a `conftest.py` file that creates a fixture named `api_url` which returns the string `'http://localhost'`.",
+    "solution": "import pytest\n\n@pytest.fixture\ndef api_url():\n  return 'http://localhost'"
+  },
+  "sources": [
+    "https://docs.pytest.org/en/7.4.x/reference/fixtures.html#conftest-py-sharing-fixtures-across-multiple-files"
+  ]
+}

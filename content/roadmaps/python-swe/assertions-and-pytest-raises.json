@@ -1,0 +1,96 @@
+{
+  "slug": "assertions-and-pytest-raises",
+  "title": "Assertions and pytest.raises",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "test-discovery-and-naming-conventions",
+      "custom-exceptions"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "pytest"
+    ]
+  },
+  "overview": {
+    "what": "An **assertion** is a statement that checks if a condition is true. If it is false, the test fails. When we expect our code to fail and raise an error, we use **pytest.raises** to check that the error happens.\n\nHere is a worked example checking a student's score:\n\n```python\nimport pytest\n\ndef get_grade(score):\n  if score < 0:\n    raise ValueError('Score cannot be negative')\n  return 'Pass' if score >= 40 else 'Fail'\n\ndef test_get_grade_pass():\n  assert get_grade(50) == 'Pass'\n\ndef test_get_grade_negative():\n  with pytest.raises(ValueError):\n    get_grade(-10)\n```\n\nThe `assert` line checks that 50 returns 'Pass'. The `with pytest.raises` block checks that passing -10 correctly causes a `ValueError`.\n\nNow, look at this faded example where one step is blank:\n\n```python\nimport pytest\n\ndef divide(a, b):\n  if b == 0:\n    raise ZeroDivisionError('Cannot divide by zero')\n  return a / b\n\ndef test_divide_by_zero():\n  with pytest._______(ZeroDivisionError):\n    divide(10, 0)\n```\n\nTo make this test check for the error, we fill in the blank with `raises`.",
+    "why": "We must prove our code works when given good data, and that it safely catches bad data. Assertions handle the good, and pytest.raises handles the bad.",
+    "where_used": [
+      "pytest test suites"
+    ]
+  },
+  "why_learning_this": [
+    "Testing error handling paths in your code.",
+    "Proving that functions return the exact expected values."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assigning instead of comparing",
+      "explanation": "Writing `assert result = 5` will cause a syntax error. You must use the double equals sign `assert result == 5` for comparison."
+    },
+    {
+      "title": "Putting the function call outside the with block",
+      "explanation": "If you call the function before the `with pytest.raises` block, the error crashes the test immediately. The call must be inside the block."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain assertions and pytest.raises in your own words, as if to a classmate.",
+      "answer": "An assertion checks if a regular condition is true. pytest.raises is a special tool used to check if a specific error is raised by our code.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if the condition in an `assert` statement is false?",
+      "answer": "The assertion fails and stops the test, marking it as a failure.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "import pytest\n\ndef test_error():\n  x = 1 / 0\n  with pytest.raises(ZeroDivisionError):\n    pass\n\ntest_error()",
+      "question": "Where is the bug in this test?",
+      "answer": "The division `x = 1 / 0` happens outside the `pytest.raises` block.",
+      "why": "The code that raises the error must be indented inside the `with pytest.raises` block so pytest can catch it. Otherwise, it just crashes the test."
+    },
+    {
+      "type": "explain-behavior",
+      "code": "def test_math():\n  assert 2 + 2 == 5\n  print('Math works!')\n\ntest_math()",
+      "question": "What happens when this test runs?",
+      "answer": "The assertion fails and the print statement never runs.",
+      "why": "When an `assert` statement fails, it immediately raises an AssertionError, stopping the rest of the code in that block from running."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "import pytest\n\ndef test_catch():\n  with pytest.raises(KeyError):\n    my_dict = {'name': 'Rahul'}\n    bad_key = my_dict['age']\n  print('Caught the error')\n\ntest_catch()",
+    "focus": "with pytest.raises(KeyError):"
+  },
+  "aha_moment": {
+    "code": "import pytest\n\ndef test_no_error():\n  with pytest.raises(ValueError):\n    number = 5 + 5\n  print('Done')\n\ntest_no_error()",
+    "prediction": "What happens when this test runs?",
+    "common_guess": "It passes and prints 'Done'.",
+    "why": "`pytest.raises` expects an error to happen. Since `5 + 5` does not raise a `ValueError`, the test actually fails because the expected error never occurred."
+  },
+  "practice_tasks": [
+    {
+      "title": "Check the error",
+      "prompt": "Given this code, change the test to correctly check that `IndexError` is raised.",
+      "starter_code": "import pytest\n\ndef test_list_error():\n  items = [1, 2, 3]\n  # Fix the line below\n  items[10]",
+      "solution": "import pytest\n\ndef test_list_error():\n  items = [1, 2, 3]\n  with pytest.raises(IndexError):\n    items[10]"
+    }
+  ],
+  "challenge": {
+    "title": "Write an assertion and an error check",
+    "prompt": "Write a test function named `test_logic` that first asserts `10 > 5`, and then uses `pytest.raises` to check that `int('abc')` raises a `ValueError`.",
+    "solution": "import pytest\n\ndef test_logic():\n  assert 10 > 5\n  with pytest.raises(ValueError):\n    int('abc')"
+  },
+  "sources": [
+    "https://docs.pytest.org/en/7.4.x/how-to/assert.html"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "slug": "modular-design-and-separation-of-concerns",
+  "title": "Modular design and separation of concerns",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 10,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "functions"
+    ],
+    "unlocks": [
+      "layered-architecture"
+    ],
+    "project_usage": [
+      "All software projects"
+    ]
+  },
+  "overview": {
+    "what": "Separation of concerns is the idea that every piece of your code should do exactly one thing. Modular design means breaking a large program into small, independent parts (modules) based on those concerns.\n\n```python\n# Bad: Doing everything in one function\ndef process_order():\n    # calculate tax, check inventory, send email...\n    pass\n\n# Good: Separated concerns\ndef calculate_tax(amount):\n    return amount * 0.1\n\ndef check_inventory(item):\n    return True\n```\n\nThe rule: **If a function or file has the word 'and' in its description, it is doing too much.** Think of it like a hospital: a doctor diagnoses you, a nurse draws blood, and a pharmacist gives medicine. If one person did all three, the hospital would collapse.",
+    "why": "It makes your code easier to read, test, and reuse. If you need to calculate tax somewhere else, you can just reuse the small function.",
+    "where_used": [
+      "Writing clean code",
+      "System design"
+    ]
+  },
+  "why_learning_this": [
+    "It is the foundation of writing code that other people can actually read and use.",
+    "It prevents the 'spaghetti code' problem where changing one thing breaks everything."
+  ],
+  "common_mistakes": [
+    {
+      "title": "God functions",
+      "explanation": "Writing a massive 500-line function that does ten different things. Break it down into smaller helper functions."
+    },
+    {
+      "title": "False reusability",
+      "explanation": "Trying to make a function so generic that it takes 15 arguments to handle every possible situation. Keep it simple."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain separation of concerns in your own words, as if to a classmate.",
+      "answer": "It means every part of your code should have only one job, so things don't get mixed together.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you tell if a function is doing too much?",
+      "answer": "If you have to use the word 'and' to describe what it does, it is probably doing too much.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is a modular design better than putting everything in one file?",
+      "answer": "It makes the code easier to read, test, and reuse in other parts of the project.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "def handle_user(name, age):\n    if age >= 18:\n        # check db\n        db_status = 'ok'\n        if db_status == 'ok':\n            return f'Welcome {name}'\n    return 'Error'",
+      "question": "What is wrong with this function's design?",
+      "answer": "It is doing two things: checking an age rule and talking to a database.",
+      "why": "A function should only do one thing. Here, the validation (age check) and the data access (db check) are mixed."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If you have an `email_sender` module and a `payment_processor` module, should the email module know how payments are calculated?",
+      "answer": "No.",
+      "why": "Concerns must be separated. The email module should only know how to send text, and the payment module should calculate the payment."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def calc(price):\n    return price * 1.1\n\ndef print_receipt(amount):\n    print(f'Total: {amount}')\n\ntotal = calc(100)\nprint_receipt(total)",
+    "focus": "total = calc(100)"
+  },
+  "practice_tasks": [
+    {
+      "title": "Split the function",
+      "prompt": "Modify this code to split the `process_student` function into two smaller functions: `get_grade` and `print_report`.",
+      "starter_code": "def process_student(score):\n    grade = 'Pass' if score > 50 else 'Fail'\n    print(f'Student achieved: {grade}')\n\nprocess_student(60)",
+      "solution": "def get_grade(score):\n    return 'Pass' if score > 50 else 'Fail'\n\ndef print_report(grade):\n    print(f'Student achieved: {grade}')\n\ng = get_grade(60)\nprint_report(g)"
+    }
+  ],
+  "sources": [
+    "https://docs.python.org/3/tutorial/modules.html"
+  ]
+}

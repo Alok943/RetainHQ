@@ -23,92 +23,97 @@
   "glossary": [
     {
       "term": "completion model",
-      "definition": "An older style of AI that simply acts like a giant auto-complete, continuing whatever text you give it without understanding conversation."
+      "definition": "An older style of AI that works like a giant autocomplete — it continues whatever text you give it, without any concept of a conversation."
     },
     {
       "term": "chat model",
-      "definition": "A modern AI designed specifically to act as a conversational partner, understanding when it is its turn to speak and how to be helpful."
+      "definition": "A modern AI fine-tuned to act as a conversation partner. It understands whose turn it is to speak and how to give a helpful, structured reply."
     },
     {
       "term": "RLHF",
-      "definition": "Stands for Reinforcement Learning from Human Feedback, a training method used to teach AI models how to behave like helpful, harmless assistants."
+      "definition": "Short for Reinforcement Learning from Human Feedback — a training method that teaches AI how to behave like a helpful, harmless assistant."
     }
   ],
   "mental_model": {
-    "intuition": "A completion model is an auto-complete engine. A chat model is an auto-complete engine that was fine-tuned to play a conversation partner.",
-    "description": "At their core, both model types do the same thing: predict the most likely next token given everything that came before. The difference is what they were trained to continue. A base completion model continues any text as if it were the middle of a document. A chat model was fine-tuned (with RLHF) on conversation transcripts, so it's optimised to continue the 'assistant' turn of a structured dialogue — it knows how conversations end."
+    "intuition": "A completion model is a text autocomplete engine. A chat model is the same engine, retrained to play the role of a helpful conversation partner.",
+    "description": "Both model types do the same thing at their core: predict the most likely next token given all the text before it. The difference is what they were trained to continue. A base completion model continues any text as if it were the middle of a document. A chat model was fine-tuned using RLHF on conversation data, so it learned to continue the 'assistant' turn of a structured dialogue — it knows what a good helpful reply looks like."
   },
   "sections": [
     {
-      "body": "Base (completion) models like the original GPT-3 took a single string and continued it. If you asked 'What is the capital of France?', it would output '...Paris, which is also known as...' — a document continuation, not a clean answer. To get answers out, you had to prompt-engineer carefully: 'Q: What is the capital of France? A:'. The model then continued with 'Paris'.",
+      "body": "Base completion models like the original GPT-3 took a single string and continued it. If you typed 'What is the capital of France?', the model would output '...Paris, which is also known as the City of Light...' — a document continuation, not a clean answer. To get a direct answer, you had to prompt carefully: 'Q: What is the capital of France? A:'. The model then continued with 'Paris'.",
       "recap": "Completion models: raw text in, text continuation out. No conversation structure."
     },
     {
-      "body": "Chat models (gpt-4o, claude-3-5-sonnet, etc.) were fine-tuned on dialogue data using Reinforcement Learning from Human Feedback (RLHF). They learned what a helpful, harmless reply looks like in a conversation. They natively understand the system/user/assistant role structure and generate proper conversational replies — not raw continuations. You send messages[]; they reply as the assistant.",
-      "recap": "Chat models: trained to be a helpful conversational partner, not just a text predictor."
+      "body": "Chat models (`gpt-4o`, `claude-3-5-sonnet`, and similar) were fine-tuned on dialogue data using RLHF. They learned what a helpful, harmless reply looks like in a conversation. They understand the system / user / assistant role structure natively and generate proper conversational replies — not raw continuations. You send a `messages[]` list; they reply as the assistant.",
+      "recap": "Chat models are trained to be a helpful conversation partner, not just a text predictor."
     },
     {
-      "body": "From an API perspective, the shift from completions to chat completions is structural. The older /v1/completions endpoint took a single prompt string. The modern /v1/chat/completions endpoint takes a messages[] list. OpenAI has been deprecating the pure completion endpoint for its flagship models — for new projects, always use the chat completions endpoint, even for non-conversational tasks.",
-      "recap": "Use /chat/completions for everything — even single-turn, non-conversational tasks."
+      "body": "From an API perspective, the two endpoints look different. The older `/v1/completions` endpoint took a single prompt string. The modern `/v1/chat/completions` endpoint takes a `messages[]` list. OpenAI has deprecated the pure completion endpoint for its flagship models. For all new projects, use the chat completions endpoint — even for tasks that are not conversational.",
+      "recap": "Use `/v1/chat/completions` for everything — even single-turn, non-conversational tasks."
     },
     {
-      "body": "For single-turn non-conversational tasks (summarize this document, classify this label), the difference is thin: put the task in the user message. For multi-turn conversation, the chat structure is essential: the model maintains its persona and understands turn-taking. For fine-tuning and building agents, chat models are the standard — almost all modern tooling assumes the chat format.",
-      "recap": "New projects → chat completions API, regardless of whether the task is 'conversational'."
+      "body": "For single-turn tasks (summarize a document, classify a label), the difference is small: put your task in the user message. For multi-turn conversations, the chat structure is essential — the model maintains its persona and understands turn order. For building agents or fine-tuning, chat models are the standard. Almost all modern tooling assumes the chat format.",
+      "recap": "New projects → chat completions API, regardless of whether the task involves conversation."
     }
   ],
   "code_snippets": [
     {
-      "title": "Legacy completion endpoint (avoid for new projects)",
+      "title": "Legacy completion endpoint (shown for reference — do not use for new projects)",
       "language": "python",
-      "code": "# DO NOT USE for new projects — endpoint deprecated for flagship models\nfrom openai import OpenAI\nclient = OpenAI()\n\n# Old way: single string, model continues it\nresponse = client.completions.create(\n    model='gpt-3.5-turbo-instruct',  # one of the few models that still supports this\n    prompt='The capital of France is',\n    max_tokens=5,\n)\nprint(response.choices[0].text)   # ' Paris.'",
-      "explanation": "Shown for context only. The /v1/completions endpoint is deprecated for GPT-4 and later models. If you're reading old blog posts that use this shape, translate them to the chat format below."
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# Old way: single string, model continues it\nresponse = client.completions.create(\n    model='gpt-3.5-turbo-instruct',\n    prompt='The capital of France is',\n    max_tokens=5,\n)\nprint(response.choices[0].text)  # ' Paris.'",
+      "explanation": "Shown for context only. The `/v1/completions` endpoint is deprecated for GPT-4 and later models. If you see old blog posts using this shape, translate them to the chat format shown below."
     },
     {
-      "title": "Modern chat completions endpoint (use this)",
+      "title": "Modern chat completions endpoint — use this for all new projects",
       "language": "python",
-      "code": "from openai import OpenAI\nclient = OpenAI()\n\n# New way: structured messages[], works for chat and non-chat tasks alike\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'Answer factually and concisely.'},\n        {'role': 'user',   'content': 'What is the capital of France?'},\n    ],\n)\nprint(response.choices[0].message.content)   # 'Paris.'",
-      "explanation": "Even for a one-shot factual question, use the chat format. It gives you the system message lever, consistent structure across all tasks, and access to all the latest model features (tools, structured output, vision)."
+      "code": "from openai import OpenAI\nclient = OpenAI()\n\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': 'Answer factually and briefly.'},\n        {'role': 'user',   'content': 'What is the capital of France?'},\n    ],\n)\nprint(response.choices[0].message.content)  # 'Paris.'",
+      "explanation": "Even for a single factual question, use the chat format. It gives you the system message lever, consistent structure across all tasks, and access to all current model features such as tools, structured output, and vision."
     }
   ],
   "common_mistakes": [
     {
       "title": "Using the completion endpoint for new projects",
-      "explanation": "The /v1/completions endpoint is deprecated for GPT-4+ models. It lacks access to tools, structured output, and latest model versions. All new projects should use /v1/chat/completions."
+      "explanation": "The `/v1/completions` endpoint is deprecated for GPT-4+ models. It does not support tools, structured output, or the latest model versions. All new projects should use `/v1/chat/completions`."
     },
     {
       "title": "Thinking the chat format only applies to chatbots",
-      "explanation": "The chat format is the standard interface for ALL tasks — classification, summarization, extraction, agents. The 'chat' name is misleading; it just means 'structured message list', not 'must be a chatbot'."
+      "explanation": "The chat format is the standard interface for ALL tasks — classification, summarization, extraction, agents. The word 'chat' is misleading. It just means 'a structured list of messages', not 'must be a chatbot'."
     }
   ],
   "recall_questions": [
     {
-      "q": "What is the fundamental difference between a base completion model and a chat model?",
-      "answer": "Base completion models predict text continuations from a raw string. Chat models are fine-tuned on conversation data (RLHF) to generate helpful, structured conversational replies from a messages[] list.",
+      "q": "Explain the difference between a completion model and a chat model, as if to a classmate.",
+      "answer": "Both predict the next token, but they were trained on different data. A completion model was trained to continue any text like a document. A chat model was further trained on conversations, so it knows how to give helpful replies as an assistant.",
       "tier": "tier1"
     },
     {
-      "q": "Which API endpoint should you use for all new projects — /v1/completions or /v1/chat/completions?",
-      "answer": "/v1/chat/completions — the completions endpoint is deprecated for flagship models and lacks access to tools, structured output, and latest model features.",
+      "q": "Which API endpoint should you use for all new projects?",
+      "answer": "`/v1/chat/completions` — the `/v1/completions` endpoint is deprecated for flagship models and does not support tools, structured output, or the latest model versions.",
       "tier": "tier1"
     },
     {
-      "q": "Can you use the chat completions API for non-conversational tasks like document summarization?",
-      "answer": "Yes — the chat format is the standard interface for ALL tasks. Put instructions in the system message and the document in the user message. The 'chat' name is misleading; it just means 'structured message list'.",
+      "q": "Can you use the chat completions API for tasks that are not conversations, like document summarization?",
+      "answer": "Yes. Put your instructions in the system message and the document in the user message. The word 'chat' just means 'structured message list' — it applies to all tasks.",
       "tier": "tier1"
+    },
+    {
+      "q": "What happens if you try to use `gpt-4o` with the `/v1/completions` endpoint?",
+      "answer": "The API will return an error or refuse the request, because the `/v1/completions` endpoint is deprecated for GPT-4 and later models. You must use `/v1/chat/completions` instead.",
+      "tier": "tier2"
     }
   ],
   "oa_questions": [
     {
-      "question": "A tutorial from 2021 uses openai.Completion.create() with a raw prompt string. You're adapting it for gpt-4o. What changes?",
+      "question": "A tutorial from 2021 uses `openai.Completion.create()` with a raw prompt string. You are adapting it for `gpt-4o`. What changes?",
       "company": "LLM Engineer OA",
-      "answer": "Switch from client.completions.create(prompt='...') to client.chat.completions.create(messages=[...]). Move the instructions into a system message and the task input into a user message. The response field also changes: response.choices[0].text → response.choices[0].message.content.",
-      "approach": "This is a direct API translation question. The key changes are endpoint, input shape (string→messages list), and output field."
+      "answer": "Switch from `client.completions.create(prompt='...')` to `client.chat.completions.create(messages=[...])`. Move the instructions into a system message and the input into a user message. The response field also changes: `response.choices[0].text` becomes `response.choices[0].message.content`.",
+      "approach": "This is a direct API translation. The key changes are the endpoint, the input shape (string → messages list), and the output field."
     },
     {
-      "question": "You need to build a document-classification pipeline that labels support tickets into categories. Should you use the chat completions API or completions API? Why?",
+      "question": "You need to build a pipeline that labels support tickets into categories. Should you use the chat completions API or the completions API? Why?",
       "company": "GenAI Engineer interview",
-      "answer": "Chat completions API. Even though this isn't a conversational task, the chat format is the modern standard for all tasks. Put the classification instructions in the system message, the ticket text in the user message. The completions endpoint is deprecated for flagship models and doesn't support tools, structured output, or the latest model versions.",
-      "approach": "Reinforce that 'chat' doesn't mean conversational — it's just the API format for all GPT-4-class tasks."
+      "answer": "Use the chat completions API. Even though this is not a conversation task, the chat format is the modern standard for all tasks. Put classification instructions in the system message and the ticket text in the user message. The completions endpoint is deprecated for flagship models and does not support tools or structured output.",
+      "approach": "Reinforce that 'chat' does not mean conversational — it is just the API format for all GPT-4-class tasks."
     }
   ],
   "sources": [
