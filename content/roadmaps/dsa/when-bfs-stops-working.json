@@ -1,0 +1,91 @@
+{
+  "slug": "when-bfs-stops-working",
+  "title": "When BFS Stops Working",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier2",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "bfs-on-graphs",
+      "weighted-vs-unweighted"
+    ],
+    "unlocks": [
+      "dijkstra-s-algorithm"
+    ],
+    "project_usage": [
+      "Routing protocols (OSPF)",
+      "Google Maps navigation"
+    ]
+  },
+  "overview": {
+    "what": "Breadth-First Search (BFS) explores graphs in rings of increasing edge-distance. However, **BFS's shortest-path guarantee is a special case that only holds when every edge costs the same.** If edges have variable weights (costs, distances, times), BFS will blindly return the path with the fewest edges, completely ignoring how expensive those edges are.\n\nThe crisp counterexample is a triangle:\n```\n  A\n1/ \\10\nC---B\n  1\n```\nTo get from `A` to `B`, BFS sees the direct `A → B` edge and stops, returning a path with cost 10. The true cheapest path is `A → C → B`, which takes 2 edges but costs only 1 + 1 = 2. BFS fails because its First-In-First-Out (FIFO) queue guarantees fewest-edges, not lowest-cost.\n\nTo fix this, we must process nodes in order of *cheapest-known-cost*, not fewest-edges. That requires swapping the standard queue for a priority queue (a min-heap), which transforms the algorithm into Dijkstra's Algorithm.",
+    "why": "Blindly applying BFS to weighted problems is a guaranteed way to produce incorrect routes and fail technical interviews. Recognizing when BFS's assumptions break is the necessary pivot to understanding advanced routing algorithms.",
+    "where_used": [
+      "GPS Navigation: Roads have different speed limits and traffic (weights). BFS would route you through a neighborhood just because it has fewer intersections.",
+      "Network Routing: OSPF uses edge bandwidth as weight. A 1-hop 56kbps link is much worse than a 3-hop 10Gbps fiber link."
+    ]
+  },
+  "why_learning_this": [
+    "It breaks the false intuition that 'shortest' always means 'fewest steps'.",
+    "It motivates the exact need for Dijkstra's Algorithm and priority queues.",
+    "It teaches you how to map physical real-world constraints (like time or cost) onto graph edges."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming BFS finds the shortest path on weighted graphs",
+      "explanation": "BFS uses a regular queue. It will always find the path with the fewest number of edges, completely ignoring edge weights."
+    },
+    {
+      "title": "Trying to 'fix' BFS by re-adding nodes to the queue",
+      "explanation": "If you modify BFS to allow re-evaluating nodes when a cheaper path is found, you destroy its `O(V+E)` time complexity and degrade it into an exponential exhaustive search."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the single rule for when BFS's shortest-path guarantee holds?",
+      "answer": "It only holds when the graph is unweighted (or every edge has the exact same uniform cost).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does BFS fail on weighted graphs?",
+      "answer": "BFS uses a FIFO queue to find the path with the fewest edges, which might have a massively higher total weight than a path with more edges but smaller weights.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What data structure change is needed to fix BFS for weighted graphs?",
+      "answer": "Swap the First-In-First-Out queue for a Priority Queue (min-heap), so nodes are processed by cheapest-known-cost instead of fewest-edges.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Suppose you have a graph where every edge has a weight of exactly 5. Will standard BFS still find the shortest path?",
+      "answer": "Yes. Because every edge has the exact same weight, minimizing the number of edges inherently minimizes the total cost. BFS's uniform-cost assumption holds.",
+      "why": "BFS breaks when edge weights vary. If all weights are identical, the path with fewer edges is mathematically guaranteed to be the cheaper path."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A junior engineer suggests modifying BFS for weighted graphs: 'Just allow a node to be pushed back into the queue if we find a cheaper path to it later.' Why is this a bad idea?",
+      "answer": "It destroys the algorithm's efficiency. Re-adding nodes means you might re-evaluate exponentially branching paths multiple times, turning an O(V+E) algorithm into an exhaustive search.",
+      "why": "The power of BFS (and Dijkstra) relies on finalizing a node's distance exactly once. Re-evaluating nodes breaks this invariant and causes massive performance degradation."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Identify the failing graph",
+      "prompt": "Look at the adjacency list provided in starter code. It represents a weighted graph where `A` is the start and `D` is the target. Identify the path BFS would return, and the true cheapest path.",
+      "starter_code": "A: (B, 10), (C, 2)\nB: (D, 5)\nC: (B, 1), (D, 20)",
+      "solution": "BFS returns A → B → D (2 edges, total weight 15). The true cheapest path is A → C → B → D (3 edges, total weight 2 + 1 + 5 = 8)."
+    }
+  ],
+  "sources": [
+    "https://www.baeldung.com/cs/graph-algorithms-bfs-dijkstra",
+    "https://www.youtube.com/watch?v=6svQuo4gyUs"
+  ]
+}

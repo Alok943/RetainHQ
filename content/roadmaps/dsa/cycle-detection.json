@@ -1,0 +1,153 @@
+{
+  "slug": "cycle-detection",
+  "title": "Cycle Detection",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "dfs-on-graphs"
+    ],
+    "unlocks": [
+      "topological-sort"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "back edge",
+      "definition": "An edge that points to an ancestor node that is currently on the recursion stack."
+    },
+    {
+      "term": "cross edge",
+      "definition": "An edge that points to a node that has already been completely visited and popped off the recursion stack."
+    },
+    {
+      "term": "parent node",
+      "definition": "In an undirected graph DFS, the immediate node we just came from."
+    }
+  ],
+  "hook": {
+    "scenario": "You're writing a package manager that needs to install dependencies. Package A needs B, B needs C, and C needs A.",
+    "question": "How do you detect this circular loop before your installer gets stuck in an infinite recursion?"
+  },
+  "why_it_exists": {
+    "problem": "A cycle in a graph represents a circular dependency or an infinite loop. Standard traversal algorithms can loop forever unless we explicitly detect cycles.",
+    "naive_solution": "Just tracking a 'visited' set works for finding components, but it fails to distinguish a harmless converging path (cross-edge) from a true loop (back-edge) in directed graphs.",
+    "better_idea": "The approach splits by directionality. For undirected graphs, we track the immediate parent to ignore the edge we just arrived on. For directed graphs, we track the active recursion stack to identify when a path bites its own tail."
+  },
+  "mental_model": {
+    "intuition": "Imagine walking through a maze trailing a ball of string. A cycle is found if you bump into your own unbroken string (a node on your active path). Bumping into string you've already cut and left behind (a fully processed node) is just a cross-edge.",
+    "description": "Cycle detection requires entirely different algorithms depending on graph directionality.\n\nFor undirected graphs, every edge goes both ways. If A goes to B, B goes back to A. To avoid falsely calling this a cycle, we pass the 'parent' in our DFS and skip it.\n\nFor directed graphs, a cycle only exists if a path loops back into itself. We use three states: Unvisited (White), Visiting (Gray, on the stack), and Visited (Black, done). A cycle is specifically a back-edge to a Gray node.",
+    "repeated_decision": "Does this edge lead somewhere already on my current path?"
+  },
+  "explanation": "Cycle detection fundamentally changes based on whether the graph is **directed** or **undirected**.\n\n### Undirected Graphs\nIn an undirected graph, an edge between A and B means you can travel A \u2192 B and B \u2192 A. If you run a standard DFS, the moment you visit B, its neighbor list contains A. If you just check if A is visited, you'll immediately claim a cycle exists! To fix this, you must pass the `parent` node into your DFS. If a neighbor is already visited, but it is *not* the parent you just came from, you have found a true cycle. (Note: an alternative way to detect undirected cycles is Union-Find, which is covered later).\n\nHand-trace (Undirected: 0-1, 1-2, 2-0):\n1. Start DFS at 0 (parent: None). Mark 0 visited. Visit neighbor 1.\n2. At 1 (parent: 0), neighbor 0 is visited, but it's the parent. Skip it. Visit neighbor 2.\n3. At 2 (parent: 1), neighbor 0 is visited and is NOT the parent. Cycle detected!\n\n### Directed Graphs\nIn a directed graph, tracking the parent isn't enough. Paths can converge without forming a cycle (a cross-edge). For example, A \u2192 B, A \u2192 C, B \u2192 C is a directed acyclic graph (DAG). If we DFS A \u2192 B \u2192 C, C is marked visited. When we backtrack to A and visit C directly, C is already visited. If we just check a single `visited` set, we'd falsely declare a cycle.\n\nInstead, we track the **recursion stack**. Nodes have three states:\n- **Unvisited (White)**: Never seen.\n- **Visiting (Gray)**: On the current path (in the call stack).\n- **Visited (Black)**: Fully processed and popped off the stack.\n\nA cycle exists if and only if we see a back-edge to a **Gray** node. A visited Black node is just a re-reached finished node, not a cycle.\n\nHand-trace (Directed: A\u2192B, B\u2192C, A\u2192C):\n1. DFS A (Gray). Visit B (Gray).\n2. From B, visit C (Gray). C has no neighbors. Mark C Black (Done).\n3. Back to B. B has no other neighbors. Mark B Black.\n4. Back to A. Next neighbor is C. C is Black. This is a cross-edge, not a cycle! Graph is acyclic.\n\nNow, if we had C\u2192A: When at C (Gray), its neighbor A is Gray! Cycle detected!",
+  "key_points": [
+    {
+      "title": "Direction matters",
+      "detail": "Undirected and directed graphs use fundamentally different cycle detection logic. A directed cycle and an undirected cycle are NOT found the same way."
+    },
+    {
+      "title": "Undirected: Track the Parent",
+      "detail": "In undirected graphs, skip the node you just came from. Any other visited node is a cycle."
+    },
+    {
+      "title": "Directed: 3-Color State",
+      "detail": "In directed graphs, track the active recursion stack. A cycle is a back-edge to a node currently on the stack."
+    }
+  ],
+  "pattern": {
+    "name": "3-Color DFS / Parent Tracking",
+    "recognition_cues": [
+      "You need to verify if a schedule or dependency tree is valid.",
+      "The problem asks to find if an infinite loop exists in a network."
+    ]
+  },
+  "failure_signals": [
+    "A directed graph DFS throws false positives on cross-edges.",
+    "A standard undirected DFS says every single edge is a cycle."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Package Managers and Build Systems",
+      "problem": "Software dependencies often form complex graphs.",
+      "why_this_algorithm": "Build tools like Make, npm, and pip use directed cycle detection (often implicitly via Topological Sort) to abort if package dependencies form an unresolvable loop."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Finding the shortest cycle",
+      "reason": "DFS just finds *a* cycle, not necessarily the shortest one. Finding the shortest cycle requires BFS."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using undirected cycle detection on a directed graph",
+      "explanation": "If you just check if a neighbor is in a single 'visited' set, you will falsely flag cross-edges (independent paths that merge at a shared dependency) as cycles."
+    },
+    {
+      "title": "Forgetting to remove from the recursion stack",
+      "explanation": "In directed graphs, if you forget to mark a node as Black (fully visited) after its DFS completes, subsequent independent paths will see it as Gray and falsely think they hit a cycle."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a standard DFS with a single visited set fail for cycle detection in directed graphs?",
+      "answer": "It cannot distinguish between a back-edge (a true cycle) and a cross-edge (paths converging), causing false positives on DAGs.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do we avoid falsely detecting the edge we just came from as a cycle in an undirected graph?",
+      "answer": "By passing the immediate parent node in the DFS state and ignoring visited neighbors that equal the parent.",
+      "tier": "tier1"
+    },
+    {
+      "q": "In the 3-color directed cycle detection, what does it mean when a DFS encounters a 'Gray' (visiting) node?",
+      "answer": "It means the node is currently on the active recursion stack, indicating we've found a back-edge and therefore a directed cycle.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Determine if a course schedule is possible given prerequisite pairs.",
+      "company": "SDE interview",
+      "answer": "Build a directed graph where A -> B means A is a prerequisite for B. Use 3-color DFS to detect cycles; if a cycle exists, the schedule is impossible.",
+      "approach": "This is the canonical directed cycle detection problem."
+    },
+    {
+      "question": "Detect if an undirected graph contains a cycle.",
+      "company": "SDE interview",
+      "answer": "Run DFS while passing the parent node. If a visited neighbor is not the parent, a cycle exists.",
+      "approach": "Standard undirected cycle check, O(V+E)."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Course Schedule",
+      "url": "https://leetcode.com/problems/course-schedule/",
+      "difficulty": "medium",
+      "why": "The quintessential directed graph cycle detection problem."
+    },
+    {
+      "title": "Graph Valid Tree",
+      "url": "https://leetcode.com/problems/graph-valid-tree/",
+      "difficulty": "medium",
+      "why": "Requires checking for undirected cycles and ensuring a single connected component."
+    }
+  ],
+  "related": [
+    "dfs-on-graphs",
+    "topological-sort",
+    "union-find"
+  ],
+  "interesting_facts": [
+    "The 3-color (White/Gray/Black) terminology comes directly from the classic algorithm textbook Introduction to Algorithms (CLRS)."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cycle_(graph_theory)",
+    "https://www.geeksforgeeks.org/detect-cycle-in-a-graph/"
+  ]
+}

@@ -15,6 +15,11 @@ produced from `content/PROMPT-dsa-research.md`) — convert each research object
 Write to `content/roadmaps/dsa/<slug>.json` (filename = slug). Validate with
 `python content/validate.py`; tick the box in the TODO once saved **and** green.
 
+**AUDIENCE & OVERLAYS:** for beginner-first batches (the P0 backtracking/linked-list/tree/graph
+families per `docs/PLAN-lesson-generation.md`), compose this contract with
+`content/PROMPT-beginner-overlay.md` — paste it after this document; **the overlay wins on
+conflict**. The ⛔ no-viz boundary and the FIVE questions are never overridden.
+
 ---
 
 ## ⛔ THE BOUNDARY — you do NOT author the visualization

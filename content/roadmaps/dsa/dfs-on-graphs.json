@@ -1,0 +1,116 @@
+{
+  "slug": "dfs-on-graphs",
+  "title": "DFS on Graphs",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "graph-representations",
+      "bfs-on-graphs"
+    ],
+    "unlocks": [
+      "connected-components",
+      "cycle-detection",
+      "topological-sort"
+    ],
+    "project_usage": [
+      "Garbage collection (mark-and-sweep)",
+      "Maze generation and solving"
+    ]
+  },
+  "hook": {
+    "scenario": "You're in a labyrinth and want to find a way out.",
+    "question": "Do you systematically check every room one step away, or do you pick a path and run down it until you hit a dead end?"
+  },
+  "why_it_exists": {
+    "problem": "Some graph problems require exploring the deepest possible paths (like finding a complete route, identifying cycles, or solving puzzles) rather than the shortest path.",
+    "naive_solution": "Randomly wandering through the graph might eventually reach every node but gets stuck in cycles.",
+    "better_idea": "Pick a starting node and recursively plunge down a path until a dead end is reached. Backtrack only when necessary, keeping a strict `visited` set to prevent infinite loops."
+  },
+  "mental_model": {
+    "intuition": "Go as deep as possible down one branch until you hit a dead end, then rewind to the last fork and try another path.",
+    "description": "DFS abandons the queue in favor of a stack (usually the call stack via recursion). It visits a node, marks it, and immediately recursively calls itself on the first unvisited neighbor. The phase invariant: every node is marked visited at most once to prevent infinite loops on any cycle.",
+    "repeated_decision": "go deeper into the first unvisited neighbour, or backtrack?"
+  },
+  "explanation": "Depth-First Search (DFS) prioritizes extreme depth over uniform breadth. Instead of checking neighbors level-by-level, DFS selects a single adjacent neighbor and recursively plunges down that specific path until it encounters a dead end. Upon reaching this terminus, the algorithm backtracks to the most recent fork and explores the next available branch.\n\nMechanistically, DFS uses a Last-In-First-Out (LIFO) stack (almost always the call stack via recursion) and a `visited` set. The phase invariant is strict: mark a node visited *prior* to recursing into its neighbors to prevent infinite loops on cycles.\n\nThe #1 misconception is that DFS finds the shortest path. **DFS finds *a* path, NOT the shortest one**. Let's prove this with a hand-trace on a 4-node undirected graph:\n\n```\nAdjacency List:\nA: [C, B]\nB: [A, D]\nC: [A, D]\nD: [C, B]\n```\n\nSuppose we want to find a path from `A` to `B`. A BFS would check `A`'s neighbors, find `B` in its list, and stop in 1 edge.\n\nWatch what DFS does based on the adjacency list order:\n- Start at `A`. Mark `A` visited. Neighbors of `A` are `C` and `B`.\n- DFS checks `C` first. `C` is unvisited, so we recurse into `C`.\n- At `C`, mark `C` visited. Neighbors are `A` and `D`.\n- `A` is already visited. Check `D`. `D` is unvisited, so recurse into `D`.\n- At `D`, mark `D` visited. Neighbors are `C` and `B`.\n- `C` is already visited. Check `B`. `B` is unvisited, so recurse into `B`.\n- We found `B`! But the path taken was `A → C → D → B` (3 edges), completely missing the direct `A → B` edge.\n\nBecause DFS uses the call stack, the maximum recursion depth equals the longest path in the graph. In a massive graph, an `O(V)` recursion depth will cause a stack overflow, requiring an explicit iterative stack instead.\n\nTime complexity is `O(V+E)`. The `visited` set ensures each vertex `V` is processed once, and we scan each vertex's adjacency list meaning we look at each edge `E` at most twice (in undirected graphs).",
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "Each node is marked visited at most once. Violating this leads to an infinite loop on any cycle."
+    },
+    {
+      "title": "Not the Shortest Path",
+      "detail": "DFS will find *a* path between two nodes, but it provides zero guarantees about finding the shortest path."
+    },
+    {
+      "title": "Stack Overflow Risk",
+      "detail": "Recursion depth is O(V). For large or deep graphs, this can blow the call stack. An iterative stack avoids this."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to mark nodes as visited",
+      "explanation": "Without a `visited` set, traversing a cyclic graph will bounce between the same nodes infinitely until the stack overflows."
+    },
+    {
+      "title": "Using DFS to find the shortest path",
+      "explanation": "DFS plunges down the first path it sees. In a weighted or unweighted graph, the first path found could be the longest and most winding route."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Garbage Collection",
+      "problem": "Identify unreachable objects in memory to free them.",
+      "why_this_algorithm": "Mark-and-sweep garbage collectors use DFS starting from root variables to set a mark bit on every reachable object, because the stack overhead is smaller than BFS's queue."
+    }
+  ],
+  "pattern": {
+    "name": "Depth-First Search",
+    "recognition_cues": [
+      "finding ALL paths",
+      "cycle detection",
+      "topological sorting",
+      "exploring puzzle states"
+    ]
+  },
+  "recall_questions": [
+    {
+      "q": "What data structure drives Depth-First Search?",
+      "answer": "A Last-In-First-Out (LIFO) stack, usually implemented implicitly via the hardware call stack through recursion.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must you mark nodes as visited in DFS?",
+      "answer": "To enforce the invariant that each node is processed exactly once, which prevents infinite loops in graphs with cycles.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does DFS guarantee the shortest path on an unweighted graph?",
+      "answer": "No. DFS explores deeply first, so it might find a long, winding path before a much shorter direct path. Use BFS for shortest paths.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Determine if there is a valid path from the source to the destination in a graph.",
+      "company": "SDE interview",
+      "answer": "Run DFS starting from the source, marking nodes as visited. If you reach the destination during traversal, return true.",
+      "approach": "Basic reachability query where path length doesn't matter."
+    },
+    {
+      "question": "Find all possible paths from source to target in a Directed Acyclic Graph (DAG).",
+      "company": "SDE interview",
+      "answer": "Use a backtracking DFS. Push nodes onto a current path, recurse, and then pop the node off the path when backtracking to explore other routes.",
+      "approach": "DFS naturally tracks the current path from the root via the call stack, making it perfect for path enumeration."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Depth-first_search",
+    "https://www.geeksforgeeks.org/depth-first-search-or-dfs-for-a-graph/"
+  ]
+}

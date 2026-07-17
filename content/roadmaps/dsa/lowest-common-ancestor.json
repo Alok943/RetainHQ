@@ -1,0 +1,106 @@
+{
+  "slug": "lowest-common-ancestor",
+  "title": "Lowest Common Ancestor",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "recursive-tree-thinking"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Given two nodes in a tree, you often need to find their closest shared relative to compute the shortest path between them or to find a shared bounding container.",
+    "better_idea": "The Lowest Common Ancestor (LCA) is the deepest node that has both nodes as descendants (where we allow a node to be a descendant of itself). Recursively, a node is the LCA if and only if the two targets lie in different subtrees (one left, one right), or the node itself is one of the targets."
+  },
+  "mental_model": {
+    "intuition": "Send out search parties to the left and right. If both parties find a target, you are the intersection point.",
+    "description": "At any node, you ask your left and right children to search for target A or target B. If your left child finds one and your right child finds the other, you are the LCA. If only one child finds something, it means both targets must be located further down that single branch, so you pass that child's result up.",
+    "repeated_decision": "Did I find a target in my left subtree AND a target in my right? If yes, I am the LCA!"
+  },
+  "explanation": "To solve LCA on a generic binary tree, you write a recursive function that returns a node if a target is found, or `None` if nothing is found.\n\nBase case: If the current node is `None`, or if it equals Target A or Target B, return the current node. This means 'I found a target!'\n\nRecursive step: Call `LCA(node.left)` and `LCA(node.right)`. \n\nCombine: \n1. If both calls return non-null, it means one target was found down the left branch, and the other down the right branch. The current node is the LCA! Return the current node.\n2. If only one call returns non-null, it means both targets (or the only target present in the tree) are located in that subtree. Return the non-null result upwards.\n3. If both return `None`, return `None`.\n\nIf the tree is a Binary Search Tree (BST), this becomes O(1) space and trivial: just start at the root and walk down. If both targets are less than the current node, walk left. If both are greater, walk right. The first time the targets split (one is less, one is greater), or you hit one of the targets, you have found the LCA.",
+  "key_points": [
+    {
+      "title": "Split point",
+      "detail": "The LCA is exactly the node where the paths to the two targets diverge (one goes left, one goes right)."
+    },
+    {
+      "title": "A node is its own ancestor",
+      "detail": "By definition, if node A is a parent of node B, then node A is the LCA of A and B."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting a node can be its own ancestor",
+      "explanation": "If Target A is the parent of Target B, the LCA is Target A. The algorithm handles this naturally because the search stops and returns Target A as soon as it is found, never even checking its subtrees for B."
+    },
+    {
+      "title": "Overcomplicating the BST case",
+      "explanation": "You do not need full recursive searches for a BST. Use the BST invariant to just track whether both values are strictly smaller or strictly larger than the current node."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In a generic binary tree, how do you know if the current node is the Lowest Common Ancestor?",
+      "answer": "If the recursive call to the left subtree returns a non-null node, and the recursive call to the right subtree also returns a non-null node, the current node is the LCA.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time and space complexity of finding the LCA in a generic binary tree?",
+      "answer": "Time is O(N) because we may need to visit all nodes. Space is O(H) for the recursive call stack, where H is the height of the tree.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does the LCA algorithm simplify if the tree is a Binary Search Tree (BST)?",
+      "answer": "You simply traverse down from the root. The first node you encounter with a value strictly between the two targets (inclusive) is the LCA. This can be done iteratively in O(1) space.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two given nodes in the BST.",
+      "company": "SDE interview",
+      "answer": "Iterate from the root. If `p.val` and `q.val` are both less than `node.val`, `node = node.left`. If both are greater, `node = node.right`. Else, return `node`.",
+      "approach": "Recognize that the BST property allows you to completely avoid recursion or exploring both branches."
+    },
+    {
+      "question": "Given a binary tree, find the lowest common ancestor (LCA) of two given nodes in the tree.",
+      "company": "SDE interview",
+      "answer": "Write a recursive function. If node is null, p, or q, return node. Recurse left and right. If both return non-null, return node. Else return the non-null child.",
+      "approach": "This is the classic bottom-up Post-order-ish synthesis. The children report up what they found."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "DOM Event Delegation",
+      "problem": "Finding the most specific common container for two selected elements on a webpage.",
+      "why_this_algorithm": "The browser uses LCA on the DOM tree to determine where to attach a single event listener that can capture events bubbling up from both target elements."
+    },
+    {
+      "title": "Version Control Systems",
+      "problem": "Performing a git merge between two branches.",
+      "why_this_algorithm": "Git finds the 'merge base', which is exactly the Lowest Common Ancestor commit in the directed acyclic graph of the commit history, to perform a 3-way merge."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Lowest Common Ancestor of a Binary Search Tree",
+      "url": "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/",
+      "difficulty": "medium"
+    },
+    {
+      "title": "Lowest Common Ancestor of a Binary Tree",
+      "url": "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/",
+      "difficulty": "medium"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Lowest_common_ancestor",
+    "https://www.geeksforgeeks.org/lowest-common-ancestor-binary-tree-set-1/"
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "slug": "weighted-vs-unweighted",
+  "title": "Weighted vs unweighted",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "graph-representations"
+    ],
+    "unlocks": [
+      "when-bfs-stops-working"
+    ],
+    "project_usage": [
+      "Network routing protocols",
+      "Traffic latency calculation",
+      "Financial arbitrage models"
+    ]
+  },
+  "overview": {
+    "what": "A weight is a real cost (like distance, time, or price) assigned to an edge. When graphs have weights, they are called weighted graphs. \n\nUnweighted graphs treat every edge identically, implicitly assigning each connection a cost or distance of exactly 1 unit.\n\nIn an undirected vs directed context, weights apply to the specific direction of the edge. For an undirected weighted edge, the cost is the same in both directions. The moment weights exist, the fewest-edges path is no longer guaranteed to be the lowest-cost path.",
+    "why": "Recognizing whether a problem involves uniform costs or variable costs is the deterministic first step in selecting a resolution algorithm. Weighted graphs fundamentally alter the definition of a shortest path.",
+    "where_used": [
+      "Flight pricing graphs where edges are ticket costs",
+      "Map routing where edges are driving times"
+    ]
+  },
+  "why_learning_this": [
+    "The moment weights exist, fewest-edges does not mean lowest-cost.",
+    "Applying an unweighted algorithm to a weighted graph (or vice versa) guarantees incorrect outputs or introduces massive unnecessary computational overhead."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming fewest edges means shortest path in weighted graphs",
+      "explanation": "A path of five edges each costing 1 is mathematically 'shorter' than a single edge costing 10. Minimizing edge count is not the same as minimizing total weight."
+    },
+    {
+      "title": "Applying standard unweighted shortest path algorithms to weighted graphs",
+      "explanation": "Unweighted shortest path algorithms (like standard BFS) rely on edge count. Using them on weighted graphs will find the path with the fewest hops, which is often not the cheapest path."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does an unweighted graph imply about edge costs?",
+      "answer": "It implies that every edge has an identical cost, usually treated as 1 unit.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does adding weights change the definition of a shortest path?",
+      "answer": "The shortest path becomes the one with the minimum cumulative sum of edge weights, rather than the path with the fewest number of edges.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "In a graph, Path A has 1 edge with weight 10. Path B has 3 edges with weight 2 each. Which path is shorter in a weighted context, and which has fewer edges?",
+      "answer": "Path B is shorter in a weighted context (cost 6 vs 10). Path A has fewer edges (1 vs 3).",
+      "why": "Weights shift the goal from minimizing hop count to minimizing cumulative cost. The path with the fewest edges is no longer guaranteed to be the cheapest."
+    },
+    {
+      "type": "choose-model",
+      "question": "You are building a friend-recommendation system finding the 'closest' connection based purely on degrees of separation. Is this graph weighted or unweighted?",
+      "answer": "Unweighted.",
+      "why": "Degrees of separation just counts the number of hops (edges) between people. Every connection is treated identically, meaning uniform costs."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Parse a weighted edge list",
+      "prompt": "Modify this graph builder to handle weighted edges given as tuples of `(u, v, weight)` instead of unweighted `(u, v)`. The adjacency list should store tuples of `(neighbor, weight)`.",
+      "starter_code": "def build_graph(edges, n):\n    adj = {i: [] for i in range(n)}\n    for u, v in edges:\n        adj[u].append(v)\n    return adj",
+      "solution": "def build_graph(edges, n):\n    adj = {i: [] for i in range(n)}\n    for u, v, w in edges:\n        adj[u].append((v, w))\n    return adj"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)#Weighted_graph",
+    "https://en.wikipedia.org/wiki/Shortest_path_problem"
+  ]
+}

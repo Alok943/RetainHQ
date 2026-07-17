@@ -1,0 +1,151 @@
+{
+  "slug": "heap-sort",
+  "title": "Heap sort",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "binary-heap"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "in-place",
+      "definition": "An algorithm that modifies the original array without needing extra memory proportional to the input size."
+    },
+    {
+      "term": "stable",
+      "definition": "A sorting algorithm that preserves the original relative order of equal elements. Heap sort is NOT stable."
+    },
+    {
+      "term": "introsort",
+      "definition": "A hybrid sorting algorithm used in standard libraries that starts with quicksort but switches to heap sort if the recursion goes too deep."
+    }
+  ],
+  "hook": {
+    "scenario": "You need a sorting algorithm that is guaranteed to run in `O(n log n)` time no matter what malicious input you get, and it must use `O(1)` extra memory.",
+    "question": "Merge sort uses `O(n)` memory, and Quicksort can degrade to `O(n^2)`. Is there a sort that guarantees both `O(n log n)` time and `O(1)` space?"
+  },
+  "why_it_exists": {
+    "problem": "Quicksort is fast in practice but has an `O(n^2)` worst-case. Merge sort guarantees `O(n log n)` but requires `O(n)` auxiliary space.",
+    "naive_solution": "Use quicksort and hope no adversary provides a worst-case input array, or use merge sort and pay the memory cost.",
+    "better_idea": "Build a max-heap in the array (`O(n)`), then repeatedly swap the root (the maximum) with the last element of the unsorted portion and shrink the heap. This sorts the array in-place with a strict `O(n log n)` worst-case time guarantee."
+  },
+  "mental_model": {
+    "intuition": "Turn the array into a max-heap, then keep tearing off the root (the largest item) and placing it at the end of the array, rebuilding the heap with the remaining items.",
+    "description": "Heap sort has two phases. First, it builds a max-heap from the array in `O(n)` time using the backward sift-down method.\n\nSecond, it repeatedly swaps the root of the max-heap (which is the current maximum) with the end of the heap boundary, shrinking the boundary by one. The newly swapped root is then sifted down to restore the max-heap property. When the heap empties, the array is sorted in ascending order.",
+    "repeated_decision": "Swap the root to the front of the sorted tail, shrink, then sift the new root down \u2014 which child does it swap with (the larger one)?"
+  },
+  "explanation": "Heap sort cleverly repurposes the array into two logical sections: the unsorted prefix (which maintains a valid max-heap) and the sorted suffix.\n\n1. **Build the Heap**: Convert the entire array into a max-heap in `O(n)` time. The largest element is now sitting at index `0`.\n2. **Extract and Sort**: Swap the element at index `0` with the last element in the heap. Now, the absolute largest element is at the end of the array \u2014 exactly where it belongs in a sorted list. Logically reduce the size of the heap by `1` (the sorted suffix grows by `1`). \n3. **Sift Down**: The element we just swapped to the root is likely small and violates the heap property. Sift it down the tree by swapping it with its larger child until it settles.\n4. **Repeat**: Continue swapping the root to the end of the heap and sifting down. After `n` extractions, the array is fully sorted in ascending order.\n\nThe algorithm trades speed for guarantees, offering strictly in-place `O(1)` space and `O(n log n)` worst-case time. However, it exhibits poor cache locality because the sift-down jumps erratically across the array. It is also an unstable sort because swapping the root with the last leaf launches elements across the array.",
+  "key_points": [
+    {
+      "title": "`O(n)` Build, `O(n log n)` Sort",
+      "detail": "Building the initial heap takes `O(n)` time. Extracting the root `n` times takes `O(n log n)`."
+    },
+    {
+      "title": "Strictly `O(1)` Space",
+      "detail": "The entire process happens in-place by manipulating indices, requiring no extra scratch array."
+    },
+    {
+      "title": "Unstable and Cache-unfriendly",
+      "detail": "Heap sort does not preserve the order of equal elements, and its jumping access pattern makes it slower than quicksort in practice."
+    }
+  ],
+  "pattern": {
+    "name": "Heap Sort",
+    "recognition_cues": [
+      "Requirements demand `O(1)` extra space and guaranteed `O(n log n)` time.",
+      "Embedded systems or memory-constrained environments needing a robust sort."
+    ]
+  },
+  "engineering_examples": [
+    {
+      "title": "Introsort (`std::sort`)",
+      "problem": "Standard libraries need a fast sort (like quicksort) but cannot risk a malicious user providing input that triggers `O(n^2)` behavior.",
+      "why_this_algorithm": "Introsort uses quicksort initially but monitors the recursion depth. If it detects pathological `O(n^2)` behavior, it instantly switches to heap sort to guarantee an `O(n log n)` finish."
+    },
+    {
+      "title": "Embedded Systems",
+      "problem": "Sorting on microcontrollers with highly constrained RAM where allocating an `O(n)` buffer for merge sort is impossible.",
+      "why_this_algorithm": "Heap sort's strict `O(1)` space overhead ensures the device won't run out of memory."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "General purpose sorting in high-level applications",
+      "reason": "Quicksort is almost always faster in practice due to sequential memory access (better cache locality). Merge sort or Timsort is preferred when stability is required."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking heap sort is stable",
+      "explanation": "Heap sort is inherently unstable. Swapping the root with the last leaf launches elements across the array, destroying the relative order of duplicate keys."
+    },
+    {
+      "title": "Confusing sort direction",
+      "explanation": "To sort an array in ASCENDING order, you must use a MAX-heap. The max elements are repeatedly swapped to the END of the array."
+    },
+    {
+      "title": "Thinking it is always faster than quicksort",
+      "explanation": "Despite a better worst-case time, heap sort has worse constant factors and terrible CPU cache behavior. Quicksort usually wins in reality."
+    },
+    {
+      "title": "Thinking building the heap takes `O(n log n)`",
+      "explanation": "Floyd's bottom-up heap construction runs in strict `O(n)` time. The `O(n log n)` cost comes entirely from the extraction phase."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does heap sort use a max-heap to sort in ascending order?",
+      "answer": "Because it repeatedly swaps the root (the maximum element) to the end of the array, filling the sorted portion from right to left.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the worst-case time complexity and space complexity of heap sort?",
+      "answer": "`O(n log n)` worst-case time and `O(1)` space.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens after the root is swapped with the last element of the heap?",
+      "answer": "The heap boundary is shrunk by one, and the new root is sifted down to restore the max-heap property.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Why is quicksort generally preferred over heap sort despite quicksort having an `O(n^2)` worst case?",
+      "company": "SDE interview",
+      "answer": "Quicksort has much better cache locality. Its pointers scan sequentially, which modern CPU caches predict perfectly. Heap sort's sift-down operations jump wildly across memory indices, causing frequent cache misses.",
+      "approach": "Highlight hardware realities (cache locality) versus pure algorithmic Big-O."
+    },
+    {
+      "question": "Is heap sort a stable sorting algorithm? Why or why not?",
+      "company": "SDE interview",
+      "answer": "No. When the maximum element is swapped with a leaf node across the array, it frequently jumps over duplicate values, destroying their original relative order.",
+      "approach": "Explain the long-distance swap mechanism."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Sort an Array",
+      "url": "https://leetcode.com/problems/sort-an-array/",
+      "difficulty": "medium",
+      "why": "The canonical problem to implement heap sort from scratch and compare it against other `O(n log n)` sorts."
+    }
+  ],
+  "related": [
+    "merge-sort",
+    "quick-sort",
+    "binary-heap"
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Heapsort",
+    "https://www.geeksforgeeks.org/dsa/top-interview-questions-and-answers-on-heap-sort/"
+  ]
+}

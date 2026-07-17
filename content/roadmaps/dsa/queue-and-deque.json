@@ -12,6 +12,10 @@
     "prerequisites": [],
     "unlocks": []
   },
+  "seo": {
+    "title": "Queue and deque in data structures (dequeue vs deque)",
+    "description": "Queues, deques, and the dequeue-vs-deque naming trap — operations, complexity, and where each shows up in real systems."
+  },
   "viz": {
     "generator": "queue-deque",
     "default_input": [4, 8, 15, 16],
@@ -34,6 +38,12 @@
     "description": "The Queue ADT enforces a FIFO policy (insert at tail, remove at head). To avoid O(n) array shifts, an array-based circular queue wraps pointers using modulo arithmetic (`ptr = (ptr + 1) % cap`). Python's `collections.deque` uses a hybrid linked list of memory blocks. Java's `ArrayDeque` uses a circular array, vastly outperforming legacy `LinkedList` queues due to cache locality.",
     "repeated_decision": "For FIFO: append to the tail, pop from the head. For Deque: choose the optimal boundary (front or back) to insert or extract."
   },
+  "sections": [
+    {
+      "body": "**Deque vs Dequeue** — There is a notoriously confusing naming overlap in queues. To **dequeue** (verb) is the action of removing an item from a queue. A **deque** (noun, pronounced \"deck\") is a Double-Ended Queue data structure. When someone asks about a \"dequeue in data structure\", they almost always mean the Deque (the double-ended buffer), not the action of removing an item.",
+      "recap": "A deque is a data structure. To dequeue is an action."
+    }
+  ],
   "engineering_examples": [
     {
       "title": "Task Scheduling & Message Brokers",

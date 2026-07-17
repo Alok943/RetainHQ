@@ -1,0 +1,126 @@
+{
+  "slug": "level-order-bfs",
+  "title": "Level-order (BFS)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "binary-tree-and-traversals",
+      "queue-and-deque"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Depth-First Search (DFS) dives down a single path immediately, which is useless if you need to find the shallowest node matching a condition or process a tree strictly by its hierarchical depth.",
+    "better_idea": "Breadth-First Search (BFS) explores the tree horizontally, visiting all nodes at depth `d` before touching any nodes at depth `d+1`. It achieves this by replacing the recursive call stack with an explicit FIFO queue."
+  },
+  "mental_model": {
+    "intuition": "Sweep across the tree horizontally, row by row from top to bottom.",
+    "description": "Start by enqueuing the root. Then, loop while the queue is not empty: dequeue the front node, process it, and enqueue its non-null children (left, then right). This First-In-First-Out mechanism guarantees that nodes are processed exactly in the order they are discovered, level by level.",
+    "repeated_decision": "Dequeue the front node -- which of its children do I enqueue (both, one, none)?"
+  },
+  "explanation": "While DFS uses the implicit call stack to go deep, BFS uses an explicit Queue to go wide. Because a queue is FIFO, it always holds nodes in non-decreasing depth order. A node's children are enqueued behind every node of its own level, meaning the level-by-level ordering falls out entirely for free.\n\nTo group output strictly by level (e.g., returning a list of lists), you snapshot `queue.length` at the top of the while loop. That length tells you exactly how many nodes exist on the current level. You then run an inner `for` loop that many times to drain the current level and populate the queue with the next level.\n\nBFS on a perfectly balanced tree uses O(n) memory because the queue must hold the widest level of the tree (which is the bottom row containing ~n/2 nodes). Contrast this with DFS, which uses O(log n) stack space for a balanced tree.",
+  "key_points": [
+    {
+      "title": "DFS vs BFS",
+      "detail": "DFS uses the call stack and goes deep. BFS uses a queue and goes wide. Use BFS whenever a problem asks for the 'shortest path' or processing by depth."
+    },
+    {
+      "title": "Level tracking",
+      "detail": "To process nodes group-by-group per level, snapshot the queue size before starting the inner dequeue loop for that level."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a stack instead of a queue",
+      "explanation": "If you process nodes using a Last-In-First-Out (LIFO) stack, you are just doing iterative DFS. You MUST use a First-In-First-Out (FIFO) queue for BFS to work."
+    },
+    {
+      "title": "Enqueuing null children",
+      "explanation": "Always check `if node.left:` and `if node.right:` before enqueuing. If you blindly enqueue nulls, your queue will bloat and you'll hit a null pointer exception upon dequeueing."
+    },
+    {
+      "title": "Believing recursion cannot do level-order",
+      "explanation": "You actually can achieve level-order with DFS by passing a depth parameter and appending to an array of lists `result[depth]`, but a queue is the natural, idiomatic tool for the job."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What data structure is required to implement Breadth-First Search (BFS)?",
+      "answer": "A Queue (First-In-First-Out).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the peak space complexity of BFS on a perfectly balanced binary tree of n nodes?",
+      "answer": "O(n). The queue must hold the entire bottom level, which contains roughly n/2 nodes.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How do you distinguish which nodes belong to which level during BFS?",
+      "answer": "Snapshot the size of the queue at the start of the level. That integer tells you exactly how many times to dequeue for the current level.",
+      "tier": "tier2"
+    },
+    {
+      "q": "When should you prefer BFS over DFS?",
+      "answer": "When finding the shortest path, processing nodes by depth, or exploring the shallowest parts of a tree first.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).",
+      "company": "SDE interview",
+      "answer": "Use a queue. Push the root. While the queue has elements, record `len(queue)`. Run an inner loop that many times to pop nodes, add their values to a temporary array, and push their non-null children. Append the temporary array to the result.",
+      "approach": "This is the classic level-tracking BFS pattern. Snapshotting the queue size isolates each level."
+    },
+    {
+      "question": "Find the minimum depth of a binary tree (the shortest path from root to a leaf).",
+      "company": "SDE interview",
+      "answer": "Run BFS. The first time you dequeue a node with no children (a leaf), return the current depth. BFS guarantees this is the shallowest leaf.",
+      "approach": "Recognize that 'shortest path' or 'shallowest' is a massive hint to use BFS."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Shortest Path in Unweighted Networks",
+      "problem": "Finding the path with the fewest hops in a peer-to-peer network.",
+      "why_this_algorithm": "BFS expands radially hop-by-hop. The first time it discovers a target, it is mathematically guaranteed to be the shortest path."
+    },
+    {
+      "title": "UI Tree Rendering",
+      "problem": "Drawing an organizational chart or rendering a UI component hierarchy layer by layer.",
+      "why_this_algorithm": "Level-order traversal naturally clusters nodes by their hierarchical tier, matching the visual layout required."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Binary Tree Level Order Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-level-order-traversal/",
+      "difficulty": "medium"
+    },
+    {
+      "title": "Binary Tree Zigzag Level Order Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/",
+      "difficulty": "medium"
+    },
+    {
+      "title": "Binary Tree Right Side View",
+      "url": "https://leetcode.com/problems/binary-tree-right-side-view/",
+      "difficulty": "medium"
+    },
+    {
+      "title": "Minimum Depth of Binary Tree",
+      "url": "https://leetcode.com/problems/minimum-depth-of-binary-tree/",
+      "difficulty": "easy"
+    }
+  ],
+  "sources": [
+    "https://www.naukri.com/code360/library/bfs-vs-dfs-for-binary-tree",
+    "https://oliviagallucci.com/graph-algorithm-basics-bfs-and-dfs/"
+  ]
+}

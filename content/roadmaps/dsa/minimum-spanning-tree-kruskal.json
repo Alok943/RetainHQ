@@ -1,0 +1,74 @@
+{
+  "slug": "minimum-spanning-tree-kruskal",
+  "title": "Minimum Spanning Tree (Kruskal)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "weighted-vs-unweighted",
+      "union-find"
+    ],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "When connecting physical infrastructure (like power grids or network cables), you need total connectivity for the absolute minimum total cost, without creating redundant loops.",
+    "better_idea": "Sort all possible connections by cost, and greedily pick the cheapest ones as long as they don't form a cycle. This relies on the graph cut property to guarantee a globally minimal spanning tree."
+  },
+  "mental_model": {
+    "intuition": "Imagine building a network using the cheapest available cables first. If a cable connects two cities already linked (creating a cycle), you discard it and check the next cheapest.",
+    "description": "Kruskal's algorithm abandons vertex-based traversal and focuses on edges. It starts by sorting all edges in ascending order of weight. It then evaluates each edge exactly once. To efficiently verify whether adding an edge creates a cycle, it delegates the check to a Union-Find data structure. The process stops when the tree spans all vertices (V-1 edges).",
+    "repeated_decision": "At each step: is the next-cheapest edge safe to take, i.e. does it connect two different components?"
+  },
+  "explanation": "A Minimum Spanning Tree (MST) is the cheapest set of edges that connects all `V` nodes with no cycles, strictly requiring `V-1` edges. MSTs are defined specifically for **undirected**, weighted graphs.\n\n### The Algorithm\n1. **Sort**: Place all edges in a list and sort them by weight in ascending order.\n2. **Initialize**: Create a Union-Find data structure where each node is its own component.\n3. **Greedy Choice**: Iterate through the sorted edges. For each edge `(u, v)` with weight `w`:\n   - Check if `Find(u) == Find(v)`.\n   - If they match, `u` and `v` are already connected; adding this edge would close a cycle. Skip it.\n   - If they differ, this edge connects two separate components. Add it to the MST, and `Union(u, v)`.\n4. Stop when you've accepted exactly `V-1` edges.\n\n### Complexity\nThe dominant cost is the initial sorting of edges, which takes `O(E log E)`. The subsequent Union-Find operations take effectively constant time, making the overall complexity `O(E log E)`. (Note: Prim's algorithm is an alternative, but Kruskal's is extremely elegant once Union-Find is available). This is our first major bridge into Greedy algorithms: making the locally cheapest choice unconditionally leads to the globally best MST.\n\n### Hand-Trace\nConsider an undirected graph with 4 nodes (A, B, C, D) and 5 edges:\n`A-B (weight 1)`, `B-C (weight 2)`, `A-C (weight 3)`, `C-D (weight 4)`, `B-D (weight 5)`.\n1. Sort edges: `(A,B,1)`, `(B,C,2)`, `(A,C,3)`, `(C,D,4)`, `(B,D,5)`.\n2. Evaluate `(A,B,1)`: Different components. Take it. MST has `[(A,B)]`.\n3. Evaluate `(B,C,2)`: Different components. Take it. MST has `[(A,B), (B,C)]`.\n4. Evaluate `(A,C,3)`: `Find(A) == Find(C)` because they are connected via B. Skip it.\n5. Evaluate `(C,D,4)`: Different components. Take it. MST has `[(A,B), (B,C), (C,D)]`.\n6. We have `4 - 1 = 3` edges. The MST is complete with total weight `1 + 2 + 4 = 7`.",
+  "common_mistakes": [
+    {
+      "title": "Detecting cycles with DFS/BFS",
+      "explanation": "Running a full graph traversal to check for cycles before adding each edge turns an efficient algorithm into an O(E * (V+E)) nightmare. Always use Union-Find."
+    },
+    {
+      "title": "Stopping too late",
+      "explanation": "Iterating over every single edge even after finding V-1 valid edges wastes time. The MST is strictly complete at V-1 edges."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What defines a Minimum Spanning Tree?",
+      "answer": "It is a subgraph containing exactly V-1 edges that connects all nodes together with the lowest possible total edge weight, and no cycles.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What data structure does Kruskal's algorithm rely on to prevent cycles?",
+      "answer": "The Union-Find (Disjoint-Set Union) data structure.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What dictates the time complexity of Kruskal's algorithm?",
+      "answer": "Sorting the edges initially, which bounds the complexity at O(E log E).",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How would you modify Kruskal's to find the Maximum Spanning Tree?",
+      "company": "SDE interview",
+      "answer": "Sort the edges in descending order of weight, then apply the exact same Union-Find logic.",
+      "approach": "Recognize that the greedy choice works for both minimizing and maximizing as long as the sorting order flips."
+    },
+    {
+      "question": "You have a graph where some edges are already built. How do you find the cheapest way to connect the rest?",
+      "company": "SDE interview",
+      "answer": "Add all pre-built edges to the Union-Find first (ignoring their weights), then run Kruskal's normally on the remaining edges.",
+      "approach": "Initialize the DSU state with the existing infrastructure to effectively cost them at 0."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Kruskal%27s_algorithm",
+    "https://www.geeksforgeeks.org/kruskals-minimum-spanning-tree-algorithm-greedy-algo-2/"
+  ]
+}

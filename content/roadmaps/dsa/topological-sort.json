@@ -1,0 +1,151 @@
+{
+  "slug": "topological-sort",
+  "title": "Topological Sort",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "cycle-detection",
+      "bfs-on-graphs"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "DAG",
+      "definition": "Directed Acyclic Graph. A directed graph with no cycles. Topological sort is only possible on a DAG."
+    },
+    {
+      "term": "in-degree",
+      "definition": "The number of incoming edges pointing to a specific node."
+    },
+    {
+      "term": "linear ordering",
+      "definition": "An ordering of vertices where for every directed edge u -> v, vertex u comes before v."
+    }
+  ],
+  "hook": {
+    "scenario": "You are building a university course registration system. Students must take prerequisites before advanced classes.",
+    "question": "How do you automatically generate a valid semester-by-semester sequence for a student to take their courses?"
+  },
+  "why_it_exists": {
+    "problem": "When tasks have dependencies (A must happen before B), we need a way to schedule them so no task is executed before its prerequisites are met.",
+    "naive_solution": "Guessing an order and checking if it violates dependencies is extremely slow (factorial time).",
+    "better_idea": "Use Kahn's algorithm (or DFS). Count how many prerequisites each task has. Do the tasks with zero prerequisites first. Once a task is done, its dependents have one less prerequisite. Repeat until all tasks are done."
+  },
+  "mental_model": {
+    "intuition": "Find jobs that have no blockers. Do them. Doing them removes blockers for other jobs. Now see if any new jobs have no blockers. Repeat.",
+    "description": "Topological sort orders a DAG linearly. A cycle means each node in the cycle depends on the other, so no linear order can exist. A topological sort fails if and only if the graph has a cycle. We teach Kahn's algorithm (BFS-based): compute in-degrees, enqueue all zero in-degree nodes, pop them, append to the output, and decrement their neighbors' in-degrees. If a neighbor hits zero, enqueue it. If the final output length is less than the number of vertices, a cycle exists.",
+    "repeated_decision": "Which node currently has in-degree zero?"
+  },
+  "explanation": "A topological sort provides a linear ordering of vertices in a Directed Acyclic Graph (DAG) such that for every edge `u \u2192 v`, `u` comes before `v`. \n\n**DAG Only:** Topological sort is only possible if there are no cycles. If A depends on B, and B depends on A, who goes first? Nobody can. Therefore, if a topological sort fails to process every node, it is proof that a cycle exists.\n\n### Kahn's Algorithm (BFS-based)\nKahn's algorithm is the most intuitive way to perform a topological sort:\n1. Compute the **in-degree** (number of incoming edges) for every node.\n2. Put all nodes with an in-degree of `0` into a Queue. (These have no prerequisites).\n3. While the queue is not empty:\n   - Pop a node, add it to your output list.\n   - For each of its neighbors, decrement their in-degree by 1. (You've satisfied one of their prerequisites).\n   - If a neighbor's in-degree drops to `0`, enqueue it.\n4. If the output list has fewer than `V` nodes at the end, the graph has a cycle.\n\nHand-trace (Graph: 0\u21922, 1\u21922, 2\u21923):\n- In-degrees: 0: 0, 1: 0, 2: 2, 3: 1.\n- Queue: [0, 1]. Output: [].\n- Pop 0. Append to Output: [0]. Decrement 2's in-degree to 1.\n- Pop 1. Append to Output: [0, 1]. Decrement 2's in-degree to 0. Enqueue 2.\n- Pop 2. Append to Output: [0, 1, 2]. Decrement 3's in-degree to 0. Enqueue 3.\n- Pop 3. Append to Output: [0, 1, 2, 3]. Queue empty.\n- Output length is 4 (all nodes). Success!\n\n*(Note: A DFS-based variant also exists, where you push nodes to a stack after all their neighbors are visited, then reverse the stack. Kahn's is generally preferred for its straightforward cycle detection).* ",
+  "key_points": [
+    {
+      "title": "DAG Requirement",
+      "detail": "Topological sort ONLY works on Directed Acyclic Graphs. Cycles make linear ordering impossible."
+    },
+    {
+      "title": "In-Degree Tracking",
+      "detail": "Kahn's algorithm hinges on accurately maintaining the count of unsatisfied dependencies (in-degrees)."
+    },
+    {
+      "title": "Cycle Detection Bonus",
+      "detail": "Kahn's algorithm natively detects cycles. If the output array length is less than V, the unprocessed nodes form a cycle."
+    }
+  ],
+  "pattern": {
+    "name": "Kahn's Algorithm (In-Degree BFS)",
+    "recognition_cues": [
+      "Scheduling tasks with prerequisites.",
+      "Finding a valid build order for dependencies."
+    ]
+  },
+  "failure_signals": [
+    "Trying to topological sort an undirected graph (meaningless).",
+    "Failing to account for disconnected components (Kahn's handles this automatically if you enqueue all 0-degree nodes initially)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Build Systems and Package Managers",
+      "problem": "Compiling source files or installing packages in the correct order.",
+      "why_this_algorithm": "Make, npm, Docker, and React's effect hooks all use topological sorting to guarantee dependencies are resolved before execution."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Graphs with cycles",
+      "reason": "Topological sort is mathematically impossible if a cycle exists."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting that multiple valid sorts can exist",
+      "explanation": "If multiple nodes have an in-degree of 0 at the same time, any of them can be processed next. There is rarely just one unique topological sort."
+    },
+    {
+      "title": "Not checking for cycles at the end",
+      "explanation": "If you don't verify that the final output list contains all V nodes, your algorithm will silently return a partial/incorrect order when given a cyclic graph."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you try to perform a topological sort on a graph with a cycle?",
+      "answer": "It fails. A linear order is impossible. In Kahn's algorithm, the nodes in the cycle will never reach an in-degree of 0, so the final output will be missing nodes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the repeated decision made at each step of Kahn's algorithm?",
+      "answer": "Which node currently has an in-degree of zero?",
+      "tier": "tier1"
+    },
+    {
+      "q": "What data structure is typically used to hold the nodes with in-degree zero in Kahn's algorithm?",
+      "answer": "A Queue (implementing BFS).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the correct compilation order for a set of modules with dependencies.",
+      "company": "SDE interview",
+      "answer": "Use Kahn's algorithm to compute in-degrees and extract a valid topological order.",
+      "approach": "Classic topological sort."
+    },
+    {
+      "question": "Course Schedule II: Return the ordering of courses you should take to finish all courses.",
+      "company": "SDE interview",
+      "answer": "Run Kahn's algorithm. If output length equals numCourses, return the output. Otherwise, return an empty array (cycle exists).",
+      "approach": "Topological sort with cycle detection."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Course Schedule II",
+      "url": "https://leetcode.com/problems/course-schedule-ii/",
+      "difficulty": "medium",
+      "why": "The canonical topological sorting problem."
+    },
+    {
+      "title": "Alien Dictionary",
+      "url": "https://leetcode.com/problems/alien-dictionary/",
+      "difficulty": "hard",
+      "why": "Requires building the graph yourself from word comparisons, then topologically sorting it."
+    }
+  ],
+  "related": [
+    "cycle-detection",
+    "bfs-on-graphs"
+  ],
+  "interesting_facts": [
+    "Spreadsheet software like Excel uses topological sorting to determine the order in which cells should be recalculated when you change a value."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Topological_sorting",
+    "https://www.geeksforgeeks.org/topological-sorting-indegree-based-solution/"
+  ]
+}

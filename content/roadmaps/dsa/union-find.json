@@ -1,0 +1,76 @@
+{
+  "slug": "union-find",
+  "title": "Union-Find",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "graph-representations",
+      "amortized-analysis"
+    ],
+    "unlocks": [
+      "minimum-spanning-tree-kruskal"
+    ],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "In dynamic undirected networks where edges are continually added, repeatedly running O(V+E) BFS or DFS to check if two nodes are in the same component becomes an unsustainable bottleneck.",
+    "better_idea": "Instead of full graph traversals, model connected components as a forest of trees. A Disjoint-Set Union (DSU) structure can link trees and trace roots in near-constant time to answer connectivity queries."
+  },
+  "mental_model": {
+    "intuition": "Every node starts in its own isolated component. When you add an edge, you find the 'leader' (root) of both nodes. If the leaders are different, you merge the components by making one leader follow the other.",
+    "description": "Union-Find bypasses literal graph traversal. It maintains a parent array where each node points to a parent. Finding a node's component means walking up parent pointers until you hit a node that points to itself—the root. A 'Union' operation links two roots. To keep things fast, we always attach the smaller tree under the larger root (Union by Rank) and flatten the path to the root during every search (Path Compression).",
+    "repeated_decision": "At each step: are these two nodes already in the same set — i.e. do they share a root?"
+  },
+  "explanation": "Union-Find (or Disjoint-Set Union, DSU) elegantly tracks connected components in an **undirected** graph without tracking full paths. It stores just one array, `parent`, where `parent[i]` is the parent of node `i`. The root of a tree represents the entire set's ID.\n\n### The Operations\n1. **Find(x)**: Walk up `parent` pointers from `x` until you reach a node `r` where `parent[r] == r`. This is the root.\n2. **Union(x, y)**: Find the root of `x` and the root of `y`. If they differ, update one's `parent` to point to the other.\n\n### The Optimizations\nWithout optimization, Union operations could link trees linearly into a linked list, degrading `Find` to O(n). We apply two tricks:\n- **Union by Rank/Size**: Track the size of each tree. Always hang the smaller/shallower tree under the root of the larger tree.\n- **Path Compression**: During `Find(x)`, as you walk up to the root, update every node along the path to point *directly* to the root. This flattens the tree for future queries.\n\nTogether, these make the operations run in **effectively constant** amortized time (inverse-Ackermann). This is the key insight from amortized analysis: individual operations might be slow, but they guarantee future operations are fast.\n\n### Hand-Trace\nConsider 6 nodes (0 to 5) initially isolated. `parent = [0, 1, 2, 3, 4, 5]`.\n- **Union(0, 1)**: `Find(0)` is 0, `Find(1)` is 1. Make 1 point to 0. `parent = [0, 0, 2, 3, 4, 5]`.\n- **Union(1, 2)**: `Find(1)` traces to 0. `Find(2)` is 2. Make 2 point to 0. `parent = [0, 0, 0, 3, 4, 5]`.\n- **Union(3, 4)**: `Find(3)` is 3, `Find(4)` is 4. Make 4 point to 3. `parent = [0, 0, 0, 3, 3, 5]`.\n- **Union(2, 4)**: `Find(2)` is 0, `Find(4)` is 3. We link root 3 to root 0. `parent = [0, 0, 0, 0, 3, 5]`.\n- Next time we run `Find(4)`, it traces `4 -> 3 -> 0`. Path compression then updates `parent[4] = 0`.",
+  "common_mistakes": [
+    {
+      "title": "Forgetting path compression",
+      "explanation": "Implementing `Find` with a simple while loop without updating the pointers along the way loses the O(1) amortized guarantee."
+    },
+    {
+      "title": "Union without Find",
+      "explanation": "Linking the nodes directly (e.g., `parent[u] = v`) instead of linking their roots (`parent[Find(u)] = Find(v)`) creates broken, disconnected trees."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two optimizations give Union-Find its effectively constant time complexity?",
+      "answer": "Union by rank (or size) and path compression.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does path compression do during a Find operation?",
+      "answer": "It flattens the tree by making every node on the path point directly to the absolute root.",
+      "tier": "tier2"
+    },
+    {
+      "q": "How does Union-Find verify if two nodes are in the same component?",
+      "answer": "It calls Find on both nodes; if they return the same root, they are in the same component.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you detect a cycle in an undirected graph using Union-Find?",
+      "company": "SDE interview",
+      "answer": "Iterate over edges. For each edge (u, v), if Find(u) == Find(v), a cycle exists because they are already connected. Otherwise, Union(u, v).",
+      "approach": "Recognize that a cycle is formed when you add an edge between two nodes already in the same set."
+    },
+    {
+      "question": "What is the time complexity of Union-Find operations with both optimizations?",
+      "company": "SDE interview",
+      "answer": "Effectively constant amortized time (inverse-Ackermann function), which is bounded for any realistic input size.",
+      "approach": "Always specify that the effectively constant bound is amortized over many operations, not guaranteed per single operation."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Disjoint-set_data_structure",
+    "https://www.geeksforgeeks.org/introduction-to-disjoint-set-data-structure-or-union-find-algorithm/"
+  ]
+}

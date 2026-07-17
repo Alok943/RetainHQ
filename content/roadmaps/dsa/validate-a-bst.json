@@ -1,0 +1,97 @@
+{
+  "slug": "validate-a-bst",
+  "title": "Validate a BST",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "bst-insert-and-search",
+      "dfs-pre-in-post"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Checking if a tree is a valid Binary Search Tree is notoriously tricky because simply checking if the left child is smaller and the right child is larger is insufficient. A node deep in the left subtree might accidentally be larger than the absolute root.",
+    "better_idea": "You must enforce the invariant globally by passing a dynamically shrinking valid range (a `min` and `max` bound) downwards during a pre-order traversal, or by ensuring an in-order traversal yields a strictly increasing sequence."
+  },
+  "mental_model": {
+    "intuition": "Every node acts as an enforcer, passing stricter and stricter boundary laws down to its children.",
+    "description": "The root starts with permission to be any value [-inf, inf]. When recursing left, the parent imposes a new maximum limit (the parent's value). When recursing right, the parent imposes a new minimum limit. If any node steps outside its inherited bounds, the tree is invalid.",
+    "repeated_decision": "Does my value fit inside the absolute [min, max] bounds inherited from my ancestors?"
+  },
+  "explanation": "The 'local check trap' is the most famous failure mode here. Imagine a root `[10]`, with a left child `[5]`, and that left child has a right child `[12]`. Locally, `[12]` is correctly greater than `[5]`. But globally, it fails, because it is in the left subtree of `[10]` and must therefore be strictly less than 10.\n\nTo solve this using the top-down (pre-order) approach, pass `min_val` and `max_val` down the call stack. Initialize them to negative and positive infinity. At node `N`, you verify `min_val < N.val < max_val`. Then, when calling `validate(node.left)`, you pass `N.val` as the new `max_val`. When calling `validate(node.right)`, you pass `N.val` as the new `min_val`.\n\nAlternatively, you can use the in-order approach: since an in-order traversal of a valid BST must produce a strictly ascending sorted list, you can just traverse in-order, keeping track of the previously visited value. If you ever visit a node whose value is less than or equal to the previous value, the tree is invalid.",
+  "key_points": [
+    {
+      "title": "Global bounds",
+      "detail": "A node is constrained not just by its immediate parent, but by every ancestor above it. You must pass boundary limits downwards."
+    },
+    {
+      "title": "In-order alternative",
+      "detail": "If you struggle with bounds, remember that in-order traversal on a BST yields sorted order. You only need a pointer to track `prev_val`."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "The local check trap",
+      "explanation": "Writing `return node.left.val < node.val and node.right.val > node.val`. This only checks the immediate children and fails to catch global invariant violations deeper in the tree."
+    },
+    {
+      "title": "Failing on duplicate values",
+      "explanation": "If a BST definition strictly requires left < parent < right, then duplicate values are invalid. Make sure you use strictly less/greater bounds (`<` and `>`), not less-than-or-equal (`<=`)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it insufficient to just verify that a node is larger than its left child and smaller than its right child?",
+      "answer": "Because it fails to enforce global constraints. A node deep in the left subtree of the root might have a right child that is technically larger than its immediate parent, but illegally larger than the root itself.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you use a top-down boundary approach, what bounds are passed when recursing to the left child?",
+      "answer": "The `min_val` bound remains unchanged, but the `max_val` bound is updated to be the parent node's value.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you validate a BST using an in-order traversal?",
+      "answer": "Track the previously visited value during an in-order traversal. If the current node's value is ever less than or equal to the previous value, the BST is invalid.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Validate if a given binary tree is a valid binary search tree (BST).",
+      "company": "SDE interview",
+      "answer": "Implement a helper function `isValid(node, lower_bound, upper_bound)`. If node is null, return true. If `node.val <= lower` or `node.val >= upper`, return false. Return `isValid(node.left, lower, node.val)` AND `isValid(node.right, node.val, upper)`.",
+      "approach": "This is the classic, O(n) time, O(h) space top-down boundary enforcement."
+    },
+    {
+      "question": "Can you validate a BST in O(1) space? (Ignoring the call stack)",
+      "company": "SDE interview",
+      "answer": "Yes, use an iterative in-order traversal tracking only a single `prev` variable to compare against the current node.",
+      "approach": "Identify that the in-order invariant guarantees sorted output, requiring only O(1) auxiliary state."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Data Integrity Constraints",
+      "problem": "Ensuring a serialized tree uploaded by a user is structurally sound before processing it.",
+      "why_this_algorithm": "Validating the structural invariants of inputs is a critical security and stability measure before feeding foreign data into your internal systems."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Validate Binary Search Tree",
+      "url": "https://leetcode.com/problems/validate-binary-search-tree/",
+      "difficulty": "medium"
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/validate-binary-search-tree/solution/",
+    "https://www.geeksforgeeks.org/a-program-to-check-if-a-binary-tree-is-bst-or-not/"
+  ]
+}

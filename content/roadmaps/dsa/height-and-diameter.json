@@ -1,0 +1,106 @@
+{
+  "slug": "height-and-diameter",
+  "title": "Height & Diameter",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "dfs-pre-in-post"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "To understand the bounding dimensions of a hierarchical structure (like maximum latency, longest decision path, or physical rendering size), you need to measure its extremities.",
+    "better_idea": "The 'height' measures the longest path from the root to a leaf, dictating maximum recursive depth. The 'diameter' measures the longest path between ANY two nodes in the tree, representing the absolute maximum distance across the structure."
+  },
+  "mental_model": {
+    "intuition": "Height is reaching straight down as far as possible. Diameter is stretching your arms out to the left and right as far as possible.",
+    "description": "A node calculates its height bottom-up: it asks its children for their heights, takes the maximum, and adds 1 for itself. While doing this, the node simultaneously calculates its local diameter (left child's height + right child's height) and updates a global tracker if its local stretch is the widest seen so far.",
+    "repeated_decision": "My height is 1 + max(left, right). My local diameter is left + right. Is my diameter the new global max?"
+  },
+  "explanation": "Height and diameter are intimately connected. In fact, the most efficient way to find the diameter is to piggyback it onto a standard height-calculation function.\n\nThe height of a node is defined as the number of edges on the longest downward path from the node to a leaf. A leaf has a height of 0. A null pointer is mathematically considered to have a height of -1 (or 0, depending on edge vs. node counting conventions). The recursive formula is `height = 1 + max(height(node.left), height(node.right))`.\n\nThe diameter of a tree is the length of the longest path between any two nodes. This path may or may not pass through the root! However, the path MUST pass through *some* node acting as the peak (the highest node on that specific path). For any given node acting as a peak, the longest path passing through it is exactly `height(node.left) + height(node.right) + 2` (assuming heights of leaves are 0). \n\nBy running a post-order traversal to calculate height, you can pause at every node, calculate its local diameter, update a global `max_diameter` variable, and then return the height upward. This solves both problems simultaneously in O(N) time.",
+  "key_points": [
+    {
+      "title": "Post-order synthesis",
+      "detail": "Calculating height fundamentally requires Post-order traversal. A parent cannot know its height until the children have completely computed and returned theirs."
+    },
+    {
+      "title": "Diameter doesn't always include the root",
+      "detail": "In a highly unbalanced tree, the longest path might be entirely contained within a massive left subtree, completely ignoring the absolute root."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "The O(N^2) trap",
+      "explanation": "A common mistake is writing a `diameter` function that internally calls a separate `height` function on `node.left` and `node.right`. Because `height` traverses the whole subtree, doing this at every node results in O(N^2) time. You must compute diameter *inside* the height function to achieve O(N)."
+    },
+    {
+      "title": "Assuming the diameter passes through the root",
+      "explanation": "Don't just calculate `height(root.left) + height(root.right)`. You must check the local diameter at *every single node* in the tree."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the recursive formula for the height of a binary tree node?",
+      "answer": "1 + max(height(node.left), height(node.right))",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it inefficient to call a separate `height()` helper function from within a recursive `diameter()` function?",
+      "answer": "Because `height()` traverses the entire subtree, calling it at every node recalculates the same heights repeatedly, degrading the time complexity to O(N^2).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Does the longest path (diameter) of a binary tree always pass through the root node?",
+      "answer": "No. In an unbalanced tree, the longest path might be entirely contained within one of the subtrees, acting like an umbrella completely underneath the root.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given the root of a binary tree, return the length of the diameter of the tree.",
+      "company": "SDE interview",
+      "answer": "Create a `max_d = 0` variable. Write a `dfs(node)` function that returns 0 if null. Let `left = dfs(node.left)` and `right = dfs(node.right)`. Update `max_d = max(max_d, left + right)`. Return `1 + max(left, right)`. Finally, return `max_d`.",
+      "approach": "Piggyback the diameter calculation onto a standard post-order height calculation to achieve O(N) time."
+    },
+    {
+      "question": "Given the root of a binary tree, return its maximum depth.",
+      "company": "SDE interview",
+      "answer": "If root is null, return 0. Otherwise, return 1 + max(maxDepth(root.left), maxDepth(root.right)).",
+      "approach": "This is the purest application of the post-order synthesis mental model."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "UI Layout Engines",
+      "problem": "Calculating the total bounding box size of a nested UI component (like a flexbox container).",
+      "why_this_algorithm": "The layout engine performs a post-order traversal to calculate the height and width of children before it can determine the final dimensions of the parent container."
+    },
+    {
+      "title": "Network Latency Analysis",
+      "problem": "Finding the maximum possible communication delay in a hierarchical routing network.",
+      "why_this_algorithm": "The diameter of the routing tree represents the absolute worst-case hop count (latency) between any two nodes in the network."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Maximum Depth of Binary Tree",
+      "url": "https://leetcode.com/problems/maximum-depth-of-binary-tree/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Diameter of Binary Tree",
+      "url": "https://leetcode.com/problems/diameter-of-binary-tree/",
+      "difficulty": "easy"
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/diameter-of-binary-tree/solution/",
+    "https://www.geeksforgeeks.org/diameter-of-a-binary-tree/"
+  ]
+}

@@ -70,12 +70,12 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [ ] Kadane's algorithm  · D · `kadane-s-algorithm`
 
 ## 9. Stacks & Queues  (all `D`)
-- [ ] Stack fundamentals  · D · `stack-fundamentals`
-- [ ] Valid parentheses  · D · `valid-parentheses`
-- [ ] Min stack  · D · `min-stack`
-- [ ] Monotonic stack  · D · `monotonic-stack`
-- [ ] Next greater element  · D · `next-greater-element`
-- [ ] Queue & deque  · D · `queue-and-deque`
+- [x] Stack fundamentals  · D · `stack-fundamentals`
+- [x] Valid parentheses  · D · `valid-parentheses`
+- [x] Min stack  · D · `min-stack`
+- [x] Monotonic stack  · D · `monotonic-stack`
+- [x] Next greater element  · D · `next-greater-element`
+- [x] Queue & deque  · D · `queue-and-deque`
 
 ## 10. Linked Lists  (all `D`)
 - [x] Traversal & reversal  · D · `traversal-and-reversal`
@@ -85,10 +85,10 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Reverse in k-groups  · D · `reverse-in-k-groups`
 
 ## 11. Recursion  (all `C` — mostly concept)
-- [ ] Base case  · C · `base-case`
-- [ ] Recursive relation  · C · `recursive-relation`
-- [ ] The call stack  · C · `the-call-stack`
-- [ ] Recursion tree  · C · `recursion-tree`
+- [x] Base case  · C · `base-case`
+- [x] Recursive relation  · C · `recursive-relation`
+- [x] The call stack  · C · `the-call-stack`
+- [x] Recursion tree  · C · `recursion-tree`
 
 ## 12. Backtracking  (all `D`)
 - [x] Backtracking template  · D · `backtracking-template`
@@ -98,7 +98,7 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] N-Queens  · D · `n-queens`
 
 ## 13. Sorting — Divide & Conquer
-- [ ] ~~Merge sort~~  · D · `merge-sort` — **SKIP: Claude authors as the gold exemplar**
+- [x] Merge sort  · D · `merge-sort` — authored by Claude as the gold exemplar
 - [ ] Quick sort  · D · `quick-sort`
 - [ ] Counting sort  · D · `counting-sort`
 
@@ -113,22 +113,22 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [ ] Height & diameter  · D · `height-and-diameter`
 
 ## 15. Heaps  (all `D`)
-- [ ] Binary heap  · D · `binary-heap`
-- [ ] Heap sort  · D · `heap-sort`
-- [ ] Top-K with a heap  · D · `top-k-with-a-heap`
+- [x] Binary heap  · D · `binary-heap`
+- [x] Heap sort  · D · `heap-sort`
+- [x] Top-K with a heap  · D · `top-k-with-a-heap`
 
 ## 16. Graphs
-- [ ] Graph representations  · C · `graph-representations`
-- [ ] Weighted vs unweighted  · C · `weighted-vs-unweighted`
-- [ ] BFS on graphs  · D · `bfs-on-graphs`
-- [ ] DFS on graphs  · D · `dfs-on-graphs`
-- [ ] When BFS stops working  · C · `when-bfs-stops-working`
-- [ ] Connected components  · D · `connected-components`
-- [ ] Cycle detection  · D · `cycle-detection`
-- [ ] Topological sort  · D · `topological-sort`
-- [ ] Dijkstra's algorithm  · D · `dijkstra-s-algorithm`
-- [ ] Union-Find  · D · `union-find`
-- [ ] Minimum spanning tree (Kruskal)  · D · `minimum-spanning-tree-kruskal`
+- [x] Graph representations  · C · `graph-representations`
+- [x] Weighted vs unweighted  · C · `weighted-vs-unweighted`
+- [x] BFS on graphs  · D · `bfs-on-graphs`
+- [x] DFS on graphs  · D · `dfs-on-graphs`
+- [x] When BFS stops working  · C · `when-bfs-stops-working`
+- [x] Connected components  · D · `connected-components`
+- [x] Cycle detection  · D · `cycle-detection`
+- [x] Topological sort  · D · `topological-sort`
+- [x] Dijkstra's algorithm  · D · `dijkstra-s-algorithm`
+- [x] Union-Find  · D · `union-find`
+- [x] Minimum spanning tree (Kruskal)  · D · `minimum-spanning-tree-kruskal`
 
 ## 17. Greedy
 - [ ] Why greedy works  · C · `why-greedy-works`
@@ -170,7 +170,10 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 
 ---
 
-**110 nodes total · 3 done · 1 skip (merge-sort = Claude).** Split: ~40 `C` (concept) · ~67 `D` (dsa).
+**110 nodes total · 41 done (incl. merge-sort by Claude) · 69 open.** Split: ~40 `C` (concept) · ~67 `D` (dsa).
+Note: checkbox state was last reconciled against `content/roadmaps/dsa/*.json` on 2026-07-12 — the file
+count (51) exceeds 41 because some shipped lessons aren't tracked as distinct TODO nodes (e.g.
+`two-pointers-on-strings` vs the still-open generic `two-pointers`).
 Kind tags are a best-first call — if a `D` node has no real trace to step through (pure idea), flag it
 and treat it as `C`; if a `C` node clearly wants a step-through, flag it for Claude.
 

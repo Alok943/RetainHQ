@@ -30,6 +30,10 @@
       "definition": "An organizing method that works by repeatedly asking 'is A bigger than B?'"
     }
   ],
+  "seo": {
+    "title": "Selection sort: how it works & is it stable?",
+    "description": "Selection sort step by step — why it's O(n²), why the standard version is not stable, and when it's still the right tool."
+  },
   "hook": {
     "scenario": "You are writing firmware for an IoT sensor that stores calibration data on Flash memory. Flash cells physically degrade and eventually fail after a finite number of write operations.",
     "question": "How do you sort the calibration data while performing the absolute minimum number of memory writes?"
@@ -44,6 +48,12 @@
     "description": "The array is divided into a sorted left partition and an unsorted right partition. In each pass, the algorithm scans the entire unsorted partition to locate the absolute minimum element. It then swaps this minimum with the first element of the unsorted partition, growing the sorted partition by one.",
     "repeated_decision": "Is this element smaller than the smallest seen so far in the unsorted part?"
   },
+  "sections": [
+    {
+      "body": "**Is selection sort stable?** — No, the standard implementation of Selection Sort is not stable. Stability means that equal elements retain their original relative order. Selection Sort uses long-distance swaps to move the minimum element into place. If you have an array like `[3A, 3B, 1]`, the algorithm finds the minimum (`1`) and swaps it with the first element (`3A`). The array becomes `[1, 3B, 3A]`. The relative order of `3A` and `3B` has been destroyed.",
+      "recap": "Selection sort is not stable because long-distance swaps jump over equal elements."
+    }
+  ],
   "viz": {
     "generator": "selection-sort",
     "default_input": [

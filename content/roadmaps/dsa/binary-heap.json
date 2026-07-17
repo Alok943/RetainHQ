@@ -1,0 +1,174 @@
+{
+  "slug": "binary-heap",
+  "title": "Binary heap",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "binary-tree-and-traversals",
+      "arrays-and-memory",
+      "logarithms-and-powers-of-two"
+    ],
+    "unlocks": [
+      "heap-sort",
+      "top-k-with-a-heap"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "complete binary tree",
+      "definition": "A binary tree where every level is fully populated except possibly the deepest level, which is filled strictly from left to right."
+    },
+    {
+      "term": "max-heap",
+      "definition": "A heap where every parent node has a value greater than or equal to the values of its children."
+    },
+    {
+      "term": "sift-up",
+      "definition": "The process of moving a newly inserted element up the tree until it satisfies the heap property."
+    },
+    {
+      "term": "sift-down",
+      "definition": "The process of moving an out-of-place node down the tree by swapping it with its larger (or smaller) child until the heap property is restored."
+    }
+  ],
+  "hook": {
+    "scenario": "You're building an emergency room triage system or an operating system task scheduler. You constantly get new patients/tasks and constantly need to pull out the highest priority one.",
+    "question": "How do you maintain a constantly shifting pool of elements so that finding and removing the 'most important' one is always instantaneous, without keeping the entire pool perfectly sorted?"
+  },
+  "why_it_exists": {
+    "problem": "Maintaining a perfectly sorted array as elements are constantly added and removed requires `O(n)` time per insertion/deletion because of shifting elements. A binary search tree gives `O(log n)` but uses extra memory for pointers and can become unbalanced.",
+    "naive_solution": "Keep an array, and every time you need the max element, scan the whole array in `O(n)`. Or sort the array on every insert in `O(n log n)` or `O(n)`.",
+    "better_idea": "Use a Complete Binary Tree stored entirely in a flat array (no pointers!). By only enforcing a vertical 'parent is greater than children' rule rather than fully sorting everything, we can add elements and remove the maximum in guaranteed `O(log n)` time."
+  },
+  "mental_model": {
+    "intuition": "A corporate hierarchy where every manager must be more skilled than their direct reports, but there is no rule comparing peers in different departments. The CEO at the root is definitely the most skilled overall.",
+    "description": "A binary heap is an array pretending to be a tree. Because the tree is complete (no gaps), we can calculate relationships using simple math: the node at index `i` has children at `2i+1` and `2i+2`, and its parent is at `(i-1)//2`.\n\nTo insert, we append to the array and 'sift-up' (bubble up by swapping with the parent). To extract the max, we remove the root, replace it with the very last element in the array, and 'sift-down' (swap with the larger child) until it settles.",
+    "repeated_decision": "Does this element violate the heap property with its parent (going up) or its larger child (going down) \u2014 swap, or stop?"
+  },
+  "explanation": "A binary heap cleverly maps a complete binary tree onto a one-dimensional array. This entirely eliminates the need for node objects and left/right pointers, making it extremely cache-friendly and memory-efficient.\n\nThe core invariant of a max-heap is that every parent is >= both its children. This guarantees that the absolute maximum element is always at the root (index `0`). Note that siblings have no specific order relative to each other; a heap is not a sorted structure, it is only partially ordered vertically.\n\nOperations:\n1. **Push (Insert)**: Place the new element at the very end of the array. Then, **sift-up**: repeatedly compare it to its parent and swap them if the new element is larger. This continues until it reaches a larger parent or becomes the root, costing `O(log n)`.\n\n2. **Pop-Max (Extract)**: The max is at the root, but simply removing it would break the tree structure. Instead, we swap the root with the last element in the array, remove that last element, and then **sift-down** the new root. Sift-down compares the node to its children and swaps it with the larger child until it settles, costing `O(log n)`.\n\n3. **Build-Heap**: To convert an arbitrary array into a heap, you don't insert `n` times (which is `O(n log n)`); instead, you iterate backwards from the last internal node to the root, running sift-down on each. Because most nodes are at the bottom and travel short distances, this converges to a strict `O(n)` linear time bound.",
+  "key_points": [
+    {
+      "title": "Array-as-tree indexing",
+      "detail": "Node at index `i` has children at `2i+1` and `2i+2`, parent at `(i-1)//2`. No pointers needed."
+    },
+    {
+      "title": "Not fully sorted",
+      "detail": "Only the root is guaranteed to be the extreme. Finding an arbitrary value still takes `O(n)`."
+    },
+    {
+      "title": "`O(n)` Build-Heap",
+      "detail": "Transforming an unordered array into a valid heap in-place takes `O(n)` time by working backwards and sifting down."
+    }
+  ],
+  "pattern": {
+    "name": "Heap / Priority Queue",
+    "recognition_cues": [
+      "You repeatedly need the largest/smallest element from a changing dataset.",
+      "Tasks are assigned priorities, and you must always execute the highest priority task next.",
+      "Finding the max/min needs to be faster than `O(n)`."
+    ]
+  },
+  "engineering_examples": [
+    {
+      "title": "Task Scheduling",
+      "problem": "An operating system must pick the next thread to run based on priority, which changes dynamically.",
+      "why_this_algorithm": "A priority queue (backed by a heap) allows inserting new tasks and popping the highest priority task both in `O(log n)`."
+    },
+    {
+      "title": "Graph Algorithms",
+      "problem": "Dijkstra's shortest path and Prim's minimum spanning tree need to repeatedly find the next closest node.",
+      "why_this_algorithm": "Min-heaps efficiently manage the frontier of unexplored nodes, always providing the one with the smallest distance."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "You need to search for random elements frequently.",
+      "reason": "A heap is not a BST. Searching for an arbitrary value in a heap takes `O(n)`. Use a Hash Map or BST instead."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking a heap is sorted",
+      "explanation": "A sequential read of the array does NOT give you sorted data. Only the root is extreme. Siblings are unordered."
+    },
+    {
+      "title": "Confusing a heap with a Binary Search Tree (BST)",
+      "explanation": "There is no 'left < parent < right' ordering. In a heap, the parent is greater than BOTH children, and there's no relationship between left and right children."
+    },
+    {
+      "title": "Pop just removes the root",
+      "explanation": "You cannot simply remove the root; you must swap the root with the last element in the array, shrink the array by one, and then sift-down the new root."
+    },
+    {
+      "title": "Mixing up sift-up vs sift-down",
+      "explanation": "Sift-up is used when PUSHING a new element at the bottom. Sift-down is used when POPPING and fixing the new root from the top."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the mathematical relationship between a parent at index i and its children?",
+      "answer": "The left child is at 2i + 1, and the right child is at 2i + 2. The parent of index i is at (i - 1) // 2.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity to build a heap from an unsorted array?",
+      "answer": "`O(n)`. Most nodes are near the leaves and travel very short distances when sifting down.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Explain the exact steps to pop the maximum element from a max-heap.",
+      "answer": "Swap the root with the last element in the array. Remove the last element (which is the max). Sift-down the new root until it is larger than both its children.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Can you use a heap to find a specific element in `O(log n)` time?",
+      "company": "SDE interview",
+      "answer": "No. A heap only provides `O(1)` access to the extreme element (max or min) and `O(log n)` extraction. Finding an arbitrary element takes `O(n)` time because heaps do not enforce a strict lateral ordering like a BST.",
+      "approach": "Explain the difference between the vertical heap property and the horizontal BST property."
+    },
+    {
+      "question": "Why use an array instead of node objects with left/right pointers for a binary heap?",
+      "company": "SDE interview",
+      "answer": "Because a binary heap is always a complete binary tree, we can use simple math (`2i+1`, `2i+2`) to find children. An array uses less memory (no pointers) and provides far better cache locality.",
+      "approach": "Mention complete binary trees and CPU cache advantages."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Kth Largest Element in an Array",
+      "url": "https://leetcode.com/problems/kth-largest-element-in-an-array/",
+      "difficulty": "medium",
+      "why": "Good test of understanding the heap properties and building a heap."
+    },
+    {
+      "title": "Kth Largest Element in a Stream",
+      "url": "https://leetcode.com/problems/kth-largest-element-in-a-stream/",
+      "difficulty": "easy",
+      "why": "Direct application of maintaining a heap as elements arrive continuously."
+    },
+    {
+      "title": "Last Stone Weight",
+      "url": "https://leetcode.com/problems/last-stone-weight/",
+      "difficulty": "easy",
+      "why": "A simulation problem perfectly solved by repeatedly popping the two max elements from a max-heap."
+    }
+  ],
+  "related": [
+    "heap-sort",
+    "top-k-with-a-heap",
+    "binary-tree-and-traversals",
+    "arrays-and-memory"
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Binary_heap",
+    "https://www.programiz.com/dsa/priority-queue"
+  ]
+}

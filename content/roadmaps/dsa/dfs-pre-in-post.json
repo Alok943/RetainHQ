@@ -1,0 +1,124 @@
+{
+  "slug": "dfs-pre-in-post",
+  "title": "DFS: pre / in / post",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "binary-tree-and-traversals"
+    ],
+    "unlocks": [
+      "validate-a-bst",
+      "height-and-diameter"
+    ]
+  },
+  "why_it_exists": {
+    "problem": "When traversing a tree, you must visit every node, but different problems require you to access a node's data at different stages of the recursion. A single traversal order cannot solve all problems.",
+    "better_idea": "Depth-First Search (DFS) provides three distinct visit orders—Pre-order, In-order, and Post-order—which differ ONLY by WHEN you record or process the current node relative to making the left and right recursive calls."
+  },
+  "mental_model": {
+    "intuition": "Three lines of code: recurse left, recurse right, and 'visit'. The order you write them dictates the traversal.",
+    "description": "Pre-order processes the parent before its children (top-down). In-order processes the left child, then the parent, then the right child. Post-order processes both children completely before processing the parent (bottom-up).",
+    "repeated_decision": "Do I record this node BEFORE, BETWEEN, or AFTER its two recursive calls?"
+  },
+  "explanation": "Depth-First Search (DFS) variants are just the same three operations rearranged. \n\n**Pre-order (Node, Left, Right):** You visit the node immediately upon reaching it, before delegating to the children. This top-down sequence is perfect for duplicating or serializing a tree, as it records the root first to provide an unambiguous starting point for deserialization.\n\n**In-order (Left, Node, Right):** You fully process the left subtree, then the current node, then the right subtree. The headline use for this is Binary Search Trees (BSTs). Because a BST places smaller elements to the left and larger elements to the right, an in-order traversal of a BST naturally yields the nodes in perfectly ascending sorted order.\n\n**Post-order (Left, Right, Node):** You delay processing the current node until both of its children have completely finished and returned their results. This bottom-up data flow is mandatory when a parent depends on the results of its descendants. For example, to calculate a tree's height or to safely delete a tree from memory, you must process the children first.",
+  "key_points": [
+    {
+      "title": "Which order for which job",
+      "detail": "Pre-order for top-down cloning/serialization. In-order for sorted iteration of a BST. Post-order for bottom-up tasks like calculating height or freeing memory."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking in-order sorts any tree",
+      "explanation": "In-order traversal only produces a sorted sequence if the tree is a Binary Search Tree (BST). It does not magically sort a generic binary tree."
+    },
+    {
+      "title": "Assuming the orders visit different nodes",
+      "explanation": "All three DFS traversals visit the exact same nodes, exactly the same number of times. The only difference is the sequence in which the node's payload is recorded."
+    },
+    {
+      "title": "Forgetting the null base case",
+      "explanation": "Always start your recursive traversal by checking `if node is None: return`. Failing to do so causes crashes on leaf children."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the exact sequence of steps for a Post-order traversal?",
+      "answer": "Recurse Left, Recurse Right, Visit Node.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which DFS traversal is used to get a sorted output from a Binary Search Tree?",
+      "answer": "In-order traversal.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Post-order traversal required for safely deleting a tree?",
+      "answer": "Because a parent node cannot be deleted until its children have been safely removed; otherwise, the pointers to the children are lost, causing memory leaks.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Which traversal order is best for serializing or cloning a tree top-down?",
+      "answer": "Pre-order traversal.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given the root of a binary tree, return the postorder traversal of its nodes' values.",
+      "company": "SDE interview",
+      "answer": "Write a recursive function that calls itself on `node.left`, then `node.right`, and finally appends `node.val` to a result array.",
+      "approach": "This tests the exact definition of post-order: Left, Right, Node."
+    },
+    {
+      "question": "Find the Kth smallest element in a Binary Search Tree.",
+      "company": "SDE interview",
+      "answer": "Perform an in-order traversal and return the Kth node you visit. Because in-order traverses a BST in ascending order, the Kth visited node is the Kth smallest.",
+      "approach": "Connect the in-order invariant to the BST sorting property."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Tree Serialization",
+      "problem": "Saving a tree structure to disk or a string so it can be perfectly reconstructed later.",
+      "why_this_algorithm": "Pre-order traversal records the parent before the children, so the deserializer knows exactly which node is the root of the current subtree when reading it back."
+    },
+    {
+      "title": "Abstract Syntax Tree Evaluation",
+      "problem": "Evaluating a mathematical expression tree like `(2+3)*4`.",
+      "why_this_algorithm": "Post-order traversal is used by compilers to ensure leaf operands are evaluated before applying the parent operator node."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Binary Tree Preorder Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-preorder-traversal/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Binary Tree Inorder Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-inorder-traversal/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Binary Tree Postorder Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-postorder-traversal/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Kth Smallest Element in a BST",
+      "url": "https://leetcode.com/problems/kth-smallest-element-in-a-bst/",
+      "difficulty": "medium"
+    }
+  ],
+  "sources": [
+    "https://medium.com/@mhhassaan.1/binary-tree-traversals-explained-inorder-preorder-postorder-with-recursion-backtracking-d9bd92549721",
+    "https://www.codeintuition.io/blogs/binary-tree-traversal"
+  ]
+}

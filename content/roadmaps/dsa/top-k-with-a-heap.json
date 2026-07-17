@@ -1,0 +1,157 @@
+{
+  "slug": "top-k-with-a-heap",
+  "title": "Top-K with a heap",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "binary-heap",
+      "quick-sort"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "data stream",
+      "definition": "A continuous flow of data where you process elements one by one, often too large to fit in memory."
+    },
+    {
+      "term": "eviction threshold",
+      "definition": "The minimum value required to enter a top-K list. In a size-K min-heap, the root acts as this threshold."
+    }
+  ],
+  "hook": {
+    "scenario": "You are processing a live stream of 10 billion financial trades and need to identify the 10 highest-value transactions.",
+    "question": "You can't fit 10 billion items in memory to sort them. How do you track the top 10 in a single pass?"
+  },
+  "why_it_exists": {
+    "problem": "Finding the `K` largest elements by sorting the entire array takes `O(n log n)` time. If you only care about a tiny subset `K`, sorting everything is massive overkill. Quickselect can find the top `K` in `O(n)` average time, but it requires holding the entire array in memory and modifying it.",
+    "naive_solution": "Sort the entire array in `O(n log n)` and slice the top `K`, or use a size-`n` Max-Heap and extract `K` times. Both are inefficient if `K` is much smaller than `n`.",
+    "better_idea": "Maintain a min-heap of size exactly `K`. As you stream through the data, push elements into the heap. If the heap exceeds size `K`, pop the minimum. By the end, the heap contains exactly the `K` largest elements, achieved in `O(n log K)` time and `O(K)` space."
+  },
+  "mental_model": {
+    "intuition": "You are hosting a VIP club that only allows 10 people. If an 11th person wants to enter, they must be richer than the poorest person currently inside. A min-heap perfectly keeps track of that 'poorest person' at the root.",
+    "description": "To find the `K` LARGEST elements, use a MIN-heap. Fill the min-heap until it has `K` elements. For every subsequent element, compare it to the root of the min-heap (the smallest of your current top `K`).\n\nIf the new element is larger, it kicks out the root: pop the root and push the new element. If it's smaller, ignore it. At the end, the heap holds the `K` largest elements, and the root is the `K`th largest.",
+    "repeated_decision": "Is this element bigger than the heap's root (the smallest of my current top-K)? If yes, pop the root and push it; if no, skip it."
+  },
+  "explanation": "The Top-K pattern is the gold standard for processing massive data streams where `n` is too large to fit in memory. For frequency problems, you must count occurrences using a Hash Map, though this strictly requires the number of *unique* items to fit in memory. Once counted, you stream those frequencies into the min-heap.\n\nThe trick is entirely in the inversion: to find the `K` **largest** items, you must use a **min-heap**. Your primary administrative task is defending the boundary of your top-`K` list, so you need to constantly access the smallest element currently in your elite group. A min-heap perfectly keeps this exact eviction threshold sitting at the root, accessible in `O(1)` time.\n\nAlgorithm:\n1. Initialize an empty min-heap and fill it with the first `K` elements of the stream.\n2. For each remaining element, compare it to the root of the min-heap.\n3. If it is larger than the root, pop the root and push the new element.\n4. If it is smaller or equal, ignore it entirely.\n5. After the stream ends, the min-heap contains the `K` largest elements.\n\nBecause the heap never exceeds size `K`, every push/pop operation costs at most `O(log K)`. Processing `n` elements yields a worst-case time of `O(n log K)`, but frequently skips elements in `O(1)` time. The memory footprint is strictly bounded to `O(K)`, making it perfect for infinite streams.",
+  "key_points": [
+    {
+      "title": "`K` Largest = MIN-Heap",
+      "detail": "Use a min-heap to track the `K` largest items, because you need fast access to the smallest of those top `K` to evict it. (Conversely, use a max-heap for the `K` smallest items)."
+    },
+    {
+      "title": "Complexity",
+      "detail": "Time: `O(n log K)`. Space: `O(K)`. Highly efficient when `K` << `n`."
+    },
+    {
+      "title": "Stream processing",
+      "detail": "This algorithm processes elements one by one, meaning the dataset does not need to be loaded into memory all at once."
+    }
+  ],
+  "pattern": {
+    "name": "Top K Elements",
+    "recognition_cues": [
+      "The problem asks for the 'top `K`', '`K` largest', '`K` smallest', or '`K` most frequent' elements.",
+      "The input is a stream of data or too large to fit in memory.",
+      "`K` is significantly smaller than `n`."
+    ]
+  },
+  "engineering_examples": [
+    {
+      "title": "Analytics Leaderboards",
+      "problem": "Twitter tracking the Top 10 Trending hashtags among billions of real-time posts.",
+      "why_this_algorithm": "Frequencies are aggregated, and a size-10 min-heap acts as a filter, dropping anything that doesn't beat the 10th place hashtag."
+    },
+    {
+      "title": "Database LIMIT queries",
+      "problem": "A SQL database executing `ORDER BY x LIMIT 10` on a billion-row table.",
+      "why_this_algorithm": "The database engine will often use a size-10 heap to scan the rows without ever attempting to sort the full billion-row table."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "You have the entire array in memory and `K` is very large (e.g., `K` = `n`/2).",
+      "reason": "Quickselect can find the `K`th element in `O(n)` average time and partition the array around it, which is faster than `O(n log K)` if the array is fully static in memory."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a max-heap for the `K` largest",
+      "explanation": "This is the most common interview trap. Building a max-heap is `O(n)` and popping `K` elements takes `O(K log n)`, making the time `O(n + K log n)`. The fatal flaw is the `O(n)` space, which fails entirely on massive infinite streams."
+    },
+    {
+      "title": "Sorting first",
+      "explanation": "Sorting takes `O(n log n)` time. For small `K`, `O(n log K)` is vastly superior, and sorting fails entirely if the data is a stream."
+    },
+    {
+      "title": "Forgetting to cap the heap at size `K`",
+      "explanation": "If you don't pop when the heap exceeds `K`, the heap grows to size `n`. You lose the `O(K)` space advantage and the time complexity degrades to `O(n log n)`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which type of heap do you use to find the `K` largest elements?",
+      "answer": "A min-heap, limited to size `K`. The root tracks the smallest element of the current top `K`, making it easy to evict.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time and space complexity of the Top-K heap algorithm?",
+      "answer": "Time: `O(n log K)`. Space: `O(K)`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a new element is smaller than the root of the size-`K` min-heap?",
+      "answer": "It is completely ignored. It is not large enough to crack the top `K`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How would you find the `K` most frequent words in a massive text file?",
+      "company": "SDE interview",
+      "answer": "First, assuming the number of unique words fits in memory, use a hash map to count the frequencies. Then, iterate over the map and push the (frequency, word) pairs into a min-heap of size `K`, comparing by frequency. The final heap contains the top `K` words.",
+      "approach": "Combine a frequency map with the Top-K heap pattern."
+    },
+    {
+      "question": "When would you choose Quickselect over a Top-`K` heap?",
+      "company": "SDE interview",
+      "answer": "Quickselect is better (`O(n)` average time) when the entire data set is statically available in memory and modifying the array is allowed. The heap is better for streams, read-only data, or when strict `O(K)` memory is required.",
+      "approach": "Contrast online/streaming processing with offline/in-memory processing."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Kth Largest Element in an Array",
+      "url": "https://leetcode.com/problems/kth-largest-element-in-an-array/",
+      "difficulty": "medium",
+      "why": "The purest form of the pattern. Practice writing it with a size-K min-heap."
+    },
+    {
+      "title": "Top K Frequent Elements",
+      "url": "https://leetcode.com/problems/top-k-frequent-elements/",
+      "difficulty": "medium",
+      "why": "Combines a hash map for frequency counting with a min-heap."
+    },
+    {
+      "title": "K Closest Points to Origin",
+      "url": "https://leetcode.com/problems/k-closest-points-to-origin/",
+      "difficulty": "medium",
+      "why": "Requires finding the K SMALLEST distances, which means using a size-K MAX-heap."
+    }
+  ],
+  "related": [
+    "binary-heap",
+    "quick-sort",
+    "hash-tables"
+  ],
+  "sources": [
+    "https://leetcode.com/discuss/general-discussion/1088565/top-k-problems-sort-heap-and-quickselect/",
+    "https://leetcode.com/discuss/post/7347258/15-essential-dsa-patterns-for-tech-inter-nxem/"
+  ]
+}

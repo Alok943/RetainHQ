@@ -1,0 +1,93 @@
+{
+  "slug": "graph-representations",
+  "title": "Graph representations",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "iteration-and-traversal"
+    ],
+    "unlocks": [
+      "weighted-vs-unweighted",
+      "bfs-on-graphs",
+      "dfs-on-graphs"
+    ],
+    "project_usage": [
+      "Network routing tables",
+      "Social network graphs",
+      "Dependency trees"
+    ]
+  },
+  "overview": {
+    "what": "A graph is conceptually a set of vertices (nodes) and edges (connections). The two primary ways to represent this in code are the Adjacency List and the Adjacency Matrix.\n\nAn adjacency list maps each vertex to a list of its immediate neighbors. It takes `O(V+E)` space, scanning neighbors takes `O(deg(v))` time, and checking a specific edge takes `O(deg(v))` time.\n\nAn adjacency matrix uses a 2D array of size `V x V`, where a cell `[u][v]` is 1 if an edge exists, and 0 otherwise. It takes `O(V^2)` space and checks specific edges in `O(1)` time.\n\nWhether a graph is directed or undirected matters for how you build these. An undirected edge between `A` and `B` is stored twice (as `A->B` and `B->A`). A directed edge is stored only once. Graphs can also have self-loops (an edge from a node to itself) or multi-edges (multiple edges between the same two nodes).",
+    "why": "The adjacency list is the default because real-world graphs are sparse (edges `E` are much less than `V^2`). A matrix burns `O(V^2)` memory to store mostly zeros. The matrix wins only on very dense graphs or when you absolutely need `O(1)` edge-existence queries.",
+    "where_used": [
+      "Social network follower connections (Adjacency List)",
+      "Dense machine learning similarity matrices (Adjacency Matrix)"
+    ]
+  },
+  "why_learning_this": [
+    "The primary challenge in computational graph theory is translating a conceptual network into a memory-efficient digital structure.",
+    "The choice of representation dictates the time and space complexity lower bounds for all subsequent operations."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using an adjacency matrix for a sparse graph",
+      "explanation": "Allocating a V by V matrix for a sparse graph wastes massive memory (`O(V^2)`) and forces `O(V^2)` traversal time since algorithms must scan every possible connection, mostly hitting zeros."
+    },
+    {
+      "title": "Forgetting to add the reverse edge for undirected graphs",
+      "explanation": "In an undirected graph, an edge between A and B must be stored as both `A->B` and `B->A` in the adjacency list. Omitting one breaks traversals and connectivity."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the space complexity of an adjacency list versus an adjacency matrix?",
+      "answer": "An adjacency list is O(V+E) space. An adjacency matrix is O(V^2) space.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the adjacency list the default representation for most graphs?",
+      "answer": "Most real-world graphs are sparse, meaning E is much less than V^2. A list uses memory proportional to actual edges, while a matrix wastes memory on non-existent connections.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How is an undirected edge stored in an adjacency list?",
+      "answer": "It is stored twice: once as an outgoing edge from u to v, and once from v to u.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "adj = {0: [1], 1: [0, 2], 2: [1]}\n# How many edges are in this UNDIRECTED graph?",
+      "question": "Based on the adjacency list above, how many undirected edges are in the graph?",
+      "answer": "2",
+      "why": "The edges are 0-1 and 1-2. Because it's undirected, each edge appears twice in the list (0->1, 1->0 and 1->2, 2->1), for a total of 4 entries, representing 2 actual undirected edges."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A candidate says: 'The adjacency matrix is just better because checking if an edge exists is O(1).' What is the flaw in this reasoning?",
+      "answer": "It ignores the severe space complexity penalty and the cost of neighbor iteration. Standard traversals like BFS and DFS need to visit all neighbors, taking O(V^2) total time with a matrix but only O(V+E) with a list.",
+      "why": "Matrix edge lookup is O(1), but memory is O(V^2). Unless the graph is extremely dense or you exclusively need existence checks, the list is superior."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Convert directed edges to an undirected adjacency list",
+      "prompt": "Given this function that builds a DIRECTED adjacency list, modify it so it builds an UNDIRECTED adjacency list.",
+      "starter_code": "def build_graph(edges, n):\n    adj = {i: [] for i in range(n)}\n    for u, v in edges:\n        adj[u].append(v)\n    return adj",
+      "solution": "def build_graph(edges, n):\n    adj = {i: [] for i in range(n)}\n    for u, v in edges:\n        adj[u].append(v)\n        adj[v].append(u)\n    return adj"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Adjacency_list",
+    "https://en.wikipedia.org/wiki/Adjacency_matrix"
+  ]
+}

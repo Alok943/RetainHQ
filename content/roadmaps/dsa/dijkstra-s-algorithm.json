@@ -1,0 +1,154 @@
+{
+  "slug": "dijkstra-s-algorithm",
+  "title": "Dijkstra's Algorithm",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 35,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "when-bfs-stops-working",
+      "weighted-vs-unweighted",
+      "binary-heap"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "edge relaxation",
+      "definition": "The process of checking if a newly discovered path to a node is cheaper than the currently known path, and updating the cost if it is."
+    },
+    {
+      "term": "priority queue",
+      "definition": "A data structure (usually a Min-Heap) that always pops the element with the lowest priority/cost first."
+    }
+  ],
+  "hook": {
+    "scenario": "You are building Google Maps. You have millions of intersections connected by roads of different length and traffic delay.",
+    "question": "How do you find the absolute fastest route from home to work without calculating every possible path?"
+  },
+  "why_it_exists": {
+    "problem": "BFS guarantees the shortest path only in unweighted graphs (fewest edges). In weighted graphs, a path with many cheap edges can cost less than a path with one expensive edge.",
+    "naive_solution": "Use BFS but re-add nodes to the queue every time a cheaper path is found. This causes exponential path re-evaluations and destroys efficiency.",
+    "better_idea": "Process nodes in order of cheapest known cost, not fewest edges. Use a Priority Queue (Min-Heap). When a node is popped, its shortest path is mathematically finalized."
+  },
+  "mental_model": {
+    "intuition": "Imagine flooding a landscape with water from a source point. The water flows along paths, taking time proportional to the edge weights. The first time the water reaches a town, that is the absolute fastest way there.",
+    "description": "Dijkstra's algorithm tracks a 'tentative distance' for every node, initializing the source to 0 and all others to infinity. The Priority Queue repeatedly pops the unfinalized node with the smallest known distance. For that node, we 'relax' all its outgoing edges: if dist[current] + weight < dist[neighbor], we update the neighbor's distance and push it into the queue. The crucial invariant: when a node is popped, its distance is final. This relies strictly on non-negative weights.",
+    "repeated_decision": "Which unfinalized node has the smallest known distance?"
+  },
+  "explanation": "Dijkstra's algorithm is the foundational single-source shortest path algorithm for graphs with **non-negative** edge weights.\n\n### The Algorithm\n1. Initialize `dist` table: `dist[start] = 0`, all others `infinity`.\n2. Insert `(0, start)` into a Min-Heap (Priority Queue).\n3. While the heap is not empty:\n   - Pop the node `u` with the smallest distance.\n   - If `u` is already finalized (popped before), skip it.\n   - Mark `u` as finalized. Its `dist[u]` is now the true shortest path.\n   - **Relaxation:** For each neighbor `v` of `u` with edge weight `w`:\n     - If `dist[u] + w < dist[v]`, update `dist[v] = dist[u] + w`.\n     - Push `(dist[v], v)` into the heap.\n\nHand-trace (Nodes A,B,C. A\u2192B:10, A\u2192C:1, C\u2192B:2):\n- Init: dist={A:0, B:inf, C:inf}. Heap: [(0,A)]\n- Pop A (0). Relax neighbors:\n  - B: dist 0+10 < inf \u2192 dist[B]=10. Push (10,B)\n  - C: dist 0+1 < inf \u2192 dist[C]=1. Push (1,C)\n- Heap is [(1,C), (10,B)].\n- Pop C (1). Finalize C. Relax neighbors:\n  - B: dist 1+2 < 10 \u2192 dist[B]=3. Push (3,B)\n- Heap is [(3,B), (10,B)].\n- Pop B (3). Finalize B. No neighbors.\n- Pop B (10). Skip (already finalized).\n- Done! Shortest paths: A=0, C=1, B=3.\n\n### The Invariant and Negative Weights\nThe heart of Dijkstra is the invariant: **when a node is popped, its distance is final**. Why? Because we always pop the cheapest known node. Any other path to this node would have to go through some other node currently in the heap, which ALREADY costs more. Adding more edges can only increase the cost... **unless negative weights exist**.\n\nIf a graph has negative edge weights, Dijkstra breaks. A seemingly expensive path might suddenly become cheap due to a massive negative edge later on, violating the invariant. (In those cases, Bellman-Ford must be used).",
+  "key_points": [
+    {
+      "title": "Priority Queue",
+      "detail": "Using a Min-Heap instead of a FIFO queue changes BFS into Dijkstra. It ensures we explore the cheapest paths first. Complexity is O(E log V)."
+    },
+    {
+      "title": "Relaxation",
+      "detail": "If `dist[u] + w < dist[v]`, then `dist[v] = dist[u] + w`. We are constantly tightening the upper bound on distances until they settle at the true minimum."
+    },
+    {
+      "title": "No Negative Weights",
+      "detail": "The algorithm's correctness hinges on path costs strictly increasing as they grow. Negative weights destroy the 'popped means final' invariant."
+    }
+  ],
+  "pattern": {
+    "name": "Dijkstra's (Min-Heap BFS)",
+    "recognition_cues": [
+      "Finding the shortest path or lowest cost.",
+      "The graph has weighted edges.",
+      "All edge weights are non-negative."
+    ]
+  },
+  "failure_signals": [
+    "Using Dijkstra on a graph with negative weights (will return incorrect results).",
+    "Using a normal array instead of a Min-Heap (degrades time complexity from O(E log V) to O(V^2))."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Network Routing Protocols",
+      "problem": "Routing IP packets across the internet efficiently.",
+      "why_this_algorithm": "OSPF (Open Shortest Path First) and IS-IS protocols build a map of the network and run Dijkstra's to populate router forwarding tables with the lowest-metric paths."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Unweighted graphs",
+      "reason": "BFS is O(V+E) and perfectly adequate. Dijkstra adds unnecessary O(log V) heap overhead."
+    },
+    {
+      "scenario": "Graphs with negative weights",
+      "reason": "Dijkstra's greedy assumption fails. Use Bellman-Ford (O(VE)) instead."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to track finalized nodes",
+      "explanation": "Because relaxing edges pushes duplicate nodes into the heap with lower costs, you will pop the same node multiple times. You must skip it if it's already finalized."
+    },
+    {
+      "title": "Initializing distances to 0 instead of infinity",
+      "explanation": "If distances aren't initialized to infinity, the relaxation condition `dist[u] + w < dist[v]` will never be true."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What data structure does Dijkstra use to determine which node to process next?",
+      "answer": "A Priority Queue (Min-Heap).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the fundamental invariant of Dijkstra's algorithm when a node is popped from the priority queue?",
+      "answer": "Its distance is completely final. No cheaper path to that node can ever be found.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why does Dijkstra's algorithm fail on graphs with negative edge weights?",
+      "answer": "Because a later-discovered path could use a negative edge to undercut an already-finalized node, violating the invariant that popped nodes are finalized.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the cheapest flight from city A to B given ticket prices.",
+      "company": "SDE interview",
+      "answer": "Run Dijkstra's algorithm from A to B. The edge weights are the ticket prices.",
+      "approach": "Classic single-source shortest path on a weighted graph."
+    },
+    {
+      "question": "Network Delay Time: Given a list of directed edges with travel times, how long will it take for a signal sent from node K to reach all nodes?",
+      "company": "SDE interview",
+      "answer": "Run Dijkstra from K. Find the maximum shortest-path distance among all reachable nodes. If any node is unreachable, return -1.",
+      "approach": "Dijkstra + checking the max value in the final distance array."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Network Delay Time",
+      "url": "https://leetcode.com/problems/network-delay-time/",
+      "difficulty": "medium",
+      "why": "The purest distillation of Dijkstra's algorithm on LeetCode."
+    },
+    {
+      "title": "Path With Minimum Effort",
+      "url": "https://leetcode.com/problems/path-with-minimum-effort/",
+      "difficulty": "medium",
+      "why": "Requires adapting the relaxation condition (minimizing the maximum edge weight on a path) rather than a simple sum."
+    }
+  ],
+  "related": [
+    "bfs-on-graphs",
+    "when-bfs-stops-working",
+    "binary-heap"
+  ],
+  "interesting_facts": [
+    "Edsger W. Dijkstra conceived the algorithm in 1956 in 20 minutes while drinking coffee with his fianc\u00e9e, looking for a problem that could be demonstrated on the ARMAC computer without pencil and paper."
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm",
+    "https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/"
+  ]
+}

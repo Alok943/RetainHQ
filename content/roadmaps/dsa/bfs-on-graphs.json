@@ -1,0 +1,85 @@
+{
+  "slug": "bfs-on-graphs",
+  "title": "BFS on graphs",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "graph-representations"
+    ],
+    "unlocks": [
+      "when-bfs-stops-working",
+      "connected-components"
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Finding the shortest path in an unweighted graph by exhaustively exploring all paths is incredibly slow and can get stuck in infinite loops on cycles.",
+    "better_idea": "Explore the graph in concentric layers (rings). Check all neighbors at distance 1, then distance 2. This guarantees the first time you reach a node, it's via the shortest path."
+  },
+  "mental_model": {
+    "intuition": "Concentric ripples in a pond: explore everything 1 hop away before looking at anything 2 hops away.",
+    "description": "Use a Queue and a `visited` set. Pop a node, then enqueue all its unvisited neighbors, marking them visited AT ENQUEUE TIME. The visited set is the phase invariant: each node is marked visited at most once, preventing infinite loops on any cycle.",
+    "repeated_decision": "Which node comes off the front of the queue next, and which of its unvisited neighbours get enqueued?"
+  },
+  "key_points": [
+    {
+      "title": "The Guarantee",
+      "detail": "BFS finds the shortest path in number of edges, and only on unweighted graphs."
+    },
+    {
+      "title": "Mark visited on ENQUEUE",
+      "detail": "Always mark a node as visited before pushing it to the queue. This prevents the same node from being enqueued multiple times."
+    },
+    {
+      "title": "Complexity",
+      "detail": "O(V+E) time, O(V) space. Each vertex is enqueued at most once, and each edge is checked at most twice."
+    }
+  ],
+  "explanation": "Breadth-First Search (BFS) is the canonical algorithm for exploring unweighted graphs and determining the absolute shortest path in terms of edge count. It relies on a First-In-First-Out (FIFO) queue to ensure nodes are processed strictly in order of their radial distance from the origin.\n\nTo avoid infinite loops in cyclic graphs, a `visited` set is critical. The central invariant of this phase is: each node is marked visited at most once. \n\nA classic bug is marking nodes as visited when they are dequeued. You must mark them visited at ENQUEUE time. If you wait until dequeue, a node might be reached and enqueued multiple times by different paths in the same layer, leading to redundant work and a blown-up queue.\n\nHere is a hand-trace on a small undirected graph: `A-B`, `A-C`, `B-D`.\n1. Start `A`. Enqueue `A`, mark `A` visited. Queue: `[A]`.\n2. Pop `A`. Neighbors are `B`, `C`.\n3. Enqueue `B`, mark `B`. Enqueue `C`, mark `C`. Queue: `[B, C]`.\n4. Pop `B`. Neighbor `A` is visited. Neighbor `D` is unvisited: enqueue `D`, mark `D`. Queue: `[C, D]`.\n5. Pop `C`. Neighbor `A` is visited. Queue: `[D]`.\n6. Pop `D`. Neighbor `B` is visited. Queue: `[]`. Done.\n\nWhether the graph is directed or undirected, BFS works the exact same way. Just ensure you are using the correct adjacency list for the directedness of the graph. The guarantee is firm: BFS finds the shortest path in number of edges, and only on unweighted graphs.",
+  "common_mistakes": [
+    {
+      "title": "Marking visited at dequeue time",
+      "explanation": "Dequeue-time marking lets a node be enqueued many times before it's ever processed, leading to exponential queue growth and massive duplicated work on dense graphs."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What data structure does BFS use to maintain its exploration order?",
+      "answer": "A First-In-First-Out (FIFO) queue.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When should a node be marked as visited in BFS?",
+      "answer": "At enqueue time, before it is pushed into the queue. This stops it from being enqueued again by another neighbor.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What shortest-path guarantee does BFS make, and under what condition?",
+      "answer": "It guarantees finding the shortest path in number of edges, but only on unweighted graphs.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the minimum number of hops to reach a target node in a social network.",
+      "company": "SDE interview",
+      "answer": "Use standard BFS from the source node, tracking the distance level. The first time the target is reached, that is the minimum hops.",
+      "approach": "Recognize that hops means an unweighted graph, making BFS the perfect fit."
+    },
+    {
+      "question": "Find the shortest path out of a 2D maze.",
+      "company": "SDE interview",
+      "answer": "Model the maze cells as graph nodes and adjacent open cells as unweighted edges. Run BFS from the start to find the nearest exit.",
+      "approach": "2D grids are implicit unweighted graphs where BFS finds the shortest path."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Breadth-first_search",
+    "https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/"
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "slug": "binary-tree-and-traversals",
+  "title": "Binary tree & traversals",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "recursive-tree-thinking"
+    ],
+    "unlocks": [
+      "dfs-pre-in-post",
+      "level-order-bfs"
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Linear structures like arrays and linked lists are excellent for contiguous data processing but become severe bottlenecks when modeling hierarchical relationships, decision pathways, or multi-dimensional routing spaces.",
+    "better_idea": "A binary tree restricts structural branching to a strict maximum of two child nodes (left and right) per parent. This simple constraint unlocks exponential processing efficiency, allowing logarithmic pruning of problem spaces and natural recursive representations."
+  },
+  "mental_model": {
+    "intuition": "A node plus a left subtree plus a right subtree, all the way down.",
+    "description": "A binary tree is a directed acyclic graph built hierarchically. The topmost node is the root; nodes with no children are leaves. Depth measures downwards from the root, while height measures upwards from the leaves. A tree is balanced if its left and right subtrees are roughly the same height, and full if every node has either 0 or 2 children.",
+    "repeated_decision": "At this node, which do I do -- visit it, go left, or go right?"
+  },
+  "explanation": "A binary tree imposes no relational ordering between a parent and its children; it simply maintains a structural hierarchy. To process or serialize the tree, you must systematically visit every node exactly once. Because a node has up to two children, there are multiple valid sequences for visiting them.\n\nDepth-First Search (DFS) dives as deep as possible down one branch before backtracking. Depending on when you 'visit' (process) the current node relative to its children, DFS yields three distinct traversal orders: Pre-order (visit the node, then left, then right), In-order (left, then node, then right), and Post-order (left, then right, then node).\n\nAlternatively, Breadth-First Search (BFS) explores the tree horizontally, processing all nodes at depth `d` before inspecting any nodes at depth `d+1`. This is known as a Level-order traversal. Regardless of the traversal chosen, the invariant remains: every node is reached exactly once, creating a total order over all N nodes.",
+  "key_points": [
+    {
+      "title": "Traversal Orders",
+      "detail": "The four main traversal orders are Pre-order, In-order, Post-order, and Level-order. DFS covers the first three using the call stack, while Level-order uses an explicit queue."
+    },
+    {
+      "title": "Invariant",
+      "detail": "Every node is reached exactly once; a traversal establishes a total sequential order over all N nodes in the tree."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming a binary tree is sorted",
+      "explanation": "A generic binary tree has no ordering rules. A Binary Search Tree (BST) is a special case that enforces ordering, but general binary trees simply group nodes hierarchically."
+    },
+    {
+      "title": "Confusing depth and height",
+      "explanation": "Depth is measured from the root down to a node (the root is at depth 0). Height is measured from a leaf up to a node (a leaf is at height 0)."
+    },
+    {
+      "title": "Believing traversal order equals insertion order",
+      "explanation": "The order nodes are printed in a traversal depends entirely on the traversal logic, not necessarily the sequence in which the nodes were originally inserted."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the defining structural constraint of a binary tree?",
+      "answer": "Each node can have at most two distinct child nodes, universally designated as the left child and the right child.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name the four standard traversal orders for a binary tree.",
+      "answer": "Pre-order, In-order, Post-order, and Level-order (BFS).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the difference between a generic binary tree and a Binary Search Tree (BST)?",
+      "answer": "A generic binary tree enforces no relational ordering among nodes, whereas a BST strictly requires left children to be smaller and right children to be larger than their parent.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What is the worst-case search time complexity for a specific value in a generic binary tree?",
+      "company": "SDE interview",
+      "answer": "O(n). Because there is no ordering invariant to prune the search space, you must potentially visit every node in the worst case to find the target.",
+      "approach": "Recognize that a generic binary tree cannot guarantee O(log n) lookups like a BST can."
+    },
+    {
+      "question": "How does the space complexity differ between traversing a perfectly balanced tree versus a highly skewed (linked list-like) tree?",
+      "company": "SDE interview",
+      "answer": "In a balanced tree, a DFS traversal uses O(log n) stack space. In a highly skewed tree, the height becomes O(n), so DFS uses O(n) stack space, risking a stack overflow.",
+      "approach": "Relate the recursive call stack depth directly to the height of the tree."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "The Document Object Model (DOM)",
+      "problem": "Rendering and managing HTML tags in a browser.",
+      "why_this_algorithm": "The DOM is a massive tree structure. Browsers traverse it to compute CSS styles and render pixels hierarchically."
+    },
+    {
+      "title": "Abstract Syntax Trees (ASTs)",
+      "problem": "Compiling source code into machine instructions.",
+      "why_this_algorithm": "Compilers parse source code into an AST where operators are nodes and operands are subtrees, evaluating them via post-order traversal."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Binary Tree Preorder Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-preorder-traversal/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Binary Tree Inorder Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-inorder-traversal/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Binary Tree Postorder Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-postorder-traversal/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Binary Tree Level Order Traversal",
+      "url": "https://leetcode.com/problems/binary-tree-level-order-traversal/",
+      "difficulty": "medium"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Tree_traversal",
+    "https://www.codeintuition.io/blogs/binary-tree-traversal"
+  ]
+}

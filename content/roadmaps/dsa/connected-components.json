@@ -1,0 +1,103 @@
+{
+  "slug": "connected-components",
+  "title": "Connected Components",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "bfs-on-graphs",
+      "dfs-on-graphs"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Image processing (blob extraction / connected-component labeling)",
+      "Social network clustering"
+    ]
+  },
+  "hook": {
+    "scenario": "You have a map of islands and bridges. Some islands are connected by bridges, forming groups, but there's no way to travel between different groups.",
+    "question": "How do you count exactly how many separate groups (or 'islands') exist in the entire network?"
+  },
+  "why_it_exists": {
+    "problem": "A standard BFS or DFS only explores nodes reachable from the starting point. If the graph is disconnected, nodes in other clusters will never be discovered.",
+    "naive_solution": "Running a full BFS from every single node blindly would recount the same clusters repeatedly and waste time.",
+    "better_idea": "Use a global `visited` set and an outer loop over all nodes. If a node is unvisited, it must belong to a brand-new component. Increment your count, run a traversal (BFS/DFS) to mark all nodes in that component as visited, and continue the loop."
+  },
+  "mental_model": {
+    "intuition": "Scan the map. Every time you spot an unvisited piece of land, color it and all land connected to it. Count how many times you had to pick up a new color.",
+    "description": "The algorithm pairs an outer loop with an inner traversal. The outer loop checks every node from `0` to `V-1`. If a node is unvisited, it's a new 'island'. The inner loop is just a standard BFS or DFS that shares the same global `visited` set. This marks the entire island. When the outer loop resumes, it safely skips all the newly marked nodes.",
+    "repeated_decision": "is there any unvisited node left to start a fresh search from?"
+  },
+  "explanation": "Beyond routing, graph traversal is heavily used to categorize disconnected networks through Connected Component Analysis. A connected component is a maximal subset of vertices where a valid path exists between every pair of nodes, but no paths connect them to nodes outside the subset.\n\nTo find them, we combine an outer loop with an inner BFS or DFS:\n- Create a global `visited` set.\n- Loop through every node in the graph.\n- If the node is *unvisited*, we have found a new component. Increment our component counter.\n- Trigger a standard BFS or DFS starting from this node. As it runs, it adds every reachable node in this component to the global `visited` set.\n- When the traversal finishes, the outer loop continues. It will skip over all nodes we just visited, ensuring we only launch a traversal exactly once per component.\n\nHere is a hand-trace on a 5-node graph with 2 components:\n```\nAdjacency List:\n0: [1]\n1: [0, 2]\n2: [1]\n3: [4]\n4: [3]\n```\n- Outer loop starts at `0`. Unvisited! `count = 1`.\n- Inner BFS/DFS runs from `0`, visiting `0, 1, 2`. They are added to the `visited` set.\n- Outer loop checks `1`. Already visited, skip.\n- Outer loop checks `2`. Already visited, skip.\n- Outer loop checks `3`. Unvisited! `count = 2`.\n- Inner BFS/DFS runs from `3`, visiting `3, 4`.\n- Outer loop checks `4`. Already visited, skip.\n- Result: 2 components.\n\nDespite the nested loops, this algorithm operates in strict `O(V+E)` time. The global `visited` set ensures the inner traversal executes exactly once per vertex across the *entire* graph.",
+  "key_points": [
+    {
+      "title": "Dual-Loop Architecture",
+      "detail": "An outer loop iterates through all nodes; an inner loop performs BFS/DFS. The inner loop only fires when the outer loop hits an unvisited node."
+    },
+    {
+      "title": "Global Visited Set",
+      "detail": "The `visited` set must be shared across all traversals. This guarantees each node is processed exactly once, preserving O(V+E) time."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Resetting the visited set",
+      "explanation": "If you clear the `visited` set between traversals, the algorithm degrades to `O(V * (V+E))` and you will drastically overcount components."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Image Processing (Blob Extraction)",
+      "problem": "Given a black-and-white image, identify distinct physical objects (blobs).",
+      "why_this_algorithm": "Treat the image grid as a graph where adjacent foreground pixels are connected. Connected-Component Labeling scans the matrix to isolate and count the blobs."
+    }
+  ],
+  "pattern": {
+    "name": "Connected Components",
+    "recognition_cues": [
+      "counting groups, islands, or isolated networks",
+      "image grid blob extraction",
+      "checking if a graph is fully connected (count == 1)"
+    ]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the basic structure of a Connected Components algorithm?",
+      "answer": "An outer loop that iterates over all nodes, and an inner BFS or DFS that runs whenever the outer loop finds an unvisited node.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the time complexity still O(V+E) despite having a loop inside a loop?",
+      "answer": "Because the global visited set ensures that each node is processed by the inner BFS/DFS exactly once across the entire execution.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if a graph is completely connected (one piece) and you run this algorithm?",
+      "answer": "The outer loop hits the first node, runs the inner traversal which visits every node in the graph, and the component count remains 1.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given an m x n 2D grid map of '1's (land) and '0's (water), return the number of islands.",
+      "company": "SDE interview",
+      "answer": "Iterate over the grid. When a '1' is found, increment the island count and run a BFS/DFS to mark all connected '1's as visited so they aren't counted again.",
+      "approach": "This is the exact connected components algorithm applied to an implicit grid graph."
+    },
+    {
+      "question": "Find the number of connected components in an undirected graph given n nodes and an array of edges.",
+      "company": "SDE interview",
+      "answer": "Build an adjacency list, then run the outer-loop + inner-DFS algorithm to count the unvisited starts.",
+      "approach": "Direct application of the algorithm on an explicit graph."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Connected_component",
+    "https://en.wikipedia.org/wiki/Connected-component_labeling"
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "slug": "recursive-tree-thinking",
+  "title": "Recursive tree thinking",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "recursion-tree",
+      "the-call-stack"
+    ],
+    "unlocks": [
+      "binary-tree-and-traversals",
+      "dfs-pre-in-post",
+      "level-order-bfs",
+      "bst-insert-and-search",
+      "validate-a-bst",
+      "lowest-common-ancestor",
+      "height-and-diameter"
+    ]
+  },
+  "overview": {
+    "what": "Recursive tree thinking is the cognitive shift from viewing a tree as a monolithic collection of nodes to viewing it as a single node attached to two perfectly independent, smaller subtrees.",
+    "why": "Iterative processing of hierarchical data requires manual stack management and complex state tracking. Recursion naturally matches the self-similar shape of a tree, allowing you to delegate state management and backtracking entirely to the system's call stack."
+  },
+  "why_learning_this": [
+    "It is the foundational paradigm for mastering binary trees and tree algorithms.",
+    "Almost every tree algorithm boils down to: do something with the current node, recurse left, recurse right, and combine.",
+    "It allows you to take the 'leap of faith'—assuming the recursive calls will flawlessly compute the correct answer for the subtrees so you only have to orchestrate the combination at the current node."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Trying to manage the whole tree at once",
+      "explanation": "A common trap is attempting to track which node you are on with loops or global state. Instead, you should reason about ONE node, letting the recursive calls handle the subtrees and trusting the call stack to track your position."
+    },
+    {
+      "title": "Missing the null base case",
+      "explanation": "Forgetting to handle the case where a node is null (often an empty leaf's child) leads to infinite recursion or a crash when trying to access properties of a null object."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core idea behind recursive tree thinking?",
+      "answer": "Treating a tree not as a whole, but as a single node connected to two smaller subtrees, and delegating the subtree processing to recursive calls.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the call stack important in tree recursion?",
+      "answer": "It automatically preserves the local variables and execution state of the current node before pausing to process child nodes, managing the backtracking for you.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a tree degenerates into a linear chain (skewed tree) during recursion?",
+      "answer": "The maximum depth of the call stack becomes O(n), proportional to the total number of nodes, which risks a stack overflow exception.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "Predict the return value of `countNodes(root)` for a tree with a root and two children: `def countNodes(node): if node is None: return 0; return 1 + countNodes(node.left) + countNodes(node.right)`",
+      "answer": "The function will return 3. The root contributes 1, and the left and right children each contribute 1, with their own null children returning 0.",
+      "why": "This demonstrates the 'leap of faith': the parent simply adds 1 to the completely correct subtree counts calculated by its recursive calls.",
+      "code": "def countNodes(node):\n    if node is None:\n        return 0\n    return 1 + countNodes(node.left) + countNodes(node.right)"
+    },
+    {
+      "type": "find-bug",
+      "question": "What is wrong with this tree traversal? `def traverse(node): print(node.val); traverse(node.left); traverse(node.right)`",
+      "answer": "It is missing the null base case. It will crash when it attempts to access `node.val` on a null child.",
+      "why": "Every recursive tree algorithm must handle the base case (usually checking if the current node is null) before attempting to read payload data or recurse further.",
+      "code": "def traverse(node):\n    print(node.val)\n    traverse(node.left)\n    traverse(node.right)"
+    }
+  ],
+  "aha_moment": {
+    "code": "def height(node):\n    if node is None:\n        return -1\n    return 1 + max(height(node.left), height(node.right))",
+    "prediction": "The height of the node is calculated by adding 1 to the maximum height of its two subtrees.",
+    "common_guess": "I have to walk down every possible path to the leaves and count the steps manually.",
+    "why": "By trusting that `height(node.left)` correctly returns the height of the left subtree, you only need to add 1 for the current edge. The recursion does the heavy lifting."
+  },
+  "practice_tasks": [
+    {
+      "title": "Fix the tree sum function",
+      "prompt": "The following function is supposed to return the sum of all node values in a binary tree, but it crashes. Identify the bug and fix it.",
+      "starter_code": "def tree_sum(node):\n    return node.val + tree_sum(node.left) + tree_sum(node.right)",
+      "solution": "The function is missing a base case for when the node is null. Fix it by adding: `if node is None: return 0` at the very beginning."
+    }
+  ],
+  "sources": [
+    "https://people.cs.vt.edu/shaffer/Papers/BTRecurTutor.pdf",
+    "https://en.wikipedia.org/wiki/Tree_traversal"
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "slug": "bst-insert-and-search",
+  "title": "BST: insert & search",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "recursive-tree-thinking"
+    ],
+    "unlocks": [
+      "validate-a-bst"
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Searching for a specific value in a generic binary tree takes O(n) time because you have no way to know which branch the target lies down—you might have to check every node.",
+    "better_idea": "A Binary Search Tree (BST) enforces a strict relational invariant: all nodes in the left subtree must be strictly less than the parent, and all nodes in the right subtree strictly greater. This allows you to prune half the remaining search space at every step, dropping search and insert times to O(log n)."
+  },
+  "mental_model": {
+    "intuition": "Binary search on an array, but built into a physical tree structure.",
+    "description": "At every node, you compare your target value to the node's value. If the target is smaller, you discard the entire right subtree and recursively step left. If larger, you discard the left and step right. Insertion uses the exact same logic to find the appropriate empty spot (null child) to attach the new node.",
+    "repeated_decision": "Is the target less than me (go left), greater than me (go right), or equal (found it)?"
+  },
+  "explanation": "To search in a BST, you start at the root. If the target is less than the root's value, you recurse into `node.left`. If it's greater, you recurse into `node.right`. You stop when you find the target, or when you hit `None` (meaning the target does not exist). Because you eliminate a branch at each step, you only travel down a single path from root to leaf.\n\nInsertion is identical to search. You walk down the tree looking for the value you want to insert. Because it isn't there yet, you will inevitably hit a `None` pointer. That exact `None` pointer is the correct location for the new node. You simply replace `None` with a new `Node(value)` and return it up the call stack to stitch it to the parent.\n\nThe time complexity of both operations is bounded by the tree's height, O(h). If the tree is balanced, h = log(n). However, if you insert already sorted data (e.g., 1, 2, 3, 4, 5), the tree degenerates into a single-branch linked list, making the height O(n) and ruining the performance.",
+  "key_points": [
+    {
+      "title": "Invariant",
+      "detail": "Left subtree < Parent < Right subtree. This rule must hold recursively for every single node in the entire tree."
+    },
+    {
+      "title": "O(log n) average, O(n) worst",
+      "detail": "BST performance relies entirely on the tree being reasonably balanced. A skewed BST degrades to O(n) for searches and inserts."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Inserting duplicate values",
+      "explanation": "Standard BSTs typically do not handle duplicate values well. Most implementations either strictly forbid duplicates, overwrite the existing node, or store a `count` frequency variable on the node itself. Tucking duplicates into the left or right subtree breaks standard O(log n) assumptions."
+    },
+    {
+      "title": "Assuming BST means guaranteed O(log n)",
+      "explanation": "A vanilla BST offers NO balance guarantees. An attacker (or bad luck) can feed you sorted data to force a worst-case O(n) skewed tree. You need advanced variants (like AVL or Red-Black trees) for guaranteed O(log n)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the defining relational invariant of a Binary Search Tree?",
+      "answer": "For any given node, all values in its left subtree must be strictly less than its value, and all values in its right subtree must be strictly greater.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if you insert data into a standard BST in already sorted order?",
+      "answer": "The tree degenerates into a skewed right-leaning linked list, and the time complexity degrades from O(log n) to O(n).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is the insertion logic in a BST nearly identical to the search logic?",
+      "answer": "Because to insert a new value while maintaining the BST invariant, you must search for it until you 'fall off' the tree (hit a null child); that exact null position is where the new node belongs.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given the root of a binary search tree and an integer val, insert it into the BST and return the root.",
+      "company": "SDE interview",
+      "answer": "Write a recursive function: if node is null, return a new Node(val). If val < node.val, set node.left = insert(node.left). Else set node.right = insert(node.right). Return node.",
+      "approach": "Rely on the leap of faith: the recursive calls correctly return the updated subtree roots to stitch back onto the parent."
+    },
+    {
+      "question": "Search in a Binary Search Tree for a specific value.",
+      "company": "SDE interview",
+      "answer": "Start at root. While node is not null, if val == node.val return node. If val < node.val, node = node.left. Else node = node.right. Return null if loop exits.",
+      "approach": "You can solve this iteratively with no extra memory, because you never need to backtrack."
+    }
+  ],
+  "engineering_examples": [
+    {
+      "title": "Language-Level Sets and Maps",
+      "problem": "Implementing `std::map` in C++ or `TreeMap` in Java to provide sorted key-value storage.",
+      "why_this_algorithm": "These structures use Self-Balancing Binary Search Trees (specifically Red-Black trees) to guarantee O(log n) lookups and ordered iteration."
+    },
+    {
+      "title": "Database Indexes",
+      "problem": "Finding a specific row by its Primary Key quickly in a database table of 100 million rows.",
+      "why_this_algorithm": "Databases use B-Trees, a wider, disk-optimized generalization of the BST concept, pruning the search space logarithmically without scanning the entire table."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Search in a Binary Search Tree",
+      "url": "https://leetcode.com/problems/search-in-a-binary-search-tree/",
+      "difficulty": "easy"
+    },
+    {
+      "title": "Insert into a Binary Search Tree",
+      "url": "https://leetcode.com/problems/insert-into-a-binary-search-tree/",
+      "difficulty": "medium"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Binary_search_tree",
+    "https://www.geeksforgeeks.org/insertion-in-binary-search-tree/"
+  ]
+}
