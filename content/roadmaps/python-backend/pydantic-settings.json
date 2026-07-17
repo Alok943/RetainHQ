@@ -29,6 +29,10 @@
       "definition": "Dynamic values that exist outside the application code, provided by the OS or the host environment."
     }
   ],
+  "seo": {
+    "title": "pydantic-settings: env vars, .env & SettingsConfigDict",
+    "description": "Load config from environment variables and .env files with pydantic-settings — SettingsConfigDict, nested models, secrets, and validation at startup."
+  },
   "hook": {
     "scenario": "You accidentally commit a file named `config.py` with `DB_PASSWORD = 'supersecret'` to GitHub. A bot scrapes it 2 minutes later, and by morning your AWS bill is $50,000 because someone spun up mining rigs using your compromised credentials.",
     "question": "How do you provide configuration securely so your code is completely decoupled from the sensitive values it needs to run?"
@@ -47,7 +51,7 @@
       "recap": "`os.getenv` provides no type safety and fails late."
     },
     {
-      "body": "Enter `pydantic-settings`. It extends Pydantic's data validation to environment variables. You define a `BaseSettings` class with your required config and its types. When instantiated, it automatically searches the environment (or a `.env` file) for matching variable names, parses strings into integers or URLs, and crashes instantly if anything is missing or invalid.",
+      "body": "**Reading environment variables** — `pydantic-settings` extends Pydantic's data validation to configuration. You define a `BaseSettings` class with your required config fields and types. When instantiated, it automatically reads the environment variables (or a `.env` file) for matching names, parses strings into integers or URLs, and crashes instantly if anything is invalid. It can even read from YAML files using `YamlConfigSettingsSource`.",
       "recap": "`pydantic-settings` gives you type-checked, fail-fast configuration at app startup."
     },
     {

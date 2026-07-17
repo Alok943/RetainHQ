@@ -32,6 +32,10 @@
       "definition": "When two or more parts of a program access and modify the exact same data in memory, often leading to unexpected bugs. Example: `b.append(1)`."
     }
   ],
+  "seo": {
+    "title": "Mutable vs immutable in Python: what actually changes",
+    "description": "Lists vs tuples, why strings can't change, aliasing bugs, and how mutability decides what happens when you pass objects to functions."
+  },
   "overview": {
     "what": "An object is mutable if its contents can change after it is created, and immutable if they cannot. Lists, dicts, and sets are mutable: list.append() edits the same object in place. int, float, bool, str, and tuple are immutable: 'changing' a string actually builds a brand-new string and leaves the original untouched. Think of a mutable object as a whiteboard you keep editing, and an immutable object as a printed page — to 'change' it you must print a new page. Because mutable objects are edited in place, a string or tuple (as long as it contains only immutable elements) can safely be a dict key while a list cannot.",
     "why": "Mutability decides whether an operation edits an object in place or returns a new one. Getting this wrong causes two classic bugs: assuming a string method changed the string (it didn't), and two names sharing one mutable object so an edit through one is unexpectedly seen through the other.",

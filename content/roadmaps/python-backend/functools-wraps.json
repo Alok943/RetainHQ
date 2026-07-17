@@ -31,6 +31,10 @@
       "definition": "The ability of a program to examine and modify its own structure and behavior while it is running. Example: `inspect.signature(func)`"
     }
   ],
+  "seo": {
+    "title": "functools.wraps: why every decorator needs it",
+    "description": "What @functools.wraps does, what breaks without it (names, docstrings, introspection), and how to write decorators that don't lie about themselves."
+  },
   "overview": {
     "what": "When you write a decorator, the returned wrapper function replaces the original function. By default, this wrapper hides the original function's metadata (like its `__name__` and `__doc__`). Using `@functools.wraps(func)` on the wrapper copies the original function's metadata to the wrapper. Think of it like wearing a costume: without `@wraps`, people see the costume and forget who is inside; with `@wraps`, you wear a name tag over the costume so your real identity is preserved.",
     "why": "Web frameworks and documentation generators rely on function metadata to register routes and build docs. If decorators obscure this, frameworks fail to map URLs correctly.",

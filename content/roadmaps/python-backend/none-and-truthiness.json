@@ -1,0 +1,106 @@
+{
+  "slug": "none-and-truthiness",
+  "title": "None & Truthiness",
+  "roadmap": "python-backend",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "mutable-vs-immutable"
+    ],
+    "unlocks": [
+      "if-elif-else",
+      "try-except"
+    ],
+    "project_usage": [
+      "FastAPI optional query/body fields",
+      "Guard clauses before a DB call",
+      "Config defaults (env var not set)"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "falsy",
+      "definition": "A value that evaluates to `False` in a boolean context even though it isn't the boolean `False` itself — `None`, `0`, `0.0`, `\"\"`, `[]`, `{}`, `set()`. Example: `if not items:`"
+    },
+    {
+      "term": "sentinel value",
+      "definition": "A special placeholder value used to signal 'nothing here' or 'not provided', distinct from any real data value. `None` is Python's built-in sentinel value. Example: `def get(self, key, default=None):`"
+    }
+  ],
+  "overview": {
+    "what": "`None` is Python's single null value and its built-in sentinel value — it means 'no value', not zero, not empty, not false. It's a singleton: there is exactly one `None` object in a running process, which is why identity checks (`is None`) work and are preferred over equality checks (`== None`).\n\nTruthiness is a separate rule: every object in Python can be evaluated in a boolean context (an `if`, a `while`, a `bool(...)` call), and Python decides `True` or `False` for it even if it's not a boolean. Falsy values are `None`, `False`, `0`, `0.0`, and any empty collection (`\"\"`, `[]`, `{}`, `set()`, `()`). Everything else is truthy — including `0.0001`, `\"False\"` (a non-empty string!), and `[None]` (a non-empty list containing None).\n\nThe trap: `if not value:` treats `None`, `0`, and `\"\"` identically. If your code needs to distinguish 'the field is missing' from 'the field was explicitly set to zero/empty', truthiness collapses that distinction and you must check `is None` instead.\n\n  count = 0\n  if not count:\n      print(\"no count provided\")  # WRONG — fires even when count really is 0\n\n  if count is None:\n      print(\"no count provided\")  # correct — 0 is a valid count, only None means missing",
+    "where_used": [
+      "FastAPI: `Optional[int] = None` as the signal for 'query param not supplied'",
+      "dict.get(key, None) and `if result is None:` after a lookup",
+      "SQLAlchemy: a NULL column deserializes to `None`, distinct from an empty string"
+    ],
+    "why": "Backend code constantly needs to tell 'the client didn't send this field' apart from 'the client sent a real but empty/zero value' — request bodies, query params, and DB NULLs all funnel through this exact distinction, and using truthiness instead of an explicit `is None` check is one of the most common silent-bug sources in request handling."
+  },
+  "why_learning_this": [
+    "Distinguishing 'missing' from 'empty/zero' is the single most common source of silent backend bugs — a request with `count=0` gets treated as if `count` was never sent.",
+    "Every FastAPI optional field, every dict.get(), and every ORM nullable column funnels through this exact distinction."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using `== None` instead of `is None`",
+      "explanation": "`==` calls `__eq__`, which a custom class could override to return True for unrelated objects (e.g. a numpy array raises entirely). `is None` checks identity against the one True singleton — always correct, always fast, and it's the PEP 8 convention linters enforce."
+    },
+    {
+      "title": "Collapsing 'missing' and 'falsy' with `if not value:`",
+      "explanation": "`if not value:` is True for `None`, `0`, `\"\"`, and `[]` alike. If zero or empty-string is a legitimate value in your domain (a discount of 0%, a comment of \"\"), this silently misclassifies real data as absent — check `if value is None:` when you specifically mean 'wasn't provided'."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is `is None` preferred over `== None`?",
+      "answer": "`is` checks object identity against the single `None` singleton and can't be overridden. `==` calls `__eq__`, which a class could redefine in a way that makes `obj == None` return something surprising (True, or an error, depending on the type).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is an empty list `[]` truthy or falsy? Is a list containing one `None`, `[None]`, truthy or falsy?",
+      "answer": "`[]` is falsy (empty collection). `[None]` is truthy — it's a non-empty list; the fact that its single element is `None` doesn't matter to truthiness, which only looks at the container's length.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A function receives `count=0` from a request body. Why does `if not count:` silently misbehave here?",
+      "answer": "`0` is falsy, so `if not count:` is True even though the caller explicitly sent a real value (zero). This branch would incorrectly treat 'count is zero' the same as 'count was never sent' — the fix is `if count is None:` to test for absence specifically."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "starter_code": "def get_discount(discount):\n    # TODO: return 'no discount specified' only if discount is genuinely missing (None),\n    # not when it's a legitimate value of 0\n    if not discount:\n        return \"no discount specified\"\n    return f\"discount: {discount}%\"\n\nprint(get_discount(0))",
+      "solution_code": "def get_discount(discount):\n    if discount is None:\n        return \"no discount specified\"\n    return f\"discount: {discount}%\"\n\nprint(get_discount(0))",
+      "expected_output": "discount: 0%"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does this print?",
+      "code": "value = \"\"\nif value:\n    print(\"truthy\")\nelse:\n    print(\"falsy\")\n\nvalue = \" \"\nif value:\n    print(\"truthy\")\nelse:\n    print(\"falsy\")",
+      "answer": "falsy\ntruthy",
+      "why": "An empty string `\"\"` has length 0, so it's falsy. A string containing a single space `\" \"` has length 1 — it's non-empty, so it's truthy, even though it looks 'blank' to a human reading it."
+    },
+    {
+      "type": "find-bug",
+      "question": "This function is supposed to reject requests with no `page` parameter, but it also rejects `page=0`, which should be valid (the first page, zero-indexed). What's wrong?",
+      "code": "def validate_page(page):\n    if not page:\n        raise ValueError(\"page is required\")\n    return page",
+      "answer": "`if not page:` is True for both `None` (missing) and `0` (a valid page value) — it uses truthiness where it needs an identity check. Fix: `if page is None:`.",
+      "why": "Truthiness treats every falsy value the same. To distinguish 'absent' from 'present but zero', you must check identity against `None` specifically, not truthiness."
+    }
+  ],
+  "runtime": "python",
+  "code_walkthrough": {
+    "code": "def summarize(items=None):\n    if items is None:\n        items = []\n    total = len(items)\n    return f\"{total} item(s)\"\n\nprint(summarize())\nprint(summarize([]))\nprint(summarize([1, 2, 3]))",
+    "focus": "Watch how `items is None` (not `if not items:`) is the only check that correctly separates 'no argument was passed at all' from 'an empty list was passed on purpose' — both branches would otherwise collapse to the same `if not items:` path."
+  },
+  "sources": [
+    "https://docs.python.org/3/library/stdtypes.html#truth-value-testing",
+    "https://peps.python.org/pep-0008/#programming-recommendations"
+  ]
+}

@@ -17,6 +17,10 @@
       "unique-ptr-shared-ptr-weak-ptr"
     ]
   },
+  "seo": {
+    "title": "RAII in C++: Resource Acquisition Is Initialization",
+    "description": "What RAII means, why destructors make C++ resource-safe without garbage collection, and how unique_ptr/lock_guard apply it."
+  },
   "hook": {
     "scenario": "You lock a mutex, write to a file, and unlock the mutex. During the file write, an unexpected `std::runtime_error` is thrown. The function aborts, the mutex is never unlocked, and your entire application deadlocks.",
     "question": "How can you guarantee the mutex unlocks even if the function is violently aborted by an exception?"

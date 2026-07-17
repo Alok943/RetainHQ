@@ -18,6 +18,10 @@
       "Performance tuning"
     ]
   },
+  "seo": {
+    "title": "Uvicorn vs Gunicorn: worker types & how many to run",
+    "description": "Uvicorn vs Gunicorn in production: worker classes, how many workers to run (2×cores+1), and when you need both — explained for FastAPI deployments."
+  },
   "hook": {
     "scenario": "You deploy your blazing-fast async FastAPI app using `uvicorn app.main:app`. Under load, it maxes out exactly 1 CPU core at 100%, while the other 7 cores sit completely idle."
   },
@@ -33,6 +37,14 @@
     },
     {
       "body": "To scale across cores, we use Gunicorn as a process manager. Gunicorn forks the application into multiple independent worker processes, each running an instance of Uvicorn. This bypasses the GIL entirely."
+    },
+    {
+      "body": "**Gunicorn worker classes** — By default, Gunicorn uses synchronous workers that block on I/O. To run an async framework like FastAPI, you must tell Gunicorn to use the Uvicorn worker class (`-k uvicorn.workers.UvicornWorker`). This gives you Gunicorn's multi-process scaling combined with Uvicorn's async event loop inside each process.",
+      "recap": "Specify the Uvicorn worker class so each Gunicorn process can handle async I/O."
+    },
+    {
+      "body": "**How many workers?** — The standard heuristic is `(2 x $num_cores) + 1`. For a 4-core machine, you run 9 workers. This ensures that even if some workers are busy or blocked, others are ready to accept new requests. If your app is heavily CPU-bound, a 1:1 ratio with cores might be more efficient.",
+      "recap": "Run (2 × cores) + 1 workers to maximize throughput."
     }
   ],
   "code_snippets": [

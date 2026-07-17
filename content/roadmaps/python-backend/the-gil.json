@@ -25,7 +25,7 @@
   },
   "sections": [
     {
-      "body": "Python's memory management uses reference counting. If two threads increase a variable's reference count at the exact same nanosecond, the count might only go up by 1 instead of 2. The variable would eventually be deleted while a thread was still using it, causing a crash. The GIL was introduced as a simple, foolproof lock to prevent these race conditions at the interpreter level.",
+      "body": "Python's memory management uses reference counting. If two threads increase a variable's reference count at the exact same nanosecond, the count might only go up by 1 instead of 2. The variable would eventually be deleted while a thread was still using it, causing a crash. The Global Interpreter Lock (GIL) was introduced as a simple, foolproof lock to prevent these race conditions at the interpreter level.",
       "recap": "The GIL exists to make Python's memory management (reference counting) thread-safe."
     },
     {

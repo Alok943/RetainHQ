@@ -1,0 +1,104 @@
+{
+  "slug": "slicing",
+  "title": "Slicing",
+  "roadmap": "python-backend",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "lists"
+    ],
+    "unlocks": [
+      "list-comprehensions"
+    ],
+    "project_usage": [
+      "Pagination (offset/limit on an in-memory result set)",
+      "Trimming a log line or header value to a max length",
+      "Batching a list into fixed-size chunks before a bulk API call"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "slice",
+      "definition": "A `start:stop:step` expression inside `[]` that extracts a sub-sequence from a list, tuple, or string, returning a NEW object rather than a reference into the original. Example: `items[2:5]`"
+    },
+    {
+      "term": "half-open interval",
+      "definition": "A range that includes its start but excludes its end — `[start, stop)`. Python slices work this way: `items[2:5]` includes index 2, 3, 4 but not 5, so `stop - start` always equals the slice's length. Example: `items[0:0]` is empty"
+    }
+  ],
+  "overview": {
+    "what": "Slicing extracts a sub-sequence with `sequence[start:stop:step]`. Any of the three can be omitted: `start` defaults to 0, `stop` defaults to the sequence's length, `step` defaults to 1. `stop` is exclusive, so a slice covers a half-open interval — `items[2:5]` returns indices 2, 3, 4, never 5. That's why `len(items[a:b]) == b - a` (clamped to the sequence bounds), a handy sanity check.\n\nNegative indices count from the end (`items[-1]` is the last element), and negative indices work inside slices too: `items[-3:]` means 'last 3 elements'. A negative `step` reverses direction: `items[::-1]` reverses the whole sequence — it walks from the end to the start.\n\nThe critical property for backend code: slicing ALWAYS returns a new list (or string, or tuple) — it never returns a view into the original, and it never raises `IndexError` even if the bounds are out of range. `items[100:200]` on a 3-element list just returns `[]`, silently. That's convenient for pagination logic (no bounds-checking needed) but dangerous if you actually expected an error to catch a bad offset.\n\n  page = items[offset:offset + limit]   # never crashes, even if offset is way past the end\n  page is a NEW list — mutating page does not touch items",
+    "where_used": [
+      "In-memory pagination: `results[offset:offset + page_size]`",
+      "String truncation for logs: `message[:200] + '...' if len(message) > 200 else message`",
+      "Reversing a sequence: `history[::-1]` to show most-recent-first"
+    ],
+    "why": "Slicing is the standard tool for in-memory pagination and batching before it's worth pushing that logic into a DB query, and its never-raises, always-copies behavior is exactly what makes it safe to reach for without extra bounds-checking or defensive-copy code."
+  },
+  "why_learning_this": [
+    "Slicing is the standard tool for in-memory pagination and batching before it's worth pushing that logic into a DB query — knowing it never raises IndexError means you can skip defensive bounds-checks.",
+    "Because a slice always returns a new object, it's a common (and correct) way to make a defensive copy of a list you're about to hand to code that might mutate it."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming an out-of-range slice raises IndexError",
+      "explanation": "Direct indexing (`items[100]`) raises `IndexError` on a 3-element list, but slicing (`items[100:200]`) just returns `[]`. If your pagination code relies on an exception to detect 'offset beyond the data', it will never fire — you have to check length explicitly instead."
+    },
+    {
+      "title": "Confusing `items[:n]` (a copy) with `items` (a reference)",
+      "explanation": "`items[:]` (a full slice) makes a real, independent copy — the classic Python idiom for shallow-copying a list. Writing just `items` instead assigns a second name to the SAME list, so mutating one mutates both. This distinction matters anywhere you pass a list into a function that might append/sort/clear it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `items[2:5]` include, and why is `len(items[2:5])` equal to 3?",
+      "answer": "It includes indices 2, 3, and 4 — the `stop` index (5) is excluded. Because the interval is half-open, `stop - start` (5 - 2 = 3) always equals the slice's length, as long as the range fits inside the sequence.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does `results[offset:offset + limit]` raise an error if `offset` is larger than `len(results)`?",
+      "answer": "No — slicing never raises IndexError, regardless of how far out of range the bounds are. An offset past the end simply returns an empty list `[]`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is `page = items[offset:offset+limit]` a new list, or a view into `items`? Why does that matter for a paginated API response?",
+      "answer": "It's a brand-new list — slicing always copies. That matters because you can freely mutate or serialize `page` (e.g. sort it, filter it) without any risk of corrupting the original `items` list that other code might still be using."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "starter_code": "def paginate(items, offset, limit):\n    # TODO: return the page as a slice — must not raise even if offset is out of range\n    pass\n\nprint(paginate([1, 2, 3, 4, 5], offset=10, limit=2))",
+      "solution_code": "def paginate(items, offset, limit):\n    return items[offset:offset + limit]\n\nprint(paginate([1, 2, 3, 4, 5], offset=10, limit=2))",
+      "expected_output": "[]"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What does this print?",
+      "code": "items = [10, 20, 30, 40, 50]\nprint(items[-3:])\nprint(items[:-2])\nprint(items[::-1])",
+      "answer": "[30, 40, 50]\n[10, 20, 30]\n[50, 40, 30, 20, 10]",
+      "why": "`items[-3:]` means 'from the 3rd-from-last element to the end' -> last 3 elements. `items[:-2]` means 'from the start up to (not including) the 2nd-from-last' -> drops the last 2. `items[::-1]` uses step -1, which walks the whole sequence backward, reversing it."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A function does `page = data[offset:offset+limit]` where `offset=1000` and `data` has 5 elements. It returns `[]` with no error. Is this a bug, and how would you detect 'offset is beyond the data' if the caller needs to know?",
+      "answer": "Not a bug in the slicing itself — this is correct, documented slice behavior. If the caller needs to distinguish 'valid empty result' from 'offset out of range', that check has to be explicit: compare `offset` against `len(data)` before or after slicing, since the slice operation itself will never signal it.",
+      "why": "Slicing's silent clamping is a feature for iteration convenience, but it means bounds validation is the caller's job whenever an out-of-range offset is meaningfully different from a legitimately empty page."
+    }
+  ],
+  "runtime": "python",
+  "code_walkthrough": {
+    "code": "items = [1, 2, 3, 4, 5, 6, 7]\n\npage = items[2:2+3]\nprint(page)\n\npage.append(999)\nprint(\"page:\", page)\nprint(\"items:\", items)",
+    "focus": "Watch that mutating `page` after the slice has zero effect on `items` — the slice created a fully independent list, it did not hand back a window into the original."
+  },
+  "sources": [
+    "https://docs.python.org/3/reference/expressions.html#slicings",
+    "https://docs.python.org/3/library/stdtypes.html#common-sequence-operations"
+  ]
+}
