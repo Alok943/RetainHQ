@@ -387,6 +387,12 @@ def main():
                     sv = seo.get(sf)
                     if sv is not None and (not isinstance(sv, str) or not sv.strip()):
                         err(rel, f"seo.{sf}, if present, must be a non-empty string")
+                seo_title = seo.get("title")
+                if isinstance(seo_title, str) and len(seo_title) > 65:
+                    warn(rel, f"seo.title is {len(seo_title)} chars — SERPs truncate around ~60 chars")
+                seo_desc = seo.get("description")
+                if isinstance(seo_desc, str) and len(seo_desc) > 158:
+                    warn(rel, f"seo.description is {len(seo_desc)} chars — SERPs truncate around ~155-160 chars")
 
         # Aptitude is its OWN thin lesson shape (kind: "aptitude"): intuition + rule + trick + recall.
         # None of the python/sql fields (overview, *_walkthrough, understanding_checks, practice_tasks)
