@@ -19,8 +19,10 @@ const MANIFEST_PATH = join(__dirname, '..', 'public', 'content', 'manifest.json'
 const SITEMAP_PATH = join(__dirname, '..', 'public', 'sitemap.xml');
 const BASE_URL = 'https://retainhq.app';
 
+const today = new Date().toISOString().split('T')[0];
+
 function urlEntry(path, priority, changefreq) {
-  return `  <url>\n    <loc>${BASE_URL}${path}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+  return `  <url>\n    <loc>${BASE_URL}${path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
 }
 
 async function main() {

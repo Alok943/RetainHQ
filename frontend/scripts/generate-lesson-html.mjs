@@ -35,83 +35,425 @@ function collapseWhitespace(str) {
   return (str || '').replace(/\s+/g, ' ').trim();
 }
 
+// --- Consolidated extractText (was duplicated: one inside renderContentBlocks, one module-level) ---
+function extractText(val) {
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) return val.map(extractText).filter(Boolean).join('\n');
+  if (typeof val === 'object' && val !== null) {
+    if (val.text) return val.text;
+    if (val.content) return val.content;
+    if (val.body) return val.body;
+    if (val.intuition) return val.intuition;
+    // mistake object {mistake, why} or {title, explanation}
+    if (val.mistake) return val.mistake + (val.why ? ' — ' + val.why : '');
+    if (val.title && val.explanation) return val.title + ': ' + val.explanation;
+    // recall / OA object {q, a} / {question, answer}
+    if (val.q) return val.q;
+    if (val.question) return val.question;
+    // overview object {what, why}
+    if (val.what) return val.what + (val.why ? ' ' + val.why : '');
+  }
+  return '';
+}
+
+// --- Helper to render a string or array as <p> paragraphs ---
+function renderParagraphs(val) {
+  const text = typeof val === 'string' ? val : extractText(val);
+  if (!text) return '';
+  return text.split('\n').map(p => p.trim()).filter(Boolean)
+    .map(p => `<p>${escapeHTML(p)}</p>\n`).join('');
+}
+
+// --- P0-A: Full content rendering for all lesson kinds ---
 function renderContentBlocks(lesson) {
-  const fields = [
-    { key: 'hook.scenario', label: 'Scenario' },
-    { key: 'overview', label: 'Overview' },
-    { key: 'why', label: 'Why' },
-    { key: 'why_it_matters', label: 'Why it matters' },
-    { key: 'mental_model', label: 'Mental model' },
-    { key: 'explanation', label: 'Explanation' },
-    { key: 'analogy', label: 'Analogy' },
-    { key: 'method', label: 'Method' },
-    { key: 'formula', label: 'Formula' },
-    { key: 'key_points', label: 'Key points', isList: true },
-    { key: 'shortcuts', label: 'Shortcuts', isList: true },
-    { key: 'common_mistakes', label: 'Common mistakes', isList: true, isMistake: true },
-    { key: 'mistakes', label: 'Mistakes', isList: true, isMistake: true },
-    { key: 'recall_questions', label: 'Recall questions', isRecall: true },
-    { key: 'recall', label: 'Recall questions', isRecall: true }
-  ];
-
-  function getField(obj, path) {
-    return path.split('.').reduce((o, p) => (o ? o[p] : undefined), obj);
-  }
-
-  function extractText(val) {
-    if (typeof val === 'string') return val;
-    if (Array.isArray(val)) return val.map(extractText).filter(Boolean).join('\n');
-    if (typeof val === 'object' && val !== null) {
-      if (val.text) return val.text;
-      if (val.content) return val.content;
-      if (val.body) return val.body;
-      // Also might be a mistake object {mistake, why}
-      if (val.mistake) return val.mistake + (val.why ? ' - ' + val.why : '');
-      // Or a recall object {q, a} / {question, answer}
-      if (val.q) return val.q;
-      if (val.question) return val.question;
-    }
-    return '';
-  }
-
   let html = '';
-  for (const field of fields) {
-    const val = getField(lesson, field.key);
-    if (!val) continue;
 
-    html += `<h2>${escapeHTML(field.label)}</h2>\n`;
+  // Helper to add a section with a heading
+  function section(label, content) {
+    if (!content) return;
+    html += `<h2>${escapeHTML(label)}</h2>\n${content}`;
+  }
 
-    if (field.isList) {
-      const arr = Array.isArray(val) ? val : [val];
-      html += `<ul>\n`;
-      for (const item of arr) {
-        const text = extractText(item);
-        if (text) {
-          html += `<li>${escapeHTML(text)}</li>\n`;
-        }
-      }
-      html += `</ul>\n`;
-    } else if (field.isRecall) {
-      const arr = Array.isArray(val) ? val : [val];
-      html += `<ul>\n`;
-      for (const item of arr) {
-        const text = item?.q || item?.question || extractText(item);
-        if (text) {
-          html += `<li>${escapeHTML(text)}</li>\n`;
-        }
-      }
-      html += `</ul>\n`;
-    } else {
-      const text = extractText(val);
-      if (text) {
-        // Split by paragraphs
-        const paras = text.split('\n').map(p => p.trim()).filter(Boolean);
-        for (const p of paras) {
-          html += `<p>${escapeHTML(p)}</p>\n`;
-        }
+  // 1. Hook (scenario + question)
+  const hook = lesson.hook;
+  if (hook && typeof hook === 'object') {
+    const scenario = hook.scenario;
+    const question = hook.question;
+    if (scenario) {
+      html += `<h2>Scenario</h2>\n`;
+      html += renderParagraphs(scenario);
+      if (question) html += `<p><strong>${escapeHTML(question)}</strong></p>\n`;
+    }
+  }
+
+  // 2. Overview / why_it_exists / why_learning_this
+  const overview = lesson.overview;
+  if (overview) {
+    html += `<h2>Overview</h2>\n`;
+    if (typeof overview === 'string') {
+      html += renderParagraphs(overview);
+    } else if (typeof overview === 'object') {
+      if (overview.what) html += `<p>${escapeHTML(overview.what)}</p>\n`;
+      if (overview.why) html += `<p>${escapeHTML(overview.why)}</p>\n`;
+      if (Array.isArray(overview.where_used) && overview.where_used.length) {
+        html += `<p><strong>Where used:</strong> ${overview.where_used.map(w => escapeHTML(w)).join(', ')}</p>\n`;
       }
     }
   }
+
+  const whyItExists = lesson.why_it_exists;
+  if (whyItExists) {
+    html += `<h2>Why it exists</h2>\n`;
+    if (typeof whyItExists === 'string') {
+      html += renderParagraphs(whyItExists);
+    } else if (typeof whyItExists === 'object') {
+      if (whyItExists.problem) html += `<p><strong>Problem:</strong> ${escapeHTML(whyItExists.problem)}</p>\n`;
+      if (whyItExists.naive_solution) html += `<p><strong>Naive approach:</strong> ${escapeHTML(whyItExists.naive_solution)}</p>\n`;
+      if (whyItExists.better_idea) html += `<p><strong>Better idea:</strong> ${escapeHTML(whyItExists.better_idea)}</p>\n`;
+    }
+  }
+
+  const whyLearning = lesson.why_learning_this;
+  if (Array.isArray(whyLearning) && whyLearning.length) {
+    html += `<h2>Why learn this</h2>\n<ul>\n`;
+    for (const item of whyLearning) {
+      if (typeof item === 'string' && item.trim()) html += `<li>${escapeHTML(item)}</li>\n`;
+    }
+    html += `</ul>\n`;
+  }
+
+  // 3. Mental model (intuition + description)
+  const mm = lesson.mental_model;
+  if (mm) {
+    html += `<h2>Mental model</h2>\n`;
+    if (typeof mm === 'string') {
+      html += renderParagraphs(mm);
+    } else if (typeof mm === 'object') {
+      if (mm.intuition) html += `<p><strong>${escapeHTML(mm.intuition)}</strong></p>\n`;
+      if (mm.description) html += renderParagraphs(mm.description);
+      if (mm.repeated_decision) html += `<p><em>Repeated decision: ${escapeHTML(mm.repeated_decision)}</em></p>\n`;
+    }
+  }
+
+  // 4. Explanation
+  if (lesson.explanation) {
+    html += `<h2>Explanation</h2>\n`;
+    html += renderParagraphs(lesson.explanation);
+  }
+
+  // Analogy
+  if (lesson.analogy) {
+    html += `<h2>Analogy</h2>\n`;
+    html += renderParagraphs(lesson.analogy);
+  }
+
+  // 5. Sections (body + recap) — one <h2> for the block, paragraphs inside
+  const sections = lesson.sections;
+  if (Array.isArray(sections) && sections.length) {
+    html += `<h2>Deep dive</h2>\n`;
+    for (const sec of sections) {
+      if (!sec || typeof sec !== 'object') continue;
+      if (sec.body) {
+        const paras = sec.body.split('\n').map(p => p.trim()).filter(Boolean);
+        for (const p of paras) html += `<p>${escapeHTML(p)}</p>\n`;
+      }
+      if (sec.recap) html += `<p><em>${escapeHTML(sec.recap)}</em></p>\n`;
+    }
+  }
+
+  // 6. Method / formula / pattern_discovery / derivation
+  const method = lesson.method;
+  if (Array.isArray(method) && method.length) {
+    html += `<h2>Method</h2>\n<ol>\n`;
+    for (const step of method) {
+      if (typeof step === 'string' && step.trim()) html += `<li>${escapeHTML(step)}</li>\n`;
+    }
+    html += `</ol>\n`;
+  }
+
+  const formula = lesson.formula;
+  if (formula) {
+    html += `<h2>Formula</h2>\n`;
+    if (typeof formula === 'string') {
+      html += renderParagraphs(formula);
+    } else if (typeof formula === 'object') {
+      if (formula.statement) html += `<p><strong>${escapeHTML(formula.statement)}</strong></p>\n`;
+      if (formula.explain) html += renderParagraphs(formula.explain);
+    }
+  }
+
+  const patternDiscovery = lesson.pattern_discovery;
+  if (patternDiscovery && typeof patternDiscovery === 'object') {
+    html += `<h2>Pattern discovery</h2>\n`;
+    if (patternDiscovery.setup) html += `<p>${escapeHTML(patternDiscovery.setup)}</p>\n`;
+    if (Array.isArray(patternDiscovery.cases) && patternDiscovery.cases.length) {
+      html += `<ul>\n`;
+      for (const c of patternDiscovery.cases) {
+        if (typeof c === 'string') html += `<li>${escapeHTML(c)}</li>\n`;
+      }
+      html += `</ul>\n`;
+    }
+    if (patternDiscovery.prompt) html += `<p><em>${escapeHTML(patternDiscovery.prompt)}</em></p>\n`;
+    if (patternDiscovery.rule) html += `<p><strong>Rule:</strong> ${escapeHTML(patternDiscovery.rule)}</p>\n`;
+  }
+
+  const derivation = lesson.derivation;
+  if (Array.isArray(derivation) && derivation.length) {
+    html += `<h2>Derivation</h2>\n`;
+    for (const der of derivation) {
+      if (!der || typeof der !== 'object') continue;
+      if (der.goal) html += `<h3>${escapeHTML(der.goal)}</h3>\n`;
+      if (Array.isArray(der.steps)) {
+        html += `<ol>\n`;
+        for (const st of der.steps) {
+          if (typeof st === 'string') {
+            html += `<li>${escapeHTML(st)}</li>\n`;
+          } else if (typeof st === 'object' && st) {
+            const parts = [st.expr, st.rule, st.why].filter(Boolean).map(s => escapeHTML(s));
+            html += `<li>${parts.join(' — ')}</li>\n`;
+          }
+        }
+        html += `</ol>\n`;
+      }
+    }
+  }
+
+  // 7. Code snippets
+  const codeSnippets = lesson.code_snippets;
+  if (Array.isArray(codeSnippets) && codeSnippets.length) {
+    html += `<h2>Code examples</h2>\n`;
+    for (const cs of codeSnippets) {
+      if (!cs || typeof cs !== 'object') continue;
+      if (cs.title) html += `<h3>${escapeHTML(cs.title)}</h3>\n`;
+      if (cs.code) {
+        const lang = cs.language || '';
+        html += `<pre><code class="language-${escapeHTML(lang)}">${escapeHTML(cs.code)}</code></pre>\n`;
+      }
+      if (cs.explanation) html += `<p>${escapeHTML(cs.explanation)}</p>\n`;
+    }
+  }
+
+  // 8. Code walkthrough / aha moment
+  const cw = lesson.code_walkthrough;
+  if (cw && typeof cw === 'object' && cw.code) {
+    html += `<h2>Code walkthrough</h2>\n`;
+    html += `<pre><code>${escapeHTML(cw.code)}</code></pre>\n`;
+    if (cw.focus) html += `<p><em>Focus: ${escapeHTML(cw.focus)}</em></p>\n`;
+  }
+
+  // Query walkthrough (SQL lessons)
+  const qw = lesson.query_walkthrough;
+  if (qw && typeof qw === 'object' && qw.query) {
+    html += `<h2>Query walkthrough</h2>\n`;
+    html += `<pre><code class="language-sql">${escapeHTML(qw.query)}</code></pre>\n`;
+    if (qw.focus) html += `<p><em>Focus: ${escapeHTML(qw.focus)}</em></p>\n`;
+  }
+
+  const aha = lesson.aha_moment;
+  if (aha && typeof aha === 'object') {
+    html += `<h2>Aha moment</h2>\n`;
+    if (aha.code) html += `<pre><code>${escapeHTML(aha.code)}</code></pre>\n`;
+    if (aha.prediction) html += `<p><strong>Prediction:</strong> ${escapeHTML(aha.prediction)}</p>\n`;
+    if (aha.common_guess) html += `<p><strong>Common guess:</strong> ${escapeHTML(aha.common_guess)}</p>\n`;
+    if (aha.why) html += `<p>${escapeHTML(aha.why)}</p>\n`;
+  }
+
+  // 9. Worked example
+  const we = lesson.worked_example;
+  if (we) {
+    html += `<h2>Worked example</h2>\n`;
+    const examples = Array.isArray(we) ? we : [we];
+    for (const ex of examples) {
+      if (!ex || typeof ex !== 'object') continue;
+      if (ex.problem) html += `<p><strong>Problem:</strong> ${escapeHTML(ex.problem)}</p>\n`;
+      if (Array.isArray(ex.steps) && ex.steps.length) {
+        html += `<ol>\n`;
+        for (const step of ex.steps) {
+          if (typeof step === 'string') {
+            html += `<li>${escapeHTML(step)}</li>\n`;
+          } else if (typeof step === 'object' && step) {
+            // Physics worked_example steps have {narration, math?}
+            const text = step.narration || step.text || extractText(step);
+            if (text) html += `<li>${escapeHTML(text)}</li>\n`;
+          }
+        }
+        html += `</ol>\n`;
+      }
+      if (ex.answer) html += `<p><strong>Answer:</strong> ${escapeHTML(ex.answer)}</p>\n`;
+    }
+  }
+
+  // 10. Key points
+  const kp = lesson.key_points;
+  if (Array.isArray(kp) && kp.length) {
+    html += `<h2>Key points</h2>\n<ul>\n`;
+    for (const item of kp) {
+      if (typeof item === 'string') {
+        html += `<li>${escapeHTML(item)}</li>\n`;
+      } else if (typeof item === 'object' && item) {
+        const title = item.title || '';
+        const detail = item.detail || '';
+        html += `<li><strong>${escapeHTML(title)}</strong>${detail ? ': ' + escapeHTML(detail) : ''}</li>\n`;
+      }
+    }
+    html += `</ul>\n`;
+  }
+
+  // 11. DSA-specific: pattern, failure_signals, engineering_examples, when_not_to_use
+  const pattern = lesson.pattern;
+  if (pattern && typeof pattern === 'object' && pattern.name) {
+    html += `<h2>Pattern: ${escapeHTML(pattern.name)}</h2>\n`;
+    if (Array.isArray(pattern.recognition_cues) && pattern.recognition_cues.length) {
+      html += `<p><strong>Recognition cues:</strong></p>\n<ul>\n`;
+      for (const cue of pattern.recognition_cues) {
+        if (typeof cue === 'string') html += `<li>${escapeHTML(cue)}</li>\n`;
+      }
+      html += `</ul>\n`;
+    }
+  }
+
+  const failureSignals = lesson.failure_signals;
+  if (Array.isArray(failureSignals) && failureSignals.length) {
+    html += `<h2>Failure signals</h2>\n<ul>\n`;
+    for (const fs of failureSignals) {
+      if (typeof fs === 'string') html += `<li>${escapeHTML(fs)}</li>\n`;
+    }
+    html += `</ul>\n`;
+  }
+
+  const engExamples = lesson.engineering_examples;
+  if (Array.isArray(engExamples) && engExamples.length) {
+    html += `<h2>Engineering examples</h2>\n`;
+    for (const ex of engExamples) {
+      if (!ex || typeof ex !== 'object') continue;
+      if (ex.title) html += `<h3>${escapeHTML(ex.title)}</h3>\n`;
+      if (ex.problem) html += `<p>${escapeHTML(ex.problem)}</p>\n`;
+      if (ex.why_this_algorithm) html += `<p><em>${escapeHTML(ex.why_this_algorithm)}</em></p>\n`;
+    }
+  }
+
+  const whenNot = lesson.when_not_to_use;
+  if (Array.isArray(whenNot) && whenNot.length) {
+    html += `<h2>When not to use</h2>\n<ul>\n`;
+    for (const wn of whenNot) {
+      if (typeof wn === 'object' && wn) {
+        html += `<li><strong>${escapeHTML(wn.scenario || '')}</strong>: ${escapeHTML(wn.reason || '')}</li>\n`;
+      }
+    }
+    html += `</ul>\n`;
+  }
+
+  // 12. Shortcuts
+  const shortcuts = lesson.shortcuts;
+  if (Array.isArray(shortcuts) && shortcuts.length) {
+    html += `<h2>Shortcuts</h2>\n<ul>\n`;
+    for (const sc of shortcuts) {
+      if (typeof sc === 'string') {
+        html += `<li>${escapeHTML(sc)}</li>\n`;
+      } else if (typeof sc === 'object' && sc) {
+        html += `<li><strong>${escapeHTML(sc.title || '')}</strong>: ${escapeHTML(sc.trick || '')}`;
+        if (sc.example) html += ` <em>(${escapeHTML(sc.example)})</em>`;
+        html += `</li>\n`;
+      }
+    }
+    html += `</ul>\n`;
+  }
+
+  // 13. Common mistakes
+  const cm = lesson.common_mistakes || lesson.mistakes;
+  if (Array.isArray(cm) && cm.length) {
+    html += `<h2>Common mistakes</h2>\n<ul>\n`;
+    for (const item of cm) {
+      if (typeof item === 'string') {
+        html += `<li>${escapeHTML(item)}</li>\n`;
+      } else if (typeof item === 'object' && item) {
+        if (item.title && item.explanation) {
+          html += `<li><strong>${escapeHTML(item.title)}</strong>: ${escapeHTML(item.explanation)}</li>\n`;
+        } else {
+          const text = item.mistake || item.title || extractText(item);
+          const why = item.why || item.explanation || '';
+          html += `<li>${escapeHTML(text)}${why ? ' — ' + escapeHTML(why) : ''}</li>\n`;
+        }
+      }
+    }
+    html += `</ul>\n`;
+  }
+
+  // 14. Glossary
+  const glossary = lesson.glossary;
+  if (Array.isArray(glossary) && glossary.length) {
+    html += `<h2>Glossary</h2>\n<dl>\n`;
+    for (const entry of glossary) {
+      if (!entry || typeof entry !== 'object') continue;
+      if (entry.term) html += `<dt>${escapeHTML(entry.term)}</dt>\n`;
+      if (entry.definition) html += `<dd>${escapeHTML(entry.definition)}</dd>\n`;
+    }
+    html += `</dl>\n`;
+  }
+
+  // 15. Recall questions (questions only)
+  const rq = lesson.recall_questions || lesson.recall;
+  if (Array.isArray(rq) && rq.length) {
+    html += `<h2>Recall questions</h2>\n<ul>\n`;
+    for (const item of rq) {
+      const text = (typeof item === 'object' && item) ? (item.q || item.question || '') : (typeof item === 'string' ? item : '');
+      if (text) html += `<li>${escapeHTML(text)}</li>\n`;
+    }
+    html += `</ul>\n`;
+  }
+
+  // 16. Understanding checks + OA questions — visible Q&A (include answers)
+  const uc = lesson.understanding_checks;
+  if (Array.isArray(uc) && uc.length) {
+    html += `<h2>Understanding checks</h2>\n`;
+    for (const check of uc) {
+      if (!check || typeof check !== 'object') continue;
+      if (check.question) html += `<h3>${escapeHTML(check.question)}</h3>\n`;
+      if (check.answer) html += `<p>${escapeHTML(check.answer)}</p>\n`;
+      if (check.why) html += `<p><em>${escapeHTML(check.why)}</em></p>\n`;
+    }
+  }
+
+  const oa = lesson.oa_questions;
+  if (Array.isArray(oa) && oa.length) {
+    html += `<h2>Questions &amp; answers</h2>\n`;
+    for (const q of oa) {
+      if (!q || typeof q !== 'object') continue;
+      const question = q.question || q.q || '';
+      if (question) html += `<h3>${escapeHTML(question)}</h3>\n`;
+      if (q.answer) html += `<p>${escapeHTML(q.answer)}</p>\n`;
+      if (q.approach) html += `<p><em>Approach: ${escapeHTML(q.approach)}</em></p>\n`;
+    }
+  }
+
+  // 17. Practice tasks + challenge (title + prompt only; omit solution/starter_code)
+  const pt = lesson.practice_tasks;
+  if (Array.isArray(pt) && pt.length) {
+    html += `<h2>Practice tasks</h2>\n`;
+    for (const task of pt) {
+      if (!task || typeof task !== 'object') continue;
+      if (task.title) html += `<h3>${escapeHTML(task.title)}</h3>\n`;
+      if (task.prompt) html += `<p>${escapeHTML(task.prompt)}</p>\n`;
+    }
+  }
+
+  const challenge = lesson.challenge;
+  if (challenge && typeof challenge === 'object') {
+    html += `<h2>Challenge</h2>\n`;
+    if (challenge.title) html += `<h3>${escapeHTML(challenge.title)}</h3>\n`;
+    if (challenge.prompt) html += `<p>${escapeHTML(challenge.prompt)}</p>\n`;
+  }
+
+  // 18. Interesting facts (DSA)
+  const facts = lesson.interesting_facts;
+  if (Array.isArray(facts) && facts.length) {
+    html += `<h2>Interesting facts</h2>\n<ul>\n`;
+    for (const f of facts) {
+      if (typeof f === 'string') html += `<li>${escapeHTML(f)}</li>\n`;
+    }
+    html += `</ul>\n`;
+  }
+
   return html;
 }
 
@@ -119,10 +461,13 @@ function getSeoDescription(lesson) {
   let raw = '';
   if (typeof lesson.overview === 'string' && lesson.overview) {
     raw = lesson.overview;
+  } else if (lesson.overview && typeof lesson.overview === 'object' && lesson.overview.what) {
+    raw = lesson.overview.what;
   } else if (lesson.hook?.scenario) {
     raw = extractText(lesson.hook.scenario);
   } else if (lesson.mental_model) {
     if (typeof lesson.mental_model === 'string') raw = lesson.mental_model;
+    else if (lesson.mental_model.intuition) raw = lesson.mental_model.intuition;
     else if (lesson.mental_model.text) raw = lesson.mental_model.text;
   }
 
@@ -131,17 +476,6 @@ function getSeoDescription(lesson) {
     desc = `Learn ${lesson.title} and lock it into long-term memory with spaced repetition and active recall on RetainHQ.`;
   }
   return desc.slice(0, 158);
-}
-
-function extractText(val) {
-  if (typeof val === 'string') return val;
-  if (Array.isArray(val)) return val.map(extractText).filter(Boolean).join(' ');
-  if (typeof val === 'object' && val !== null) {
-    if (val.text) return val.text;
-    if (val.content) return val.content;
-    if (val.body) return val.body;
-  }
-  return '';
 }
 
 async function main() {
@@ -193,8 +527,9 @@ async function main() {
     // Second pass: Generate HTML
     for (const { slug, lesson } of lessons) {
       const label = ROADMAP_LABEL[roadmapKey] || 'RetainHQ';
-      const pageTitle = `${lesson.title} · ${label} | RetainHQ`;
-      const pageDesc = getSeoDescription(lesson);
+      // P0-B: prefer seo.title / seo.description if present
+      const pageTitle = lesson.seo?.title ?? `${lesson.title} · ${label} | RetainHQ`;
+      const pageDesc = lesson.seo?.description ?? getSeoDescription(lesson);
       const url = `${BASE_URL}/roadmaps/${roadmapKey}/learn/${slug}`;
 
       // 1. Replacements in <head>. NOTE: every replacement uses the function form —
@@ -258,30 +593,37 @@ async function main() {
       
       articleHtml += renderContentBlocks(lesson);
       
-      // Continue learning list
-      const continueSlugs = new Set();
-      if (lesson.metadata) {
-        if (Array.isArray(lesson.metadata.prerequisites)) {
-          lesson.metadata.prerequisites.forEach(s => continueSlugs.add(s));
-        }
-        if (Array.isArray(lesson.metadata.unlocks)) {
-          lesson.metadata.unlocks.forEach(s => continueSlugs.add(s));
+      // 19. Previous, Next, and Related Links
+      let navHtml = '';
+      const prevSlugs = lesson.metadata?.prerequisites || [];
+      for (const s of prevSlugs) {
+        if (slugMap.has(s)) {
+          navHtml += `<p><strong>Previous:</strong> <a href="/roadmaps/${roadmapKey}/learn/${s}">${escapeHTML(slugMap.get(s))}</a></p>\n`;
         }
       }
-      
-      const relatedLinks = [];
-      for (const reqSlug of continueSlugs) {
-        if (slugMap.has(reqSlug)) {
-          relatedLinks.push({ slug: reqSlug, title: slugMap.get(reqSlug) });
+      const nextSlugs = lesson.metadata?.unlocks || [];
+      for (const s of nextSlugs) {
+        if (slugMap.has(s)) {
+          navHtml += `<p><strong>Next:</strong> <a href="/roadmaps/${roadmapKey}/learn/${s}">${escapeHTML(slugMap.get(s))}</a></p>\n`;
         }
       }
-      
-      if (relatedLinks.length > 0) {
-        articleHtml += `<h2>Continue learning</h2>\n<ul>\n`;
-        for (const rel of relatedLinks) {
-          articleHtml += `<li><a href="/roadmaps/${roadmapKey}/learn/${rel.slug}">${escapeHTML(rel.title)}</a></li>\n`;
+
+      const relatedSlugs = lesson.related || [];
+      for (const s of relatedSlugs) {
+        if (slugMap.has(s)) {
+          navHtml += `<p><strong>Related:</strong> <a href="/roadmaps/${roadmapKey}/learn/${s}">${escapeHTML(slugMap.get(s))}</a></p>\n`;
         }
-        articleHtml += `</ul>\n`;
+      }
+
+      // Hardcoded cross-roadmap links
+      if (slug === 'the-gil') {
+        navHtml += `<p><strong>Related:</strong> <a href="/roadmaps/python-backend/learn/threading-vs-multiprocessing">Threading vs Multiprocessing</a></p>\n`;
+      } else if (slug === 'threading-vs-multiprocessing') {
+        navHtml += `<p><strong>Related:</strong> <a href="/roadmaps/python-backend/learn/the-gil">The GIL (Global Interpreter Lock)</a></p>\n`;
+      }
+
+      if (navHtml) {
+        articleHtml += `<h2>Continue learning</h2>\n${navHtml}`;
       }
       
       // Link to roadmap again at the end
