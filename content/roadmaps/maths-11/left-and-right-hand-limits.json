@@ -1,0 +1,177 @@
+{
+  "slug": "left-and-right-hand-limits",
+  "title": "Left-Hand and Right-Hand Limits",
+  "roadmap": "maths-11",
+  "kind": "maths",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "interview_frequency": "high",
+    "importance": 10,
+    "prerequisites": ["what-is-a-limit"],
+    "unlocks": ["algebra-of-limits"]
+  },
+  "mental_model": {
+    "intuition": "If the left-hand limit and right-hand limit do not match exactly, the limit does not exist.",
+    "description": "For absolute value functions, the rule changes at zero. You must check the left path and right path separately to see if they meet at the same point."
+  },
+  "explanation": "Some functions split into two different rules at a point. You cannot just substitute the value. You must evaluate the limit as you approach from the left, and separately from the right. If these two numbers are different, the paths do not meet, and the overall limit does not exist.",
+  "derivation": [
+    {
+      "goal": "Evaluate the limit of |x|/x as x approaches 0",
+      "steps": [
+        {
+          "expr": "\\lim_{x \\to 0^-} \\frac{|x|}{x}",
+          "rule": "modulus-left",
+          "why": "Start by finding the left-hand limit as x approaches 0."
+        },
+        {
+          "expr": "\\lim_{x \\to 0^-} \\frac{-x}{x}",
+          "rule": "modulus-left",
+          "why": "For x less than 0, the absolute value of x is defined as -x.",
+          "predict": {
+            "question": "How do you evaluate the absolute value for the left-hand limit?",
+            "options": [
+              {
+                "expr": "\\lim_{x \\to 0^-} \\frac{-x}{x}",
+                "correct": true
+              },
+              {
+                "expr": "\\frac{0}{0} = 1",
+                "error_id": "ignore-one-sided-for-modulus",
+                "wrong_path": ["\\frac{0}{0} = 1"],
+                "feedback": "For absolute values, the rule changes at zero. You must check the left limit and right limit separately."
+              }
+            ]
+          }
+        },
+        {
+          "expr": "\\lim_{x \\to 0^-} (-1)",
+          "rule": "cancel-common-factors",
+          "why": "Cancel x from the top and bottom."
+        },
+        {
+          "expr": "-1",
+          "rule": "limit-of-constant",
+          "why": "The limit of a constant is the constant itself."
+        },
+        {
+          "expr": "\\lim_{x \\to 0^+} \\frac{|x|}{x}",
+          "rule": "modulus-right",
+          "why": "Now find the right-hand limit as x approaches 0.",
+          "predict": {
+            "question": "What is the correct next step after finding the left-hand limit?",
+            "options": [
+              {
+                "expr": "\\lim_{x \\to 0^+} \\frac{|x|}{x}",
+                "correct": true
+              },
+              {
+                "expr": "f(-0)",
+                "error_id": "confuse-direction-with-sign",
+                "wrong_path": ["f(-0)"],
+                "feedback": "The minus sign at the top means 'from the left', not a negative number."
+              }
+            ]
+          }
+        },
+        {
+          "expr": "\\lim_{x \\to 0^+} \\frac{x}{x}",
+          "rule": "modulus-right",
+          "why": "For x greater than 0, the absolute value of x is defined as x."
+        },
+        {
+          "expr": "\\lim_{x \\to 0^+} (1)",
+          "rule": "cancel-common-factors",
+          "why": "Cancel x from the top and bottom."
+        },
+        {
+          "expr": "1",
+          "rule": "limit-of-constant",
+          "why": "The limit of a constant is the constant itself."
+        },
+        {
+          "expr": "\\text{Limit does not exist}",
+          "rule": "lhl-rhl-compare",
+          "why": "The left-hand limit (-1) does not equal the right-hand limit (1).",
+          "predict": {
+             "question": "What is the final limit since LHL is -1 and RHL is 1?",
+             "options": [
+               {
+                 "expr": "\\text{Limit does not exist}",
+                 "correct": true
+               },
+               {
+                 "expr": "\\text{Limit} = 1",
+                 "error_id": "force-limit-existence",
+                 "wrong_path": ["\\text{Limit} = 1"],
+                 "feedback": "If the left-hand limit and right-hand limit do not match exactly, the limit does not exist."
+               }
+             ]
+          }
+        }
+      ],
+      "rules": [
+        {
+          "id": "modulus-left",
+          "statement": "When approaching zero from the left, the variable is negative, so absolute value opens with a negative sign."
+        },
+        {
+          "id": "modulus-right",
+          "statement": "When approaching zero from the right, the variable is positive, so absolute value opens unchanged."
+        },
+        {
+          "id": "cancel-common-factors",
+          "statement": "You can cancel a factor from the top and bottom because inside a limit the variable never equals the target number."
+        },
+        {
+          "id": "limit-of-constant",
+          "statement": "The limit of a fixed number is just that number."
+        },
+        {
+          "id": "lhl-rhl-compare",
+          "statement": "For a limit to exist, the left-hand limit and right-hand limit must equal the exact same number."
+        }
+      ]
+    }
+  ],
+  "graph_play": [
+    {
+      "mode": "limit",
+      "fn": "abs(x)/x",
+      "a": 0,
+      "predict": {
+        "question": "As x approaches 0 from the left, y is... and from the right, y is...",
+        "options": ["-1 and 1", "0 and 0", "1 and 1"],
+        "answer": 0,
+        "why": "A jump in the graph means the left and right paths do not meet, so the global limit breaks."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forcing limit existence",
+      "explanation": "Students think every math question must have a number answer, so they write 0 or 1. 'Does not exist' is a valid math answer when paths do not meet."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain when a limit does not exist in your own words, as if to a classmate.",
+      "answer": "A limit does not exist if the function heads to one value from the left side, but a completely different value from the right side.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does |x| open when x approaches zero from the left side?",
+      "answer": "It opens as -x, because approaching from the left means x is a negative number.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does the minus sign mean in x → 2⁻?",
+      "answer": "It means x approaches 2 from the left side. It does not mean negative 2.",
+      "tier": "tier1"
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?kemh1=13-16"
+  ]
+}

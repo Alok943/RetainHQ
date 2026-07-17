@@ -162,13 +162,17 @@ export default function LessonView() {
 
   // Per-page SEO: each static lesson becomes its own keyword-targeted, crawlable
   // search landing page (backend-independent). Null while loading → defaults stay.
-  const seoTitle = lesson ? `${lesson.title} · ${ROADMAP_LABEL[lesson.roadmap] || 'RetainHQ'} | RetainHQ` : null;
+  // P0-B: prefer lesson.seo.title / lesson.seo.description overrides when present
+  // (search-facing only — H1/breadcrumbs/JSON-LD name keep using lesson.title).
+  const seoTitle = lesson
+    ? (lesson.seo?.title ?? `${lesson.title} · ${ROADMAP_LABEL[lesson.roadmap] || 'RetainHQ'} | RetainHQ`)
+    : null;
   const seoRaw = lesson ? ((typeof lesson.overview === 'string' && lesson.overview) || lesson.hook?.scenario || '') : '';
   const seoDesc = lesson
-    ? (seoRaw
+    ? (lesson.seo?.description ?? (seoRaw
         ? seoRaw.replace(/\s+/g, ' ').trim()
         : `Learn ${lesson.title} and lock it into long-term memory with spaced repetition and active recall on RetainHQ.`
-      ).slice(0, 158)
+      ).slice(0, 158))
     : null;
   // Structured data: mark each lesson as a LearningResource + a breadcrumb trail
   // so Google indexes the hierarchy and is eligible to show rich results.

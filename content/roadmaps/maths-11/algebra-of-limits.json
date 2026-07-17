@@ -1,0 +1,126 @@
+{
+  "slug": "algebra-of-limits",
+  "title": "Algebra of Limits",
+  "roadmap": "maths-11",
+  "kind": "maths",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "interview_frequency": "high",
+    "importance": 10,
+    "prerequisites": ["left-and-right-hand-limits"],
+    "unlocks": []
+  },
+  "mental_model": {
+    "intuition": "The limit of a sum is the sum of the limits, as long as both limits exist.",
+    "description": "You can split limits into smaller, easier pieces using basic algebra rules, just like distributing multiplication over addition."
+  },
+  "explanation": "The algebra of limits provides tools to simplify complex expressions. But these rules have conditions. You can only split a limit if the individual limits exist as real numbers. For quotients, you can only split them if the denominator's limit is non-zero.",
+  "derivation": [
+    {
+      "goal": "Evaluate the limit of (x^2 + 5x) as x approaches 2",
+      "steps": [
+        {
+          "expr": "\\lim_{x \\to 2} (x^2 + 5x)",
+          "rule": "limit-sum-rule",
+          "why": "Start with the original limit."
+        },
+        {
+          "expr": "\\lim_{x \\to 2} (x^2) + \\lim_{x \\to 2} (5x)",
+          "rule": "limit-sum-rule",
+          "why": "The limit of a sum is the sum of the limits.",
+          "predict": {
+            "question": "Is it safe to split this limit into two parts?",
+            "options": [
+              {
+                "expr": "\\lim_{x \\to 2} (x^2) + \\lim_{x \\to 2} (5x)",
+                "correct": true
+              },
+              {
+                "expr": "\\infty - \\infty",
+                "error_id": "split-limit-blindly",
+                "wrong_path": ["\\infty - \\infty"],
+                "feedback": "You can only split a limit if the individual limits exist as real numbers. Both these limits exist."
+              }
+            ]
+          }
+        },
+        {
+          "expr": "\\lim_{x \\to 2} (x^2) + 5 \\lim_{x \\to 2} (x)",
+          "rule": "limit-scalar-rule",
+          "why": "Pull the constant 5 out of the second limit.",
+          "predict": {
+            "question": "What do you do with the constant 5?",
+            "options": [
+              {
+                "expr": "\\lim_{x \\to 2} (x^2) + 5 \\lim_{x \\to 2} (x)",
+                "correct": true
+              },
+              {
+                "expr": "5 + \\lim_{x \\to 2} (x)",
+                "error_id": "pull-out-scalar-wrong",
+                "wrong_path": ["5 + \\lim_{x \\to 2} (x)"],
+                "feedback": "A constant pulled out of a limit must be multiplied by the final limit value, not added."
+              }
+            ]
+          }
+        },
+        {
+          "expr": "(2)^2 + 5(2)",
+          "rule": "substitute-limit",
+          "why": "Substitute x = 2 into the pieces."
+        },
+        {
+          "expr": "4 + 10",
+          "rule": "substitute-limit",
+          "why": "Square the 2 and multiply 5 by 2."
+        },
+        {
+          "expr": "14",
+          "rule": "substitute-limit",
+          "why": "Add to get the final answer."
+        }
+      ],
+      "rules": [
+        {
+          "id": "limit-sum-rule",
+          "statement": "The limit of a sum is the sum of the limits, as long as both limits exist."
+        },
+        {
+          "id": "limit-scalar-rule",
+          "statement": "A constant number multiplied by a function can be pulled outside the limit sign."
+        },
+        {
+          "id": "substitute-limit",
+          "statement": "When putting the value of the variable no longer causes division by zero, substitute the number and drop the limit sign."
+        }
+      ]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Quotient rule division by zero",
+      "explanation": "Students often split a limit into a fraction when the bottom limit is zero. You cannot split a limit into a fraction if the bottom limit is zero. Simplify the expression first."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the limit sum rule in your own words, as if to a classmate.",
+      "answer": "You can break a big limit into smaller limits and add them up, but only if each smaller limit actually goes to a real number.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When are you NOT allowed to use the quotient rule for limits?",
+      "answer": "You cannot use the quotient rule when the limit of the denominator is exactly zero.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What must you do with a constant number pulled out of a limit?",
+      "answer": "You must multiply it by the result of the limit.",
+      "tier": "tier1"
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?kemh1=13-16"
+  ]
+}

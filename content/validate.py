@@ -27,7 +27,7 @@ except OSError:
     DERIVE_NAMES = set()
 PREDICTION_LEVELS = {"easy", "medium", "hard", "expert"}
 
-KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa", "physics", "numericals", "test"}
+KIND = {"concept", "milestone", "aptitude", "reasoning", "theory", "engineering", "dsa", "physics", "numericals", "test", "maths"}
 TIER = {"tier1", "tier2", "tier3"}
 DIFF = {"easy", "medium", "hard"}
 FREQ = {"low", "medium", "high"}
@@ -376,6 +376,18 @@ def main():
                     if not re.search(r'\b' + escaped_term + r'\b', prose_text, re.IGNORECASE):
                         warn(rel, f"glossary term {term!r} does not appear as a whole word in the lesson's prose fields")
 
+        # SEO metadata override (optional, all kinds). P0-B: search-facing title/description
+        # that differ from the in-app title, consumed by generate-lesson-html.mjs and LessonView.jsx.
+        seo = d.get("seo")
+        if seo is not None:
+            if not isinstance(seo, dict):
+                err(rel, "seo, if present, must be an object")
+            else:
+                for sf in ("title", "description"):
+                    sv = seo.get(sf)
+                    if sv is not None and (not isinstance(sv, str) or not sv.strip()):
+                        err(rel, f"seo.{sf}, if present, must be a non-empty string")
+
         # Aptitude is its OWN thin lesson shape (kind: "aptitude"): intuition + rule + trick + recall.
         # None of the python/sql fields (overview, *_walkthrough, understanding_checks, practice_tasks)
         # apply — branch entirely and skip them. See content/PROMPT-aptitude.md.
@@ -612,6 +624,93 @@ def main():
                 for i, s in enumerate(srcs):
                     if not isinstance(s, str) or not s.startswith("http"):
                         err(rel, f"sources[{i}] is not a URL: {s!r}")
+            if d.get("roadmap"):
+                by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
+            continue
+
+        # Maths (DerivationPlayer + GraphPlay)
+        if d.get("kind") == "maths":
+            mm = d.get("mental_model")
+            if not isinstance(mm, dict) or not mm.get("intuition"):
+                err(rel, "mental_model is required (object with a non-empty 'intuition')")
+            if not d.get("sections") and (not isinstance(d.get("explanation"), str) or not d.get("explanation").strip()):
+                err(rel, "explanation OR sections is required")
+            
+            derivations = d.get("derivation")
+            if not isinstance(derivations, list) or not derivations:
+                err(rel, "derivation is required: a non-empty list of derivation objects")
+            else:
+                for i, der in enumerate(derivations):
+                    if not isinstance(der, dict) or not der.get("goal"):
+                        err(rel, f"derivation[{i}] needs a non-empty 'goal'")
+                    steps = der.get("steps")
+                    if not isinstance(steps, list) or len(steps) < 3:
+                        err(rel, f"derivation[{i}].steps is required: a list of >=3 items")
+                    else:
+                        for j, st in enumerate(steps):
+                            if not isinstance(st, dict) or not st.get("expr") or not st.get("rule") or not st.get("why"):
+                                err(rel, f"derivation[{i}].steps[{j}] needs non-empty 'expr', 'rule', and 'why'")
+                            if j == 0 and "predict" in st:
+                                err(rel, f"derivation[{i}].steps[0] must NOT have a 'predict' block")
+                            predict = st.get("predict")
+                            if predict is not None:
+                                if not isinstance(predict, dict) or not predict.get("question"):
+                                    err(rel, f"derivation[{i}].steps[{j}].predict needs a non-empty 'question'")
+                                opts = predict.get("options")
+                                if not isinstance(opts, list) or not (2 <= len(opts) <= 4):
+                                    err(rel, f"derivation[{i}].steps[{j}].predict.options must be a list of 2-4 items")
+                                else:
+                                    correct_count = sum(1 for o in opts if isinstance(o, dict) and o.get("correct") is True)
+                                    if correct_count != 1:
+                                        err(rel, f"derivation[{i}].steps[{j}].predict.options needs exactly one 'correct: true'")
+                                    for k, o in enumerate(opts):
+                                        if isinstance(o, dict) and not o.get("correct") and not o.get("feedback"):
+                                            err(rel, f"derivation[{i}].steps[{j}].predict.options[{k}] is incorrect and needs non-empty 'feedback'")
+                    
+                    drules = der.get("rules")
+                    if not isinstance(drules, list):
+                        err(rel, f"derivation[{i}].rules is required: a list of {{id, statement}}")
+                    else:
+                        drule_ids = {r.get("id") for r in drules if isinstance(r, dict)}
+                        if isinstance(steps, list):
+                            for j, st in enumerate(steps):
+                                if isinstance(st, dict) and st.get("rule") and st.get("rule") not in drule_ids:
+                                    err(rel, f"derivation[{i}].steps[{j}].rule '{st.get('rule')}' is not defined in derivation's rules list")
+
+            gp = d.get("graph_play")
+            if gp is not None:
+                if not isinstance(gp, list):
+                    err(rel, "graph_play, if present, must be a list")
+                else:
+                    for i, g in enumerate(gp):
+                        if not isinstance(g, dict):
+                            err(rel, f"graph_play[{i}] must be an object"); continue
+                        if g.get("mode") not in {"limit", "secant-tangent"}:
+                            err(rel, f"graph_play[{i}].mode must be 'limit' or 'secant-tangent'")
+                        if not g.get("fn"):
+                            err(rel, f"graph_play[{i}] needs a non-empty 'fn'")
+                        if not isinstance(g.get("a"), (int, float)):
+                            err(rel, f"graph_play[{i}] needs a numeric 'a'")
+                        gpred = g.get("predict")
+                        if not isinstance(gpred, dict) or not gpred.get("question") or not gpred.get("why"):
+                            err(rel, f"graph_play[{i}].predict needs non-empty 'question' and 'why'")
+                        else:
+                            opts = gpred.get("options")
+                            if not isinstance(opts, list) or len(opts) < 2:
+                                err(rel, f"graph_play[{i}].predict.options must be a list of >=2 items")
+                            ans = gpred.get("answer")
+                            if not isinstance(ans, int) or not (0 <= ans < len(opts if isinstance(opts, list) else [])):
+                                err(rel, f"graph_play[{i}].predict.answer must be a valid index into options")
+            
+            cm = d.get("common_mistakes")
+            if not isinstance(cm, list) or not cm:
+                err(rel, "common_mistakes is required: a non-empty list")
+            rq = d.get("recall_questions")
+            if not isinstance(rq, list) or len(rq) < 3:
+                err(rel, "recall_questions is required: >=3 items")
+            srcs = d.get("sources")
+            if not isinstance(srcs, list) or not srcs:
+                err(rel, "'sources' must be a non-empty list")
             if d.get("roadmap"):
                 by_roadmap.setdefault(d["roadmap"], set()).add(d.get("slug"))
             continue

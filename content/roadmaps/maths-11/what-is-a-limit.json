@@ -1,0 +1,153 @@
+{
+  "slug": "what-is-a-limit",
+  "title": "What is a Limit?",
+  "roadmap": "maths-11",
+  "kind": "maths",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "interview_frequency": "high",
+    "importance": 10,
+    "prerequisites": [],
+    "unlocks": ["left-and-right-hand-limits"]
+  },
+  "mental_model": {
+    "intuition": "The limit asks what the function approaches near the point, not what the function is exactly at the point.",
+    "description": "For ten years, you have used substitution to evaluate functions. A limit is a new tool to find out where a function is heading, even if it is broken exactly at that point."
+  },
+  "explanation": "When you substitute a number into a function and get 0/0, the function is broken at that exact point. It has a hole. But the graph still heads somewhere. A limit finds where it is heading. Keep the limit sign in every step until the exact moment you substitute the number.",
+  "derivation": [
+    {
+      "goal": "Evaluate the limit of (x^2 - 4)/(x - 2) as x approaches 2",
+      "steps": [
+        {
+          "expr": "\\lim_{x \\to 2} \\frac{x^2 - 4}{x - 2}",
+          "rule": "identify-indeterminate-form",
+          "why": "Set up the limit. Substituting 2 now gives zero divided by zero."
+        },
+        {
+          "expr": "\\lim_{x \\to 2} \\frac{(x - 2)(x + 2)}{x - 2}",
+          "rule": "factor-difference-of-squares",
+          "why": "Factor the top to find the common term that causes the zero.",
+          "predict": {
+            "question": "What is the correct next move?",
+            "options": [
+              {
+                "expr": "\\lim_{x \\to 2} \\frac{(x - 2)(x + 2)}{x - 2}",
+                "correct": true
+              },
+              {
+                "expr": "\\frac{2^2 - 4}{2 - 2}",
+                "error_id": "limit-is-value-at-point",
+                "wrong_path": ["\\frac{2^2 - 4}{2 - 2}", "\\frac{0}{0}"],
+                "feedback": "The limit asks what the function approaches near the point, not what the function is exactly at the point."
+              }
+            ]
+          }
+        },
+        {
+          "expr": "\\lim_{x \\to 2} (x + 2)",
+          "rule": "cancel-common-factors",
+          "why": "Cancel (x-2). We can do this because inside a limit, x approaches 2 but never exactly equals 2.",
+          "predict": {
+            "question": "After cancelling, what do you write next?",
+            "options": [
+              {
+                "expr": "\\lim_{x \\to 2} (x + 2)",
+                "correct": true
+              },
+              {
+                "expr": "x + 2",
+                "error_id": "dropping-limit-notation-early",
+                "wrong_path": ["x + 2", "x + 2 = 4"],
+                "feedback": "Keep the limit sign in every step until the exact moment you substitute the number."
+              }
+            ]
+          }
+        },
+        {
+          "expr": "2 + 2",
+          "rule": "substitute-limit",
+          "why": "Now it is safe to put x = 2. We drop the limit sign here because we are evaluating.",
+          "predict": {
+             "question": "Is it safe to substitute now?",
+             "options": [
+               {
+                 "expr": "2 + 2",
+                 "correct": true
+               },
+               {
+                 "expr": "\\lim_{x \\to 2} (2 + 2)",
+                 "error_id": "keeping-limit-after-sub",
+                 "wrong_path": [],
+                 "feedback": "Once you substitute the target value, you are evaluating the limit, so drop the limit sign."
+               }
+             ]
+          }
+        },
+        {
+          "expr": "4",
+          "rule": "substitute-limit",
+          "why": "Add the numbers to find the final limit."
+        }
+      ],
+      "rules": [
+        {
+          "id": "identify-indeterminate-form",
+          "statement": "If direct substitution yields 0/0, the function has a hole and must be simplified."
+        },
+        {
+          "id": "factor-difference-of-squares",
+          "statement": "Use the algebraic formula a^2 - b^2 = (a-b)(a+b)."
+        },
+        {
+          "id": "cancel-common-factors",
+          "statement": "You can cancel a factor from the top and bottom because inside a limit the variable never equals the target number."
+        },
+        {
+          "id": "substitute-limit",
+          "statement": "When putting the value of the variable no longer causes division by zero, substitute the number and drop the limit sign."
+        }
+      ]
+    }
+  ],
+  "graph_play": [
+    {
+      "mode": "limit",
+      "fn": "(x^2 - 4)/(x - 2)",
+      "a": 2,
+      "predict": {
+        "question": "As x approaches 2 from the left and right, the y-value points to...",
+        "options": ["4", "0", "undefined"],
+        "answer": 0,
+        "why": "The function has a hole at x=2, but the y-value approaches 4 from both sides."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Dropping limit sign early",
+      "explanation": "Students often drop the limit sign before taking the limit to do algebra faster on the page. Keep the limit sign in every step until the exact moment you substitute the number."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain what a limit is in your own words, as if to a classmate.",
+      "answer": "A limit is the exact value a function heads toward as the input gets closer and closer to a point, even if the function is broken at that exact point.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can we cancel (x-2) from the numerator and denominator when evaluating the limit as x approaches 2?",
+      "answer": "Because inside a limit, x approaches 2 but never exactly equals 2, so we are not dividing by zero.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When do you stop writing the limit sign?",
+      "answer": "You drop the limit sign at the exact moment you substitute the number into the expression.",
+      "tier": "tier1"
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?kemh1=13-16"
+  ]
+}
