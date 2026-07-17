@@ -15,6 +15,7 @@ from app.schemas.dashboard import (
     MemoryStrengthResponse, StrengthBucket,
     NodeAccuracyResponse,
     TimeOfDayResponse, TimeOfDayBucket,
+    FocusArea, FocusAreasResponse,
 )
 from app.services.scheduler import REVIEW_SESSION_CAP
 from app.services.learner_stats import REVIEW_METRICS_MIN, get_review_metrics as _get_review_metrics, get_heatmap as _get_heatmap, get_node_accuracy as _get_node_accuracy
@@ -89,6 +90,75 @@ async def get_dashboard_stats(
         total_activities=act.total or 0,
         total_reviews_completed=rev.total_completed or 0,
         next_review_at=rev.next_review,
+    )
+
+
+FOCUS_WINDOW_DAYS = 14
+FOCUS_LIMIT = 5
+
+
+@router.get("/focus-areas", response_model=FocusAreasResponse)
+async def get_focus_areas(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Topics the user got WRONG recently — powers Home's 'Key areas to focus'.
+
+    Signal = the user's own `recalled == False` on completed reviews (the honest,
+    authoritative miss signal; the AI verdict only supplies the feedback line).
+    Grouped per card (activity), most-missed first, capped so the section is a
+    nudge and never a wall of shame. Empty list = the section doesn't render.
+    """
+    user_id = uuid.UUID(current_user.id)
+    since = datetime.utcnow() - timedelta(days=FOCUS_WINDOW_DAYS)
+
+    stmt = (
+        select(
+            Review.activity_id,
+            Review.completed_at,
+            Review.ai_feedback,
+            Activity.topic,
+        )
+        .join(Activity, Review.activity_id == Activity.id)
+        .where(
+            Review.user_id == user_id,
+            Review.status == "completed",
+            Review.recalled == False,  # noqa: E712 — SQLAlchemy needs the comparison
+            Review.completed_at >= since,
+        )
+        .order_by(Review.completed_at.desc())
+    )
+    rows = (await db.execute(stmt)).all()
+
+    # Aggregate per activity in Python (bounded: one user's 14-day misses).
+    by_activity: dict = {}
+    for row in rows:
+        entry = by_activity.setdefault(
+            row.activity_id,
+            {"topic": row.topic, "misses": 0, "last": row.completed_at, "feedback": None},
+        )
+        entry["misses"] += 1
+        # rows arrive newest-first, so first non-empty feedback is the latest one
+        if entry["feedback"] is None and row.ai_feedback:
+            entry["feedback"] = row.ai_feedback
+
+    # Most-missed first; ties broken by recency (newest miss first).
+    ranked = sorted(
+        by_activity.items(),
+        key=lambda kv: (-kv[1]["misses"], -kv[1]["last"].timestamp()),
+    )[:FOCUS_LIMIT]
+
+    return FocusAreasResponse(
+        areas=[
+            FocusArea(
+                activity_id=str(aid),
+                topic=e["topic"],
+                misses=e["misses"],
+                last_missed_at=e["last"],
+                feedback=e["feedback"],
+            )
+            for aid, e in ranked
+        ]
     )
 
 

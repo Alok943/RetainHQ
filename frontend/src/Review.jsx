@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb, Bell, X } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import { useTheme } from './lib/theme';
 import { track, EVENTS } from './lib/analytics';
 import { isPushSupported, subscribePush } from './lib/push';
 import Hint from './Hint';
@@ -27,8 +28,12 @@ function whyDueLine(activity) {
 
 // Each post-reveal choice carries BOTH signals at once:
 //   recalled = objective (did they reconstruct it?)   rating = subjective (how hard it felt)
+// The buttons paint these via INLINE styles, which bypass index.css's html.dark
+// class-remap layer — so any outcome whose light color is dark-on-dark needs an
+// explicit darkColor. 'Missed' (#334155, deliberately muted slate) was invisible
+// on the dark background; the bright amber/cyan/teal survive as-is.
 const OUTCOMES = [
-  { key: 'missed', label: 'Missed it', desc: "Couldn't recall it", rating: 'hard',   recalled: false, color: '#334155', border: 'rgba(15,23,42,0.2)' },
+  { key: 'missed', label: 'Missed it', desc: "Couldn't recall it", rating: 'hard',   recalled: false, color: '#334155', darkColor: '#cbd5e1', border: 'rgba(15,23,42,0.2)', darkBorder: 'rgba(255,255,255,0.25)' },
   { key: 'hard',   label: 'Hard',      desc: "Took serious effort", rating: 'hard',   recalled: true,  color: '#B45309' },
   { key: 'good',   label: 'Good',      desc: "Recalled with minor effort", rating: 'medium', recalled: true,  color: '#0891B2' },
   { key: 'easy',   label: 'Easy',      desc: "Instantly knew it", rating: 'easy',   recalled: true,  color: '#0F766E' },
@@ -105,6 +110,13 @@ function Review({ onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { session } = useAuth();
+  const { theme } = useTheme();
+
+  // Inline-styled outcome colors bypass the html.dark remap layer, so resolve
+  // the theme variant here (see OUTCOMES comment).
+  const outcomeColor = (o) => (theme === 'dark' ? (o.darkColor ?? o.color) : o.color);
+  const outcomeBorder = (o) =>
+    theme === 'dark' ? (o.darkBorder ?? o.darkColor ?? o.color) : (o.border ?? o.color);
 
   // Per-card state
   const [revealed, setRevealed] = useState(false);
@@ -571,8 +583,11 @@ function Review({ onBack }) {
                         <p className="font-sans text-sm font-medium text-[#0F172A] flex items-start gap-2">
                           <span className="font-mono text-xs text-[#0891B2] mt-0.5">{i + 1}.</span>
                           <span className="flex-1">{q}</span>
+                          {/* Missed = the house alert red, not grey — grey-on-grey blended into
+                              the answer card's background and the WRONG answers are exactly the
+                              ones that must pop. text-[#ba1a1a] has a dark-mode remap (#f87171). */}
                           {item && (
-                            <span className={`shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.correct ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-[rgba(15,23,42,0.08)] text-[#334155]'}`}>
+                            <span className={`shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.correct ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-[#ba1a1a]/10 text-[#ba1a1a]'}`}>
                               {item.correct ? 'Got it' : 'Missed'}
                             </span>
                           )}
@@ -694,10 +709,10 @@ function Review({ onBack }) {
                       onClick={() => handleOutcome(o)}
                       disabled={submitting}
                       title="Press 1"
-                      style={{ borderColor: o.border ?? o.color, color: o.color }}
+                      style={{ borderColor: outcomeBorder(o), color: outcomeColor(o) }}
                       className={`kinetic-btn relative bg-white border p-3 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; e.currentTarget.querySelector('p').style.color = 'rgba(255,255,255,0.8)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; e.currentTarget.querySelector('p').style.color = '#64748B'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = outcomeColor(o); e.currentTarget.querySelector('p').style.color = '#64748B'; }}
                     >
                       {isSuggested && (
                         <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#0891B2] text-white font-sans text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full whitespace-nowrap animate-in fade-in zoom-in duration-300">
@@ -722,10 +737,10 @@ function Review({ onBack }) {
                       onClick={() => handleOutcome(o)}
                       disabled={submitting}
                       title={`Press ${i + 2}`}
-                      style={{ borderColor: o.border ?? o.color, color: o.color }}
+                      style={{ borderColor: outcomeBorder(o), color: outcomeColor(o) }}
                       className={`kinetic-btn relative bg-white border p-3 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; e.currentTarget.querySelector('p').style.color = 'rgba(255,255,255,0.8)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = o.color; e.currentTarget.querySelector('p').style.color = '#64748B'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = outcomeColor(o); e.currentTarget.querySelector('p').style.color = '#64748B'; }}
                     >
                       {isSuggested && (
                         <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#0891B2] text-white font-sans text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full whitespace-nowrap animate-in fade-in zoom-in duration-300">

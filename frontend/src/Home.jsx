@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Target } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import { track, trackOnce, EVENTS } from './lib/analytics';
@@ -65,6 +65,7 @@ function Home({ onStartReviews }) {
   const [dueReviews, setDueReviews] = useState([]);
   const [activities, setActivities] = useState([]);
   const [roadmaps, setRoadmaps] = useState([]);
+  const [focusAreas, setFocusAreas] = useState([]);
   // Independent loading per section so each paints the moment its own call returns,
   // instead of the whole page waiting on the slowest of three requests.
   const [loadingReviews, setLoadingReviews] = useState(true);
@@ -115,6 +116,12 @@ function Home({ onStartReviews }) {
 
     apiFetch('/api/roadmaps/', { optionalAuth: true })
       .then((data) => setRoadmaps(Array.isArray(data) ? data : []))
+      .catch(() => {});
+
+    // "Key areas to focus" — topics missed in recent reviews. Fail-open:
+    // an error just means the section doesn't render.
+    apiFetch('/api/dashboard/focus-areas')
+      .then((d) => setFocusAreas(Array.isArray(d?.areas) ? d.areas : []))
       .catch(() => {});
   }, []);
 
@@ -289,6 +296,14 @@ function Home({ onStartReviews }) {
               />
             )}
           </section>
+
+          {/* Key areas to focus — topics the user genuinely got wrong recently.
+              Renders only when there are misses; capped server-side at 5. */}
+          {focusAreas.length > 0 && (
+            <section>
+              <FocusAreasCard areas={focusAreas} onReview={() => requireAuth(onStartReviews)} />
+            </section>
+          )}
 
           {/* Entry card — Resume lesson or Start learning */}
           {entryCard && (
@@ -534,6 +549,46 @@ function StartLearningCard({ roadmaps }) {
           </Link>
         ))}
       </div>
+    </div>
+  );
+}
+
+// "Key areas to focus" — the topics missed in recent review sessions, so the
+// user leaves Home knowing exactly WHAT to revise, not just how much is due.
+// Amber accent (attention, not punishment — matches the Previous Mistake box).
+function FocusAreasCard({ areas, onReview }) {
+  return (
+    <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#B45309] uppercase tracking-widest">
+          <Target size={12} /> Key areas to focus
+        </div>
+        <span className="font-mono text-[10px] text-[#94A3B8]">last 14 days</span>
+      </div>
+      <div className="flex flex-col">
+        {areas.map((a, i) => (
+          <div
+            key={a.activity_id}
+            className={`py-2.5 first:pt-0 last:pb-0 border-b border-[rgba(15,23,42,0.06)] ${i === areas.length - 1 ? 'border-b-0' : ''}`}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="font-sans text-sm font-medium text-[#0F172A] truncate">{a.topic}</span>
+              <span className="shrink-0 font-mono text-[10px] font-semibold text-[#B45309] bg-[rgba(180,83,9,0.08)] rounded-full px-2 py-0.5">
+                missed {a.misses}×
+              </span>
+            </div>
+            {a.feedback && (
+              <p className="font-sans text-xs text-[#64748B] mt-1 line-clamp-2">{a.feedback}</p>
+            )}
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={onReview}
+        className="mt-3 flex items-center gap-1.5 font-sans text-xs font-semibold text-[#B45309] hover:text-[#0F172A] transition-colors"
+      >
+        Review these when they come due <ArrowRight size={12} />
+      </button>
     </div>
   );
 }

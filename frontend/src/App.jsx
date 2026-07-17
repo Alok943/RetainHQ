@@ -45,9 +45,10 @@ function AppLayout() {
   const { session, showAuthModal } = useAuth();
   
   // Floating sidebar: an icon rail by default, expands to a labelled panel on
-  // hover and floats over content (never reflows the page).
+  // hover and floats over content (never reflows the page). Exception: on Home
+  // it is OPEN by default — there the spacer widens too, so the expanded panel
+  // is structural (content reflows beside it) instead of floating over it.
   const [hovered, setHovered] = useState(false);
-  const isCollapsed = !hovered;
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -102,6 +103,10 @@ function AppLayout() {
   const activeTab = getActiveTab();
   const isMoreActive = ['paths', 'vault', 'analytics', 'teach', 'admin'].includes(activeTab);
 
+  // Home shows the sidebar open; everywhere else it stays the hover-expand rail.
+  const sidebarDefaultOpen = activeTab === 'dashboard';
+  const isCollapsed = !hovered && !sidebarDefaultOpen;
+
   const email = session?.user?.email || '';
   const initials = email ? email.substring(0, 2).toUpperCase() : '?';
   const isAdmin = email === ADMIN_EMAIL;
@@ -117,11 +122,11 @@ function AppLayout() {
       {/* LEFT SIDEBAR (Desktop / Tablet) — floating icon rail that expands on hover.
           The spacer holds the collapsed footprint so content never sits under the rail;
           the aside is absolutely positioned and floats over content while expanded. */}
-      <div className="hidden md:block w-[84px] shrink-0" aria-hidden="true" />
+      <div className={`hidden md:block shrink-0 transition-all duration-300 ease-out ${sidebarDefaultOpen ? 'w-[240px]' : 'w-[84px]'}`} aria-hidden="true" />
       <aside
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={`hidden md:flex flex-col border-r glass-nav justify-between transition-all duration-300 ease-out absolute inset-y-0 left-0 z-40 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : 'w-[240px] p-6 shadow-2xl shadow-[rgba(15,23,42,0.18)]'}`}
+        className={`hidden md:flex flex-col border-r glass-nav justify-between transition-all duration-300 ease-out absolute inset-y-0 left-0 z-40 ${isCollapsed ? 'w-[84px] items-center p-6 px-4' : `w-[240px] p-6 ${sidebarDefaultOpen ? '' : 'shadow-2xl shadow-[rgba(15,23,42,0.18)]'}`}`}
       >
         <div className="w-full">
           <div className={`flex items-center mb-10 ${isCollapsed ? 'flex-col gap-4' : ''}`}>

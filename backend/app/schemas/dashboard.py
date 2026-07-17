@@ -11,6 +11,19 @@ class DashboardStats(BaseModel):
     next_review_at: Optional[datetime] = None  # soonest future-scheduled review (when nothing is due now)
 
 
+class FocusArea(BaseModel):
+    """One recently-missed topic for the Home 'Key areas to focus' card."""
+    activity_id: str
+    topic: str
+    misses: int                          # recalled=False completions in the window
+    last_missed_at: datetime
+    feedback: Optional[str] = None       # latest ai_feedback from a missed review, if any
+
+
+class FocusAreasResponse(BaseModel):
+    areas: List[FocusArea]
+
+
 class HeatmapDay(BaseModel):
     date: str          # ISO "YYYY-MM-DD"
     count: int         # completed reviews that day
