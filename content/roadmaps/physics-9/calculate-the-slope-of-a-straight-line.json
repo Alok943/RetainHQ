@@ -1,0 +1,145 @@
+{
+  "slug": "calculate-the-slope-of-a-straight-line",
+  "title": "Calculate the slope of a straight line",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 12,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "read-coordinates-from-a-line-graph"
+    ],
+    "unlocks": [
+      "read-speed-off-a-distance-time-graph",
+      "read-acceleration-off-a-velocity-time-graph"
+    ],
+    "appears_in": [
+      "CBSE Class 9/10 Boards"
+    ]
+  },
+  "hook": {
+    "scenario": "Pahad par chadhte waqt ek rasta ekdum khada hota hai aur doosra thoda flat. Khade raste par chadhna zyada mushkil hota hai kyunki uski 'slope' (dhalan) zyada hoti hai.",
+    "question": "Is dhalan ya slope ko hum math mein accurately measure kaise karte hain?"
+  },
+  "mental_model": {
+    "intuition": "Slope = Rise over Run (kitna upar gaye divided by kitna aage gaye).",
+    "description": "Slope ek number hota hai jo batata hai line kitni steep (khadi) hai. Agar aap aage badhne ke sath bohot jaldi upar jaate ho, toh slope high hai. Agar aage badhne ke baad bhi upar zyada nahi jaate, toh slope low hai."
+  },
+  "explanation": "Physics ke graphs mein line ki steepness ya 'slope' nikalna bahut important hai. Distance-time graph ka slope aapko speed deta hai, aur velocity-time graph ka slope aapko acceleration deta hai. Slope ka ek simple formula hota hai: change in y divided by change in x.\n\nIsey samajhne ke liye, line par koi bhi do points lijiye. Maan lijiye pehla point hai (x1, y1) aur doosra point hai (x2, y2). Y-axis par inke beech ka difference (y2 - y1) aapko batata hai ki aap kitna upar gaye jise hum 'Rise' kehte hain. X-axis par difference (x2 - x1) batata hai ki aap kitna right ki taraf gaye jise hum 'Run' kehte hain.\n\nToh formula banta hai: Slope = (y2 - y1) / (x2 - x1). Ek straight line ka slope har jagah same hota hai, isliye aap us line par se koi bhi do points choose kar sakte hain calculation ke liye. Jo numbers choose karne mein asaan ho, unhe hi lena chahiye, jaise origin (0,0) agar line wahan se guzar rahi ho.\n\nYeh calculation sirf positive values nahi deta. Agar line upar ki jagah neeche ja rahi ho (jaise gadi slow ho rahi ho), toh (y2 - y1) negative aayega, jiska matlab slope bhi negative hoga. Horizontal line (flat rasta) ke case mein y change nahi hota, isliye uska slope 0 hota hai.",
+  "diagram": {
+    "type": "graph",
+    "axes": {
+      "x": {
+        "label": "x"
+      },
+      "y": {
+        "label": "y"
+      }
+    },
+    "line": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 4,
+        "y": 8
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Rise and Run",
+      "detail": "Slope is defined as 'Rise' (change in vertical axis) divided by 'Run' (change in horizontal axis)."
+    },
+    {
+      "title": "Slope formula",
+      "detail": "Slope m = (y2 - y1) / (x2 - x1)."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A line passes through the points (2, 5) and (6, 17). Calculate the slope of the line.",
+      "steps": [
+        {
+          "narration": "Dono points ke y-coordinates ka difference nikalein (Rise).",
+          "math": "Rise = 17 - 5 = 12"
+        },
+        {
+          "narration": "Dono points ke x-coordinates ka difference nikalein (Run).",
+          "math": "Run = 6 - 2 = 4"
+        },
+        {
+          "narration": "Slope = Rise / Run.",
+          "math": "Slope = 12 / 4"
+        }
+      ],
+      "answer": "3"
+    },
+    {
+      "problem": "Calculate the slope of a line graph passing through (0, 0) and (5, 25).",
+      "steps": [
+        {
+          "narration": "Origin (0,0) ek bohot aasan point hota hai. Y-change (Rise) nikalein.",
+          "math": "Rise = 25 - 0 = 25"
+        },
+        {
+          "narration": "Ab X-change (Run) nikalein.",
+          "math": "Run = 5 - 0 = 5"
+        },
+        {
+          "narration": "Formula mein daalkar slope nikalein.",
+          "math": "Slope = 25 / 5"
+        }
+      ],
+      "answer": "5"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Reversing Rise and Run",
+      "explanation": "Bache aksar Run/Rise kar dete hain yani x / y. Hamesha yaad rakhein ki 'Rise' (y-axis, uthna) upar hota hai (numerator)."
+    },
+    {
+      "title": "Mixing up point order",
+      "explanation": "Agar aapne y2 - y1 kiya hai, toh denominator mein x2 - x1 hi hona chahiye. x1 - x2 karenge toh sign galat ho jayega."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the formula for the slope of a straight line?",
+      "answer": "(y2 - y1) / (x2 - x1)",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the slope of a horizontal line?",
+      "answer": "0",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a line rises 10 units for every 2 units it moves horizontally, what is its slope?",
+      "answer": "5",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "Find the slope of the line segment joining the points (1, 3) and (4, 9).",
+      "answer": "2",
+      "approach": "Use the slope formula: m = (y2 - y1)/(x2 - x1). m = (9 - 3)/(4 - 1) = 6/3 = 2."
+    },
+    {
+      "source": "CBSE Sample Paper",
+      "question": "Does a steeper line have a larger or smaller slope?",
+      "answer": "Larger slope.",
+      "approach": "A steeper line means a larger change in y for a small change in x, resulting in a higher ratio (larger slope)."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=8-8"
+  ]
+}

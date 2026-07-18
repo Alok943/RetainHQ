@@ -1,0 +1,118 @@
+{
+  "slug": "convert-commercial-unit-of-energy",
+  "title": "Convert commercial unit of energy",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "apply-power-formula"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 9 Boards",
+      "NCERT Class 9"
+    ]
+  },
+  "hook": {
+    "scenario": "Aapke ghar ka bijli ka bill har mahine aata hai, jismein likha hota hai '250 units consumed'.",
+    "question": "Ye 'unit' physics ki language mein kitne Joules ke barabar hota hai, aur bijli board Joules mein charge kyun nahi karta?"
+  },
+  "mental_model": {
+    "intuition": "Joule bohot chota chillar (coins) hai aur kWh badda note (currency) hai. Ghar ki electricity units kWh mein hoti hain.",
+    "description": "Ek Joule energy bohot hi kam hoti hai (ek choti torch ko fraction of second chalane bhar). Ghar ka TV aur AC mahino chalte hain. Toh Joules mein bill banayenge toh arabo (billions) mein numbers aayenge. Isliye unit badal kar kilowatt-hour (kWh) kar di jati hai."
+  },
+  "explanation": "Energy ki standard SI unit Joule (J) hoti hai, jo day-to-day electrical consumption measure karne ke liye bahut chhoti aur inconvenient hai. Isliye commercial purposes ke liye ek badi unit ka use kiya jata hai jise 'kilowatt-hour' ya kWh kehte hain. Ghar ke bill mein ise hi simply 'unit' bulaya jata hai (matlab 1 unit = 1 kWh).\n\n1 kWh ka exact meaning kya hai? Agar ek machine (jaise bada heater) jiski power 1 kilowatt (yani 1000 Watt) hai, aur aap use lagatar 1 hour (ek ghanta) chalate ho, toh wo exact 1 kWh energy consume karegi.\n\nAb iska Joule ke saath relation banate hain:\n1 kilowatt = 1000 Watt (yani 1000 J/s)\n1 hour = 3600 seconds\n\nToh, `1 kWh = 1 kW × 1 h`\n`= 1000 W × 3600 s`\n`= 3,600,000 Joules`.\nStandard form mein isko hum `3.6 × 10^6 J` likhte hain. Ye conversion directly exam mein poocha jata hai aur numericals solve karne mein bhi kaam aata hai.",
+  "key_points": [
+    {
+      "title": "Commercial Unit",
+      "detail": "The commercial unit of electrical energy is kilowatt-hour (kWh)."
+    },
+    {
+      "title": "Conversion Value",
+      "detail": "1 kWh = 3.6 x 10^6 J."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A radio set of 60 W runs for 50 hours. How much electrical energy is consumed in kWh?",
+      "steps": [
+        {
+          "narration": "kWh nikalne ke liye Power (kilowatt mein) ko Time (hours mein) se multiply karna padta hai. Pehle power ko convert karo.",
+          "math": "P = 60 \\text{ W} = \\frac{60}{1000} \\text{ kW} = 0.06 \\text{ kW}"
+        },
+        {
+          "narration": "Time already hours mein hai.",
+          "math": "t = 50 \\text{ h}"
+        },
+        {
+          "narration": "Energy P * t karke nikal lo.",
+          "math": "E = P \\times t = 0.06 \\times 50 = 3 \\text{ kWh}"
+        }
+      ],
+      "answer": "3 kWh"
+    },
+    {
+      "problem": "An electric heater is rated 1500 W. How much energy does it use in 10 hours? Give the answer in Joules and kWh.",
+      "steps": [
+        {
+          "narration": "Pehle Power ko kilowatt aur Time ko hours mein likh kar kWh mein nikalte hain.",
+          "math": "P = 1500 \\text{ W} = 1.5 \\text{ kW}, t = 10 \\text{ h}"
+        },
+        {
+          "narration": "kWh mein energy hogi:",
+          "math": "E = 1.5 \\times 10 = 15 \\text{ kWh}"
+        },
+        {
+          "narration": "Ab 1 kWh = 3.6 x 10^6 J ka logic use karke Joules nikal lo.",
+          "math": "E \\text{ in Joules} = 15 \\times (3.6 \\times 10^6) = 54 \\times 10^6 = 5.4 \\times 10^7 J"
+        }
+      ],
+      "answer": "15 kWh or 5.4 x 10^7 J"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking kWh is a unit of Power",
+      "explanation": "Kyunki naam mein 'kilowatt' aata hai, bohot log isko power ka unit samajh lete hain. Lekin dhyan se dekho, ye kilowatt multiplied by time (hour) hai (Power x Time = Energy). Ye Energy ka unit hai, strictly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the relation between kilowatt-hour (kWh) and Joule (J)?",
+      "answer": "1 kWh = 3.6 x 10^6 J",
+      "tier": "tier1"
+    },
+    {
+      "q": "What physical quantity is measured in kilowatt-hour (kWh)?",
+      "answer": "Electrical energy.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How many seconds are there in 1 hour?",
+      "answer": "3600 seconds.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Class 9",
+      "question": "A certain household has consumed 250 units of energy during a month. How much energy is this in joules?",
+      "answer": "9 x 10^8 J",
+      "approach": "Multiply 250 by 3.6 x 10^6. (250 * 3.6 = 900), so 900 * 10^6 = 9 * 10^8."
+    },
+    {
+      "source": "CBSE Class 9",
+      "question": "Express 1 kWh in joules.",
+      "answer": "3.6 x 10^6 J",
+      "approach": "1 kW = 1000 W and 1 h = 3600 s. So 1000 W * 3600 s = 3,600,000 J."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=11-11"
+  ]
+}

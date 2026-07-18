@@ -1,0 +1,150 @@
+{
+  "slug": "describe-electromagnetic-induction",
+  "title": "Describe electromagnetic induction",
+  "roadmap": "physics-10",
+  "kind": "physics",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "describe-magnetic-field-lines"
+    ],
+    "unlocks": [
+      "apply-flemings-right-hand-rule"
+    ],
+    "appears_in": [
+      "CBSE Class 10 Boards",
+      "NCERT Class 10 Science"
+    ]
+  },
+  "hook": {
+    "scenario": "Michael Faraday ne socha ki agar electric current se magnetic field ban sakti hai (Oersted ka experiment), toh kya magnet se wapas current ban sakti hai?",
+    "question": "Kya ek magnet ko wire ke paas rakhne se bulb jal sakta hai?"
+  },
+  "mental_model": {
+    "intuition": "Motion + Magnet = Current. Sirf magnet rakhne se kuch nahi hota, usko move karna zaroori hai.",
+    "description": "Ek wire ki coil ko ek pipe ki tarah samjho. Agar ek bar magnet ko uske andar tezi se andar-bahar karo, toh wire ke electrons flow karna shuru kar dete hain. Jab tak magnet move karega, current banta rahega."
+  },
+  "explanation": "Electromagnetic Induction (EMI) wo process hai jisme ek change hote hue magnetic field ki wajah se conductor (wire) ke andar electric current ban (induce ho) jata hai. Isey sabse pehle Michael Faraday ne 1831 mein discover kiya tha.\n\nEk simple experiment hai: ek coil (wire ke kai saare turns) lo aur uske dono ends ko ek galvanometer (jo chota current bhi detect kar le) se connect kar do. Ab ek bar magnet ka North pole lo aur usko tezi se coil ke andar daalo. Tum dekhoge ki galvanometer ki needle ek taraf deflect (ghoomti) hoti hai. Iska matlab coil mein current flow hua hai.\n\nAb us magnet ko coil ke andar hi rok do. Needle wapas zero par aa jayegi, yani current ruk gaya. Sirf strong magnet hone se current nahi banta, magnet aur coil ke beech **relative motion** (harkat) hona chahiye.\n\nJab tum magnet ko bahar kheenchte ho, toh needle dusri taraf deflect hoti hai. Yani motion ki direction palatne se current ki direction bhi palat jati hai (Lenz's Law). Agar tum magnet ko aur zyada tezi se move karoge, ya coil mein turns badha doge, toh banne wala current bhi strong hoga. Is principle par hi saare power plants aur generators kaam karte hain.",
+  "key_points": [
+    {
+      "title": "Electromagnetic Induction",
+      "detail": "The production of electricity by moving a magnet relative to a coil."
+    },
+    {
+      "title": "Relative Motion is Key",
+      "detail": "A stationary magnet produces no current. The magnetic field must be changing."
+    },
+    {
+      "title": "Increasing Induced Current",
+      "detail": "Move the magnet faster, use a stronger magnet, or increase the number of turns in the coil."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A student pushes the North pole of a bar magnet into a closed wire coil. A current is induced. What happens if she holds the magnet completely still inside the coil?",
+      "steps": [
+        {
+          "narration": "Current tabhi induce hota hai jab magnetic field badal rahi ho (relative motion ho).",
+          "math": "Induced current \\propto Rate of change of magnetic field"
+        },
+        {
+          "narration": "Agar magnet stationary (ruka hua) hai, toh koi change nahi ho raha.",
+          "math": "Motion = 0, so Induced current = 0"
+        }
+      ],
+      "answer": "The induced current becomes zero because there is no relative motion between the magnet and the coil.",
+      "diagram3d": {
+        "schema_version": 1,
+        "scene": "em-induction",
+        "motion": "insert",
+        "magnet_pole": "N",
+        "prediction": {
+          "question": "Jab aap North pole ko andar dhakelte hain (insert), toh coil mein current aisa banta hai jo magnet ko ander aane se rok sake (repel kare). Toh coil ka pass wala face kaisa pole banega?",
+          "choices": [
+            "South Pole (attract karega)",
+            "North Pole (repel karega)",
+            "Koi pole nahi banega"
+          ],
+          "answer": 1,
+          "explains": "Lenz's Law ke hisaab se induced current hamesha us reason ka virodh (oppose) karta hai jisne use banaya. North pole paas aayega toh coil khud North banke dhakka maregi."
+        },
+        "manipulate": {
+          "param": "motion",
+          "options": [
+            "insert",
+            "withdraw"
+          ],
+          "prompt": "Magnet ko bahar nikal kar (withdraw) dekho ki current ki direction kaise palat jaati hai."
+        },
+        "reflection": {
+          "prompt": "Withdraw karte waqt current ki disha ulte kyu ho gayi?",
+          "answer": "Kyunki ab coil magnet ko door jaane se rokna chahti hai (oppose change). Isliye wo South pole ban kar magnet (N) ko wapas kheenchna shuru kar deti hai."
+        },
+        "caption": "Magnet aur coil ke beech motion se current banta hai jo usi motion ka virodh (oppose) karta hai.",
+        "poster": {
+          "type": "image",
+          "asset": "em-induction.jpg",
+          "alt": "Electromagnetic induction in a coil"
+        }
+      }
+    },
+    {
+      "problem": "State two ways you could increase the amount of induced current when moving a magnet in and out of a coil.",
+      "steps": [
+        {
+          "narration": "Current badhane ke liye magnetic flux ka badalna fast karna hoga.",
+          "math": "Faster change = more current"
+        },
+        {
+          "narration": "Ya toh magnet tezi se hilao, ya usme aur turns daalo, ya strong magnet use karo.",
+          "math": "Speed ↑ or Turns ↑ or Magnetic strength ↑"
+        }
+      ],
+      "answer": "You can increase the induced current by moving the magnet faster or by increasing the number of turns in the coil."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking a strong magnet is enough",
+      "explanation": "Bache sochte hain ki bas magnet wire ke paas rakh do toh current aa jayega. Nahi! Relative motion ya change zaruri hai. Ruka hua super-magnet bhi zero current dega."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What phenomenon produces an induced current when a magnet moves through a coil?",
+      "answer": "Electromagnetic Induction.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens to the induced current if the magnet is held stationary inside the coil?",
+      "answer": "The induced current becomes zero.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name two ways to increase the strength of an induced current.",
+      "answer": "By moving the magnet faster, or by increasing the number of turns in the coil.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Class 10 Science",
+      "question": "What is electromagnetic induction?",
+      "answer": "The phenomenon of producing an induced electric current in a closed circuit by changing the magnetic field in the region of the circuit.",
+      "approach": "Define the term clearly, emphasizing the changing magnetic field."
+    },
+    {
+      "source": "CBSE Class 10 Boards",
+      "question": "Two circular coils A and B are placed close to each other. If the current in coil A is changed, will some current be induced in coil B? Give reason.",
+      "answer": "Yes, a current will be induced in coil B. When current in coil A changes, the magnetic field associated with it changes. This changing magnetic field passes through coil B, inducing a current in it.",
+      "approach": "Explain mutual induction: changing current in A -> changing magnetic field -> changing flux in B -> induced current in B."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?jesc1=13-13"
+  ]
+}

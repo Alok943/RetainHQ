@@ -35,7 +35,7 @@ const TIER_COLOR = { tier1: '#0F766E', tier2: '#B45309', tier3: '#B91C1C' };
 const DIFF_COLOR = { easy: '#0F766E', medium: '#B45309', hard: '#B91C1C' };
 
 // Short roadmap labels for the per-page <title> (keyword-targeted SEO).
-const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering', 'cpp-swe': 'C++', 'python-backend': 'Python Backend', 'physics-9-10': 'Physics (Class 9–10)' };
+const ROADMAP_LABEL = { 'python-swe': 'Python', sql: 'SQL', aptitude: 'Aptitude', 'core-cs': 'Core CS', dsa: 'DSA', 'ai-engineering': 'AI Engineering', 'cpp-swe': 'C++', 'python-backend': 'Python Backend', 'physics-9': 'Physics (Class 9)', 'physics-10': 'Physics (Class 10)' };
 
 const prettifySlug = (slug) => {
   if (!slug) return '';

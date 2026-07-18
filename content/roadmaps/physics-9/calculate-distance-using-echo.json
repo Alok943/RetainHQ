@@ -1,0 +1,115 @@
+{
+  "slug": "calculate-distance-using-echo",
+  "title": "Calculate distance using echo",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "apply-wave-speed-equation",
+      "state-laws-of-reflection-of-sound"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 9 Boards",
+      "NCERT Class 9 Science"
+    ]
+  },
+  "hook": {
+    "scenario": "Agar aap pahaadon mein khade hokar apna naam zor se chillate hain, toh kuch seconds baad wahi aawaz wapas aati hai.",
+    "question": "Kya hum is 'echo' ke time ko measure karke us pahaad ki doori calculate kar sakte hain?"
+  },
+  "mental_model": {
+    "intuition": "Sound do baar distance cover karti hai: pehle pahaad tak jaane mein, aur phir pahaad se wapas aane mein.",
+    "description": "Echo ek reflected sound hai. Agar aap aur deewar ke beech ki doori d hai, toh sound ko aap tak wapas aane mein total 2d distance chalna padta hai (d jana aur d aana). Speed nikalne ke liye hum distance 2d use karte hain."
+  },
+  "explanation": "Jab sound kisi badi object (jaise pahaad ya deewar) se takra kar wapas aati hai, toh us reflected sound ko hum **echo** kehte hain. Echo ka calculation board exams ka bahut popular topic hai.\n\nNormally, speed ka formula hota hai $v = d / t$. Lekin echo ke cases mein dhyan rakhne wali baat ye hai ki sound ko object tak jaane aur wapas observer tak aane dono ka safar tay karna hota hai. Isliye total distance travelled $2d$ hota hai, jahan $d$ observer aur reflecting surface ke beech ki doori hai.\n\nToh echo ke liye formula ban jata hai: $v = 2d / t$. Yahan $t$ wo total time hai jo sound ko jaane aur wapas aane mein laga.\n\nEk aur important fact: Hamara brain kisi sound ka asar lagbhag 0.1 second tak retain karta hai (persistence of hearing). Isliye, ek distinct echo sunne ke liye original sound aur reflected sound ke beech kam se kam 0.1s ka gap hona chahiye. Agar hawa mein sound ki speed 344 m/s hai, toh echo sunne ke liye minimum distance $(344 \\times 0.1) / 2 = 17.2 \\text{ m}$ honi chahiye.",
+  "key_points": [
+    {
+      "title": "Echo Distance Formula",
+      "detail": "Speed = Total Distance / Time = 2d / t. Where d is the distance to the reflecting surface."
+    },
+    {
+      "title": "Minimum Time for Echo",
+      "detail": "For a distinct echo to be heard, the time interval between original sound and reflected sound must be at least 0.1 seconds."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A person claps his hands near a cliff and hears the echo after 4 seconds. If the speed of sound is taken as 340 m/s, find the distance of the cliff from the person.",
+      "steps": [
+        {
+          "narration": "Hamein speed aur total time pata hai, toh echo wala formula lagayenge.",
+          "math": "v = 2d / t"
+        },
+        {
+          "narration": "Formula ko doori (d) nikalne ke liye rearrange karenge.",
+          "math": "d = (v \\times t) / 2"
+        },
+        {
+          "narration": "Values put karke answer nikalenge.",
+          "math": "d = (340 \\times 4) / 2 = 680"
+        }
+      ],
+      "answer": "680 m"
+    },
+    {
+      "problem": "A ship sends out ultrasound that returns from the seabed in 2 seconds. If the speed of sound in seawater is 1500 m/s, calculate the depth of the seabed.",
+      "steps": [
+        {
+          "narration": "Seabed tak sound jaakar wapas aayi hai, isliye yahan bhi echo wala logic use hoga.",
+          "math": "d = (v \\times t) / 2"
+        },
+        {
+          "narration": "Paani mein speed alag hoti hai, lekin formula wahi rahega.",
+          "math": "d = (1500 \\times 2) / 2 = 1500"
+        }
+      ],
+      "answer": "1500 m"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to divide by 2",
+      "explanation": "Sabse badi mistake hoti hai d = v * t use karna. Sound aage aur peeche dono taraf travel karti hai, isliye total distance 2d hota hai. One-way distance nikalne ke liye hamesha 2 se divide karo."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the formula to calculate the distance of an object using echo?",
+      "answer": "d = (v * t) / 2",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the minimum time gap required to hear a distinct echo?",
+      "answer": "0.1 seconds.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the total distance travelled by sound during an echo if the wall is d meters away?",
+      "answer": "2d meters.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Class 9 Science",
+      "question": "An echo is heard in 3 s. What is the distance of the reflecting surface from the source, given that the speed of sound is 342 m/s?",
+      "answer": "Distance = (v * t) / 2 = (342 * 3) / 2 = 513 m.",
+      "approach": "Use the echo formula d = (vt)/2 because the sound travels to the surface and back."
+    },
+    {
+      "source": "CBSE Class 9 Boards",
+      "question": "Why is an echo not heard in a small room?",
+      "answer": "Because the distance is less than 17.2m, the reflected sound reaches our ears in less than 0.1s, blending with the original sound.",
+      "approach": "Mention the minimum distance (17.2m) or minimum time (0.1s) for a distinct echo."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=12-12"
+  ]
+}

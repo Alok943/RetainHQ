@@ -1,7 +1,7 @@
 # SEO Implementation Plan
 
 **Source data:** Google Search Console 3-month export, 2026-07-16 (property covers both hosts).
-**Status:** Plan only — nothing here is implemented yet. Each work item is self-contained and can be handed to any implementation session/model without this document's authoring context.
+**Status (2026-07-17):** P0-A, P0-B, and P1-A are implemented and live in production (reviewed & verified — 640 pages prerendered, title parity confirmed in-browser, all word-count criteria pass). Open items: sitemap `<lastmod>` uses build date instead of git date (needs fix), 3 physics `seo.title`s over 60 chars, cross-roadmap links only done for the GIL pair. Next founder action: request indexing for the §0 priority URLs in GSC and judge on 28-day windows.
 
 ---
 
@@ -29,7 +29,7 @@ Priority pages (best position × most impressions, 3-month data):
 | pytest-basics-and-fixtures | python-backend | 50.9 | 21 | `python fixtures`, `pytest yield` |
 | threading-vs-multiprocessing | python-backend | 52.6 | 14 | ~8 phrasings |
 | rag-evaluation | ai-engineering | 82 | 77 | `rag evaluation` (41 imp), `rag testing`, `rag triad`, `rag evaluation framework` |
-| distinguish-live-neutral-and-earth-wires | physics-9-10 | 41.7 | 11 | `live wire neutral wire earth wire` |
+| distinguish-live-neutral-and-earth-wires | physics-9 / physics-10 | 41.7 | 11 | `live wire neutral wire earth wire` |
 | tcp-3-way-handshake | core-cs | 71 | 10 | ~9 phrasings of "tcp 3 way handshake" |
 
 Geography: India has all clicks + 58 impressions; US leads impressions (100). Desktop = 606 of 630 impressions. Physics `class 9`/`class 10` query phrasing confirms the India school audience is reaching these pages.
@@ -161,11 +161,11 @@ In GSC → URL Inspection, request indexing for the 15 priority URLs in §0. The
 
 | Slug | `seo.title` |
 |---|---|
-| physics-9-10/distinguish-live-neutral-and-earth-wires | `Live, neutral & earth wires explained — Class 10 Physics` |
-| physics-9-10/relate-refractive-index-to-speed-of-light | `Refractive index & speed of light — Class 10 Physics` |
-| physics-9-10/define-electric-potential-difference | `Electric potential difference: definition & formula — Class 10` |
-| physics-9-10/state-laws-of-reflection-of-sound | `Laws of reflection of sound — Class 9 Physics` |
-| physics-9-10/define-pressure | `Pressure: definition, formula & SI unit — Class 9 Physics` |
+| physics-10/distinguish-live-neutral-and-earth-wires | `Live, neutral & earth wires explained — Class 10 Physics` |
+| physics-10/relate-refractive-index-to-speed-of-light | `Refractive index & speed of light — Class 10 Physics` |
+| physics-10/define-electric-potential-difference | `Electric potential difference: definition & formula — Class 10` |
+| physics-9/state-laws-of-reflection-of-sound | `Laws of reflection of sound — Class 9 Physics` |
+| physics-9/define-pressure | `Pressure: definition, formula & SI unit — Class 9 Physics` |
 
 ### Acceptance criteria
 

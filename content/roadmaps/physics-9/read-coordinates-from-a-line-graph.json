@@ -1,0 +1,134 @@
+{
+  "slug": "read-coordinates-from-a-line-graph",
+  "title": "Read coordinates from a line graph",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [],
+    "unlocks": [
+      "calculate-the-slope-of-a-straight-line"
+    ],
+    "appears_in": [
+      "CBSE Class 9/10 Boards"
+    ]
+  },
+  "hook": {
+    "scenario": "Google Maps par route dekhte waqt ek location ka pin point hota hai. Wahan latitude aur longitude se pata chalta hai ki exact jagah kahan hai.",
+    "question": "Physics ke graphs mein kisi bhi point ki exact position kaise batate hain?"
+  },
+  "mental_model": {
+    "intuition": "Graph par ek address hota hai, pehle zameen par kitna chale (x-axis), phir building mein kitni upar gaye (y-axis).",
+    "description": "Coordinate system ek grid ki tarah hota hai. Har point ke paas do values hoti hain: (x, y). X-axis horizontal line hai, jo batati hai ki left-right kahan jaana hai. Y-axis vertical line hai, jo batati hai ki upar-neeche kahan jaana hai. Dono milkar ek exact location fix karte hain."
+  },
+  "explanation": "Physics mein motion ko samajhne ke liye graphs bahut zaroori hote hain. Jab hum ek line graph banate hain, toh hum do quantities ko compare kar rahe hote hain, jaise time aur distance. Is graph par kisi bhi point ko read karne ka matlab hai us point ki exact (x, y) coordinates nikalna.\n\nGraph par horizontal line ko x-axis kehte hain. Yeh aam taur par independent variable (jaise time) ko represent karta hai. Vertical line ko y-axis kehte hain, jo dependent variable (jaise distance ya speed) ko dikhata hai. Jahaan yeh dono lines milti hain, use origin (0, 0) kehte hain.\n\nKisi bhi point ka coordinate padhne ke liye, pehle us point se ek seedhi line x-axis ki taraf kheencho aur dekho woh kis number par milti hai. Yeh aapka x-coordinate hota hai. Phir ussi point se ek horizontal line y-axis ki taraf kheencho, wahan jo number milega woh y-coordinate hota hai. Inhe hamesha bracket mein (x, y) ke format mein likha jaata hai.\n\nGraph reading ki aadat daalna bahut aasaan hai aur physics ke aage ke chapters mein slope ya area nikalne mein ye basic reading hi kaam aati hai. Agar aapne galat axis se reading le li, toh poora concept palat jayega. Isliye hamesha pehle 'x' (horizontal) aur phir 'y' (vertical) ka order dhyan rakhein.",
+  "diagram": {
+    "type": "graph",
+    "axes": {
+      "x": {
+        "label": "Time (s)"
+      },
+      "y": {
+        "label": "Distance (m)"
+      }
+    },
+    "line": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 5,
+        "y": 10
+      }
+    ]
+  },
+  "key_points": [
+    {
+      "title": "Order of coordinates",
+      "detail": "Always read the x-axis (horizontal) first, followed by the y-axis (vertical). Write it as (x, y)."
+    },
+    {
+      "title": "Origin",
+      "detail": "The starting point where both axes intersect is called the origin, written as (0, 0)."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "On a distance-time graph, a point P lies above 4 on the time axis and across from 20 on the distance axis. What are its coordinates?",
+      "steps": [
+        {
+          "narration": "Pehle time axis (x-axis) ki value dekhein.",
+          "math": "x = 4"
+        },
+        {
+          "narration": "Phir distance axis (y-axis) ki value dekhein.",
+          "math": "y = 20"
+        }
+      ],
+      "answer": "(4, 20)"
+    },
+    {
+      "problem": "Identify the value of speed from a speed-time graph if the point is marked exactly at 6s on the x-axis and 15 m/s on the y-axis.",
+      "steps": [
+        {
+          "narration": "Time ki value x-axis par hai, jo 6s hai.",
+          "math": "x = 6"
+        },
+        {
+          "narration": "Speed ki value y-axis par hai, jo us instant par speed batayegi.",
+          "math": "y = 15"
+        }
+      ],
+      "answer": "15 m/s"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Swapping x and y values",
+      "explanation": "Often students write (y, x) instead of (x, y). Hamesha yaad rakho, alphabet mein X pehle aata hai aur Y baad mein, so format is (x, y)."
+    },
+    {
+      "title": "Reading from the wrong line",
+      "explanation": "Point se axis tak line kheenchte waqt scale ko carefully nahi padhne se value wrong ho sakti hai. Hamesha grid lines ko follow karein."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which axis is typically the horizontal axis?",
+      "answer": "x-axis",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the coordinates of the origin?",
+      "answer": "(0, 0)",
+      "tier": "tier1"
+    },
+    {
+      "q": "In the coordinate (5, 12), which value represents the y-axis?",
+      "answer": "12",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "A graph has time on the x-axis and position on the y-axis. If a point is located at x = 10, y = 50, what does it signify?",
+      "answer": "At 10 seconds, the position of the object is 50 meters.",
+      "approach": "Match the x-coordinate with the physical quantity on the x-axis (time) and the y-coordinate with the y-axis (position)."
+    },
+    {
+      "source": "CBSE 2022",
+      "question": "Write the coordinates of a point lying on the x-axis at a distance of 4 units from the origin.",
+      "answer": "(4, 0)",
+      "approach": "Since the point is on the x-axis, its y-coordinate is 0. So, the coordinates are (4, 0)."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=8-8"
+  ]
+}

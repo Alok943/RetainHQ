@@ -18,7 +18,8 @@ const ROADMAP_LABEL = {
   'ai-engineering': 'AI Engineering',
   'cpp-swe': 'C++',
   'python-backend': 'Python Backend',
-  'physics-9-10': 'Physics (Class 9–10)'
+  'physics-9': 'Physics (Class 9)',
+  'physics-10': 'Physics (Class 10)'
 };
 
 function escapeHTML(str) {

@@ -13,7 +13,7 @@ function Physics3DFallback() {
 }
 
 /**
- * PhysicsNumericals — phase-end problem sets for the physics-9-10 roadmap.
+ * PhysicsNumericals — phase-end problem sets for the physics-9 / physics-10 roadmaps.
  *
  * Fetches  /content/roadmaps/<roadmapSlug>/_numericals/<phaseSlug>.json
  * and renders each problem with:

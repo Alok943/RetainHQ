@@ -870,9 +870,11 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
   const phases = [];
   topLevel.forEach((n) => { if (!phases.includes(n.phase)) phases.push(n.phase); });
 
-  // For physics-9-10 roadmaps, we show a "Practice numericals" link per phase.
+  // For physics roadmaps, we show a "Practice numericals" link per phase (that
+  // content only exists for physics- roadmaps today; startsWith covers physics-9,
+  // physics-10, and future physics-11/physics-12 without another edit here).
   // The phase name is slugified: lowercase, spaces and non-alphanumeric → hyphens.
-  const isPhysics = contentKey === 'physics-9-10';
+  const isPhysics = contentKey?.startsWith('physics-');
   const phaseToSlug = (phase) =>
     phase.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -942,7 +944,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
               </div>
             )}
 
-            {/* Practice numericals + Take a test affordances. Numericals stays physics-9-10
+            {/* Practice numericals + Take a test affordances. Numericals stays physics-*
                 only (that content only exists there); "Take a test" is generic — every
                 roadmap's Tests bank lives under content/roadmaps/<key>/_test/<phase>.json,
                 and Tests.jsx shows a friendly empty state if this phase has no bank yet. */}

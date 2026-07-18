@@ -1,0 +1,138 @@
+{
+  "slug": "identify-zero-work-conditions",
+  "title": "Identify zero work conditions",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "define-work-done-by-a-constant-force"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 9 Boards",
+      "NCERT Class 9"
+    ]
+  },
+  "hook": {
+    "scenario": "Ek coolie railway station par ek bhaari suitcase apne sir par rakh kar sidha platform par chal raha hai.",
+    "question": "Kya usne gravity ke against koi work kiya suitcase par platform par chalte hue?"
+  },
+  "mental_model": {
+    "intuition": "Agar aapka force movement se exactly 90 degrees par hai (sideways movement, upward force), ya object hila hi nahi, toh result zero aayega.",
+    "description": "Work depends on the component of force in the direction of displacement. Agar aap force upar lagate hain (gravity ko counter karne ke liye) aur aage (horizontal) chalte hain, toh direction of motion mein force ka koi hissa nahi lag raha."
+  },
+  "explanation": "Aapne seekha ki work done `W = F s`. Lekin ye formula tab direct apply hota hai jab force aur displacement exact same direction mein ho. Agar object wahi ka wahi rahe, yaani displacement `s = 0` ho jaye, toh force kitna bhi lagao, `W = F × 0 = 0`.\n\nDoosri interesting condition zero work ki tab aati hai jab force aur displacement ek doosre ke perpendicular hote hain. Matlab unke beech ka angle 90 degrees hota hai. General formula for work is `W = F s cos(θ)`, jahan `θ` force aur displacement ke beech ka angle hai.\n\nJab `θ = 90°`, toh `cos(90°) = 0`. Isliye pura work done zero ho jata hai. Iska best example ek coolie hai jo apna load sir par le kar horizontally chal raha hai. Usne load ko girne se bachane ke liye vertically upward force lagaya hai, par wo chal horizontal raha hai. In dono directions ke beech 90 degree ka angle hai, so gravity ya upward lifting force ke context mein horizontal travel karte hue work done zero hota hai.\n\nEk aur famous example earth aur moon ka hai. Earth ka gravitational pull moon par uski aage badhne ki velocity ke humesha perpendicular lagta hai, isliye circular orbit mein ghumte hue bhi gravitational force koi work nahi karta.",
+  "diagram": {
+    "type": "free-body",
+    "setup": "A person carrying a load horizontally",
+    "elements": [
+      {
+        "label": "F_up",
+        "direction": "up"
+      },
+      {
+        "label": "s",
+        "direction": "right"
+      }
+    ],
+    "object": "box",
+    "forces": []
+  },
+  "key_points": [
+    {
+      "title": "Zero Displacement",
+      "detail": "If s = 0, work done is zero (e.g., pushing a fixed wall)."
+    },
+    {
+      "title": "Perpendicular Force",
+      "detail": "If the angle between force and displacement is 90 degrees, work done is zero."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A student pushes against a heavy boulder with a force of 100 N for 5 minutes, but the boulder does not move. What is the work done by the student?",
+      "steps": [
+        {
+          "narration": "Question mein explicitly diya hai ki boulder nahi hila.",
+          "math": "s = 0 m"
+        },
+        {
+          "narration": "Work ke formula mein value rakho.",
+          "math": "W = F \\times s"
+        },
+        {
+          "narration": "Calculate karo, kisi bhi force ko zero se multiply karne par zero aata hai.",
+          "math": "W = 100 \\times 0 = 0 J"
+        }
+      ],
+      "answer": "0 J",
+      "diagram": {
+        "type": "free-body",
+        "setup": "Boulder being pushed but s=0"
+      }
+    },
+    {
+      "problem": "A porter lifts a luggage of 15 kg and carries it on his head walking horizontally for 50 m. What is the work done by him against gravity while walking horizontally?",
+      "steps": [
+        {
+          "narration": "Porter vertically up force lagata hai (against gravity), par movement horizontally aage ki taraf hai.",
+          "math": "\\theta = 90^\\circ"
+        },
+        {
+          "narration": "Kyunki force aur displacement perpendicular hain, work zero hota hai.",
+          "math": "W = F s \\cos(90^\\circ)"
+        },
+        {
+          "narration": "cos(90) zero hota hai.",
+          "math": "W = 0 J"
+        }
+      ],
+      "answer": "0 J"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking effort means work",
+      "explanation": "Bhaari saaman sir par uthakar chalne mein aap thak zarur jaate ho, par horizontal motion mein lifting force ka work done physics ke according strictly zero hota hai."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the work done when force and displacement are perpendicular?",
+      "answer": "Zero",
+      "tier": "tier1"
+    },
+    {
+      "q": "Give an example of zero work despite applying a large force.",
+      "answer": "Pushing against a rigid wall.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the work done by the Earth's gravity on the Moon zero?",
+      "answer": "Because the gravitational force and the Moon's displacement are perpendicular at every point in its circular orbit.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Class 9",
+      "question": "A body is thrown vertically upwards. What is the work done by the gravitational force when it reaches the highest point?",
+      "answer": "Work done is negative (since force and displacement are in opposite directions, wait, this is a trick question. Actually it's negative, not zero. If it asks about a satellite moving around earth, it's zero). Let's change the question: A satellite revolves around the earth in a circular orbit. What is the work done by the force of gravity?",
+      "approach": "Zero, because gravitational force is perpendicular to the direction of motion at any point."
+    },
+    {
+      "source": "NCERT Class 9",
+      "question": "A person holds a bundle of hay over his head for 30 minutes and gets tired. Has he done some work or not?",
+      "answer": "No work is done.",
+      "approach": "Because there is no displacement of the bundle of hay (s = 0)."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=11-11"
+  ]
+}

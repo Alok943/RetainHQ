@@ -1,0 +1,145 @@
+{
+  "slug": "calculate-equivalent-resistance-in-parallel",
+  "title": "Calculate equivalent resistance in parallel",
+  "roadmap": "physics-10",
+  "kind": "physics",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 12,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "calculate-inverse-sums",
+      "apply-ohms-law-to-circuits"
+    ],
+    "unlocks": [
+      "solve-complex-resistor-networks"
+    ],
+    "appears_in": [
+      "CBSE Class 10 Boards",
+      "NCERT"
+    ]
+  },
+  "hook": {
+    "scenario": "Agar ek nadi ke paani ko teen alag-alag naharon (canals) mein baant diya jaye, toh kya hoga?",
+    "question": "Paani (current) bat jayega, par shuru aur khatam hone ka level (voltage) same rahega."
+  },
+  "mental_model": {
+    "intuition": "Parallel connection ka matlab hai raste ka batna. Jitne zyada raste khulenge, traffic (resistance) utna kam hoga.",
+    "description": "Jab resistors ke dono ends ek dusre se jude hote hain, toh unke across potential difference (voltage) bilkul same rehta hai. Lekin total current un rasto mein apni-apni resistance ke hisab se bant jata hai."
+  },
+  "explanation": "Parallel circuit mein, sabhi resistors battery ke dono terminals ke across directly jude hote hain. Iska matlab hai ki V (voltage) sab mein same hota hai.\n\nLekin main line se aane wala current (I) bat jata hai: I = I1 + I2 + I3. Ohm's law se I = V/R hota hai. Isliye: V/Rp = V/R1 + V/R2 + V/R3.\n\nJab hum V ko common le kar cancel karte hain, toh equivalent resistance ka formula banta hai: 1/Rp = 1/R1 + 1/R2 + 1/R3. Yahan inverse addition karna zaroori hai.\n\nEk khaas baat: Parallel mein laga equivalent resistance humesha circuit ke sabse chhote resistance se bhi chhota hota hai. Gharon mein saari wiring parallel mein hi hoti hai, taaki ek appliance band hone par baaki sab chalte rahein.",
+  "diagram": {
+    "type": "circuit",
+    "components": [
+      {
+        "kind": "resistor",
+        "label": "R1"
+      },
+      {
+        "kind": "resistor",
+        "label": "R2"
+      }
+    ],
+    "topology": "parallel"
+  },
+  "key_points": [
+    {
+      "title": "Constant Voltage",
+      "detail": "The voltage remains the same across all components in a parallel circuit."
+    },
+    {
+      "title": "Current Divides",
+      "detail": "The total current is the sum of branch currents (I = I1 + I2 + I3)."
+    },
+    {
+      "title": "Formula",
+      "detail": "1/Rp = 1/R1 + 1/R2 + 1/R3"
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "Judge the equivalent resistance when 1 ohm and 10^6 ohm are connected in parallel.",
+      "steps": [
+        {
+          "narration": "Parallel combination ka rule yaad karte hain.",
+          "math": "1/Rp = 1/R1 + 1/R2"
+        },
+        {
+          "narration": "Conceptually, parallel me Rp sabse chote resistor se bhi chota hota hai.",
+          "math": "Smallest resistance = 1 ohm"
+        }
+      ],
+      "answer": "Less than 1 ohm",
+      "diagram": {
+        "type": "circuit"
+      }
+    },
+    {
+      "problem": "An electric lamp of 100 ohm, a toaster of 50 ohm, and a water filter of 500 ohm are connected in parallel to a 220 V source. What is the resistance of an iron connected to the same source that takes as much current as all three appliances, and what is the current through it?",
+      "steps": [
+        {
+          "narration": "Teeno appliances parallel mein hain, unka equivalent Rp nikalte hain.",
+          "math": "1/Rp = 1/100 + 1/50 + 1/500"
+        },
+        {
+          "narration": "LCM 500 lekar add karte hain.",
+          "math": "1/Rp = 5/500 + 10/500 + 1/500 = 16/500"
+        },
+        {
+          "narration": "Rp ke liye flip karte hain.",
+          "math": "Rp = 500 / 16 = 31.25 ohm"
+        },
+        {
+          "narration": "Total current I = V / Rp use karke nikalte hain.",
+          "math": "I = 220 / 31.25 = 7.04 A"
+        }
+      ],
+      "answer": "Resistance = 31.25 ohm, Current = 7.04 A",
+      "diagram": {
+        "type": "circuit"
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to take the reciprocal",
+      "explanation": "1/Rp nikal kar wahi answer chhod dete hain. Rp nikalne ke liye fraction ko ulta karna hamesha yaad rakho."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "In a parallel circuit, what physical quantity remains the same across all branches?",
+      "answer": "Potential difference (Voltage)",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is the equivalent resistance in parallel greater or less than the individual resistances?",
+      "answer": "Always less than the smallest individual resistance.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What remains constant across all resistors in a parallel circuit?",
+      "answer": "The potential difference (voltage).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT",
+      "question": "What are the advantages of connecting electrical devices in parallel with the battery instead of connecting them in series?",
+      "answer": "1. If one fails, others keep working. 2. Each gets full voltage. 3. Total resistance is lower, providing more current.",
+      "approach": "List points comparing parallel and series."
+    },
+    {
+      "source": "Board Exam",
+      "question": "Calculate the equivalent resistance of two 4Ω resistors in parallel.",
+      "answer": "2 Ω",
+      "approach": "1/Rp = 1/4 + 1/4 = 2/4 = 1/2. So Rp = 2 Ω."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?jesc1=12-12"
+  ]
+}

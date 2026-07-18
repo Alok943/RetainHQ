@@ -1,0 +1,117 @@
+{
+  "slug": "calculate-average-velocity",
+  "title": "Calculate average velocity",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "define-velocity"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 9/10 Boards"
+    ]
+  },
+  "hook": {
+    "scenario": "Aap ek straight road par pehle 40 km/h ki velocity se gaye aur phir thodi der baad aapne speed badha kar 60 km/h kar di, aur ye uniformly (barabar rate se) badhi.",
+    "question": "Is poori journey ki ek single average velocity kaise nikalenge bina lambe calculation ke?"
+  },
+  "mental_model": {
+    "intuition": "Normal cases me Average Velocity = Total Displacement / Total Time. Lekin uniform acceleration wale case mein yeh simply (First Velocity + Last Velocity) / 2 hoti hai.",
+    "description": "Average velocity ke do formulas hote hain, situation ke hisab se. Agar speed randomly badal rahi hai ya object wapas mud raha hai, toh always use fundamental formula: Net Displacement ko Time se divide karo. Lekin agar ek object lagaatar ek hi rate se speed pakad raha hai (jaise building se girti hui ball), toh simply start aur end velocities ka mean nikal lo."
+  },
+  "explanation": "Average velocity nikalne ke approaches numerical ke scenario par depend karte hain. Yeh ek bohot zaroori concept hai jahan maximum bachhe galti karte hain, isliye dhyan se samajhna zaroori hai.\n\nApproach 1 (General formula): Agar koi object randomly move kar raha hai, alag alag dishao (directions) mein ja raha hai, toh ek hi universal formula kaam karta hai: Average Velocity = Total Displacement / Total time. Aapko initial se final position tak ka net displacement nikalna padega (direction dhyan mein rakh kar, minus/plus use karke), aur phir usko kul samay (total time) se divide karna padega.\n\nApproach 2 (Uniform acceleration ka shortcut): Agar object straight line mein move kar raha hai, aur uski velocity ek constant rate se badh ya ghat rahi hai (jise hum uniform acceleration kehte hain), tab aapke paas ek arithmetic shortcut hota hai. Aap Initial Velocity (jise 'u' kehte hain) aur Final Velocity (jise 'v' kehte hain) ko add karke 2 se divide kar sakte hain.\n\nYaani Average velocity = (u + v) / 2. Yeh bilkul waisa hi hai jaise aap apne do unit test ke marks ka average nikalte hain. Par yaad rahe, ye shortcut sirf aur sirf tab lagana hai jab velocity 'uniformly' (ek barabar speed se) change ho rahi ho. Kisi bhi aade-tirche (random) motion mein ye formula answer galat de dega.",
+  "key_points": [
+    {
+      "title": "General Formula",
+      "detail": "Average Velocity = Total Displacement / Total Time. Use this for complex or random paths."
+    },
+    {
+      "title": "Arithmetic Mean Formula",
+      "detail": "Average Velocity = (u + v) / 2. Use this ONLY when acceleration is uniform (velocity changes at a constant rate in a straight line)."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A car travelling in a straight line uniformly increases its velocity from 10 m/s to 30 m/s. What is its average velocity?",
+      "steps": [
+        {
+          "narration": "Kyunki yahan 'uniformly' word use hua hai, hum arithmetic mean wala formula (u+v)/2 laga sakte hain.",
+          "math": "Average Velocity = (10 + 30) / 2"
+        },
+        {
+          "narration": "Sum nikal kar 2 se divide karein.",
+          "math": "Average Velocity = 40 / 2"
+        }
+      ],
+      "answer": "20 m/s"
+    },
+    {
+      "problem": "A man walks 40 m East in 10 s, and then walks 20 m West in 10 s. Find his average velocity.",
+      "steps": [
+        {
+          "narration": "Motion wapas palat rahi hai (non-uniform), toh General formula lagega. Pehle net displacement nikalein.",
+          "math": "Displacement = +40 (East) - 20 (West) = +20 m"
+        },
+        {
+          "narration": "Phir Total time nikalein.",
+          "math": "Time = 10 + 10 = 20 s"
+        },
+        {
+          "narration": "Average velocity = Net Displacement / Total Time karein.",
+          "math": "Average Velocity = 20 / 20"
+        }
+      ],
+      "answer": "1 m/s East"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using (u+v)/2 everywhere",
+      "explanation": "Bache har question mein (u+v)/2 laga dete hain. Agar car dhaba pe ruk ruk kar ja rahi hai, toh velocity linearly nahi badh rahi, tab ye formula completely wrong result dega."
+    },
+    {
+      "title": "Treating Displacement like Distance",
+      "explanation": "General formula me 'total displacement' ki jagah log saari lengths add kar dete hain. Agar koi back (piche) ja raha hai, to value minus karni chahiye."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the general formula for average velocity?",
+      "answer": "Total Displacement / Total Time",
+      "tier": "tier1"
+    },
+    {
+      "q": "When can you use the formula (u + v) / 2 for average velocity?",
+      "answer": "Only when the object is moving with uniform acceleration (velocity changing at a constant rate).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Can average velocity be zero?",
+      "answer": "Yes, if the net displacement is zero (e.g. returning to the starting point), the average velocity is zero.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "A train starting from a railway station and moving with uniform acceleration attains a speed 40 km/h. What is its average velocity during this period?",
+      "answer": "20 km/h",
+      "approach": "Starts from station means initial velocity u = 0. Final velocity v = 40 km/h. Since it moves with uniform acceleration, Average Velocity = (u + v)/2 = (0 + 40)/2 = 20 km/h."
+    },
+    {
+      "source": "CBSE 2020",
+      "question": "A girl swims 100 m to one end of a pool and swims back to the start in 100 seconds. Find her average velocity.",
+      "answer": "0 m/s",
+      "approach": "She returns to the start, so total displacement is 0. Average velocity = Displacement / Time = 0 / 100 = 0 m/s."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=8-8"
+  ]
+}

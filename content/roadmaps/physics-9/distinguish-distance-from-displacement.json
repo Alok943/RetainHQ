@@ -1,0 +1,120 @@
+{
+  "slug": "distinguish-distance-from-displacement",
+  "title": "Distinguish distance from displacement",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "define-distance",
+      "define-displacement"
+    ],
+    "unlocks": [
+      "distinguish-speed-from-velocity"
+    ],
+    "appears_in": [
+      "CBSE Class 9/10 Boards"
+    ]
+  },
+  "hook": {
+    "scenario": "Aapne subah se raat tak school, tuition aur ground ke bohot chakkar lagaye. FitBit bolta hai 5 km chale, par mummy kehti hain subah se ghar par the aur abhi bhi yahin ho, kahin nahi gaye.",
+    "question": "FitBit aur mummy dono apni jagah physics ke hisaab se sahi kaise ho sakte hain?"
+  },
+  "mental_model": {
+    "intuition": "Distance FitBit ka pedometer hai jo sab record karta hai, aur displacement aapki mummy hain jo bas ye dekhti hain ki aakhiri mein aap kahan ho.",
+    "description": "Distance scalar hai, isko disha (direction) se koi matlab nahi, yeh actual path ki length hai. Displacement vector hai, yeh sirf start point aur end point ke beech ka ek hawai shortcut dekhta hai, aur isme direction hoti hai."
+  },
+  "explanation": "Distance aur displacement ko compare karna mechanics ka sabse fundamental part hai. In dono mein confuse nahi hona chahiye. Distance woh puri actual path ki lambai hai jo aapne cover ki hai. Isko bas positive numbers pasand hain; yeh add hi hota rahega aur isko disha (direction) ki koi parwah nahi hoti. Isliye ye ek 'scalar' quantity hai.\n\nDoosri taraf, displacement sirf ek straight line dekhta hai, initial position se final position tak. Isse farq nahi padta ki aap kis gali (lane) se aaye, ise bas shortest shortcut chahiye. Kyunki isme starting point se lekar ending point tak ek clear disha (direction) hoti hai, isliye yeh ek 'vector' quantity hai. Displacement negative, zero ya positive kuch bhi ho sakti hai.\n\nEk aur bada difference inki numerical values (magnitude) ka hai. Distance ka magnitude ya toh displacement se zyada hoga, ya uske barabar hoga. Yeh dono barabar sirf tab hote hain jab object bina kisi turn (mod) ke ek perfectly straight line mein chal raha ho. Lekin agar object ne ek baar bhi direction badli (U-turn liya), toh distance to badhta jayega par displacement choti ho jayegi.\n\nAgar aap rasta bhatak kar dobara usi jagah par aa jaate hain jahan se shuru kiya tha, toh aapka distance maximum ho jayega (saara rasta add hokar), lekin aapki displacement zero ho jayegi. Yeh concept exams mein differences poochne ke liye sabse zyada popular hai.",
+  "key_points": [
+    {
+      "title": "Scalar vs Vector",
+      "detail": "Distance is scalar (only magnitude). Displacement is vector (magnitude and direction)."
+    },
+    {
+      "title": "Path Dependence",
+      "detail": "Distance depends on the path taken. Displacement depends only on initial and final positions."
+    },
+    {
+      "title": "Magnitude comparison",
+      "detail": "Distance is always greater than or equal to the magnitude of displacement. They are only equal for straight-line motion in one direction."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A car travels 50 km due North, then immediately reverses and travels 20 km due South. Find both distance and displacement.",
+      "steps": [
+        {
+          "narration": "Distance ke liye saari lengths ko directly add karte hain.",
+          "math": "Distance = 50 + 20"
+        },
+        {
+          "narration": "Displacement nikalne ke liye initial se final position dekhte hain. North 50 gaya aur South 20 wapas aya. Toh net North ki taraf kitna raha?",
+          "math": "Displacement = 50 - 20"
+        }
+      ],
+      "answer": "Distance = 70 km; Displacement = 30 km North"
+    },
+    {
+      "problem": "A ball is thrown vertically upwards to a height of 20 m and returns to the thrower's hand. Compare its distance and displacement.",
+      "steps": [
+        {
+          "narration": "Upar jana (20 m) aur wapas aana (20 m) total rasta distance hota hai.",
+          "math": "Distance = 20 + 20 = 40"
+        },
+        {
+          "narration": "Ball wapas haath mein aa gayi, yaani initial aur final point same hain.",
+          "math": "Displacement = 0"
+        }
+      ],
+      "answer": "Distance = 40 m, Displacement = 0 m"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming displacement is always smaller",
+      "explanation": "Bache sochte hain displacement hamesha distance se choti hoti hai. Par straight line mein ek hi direction mein chalne par dono exactly barabar hote hain."
+    },
+    {
+      "title": "Treating both as scalars",
+      "explanation": "Numerical problems mein agar koi object waapas mudta hai (U-turn), toh distance to badhta hai par students galti se dono ko minus ya dono ko plus kar dete hain."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Can the magnitude of displacement ever be greater than the distance travelled?",
+      "answer": "No, distance is always greater than or equal to displacement.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Which of the two is a vector quantity?",
+      "answer": "Displacement",
+      "tier": "tier1"
+    },
+    {
+      "q": "When is the magnitude of displacement equal to the distance?",
+      "answer": "When the object moves in a straight line without changing direction.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "Which of the following is true for displacement? (a) It cannot be zero. (b) Its magnitude is greater than the distance travelled by the object.",
+      "answer": "Both (a) and (b) are false.",
+      "approach": "(a) Displacement can be zero if the object returns to its starting point. (b) Its magnitude can never be greater than the distance; it is at most equal."
+    },
+    {
+      "source": "CBSE 2020",
+      "question": "Differentiate between distance and displacement (give any two points).",
+      "answer": "1. Distance is the actual path length (scalar); displacement is the shortest path between initial and final position (vector). 2. Distance is always positive; displacement can be positive, negative, or zero.",
+      "approach": "List points of difference covering definition, scalar/vector nature, and possible values (zero/negative)."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=8-8"
+  ]
+}

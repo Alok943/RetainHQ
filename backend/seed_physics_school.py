@@ -1,30 +1,57 @@
 """
-Seed script: NCERT Physics (Class 9-10) as a RetainHQ roadmap — the SCHOOL platform spine.
+Seed script: NCERT Physics as two RetainHQ roadmaps — physics-9 and physics-10 —
+the SCHOOL platform spine. Split 2026-07-17 (docs/SPEC-school-science-viz.md, D-029)
+from the original single physics-9-10 roadmap so Chemistry/Math and Classes 11-12
+can slot in as their own class-wise subject roadmaps without a span-key like
+"physics-9-10" no longer fitting. SchoolRoadmaps.jsx already groups roadmaps into
+a Class -> Subject -> Chapter browser purely by parsing each node's
+"Class N · Chapter" phase string, so splitting the roadmap identity here is the
+only change needed for the class-first IA to render correctly (Physics no longer
+appears bucketed under BOTH Class 9 and Class 10 from one shared roadmap title).
 
 Knowledge-component graph authored by Antigravity against content/PROMPT-physics-kc-graph.md
 (artifacts + critic report: content/research/physics/). Post-audit fixes applied:
 definitional edges added (velocity<-displacement, acceleration<-velocity, Ohm's law<-V,I),
-transitive-redundant edges removed. 126 KCs; edges live in
-seed_physics_school_prereqs.py (140 edges, 8 cross-year Class 9->10).
+transitive-redundant edges removed. 128 KCs (single NODES list below, split by class at
+seed time); edges live in seed_physics_school_prereqs.py (132 same-class edges seeded;
+8 Class 9->10 cross-year edges are dropped from the DB split — see that file's docstring).
 
 audience='school' — the roadmaps.audience gate (migration c4d7e9a2b501 + user_prefs)
 keeps this out of the 'career' catalog, so college users never see it and school
 users see only it. Run migrations to head before seeding in prod.
 
-Idempotent — deletes and recreates this roadmap each run (wipes its user_progress).
+Idempotent — deletes and recreates BOTH roadmaps each run (wipes their user_progress).
+physics-10 reuses the original physics-9-10 roadmap UUID (so the DELETE below also
+cleans up that legacy row); physics-9 gets a fresh UUID.
 Run: ./.venv/Scripts/python.exe seed_physics_school.py  (then seed_physics_school_prereqs.py)
 """
 import asyncio
+import re
 import uuid
 from sqlalchemy import text
 from app.core.database import engine
 
-ROADMAP_ID = uuid.UUID("f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1")
-TITLE = "Physics — Class 9 & 10 (NCERT)"
-SLUG = "physics-9-10"
-DESCRIPTION = "Every physics concept from the Class 9 and 10 NCERT textbooks as one prerequisite graph — so you can see exactly which earlier idea is blocking you, and never walk into boards having forgotten August's chapters."
+PHYSICS_9_ID = uuid.UUID("f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9")
+PHYSICS_10_ID = uuid.UUID("f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1")  # reuses the legacy physics-9-10 id
 
-# (phase, section, title, tier, recall_hint)
+ROADMAPS = {
+    "9": {
+        "id": PHYSICS_9_ID,
+        "slug": "physics-9",
+        "title": "Physics",
+        "description": "Every physics concept from the Class 9 NCERT textbook as one prerequisite graph — so you can see exactly which earlier idea is blocking you, and never walk into boards having forgotten a chapter you covered months ago.",
+    },
+    "10": {
+        "id": PHYSICS_10_ID,
+        "slug": "physics-10",
+        "title": "Physics",
+        "description": "Every physics concept from the Class 10 NCERT textbook as one prerequisite graph — so you can see exactly which earlier idea is blocking you, and never walk into boards having forgotten a chapter you covered months ago.",
+    },
+}
+
+# (phase, section, title, tier, recall_hint) — phase's leading "Class N" decides which
+# of the two roadmaps above a node belongs to; kept as ONE list (matches the single
+# content/roadmaps/physics-9 + physics-10 authoring source) rather than duplicated.
 NODES = [
     # ---------------- Class 9 · Motion ----------------
     ("Class 9 · Motion", "Math tools", "Convert km/h to m/s", "easy", "Multiply by 5/18 to convert km/h to m/s."),
@@ -178,24 +205,40 @@ NODES = [
 ]
 
 
+def _class_of(phase: str) -> str:
+    m = re.match(r"Class\s*(\d+)", phase)
+    if not m:
+        raise ValueError(f"Node phase does not start with 'Class N': {phase!r}")
+    return m.group(1)
+
+
 async def main():
     async with engine.begin() as conn:
-        await conn.execute(text("DELETE FROM roadmap_nodes WHERE roadmap_id = :rid"), {"rid": str(ROADMAP_ID)})
-        await conn.execute(text("DELETE FROM roadmaps WHERE id = :rid"), {"rid": str(ROADMAP_ID)})
-        await conn.execute(
-            text("INSERT INTO roadmaps (id, slug, title, description, audience, created_at) "
-                 "VALUES (:id, :slug, :title, :desc, 'school', now())"),
-            {"id": str(ROADMAP_ID), "slug": SLUG, "title": TITLE, "desc": DESCRIPTION},
-        )
+        for cls, cfg in ROADMAPS.items():
+            rid = cfg["id"]
+            await conn.execute(text("DELETE FROM roadmap_nodes WHERE roadmap_id = :rid"), {"rid": str(rid)})
+            await conn.execute(text("DELETE FROM roadmaps WHERE id = :rid"), {"rid": str(rid)})
+            await conn.execute(
+                text("INSERT INTO roadmaps (id, slug, title, description, audience, created_at) "
+                     "VALUES (:id, :slug, :title, :desc, 'school', now())"),
+                {"id": str(rid), "slug": cfg["slug"], "title": cfg["title"], "desc": cfg["description"]},
+            )
+
+        counts = {"9": 0, "10": 0}
         for i, (phase, section, title, tier, desc) in enumerate(NODES):
+            cls = _class_of(phase)
+            rid = ROADMAPS[cls]["id"]
             await conn.execute(
                 text("INSERT INTO roadmap_nodes "
                      "(id, roadmap_id, phase, section, title, tier, order_index, description) "
                      "VALUES (:id, :rid, :phase, :section, :title, :tier, :idx, :desc)"),
-                {"id": str(uuid.uuid4()), "rid": str(ROADMAP_ID), "phase": phase,
-                 "section": section, "title": title, "tier": tier, "idx": i, "desc": desc},
+                {"id": str(uuid.uuid4()), "rid": str(rid), "phase": phase,
+                 "section": section, "title": title, "tier": tier, "idx": counts[cls], "desc": desc},
             )
-    print(f"Seeded '{TITLE}' with {len(NODES)} nodes.")
+            counts[cls] += 1
+
+    for cls, cfg in ROADMAPS.items():
+        print(f"Seeded '{cfg['slug']}' with {counts[cls]} nodes.")
 
 
 if __name__ == "__main__":

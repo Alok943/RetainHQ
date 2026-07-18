@@ -1,0 +1,143 @@
+{
+  "slug": "calculate-power-for-vision-correction",
+  "title": "Calculate power for vision correction",
+  "roadmap": "physics-10",
+  "kind": "physics",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "identify-myopia-near-sightedness",
+      "identify-hypermetropia-far-sightedness"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CBSE Class 10 Boards",
+      "NCERT Class 10 Science"
+    ]
+  },
+  "hook": {
+    "scenario": "Aapka dost optician ke paas jata hai aur wahan se -1.5D ka chashma le aata hai.",
+    "question": "Optician exactly yeh number kaise calculate karta hai?"
+  },
+  "mental_model": {
+    "intuition": "Lens formula (1/f = 1/v - 1/u) trick karta hai hamari eye ko: object (u) jahan hona chahiye, wahan ki image (v) eye ke actual far/near point par bana deta hai.",
+    "description": "Agar myopic eye ko door (infinity) ki cheez nahi dikhti, toh correction lens infinity wali object ki virtual image far point par bana dega. Agar hypermetropic eye ko 25 cm ki cheez nahi dikhti, toh correction lens wahan ki object ki virtual image shifted near point par bana dega."
+  },
+  "explanation": "Vision defects ke numericals mainly Lens Formula (1/v - 1/u = 1/f) par based hote hain, aur fir Power (P = 1/f) nikalna hota hai. Saara khel 'u' (object distance) aur 'v' (image distance) ko correctly identify karne aur sign convention use karne ka hai.\n\nMyopia ke case mein, insaan ko infinity ki cheezein dekhni hain, isliye u = -infinity. Corrective concave lens ek virtual image banayega at the person's far point, isliye v = -(far point). Formula apply karne par 1/f = 1/v - 0 ban jata hai, yani f = v. Dhyan rahe, f negative aayega, aur P bhi negative hoga.\n\nHypermetropia ke case mein, insaan ko normally 25 cm par padhna hota hai, isliye object ko u = -25 cm par consider karte hain. Corrective convex lens us object ki virtual image person ke defective near point par banayega, isliye v = -(near point distance). Phir se lens formula mein u aur v ki negative values daal kar hum f nikalte hain. Is case mein f positive aayega, isliye Power bhi positive hogi.\n\nHumesha power nikalne se pehle focal length 'f' ko metres mein convert karna mat bhoolna, kyunki P = 1/f(in m) tabhi Diopters (D) mein aata hai. Sign convention follow karna in numericals ka sabse critical step hai.",
+  "key_points": [
+    {
+      "title": "Myopia values",
+      "detail": "u = -infinity, v = -(far point of eye). f will be negative."
+    },
+    {
+      "title": "Hypermetropia values",
+      "detail": "u = -25 cm (normal near point), v = -(defective near point of eye). f will be positive."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "The far point of a myopic person is 80 cm in front of the eye. What is the nature and power of the lens required to correct the problem?",
+      "steps": [
+        {
+          "narration": "Myopia ko theek karne ke liye hum object ko infinity par maante hain aur lens uski image far point (80 cm) par banata hai. Sign convention use karke v -80 aayega.",
+          "math": "u = -infinity, v = -80 cm = -0.8 m"
+        },
+        {
+          "narration": "Ab lens formula lagayenge f nikalne ke liye.",
+          "math": "1/f = 1/v - 1/u => 1/f = 1/(-0.8) - 1/(-infinity)"
+        },
+        {
+          "narration": "1/infinity zero hota hai, isliye seedha f = v ho jayega.",
+          "math": "1/f = -1/0.8 => f = -0.8 m"
+        },
+        {
+          "narration": "Power ke formula P = 1/f(in m) mein value dalenge.",
+          "math": "P = 1 / (-0.8) = -1.25 D"
+        }
+      ],
+      "answer": "-1.25 D, Concave Lens",
+      "diagram": {
+        "type": "ray",
+        "focal_length": 0.8,
+        "object_distance": 100.0,
+        "optic": "concave-lens"
+      }
+    },
+    {
+      "problem": "The near point of a hypermetropic eye is 1 m. What is the power of the lens required to correct this defect? (Assume normal near point is 25 cm).",
+      "steps": [
+        {
+          "narration": "Hypermetropia mein normal reading distance 25 cm object distance (u) banta hai, aur actual near point (1 m) image distance (v) banta hai.",
+          "math": "u = -25 cm = -0.25 m, v = -1 m"
+        },
+        {
+          "narration": "Lens formula mein dono negative values daal kar solve karte hain.",
+          "math": "1/f = 1/v - 1/u => 1/f = 1/(-1) - 1/(-0.25)"
+        },
+        {
+          "narration": "Solve karte hue dhyan rakhna hai ki minus aur minus plus ban jate hain.",
+          "math": "1/f = -1 + 4 = 3 m^-1"
+        },
+        {
+          "narration": "Kyunki 1/f = 3 aaya hai, and Power directly 1/f hoti hai jab f metres mein ho.",
+          "math": "P = 3.0 D"
+        }
+      ],
+      "answer": "+3.0 D",
+      "diagram": {
+        "type": "ray",
+        "focal_length": 0.33,
+        "object_distance": 25.0,
+        "optic": "convex-lens"
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting sign conventions",
+      "explanation": "Bache u aur v ki values bina minus sign lagaye formula mein daal dete hain. Virtual images hamesha front mein banti hain isliye v aur u dono negative hote hain."
+    },
+    {
+      "title": "Forgetting to convert to meters",
+      "explanation": "Agar f cm mein nikal ke seedha 1/f kar diya toh Power galat aayegi. Hamesha f ko metres mein karo, ya P = 100/f(in cm) use karo."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the formula for Power of a lens?",
+      "answer": "P = 1 / f (in metres)",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the object distance (u) typically taken for solving myopia problems?",
+      "answer": "Infinity",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the SI unit of power of a lens?",
+      "answer": "Dioptre (D)",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "The near point of a hypermetropic eye is 1 m. What is the power of the lens required to correct this defect? Assume that the near point of the normal eye is 25 cm.",
+      "answer": "+3.0 D",
+      "approach": "Use u = -0.25 m, v = -1 m in lens formula, find f, then P=1/f."
+    },
+    {
+      "source": "Board Exam",
+      "question": "A person uses a lens of power -2.0 D. What is the focal length?",
+      "answer": "-50 cm",
+      "approach": "f = 1/P = 1/(-2) = -0.5 m = -50 cm."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?jesc1=11-11"
+  ]
+}

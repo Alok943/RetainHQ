@@ -1,0 +1,127 @@
+{
+  "slug": "apply-acceleration-formula",
+  "title": "Apply acceleration formula",
+  "roadmap": "physics-9",
+  "kind": "physics",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "define-acceleration",
+      "rearrange-linear-algebraic-equations",
+      "interpret-sign-of-acceleration",
+      "convert-km-h-to-m-s"
+    ],
+    "unlocks": [
+      "apply-v-u-at"
+    ],
+    "appears_in": [
+      "CBSE Class 9/10 Boards",
+      "NCERT Exercise"
+    ]
+  },
+  "hook": {
+    "scenario": "Aapki gadi 20 m/s par chal rahi hai. Brakes ki manual me likha hai ki wo -5 m/s² ka deceleration de sakti hai. Aapko calculate karna hai ki gadi rukne me kitne seconds legi.",
+    "question": "Basic acceleration equation ka use karke time ya final velocity kaise nikalte hain?"
+  },
+  "mental_model": {
+    "intuition": "a = (v - u) / t ek master equation hai jisme 4 parts hain. Koi bhi 3 pata hon toh maths se chautha nikal ata hai.",
+    "description": "Jab bhi velocity change hoti hai, wahan 4 characters hote hain: Start (u), End (v), Time (t), aur Change ka Rate (a). Equation ko idhar udhar shift karke (jaise t udhar bhej diya) aap kisi bhi missing character ko dhoondh sakte ho."
+  },
+  "explanation": "Acceleration ka formula a = (v - u) / t kinematics ke sabse zaroori tools mein se ek hai. Board exams mein seedhe acceleration nikalne wale sawal kam aate hain; ulta woh aapse kisi dusri cheez (jaise time, initial velocity ya final velocity) ko nikalne ke liye bolte hain. Iske liye aapko algebraic rearrangement aana chahiye.\n\nValues put karne se pehle sabse bada rule: question ki wording ko variables me decode karo. 'Starts from rest' ka seedha matlab hai u = 0. 'Comes to a stop' ya 'brakes are applied to stop' ka matlab hai v = 0. Ye hidden values pakadna bohot zaroori hai. Phir check karo units ko; agar velocity km/h mein hai aur time seconds mein, toh calculation se pehle 5/18 factor use karke velocity ko m/s mein badalna padega.\n\nAgar aapko Time (t) nikalna hai, toh formula ban jayega t = (v - u) / a. Ek example lo: gadi 10 m/s se 0 tak aayi -2 m/s² ke rate se. Toh t = (0 - 10) / (-2) = -10 / -2 = 5 seconds. Yahan minus sign automatically cut jata hai. Agar time negative aaye, toh pakka aapne (v - u) ko galti se (u - v) likh diya hai.\n\nAgar aapko Final Velocity (v) nikalni hai, toh 't' ko udhar bhej kar 'at' banate hain, phir 'u' add karte hain: v = u + at. Yeh technically Newton ki first equation of motion hai jo isi formula se derive hoti hai. Practice me ye sabse zyada use hone wala step hai.",
+  "key_points": [
+    {
+      "title": "Hidden Variables",
+      "detail": "Words like 'from rest' mean u = 0. 'Comes to a stop' means v = 0."
+    },
+    {
+      "title": "Rearranging for time",
+      "detail": "t = (v - u) / a. Time can never be negative, so watch your signs carefully."
+    },
+    {
+      "title": "Unit Check",
+      "detail": "Always ensure speeds are in m/s if time is in seconds and acceleration is in m/s^2."
+    }
+  ],
+  "worked_example": [
+    {
+      "problem": "A motorcycle moving at 15 m/s accelerates at 3 m/s^2 for 4 seconds. What will be its final velocity?",
+      "steps": [
+        {
+          "narration": "Acceleration formula (a = (v - u) / t) se 'v' ko isolate karein. v = u + at ban jayega.",
+          "math": "v = 15 + (3 * 4)"
+        },
+        {
+          "narration": "BODMAS rule lagate hue pehle multiply karein.",
+          "math": "v = 15 + 12"
+        }
+      ],
+      "answer": "27 m/s"
+    },
+    {
+      "problem": "A train travelling at 90 km/h applies brakes to produce a retardation of 5 m/s^2. Find the time it takes to come to a stop.",
+      "steps": [
+        {
+          "narration": "Pehle km/h ko m/s mein convert karein. u = 90 * (5/18).",
+          "math": "u = 25 m/s"
+        },
+        {
+          "narration": "Comes to a stop matlab v = 0. Retardation matlab a = -5. Time nikalne ke liye t = (v - u) / a karein.",
+          "math": "t = (0 - 25) / -5"
+        },
+        {
+          "narration": "Dono minus sign cancel ho jayenge.",
+          "math": "t = -25 / -5 = 5"
+        }
+      ],
+      "answer": "5 s"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Ignoring unit conversion",
+      "explanation": "Question mein 90 km/h likha hota hai, bache direct usme 5s wala (m/s^2) acceleration daal dete hain bina 5/18 se multiply kiye. Isse answer bilkul galat ho jata hai."
+    },
+    {
+      "title": "Negative time",
+      "explanation": "Time negative nahi ho sakta. Agar calculation me time -5 aa raha hai, to pakka aapne brakes lagne par acceleration ko positive le liya, ya phir (v-u) ko u-v kar diya."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the implied value of initial velocity if an object 'starts from rest'?",
+      "answer": "u = 0",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you express time 't' in terms of v, u, and a?",
+      "answer": "t = (v - u) / a",
+      "tier": "tier1"
+    },
+    {
+      "q": "If final velocity is zero and initial velocity is positive, will time come out positive?",
+      "answer": "Yes, because acceleration must be negative (retardation), cancelling out the negative numerator.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "source": "NCERT Exercise",
+      "question": "A train is travelling at a speed of 90 km h-1. Brakes are applied so as to produce a uniform acceleration of -0.5 m s-2. Find how far the train will go before it is brought to rest.",
+      "answer": "We'll find time first (or use 3rd equation later). t = (0 - 25)/-0.5 = 50s. (Note: using equation 3 directly is better, but this teaches time finding).",
+      "approach": "First step is to extract hidden v=0 and convert u to 25 m/s. Understanding these variables correctly is the core application here."
+    },
+    {
+      "source": "CBSE 2019",
+      "question": "An object starts from rest and travels with a uniform acceleration of 4 m/s^2. How much time will it take to reach a speed of 36 m/s?",
+      "answer": "9 seconds",
+      "approach": "u = 0, a = 4, v = 36. Use formula t = (v - u)/a = (36 - 0) / 4 = 9."
+    }
+  ],
+  "sources": [
+    "https://ncert.nic.in/textbook.php?iesc1=8-8"
+  ]
+}
