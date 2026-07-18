@@ -20,9 +20,21 @@ audience='school' — the roadmaps.audience gate (migration c4d7e9a2b501 + user_
 keeps this out of the 'career' catalog, so college users never see it and school
 users see only it. Run migrations to head before seeding in prod.
 
-Idempotent — deletes and recreates BOTH roadmaps each run (wipes their user_progress).
-physics-10 reuses the original physics-9-10 roadmap UUID (so the DELETE below also
-cleans up that legacy row); physics-9 gets a fresh UUID.
+Progress-safe, additive upsert (matches seed_python_swe.py's convention). physics-10
+reuses the original physics-9-10 roadmap UUID; physics-9 gets a fresh UUID. Both
+roadmap rows are upserted (ON CONFLICT DO UPDATE), never deleted+recreated, so
+`activities.roadmap_id` / `test_attempts.roadmap_id` never dangle.
+
+Nodes are matched CASE-INSENSITIVELY by title against whatever currently sits under
+EITHER target id — at first run that's all 126 old nodes still parked under the
+legacy physics-9-10/physics-10 id, since the class-9-titled ones haven't been moved
+yet. A match UPDATEs the existing row in place, including re-pointing its roadmap_id
+to wherever this file says that title now belongs — this is what actually performs
+the split. Because the row (and therefore its id) is never deleted and recreated,
+`user_progress.node_id` (ON DELETE CASCADE), `activities.node_id`, and any node_title
+lookups (reviews, test_attempts.results) all survive untouched. Titles present in the
+DB but absent from NODES are reported, never removed.
+
 Run: ./.venv/Scripts/python.exe seed_physics_school.py  (then seed_physics_school_prereqs.py)
 """
 import asyncio
@@ -214,31 +226,59 @@ def _class_of(phase: str) -> str:
 
 async def main():
     async with engine.begin() as conn:
-        for cls, cfg in ROADMAPS.items():
-            rid = cfg["id"]
-            await conn.execute(text("DELETE FROM roadmap_nodes WHERE roadmap_id = :rid"), {"rid": str(rid)})
-            await conn.execute(text("DELETE FROM roadmaps WHERE id = :rid"), {"rid": str(rid)})
+        for cfg in ROADMAPS.values():
             await conn.execute(
                 text("INSERT INTO roadmaps (id, slug, title, description, audience, created_at) "
-                     "VALUES (:id, :slug, :title, :desc, 'school', now())"),
-                {"id": str(rid), "slug": cfg["slug"], "title": cfg["title"], "desc": cfg["description"]},
+                     "VALUES (:id, :slug, :title, :desc, 'school', now()) "
+                     "ON CONFLICT (id) DO UPDATE SET slug = :slug, title = :title, "
+                     "description = :desc, audience = 'school'"),
+                {"id": str(cfg["id"]), "slug": cfg["slug"], "title": cfg["title"], "desc": cfg["description"]},
             )
 
+        target_ids = [str(cfg["id"]) for cfg in ROADMAPS.values()]
+        rows = (await conn.execute(
+            text("SELECT id, title FROM roadmap_nodes WHERE roadmap_id = ANY(:rids)"),
+            {"rids": target_ids},
+        )).fetchall()
+        # key by lower(title) so casing differences update in place instead of duplicating
+        existing = {r.title.lower(): (r.id, r.title) for r in rows}
+
+        seen, inserted, updated = set(), 0, 0
         counts = {"9": 0, "10": 0}
-        for i, (phase, section, title, tier, desc) in enumerate(NODES):
+        for phase, section, title, tier, desc in NODES:
             cls = _class_of(phase)
             rid = ROADMAPS[cls]["id"]
-            await conn.execute(
-                text("INSERT INTO roadmap_nodes "
-                     "(id, roadmap_id, phase, section, title, tier, order_index, description) "
-                     "VALUES (:id, :rid, :phase, :section, :title, :tier, :idx, :desc)"),
-                {"id": str(uuid.uuid4()), "rid": str(rid), "phase": phase,
-                 "section": section, "title": title, "tier": tier, "idx": counts[cls], "desc": desc},
-            )
+            key = title.lower()
+            seen.add(key)
+            if key in existing:
+                node_id, _db_title = existing[key]
+                await conn.execute(
+                    text("UPDATE roadmap_nodes SET roadmap_id = :rid, title = :title, "
+                         "phase = :phase, section = :section, tier = :tier, "
+                         "order_index = :idx, description = :desc WHERE id = :id"),
+                    {"rid": str(rid), "title": title, "phase": phase, "section": section,
+                     "tier": tier, "idx": counts[cls], "desc": desc, "id": str(node_id)},
+                )
+                updated += 1
+            else:
+                await conn.execute(
+                    text("INSERT INTO roadmap_nodes "
+                         "(id, roadmap_id, phase, section, title, tier, order_index, description) "
+                         "VALUES (:id, :rid, :phase, :section, :title, :tier, :idx, :desc)"),
+                    {"id": str(uuid.uuid4()), "rid": str(rid), "phase": phase,
+                     "section": section, "title": title, "tier": tier, "idx": counts[cls], "desc": desc},
+                )
+                inserted += 1
             counts[cls] += 1
+
+        # Report (never delete) titles in the DB that this seed no longer lists.
+        orphans = [db_title for key, (_id, db_title) in existing.items() if key not in seen]
 
     for cls, cfg in ROADMAPS.items():
         print(f"Seeded '{cfg['slug']}' with {counts[cls]} nodes.")
+    print(f"Total: {inserted} inserted, {updated} updated/relocated, 0 removed.")
+    if orphans:
+        print(f"NOTE: {len(orphans)} DB node(s) not in this seed, left in place: {orphans}")
 
 
 if __name__ == "__main__":

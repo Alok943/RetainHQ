@@ -185,9 +185,9 @@ async def _seed_one(conn, roadmap_id, prereqs):
                 missing.add(pt)
                 continue
             await conn.execute(
-                text("INSERT INTO roadmap_node_prerequisites (node_id, prerequisite_id) "
-                     "VALUES (:nid, :pid)"),
-                {"nid": str(nid), "pid": str(pid)},
+                text("INSERT INTO roadmap_node_prerequisites (id, node_id, prerequisite_node_id) "
+                     "VALUES (:id, :nid, :pid)"),
+                {"id": str(uuid.uuid4()), "nid": str(nid), "pid": str(pid)},
             )
             inserted += 1
     return inserted, missing
