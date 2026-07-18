@@ -1,7 +1,7 @@
 # SEO Implementation Plan
 
 **Source data:** Google Search Console 3-month export, 2026-07-16 (property covers both hosts).
-**Status (2026-07-19):** P0-A (prerender) shipped 2026-07-17. P0-B mechanism shipped 2026-07-17; only the physics 5-row retitle table applied so far, the python-backend/cpp-swe/dsa/ai-engineering rows in §P0-B are still pending. **P1-B is fully shipped** — item 2 (DSA `related` field → links) turned out to already be live from the P0-A build; items 1 (same-roadmap prev/next), 3 (hardcoded topical links), and 4 (git-derived sitemap lastmod) shipped 2026-07-19. **Still open: all of P1-A** (keyword-gap content edits — those go through the Antigravity content pipeline, not a script change) and the remaining P0-B retitle rows. Each work item below is still self-contained and can be handed to any implementation session/model without this document's authoring context.
+**Status (2026-07-19):** P0-A (prerender) and P0-B (mechanism + the full retitle table, all 16 pages + the 5 physics pages) are fully shipped. **P1-B is fully shipped** — item 2 (DSA `related` field → links) turned out to already be live from the P0-A build; items 1 (same-roadmap prev/next), 3 (hardcoded topical links), and 4 (git-derived sitemap lastmod) shipped 2026-07-19. **Still open: all of P1-A** — the keyword-gap content edits below go through the Antigravity content pipeline (real prose, not metadata), not a script/schema change, so they're unstarted. Each P1-A item below is still self-contained and can be handed to any implementation session/model without this document's authoring context.
 
 ---
 
