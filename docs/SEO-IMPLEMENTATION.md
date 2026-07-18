@@ -1,7 +1,7 @@
 # SEO Implementation Plan
 
 **Source data:** Google Search Console 3-month export, 2026-07-16 (property covers both hosts).
-**Status:** Plan only — nothing here is implemented yet. Each work item is self-contained and can be handed to any implementation session/model without this document's authoring context.
+**Status (2026-07-19):** P0-A (prerender) shipped 2026-07-17. P0-B mechanism shipped 2026-07-17; only the physics 5-row retitle table applied so far, the python-backend/cpp-swe/dsa/ai-engineering rows in §P0-B are still pending. **P1-B is fully shipped** — item 2 (DSA `related` field → links) turned out to already be live from the P0-A build; items 1 (same-roadmap prev/next), 3 (hardcoded topical links), and 4 (git-derived sitemap lastmod) shipped 2026-07-19. **Still open: all of P1-A** (keyword-gap content edits — those go through the Antigravity content pipeline, not a script change) and the remaining P0-B retitle rows. Each work item below is still self-contained and can be handed to any implementation session/model without this document's authoring context.
 
 ---
 
@@ -194,10 +194,10 @@ GSC shows searchers arriving on sub-topics the pages never name. Add these as **
 
 Current crawl graph: hubs → lessons; lessons → prerequisites/unlocks + own hub. Gaps:
 
-1. **Same-roadmap prev/next:** in the prerendered article, link the adjacent lessons in roadmap order (the hub index already has the ordered list at generation time). Adds 2 contextual links per page across all ~640 pages.
-2. **dsa `related` field** (31 lessons have it) — render it as links; it's currently ignored.
-3. **Cross-roadmap topical links** (hand-curated, in lesson content or a small map in the generator): the-gil ↔ threading-vs-multiprocessing ↔ concurrency-vs-parallelism; configdict-from-attributes ↔ sqlalchemy-sqlmodel-async; rag-evaluation ↔ evaluation-and-test-sets ↔ grounding-with-retrieval.
-4. **Sitemap `<lastmod>`:** add from the content file's git commit date (fall back to file mtime). Helps recrawl prioritization after the P0-A content change ships.
+1. ✅ **Same-roadmap prev/next** (shipped 2026-07-19, `generate-lesson-html.mjs`): "Previous/Next in roadmap" links using the same ordered `lessons` array the hub page builds from.
+2. ✅ **dsa `related` field** (31 lessons have it) — already rendered as links, verified live 2026-07-19 (was implemented alongside P0-A, just never checked off here).
+3. ✅ **Cross-roadmap topical links** (shipped 2026-07-19, `generate-lesson-html.mjs` `TOPICAL_LINKS` map, deduped against prerequisites/unlocks/related): the-gil ↔ threading-vs-multiprocessing; configdict-from-attributes ↔ sqlalchemy-sqlmodel-async; rag-evaluation ↔ evaluation-and-test-sets ↔ grounding-with-retrieval. (concurrency-vs-parallelism was already linked as a prerequisite of the-gil — no separate hardcoded pair needed.)
+4. ✅ **Sitemap `<lastmod>`** (shipped 2026-07-17, `sync-content.mjs`): per-lesson git commit date (one batched `git log` pass), file-mtime fallback, hub pages use the newest child lesson's date.
 
 ---
 

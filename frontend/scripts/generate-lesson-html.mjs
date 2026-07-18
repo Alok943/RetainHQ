@@ -21,6 +21,20 @@ const ROADMAP_LABEL = {
   'physics-9-10': 'Physics (Class 9–10)'
 };
 
+// Hardcoded topical links (docs/SEO-IMPLEMENTATION.md P1-B item 3): slug -> [roadmapKey, targetSlug, linkText][]
+const TOPICAL_LINKS = {
+  'the-gil': [['python-backend', 'threading-vs-multiprocessing', 'Threading vs Multiprocessing']],
+  'threading-vs-multiprocessing': [['python-backend', 'the-gil', 'The GIL (Global Interpreter Lock)']],
+  'configdict-from-attributes': [['python-backend', 'sqlalchemy-sqlmodel-async', 'Async SQLAlchemy and SQLModel']],
+  'sqlalchemy-sqlmodel-async': [['python-backend', 'configdict-from-attributes', 'ConfigDict & from_attributes']],
+  'rag-evaluation': [
+    ['ai-engineering', 'evaluation-and-test-sets', 'Evaluation & Test Sets'],
+    ['ai-engineering', 'grounding-with-retrieval', 'Grounding with Retrieval'],
+  ],
+  'evaluation-and-test-sets': [['ai-engineering', 'rag-evaluation', 'RAG Evaluation']],
+  'grounding-with-retrieval': [['ai-engineering', 'rag-evaluation', 'RAG Evaluation']],
+};
+
 function escapeHTML(str) {
   if (typeof str !== 'string') return '';
   return str
@@ -525,7 +539,8 @@ async function main() {
     }
 
     // Second pass: Generate HTML
-    for (const { slug, lesson } of lessons) {
+    for (let li = 0; li < lessons.length; li++) {
+      const { slug, lesson } = lessons[li];
       const label = ROADMAP_LABEL[roadmapKey] || 'RetainHQ';
       // P0-B: prefer seo.title / seo.description if present
       const pageTitle = lesson.seo?.title ?? `${lesson.title} · ${label} | RetainHQ`;
@@ -615,11 +630,24 @@ async function main() {
         }
       }
 
-      // Hardcoded cross-roadmap links
-      if (slug === 'the-gil') {
-        navHtml += `<p><strong>Related:</strong> <a href="/roadmaps/python-backend/learn/threading-vs-multiprocessing">Threading vs Multiprocessing</a></p>\n`;
-      } else if (slug === 'threading-vs-multiprocessing') {
-        navHtml += `<p><strong>Related:</strong> <a href="/roadmaps/python-backend/learn/the-gil">The GIL (Global Interpreter Lock)</a></p>\n`;
+      // Same-roadmap adjacency (docs/SEO-IMPLEMENTATION.md P1-B item 1) — distinct from the
+      // prerequisites/unlocks links above, which are conceptual, not positional. `lessons` is
+      // the same ordered array the hub page below is built from.
+      if (li > 0) {
+        const { slug: prevSlug, lesson: prevLesson } = lessons[li - 1];
+        navHtml += `<p><strong>Previous in roadmap:</strong> <a href="/roadmaps/${roadmapKey}/learn/${prevSlug}">${escapeHTML(prevLesson.title)}</a></p>\n`;
+      }
+      if (li < lessons.length - 1) {
+        const { slug: nextSlug, lesson: nextLesson } = lessons[li + 1];
+        navHtml += `<p><strong>Next in roadmap:</strong> <a href="/roadmaps/${roadmapKey}/learn/${nextSlug}">${escapeHTML(nextLesson.title)}</a></p>\n`;
+      }
+
+      // Skip any topical-link pair already covered by prerequisites/unlocks/related above —
+      // no value in linking the same URL twice.
+      const alreadyLinked = new Set([...prevSlugs, ...nextSlugs, ...relatedSlugs, slug]);
+      for (const [linkRoadmap, linkSlug, linkTitle] of TOPICAL_LINKS[slug] || []) {
+        if (alreadyLinked.has(linkSlug)) continue;
+        navHtml += `<p><strong>Related:</strong> <a href="/roadmaps/${linkRoadmap}/learn/${linkSlug}">${escapeHTML(linkTitle)}</a></p>\n`;
       }
 
       if (navHtml) {
