@@ -32,7 +32,7 @@ function cellClass(count) {
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function ReviewHeatmap() {
+function ReviewHeatmap({ compact: compactProp } = {}) {
   const { session } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,13 @@ function ReviewHeatmap() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Compact mode (~5 week columns / 1 month) when there's little/no history to
+  // show — the 53-week grid is mostly empty gray squares for a new user. Caller
+  // can force it via the `compact` prop, otherwise decide from the data.
+  const isLowActivity = !data || data.total_reviews < 20;
+  const compact = compactProp ?? isLowActivity;
+  const weekCount = compact ? 5 : 53;
+
   // Build the grid data from the fetched days array
   const grid = useMemo(() => {
     if (!data) return null;
@@ -59,16 +66,16 @@ function ReviewHeatmap() {
       dayMap.set(d.date, { count: d.count, recalled: d.recalled });
     }
 
-    // End = today; start = the Sunday of the week 52 full weeks ago
+    // End = today; start = the Sunday of the week (weekCount - 1) full weeks ago
     const today = new Date();
     const todayStr = toLocalDateStr(today);
     const todayDow = today.getDay(); // 0=Sun
 
     // The grid ends at the last day of the current week (Saturday)
     const endOfGrid = addDays(today, 6 - todayDow);
-    // Start = 52 weeks before the first day of the current week
+    // Start = (weekCount - 1) weeks before the first day of the current week
     const startOfCurrentWeek = addDays(today, -todayDow);
-    const startOfGrid = addDays(startOfCurrentWeek, -52 * 7); // 53 weeks total
+    const startOfGrid = addDays(startOfCurrentWeek, -(weekCount - 1) * 7);
 
     // Build columns: each column = one week (7 days Sun..Sat)
     const weeks = [];
@@ -105,7 +112,7 @@ function ReviewHeatmap() {
     }
 
     return { weeks, monthLabels, todayStr };
-  }, [data]);
+  }, [data, weekCount]);
 
   if (loading) {
     return (
@@ -151,28 +158,26 @@ function ReviewHeatmap() {
         <StatPill label="Active days" value={data?.active_days ?? 0} />
       </div>
 
-      {isEmpty ? (
-        <p className="font-sans text-sm text-[#64748B] py-4 text-center">
-          Complete reviews to start building your streak.
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <div className="inline-block min-w-max">
-            {/* Month labels row */}
-            <div className="flex mb-1 ml-7">
-              {grid.weeks.map((_, wi) => {
-                const label = grid.monthLabels.find((m) => m.wi === wi);
-                return (
-                  <div key={wi} className="w-[13px] mr-[2px] shrink-0">
-                    {label ? (
-                      <span className="font-sans text-[9px] text-[#94a3b8] whitespace-nowrap">
-                        {label.label}
-                      </span>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+      {grid && (
+      <div className="overflow-x-auto">
+        <div className="inline-block min-w-max">
+            {/* Month labels row — dropped in compact mode, not enough width to matter */}
+            {!compact && (
+              <div className="flex mb-1 ml-7">
+                {grid.weeks.map((_, wi) => {
+                  const label = grid.monthLabels.find((m) => m.wi === wi);
+                  return (
+                    <div key={wi} className="w-[13px] mr-[2px] shrink-0">
+                      {label ? (
+                        <span className="font-sans text-[9px] text-[#94a3b8] whitespace-nowrap">
+                          {label.label}
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Grid: 7 rows (day of week) × N cols (weeks) */}
             <div className="flex gap-[2px]">
@@ -214,19 +219,27 @@ function ReviewHeatmap() {
               ))}
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-1 mt-2 ml-7">
-              <span className="font-sans text-[9px] text-[#94a3b8]">Less</span>
-              {[0, 1, 2, 4, 7].map((count) => (
-                <div
-                  key={count}
-                  className={`w-[11px] h-[11px] rounded-[2px] ${cellClass(count)}`}
-                />
-              ))}
-              <span className="font-sans text-[9px] text-[#94a3b8]">More</span>
-            </div>
-          </div>
+            {/* Legend — dropped in compact mode along with the month row */}
+            {!compact && (
+              <div className="flex items-center gap-1 mt-2 ml-7">
+                <span className="font-sans text-[9px] text-[#94a3b8]">Less</span>
+                {[0, 1, 2, 4, 7].map((count) => (
+                  <div
+                    key={count}
+                    className={`w-[11px] h-[11px] rounded-[2px] ${cellClass(count)}`}
+                  />
+                ))}
+                <span className="font-sans text-[9px] text-[#94a3b8]">More</span>
+              </div>
+            )}
         </div>
+      </div>
+      )}
+
+      {isEmpty && (
+        <p className="font-sans text-sm text-[#64748B] text-center">
+          Complete reviews to start building your streak.
+        </p>
       )}
     </div>
   );

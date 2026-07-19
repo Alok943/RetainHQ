@@ -200,14 +200,37 @@ function Home({ onStartReviews }) {
     }
   }, [roadmaps, contentManifest]);
 
-  // In-progress roadmaps first; fall back to a few starters (0% rings, "EXPLORE")
-  // so the section is never empty for a new user.
+  // In-progress roadmaps first (so resuming always wins); fill remaining slots
+  // with our strongest content in a fixed order so a new user sees the best
+  // material first instead of whatever order the API happens to return.
+  const FLAGSHIP_SLUGS = ['dsa', 'ai-engineering', 'python-swe', 'sql'];
   const inProgress = roadmaps.filter((r) => (r.progress_pct ?? 0) > 0)
     .sort((a, b) => (b.progress_pct ?? 0) - (a.progress_pct ?? 0));
-  // Three roadmap tiles + the always-last "Customize your own" tile keeps the
-  // grid at 4 cells (one row on desktop).
-  const roadmapTiles = (inProgress.length > 0 ? inProgress : roadmaps).slice(0, 3);
-  const roadmapsHeading = inProgress.length > 0 ? 'ROADMAPS' : 'EXPLORE';
+
+  const roadmapTiles = [];
+  const seenIds = new Set();
+  for (const rm of inProgress) {
+    if (roadmapTiles.length >= 4) break;
+    roadmapTiles.push(rm);
+    seenIds.add(rm.id);
+  }
+  for (const slug of FLAGSHIP_SLUGS) {
+    if (roadmapTiles.length >= 4) break;
+    const rm = roadmaps.find((r) => r.slug === slug && !seenIds.has(r.id));
+    if (rm) {
+      roadmapTiles.push(rm);
+      seenIds.add(rm.id);
+    }
+  }
+  // Still short (small catalog, or few flagship slugs present)? fill from the rest.
+  for (const rm of roadmaps) {
+    if (roadmapTiles.length >= 4) break;
+    if (!seenIds.has(rm.id)) {
+      roadmapTiles.push(rm);
+      seenIds.add(rm.id);
+    }
+  }
+  const roadmapsHeading = inProgress.length > 0 ? 'ROADMAPS' : 'START HERE';
 
   const topReview = dueReviews[0] ?? null;
   const dueCount = dashboard?.due_count ?? 0;
@@ -335,36 +358,43 @@ function Home({ onStartReviews }) {
             </section>
           )}
 
-          {/* Review heatmap — primary, full-width */}
-          <section>
-            <ReviewHeatmap />
+          {/* Heatmap + roadmaps side by side — keeps the empty-state heatmap
+              from dominating the page as its own full-width band. Guests get
+              no heatmap (ReviewHeatmap returns null without a session), so
+              the roadmaps block goes full-width and back to a 4-across tile
+              grid instead of leaving dead space in the right column. */}
+          <section className={session ? 'grid md:grid-cols-2 gap-4 items-start' : ''}>
+            {session && <ReviewHeatmap />}
+
+            <div>
+              <div className="micro-label text-[#64748B] text-[11px] font-bold uppercase tracking-widest mb-3">
+                {roadmapsHeading}
+              </div>
+              {roadmaps.length === 0 ? (
+                <div className={session ? 'grid grid-cols-2 gap-3' : 'grid grid-cols-2 sm:grid-cols-4 gap-3'}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-3 flex items-center gap-2.5">
+                      <div className="skeleton w-7 h-7 rounded-full shrink-0" />
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <div className="skeleton h-3 w-full" />
+                        <div className="skeleton h-2.5 w-8" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={session ? 'grid grid-cols-2 gap-3' : 'grid grid-cols-2 sm:grid-cols-4 gap-3'}>
+                  {roadmapTiles.map((rm) => (
+                    <RoadmapTile key={rm.id} rm={rm} to={`/roadmaps/${rm.slug || rm.id}`} />
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
-          {/* Roadmaps grid */}
+          {/* Bring your own path — first-class option, not a grid afterthought */}
           <section>
-            <div className="micro-label text-[#64748B] text-[11px] font-bold uppercase tracking-widest mb-3">
-              {roadmapsHeading}
-            </div>
-            {roadmaps.length === 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-3 flex items-center gap-2.5">
-                    <div className="skeleton w-7 h-7 rounded-full shrink-0" />
-                    <div className="flex-1 flex flex-col gap-1.5">
-                      <div className="skeleton h-3 w-full" />
-                      <div className="skeleton h-2.5 w-8" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {roadmapTiles.map((rm) => (
-                  <RoadmapTile key={rm.id} rm={rm} to={`/roadmaps/${rm.slug || rm.id}`} />
-                ))}
-                <CustomRoadmapTile />
-              </div>
-            )}
+            <CustomRoadmapTile />
           </section>
 
         </div>
@@ -599,21 +629,31 @@ function FocusAreasCard({ areas, onReview }) {
   );
 }
 
-// Always-last tile in the Home roadmaps grid: syllabus → personal roadmap.
-// Dashed like the "Bring Your Own Path" card on /roadmaps (same destination).
+// "Bring your own path" — a first-class option, not a grid afterthought.
+// Same dashed treatment + copy tone as the card on /roadmaps (Roadmaps.jsx),
+// just sized for Home: full-width, room for the explainer line.
 function CustomRoadmapTile() {
   return (
     <Link
       to="/roadmaps/new"
-      className="border-2 border-dashed border-[rgba(15,23,42,0.12)] hover:border-[#0891B2]/60 rounded-lg p-3 flex items-center gap-2.5 text-left hover:-translate-y-0.5 transition-all"
+      className="bg-[rgba(15,23,42,0.02)] border-2 border-dashed border-[rgba(15,23,42,0.12)] hover:border-[#0891B2]/60 rounded-lg p-5 md:p-6 flex flex-col md:flex-row items-center gap-5 justify-between text-left hover:-translate-y-0.5 transition-all group/byop"
     >
-      <div className="w-7 h-7 rounded-full bg-[#0891B2]/10 flex items-center justify-center shrink-0">
-        <Sparkles size={13} className="text-[#0891B2]" />
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="w-11 h-11 rounded-xl bg-white border border-[rgba(15,23,42,0.08)] shadow-sm flex items-center justify-center shrink-0 group-hover/byop:border-[#0891B2]/40 transition-colors">
+          <Sparkles size={18} className="text-[#0891B2]" />
+        </div>
+        <div className="min-w-0">
+          <div className="font-sans text-base font-semibold text-[#0F172A] mb-1">
+            Bring your own path
+          </div>
+          <p className="font-sans text-sm text-[#64748B] leading-relaxed">
+            Paste a syllabus or describe a goal — get a personal roadmap with spaced reviews built in.
+          </p>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="font-sans text-[13px] font-medium text-[#0F172A] truncate">Customize your own</div>
-        <div className="font-mono text-[11px] text-[#64748B] truncate">syllabus → roadmap</div>
-      </div>
+      <span className="kinetic-btn kinetic-accent-gradient shrink-0 px-4 py-2.5 text-sm">
+        Get started <ArrowRight size={14} />
+      </span>
     </Link>
   );
 }
