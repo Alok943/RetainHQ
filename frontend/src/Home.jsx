@@ -5,6 +5,7 @@ import { apiFetch } from './lib/api';
 import { track, trackOnce, EVENTS } from './lib/analytics';
 import FirstCapture from './FirstCapture';
 import AudiencePicker from './AudiencePicker';
+import PushPromptBanner from './PushPromptBanner';
 import { useAuth } from './lib/AuthContext';
 import { useToast } from './lib/ToastContext';
 import ReviewHeatmap from './ReviewHeatmap';
@@ -267,6 +268,11 @@ function Home({ onStartReviews }) {
 
         {/* --- MAIN COLUMN --- */}
         <div className="flex flex-col gap-5 min-w-0">
+
+          {/* Notification opt-in — signed-in only (guests have no scheduled
+              reviews to be reminded about). Self-hides per its own frequency
+              policy; renders nothing when already on, denied, or asked today. */}
+          {session && <PushPromptBanner />}
 
           {/* Due-session card */}
           <section>

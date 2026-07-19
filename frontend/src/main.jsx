@@ -17,17 +17,18 @@ import ErrorBoundary from './ErrorBoundary.jsx'
 import { ThemeProvider } from './lib/theme'
 import { initAnalytics, track, EVENTS } from './lib/analytics'
 import { initErrorTracking } from './lib/errors'
-import { registerSW, isPushSupported } from './lib/push'
+import { ensureSubscribed } from './lib/push'
 
 initAnalytics() // no-op unless VITE_POSTHOG_KEY is set
 initErrorTracking() // no-op unless VITE_SENTRY_DSN is set
 
-// Re-register the push SW on load if permission was already granted in a
-// prior session. Never prompt here — that's an explicit user action
-// (Profile.jsx toggle / Review.jsx done-screen card, see B4).
-if (isPushSupported() && Notification.permission === 'granted') {
-  registerSW();
-}
+// Re-register the push SW on load if permission was already granted in a prior
+// session, and silently re-create the subscription if it went stale (cleared
+// site data, new profile, rotated endpoint, changed VAPID key) — otherwise the
+// user stays "granted" but never receives anything. Never prompts: that's an
+// explicit user action (Profile.jsx toggle / Review.jsx + Home.jsx cards, B4).
+// Fire-and-forget so a push hiccup can never block app startup.
+ensureSubscribed().catch(() => {});
 
 // Fires once, whenever the browser actually installs the PWA (Add to Home
 // Screen / desktop install) — a real intent signal, not just a manifest check.

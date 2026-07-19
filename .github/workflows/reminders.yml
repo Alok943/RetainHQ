@@ -1,15 +1,21 @@
 name: Daily review reminders
 
-# Sends due-review reminder emails once a day. Host-agnostic: it just POSTs to
-# the API with the shared secret, so moving Railway -> Render means updating the
-# REMINDERS_URL repo secret only.
+# Sends due-review reminders (email + web push) once a day. Host-agnostic: it
+# just POSTs to the API with the shared secret, so moving hosts means updating
+# the REMINDERS_URL repo secret only.
 #
 # Required repo secrets (Settings -> Secrets and variables -> Actions):
-#   REMINDERS_URL   e.g. https://<your-api-host>/api/internal/send-reminders
+#   REMINDERS_URL   e.g. https://retainhq.onrender.com/api/internal/send-reminders
 #   CRON_SECRET     same value as the backend CRON_SECRET env var
 #
 # Note: GitHub Actions cron can lag ~15 min and pauses after 60 days of repo
 # inactivity. Fine for a daily nudge; switch to a host cron if that ever bites.
+#
+# Render's free tier sleeps after ~15 min idle, so the 01:30 UTC run always hits
+# a cold service. The warmup step below wakes it (and tolerates the 502/503 the
+# router returns mid-spin-up) before the real POST, which then retries only on
+# transient failures — a 401/4xx is a genuine misconfiguration and fails loudly
+# on the first attempt rather than being retried into a timeout.
 
 on:
   schedule:
@@ -19,13 +25,65 @@ on:
 jobs:
   send:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REMINDERS_URL: ${{ secrets.REMINDERS_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
+      - name: Check secrets are set
+        run: |
+          if [ -z "$REMINDERS_URL" ]; then
+            echo "::error::REMINDERS_URL repo secret is empty or unset."
+            exit 1
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET repo secret is empty or unset."
+            exit 1
+          fi
+          # Log the host only — never the full URL (it is not sensitive, but the
+          # secret sits next to it in the settings UI and mistakes are easy).
+          echo "Target host: $(echo "$REMINDERS_URL" | sed -E 's#^(https?://[^/]+).*#\1#')"
+
+      - name: Wake the API (Render free tier sleeps)
+        run: |
+          HEALTH_URL="${REMINDERS_URL%/api/internal/send-reminders}/health"
+          for i in $(seq 1 8); do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL" || echo 000)
+            echo "warmup $i/8 -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "API is awake."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::API did not return 200 from $HEALTH_URL within ~2 min."
+          exit 1
+
       - name: Trigger reminder send
         run: |
-          code=$(curl -sS -o /tmp/body -w "%{http_code}" -X POST \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.REMINDERS_URL }}")
-          echo "HTTP $code"
-          cat /tmp/body
-          echo
-          test "$code" = "200"
+          for i in 1 2 3; do
+            code=$(curl -sS -o /tmp/body -w "%{http_code}" --max-time 120 \
+              -X POST -H "X-Cron-Secret: $CRON_SECRET" "$REMINDERS_URL" || echo 000)
+            echo "attempt $i/3 -> HTTP $code"
+            cat /tmp/body 2>/dev/null || true
+            echo
+            case "$code" in
+              200)
+                exit 0
+                ;;
+              401)
+                echo "::error::401 — the CRON_SECRET repo secret does not match the backend's CRON_SECRET env var (or the backend's is unset, which rejects every caller)."
+                exit 1
+                ;;
+              000|5??)
+                echo "Transient failure, retrying in 20s..."
+                sleep 20
+                ;;
+              *)
+                echo "::error::Non-retryable HTTP $code — check REMINDERS_URL points at the current host."
+                exit 1
+                ;;
+            esac
+          done
+          echo "::error::Still failing after 3 attempts."
+          exit 1

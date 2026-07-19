@@ -65,6 +65,22 @@ export async function subscribePush() {
   return subscription;
 }
 
+// Keep an already-granted permission actually working. `permission === 'granted'`
+// does NOT guarantee a live PushSubscription — it dies when the user clears site
+// data, moves to a new browser profile, the push service rotates the endpoint, or
+// the server's VAPID key changes. The symptom is silent: the browser still says
+// "granted", the Profile toggle quietly reads as off, and no notification ever
+// arrives. Re-subscribing here is promptless (the browser only prompts when
+// permission is 'default'), so this never violates the never-prompt-on-load rule.
+export async function ensureSubscribed() {
+  if (!isPushSupported()) return;
+  if (Notification.permission !== 'granted') return; // 'default' → user-gesture prompts only
+  const reg = await registerSW();
+  const existing = await reg?.pushManager.getSubscription();
+  if (existing) return; // already live — nothing to do
+  await subscribePush();
+}
+
 export async function unsubscribePush() {
   if (!isPushSupported()) return;
   const reg = await navigator.serviceWorker.getRegistration();

@@ -11,10 +11,19 @@ router = APIRouter()
 # Activation funnel derived from existing data (auth.users + activities + reviews).
 # Mirrors docs/funnel.sql. Admin-gated (founder email) — no per-user PII leaves the
 # admin's own view. Casts pct to float so Pydantic serializes cleanly.
+#
+# Every CTE MUST be scoped to `u` (i.e. auth.users). The demo classroom for the
+# teacher dashboard is seeded with synthetic students that have activities and
+# reviews but no auth.users row, and those rows are intentionally permanent — the
+# school pitch needs a populated gap map. Counting them put ghosts in the
+# numerator while the denominator stayed real, which reported activation at
+# 121.1% (23/19). An unscoped `select distinct user_id from <table>` here is
+# always a bug, no matter how the seed data evolves.
 _SUMMARY_SQL = text("""
 with u as (select id, created_at::date as signup_date from auth.users),
-acted    as (select distinct user_id from activities),
-reviewed as (select distinct user_id from reviews where status = 'completed'),
+acted    as (select distinct a.user_id from activities a join u on u.id = a.user_id),
+reviewed as (select distinct r.user_id from reviews r join u on u.id = r.user_id
+             where r.status = 'completed'),
 returned as (
   select u.id from u
   where exists (select 1 from activities a where a.user_id = u.id and a.created_at::date  > u.signup_date)
@@ -44,9 +53,14 @@ group by u.email, u.created_at
 order by u.created_at desc
 """)
 
+# Same scoping rule as _SUMMARY_SQL: without the auth.users filter the seeded
+# demo classroom dominates this chart (it reported lesson=73 when exactly 1 of
+# those captures came from a real user), which inverts the read on which sources
+# actually drive captures.
 _SOURCE_SQL = text("""
-select coalesce(source_type, 'unspecified') as source_type, count(*) as activities
-from activities
+select coalesce(a.source_type, 'unspecified') as source_type, count(*) as activities
+from activities a
+where exists (select 1 from auth.users u where u.id = a.user_id)
 group by 1
 order by 2 desc
 """)
