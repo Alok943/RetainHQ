@@ -1,7 +1,7 @@
 # SEO Implementation Plan
 
 **Source data:** Google Search Console 3-month export, 2026-07-16 (property covers both hosts).
-**Status (2026-07-19):** P0-A (prerender) and P0-B (mechanism + the full retitle table, all 16 pages + the 5 physics pages) are fully shipped. **P1-B is fully shipped** — item 2 (DSA `related` field → links) turned out to already be live from the P0-A build; items 1 (same-roadmap prev/next), 3 (hardcoded topical links), and 4 (git-derived sitemap lastmod) shipped 2026-07-19. **Still open: all of P1-A** — the keyword-gap content edits below go through the Antigravity content pipeline (real prose, not metadata), not a script/schema change, so they're unstarted. Each P1-A item below is still self-contained and can be handed to any implementation session/model without this document's authoring context.
+**Status (2026-07-19): everything in this plan is shipped.** P0-A (prerender) and P0-B (mechanism + the full retitle table, all 16 pages + the 5 physics pages) shipped. P1-B (internal linking, all 4 items) shipped. **P1-A turned out to already be done** — checked all 6 target lessons before drafting an Antigravity runbook for them, and 5 of 6 keyword-gap sections already existed verbatim (RAG triad + RAGAS/TruLens, Gunicorn worker classes + how-many-workers, reading-env-vars + YamlConfigSettingsSource, deque-vs-dequeue, is-selection-sort-stable — likely from an untracked prior content pass). Only `the-gil` needed a fix: "Global Interpreter Lock (GIL)" was in paragraph 3, not paragraph 1 — moved earlier with a one-word edit. Nothing left from this plan; future SEO work starts fresh from the monthly GSC loop below.
 
 ---
 
@@ -175,18 +175,18 @@ In GSC → URL Inspection, request indexing for the 15 priority URLs in §0. The
 
 ---
 
-## P1-A · Keyword-gap coverage inside existing lessons
+## P1-A · Keyword-gap coverage inside existing lessons — ✅ done (verified 2026-07-19)
 
-GSC shows searchers arriving on sub-topics the pages never name. Add these as **real content** (a section/heading + 2–4 sentences in the lesson JSON, written to teach — not keyword stuffing). Content edits can go through the normal Antigravity pipeline against `content/PROMPT-*.md` contracts; each must pass `content/validate.py`.
+GSC shows searchers arriving on sub-topics the pages never name. These needed **real content** (a section/heading + 2–4 sentences in the lesson JSON, written to teach — not keyword stuffing). All 6 were checked against the live content JSON before any edit was made; 5 already had the exact section from a prior (untracked) content pass, the 6th got a one-word fix.
 
-| Lesson | Add |
-|---|---|
-| ai-engineering/rag-evaluation | A "The RAG triad" section (context relevance, groundedness, answer relevance — queries `rag triad` already hit this page); a sentence naming common frameworks (RAGAS, TruLens) as things this lesson's concepts map to |
-| python-backend/uvicorn-gunicorn-workers | "Gunicorn worker classes" (sync, gthread, `uvicorn.workers.UvicornWorker`) and "How many workers?" (the 2×cores+1 heuristic and when it's wrong) — both are distinct GSC queries |
-| python-backend/pydantic-settings | Explicit "Reading environment variables" phrasing; name `YamlConfigSettingsSource` (a GSC query) if YAML config is covered at all |
-| dsa/queue-and-deque | A "deque vs dequeue" naming note — searchers write `dequeue in data structure` (2 distinct GSC queries) |
-| dsa/selection-sort | "Is selection sort stable?" — an exact GSC query (`selection sort is stable or not`) |
-| python-backend/the-gil | Make sure the exact phrase "Global Interpreter Lock (GIL)" appears in the first paragraph; cross-link threading-vs-multiprocessing |
+| Lesson | Add | Status |
+|---|---|---|
+| ai-engineering/rag-evaluation | A "The RAG triad" section (context relevance, groundedness, answer relevance — queries `rag triad` already hit this page); a sentence naming common frameworks (RAGAS, TruLens) as things this lesson's concepts map to | ✅ already present |
+| python-backend/uvicorn-gunicorn-workers | "Gunicorn worker classes" (sync, gthread, `uvicorn.workers.UvicornWorker`) and "How many workers?" (the 2×cores+1 heuristic and when it's wrong) — both are distinct GSC queries | ✅ already present |
+| python-backend/pydantic-settings | Explicit "Reading environment variables" phrasing; name `YamlConfigSettingsSource` (a GSC query) if YAML config is covered at all | ✅ already present |
+| dsa/queue-and-deque | A "deque vs dequeue" naming note — searchers write `dequeue in data structure` (2 distinct GSC queries) | ✅ already present |
+| dsa/selection-sort | "Is selection sort stable?" — an exact GSC query (`selection sort is stable or not`) | ✅ already present |
+| python-backend/the-gil | Make sure the exact phrase "Global Interpreter Lock (GIL)" appears in the first paragraph; cross-link threading-vs-multiprocessing | ✅ fixed 2026-07-19 — phrase was in paragraph 3 (`mental_model.description`), added to `mental_model.intuition` (paragraph 1) too; cross-link to threading-vs-multiprocessing was already there via `metadata.unlocks` |
 
 ---
 

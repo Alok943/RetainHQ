@@ -20,7 +20,7 @@
     "scenario": "You spin up 4 threads on your 4-core server to process a massive dataset, expecting it to be 4x faster. But it actually takes slightly longer than using 1 thread. Why?"
   },
   "mental_model": {
-    "intuition": "The GIL is a speaking baton. Even if there are 10 people in the room (threads), only the person holding the baton is allowed to speak (execute Python code).",
+    "intuition": "The GIL (Global Interpreter Lock) is a speaking baton. Even if there are 10 people in the room (threads), only the person holding the baton is allowed to speak (execute Python code).",
     "description": "The Global Interpreter Lock (GIL) is a mutex in CPython that protects access to Python objects, preventing multiple threads from executing Python bytecodes at once. This means no matter how many threads or CPU cores you have, only one thread can execute Python code at any given time."
   },
   "sections": [
