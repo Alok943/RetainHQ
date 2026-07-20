@@ -242,7 +242,10 @@ async def test_template_version_pinned_on_goal(client):
     draft = await _create_goal_and_generate_draft(client)
     commit = await client.post("/api/career/tree/commit", json=draft)
     assert commit.status_code == 201
-    assert commit.json()["template_version"] == draft["template_version"] == "v1"
+    # Pinned to whatever version the draft was generated from — the CURRENT
+    # latest on disk, not a hardcoded literal (templates version over time).
+    latest = next(t["version"] for t in career_tree.list_templates() if t["role_key"] == BACKEND_ROLE)
+    assert commit.json()["template_version"] == draft["template_version"] == latest
 
 
 async def test_second_active_goal_archives_first(client, db):
