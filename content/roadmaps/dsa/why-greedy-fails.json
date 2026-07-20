@@ -1,0 +1,89 @@
+{
+  "slug": "why-greedy-fails",
+  "title": "Why greedy fails",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "why-greedy-works"
+    ],
+    "unlocks": [
+      "overlapping-subproblems"
+    ],
+    "project_usage": [
+      "Algorithm design",
+      "System optimization"
+    ]
+  },
+  "overview": {
+    "what": "Greedy algorithms fail when a locally optimal choice prevents finding the globally optimal solution. For example, making change for `6` with coins `{1, 3, 4}`. A greedy approach takes `4 + 1 + 1` (3 coins), but the optimal is `3 + 3` (2 coins). Taking the biggest coin blocks the better combination.",
+    "why": "Identifying when greedy fails is crucial because it tells you when to switch to more exhaustive strategies like dynamic programming.",
+    "where_used": [
+      "Coin change problems with arbitrary denominations",
+      "0/1 Knapsack",
+      "Complex resource allocation"
+    ]
+  },
+  "why_learning_this": [
+    "You will save hours of debugging by quickly identifying problems that cannot be solved greedily.",
+    "It forms the diagnostic rule for knowing when to reach for dynamic programming.",
+    "Interviewers frequently present problems that look greedy but are actually dynamic programming traps."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Trying to 'fix' a failing greedy algorithm with more heuristics",
+      "explanation": "If the problem lacks the greedy-choice property, adding complex conditions or sorting rules usually just creates a fragile algorithm that fails on different edge cases."
+    },
+    {
+      "title": "Assuming 0/1 Knapsack works like Fractional Knapsack",
+      "explanation": "In Fractional Knapsack, you can split items, so taking the best value-to-weight ratio works. In 0/1 Knapsack, items are indivisible, so taking a high-ratio item might leave awkward empty space."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a greedy approach fail for making change for `6` using coin denominations of `{1, 3, 4}`?",
+      "answer": "A greedy algorithm picks the largest coin first (`4`), leaving `2`, which requires two `1`-coins. The result is 3 coins (`4 + 1 + 1`). The optimal solution is 2 coins (`3 + 3`). The greedy choice locks out the better combination.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the diagnostic rule for when a greedy algorithm fails?",
+      "answer": "Greedy fails exactly when no exchange argument holds -- when today's locally-best choice can foreclose a better global outcome.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a greedy algorithm fails, what technique should you usually reach for next?",
+      "answer": "Dynamic programming, because you need to explore multiple branching possibilities.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Why does the greedy strategy fail for 0/1 Knapsack?",
+      "answer": "Because items are indivisible. Taking an item with a high value-to-weight ratio might consume capacity that could otherwise hold multiple slightly less efficient items that together yield a higher total value.",
+      "why": "The inability to fractionalize items means the greedy choice can leave wasted, unusable capacity."
+    },
+    {
+      "type": "predict-output",
+      "question": "Given coins `{1, 15, 25}` and a target of `30`, what does the greedy algorithm output, and what is the optimal output?",
+      "answer": "Greedy outputs 6 coins (`25 + 1 + 1 + 1 + 1 + 1`). The optimal output is 2 coins (`15 + 15`).",
+      "why": "Greedy blindly takes the largest coin (`25`), ignoring that it leaves a remainder (`5`) that requires many small coins."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Spot the failure",
+      "prompt": "Create a counter-example for a greedy pathfinding algorithm that always takes the edge with the lowest immediate cost to reach the target."
+    }
+  ],
+  "sources": [
+    "https://medium.com/@davinaleo2007/mastering-greedy-algorithms-from-brute-force-to-optimal-solutions-e9e1179b0c08",
+    "https://dev.to/jayk0001/dsa-fundamentals-greedy-algorithms-from-theory-to-leetcode-practice-dg9"
+  ]
+}

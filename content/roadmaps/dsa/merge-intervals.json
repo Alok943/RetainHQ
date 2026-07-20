@@ -1,0 +1,143 @@
+{
+  "slug": "merge-intervals",
+  "title": "Merge intervals",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "interval-scheduling"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "Union",
+      "definition": "The combination of two overlapping or touching intervals into a single continuous interval."
+    }
+  ],
+  "hook": {
+    "scenario": "You have a list of times when your servers were down. Some downtimes overlap because multiple alerts fired simultaneously.",
+    "question": "How do you calculate the actual contiguous blocks of time your system was offline?"
+  },
+  "why_it_exists": {
+    "problem": "Given an array of intervals, merge all overlapping intervals to produce a list of mutually exclusive intervals that cover all the input.",
+    "naive_solution": "Compare every interval with every other interval to check for overlaps, merging them and restarting the check until no overlaps remain. This takes `O(n^2)` or worse.",
+    "better_idea": "Sort the intervals first. Once sorted, overlapping intervals will be adjacent, allowing us to merge them in a single `O(n)` scan."
+  },
+  "mental_model": {
+    "intuition": "If you line up all the intervals by when they start, you can just walk down the line, stretching out your current block as long as the next piece touches or overlaps it.",
+    "description": "Sort the array by start times. Keep a 'current merged interval'. If the next interval in the sorted list overlaps the current one, extend the current one's end time. If it doesn't overlap, save the current interval and start a new one.",
+    "repeated_decision": "Does this next interval (sorted by start time) overlap the one I'm currently building -- if so, extend it; if not, close it and start a new one."
+  },
+  "explanation": "Merge Intervals has a different goal than Interval Scheduling. We aren't trying to pick a subset; we are COALESCING overlapping intervals into their union.\n\nBecause the goal is different, the sorting key is different. We MUST sort by START TIME, not end time. Call this contrast out explicitly. If you sort by start time, any intervals that overlap are guaranteed to be adjacent in the sorted array.\n\nThe algorithm sweeps exactly once. We maintain the `current` interval. When we look at the `next` interval:\n1. If `next.start <= current.end`, they overlap. We extend the current interval by taking the maximum of their end times: `current.end = max(current.end, next.end)`. We use `max()` because the `next` interval might be completely swallowed by the `current` one (e.g., merging `[1, 10]` with `[2, 5]`).\n2. If `next.start > current.end`, they do not overlap. We push the `current` interval to our results array, and set `current = next` to start building a new contiguous block.\n\nLet's hand-trace with intervals: `[1, 3]`, `[2, 6]`, `[8, 10]`, `[15, 18]`, `[2, 4]`.\n\n1. Sort by start time: `[1, 3]`, `[2, 4]`, `[2, 6]`, `[8, 10]`, `[15, 18]`.\n2. Initialize `current` as `[1, 3]`.\n3. Next is `[2, 4]`. Start `2 <= 3` (overlap). `current.end = max(3, 4) = 4`. `current` is now `[1, 4]`.\n4. Next is `[2, 6]`. Start `2 <= 4` (overlap). `current.end = max(4, 6) = 6`. `current` is now `[1, 6]`. (Notice the triple-overlap resolved perfectly).\n5. Next is `[8, 10]`. Start `8 > 6` (no overlap). Push `[1, 6]` to results. `current` becomes `[8, 10]`.\n6. Next is `[15, 18]`. Start `15 > 10` (no overlap). Push `[8, 10]` to results. `current` becomes `[15, 18]`.\n7. End of array. Push final `current` `[15, 18]` to results.\n\nFinal output: `[1, 6]`, `[8, 10]`, `[15, 18]`.\n\nThe time complexity is `O(n log n)` due to the sorting step. The linear scan takes `O(n)`. The space complexity is `O(n)` for the output array (or `O(1)` or `O(n)` for sorting depending on the language).",
+  "key_points": [
+    {
+      "title": "Sort by start time",
+      "detail": "Unlike interval scheduling, you must sort by start time to guarantee overlapping intervals are adjacent."
+    },
+    {
+      "title": "Use max() when extending",
+      "detail": "When extending an interval, always use `max(current.end, next.end)`. This handles intervals that are completely contained within the current one."
+    },
+    {
+      "title": "Push the final interval",
+      "detail": "Don't forget to push the last `current` interval to the results array after the loop finishes."
+    }
+  ],
+  "pattern": {
+    "name": "Line Sweep / Sorting",
+    "recognition_cues": [
+      "The problem asks you to combine or merge overlapping blocks of time or ranges.",
+      "You need to find continuous segments."
+    ]
+  },
+  "failure_signals": [
+    "Sorting by end time instead of start time (conflating with interval scheduling).",
+    "Forgetting that one interval might be completely inside another and just blindly doing `current.end = next.end`.",
+    "Forgetting to push the very last interval after the loop terminates."
+  ],
+  "engineering_examples": [
+    {
+      "title": "IP/CIDR Aggregation",
+      "problem": "Firewalls often receive massive lists of blocked IP ranges that overlap.",
+      "why_this_algorithm": "Merging the intervals reduces the rule list to a minimal set of non-overlapping IP blocks, speeding up packet filtering."
+    },
+    {
+      "title": "Calendar Free/Busy Calculation",
+      "problem": "Finding a time when everyone in a team is free for a meeting.",
+      "why_this_algorithm": "By taking all busy events for all users and merging them, you get the combined busy time. The gaps between are the free times."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "You need to find the point in time with the maximum overlapping intervals.",
+      "reason": "While sorting by start time helps, you usually want a different pattern (sweeping line with +1 for start and -1 for end) to count simultaneous events rather than just merging them."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Conflating with interval scheduling",
+      "explanation": "If you sort by end time, `[1, 10]` and `[2, 3]` will be ordered `[2, 3]`, `[1, 10]`. Merging them properly becomes much harder because the starts are out of order."
+    },
+    {
+      "title": "Forgetting `max()` during extension",
+      "explanation": "If `current` is `[1, 10]` and `next` is `[2, 3]`, they overlap. If you just set `current.end = next.end`, you shrink the interval to `[1, 3]`, which is wrong. You need `max(10, 3)`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Which property should you sort intervals by when solving the Merge Intervals problem?",
+      "answer": "Start time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When two intervals overlap, how do you determine the end time of the merged interval?",
+      "answer": "Take the maximum of the two end times: `max(current.end, next.end)`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of the standard Merge Intervals solution?",
+      "answer": "`O(n log n)` due to the initial sorting. The merging pass is `O(n)`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given an array of intervals, return an array of non-overlapping intervals that cover all the intervals in the input.",
+      "company": "SDE interview",
+      "answer": "Sort by start time. Initialize a result array with the first interval. Iterate through the rest. If the current interval overlaps the last one in the result array, update the result array's last interval end time using `max()`. Otherwise, push the current interval.",
+      "approach": "This is the classic implementation of Merge Intervals. Sorting is the critical enabler."
+    },
+    {
+      "question": "Given a list of intervals representing the busy times of users, find the first available free slot of a given duration.",
+      "company": "SDE interview",
+      "answer": "Merge all the busy intervals across all users using the standard Merge Intervals algorithm. Then iterate through the merged intervals; the gaps between `merged[i].end` and `merged[i+1].start` are the free slots. Check if any gap is >= the requested duration.",
+      "approach": "Merging the intervals collapses the complexity of multiple users into a single timeline, making it trivial to find the gaps."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Merge Intervals",
+      "url": "https://leetcode.com/problems/merge-intervals/",
+      "difficulty": "medium",
+      "why": "The canonical problem for this pattern."
+    }
+  ],
+  "related": [
+    "interval-scheduling",
+    "minimum-spanning-tree-kruskal"
+  ],
+  "interesting_facts": [
+    "This algorithm is functionally a 1-dimensional bounding box calculation, a concept heavily used in graphics programming and collision detection."
+  ],
+  "sources": [
+    "https://www.educative.io/answers/merge-intervals-leetcode",
+    "https://unwiredlearning.com/blog/merge-intervals",
+    "https://algo.monster/liteproblems/56"
+  ]
+}

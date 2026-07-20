@@ -1,0 +1,143 @@
+{
+  "slug": "jump-game",
+  "title": "Jump game",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "why-greedy-works"
+    ],
+    "unlocks": []
+  },
+  "glossary": [
+    {
+      "term": "Reachability",
+      "definition": "Whether a certain state or index in a data structure can be accessed from a starting position following the given rules."
+    }
+  ],
+  "hook": {
+    "scenario": "You are playing a board game where each square tells you the maximum number of steps you can jump forward.",
+    "question": "Can you determine if it's possible to reach the final square without exploring every possible combination of jumps?"
+  },
+  "why_it_exists": {
+    "problem": "Given an integer array `nums` where `nums[i]` is the maximum jump length at that position, determine if you can reach the last index starting from index 0.",
+    "naive_solution": "Use backtracking to try every possible jump size from every position. If a path reaches the end, return true. This has an exponential `O(2^n)` time complexity.",
+    "better_idea": "Use a greedy approach to track the absolute furthest index reachable at any point. If we update this maximum reach as we scan left to right, we can solve it in a single `O(n)` pass."
+  },
+  "mental_model": {
+    "intuition": "Imagine you are painting the floor forward. As long as you are standing on a painted tile, you can swing your brush forward to paint more tiles. If you step on a tile and realize your paint ran out behind you, you're stuck.",
+    "description": "Maintain a variable `farthest_reachable`. Iterate through the array. At index `i`, if `i > farthest_reachable`, it means you couldn't even reach your current position, so return false. Otherwise, update `farthest_reachable` to `max(farthest_reachable, i + nums[i])`. If `farthest_reachable` >= the last index, return true.",
+    "repeated_decision": "Has the farthest index I can reach fallen behind the index I'm currently standing on? If yes, I'm stuck; if no, can this index's jump extend my reach?"
+  },
+  "explanation": "Jump Game is a different flavor of greedy algorithm compared to interval scheduling. It's not 'sort then scan'; it's 'greedy reachability'. We maintain a running frontier of how far we can go.\n\nThe invariant is critical: `farthest_reachable` never needs recomputation. It only grows monotonically as we scan left to right. Because `nums[i]` represents a MAXIMUM jump length, if we can reach index `i`, we can reach every index between our current position and `i + nums[i]`.\n\nLet's trace an array `nums = [2, 3, 1, 1, 4]`:\n1. Initialize `farthest_reachable = 0`.\n2. `i = 0`, `nums[0] = 2`. We are at `0 <= 0` (good). New reach: `max(0, 0 + 2) = 2`.\n3. `i = 1`, `nums[1] = 3`. We are at `1 <= 2` (good). New reach: `max(2, 1 + 3) = 4`.\n4. `i = 2`, `nums[2] = 1`. We are at `2 <= 4` (good). New reach: `max(4, 2 + 1) = 4`.\n5. `i = 3`, `nums[3] = 1`. We are at `3 <= 4` (good). New reach: `max(4, 3 + 1) = 4`.\n6. `i = 4`, `nums[4] = 4`. We are at `4 <= 4` (good). We reached the end! Return true.\n\nWhat about a failure case? `nums = [3, 2, 1, 0, 4]`:\n1. `farthest_reachable = 0`.\n2. `i = 0`, `nums[0] = 3`. Reach becomes 3.\n3. `i = 1`, `nums[1] = 2`. Reach becomes `max(3, 1 + 2) = 3`.\n4. `i = 2`, `nums[2] = 1`. Reach becomes `max(3, 2 + 1) = 3`.\n5. `i = 3`, `nums[3] = 0`. Reach becomes `max(3, 3 + 0) = 3`.\n6. `i = 4`, `nums[4] = 4`. Wait, `4 > farthest_reachable` (which is 3). We are standing on an index we cannot reach! Return false.\n\nBecause we do exactly one pass without backtracking, the time complexity is `O(n)`, and space is `O(1)`. There is also a Jump Game II variant where you must find the MINIMUM number of jumps; that also uses a greedy frontier but effectively counts BFS layers in `O(n)`.",
+  "key_points": [
+    {
+      "title": "Track the maximum frontier",
+      "detail": "You only need to know the absolute furthest point you can reach, not the specific path to get there."
+    },
+    {
+      "title": "Check for unreachability mid-scan",
+      "detail": "The failure condition is when your current index `i` is greater than `farthest_reachable`. If that happens, stop early and return false."
+    },
+    {
+      "title": "O(n) time, O(1) space",
+      "detail": "By maintaining just a single integer tracking the frontier, we achieve optimal space and time."
+    }
+  ],
+  "pattern": {
+    "name": "Greedy Frontier Tracking",
+    "recognition_cues": [
+      "You need to determine if a destination is reachable.",
+      "You have varying 'power' or 'range' at each step.",
+      "Any step within the range is valid."
+    ]
+  },
+  "failure_signals": [
+    "Trying to write an `O(n^2)` dynamic programming solution (it works, but is suboptimal).",
+    "Forgetting to check if `i > farthest_reachable` before using `nums[i]` to extend the reach.",
+    "Trying to track the 'best single jump' from a position instead of the absolute max reach."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Network Packet TTL Routing",
+      "problem": "Determine if a packet can reach its destination across nodes that impart different Time-To-Live (TTL) boosts.",
+      "why_this_algorithm": "Tracking the maximum reachable node ensures the packet isn't dropped prematurely."
+    },
+    {
+      "title": "Video Game Procedural Generation",
+      "problem": "Validating that a procedurally generated platformer level is actually completable by the player.",
+      "why_this_algorithm": "The algorithm verifies that from the start, there are always platforms within jump range leading to the exit."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "You need to find the specific path taken, not just a true/false reachability answer.",
+      "reason": "While the greedy frontier tells you IF it's possible, it doesn't store the parents of each jump. You'd need an array or BFS to reconstruct the path."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Tracking 'best jump' instead of running frontier",
+      "explanation": "Some attempt to greedily pick the jump that lands on the largest `nums` value. This fails. You must track the absolute index `i + nums[i]`, not the value of `nums[jump]`."
+    },
+    {
+      "title": "Forgetting to check if `i > farthest_reachable`",
+      "explanation": "If you just unconditionally do `farthest_reachable = max(..., i + nums[i])`, you might incorrectly 'jump over' a gap of 0s that you shouldn't have been able to cross."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What single value do we need to track to solve the Jump Game greedily?",
+      "answer": "The furthest index that is reachable so far (`farthest_reachable`).",
+      "tier": "tier1"
+    },
+    {
+      "q": "In the Jump Game algorithm, what is the condition that proves we are stuck and cannot reach the end?",
+      "answer": "When the current index `i` we are evaluating is strictly greater than the `farthest_reachable` index.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the space complexity of the optimal greedy Jump Game solution?",
+      "answer": "`O(1)`, because we only need to store a few integer variables.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "You are given an integer array `nums`. You are initially positioned at the array's first index, and each element in the array represents your maximum jump length at that position. Return `true` if you can reach the last index, or `false` otherwise.",
+      "company": "SDE interview",
+      "answer": "Initialize `max_reach = 0`. Loop `i` from 0 to `nums.length - 1`. If `i > max_reach`, return `false`. Update `max_reach = max(max_reach, i + nums[i])`. If `max_reach >= nums.length - 1`, return `true`.",
+      "approach": "This is the direct prompt for the greedy Jump Game. The `max_reach` variable serves as the monotonic frontier."
+    },
+    {
+      "question": "Given an array of non-negative integers `nums`, you are initially positioned at the first index. Each element represents your maximum jump. Your goal is to reach the last index in the minimum number of jumps.",
+      "company": "SDE interview",
+      "answer": "This is Jump Game II. Use a greedy BFS approach. Track `current_end` and `farthest`. Loop through the array. Update `farthest = max(farthest, i + nums[i])`. When `i == current_end`, increment your jump count and set `current_end = farthest`. Return the jump count.",
+      "approach": "This extends the basic reachability concept to counting layers of reachability, still achieving `O(n)` time."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Jump Game",
+      "url": "https://leetcode.com/problems/jump-game/",
+      "difficulty": "medium",
+      "why": "The foundational reachability problem."
+    }
+  ],
+  "related": [
+    "sliding-window-variable"
+  ],
+  "interesting_facts": [
+    "A popular alternative way to solve this is looping backwards from the end: keep track of the `last_good_index`. If `i + nums[i] >= last_good_index`, then `last_good_index = i`. If it reaches 0, return true."
+  ],
+  "sources": [
+    "https://leetcode.com/problems/jump-game/",
+    "https://www.designgurus.io/answers/detail/55-jump-game-nha654",
+    "https://dev.to/jayk0001/dsa-fundamentals-greedy-algorithms-from-theory-to-leetcode-practice-dg9"
+  ]
+}

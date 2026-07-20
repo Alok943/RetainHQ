@@ -131,11 +131,11 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Minimum spanning tree (Kruskal)  · D · `minimum-spanning-tree-kruskal`
 
 ## 17. Greedy
-- [ ] Why greedy works  · C · `why-greedy-works`
-- [ ] Why greedy fails  · C · `why-greedy-fails`
-- [ ] Interval scheduling  · D · `interval-scheduling`
-- [ ] Merge intervals  · D · `merge-intervals`
-- [ ] Jump game  · D · `jump-game`
+- [x] Why greedy works  · C · `why-greedy-works`
+- [x] Why greedy fails  · C · `why-greedy-fails`
+- [x] Interval scheduling  · D · `interval-scheduling`
+- [x] Merge intervals  · D · `merge-intervals`
+- [x] Jump game  · D · `jump-game`
 
 ## 18. Dynamic Programming
 - [ ] Overlapping subproblems  · C · `overlapping-subproblems`

@@ -1,0 +1,150 @@
+{
+  "slug": "interval-scheduling",
+  "title": "Interval scheduling",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 45,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "why-greedy-works"
+    ],
+    "unlocks": [
+      "merge-intervals"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "Exchange Argument",
+      "definition": "A mathematical proof technique used to show a greedy strategy is optimal by assuming a different optimal solution exists, and showing you can 'exchange' pieces to match the greedy choice without making the solution worse."
+    },
+    {
+      "term": "Interval",
+      "definition": "A time period defined by a start time and an end time, often representing an event or task."
+    }
+  ],
+  "hook": {
+    "scenario": "You have a single conference room and a huge list of requested meetings. You want to host as many meetings as possible today.",
+    "question": "How do you decide which meetings to accept without double-booking the room?"
+  },
+  "why_it_exists": {
+    "problem": "Given a set of intervals (events with start and end times), select the maximum number of non-overlapping intervals. A single resource can only handle one event at a time.",
+    "naive_solution": "Generate all possible subsets of intervals, check if they are mutually compatible, and pick the largest valid subset. This takes exponential `O(2^n)` time.",
+    "better_idea": "Use a greedy choice based on sorting. If we pick the event that finishes earliest, we leave the maximum possible remaining time for other events."
+  },
+  "mental_model": {
+    "intuition": "To maximize the number of things you can do, always do the thing that gets over with first.",
+    "description": "Sort all intervals by their end times. Pick the first interval. Then, iterate through the rest. If an interval starts after or at the same time the previously selected interval ends, pick it.",
+    "repeated_decision": "Is this next interval (sorted by end time) compatible with the last one I picked -- does it start at or after the last one's end?"
+  },
+  "explanation": "Interval scheduling is the classic 'activity selection' problem. The goal is to maximize count, not total duration.\n\nThe most important step is choosing the right property to sort by. Sorting by start time seems intuitive, but a single long event starting early could block the entire day. Sorting by shortest duration also fails -- a short event might overlap with two other events that don't overlap with each other, meaning picking the short one forces you to drop two others.\n\nThe correct greedy choice is to sort by EARLIEST END TIME. Why? An exchange argument proves it: by picking the event that finishes first, you reserve the maximum amount of remaining continuous time for subsequent events. No other choice could leave more time available.\n\nLet's hand-trace an example with intervals `[start, end]`: `[1, 4]`, `[3, 5]`, `[0, 6]`, `[5, 7]`, `[3, 9]`, `[5, 9]`, `[6, 10]`, `[8, 11]`.\n\n1. Sort by end time: `[1, 4]`, `[3, 5]`, `[0, 6]`, `[5, 7]`, `[3, 9]`, `[5, 9]`, `[6, 10]`, `[8, 11]`.\n2. Pick the first one: `[1, 4]`. (Count = 1). The 'current end' is now `4`.\n3. Look at `[3, 5]`. Start is `3`, which is less than `4`. Overlaps, reject.\n4. Look at `[0, 6]`. Start is `0` < `4`. Overlaps, reject.\n5. Look at `[5, 7]`. Start is `5` >= `4`. Compatible! Pick it (Count = 2). New 'current end' is `7`.\n6. Look at `[3, 9]`. Start is `3` < `7`. Reject.\n7. Look at `[5, 9]`. Start is `5` < `7`. Reject.\n8. Look at `[6, 10]`. Start is `6` < `7`. Reject.\n9. Look at `[8, 11]`. Start is `8` >= `7`. Pick it (Count = 3). New 'current end' is `11`.\n\nThe maximum number of non-overlapping intervals is 3.\n\nThe time complexity is dominated by the sorting step, which takes `O(n log n)`. The subsequent scan to select intervals is a single linear pass taking `O(n)`. Overall time complexity is `O(n log n)`. Space complexity depends on the sorting algorithm, typically `O(1)` or `O(n)`.",
+  "key_points": [
+    {
+      "title": "Sort by end time",
+      "detail": "This is the crucial greedy heuristic that guarantees an optimal solution for maximizing the count of non-overlapping intervals."
+    },
+    {
+      "title": "O(n log n) complexity",
+      "detail": "The greedy scan is `O(n)`, but sorting the intervals first takes `O(n log n)`."
+    },
+    {
+      "title": "Keep track of previous end",
+      "detail": "During the scan, you only need to store the end time of the most recently selected interval to test compatibility."
+    }
+  ],
+  "pattern": {
+    "name": "Greedy Activity Selection",
+    "recognition_cues": [
+      "You need to maximize the number of events/intervals you can schedule.",
+      "A single resource can only process one item at a time.",
+      "Items have start and end times or dependencies."
+    ]
+  },
+  "failure_signals": [
+    "You are trying to write a recursive backtracking solution.",
+    "You are sorting by start time or duration without recognizing the edge cases.",
+    "You are trying to maintain a complex state instead of just the last interval's end time."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Hubble Space Telescope Scheduling",
+      "problem": "The SPIKE system had to schedule the maximum number of astronomical observations.",
+      "why_this_algorithm": "Observations have fixed visibility windows (start/end times). A variant of interval scheduling maximizes the scientific output per orbit."
+    },
+    {
+      "title": "5G Antenna Beam-Forming",
+      "problem": "A base station needs to serve as many distinct user devices as possible in a given timeslot.",
+      "why_this_algorithm": "If user requests can be modeled as time intervals on a specific frequency band, maximizing the served users uses this greedy approach."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "You want to maximize the total duration of scheduled events, not the count.",
+      "reason": "The greedy end-time strategy only maximizes the number of events. To maximize weight or duration, you need Dynamic Programming (Weighted Interval Scheduling)."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Sorting by start time",
+      "explanation": "If you sort by start time, an interval like `[0, 100]` will be picked first, blocking out ten other intervals like `[1, 2]`, `[3, 4]`, etc. You get 1 event instead of 10."
+    },
+    {
+      "title": "Sorting by shortest duration",
+      "explanation": "Consider `[1, 5]`, `[4, 6]`, and `[5, 10]`. The shortest is `[4, 6]`. If you pick it, you block both `[1, 5]` and `[5, 10]`. But picking `[1, 5]` and `[5, 10]` gives you 2 events. Shortest duration fails."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the correct property to sort intervals by when trying to maximize the number of non-overlapping intervals?",
+      "answer": "Earliest end time.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does sorting by earliest start time fail for interval scheduling?",
+      "answer": "Because a single interval that starts early but has a very long duration could block many other shorter, later-starting intervals.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of the standard greedy interval scheduling algorithm?",
+      "answer": "`O(n log n)` because the intervals must be sorted first. The scan itself is `O(n)`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given an array of meeting time intervals consisting of start and end times, find the maximum number of meetings a single person can attend.",
+      "company": "SDE interview",
+      "answer": "Sort intervals by end time. Initialize `count = 1` and `last_end = intervals[0][1]`. Iterate from the second interval: if its start time >= `last_end`, increment `count` and update `last_end`. Return `count`.",
+      "approach": "This is the exact Interval Scheduling problem. Recognize that 'maximum number of meetings' implies the greedy end-time strategy."
+    },
+    {
+      "question": "You are given a 2D array of balloons. Each balloon is represented as a horizontal interval `[x_start, x_end]`. You can shoot arrows straight up. An arrow shot at `x` bursts all balloons where `x_start <= x <= x_end`. What is the minimum number of arrows to burst all balloons?",
+      "company": "SDE interview",
+      "answer": "Sort balloons by `x_end`. Shoot the first arrow at the first balloon's `x_end`. For subsequent balloons, if their `x_start` is strictly greater than the current arrow position, you need a new arrow. Shoot it at that balloon's `x_end` and update the arrow position.",
+      "approach": "This is mathematically identical to finding the maximum number of non-overlapping intervals. The number of arrows equals the maximum independent set of intervals."
+    }
+  ],
+  "practice": [
+    {
+      "title": "Non-overlapping Intervals",
+      "url": "https://leetcode.com/problems/non-overlapping-intervals/",
+      "difficulty": "medium",
+      "why": "The direct implementation of the classic interval scheduling algorithm."
+    }
+  ],
+  "related": [
+    "merge-intervals",
+    "minimum-spanning-tree-kruskal"
+  ],
+  "interesting_facts": [
+    "The greedy strategy for this problem is one of the classic examples used to teach the 'exchange argument' technique in algorithm correctness proofs."
+  ],
+  "sources": [
+    "https://walkccc.me/CLRS/Chap16/16.1/",
+    "https://courses.cs.washington.edu/courses/cse421/22au/lecture/07-greedy.pdf",
+    "https://grokipedia.com/page/Activity_selection_problem"
+  ]
+}

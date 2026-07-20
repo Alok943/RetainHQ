@@ -1,0 +1,86 @@
+{
+  "slug": "why-greedy-works",
+  "title": "Why greedy works",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "minimum-spanning-tree-kruskal"
+    ],
+    "unlocks": [
+      "why-greedy-fails",
+      "interval-scheduling"
+    ],
+    "project_usage": [
+      "Task scheduling",
+      "Resource allocation"
+    ]
+  },
+  "overview": {
+    "what": "A greedy algorithm builds a solution piece by piece, always choosing the next piece that offers the most obvious and immediate benefit. It works when this local, short-term optimization inevitably leads to a global, long-term optimum.",
+    "why": "When applicable, greedy algorithms are exceptionally fast and simple to implement, usually avoiding complex state management or recursion.",
+    "where_used": [
+      "Minimum Spanning Trees",
+      "Shortest path finding",
+      "Data compression",
+      "Job sequencing"
+    ]
+  },
+  "why_learning_this": [
+    "You need to know when you can safely use a fast greedy approach instead of an exhaustive search.",
+    "Understanding the underlying proofs (like the exchange argument) prevents you from guessing on algorithm design.",
+    "It forms the theoretical foundation for major graph algorithms you have already seen, like Kruskal's algorithm."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming greedy always works",
+      "explanation": "The most common trap is inventing a greedy heuristic that seems intuitive but fails on edge cases. A greedy choice must be rigorously provable."
+    },
+    {
+      "title": "Confusing optimal substructure with greedy-choice property",
+      "explanation": "Dynamic programming also uses optimal substructure. Greedy requires the extra 'greedy-choice' property: the single best immediate choice is always part of the global optimum, meaning you never need to backtrack."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What two properties must a problem have for a greedy algorithm to yield an optimal solution?",
+      "answer": "It must have the greedy-choice property (a local optimum leads to a global optimum) and optimal substructure (an optimal solution contains optimal solutions to subproblems).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the exchange argument?",
+      "answer": "A proof technique to show a greedy choice is safe. You take any hypothetical optimal solution that does not include the greedy choice, and show you can swap the greedy choice into it without worsening the solution.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "How does the exchange argument justify the greedy choice in interval scheduling?",
+      "answer": "If an optimal schedule doesn't pick the interval ending earliest, you can swap that early-ending interval in place of the first interval in the optimal schedule. Because the greedy choice ends earlier, the swap frees up more room and cannot conflict with the rest of the schedule.",
+      "why": "This proves that picking the earliest ending interval never forecloses a better outcome."
+    },
+    {
+      "type": "predict-result",
+      "question": "If a problem has optimal substructure but lacks the greedy-choice property, can you use a greedy algorithm?",
+      "answer": "No, you usually need dynamic programming instead.",
+      "why": "Without the greedy-choice property, a locally optimal choice might lead you down a suboptimal path, requiring you to explore multiple branches."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Mental exchange argument",
+      "prompt": "Think of Kruskal's algorithm. If an optimal spanning tree does not include the cheapest edge in the graph, how could you use an exchange argument to prove it should?"
+    }
+  ],
+  "sources": [
+    "https://courses.cs.washington.edu/courses/cse421/22au/lecture/07-greedy.pdf",
+    "https://walkccc.me/CLRS/Chap16/16.2/"
+  ]
+}
