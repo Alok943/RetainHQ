@@ -1,0 +1,492 @@
+{
+  "role_key": "sde_generalist",
+  "version": "v1",
+  "title": "Software Development Engineer (Generalist)",
+  "subjects": [
+    {
+      "key": "dsa_core",
+      "title": "Core Data Structures & Algorithms",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "core.big_o_notation",
+          "title": "Big-O Notation",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What does it mean for an algorithm to run in O(n log n) time?",
+          "diagnostic_answer": "It means the algorithm's runtime grows proportionally to n times the logarithm of n as the input size n increases — for example, a well-implemented comparison-based sort like mergesort. It's faster than O(n^2) but slower than O(n) for large inputs."
+        },
+        {
+          "stable_key": "core.arrays_and_strings",
+          "title": "Arrays & Strings",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["core.big_o_notation"]
+        },
+        {
+          "stable_key": "core.hashmaps",
+          "title": "Hash Maps",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["core.arrays_and_strings"],
+          "diagnostic_probe": "Why is a hash map lookup typically O(1) on average?",
+          "diagnostic_answer": "A good hash function distributes keys roughly evenly across buckets, so each bucket holds a small, roughly constant number of items — looking one up means computing its hash and checking that one bucket, independent of how many total items are stored."
+        },
+        {
+          "stable_key": "core.linked_lists",
+          "title": "Linked Lists",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "core.stacks_queues",
+          "title": "Stacks & Queues",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "core.recursion",
+          "title": "Recursion",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What are the two essential parts of any correct recursive function?",
+          "diagnostic_answer": "A base case that stops the recursion without calling itself again, and a recursive case that calls the function on a smaller version of the problem, making progress toward the base case."
+        },
+        {
+          "stable_key": "core.trees_and_traversals",
+          "title": "Trees & Traversals",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["core.recursion"]
+        },
+        {
+          "stable_key": "core.graphs_bfs_dfs",
+          "title": "Graphs: BFS & DFS",
+          "est_effort_min": 120,
+          "priority": 4,
+          "depends_on": ["core.stacks_queues", "core.trees_and_traversals"]
+        },
+        {
+          "stable_key": "core.sorting_algorithms",
+          "title": "Sorting Algorithms",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["core.arrays_and_strings"]
+        },
+        {
+          "stable_key": "core.dynamic_programming",
+          "title": "Dynamic Programming",
+          "est_effort_min": 120,
+          "priority": 4,
+          "depends_on": ["core.recursion"]
+        }
+      ]
+    },
+    {
+      "key": "oop_design",
+      "title": "OOP & Design Patterns",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "oop.classes_and_objects",
+          "title": "Classes & Objects",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What's the difference between a class and an instance?",
+          "diagnostic_answer": "A class is the blueprint/template defining what fields and methods something has. An instance (object) is one concrete thing created from that blueprint, with its own actual field values in memory."
+        },
+        {
+          "stable_key": "oop.encapsulation_abstraction",
+          "title": "Encapsulation & Abstraction",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": ["oop.classes_and_objects"]
+        },
+        {
+          "stable_key": "oop.inheritance_vs_composition",
+          "title": "Inheritance vs Composition",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["oop.classes_and_objects"],
+          "diagnostic_probe": "Why is 'favor composition over inheritance' common advice?",
+          "diagnostic_answer": "Inheritance creates a tight, rigid coupling between parent and child classes (changing the parent can break every subclass) and can lead to fragile, deep hierarchies. Composition builds behavior by combining smaller, independent objects, which is more flexible and easier to change later."
+        },
+        {
+          "stable_key": "oop.polymorphism",
+          "title": "Polymorphism",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["oop.inheritance_vs_composition"]
+        },
+        {
+          "stable_key": "oop.solid_principles",
+          "title": "SOLID Principles",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["oop.classes_and_objects"]
+        },
+        {
+          "stable_key": "oop.design_pattern_singleton_factory",
+          "title": "Singleton & Factory Patterns",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["oop.classes_and_objects"]
+        },
+        {
+          "stable_key": "oop.design_pattern_observer_strategy",
+          "title": "Observer & Strategy Patterns",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["oop.polymorphism"]
+        },
+        {
+          "stable_key": "oop.interfaces_and_abstract_classes",
+          "title": "Interfaces & Abstract Classes",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["oop.inheritance_vs_composition"]
+        }
+      ]
+    },
+    {
+      "key": "systems_and_networks",
+      "title": "Systems & Networking Basics",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "sys.processes_and_threads",
+          "title": "Processes & Threads",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What's the main difference between a process and a thread?",
+          "diagnostic_answer": "A process has its own isolated memory space; threads within the same process share that memory space but each have their own stack, making threads lighter-weight to create and switch between, at the cost of needing synchronization for shared data."
+        },
+        {
+          "stable_key": "sys.concurrency_basics",
+          "title": "Concurrency Basics",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["sys.processes_and_threads"]
+        },
+        {
+          "stable_key": "sys.memory_management",
+          "title": "Memory Management",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["sys.processes_and_threads"]
+        },
+        {
+          "stable_key": "sys.tcp_ip_basics",
+          "title": "TCP/IP Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "Why does TCP guarantee delivery while UDP doesn't?",
+          "diagnostic_answer": "TCP establishes a connection and tracks acknowledgments for every packet, retransmitting anything lost — that bookkeeping is what guarantees delivery. UDP sends packets with no connection or acknowledgment tracking at all, so it's faster but delivery isn't guaranteed."
+        },
+        {
+          "stable_key": "sys.http_basics",
+          "title": "HTTP Basics",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": ["sys.tcp_ip_basics"],
+          "diagnostic_probe": "What does a 500 status code tell you versus a 400?",
+          "diagnostic_answer": "A 5xx code means the SERVER failed to fulfill a valid request (its own fault — a bug or outage). A 4xx code means the CLIENT'S request itself was invalid or couldn't be fulfilled as sent (bad input, missing auth, wrong resource)."
+        },
+        {
+          "stable_key": "sys.dns_and_load_balancing",
+          "title": "DNS & Load Balancing",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["sys.tcp_ip_basics"]
+        },
+        {
+          "stable_key": "sys.caching_basics",
+          "title": "Caching Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["sys.http_basics"]
+        }
+      ]
+    },
+    {
+      "key": "databases_basics",
+      "title": "Databases Basics",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "db.sql_fundamentals",
+          "title": "SQL Fundamentals",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What clause filters rows BEFORE grouping, versus the clause that filters AFTER grouping?",
+          "diagnostic_answer": "WHERE filters individual rows BEFORE any grouping happens. HAVING filters entire groups AFTER GROUP BY has aggregated them — you'd use HAVING to filter on an aggregate value like COUNT(*) or SUM(...)."
+        },
+        {
+          "stable_key": "db.joins",
+          "title": "SQL Joins",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["db.sql_fundamentals"],
+          "diagnostic_probe": "What does a LEFT JOIN return that an INNER JOIN doesn't?",
+          "diagnostic_answer": "A LEFT JOIN returns every row from the left table regardless of whether it has a match, filling unmatched right-table columns with NULL. An INNER JOIN only returns rows that have a match in both tables, dropping unmatched rows entirely."
+        },
+        {
+          "stable_key": "db.indexing_basics",
+          "title": "Indexing Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["db.sql_fundamentals"]
+        },
+        {
+          "stable_key": "db.normalization",
+          "title": "Normalization",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["db.sql_fundamentals"]
+        },
+        {
+          "stable_key": "db.transactions_acid",
+          "title": "Transactions & ACID",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["db.sql_fundamentals"]
+        },
+        {
+          "stable_key": "db.nosql_basics",
+          "title": "NoSQL Basics",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["db.sql_fundamentals"]
+        },
+        {
+          "stable_key": "db.orm_basics",
+          "title": "ORM Basics",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["db.sql_fundamentals"]
+        }
+      ]
+    },
+    {
+      "key": "web_fundamentals",
+      "title": "Web Fundamentals",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "web.rest_api_basics",
+          "title": "REST API Basics",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": ["sys.http_basics"],
+          "diagnostic_probe": "What HTTP method is both idempotent and safe for reading a resource?",
+          "diagnostic_answer": "GET — it doesn't change server state (safe) and calling it repeatedly returns the same result without additional side effects (idempotent)."
+        },
+        {
+          "stable_key": "web.json_and_serialization",
+          "title": "JSON & Serialization",
+          "est_effort_min": 30,
+          "priority": 4,
+          "depends_on": ["web.rest_api_basics"]
+        },
+        {
+          "stable_key": "web.authentication_basics",
+          "title": "Authentication Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["web.rest_api_basics"],
+          "diagnostic_probe": "What's the difference between authentication and authorization?",
+          "diagnostic_answer": "Authentication verifies WHO you are (proving identity, e.g. logging in). Authorization determines WHAT you're allowed to do once identified (permissions/access control)."
+        },
+        {
+          "stable_key": "web.cors_basics",
+          "title": "CORS Basics",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["web.rest_api_basics"]
+        },
+        {
+          "stable_key": "web.frontend_basics_html_css_js",
+          "title": "Frontend Basics: HTML/CSS/JS",
+          "est_effort_min": 75,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "web.client_server_model",
+          "title": "Client-Server Model",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": ["web.rest_api_basics"]
+        },
+        {
+          "stable_key": "web.websockets_basics",
+          "title": "WebSockets Basics",
+          "est_effort_min": 45,
+          "priority": 2,
+          "depends_on": ["web.rest_api_basics"]
+        }
+      ]
+    },
+    {
+      "key": "software_engineering_practices",
+      "title": "Software Engineering Practices",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "eng.unit_testing",
+          "title": "Unit Testing",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What makes a good unit test independent of other tests?",
+          "diagnostic_answer": "It doesn't depend on external state, other tests' side effects, or execution order — it sets up its own fixtures/mocks and can run alone, in any order, and still produce the same pass/fail result every time."
+        },
+        {
+          "stable_key": "eng.integration_testing",
+          "title": "Integration Testing",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["eng.unit_testing"]
+        },
+        {
+          "stable_key": "eng.code_review_practices",
+          "title": "Code Review Practices",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "eng.git_basics",
+          "title": "Git Basics",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What's the difference between `git merge` and `git rebase`?",
+          "diagnostic_answer": "`git merge` creates a new merge commit that joins two branches' histories together, preserving both branches' commit history as-is. `git rebase` replays your branch's commits on top of another branch, rewriting history into a single linear sequence."
+        },
+        {
+          "stable_key": "eng.git_branching_workflows",
+          "title": "Git Branching Workflows",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["eng.git_basics"]
+        },
+        {
+          "stable_key": "eng.ci_cd_basics",
+          "title": "CI/CD Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["eng.git_basics", "eng.integration_testing"]
+        },
+        {
+          "stable_key": "eng.debugging_strategies",
+          "title": "Debugging Strategies",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "eng.clean_code_principles",
+          "title": "Clean Code Principles",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": []
+        }
+      ]
+    },
+    {
+      "key": "system_design_intro",
+      "title": "System Design Intro",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "design.scalability_basics",
+          "title": "Scalability Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["sys.caching_basics"]
+        },
+        {
+          "stable_key": "design.load_balancing_and_replication",
+          "title": "Load Balancing & Replication",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["design.scalability_basics"]
+        },
+        {
+          "stable_key": "design.database_sharding",
+          "title": "Database Sharding",
+          "est_effort_min": 75,
+          "priority": 3,
+          "depends_on": ["db.transactions_acid"]
+        },
+        {
+          "stable_key": "design.message_queues",
+          "title": "Message Queues",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["design.scalability_basics"]
+        },
+        {
+          "stable_key": "design.cap_theorem",
+          "title": "CAP Theorem",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["design.database_sharding"]
+        },
+        {
+          "stable_key": "design.design_a_url_shortener",
+          "title": "Design: URL Shortener",
+          "est_effort_min": 90,
+          "priority": 3,
+          "depends_on": ["design.scalability_basics", "db.indexing_basics"]
+        }
+      ]
+    },
+    {
+      "key": "interview_prep",
+      "title": "Behavioral & Interview Prep",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "interview.behavioral_star_method",
+          "title": "STAR Method",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [],
+          "diagnostic_probe": "What does the STAR method stand for when structuring a behavioral interview answer?",
+          "diagnostic_answer": "Situation, Task, Action, Result — a structure for describing the context, what needed to be done, what you specifically did, and the outcome/impact of your action."
+        },
+        {
+          "stable_key": "interview.system_design_interview_framework",
+          "title": "System Design Interview Framework",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["design.scalability_basics"]
+        },
+        {
+          "stable_key": "interview.coding_interview_strategy",
+          "title": "Coding Interview Strategy",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": ["core.big_o_notation"]
+        },
+        {
+          "stable_key": "interview.negotiation_basics",
+          "title": "Offer Negotiation Basics",
+          "est_effort_min": 30,
+          "priority": 2,
+          "depends_on": []
+        }
+      ]
+    }
+  ]
+}

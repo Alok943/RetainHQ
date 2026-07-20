@@ -1,0 +1,534 @@
+{
+  "role_key": "backend",
+  "version": "v1",
+  "title": "Backend Engineer",
+  "subjects": [
+    {
+      "key": "dsa",
+      "title": "Data Structures & Algorithms",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "dsa.arrays.basics",
+          "title": "Arrays & Time Complexity",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What is the time complexity of accessing an element by index in an array, and of inserting at the front?",
+          "diagnostic_answer": "Indexing by position is O(1) — arrays are contiguous memory, so the address is computed directly. Inserting at the front is O(n) because every existing element must shift right by one."
+        },
+        {
+          "stable_key": "dsa.arrays.two_pointers",
+          "title": "Two Pointers",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["dsa.arrays.basics"],
+          "diagnostic_probe": "Given a sorted array, find two numbers summing to a target in O(n).",
+          "diagnostic_answer": "Use two pointers, one at each end. If the sum is too large, move the right pointer left; if too small, move the left pointer right; if it matches, stop. Each step discards at least one candidate, so it's O(n) with O(1) extra space — no need for a hash set."
+        },
+        {
+          "stable_key": "dsa.arrays.sliding_window",
+          "title": "Sliding Window",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["dsa.arrays.two_pointers"]
+        },
+        {
+          "stable_key": "dsa.strings.basics",
+          "title": "String Manipulation",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["dsa.arrays.basics"]
+        },
+        {
+          "stable_key": "dsa.hashing.hashmaps",
+          "title": "Hash Maps & Sets",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": ["dsa.arrays.basics"],
+          "diagnostic_probe": "Why is average-case hash map lookup O(1), and when does it degrade to O(n)?",
+          "diagnostic_answer": "A good hash function spreads keys evenly across buckets, so each bucket holds ~O(1) items on average. It degrades to O(n) when many keys collide into the same bucket (a poor hash function, or adversarial input), turning the bucket into a linear scan."
+        },
+        {
+          "stable_key": "dsa.linked_lists.basics",
+          "title": "Linked Lists",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "dsa.stacks_queues",
+          "title": "Stacks & Queues",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "dsa.recursion.basics",
+          "title": "Recursion & Backtracking",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "Write the recurrence for factorial and identify its base case.",
+          "diagnostic_answer": "factorial(n) = n * factorial(n-1) for n > 0, with base case factorial(0) = 1. Without the base case the recursion never terminates."
+        },
+        {
+          "stable_key": "dsa.trees.binary_trees",
+          "title": "Binary Trees & Traversals",
+          "est_effort_min": 120,
+          "priority": 5,
+          "depends_on": ["dsa.recursion.basics"],
+          "diagnostic_probe": "What's the difference between in-order, pre-order, and post-order traversal?",
+          "diagnostic_answer": "In-order visits left subtree, then the node, then right subtree (yields sorted order for a BST). Pre-order visits the node first, then left, then right. Post-order visits left, then right, then the node last."
+        },
+        {
+          "stable_key": "dsa.trees.bst",
+          "title": "Binary Search Trees",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["dsa.trees.binary_trees"]
+        },
+        {
+          "stable_key": "dsa.graphs.bfs_dfs",
+          "title": "Graph Traversal: BFS & DFS",
+          "est_effort_min": 120,
+          "priority": 5,
+          "depends_on": ["dsa.stacks_queues", "dsa.trees.binary_trees"],
+          "diagnostic_probe": "When would you use BFS over DFS to find the shortest path in an unweighted graph?",
+          "diagnostic_answer": "BFS explores level-by-level, so the first time it reaches a node is guaranteed to be via the fewest edges — it finds shortest paths in an unweighted graph. DFS explores one path fully before backtracking and offers no such guarantee."
+        },
+        {
+          "stable_key": "dsa.graphs.shortest_path",
+          "title": "Shortest Path (Dijkstra)",
+          "est_effort_min": 120,
+          "priority": 3,
+          "depends_on": ["dsa.graphs.bfs_dfs"]
+        },
+        {
+          "stable_key": "dsa.dp.basics",
+          "title": "Dynamic Programming Basics",
+          "est_effort_min": 150,
+          "priority": 5,
+          "depends_on": ["dsa.recursion.basics"],
+          "diagnostic_probe": "What makes a problem a good candidate for memoization?",
+          "diagnostic_answer": "The problem has overlapping subproblems (the same subproblem recurs many times in the naive recursive solution) and optimal substructure (the optimal solution is built from optimal solutions to subproblems). Memoization caches subproblem results so each is computed once."
+        },
+        {
+          "stable_key": "dsa.sorting.comparison_sorts",
+          "title": "Sorting Algorithms",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["dsa.arrays.basics"]
+        },
+        {
+          "stable_key": "dsa.searching.binary_search",
+          "title": "Binary Search",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["dsa.arrays.basics"]
+        }
+      ]
+    },
+    {
+      "key": "os",
+      "title": "Operating Systems",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "os.processes_threads",
+          "title": "Processes & Threads",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What's the key difference between a process and a thread in terms of memory sharing?",
+          "diagnostic_answer": "Each process has its own isolated address space. Threads within the same process share that address space (heap, globals) but each has its own stack and registers — so threads are cheaper to create/switch but must coordinate access to shared memory."
+        },
+        {
+          "stable_key": "os.concurrency.locks",
+          "title": "Concurrency & Locks",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["os.processes_threads"]
+        },
+        {
+          "stable_key": "os.memory.virtual_memory",
+          "title": "Virtual Memory & Paging",
+          "est_effort_min": 75,
+          "priority": 3,
+          "depends_on": ["os.processes_threads"]
+        },
+        {
+          "stable_key": "os.scheduling.cpu_scheduling",
+          "title": "CPU Scheduling",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["os.processes_threads"]
+        },
+        {
+          "stable_key": "os.deadlocks",
+          "title": "Deadlocks",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["os.concurrency.locks"]
+        },
+        {
+          "stable_key": "os.filesystems.basics",
+          "title": "File Systems Basics",
+          "est_effort_min": 45,
+          "priority": 2,
+          "depends_on": []
+        },
+        {
+          "stable_key": "os.io.blocking_vs_nonblocking",
+          "title": "Blocking vs Non-blocking I/O",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["os.processes_threads"]
+        }
+      ]
+    },
+    {
+      "key": "dbms",
+      "title": "Databases & SQL",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "dbms.sql.basics",
+          "title": "SQL Fundamentals",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "Write a query to select all columns from a table where a column equals a value.",
+          "diagnostic_answer": "SELECT * FROM table_name WHERE column_name = value;"
+        },
+        {
+          "stable_key": "dbms.sql.joins",
+          "title": "SQL Joins",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": ["dbms.sql.basics"],
+          "diagnostic_probe": "What's the difference between an INNER JOIN and a LEFT JOIN?",
+          "diagnostic_answer": "INNER JOIN returns only rows that have a matching row in both tables. LEFT JOIN returns every row from the left table, with NULLs filled in for columns from the right table when there's no match."
+        },
+        {
+          "stable_key": "dbms.sql.indexing",
+          "title": "Indexing",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["dbms.sql.basics"]
+        },
+        {
+          "stable_key": "dbms.transactions.acid",
+          "title": "Transactions & ACID",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": ["dbms.sql.basics"],
+          "diagnostic_probe": "What does the 'I' in ACID guarantee, and what problem does it prevent?",
+          "diagnostic_answer": "'I' is Isolation — concurrent transactions produce the same result as if they had run one after another, serially. It prevents problems like dirty reads, where one transaction sees another's uncommitted changes."
+        },
+        {
+          "stable_key": "dbms.normalization",
+          "title": "Normalization",
+          "est_effort_min": 75,
+          "priority": 3,
+          "depends_on": ["dbms.sql.basics"]
+        },
+        {
+          "stable_key": "dbms.nosql.document_stores",
+          "title": "NoSQL & Document Stores",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["dbms.sql.basics"]
+        },
+        {
+          "stable_key": "dbms.replication_sharding",
+          "title": "Replication & Sharding",
+          "est_effort_min": 90,
+          "priority": 3,
+          "depends_on": ["dbms.transactions.acid"]
+        },
+        {
+          "stable_key": "dbms.orm_basics",
+          "title": "ORMs & Migrations",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["dbms.sql.basics"]
+        },
+        {
+          "stable_key": "dbms.query_optimization",
+          "title": "Query Optimization",
+          "est_effort_min": 60,
+          "priority": 2,
+          "depends_on": ["dbms.sql.indexing"]
+        }
+      ]
+    },
+    {
+      "key": "networking",
+      "title": "Computer Networks",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "net.tcp_ip_basics",
+          "title": "TCP/IP Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What's the difference between TCP and UDP, and when would you pick one over the other?",
+          "diagnostic_answer": "TCP is connection-oriented, reliable, and ordered (retransmits lost packets) — use it when correctness matters (web pages, file transfer, APIs). UDP is connectionless and unreliable but lower-latency — use it when speed matters more than guaranteed delivery (video calls, gaming, DNS)."
+        },
+        {
+          "stable_key": "net.http_https",
+          "title": "HTTP/HTTPS",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": ["net.tcp_ip_basics"],
+          "diagnostic_probe": "What HTTP status code range indicates a client error, and what does 404 mean?",
+          "diagnostic_answer": "4xx indicates a client error (the request itself is wrong or can't be fulfilled as sent). 404 specifically means 'Not Found' — the server couldn't find a resource matching the requested URL."
+        },
+        {
+          "stable_key": "net.dns",
+          "title": "DNS",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": ["net.tcp_ip_basics"]
+        },
+        {
+          "stable_key": "net.load_balancing",
+          "title": "Load Balancing",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["net.http_https"]
+        },
+        {
+          "stable_key": "net.websockets",
+          "title": "WebSockets",
+          "est_effort_min": 45,
+          "priority": 2,
+          "depends_on": ["net.http_https"]
+        },
+        {
+          "stable_key": "net.tls_basics",
+          "title": "TLS Basics",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["net.tcp_ip_basics"]
+        }
+      ]
+    },
+    {
+      "key": "system_design",
+      "title": "System Design",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "sd.scalability_basics",
+          "title": "Scalability Basics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["net.load_balancing"]
+        },
+        {
+          "stable_key": "sd.caching",
+          "title": "Caching Strategies",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["sd.scalability_basics"]
+        },
+        {
+          "stable_key": "sd.rate_limiting",
+          "title": "Rate Limiting",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["sd.scalability_basics"]
+        },
+        {
+          "stable_key": "sd.message_queues",
+          "title": "Message Queues",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["sd.scalability_basics"]
+        },
+        {
+          "stable_key": "sd.cap_theorem",
+          "title": "CAP Theorem",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["dbms.replication_sharding"]
+        },
+        {
+          "stable_key": "sd.design_url_shortener",
+          "title": "Design: URL Shortener",
+          "est_effort_min": 90,
+          "priority": 3,
+          "depends_on": ["sd.caching", "dbms.sql.indexing"]
+        },
+        {
+          "stable_key": "sd.design_rate_limiter",
+          "title": "Design: Rate Limiter",
+          "est_effort_min": 60,
+          "priority": 2,
+          "depends_on": ["sd.rate_limiting"]
+        },
+        {
+          "stable_key": "sd.microservices_basics",
+          "title": "Microservices Basics",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["sd.message_queues"]
+        }
+      ]
+    },
+    {
+      "key": "backend_dev",
+      "title": "Backend Development",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "backend.rest_api_design",
+          "title": "REST API Design",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["net.http_https"],
+          "diagnostic_probe": "Design a REST endpoint to create a new resource — which HTTP method and status code do you use?",
+          "diagnostic_answer": "POST to the collection endpoint (e.g. POST /users), returning 201 Created along with the new resource (and ideally a Location header pointing to it)."
+        },
+        {
+          "stable_key": "backend.auth.sessions_tokens",
+          "title": "Sessions & Tokens",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["backend.rest_api_design"]
+        },
+        {
+          "stable_key": "backend.auth.oauth",
+          "title": "OAuth Basics",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["backend.auth.sessions_tokens"]
+        },
+        {
+          "stable_key": "backend.frameworks.orm_migrations",
+          "title": "Framework ORMs & Migrations",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["dbms.orm_basics"]
+        },
+        {
+          "stable_key": "backend.error_handling",
+          "title": "Error Handling",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": ["backend.rest_api_design"]
+        },
+        {
+          "stable_key": "backend.background_jobs",
+          "title": "Background Jobs",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["sd.message_queues"]
+        },
+        {
+          "stable_key": "backend.rate_limiting_impl",
+          "title": "Implementing Rate Limits",
+          "est_effort_min": 45,
+          "priority": 2,
+          "depends_on": ["sd.rate_limiting"]
+        },
+        {
+          "stable_key": "backend.logging_observability",
+          "title": "Logging & Observability",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["backend.rest_api_design"]
+        },
+        {
+          "stable_key": "backend.api_versioning",
+          "title": "API Versioning",
+          "est_effort_min": 30,
+          "priority": 2,
+          "depends_on": ["backend.rest_api_design"]
+        }
+      ]
+    },
+    {
+      "key": "git",
+      "title": "Version Control",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "git.basics",
+          "title": "Git Basics",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What's the difference between `git add` and `git commit`?",
+          "diagnostic_answer": "`git add` stages changes into the index (the snapshot that will become the next commit) but doesn't record any history. `git commit` takes what's staged and creates a permanent snapshot in the repository's history with a message."
+        },
+        {
+          "stable_key": "git.branching_merging",
+          "title": "Branching & Merging",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["git.basics"]
+        },
+        {
+          "stable_key": "git.rebase_vs_merge",
+          "title": "Rebase vs Merge",
+          "est_effort_min": 30,
+          "priority": 2,
+          "depends_on": ["git.branching_merging"]
+        },
+        {
+          "stable_key": "git.collaboration_workflows",
+          "title": "Collaboration Workflows",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": ["git.branching_merging"]
+        }
+      ]
+    },
+    {
+      "key": "testing",
+      "title": "Testing & Quality",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "testing.unit_testing",
+          "title": "Unit Testing",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "testing.integration_testing",
+          "title": "Integration Testing",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["testing.unit_testing"]
+        },
+        {
+          "stable_key": "testing.mocking",
+          "title": "Mocking & Stubs",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["testing.unit_testing"]
+        },
+        {
+          "stable_key": "testing.tdd_basics",
+          "title": "TDD Basics",
+          "est_effort_min": 45,
+          "priority": 2,
+          "depends_on": ["testing.unit_testing"]
+        },
+        {
+          "stable_key": "testing.ci_cd_pipelines",
+          "title": "CI/CD Pipelines",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["git.basics", "testing.integration_testing"]
+        }
+      ]
+    }
+  ]
+}

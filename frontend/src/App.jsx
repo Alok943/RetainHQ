@@ -1,9 +1,10 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal, Presentation } from 'lucide-react';
+import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal, Presentation, Compass } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
+import { ClassroomsProvider, useClassrooms } from './lib/ClassroomsContext';
 import { ToastProvider } from './lib/ToastContext';
 import { apiFetch } from './lib/api';
 import { pageview, trackOnce, EVENTS } from './lib/analytics';
@@ -24,17 +25,20 @@ const LogActivity = lazy(() => import('./LogActivity'));
 const Roadmaps = lazy(() => import('./Roadmaps'));
 const SyllabusUpload = lazy(() => import('./SyllabusUpload'));
 const CareerPaths = lazy(() => import('./CareerPaths'));
+const CareerCoach = lazy(() => import('./CareerCoach')); // Career Coach Phase 2 (SPEC-career-coach-phase2.md)
 const Analytics = lazy(() => import('./Analytics'));
 const RoadmapDetail = lazy(() => import('./RoadmapDetail'));
 const LessonView = lazy(() => import('./LessonView'));
 const Profile = lazy(() => import('./Profile'));
 const KnowledgeVault = lazy(() => import('./KnowledgeVault'));
 const Admin = lazy(() => import('./Admin'));
+const Evidence = lazy(() => import('./Evidence')); // Dev-only instrument (SPEC-career-coach-phase1 §7-8)
 const DsaDev = lazy(() => import('./dsa/DsaDev')); // TEMP: DSA pilot harness (/dsa-dev)
 const PhysicsNumericals = lazy(() => import('./PhysicsNumericals'));
 const Tests = lazy(() => import('./Tests'));
 const Teach = lazy(() => import('./Teach'));
 const TeachClassroom = lazy(() => import('./TeachClassroom'));
+const TeachStudentDetail = lazy(() => import('./TeachStudentDetail'));
 
 const ADMIN_EMAIL = 'aloksingh98541@gmail.com';
 
@@ -67,18 +71,11 @@ function AppLayout() {
   }, [session, location.pathname]);
 
   // "Teach" nav entry only shows once the caller actually teaches a class
-  // (no role column — spec §2: "is a teacher" == "owns >=1 classroom").
-  // Same fetch-on-route-change pattern as dueCount above.
-  const [teachingCount, setTeachingCount] = useState(0);
-  useEffect(() => {
-    if (!session) {
-      setTeachingCount(0);
-      return;
-    }
-    apiFetch('/api/classrooms/mine')
-      .then((d) => setTeachingCount(d?.teaching?.length ?? 0))
-      .catch(() => {});
-  }, [session, location.pathname]);
+  // (no role column — spec §2: "is a teacher" == "owns >=1 classroom"). Read
+  // from the shared ClassroomsContext so we don't refetch /mine on every route
+  // change; the context refreshes when a class is created or left.
+  const { classrooms } = useClassrooms();
+  const teachingCount = classrooms?.teaching?.length ?? 0;
 
   const logoVariant = theme === 'dark' ? 'light' : 'dark';
 
@@ -93,6 +90,7 @@ function AppLayout() {
     if (path.startsWith('/log')) return 'log';
     if (path.startsWith('/roadmaps')) return 'roadmaps';
     if (path.startsWith('/paths')) return 'paths';
+    if (path.startsWith('/coach')) return 'coach';
     if (path.startsWith('/vault')) return 'vault';
     if (path.startsWith('/analytics')) return 'analytics';
     if (path.startsWith('/teach')) return 'teach';
@@ -101,7 +99,7 @@ function AppLayout() {
   };
 
   const activeTab = getActiveTab();
-  const isMoreActive = ['paths', 'vault', 'analytics', 'teach', 'admin'].includes(activeTab);
+  const isMoreActive = ['paths', 'coach', 'vault', 'analytics', 'teach', 'admin'].includes(activeTab);
 
   // Home shows the sidebar open; everywhere else it stays the hover-expand rail.
   const sidebarDefaultOpen = activeTab === 'dashboard';
@@ -141,6 +139,7 @@ function AppLayout() {
             <SidebarItem isCollapsed={isCollapsed} icon={<Brain size={20} />} label="Reviews" active={activeTab === 'review'} to="/reviews" badge={dueCount} />
             <SidebarItem isCollapsed={isCollapsed} icon={<GraduationCap size={20} />} label="Learn" active={activeTab === 'roadmaps'} to="/roadmaps" />
             <SidebarItem isCollapsed={isCollapsed} icon={<RouteIcon size={20} />} label="Career Paths" active={activeTab === 'paths'} to="/paths" />
+            <SidebarItem isCollapsed={isCollapsed} icon={<Compass size={20} />} label="Career Coach" active={activeTab === 'coach'} to="/coach" />
             <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} to="/vault" />
             <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} to="/analytics" />
             {teachingCount > 0 && <SidebarItem isCollapsed={isCollapsed} icon={<Presentation size={20} />} label="Teach" active={activeTab === 'teach'} to="/teach" />}
@@ -243,13 +242,16 @@ function AppLayout() {
             <Route path="roadmaps/:roadmapSlug/numericals/:phaseSlug" element={<PhysicsNumericals />} />
             <Route path="roadmaps/:roadmapSlug/test/:phaseSlug" element={<Tests />} />
             <Route path="paths" element={<CareerPaths />} />
+            <Route path="coach" element={<CareerCoach />} />
             <Route path="dsa-dev" element={<DsaDev />} />
             <Route path="vault" element={<KnowledgeVault />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="teach" element={<Teach />} />
             <Route path="teach/:id" element={<TeachClassroom />} />
+            <Route path="teach/:id/students/:memberId" element={<TeachStudentDetail />} />
             <Route path="profile" element={<Profile />} />
             {isAdmin && <Route path="admin" element={<Admin />} />}
+            {isAdmin && <Route path="evidence" element={<Evidence />} />}
             {/* Fallback internal route — absolute path: a relative "dashboard" inside
                 this splat route appends recursively (/dashboard/dashboard/...) into a loop. */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -291,6 +293,7 @@ function AppLayout() {
                 <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
                 <div className="absolute bottom-[100%] right-0 mb-3 bg-white border border-[rgba(15,23,42,0.08)] shadow-lg rounded-xl flex flex-col w-48 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
                   <MenuButton icon={<RouteIcon size={16} />} label="Career Paths" active={activeTab === 'paths'} onClick={() => setShowMoreMenu(false)} to="/paths" />
+                  <MenuButton icon={<Compass size={16} />} label="Career Coach" active={activeTab === 'coach'} onClick={() => setShowMoreMenu(false)} to="/coach" />
                   <MenuButton icon={<Library size={16} />} label="Vault" active={activeTab === 'vault'} onClick={() => setShowMoreMenu(false)} to="/vault" />
                   <MenuButton icon={<TrendingUp size={16} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => setShowMoreMenu(false)} to="/analytics" />
                   {teachingCount > 0 && <MenuButton icon={<Presentation size={16} />} label="Teach" active={activeTab === 'teach'} onClick={() => setShowMoreMenu(false)} to="/teach" />}
@@ -402,6 +405,28 @@ function Root() {
     }
   }, []);
 
+  // Warm the core-loop route chunks in priority order once idle, so the first
+  // real navigation after login doesn't pay a chunk round-trip. Same import()
+  // specifiers as the lazy() calls above, so Vite serves these from cache
+  // instead of double-fetching.
+  useEffect(() => {
+    if (!session) return;
+    const prefetch = [
+      () => import('./Home'),
+      () => import('./Review'),
+      () => import('./Roadmaps'),
+      () => import('./Profile'),
+    ];
+    let cancelled = false;
+    const schedule = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
+    function next(i) {
+      if (cancelled || i >= prefetch.length) return;
+      schedule(() => prefetch[i]().finally(() => next(i + 1)));
+    }
+    next(0);
+    return () => { cancelled = true; };
+  }, [session]);
+
   if (loading) {
     return <div className="min-h-screen bg-[#f9f9f6] flex items-center justify-center font-sans text-[#64748B]">Loading...</div>;
   }
@@ -424,7 +449,9 @@ function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <Root />
+        <ClassroomsProvider>
+          <Root />
+        </ClassroomsProvider>
       </AuthProvider>
     </ToastProvider>
   );

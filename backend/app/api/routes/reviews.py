@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
@@ -5,7 +6,7 @@ from sqlalchemy.orm import selectinload
 import random
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
@@ -33,9 +34,12 @@ from app.services.grader import (
     grade_question_set,
     GraderError,
 )
-from app.services import analytics
+from app.services import analytics, evidence, metrics
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
 
 @router.get("/due", response_model=List[ReviewResponse])
 async def get_due_reviews(
@@ -139,6 +143,57 @@ async def complete_review(
 
     await db.commit()
     await db.refresh(review)
+
+    # Evidence spine (SPEC-career-coach-phase1 §6.1/§6.3) — failure-isolated:
+    # a bug in this brand-new, low-traffic feature must never break the
+    # review loop that already committed above. Most existing activities have
+    # node_id=NULL (only lesson-created cards set it) — never guess a node,
+    # just count the miss so phase 2 can see how large the gap actually is.
+    #
+    # The attempt is wrapped in a SAVEPOINT (db.begin_nested()), not a bare
+    # try/except around db.rollback(): a plain session.rollback() expires
+    # every object already loaded on `db` — including `review.activity`,
+    # eager-loaded above via selectinload — and the next unguarded attribute
+    # access (analytics.capture()'s review.activity.interval_days, just below)
+    # would then try to lazy-load on a sync attribute access outside any
+    # await, crashing with MissingGreenlet. A savepoint rollback undoes only
+    # this block's own work and leaves the rest of the session untouched.
+    if review.activity.node_id is not None:
+        try:
+            async with db.begin_nested():
+                grade = evidence.recall_grade(review_in.recalled, review_in.rating, review.quality)
+                if grade is not None:
+                    await evidence.record_event(
+                        db, user_id,
+                        event_type="RECALL_GRADED",
+                        trust_tier="T2_verified_internal",
+                        source="retainhq_review",
+                        node_id=review.activity.node_id,
+                        grade=grade,
+                        outcome="pass" if review_in.recalled else "fail",
+                        duration_min=round(duration_ms / 60000) if duration_ms else 0,
+                        entity_id=review.id,
+                        payload={
+                            "rating": review_in.rating,
+                            "recalled": review_in.recalled,
+                            "quality": review.quality,
+                            "ai_verdict": review.ai_verdict,
+                        },
+                    )
+            await db.commit()
+        except Exception:
+            logger.exception("evidence record_event failed for review %s", review.id)
+    else:
+        try:
+            async with db.begin_nested():
+                await metrics.record_metric_event(
+                    db, user_id,
+                    event_type="evidence_unmapped",
+                    payload={"reason": "no_node_id", "activity_id": str(review.activity_id)},
+                )
+            await db.commit()
+        except Exception:
+            logger.exception("evidence_unmapped metric failed for review %s", review.id)
 
     # Server-truth: the spaced-repetition loop advanced this card. `interval_days`
     # is the new spacing — a rising interval across a cohort means memory is sticking.

@@ -1,0 +1,584 @@
+{
+  "role_key": "ai_engineer",
+  "version": "v1",
+  "title": "AI Engineer",
+  "subjects": [
+    {
+      "key": "python_ml",
+      "title": "Python for ML",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "python_ml.numpy_basics",
+          "title": "NumPy Basics",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What's the advantage of a NumPy vectorized operation over an equivalent Python for-loop?",
+          "diagnostic_answer": "Vectorized NumPy operations run in compiled C loops under the hood, avoiding Python's per-iteration interpreter overhead — this makes them dramatically faster than an equivalent explicit for-loop, especially at scale."
+        },
+        {
+          "stable_key": "python_ml.pandas_basics",
+          "title": "Pandas Basics",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["python_ml.numpy_basics"]
+        },
+        {
+          "stable_key": "python_ml.data_viz",
+          "title": "Data Visualization",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["python_ml.pandas_basics"]
+        },
+        {
+          "stable_key": "python_ml.oop_for_ml",
+          "title": "OOP for ML Code",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "python_ml.virtual_envs_packaging",
+          "title": "Virtual Envs & Packaging",
+          "est_effort_min": 30,
+          "priority": 2,
+          "depends_on": []
+        },
+        {
+          "stable_key": "python_ml.pytorch_tensors",
+          "title": "PyTorch Tensors",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": ["python_ml.numpy_basics"],
+          "diagnostic_probe": "What's the key difference between a NumPy array and a PyTorch tensor?",
+          "diagnostic_answer": "A PyTorch tensor supports the same array operations as a NumPy array, but adds two things NumPy doesn't: GPU acceleration and automatic differentiation (autograd) for computing gradients."
+        },
+        {
+          "stable_key": "python_ml.autograd_basics",
+          "title": "Autograd Basics",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["python_ml.pytorch_tensors"]
+        },
+        {
+          "stable_key": "python_ml.gpu_basics",
+          "title": "GPU Basics for ML",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["python_ml.pytorch_tensors"]
+        }
+      ]
+    },
+    {
+      "key": "math_foundations",
+      "title": "Math Foundations",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "math.linear_algebra_vectors_matrices",
+          "title": "Vectors & Matrices",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What does matrix multiplication represent geometrically?",
+          "diagnostic_answer": "Matrix multiplication represents a linear transformation — it maps vectors from one space to another (e.g. rotating, scaling, or projecting them) via a linear combination of the input's components."
+        },
+        {
+          "stable_key": "math.eigenvalues_eigenvectors",
+          "title": "Eigenvalues & Eigenvectors",
+          "est_effort_min": 90,
+          "priority": 3,
+          "depends_on": ["math.linear_algebra_vectors_matrices"]
+        },
+        {
+          "stable_key": "math.derivatives_gradients",
+          "title": "Derivatives & Gradients",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What does the gradient of a function point toward?",
+          "diagnostic_answer": "The gradient points in the direction of steepest ascent of the function at that point — moving in the negative gradient direction decreases the function fastest, which is exactly what gradient descent uses to minimize a loss."
+        },
+        {
+          "stable_key": "math.chain_rule",
+          "title": "Chain Rule",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["math.derivatives_gradients"]
+        },
+        {
+          "stable_key": "math.probability_basics",
+          "title": "Probability Basics",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What's the difference between a probability and a likelihood?",
+          "diagnostic_answer": "A probability is a function of the outcome given fixed distribution parameters; a likelihood is a function of the parameters given fixed observed data. They use the same formula but the roles of what's fixed and what's varying are swapped."
+        },
+        {
+          "stable_key": "math.distributions",
+          "title": "Probability Distributions",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["math.probability_basics"]
+        },
+        {
+          "stable_key": "math.bayes_theorem",
+          "title": "Bayes' Theorem",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["math.probability_basics"]
+        },
+        {
+          "stable_key": "math.statistics_basics",
+          "title": "Statistics Basics",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["math.probability_basics"]
+        }
+      ]
+    },
+    {
+      "key": "classical_ml",
+      "title": "Classical ML",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "classical_ml.linear_regression",
+          "title": "Linear Regression",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": ["math.derivatives_gradients"],
+          "diagnostic_probe": "What loss function does ordinary least squares minimize?",
+          "diagnostic_answer": "Ordinary least squares minimizes the sum of squared residuals — the squared difference between each predicted value and the actual observed value."
+        },
+        {
+          "stable_key": "classical_ml.logistic_regression",
+          "title": "Logistic Regression",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["classical_ml.linear_regression"]
+        },
+        {
+          "stable_key": "classical_ml.overfitting_regularization",
+          "title": "Overfitting & Regularization",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["classical_ml.linear_regression"],
+          "diagnostic_probe": "What's the difference between L1 and L2 regularization's effect on model weights?",
+          "diagnostic_answer": "L1 (Lasso) regularization can shrink some weights exactly to zero, producing sparse models that effectively perform feature selection. L2 (Ridge) shrinks weights smoothly toward zero without eliminating them."
+        },
+        {
+          "stable_key": "classical_ml.train_val_test_splits",
+          "title": "Train/Val/Test Splits",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "Why do you need a separate validation set from the test set?",
+          "diagnostic_answer": "The validation set is used to tune hyperparameters and make model-selection decisions during development. If you used the test set for that, you'd be indirectly fitting to it, and its final accuracy would no longer be an honest estimate of performance on unseen data."
+        },
+        {
+          "stable_key": "classical_ml.decision_trees",
+          "title": "Decision Trees",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "classical_ml.ensembles_boosting",
+          "title": "Ensembles & Boosting",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["classical_ml.decision_trees"]
+        },
+        {
+          "stable_key": "classical_ml.clustering_kmeans",
+          "title": "Clustering (k-means)",
+          "est_effort_min": 60,
+          "priority": 2,
+          "depends_on": []
+        },
+        {
+          "stable_key": "classical_ml.dimensionality_reduction_pca",
+          "title": "Dimensionality Reduction (PCA)",
+          "est_effort_min": 75,
+          "priority": 2,
+          "depends_on": ["math.eigenvalues_eigenvectors"]
+        },
+        {
+          "stable_key": "classical_ml.feature_engineering",
+          "title": "Feature Engineering",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": []
+        }
+      ]
+    },
+    {
+      "key": "deep_learning",
+      "title": "Neural Nets & Deep Learning",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "dl.perceptron_and_mlp",
+          "title": "Perceptron & MLPs",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": ["python_ml.pytorch_tensors"],
+          "diagnostic_probe": "What role does a non-linear activation function play in a neural network?",
+          "diagnostic_answer": "Without a non-linear activation function, stacking any number of linear layers collapses to a single linear transformation — activations are what let a network learn non-linear decision boundaries and represent complex functions."
+        },
+        {
+          "stable_key": "dl.backpropagation",
+          "title": "Backpropagation",
+          "est_effort_min": 120,
+          "priority": 5,
+          "depends_on": ["dl.perceptron_and_mlp", "math.chain_rule"],
+          "diagnostic_probe": "What does backpropagation use the chain rule to compute?",
+          "diagnostic_answer": "Backpropagation applies the chain rule to compute the gradient of the loss with respect to every weight in the network, propagating the error backward layer by layer from the output to the input."
+        },
+        {
+          "stable_key": "dl.activation_functions",
+          "title": "Activation Functions",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["dl.perceptron_and_mlp"]
+        },
+        {
+          "stable_key": "dl.optimizers_sgd_adam",
+          "title": "Optimizers (SGD, Adam)",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["dl.backpropagation"]
+        },
+        {
+          "stable_key": "dl.cnn_basics",
+          "title": "CNN Basics",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["dl.perceptron_and_mlp"]
+        },
+        {
+          "stable_key": "dl.rnn_and_sequence_models",
+          "title": "RNNs & Sequence Models",
+          "est_effort_min": 90,
+          "priority": 3,
+          "depends_on": ["dl.perceptron_and_mlp"]
+        },
+        {
+          "stable_key": "dl.batch_norm_dropout",
+          "title": "Batch Norm & Dropout",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["dl.perceptron_and_mlp"]
+        },
+        {
+          "stable_key": "dl.transfer_learning",
+          "title": "Transfer Learning",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["dl.cnn_basics"]
+        },
+        {
+          "stable_key": "dl.training_loops_pytorch",
+          "title": "Training Loops in PyTorch",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["dl.backpropagation", "dl.optimizers_sgd_adam"]
+        }
+      ]
+    },
+    {
+      "key": "nlp_llms",
+      "title": "NLP & LLMs",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "nlp.tokenization",
+          "title": "Tokenization",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "Why do modern LLMs use subword tokenization instead of whole-word tokens?",
+          "diagnostic_answer": "Subword tokenization keeps vocabulary size manageable while still handling rare and out-of-vocabulary words — a word the model never saw during training can still be represented as a combination of familiar subword pieces."
+        },
+        {
+          "stable_key": "nlp.word_embeddings",
+          "title": "Word Embeddings",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["nlp.tokenization"]
+        },
+        {
+          "stable_key": "nlp.attention_mechanism",
+          "title": "Attention Mechanism",
+          "est_effort_min": 120,
+          "priority": 5,
+          "depends_on": ["dl.perceptron_and_mlp"],
+          "diagnostic_probe": "What problem does the attention mechanism solve that fixed-size RNN hidden states struggle with?",
+          "diagnostic_answer": "A fixed-size RNN hidden state has to compress an entire sequence's information into one vector, losing detail on long sequences. Attention lets the model look back at ALL previous positions directly and weigh which ones matter most for the current output."
+        },
+        {
+          "stable_key": "nlp.transformer_architecture",
+          "title": "Transformer Architecture",
+          "est_effort_min": 120,
+          "priority": 5,
+          "depends_on": ["nlp.attention_mechanism"],
+          "diagnostic_probe": "What are the two main sub-layers inside a transformer encoder block?",
+          "diagnostic_answer": "A transformer encoder block has a multi-head self-attention sub-layer and a position-wise feed-forward sub-layer, each wrapped with a residual connection and layer normalization."
+        },
+        {
+          "stable_key": "nlp.pretraining_finetuning",
+          "title": "Pretraining & Fine-tuning",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["nlp.transformer_architecture"]
+        },
+        {
+          "stable_key": "nlp.tokens_and_context_windows",
+          "title": "Context Windows",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["nlp.tokenization"]
+        },
+        {
+          "stable_key": "nlp.embeddings_for_search",
+          "title": "Embeddings for Search",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["nlp.word_embeddings"]
+        },
+        {
+          "stable_key": "nlp.decoding_strategies",
+          "title": "Decoding Strategies",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["nlp.transformer_architecture"]
+        }
+      ]
+    },
+    {
+      "key": "genai_engineering",
+      "title": "Applied GenAI Engineering",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "genai.prompt_engineering_basics",
+          "title": "Prompt Engineering Basics",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What's the difference between a system prompt and a user prompt?",
+          "diagnostic_answer": "A system prompt sets the model's persistent behavior, role, and constraints for the whole conversation. A user prompt is the specific request or question in a given turn."
+        },
+        {
+          "stable_key": "genai.few_shot_prompting",
+          "title": "Few-Shot Prompting",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": ["genai.prompt_engineering_basics"]
+        },
+        {
+          "stable_key": "genai.rag_basics",
+          "title": "RAG Basics",
+          "est_effort_min": 90,
+          "priority": 5,
+          "depends_on": ["nlp.embeddings_for_search"],
+          "diagnostic_probe": "What problem does Retrieval-Augmented Generation solve that a base LLM alone can't?",
+          "diagnostic_answer": "RAG retrieves relevant external documents at query time and feeds them into the model's context, letting it answer using up-to-date or private information it was never trained on — instead of relying only on what's frozen in its training weights."
+        },
+        {
+          "stable_key": "genai.vector_databases",
+          "title": "Vector Databases",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["genai.rag_basics"]
+        },
+        {
+          "stable_key": "genai.chunking_strategies",
+          "title": "Chunking Strategies",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["genai.rag_basics"]
+        },
+        {
+          "stable_key": "genai.function_tool_calling",
+          "title": "Function / Tool Calling",
+          "est_effort_min": 75,
+          "priority": 5,
+          "depends_on": ["genai.prompt_engineering_basics"],
+          "diagnostic_probe": "What must a tool-calling LLM output in order for your code to actually execute the tool?",
+          "diagnostic_answer": "The model must output a structured call (typically JSON) naming the tool/function and its arguments, matching a schema your code defined — your code then parses that output, executes the real function, and returns the result back to the model."
+        },
+        {
+          "stable_key": "genai.agent_loops",
+          "title": "Agent Loops",
+          "est_effort_min": 90,
+          "priority": 4,
+          "depends_on": ["genai.function_tool_calling"]
+        },
+        {
+          "stable_key": "genai.multi_agent_systems",
+          "title": "Multi-Agent Systems",
+          "est_effort_min": 90,
+          "priority": 2,
+          "depends_on": ["genai.agent_loops"]
+        },
+        {
+          "stable_key": "genai.structured_output_json_mode",
+          "title": "Structured Output / JSON Mode",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["genai.prompt_engineering_basics"]
+        },
+        {
+          "stable_key": "genai.context_management",
+          "title": "Context Management",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["genai.agent_loops"]
+        }
+      ]
+    },
+    {
+      "key": "mlops",
+      "title": "MLOps & Deployment",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "mlops.model_serving_basics",
+          "title": "Model Serving Basics",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What's the tradeoff between batch inference and real-time inference?",
+          "diagnostic_answer": "Batch inference processes many inputs together on a schedule, trading latency for throughput and lower cost per prediction. Real-time inference responds to individual requests immediately, which costs more per prediction but is necessary when a user is waiting on the response."
+        },
+        {
+          "stable_key": "mlops.experiment_tracking",
+          "title": "Experiment Tracking",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "mlops.model_versioning",
+          "title": "Model Versioning",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["mlops.model_serving_basics"]
+        },
+        {
+          "stable_key": "mlops.containerization_docker",
+          "title": "Containerization (Docker)",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "mlops.ci_cd_for_ml",
+          "title": "CI/CD for ML",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["mlops.containerization_docker"]
+        },
+        {
+          "stable_key": "mlops.monitoring_drift",
+          "title": "Monitoring & Drift Detection",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["mlops.model_serving_basics"]
+        },
+        {
+          "stable_key": "mlops.cost_and_latency_tradeoffs",
+          "title": "Cost & Latency Tradeoffs",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": ["mlops.model_serving_basics"]
+        }
+      ]
+    },
+    {
+      "key": "data_engineering_basics",
+      "title": "Data Engineering Basics",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "data_eng.etl_basics",
+          "title": "ETL Basics",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "data_eng.sql_for_ml",
+          "title": "SQL for ML Feature Prep",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "Why would you aggregate features in SQL before training rather than in Python?",
+          "diagnostic_answer": "Aggregating in SQL pushes the computation down to where the data already lives, avoiding pulling the full raw dataset into Python memory just to group and summarize it — this is far more efficient at scale and leverages the database's optimized query engine."
+        },
+        {
+          "stable_key": "data_eng.data_cleaning",
+          "title": "Data Cleaning",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "data_eng.feature_stores",
+          "title": "Feature Stores",
+          "est_effort_min": 45,
+          "priority": 2,
+          "depends_on": ["data_eng.sql_for_ml"]
+        }
+      ]
+    },
+    {
+      "key": "evaluation_and_safety",
+      "title": "Evaluation, Safety & Ethics",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "eval.offline_eval_metrics",
+          "title": "Offline Evaluation Metrics",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "Why can a model with 99% accuracy still be useless on a highly imbalanced dataset?",
+          "diagnostic_answer": "On an imbalanced dataset (e.g. 99% negative class), a model that always predicts the majority class scores 99% accuracy while being completely useless at detecting the minority class — which is usually the class that actually matters (fraud, disease, etc.)."
+        },
+        {
+          "stable_key": "eval.llm_eval_and_judges",
+          "title": "LLM Evaluation & Judges",
+          "est_effort_min": 75,
+          "priority": 4,
+          "depends_on": ["genai.prompt_engineering_basics"]
+        },
+        {
+          "stable_key": "eval.hallucination_and_grounding",
+          "title": "Hallucination & Grounding",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": ["genai.rag_basics"]
+        },
+        {
+          "stable_key": "eval.bias_and_fairness",
+          "title": "Bias & Fairness",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "eval.prompt_injection_and_safety",
+          "title": "Prompt Injection & Safety",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": ["genai.function_tool_calling"]
+        }
+      ]
+    }
+  ]
+}

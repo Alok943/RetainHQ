@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import UniqueConstraint, Column, JSON
+from sqlalchemy import UniqueConstraint, Column, JSON, Index, text
 from sqlalchemy.dialects.postgresql import JSONB
 
 # JSONB in Postgres (indexable, typed); plain JSON under SQLite so the test
@@ -284,3 +284,115 @@ class ClassroomRoadmap(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     classroom_id: uuid.UUID = Field(foreign_key="classrooms.id", ondelete="CASCADE")
     roadmap_id: uuid.UUID = Field(foreign_key="roadmaps.id", ondelete="CASCADE")
+
+
+class LearningEvent(SQLModel, table=True):
+    """Immutable append-only evidence log — the source of truth for all mastery
+    state (Career Coach design doc, Design law 2). Every producer (in-app review,
+    manual log, and later LeetCode/GitHub/companion) writes this same shape.
+
+    Rows are NEVER updated. Correction = insert a compensating event or soft-delete
+    via `deleted_at` and recompute. Mastery in `node_mastery` is a derived cache and
+    can be rebuilt from this table alone at any time."""
+    __tablename__ = "learning_events"
+    __table_args__ = (
+        # Idempotency key for polling producers (LeetCode etc, phase 2+) — a
+        # double-counted re-read of the same solve would silently inflate
+        # mastery. Partial: entity_id is NULL for producers with no source row
+        # (e.g. manual log), which must never collide with each other.
+        Index(
+            "uq_learning_event_dedupe", "user_id", "source", "entity_id",
+            unique=True,
+            postgresql_where=text("entity_id IS NOT NULL"),
+            sqlite_where=text("entity_id IS NOT NULL"),
+        ),
+        Index("ix_learning_event_fold_path", "user_id", "node_id", "occurred_at"),
+    )
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    occurred_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    event_type: str            # see evidence_weights.EVENT_TYPES
+    trust_tier: str            # see evidence_weights.TRUST_TIERS
+    source: str                # see evidence_weights.SOURCES
+    node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id", index=True)
+    duration_min: int = Field(default=0)
+    difficulty: Optional[str] = None    # 'easy' | 'medium' | 'hard'
+    assistance: Optional[str] = None    # 'none' | 'hint' | 'llm_assisted' | 'solution_seen'
+    outcome: Optional[str] = None       # 'pass' | 'fail' | 'partial'
+    grade: Optional[float] = None       # 0.0-1.0
+    # Loose FK to the producing row (reviews.id, activities.id, ...). No constraint:
+    # the referenced table varies by source. Doubles as the idempotency key with
+    # (user_id, source) — see uq_learning_event_dedupe.
+    entity_id: Optional[uuid.UUID] = Field(default=None, index=True)
+    payload: dict = Field(default_factory=dict, sa_column=Column(_JSONB))
+    # Soft delete only — user-requested evidence removal (design doc §14). Excluded
+    # from recompute; the row survives so history stays auditable.
+    deleted_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class NodeMastery(SQLModel, table=True):
+    """Derived mastery cache — one row per (user, node). Recomputable in full
+    from `learning_events`; deleting this table costs only CPU. Never write it
+    from anywhere except services/evidence.py."""
+    __tablename__ = "node_mastery"
+    __table_args__ = (UniqueConstraint("user_id", "node_id", name="uq_node_mastery"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE", index=True)
+    m_learned: float = Field(default=0.0)      # evidence-accumulated skill, 0-1
+    evidence_count: int = Field(default=0)     # non-deleted, weight-bearing events folded in
+    last_event_at: Optional[datetime] = None
+    exposure_capped: bool = Field(default=False)  # True if only T3-capped evidence exists
+    weights_version: str                       # which weights table produced this
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CareerGoal(SQLModel, table=True):
+    """The user's active career target. Drives tree generation and (phase 3)
+    scheduler priorities. One active goal per user — parent doc assumption A1;
+    multi-goal is explicitly P2."""
+    __tablename__ = "career_goals"
+    __table_args__ = (
+        # Enforced by the DB, not application code phase 3 might forget.
+        Index(
+            "uq_career_goal_one_active", "user_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+            sqlite_where=text("status = 'active'"),
+        ),
+    )
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    role_key: str                       # 'backend' | 'ai_engineer' | 'sde_generalist' — a template key
+    title: str                          # user-facing, editable: "Backend SDE, Jan 2027 placements"
+    target_date: Optional[date] = None  # deadline proximity input for phase 3; None = open-ended
+    # The tree this goal generated. NULL only between goal creation and tree commit.
+    roadmap_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmaps.id", index=True)
+    template_version: Optional[str] = None  # pinned at commit — parent §6 versioning rule
+    # Parent A3: user-declared temporary weight override. Stored now, consumed in
+    # phase 3. Suppresses balance flags until the end date.
+    sprint_node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
+    sprint_until: Optional[date] = None
+    status: str = Field(default="active")   # 'active' | 'archived'
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class NodeMeta(SQLModel, table=True):
+    """Career-tree-specific node attributes. Sidecar to roadmap_nodes so the
+    shared catalog table stays untouched. Rows exist only for career-tree nodes."""
+    __tablename__ = "node_meta"
+    __table_args__ = (UniqueConstraint("node_id", name="uq_node_meta_node"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE", index=True)
+    # Stable across template versions — parent §6 mandatory rule. Template-authored
+    # slug ('dsa.graphs.bfs'), NOT the UUID (node UUIDs are regenerated on re-seed,
+    # see the RoadmapNodePrerequisite docstring).
+    stable_key: str = Field(index=True)
+    priority: int = Field(default=3, ge=1, le=5)
+    est_effort_min: int = Field(default=60)
+    subject: str                          # top-level grouping for phase-3 balance: 'dsa' | 'os' | 'dbms' | ...
+    review_policy: str = Field(default="default")  # parent A7: per-node FSRS tuning, consumed later
+    user_edited: bool = Field(default=False)       # protects user edits from template upgrades
+    created_at: datetime = Field(default_factory=datetime.utcnow)

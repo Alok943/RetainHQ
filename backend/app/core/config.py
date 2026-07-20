@@ -62,6 +62,14 @@ class Settings(BaseSettings):
     # creation, same spirit as the syllabus caps above — not a pricing tier.
     MAX_CLASSROOMS_PER_TEACHER: int = 20
 
+    # Career tree generation (SPEC-career-coach-phase2.md §3). One-shot
+    # top-tier model call adapting a role template. Reuses ANTHROPIC_API_KEY/
+    # GEMINI_API_KEY — routed the same "gemini*" way as SYLLABUS_MODEL.
+    # Quota-exempt (it's the primary onboarding path, not abuse-prone like a
+    # syllabus PDF) — rate-limited daily instead, per user.
+    CAREER_TREE_MODEL: str = "claude-opus-4-8"
+    CAREER_TREE_DAILY_LIMIT: int = 3
+
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
     # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger
     # endpoint — if unset, the endpoint refuses all callers (no open trigger).
