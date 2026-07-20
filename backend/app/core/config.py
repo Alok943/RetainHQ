@@ -50,10 +50,12 @@ class Settings(BaseSettings):
     # Provider is routed by SYLLABUS_MODEL: a "gemini*" id uses Google (GEMINI_API_KEY),
     # anything else uses Anthropic (ANTHROPIC_API_KEY). The feature is a no-op (404)
     # until the SELECTED provider's key is set, so it's safe to deploy gated-off.
-    # Gemini is wired in to A/B the extraction quality/cost against Opus.
+    # Gemini is the default provider (D-037) — GEMINI_API_KEY is the only LLM key
+    # these features need. The Anthropic path stays wired so a single env override
+    # (SYLLABUS_MODEL=claude-*) routes back without a code change.
     ANTHROPIC_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    SYLLABUS_MODEL: str = "claude-opus-4-8"  # e.g. "gemini-flash-lite-latest" to route to Gemini
+    SYLLABUS_MODEL: str = "gemini-3.5-flash"  # e.g. "claude-opus-4-8" to route to Anthropic
     SYLLABUS_MAX_PDF_MB: int = 10
     SYLLABUS_DAILY_LIMIT: int = 5  # extractions per user per UTC day (API-budget guard)
     SYLLABUS_LIFETIME_LIMIT: int = 3  # personal roadmaps per user, LIFETIME (delete ≠ refund)
@@ -62,12 +64,12 @@ class Settings(BaseSettings):
     # creation, same spirit as the syllabus caps above — not a pricing tier.
     MAX_CLASSROOMS_PER_TEACHER: int = 20
 
-    # Career tree generation (SPEC-career-coach-phase2.md §3). One-shot
-    # top-tier model call adapting a role template. Reuses ANTHROPIC_API_KEY/
-    # GEMINI_API_KEY — routed the same "gemini*" way as SYLLABUS_MODEL.
+    # Career tree generation (SPEC-career-coach-phase2.md §3). One-shot model
+    # call adapting a role template. Uses GEMINI_API_KEY — routed the same
+    # "gemini*" way as SYLLABUS_MODEL (D-037).
     # Quota-exempt (it's the primary onboarding path, not abuse-prone like a
     # syllabus PDF) — rate-limited daily instead, per user.
-    CAREER_TREE_MODEL: str = "claude-opus-4-8"
+    CAREER_TREE_MODEL: str = "gemini-3.5-flash"
     CAREER_TREE_DAILY_LIMIT: int = 3
 
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
