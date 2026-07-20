@@ -1,0 +1,153 @@
+{
+  "slug": "human-in-the-loop-interrupts",
+  "title": "Human-in-the-loop interrupts",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "agent-checkpointing-and-resumability"
+    ],
+    "unlocks": [
+      "agent-trajectory-vs-outcome-evals"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview",
+      "System Design"
+    ]
+  },
+  "seo": {
+    "title": "Agent Human-in-the-Loop: LangGraph Interrupts and Approvals",
+    "description": "Learn how to build safe AI agents using human-in-the-loop approval gates, graph interrupts, and durable resumes."
+  },
+  "glossary": [
+    {
+      "term": "human-in-the-loop (HITL)",
+      "definition": "A system design where an AI must pause and ask a human for permission before taking a dangerous action."
+    },
+    {
+      "term": "interrupt",
+      "definition": "A specific command that suspends the agent graph, saves its state, and cleanly shuts down the server process while waiting."
+    }
+  ],
+  "hook": {
+    "scenario": "A developer puts a standard Python `input(\"Approve this action?\")` command in their AI agent to ask the user for permission. They deploy it to a cloud server.",
+    "question": "What happens when the agent reaches this line in production?"
+  },
+  "mental_model": {
+    "intuition": "An interrupt is not a pause button; it's a save-and-quit button.",
+    "description": "When you pause a video game, the console stays on and burns electricity. When you interrupt an agent, it saves the game and unplugs the console entirely. When the human finally returns to approve the action (even days later), the console plugs back in, loads the save, and continues."
+  },
+  "sections": [
+    {
+      "body": "Agents that execute destructive actions (like dropping a database, spending money, or sending emails) need **human-in-the-loop (HITL)** approval gates. We cannot trust the AI to make the final call on dangerous operations.",
+      "recap": "Dangerous agent actions require explicit human approval before execution."
+    },
+    {
+      "body": "You cannot use `input()` or `time.sleep()` to pause an agent. If you do, the server process stays alive waiting for an answer. In the cloud (like AWS Lambda), this will hit a timeout limit in 30 seconds, crash, and lose all memory of what the agent was doing.",
+      "recap": "Standard code pauses cause cloud timeouts and destroy agent state."
+    },
+    {
+      "body": "Instead, production frameworks use **interrupts**. An `interrupt()` suspends the graph and uses a checkpointer to save the state to a database. The server process then shuts down completely. Hours or days later, an external API call resumes the graph, injecting the human's response.",
+      "recap": "Interrupts save state to a database and shut down the process while waiting."
+    },
+    {
+      "body": "Prediction: A developer puts `send_email()` and then `interrupt()` inside the *same* agent node. The graph pauses. A day later, the human approves. The agent resumes... and sends the email again. Why? Because when a node resumes from an interrupt, the framework restarts that specific node from the top. Non-idempotent actions must be in separate nodes.",
+      "recap": "When an interrupted node resumes, all code before the interrupt re-executes."
+    }
+  ],
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "draft",
+        "label": "Draft Email Node"
+      },
+      {
+        "id": "interrupt",
+        "label": "Interrupt! (Server shuts down)"
+      },
+      {
+        "id": "human",
+        "label": "Human clicks 'Approve' on UI"
+      },
+      {
+        "id": "send",
+        "label": "Send Email Node"
+      }
+    ],
+    "steps": [
+      {
+        "from": "draft",
+        "to": "interrupt",
+        "label": "Requests approval"
+      },
+      {
+        "from": "interrupt",
+        "to": "human",
+        "label": "Days pass..."
+      },
+      {
+        "from": "human",
+        "to": "send",
+        "label": "Resumes graph"
+      }
+    ]
+  },
+  "code_snippets": [
+    {
+      "title": "Safely interrupting and resuming an agent",
+      "language": "python",
+      "code": "from langgraph.types import interrupt, Command\n\ndef approval_node(state):\n    # 1. The graph suspends here, saves state, and dies cleanly.\n    user_decision = interrupt(\"Do you approve this $500 purchase?\")\n    \n    if user_decision == \"yes\":\n        return {\"next_node\": \"buy_item\"}\n    return {\"next_node\": \"cancel\"}\n\n# --- DAYS LATER, in a different file/server request ---\n\n# 2. The human clicked 'Yes' in a UI. We resume the graph.\n# The 'resume' value is injected directly into 'user_decision' above.\ngraph.invoke(\n    Command(resume=\"yes\"), \n    config={\"configurable\": {\"thread_id\": \"123\"}}\n)",
+      "explanation": "This is a durable pause. The server does not hang while waiting for the human. It completely stops. Later, `Command(resume=...)` wakes the graph back up and passes the human's answer exactly where the code left off."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using blocking inputs instead of interrupts",
+      "explanation": "Human-in-the-loop is not achieved by placing an `input()` prompt in the agent's code. Local CLI prototypes do this, but in production, this blocks the server thread and hits timeouts. An `interrupt()` safely suspends the graph and serializes state to a database, allowing the process to terminate."
+    },
+    {
+      "title": "Assuming code before an interrupt only runs once",
+      "explanation": "When a graph resumes after an `interrupt()`, execution picks up by restarting the node from the beginning. Any code preceding the `interrupt()` call inside that node re-executes. If you place a 'charge credit card' function right before the interrupt in the same node, the card will be charged a second time when the human approves."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it dangerous to use `time.sleep()` or `input()` to wait for human approval in a cloud-hosted agent?",
+      "answer": "Because it keeps the server process alive and blocking. Cloud environments will quickly kill the process for timing out, destroying the agent's memory and state.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does an agent know what the human decided after waking up from an interrupt?",
+      "answer": "The human's decision is passed back into the graph using a special resume command (e.g., `Command(resume='yes')`), which injects the value directly into the variable where the interrupt happened.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer puts an API call to a billing system and an `interrupt()` inside the exact same node. What bug will this cause when the graph resumes?",
+      "answer": "The API call will fire twice. When an interrupted node is resumed, the framework restarts the node from the top, re-executing any code placed before the interrupt.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Design an approval flow for an agent that drops a SQL table. How do you prevent the table from dropping while waiting for approval, without causing a server timeout?",
+      "company": "System Design",
+      "answer": "Use a durable interrupt framework. The agent reaches an approval node, calls `interrupt()`, and halts. The state is saved to a checkpointer. A separate UI system alerts a human. Upon approval, the UI makes a new API call with `resume=True`, which loads the state and allows the graph to proceed to the actual execution node.",
+      "approach": "Demonstrate the difference between a blocking thread pause and a durable, stateless checkpoint interrupt."
+    },
+    {
+      "question": "Why can't you achieve human-in-the-loop by simply placing a `time.sleep()` or `input()` block inside a cloud-hosted agent?",
+      "company": "System Design",
+      "answer": "Blocking the execution thread will cause the cloud function (e.g., AWS Lambda) to hit its timeout limit and terminate forcefully, resulting in the complete loss of the agent's in-memory state.",
+      "approach": "Highlight the difference between local blocking scripts and stateless, durable cloud architectures."
+    }
+  ],
+  "sources": [
+    "https://docs.langchain.com/oss/python/langgraph/interrupts"
+  ]
+}

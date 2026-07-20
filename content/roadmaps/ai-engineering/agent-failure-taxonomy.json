@@ -1,0 +1,96 @@
+{
+  "slug": "agent-failure-taxonomy",
+  "title": "A Taxonomy of Production Agent Failures",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "multi-agent-orchestration-patterns",
+      "agent-trajectory-vs-outcome-evals"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Debugging multi-agent systems",
+      "Logging agent trace metrics"
+    ]
+  },
+  "overview": {
+    "what": "A systematic classification of how and why multi-agent systems fail, moving beyond generic `hallucination`.",
+    "why": "To correctly diagnose an agent failure so you can apply the right fix (e.g., fixing a specification issue rather than arbitrarily tuning the prompt).",
+    "where_used": [
+      "Debugging failing agents",
+      "Evaluating agent traces",
+      "System design interviews"
+    ]
+  },
+  "why_learning_this": [
+    "Debugging a failing agent without a shared vocabulary leads teams to blindly tune prompts regardless of the root cause.",
+    "Anthropic and the research community have identified failures like `endless search` and `redundant coordination` that are invisible if you only check the final answer."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Failures are all hallucination",
+      "explanation": "The belief that every agent failure traces back to the LLM `hallucinating` a wrong fact or tool call. In reality, the MAST taxonomy shows failures fall largely into `specification issues`, `inter-agent misalignment`, and `task verification`, which are mostly not `hallucination`."
+    },
+    {
+      "title": "Final answer correctness is the whole story",
+      "explanation": "If an agent run's final output was acceptable, developers assume nothing meaningfully went wrong during execution. In reality, early agents made errors like spawning 50 `subagents` for simple queries or scouring the web endlessly, driving up costs significantly despite a correct final answer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "According to the MAST taxonomy, what are the three main categories of multi-agent failure?",
+      "answer": "`Specification issues`, `inter-agent misalignment`, and `task verification failures`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A team's multi-agent pipeline keeps producing wrong final answers. They spend a sprint tightening prompts against hallucination, but the worker agent's output schema had silently changed and the supervisor never re-validated it. What kind of failure is this?",
+      "answer": "A `task verification` failure (or `inter-agent misalignment`), not a `hallucination`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A developer ships a research agent that gives a correct final answer in testing, unaware it spawned 40 redundant subagents to get there. Why is this problematic?",
+      "answer": "Because the failure (`redundant coordination`/`subagent runaway`) only shows up in the API bill and the trace, never in the answer a reviewer reads.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If an agent correctly identifies a task but the supervisor fails to check whether the claimed outcome actually happened, which `MAST` category does this fall under?",
+      "answer": "`Task verification failure`.",
+      "why": "Task verification failures occur when there is a lack of proper validation of the agent's work, rather than an issue with the task definition (specification) or communication between agents (misalignment)."
+    },
+    {
+      "type": "predict-result",
+      "question": "What happens if a developer only monitors the final output of an agent pipeline without tracing the intermediate steps?",
+      "answer": "They will miss hidden failures like `endless search loops` or redundant `subagent` spawning, leading to unexpectedly high API costs and latency.",
+      "why": "Outcome-only evaluation cannot detect trajectory-level inefficiencies and coordination failures that resolve before the final output is produced."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement a Trace Labeler",
+      "prompt": "Write a Python function that iterates through an agent's execution log and labels each step with one of the three MAST failure categories, producing a histogram of failures.",
+      "starter_code": "def label_agent_trace(trace_log):\n    # Your code here\n    pass",
+      "solution": "def label_agent_trace(trace_log):\n    histogram = {'specification': 0, 'misalignment': 0, 'verification': 0}\n    for step in trace_log:\n        if step.get('error') == 'schema_mismatch':\n            histogram['verification'] += 1\n        elif step.get('error') == 'unclear_role':\n            histogram['specification'] += 1\n        elif step.get('error') == 'context_lost':\n            histogram['misalignment'] += 1\n    return histogram"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def evaluate_agent_trace(trace_data):\n    failures = {'specification': 0, 'misalignment': 0, 'verification': 0}\n    \n    for step in trace_data:\n        if 'missing_context' in step.get('error_tags', []):\n            failures['misalignment'] += 1\n        elif 'schema_validation_failed' in step.get('error_tags', []):\n            failures['verification'] += 1\n        elif 'unclear_task_boundary' in step.get('error_tags', []):\n            failures['specification'] += 1\n            \n    return failures\n\n# Example usage:\n# trace = [{'error_tags': ['schema_validation_failed']}]\n# print(evaluate_agent_trace(trace))\n# Output: {'specification': 0, 'misalignment': 0, 'verification': 1}",
+    "focus": "This function walks an agent's execution log and labels each step against MAST's three top-level categories instead of just returning a single pass/fail bit."
+  },
+  "sources": [
+    "https://arxiv.org/abs/2503.13657",
+    "https://www.anthropic.com/engineering/multi-agent-research-system"
+  ],
+  "seo": {
+    "title": "A Taxonomy of Production Agent Failures | MAST Explained",
+    "description": "The three categories of agent failure - specification, misalignment, and verification - and how to diagnose failures beyond hallucination."
+  }
+}

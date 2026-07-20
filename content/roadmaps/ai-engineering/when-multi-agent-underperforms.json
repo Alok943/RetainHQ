@@ -1,0 +1,153 @@
+{
+  "slug": "when-multi-agent-underperforms",
+  "title": "When multi-agent underperforms",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "multi-agent-orchestration-patterns"
+    ],
+    "unlocks": [
+      "agent-checkpointing-and-resumability"
+    ],
+    "appears_in": [
+      "System Design"
+    ]
+  },
+  "seo": {
+    "title": "Why Multi-Agent Systems Fail: Compounding Errors",
+    "description": "Discover why adding more AI agents often decreases accuracy, increases latency, and causes compounding errors in multi-agent frameworks."
+  },
+  "glossary": [
+    {
+      "term": "cascading error",
+      "definition": "When a small mistake made by one agent is passed to the next agent, causing a massive failure at the end."
+    },
+    {
+      "term": "serialization overhead",
+      "definition": "The time and token cost of constantly translating state data back and forth as agents hand off to one another."
+    }
+  ],
+  "hook": {
+    "scenario": "A developer splits a data formatting task into a 5-agent pipeline, expecting it to be highly accurate.",
+    "question": "Will 5 agents format the data better than 1 agent?"
+  },
+  "mental_model": {
+    "intuition": "More cooks in the kitchen don't make a better meal if they keep dropping the ingredients.",
+    "description": "We assume splitting a task among many specialists is always better. But in AI, every time you hand a task to a new agent, there is a chance it misunderstands the data. If 5 agents each have a 95% success rate, the total system success rate drops to 77% because the errors multiply."
+  },
+  "sections": [
+    {
+      "body": "The industry hype says you should build teams of AI agents. But empirical evidence shows that multi-agent systems often **increase latency** and **decrease accuracy**. Why? Because errors compound sequentially.",
+      "recap": "Multi-agent systems often fail because errors multiply at every handoff step."
+    },
+    {
+      "body": "If you use a single agent, it maintains a unified, uncorrupted context. It knows everything it has done so far. If you split the task across 5 agents, they have to constantly read and write to the shared state. This causes massive **serialization overhead** (using 15x more tokens) and creates 5 different chances for an agent to hallucinate.",
+      "recap": "Single agents maintain perfect context; multi-agents lose context and waste tokens."
+    },
+    {
+      "body": "A multi-agent framework (like LangGraph or CrewAI) is just a router. It cannot make a dumb model smart. If your underlying LLM is failing to reason through a problem, wrapping it in a complex 4-agent hierarchy will just make it fail harder and slower.",
+      "recap": "Frameworks route logic, but they cannot compensate for a model's inability to reason."
+    },
+    {
+      "body": "Prediction: A developer spends three days rewriting a failing single-agent script into a complex multi-agent graph, only to find the exact same logical errors occur at the end. The framework didn't fix the model's limitations.",
+      "recap": "Never use a multi-agent framework to 'fix' a model that is failing at basic reasoning."
+    }
+  ],
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "agent1",
+        "label": "Agent 1 (95%)"
+      },
+      {
+        "id": "agent2",
+        "label": "Agent 2 (95%)"
+      },
+      {
+        "id": "agent3",
+        "label": "Agent 3 (95%)"
+      },
+      {
+        "id": "final",
+        "label": "Final Output (77%)"
+      }
+    ],
+    "steps": [
+      {
+        "from": "agent1",
+        "to": "agent2",
+        "label": "Handoff"
+      },
+      {
+        "from": "agent2",
+        "to": "agent3",
+        "label": "Handoff"
+      },
+      {
+        "from": "agent3",
+        "to": "final",
+        "label": "Result"
+      }
+    ]
+  },
+  "code_snippets": [
+    {
+      "title": "The math behind compounding errors",
+      "language": "python",
+      "code": "def calculate_pipeline_success(agent_success_rate, num_agents):\n    # Errors multiply sequentially in a pipeline\n    total_success = agent_success_rate ** num_agents\n    return total_success\n\n# Single agent doing the work:\nprint(calculate_pipeline_success(0.95, 1)) # Output: 0.95 (95% success)\n\n# 5-agent pipeline doing the work:\nprint(round(calculate_pipeline_success(0.95, 5), 2)) # 0.77 (77% success)",
+      "explanation": "Because each handoff requires the next agent to correctly parse the previous agent's output, a 5% error rate quickly destroys the reliability of the system. This is why simpler single-agent loops often win."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming more agents equals more accuracy",
+      "explanation": "It mimics human organizational logic (specialized teams are smarter). But in agent architectures, a 5% error rate across multiple handoffs drastically reduces the final pass rate compared to a single model maintaining an uncorrupted context."
+    },
+    {
+      "title": "Using frameworks to solve model limits",
+      "explanation": "Framework marketing suggests that orchestration unlocks 'emergent intelligence'. In reality, the underlying LLM is the primary driver of capability. Extensive diagnostics prove agents sharing the same LLM perform similarly regardless of the framework."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does a 5-agent pipeline often have a lower success rate than a single agent?",
+      "answer": "Because errors compound sequentially. Every time an agent hands off data to the next, there is a new chance for hallucinations or context loss.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If your AI model is constantly failing a specific reasoning task, will wrapping it in a multi-agent framework fix the issue?",
+      "answer": "No. Frameworks only route data; they cannot increase the base reasoning capabilities of the underlying model.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the token overhead of using a multi-agent system compared to a single chat?",
+      "answer": "Multi-agent systems use significantly more tokens (often 15x more) because they must constantly serialize and pass the shared state back and forth between agents.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "When would you choose a single ReAct loop over a multi-agent framework?",
+      "company": "System Design",
+      "answer": "You should use a single ReAct loop when the task has highly interdependent steps that benefit from a single, unbroken context window, and to avoid the compounding error rates of multiple handoffs.",
+      "approach": "Identify the latency, cost, and reliability trade-offs of multi-agent orchestration."
+    },
+    {
+      "question": "A team decides to use 5 specialized agents to process data sequentially. Why might this increase latency and token costs compared to a single agent?",
+      "company": "GenAI Engineer interview",
+      "answer": "Each handoff between agents requires the entire shared state to be serialized, passed as context, and parsed by the next agent. This serialization overhead heavily increases token consumption and network latency.",
+      "approach": "Discuss the serialization overhead and context window duplication inherent in multi-agent handoffs."
+    }
+  ],
+  "sources": [
+    "https://www.anthropic.com/engineering/multi-agent-research-system",
+    "https://cognition.com/blog/dont-build-multi-agents"
+  ]
+}

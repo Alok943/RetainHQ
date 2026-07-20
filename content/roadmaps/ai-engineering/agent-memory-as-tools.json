@@ -1,0 +1,104 @@
+{
+  "slug": "agent-memory-as-tools",
+  "title": "Memory as an Actively-Invoked Tool",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier2",
+  "runtime": "python",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "agent-state-pruning-and-compaction",
+      "memory-short-and-long-term"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Building persistent AI assistants",
+      "Designing episodic memory for agents"
+    ]
+  },
+  "overview": {
+    "what": "Implementing agent memory as a set of tools the model explicitly chooses to call, rather than passively prepending all past conversations into every system prompt.",
+    "why": "Passive injection degrades performance, causes context overflow, and inflates token costs. Active retrieval forces the agent to consciously look up semantic facts or episodic logs only when needed.",
+    "where_used": [
+      "Production-grade Claude or LangChain agents",
+      "Long-running assistants with episodic memory requirements"
+    ]
+  },
+  "why_learning_this": [
+    "You will understand the difference between passive context injection and active memory retrieval.",
+    "You will learn to separate semantic (facts), episodic (experiences), and procedural (instructions) memory.",
+    "You will avoid the common pitfall of a single flat memory store that degrades agent reasoning."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming memory tools inject context automatically",
+      "explanation": "Giving an agent a 'memory tool' doesn't mean it inherently knows past facts. The model must explicitly issue a tool call to read that memory; if it doesn't, the context is completely absent."
+    },
+    {
+      "title": "Using a single undifferentiated memory store",
+      "explanation": "Dumping stable user facts (semantic), past conversations (episodic), and agent instructions (procedural) into one flat text file causes retrieval failures, as episodic logs will bury semantic facts."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the fundamental difference between passive memory injection and memory as a tool?",
+      "answer": "Passive injection force-feeds all past context into the system prompt every turn, whereas memory as a tool requires the agent to actively decide to retrieve information via tool calls.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Name the three types of agent memory.",
+      "answer": "Semantic (stable facts), Episodic (past experiences), and Procedural (instructions/skills).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If an agent has a memory tool but still claims it doesn't know a previously stored fact, what likely happened?",
+      "answer": "The agent decided not to invoke the memory tool in this turn, meaning the fact was never retrieved into its current context window.",
+      "tier": "tier2"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def run_agent(user_input):\n    # Agent starts with a clean prompt and memory access tools\n    tools = [{'type': 'function', 'function': {'name': 'search_semantic_memory'}}]\n    \n    response = client.chat.completions.create(\n        model='gpt-4o',\n        tools=tools,\n        messages=[{'role': 'user', 'content': user_input}]\n    )\n    \n    # The memory is only loaded IF the agent called the tool\n    if response.tool_calls:\n        context = execute_memory_tool(response.tool_calls[0])\n        return \"Memory retrieved: \" + context\n    return \"No memory needed.\"",
+    "focus": "Notice how the system prompt is clean. The agent must consciously choose to invoke `search_semantic_memory` to access historical context. Helper names are placeholders \u2014 the control flow is the point."
+  },
+  "aha_moment": {
+    "code": "def ask_agent():\n    # User stored their favorite color in memory yesterday\n    tools = [search_memory_tool]\n    messages = [{'role': 'user', 'content': 'What is my favorite color?'}]\n    return invoke_llm(messages, tools)",
+    "prediction": "The agent will execute a tool call to `search_memory_tool` with the query 'favorite color', and wait for the result before answering.",
+    "common_guess": "The agent will simply answer with the favorite color because it 'has memory'.",
+    "why": "The agent's context window is clean at the start of the turn. It does not possess the memory yet. It must actively use the tool to retrieve the answer from storage."
+  },
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "An agent has access to `search_semantic_memory`. A user asks, 'What did I say my favorite color was yesterday?' The agent responds, 'I don't know, you haven't told me.' What went wrong in the execution trace?",
+      "answer": "The agent failed to generate a tool call for `search_semantic_memory` and attempted to answer directly from its empty context.",
+      "why": "Because memory is actively invoked rather than passively injected, if the model decides not to use the tool, it has zero access to the historical data."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer dumps 50 past chat summaries and 5 core user facts into `memory.txt`. The agent uses a `search_memory` tool but frequently fails to find the core facts. Why?",
+      "answer": "The episodic memory (chat summaries) buried the semantic memory (core facts), causing the retrieval tool to return irrelevant chunks.",
+      "why": "Combining all memory types into a flat structure dilutes the density of important facts, degrading retrieval accuracy."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement an Active Memory Tool",
+      "prompt": "Write a Python dictionary defining an OpenAI-formatted tool called `view_semantic_memory` that takes a `topic` string parameter.",
+      "starter_code": "memory_tool = {}",
+      "solution": "memory_tool = {\n    'type': 'function',\n    'function': {\n        'name': 'view_semantic_memory',\n        'description': 'Look up user preferences and facts.',\n        'parameters': {\n            'type': 'object',\n            'properties': {'topic': {'type': 'string'}},\n            'required': ['topic']\n        }\n    }\n}"
+    }
+  ],
+  "sources": [
+    "https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool",
+    "https://docs.langchain.com/oss/python/concepts/memory",
+    "https://langchain-ai.github.io/langmem/concepts/conceptual_guide/"
+  ],
+  "seo": {
+    "title": "Agent Memory Tool: Episodic vs Semantic Memory",
+    "description": "Learn how the Claude memory tool and LangMem use actively-invoked tool calls for episodic vs semantic memory instead of passive context injection."
+  }
+}

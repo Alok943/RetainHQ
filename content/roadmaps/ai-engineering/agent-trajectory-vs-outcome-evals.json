@@ -1,0 +1,97 @@
+{
+  "slug": "agent-trajectory-vs-outcome-evals",
+  "title": "Agent Evals: Trajectory vs Outcome Scoring",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "evaluation-and-test-sets",
+      "observability-traces-logging"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Building CI/CD pipelines for agents",
+      "Measuring agent reliability"
+    ]
+  },
+  "overview": {
+    "what": "Evaluating an agent based on the sequence of tool calls and actions it took (trajectory), not just the final text it returned (outcome).",
+    "why": "Agents can arrive at the right answer through luck, hallucinations, or dangerous tool loops. Outcome evaluation hides these catastrophic failures.",
+    "where_used": [
+      "Evaluating agent loops",
+      "Test suites for agentic applications",
+      "Continuous integration for LLM architectures"
+    ]
+  },
+  "why_learning_this": [
+    "Traditional LLM evaluation (input-to-output) fails when applied to autonomous agents.",
+    "You cannot trust an agent in production if you only measure its final text string.",
+    "Companies are shifting from pass@k to pass^k to truly measure reliability."
+  ],
+  "common_mistakes": [
+    {
+      "title": "pass@k proves reliability",
+      "explanation": "If an agent achieves a high `pass@k` score, developers assume it is highly reliable. In reality, `pass@k` artificially inflates success by hiding catastrophic tool-loop failures. A positive outcome often hides a broken trajectory. `pass^k` (consistent success across `k` attempts) is the true measure."
+    },
+    {
+      "title": "Exact-match JSON grading",
+      "explanation": "Failing an agent because it formatted a payload with different whitespace (e.g., `{'price': 199.99}` instead of `{'price': 200}`) is brittle. Evaluation must score the sequence of actions and their ultimate environmental impact, not just strict string matching of the final JSON."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "A developer sees an agent output the correct final string 'Flight Booked', but ignores the trace showing the agent hallucinated 15 failed database queries before accidentally retrieving the right row. What evaluation failure does this highlight?",
+      "answer": "This highlights the failure of outcome-only evaluation. By ignoring the trajectory (the sequence of tool calls), the developer misses that the agent is inefficient and prone to hallucination.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the difference between pass@k and pass^k in the context of agent evaluation?",
+      "answer": "`pass@k` measures if an agent succeeds at least once in `k` attempts, inflating perceived reliability. `pass^k` measures if the agent succeeds consistently across all `k` attempts, revealing compounding multi-step errors.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is exact-match JSON grading a brittle way to evaluate agents?",
+      "answer": "Because agents can execute all backend tools perfectly but fail the eval due to minor whitespace or formatting differences in the final JSON string. Agents must be evaluated on their trajectory and environmental impact.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "An agent evaluates a complex database query. It gets the answer right 1 out of 5 times. If we use `pass@5`, the score is 100%. If we use `pass^5`, the score is 0%. Which metric provides a safer evaluation for deploying this autonomous agent to production, and why?",
+      "answer": "`pass^5` is safer. Autonomous agents can cause harm or incur massive costs if they fail or loop infinitely 80% of the time. `pass^k` measures the required consistency.",
+      "why": "Agents have compounding error rates due to their multi-step nature, meaning consistency is critical."
+    },
+    {
+      "type": "find-bug",
+      "code": "def eval(trace):\n    assert 'Success' in trace.output\n    assert trace.tool_calls[0] == 'db_write'",
+      "question": "What is the flaw in this trajectory evaluation?",
+      "answer": "It checks the first tool call but doesn't limit or check the total number of tool calls. The agent could have hallucinated 50 tool calls after the first one before eventually outputting 'Success'.",
+      "why": "Trajectory evaluation must ensure the agent didn't take unnecessary or dangerous steps, which requires validating the entire tool call sequence."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Write a Trajectory Evaluator",
+      "prompt": "Write a Python function `eval_trajectory(trace)` that takes a trace object (which has a `.steps` list of strings representing tool names). The function should return True only if the agent called 'search' exactly once, followed by 'execute' exactly once, and made no other tool calls.",
+      "starter_code": "def eval_trajectory(trace):\n    # TODO: Evaluate the sequence of tool calls\n    pass",
+      "solution": "def eval_trajectory(trace):\n    if len(trace.steps) != 2:\n        return False\n    return trace.steps[0] == 'search' and trace.steps[1] == 'execute'"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def evaluate_agent_run(trace_object):\n    # BAD: Outcome-only evaluation passes even if the path was chaotic\n    assert 'Booked' in trace_object.final_output\n\n    # GOOD: Trajectory evaluation inspecting the exact sequence\n    tool_names = [step.tool_name for step in trace_object.steps]\n    \n    # A bad trace might be: ['search', 'search', 'hallucinated_api', 'book']\n    # We must explicitly forbid loops and hallucinations\n    assert len(tool_names) == 2, f'Expected 2 tool calls, got {len(tool_names)}'\n    assert tool_names[0] == 'search_flights'\n    assert tool_names[1] == 'book_flight'\n    \n    # Assert the environmental impact actually occurred\n    assert db.get_flight_status() == 'Booked'",
+    "focus": "Outcome evaluation only checks the final string ('Booked'), which would pass an agent that hallucinated 15 failed database queries before accidentally succeeding. Trajectory evaluation asserts the exact sequence of tools used and verifies the environment state. Helper names are placeholders \u2014 the control flow is the point."
+  },
+  "sources": [
+    "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"
+  ],
+  "seo": {
+    "title": "Agent Evals: Trajectory vs Outcome Scoring",
+    "description": "Learn why trajectory evaluation and pass^k are essential for evaluating AI agents, and why traditional outcome-based LLM evals hide catastrophic failures."
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "slug": "agent-tool-execution-sandboxing",
+  "title": "Sandboxing Agent Tool Execution",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "agent-least-privilege-and-consent"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Securing agent infrastructure"
+    ]
+  },
+  "overview": {
+    "what": "OS-level enforcement of filesystem and network isolation around agent tool execution.",
+    "why": "Once an agent can execute code or shell commands, least-privilege prompting alone is not a security boundary. Containers alone are often incomplete without network and filesystem restrictions.",
+    "where_used": [
+      "Production agent platforms",
+      "Sandboxed execution environments",
+      "Code-interpreter features"
+    ]
+  },
+  "why_learning_this": [
+    "To prevent compromised agents from exfiltrating sensitive data like SSH keys.",
+    "To understand why a broad domain allowlist can still be a data-exfiltration path.",
+    "To implement robust sandbox boundaries using both filesystem and network isolation."
+  ],
+  "common_mistakes": [
+    {
+      "title": "container-alone-is-sandboxing",
+      "explanation": "Running an agent's code-execution tool inside a Docker container is, by itself, insufficient isolation against a compromised agent. Effective sandboxing requires both filesystem and network isolation. Without network isolation, a compromised agent could exfiltrate sensitive files like SSH keys. Without filesystem isolation, a compromised agent could backdoor system resources to gain network access."
+    },
+    {
+      "title": "trusted-domain-allowlist-is-safe",
+      "explanation": "Adding a well-known, trusted domain (like github.com) to a sandboxed agent's network allowlist is dangerous because the destination itself being reputable does not make it safe. The sandbox proxy allows or denies based on the requested hostname without inspecting TLS-encrypted contents. A compromised agent can still create a public gist or repo on an 'allowed' host and exfiltrate data through it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is a Docker container with default networking insufficient for sandboxing an agent?",
+      "answer": "Without strict network isolation, a compromised agent executing code inside the container can read mounted secrets and POST them to an external attacker-controlled URL.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is allowlisting 'github.com' a security risk for a code-execution sandbox?",
+      "answer": "A compromised agent could exfiltrate data by creating a public GitHub gist or repository. The proxy only sees the allowed domain and doesn't inspect the encrypted contents being sent.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What are the two required axes for effective agent code execution sandboxing?",
+      "answer": "Filesystem isolation (restricting what the agent can touch) and network isolation (restricting who the agent can talk to). Both must be enforced at the OS level.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "code": "sandbox_config = {\n    'network': {'allowedDomains': ['github.com']},\n    'filesystem': {'allowRead': ['/workspace', '/etc/secrets']}\n}",
+      "question": "What is the critical exfiltration risk in this sandbox configuration?",
+      "answer": "The sandbox allows read access to '/etc/secrets' and allows outbound network traffic to 'github.com'. A compromised agent could read the secrets and POST them to a public GitHub Gist.",
+      "why": "Network isolation and filesystem isolation must be securely scoped together. Even trusted domains like github.com can be used as data exfiltration vectors if the agent has access to sensitive files."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer places their agent's Python code execution tool inside a standard Docker container and considers it securely sandboxed from data exfiltration. Are they correct?",
+      "answer": "No. A standard Docker container has default bridge networking, which allows outbound internet access.",
+      "why": "Containers isolate processes, but without explicit network restrictions (like disabling egress) and strict filesystem boundaries, they are incomplete sandboxes."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Scope a Secure Sandbox",
+      "prompt": "Write a JSON configuration for a sandbox that only allows reading from '/project/src', writing to '/project/out', and strictly prevents all outbound network access by emptying the allowed domains.",
+      "solution": "{\n  \"sandbox\": {\n    \"filesystem\": {\n      \"allowRead\": [\"/project/src\"],\n      \"allowWrite\": [\"/project/out\"]\n    },\n    \"network\": {\n      \"allowedDomains\": []\n    }\n  }\n}"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "# ❌ NAIVE SETUP: High exfiltration risk\nnaive_sandbox = {\n    \"filesystem\": {\n        \"allowWrite\": [\"/home/user/\"]\n    },\n    \"network\": {\n        \"allowedDomains\": [\"*.github.com\"]\n    }\n}\n\n# ✅ SECURE SETUP: Independently scoped axes\nsecure_sandbox = {\n    \"filesystem\": {\n        \"allowWrite\": [\"/app/workspace/build\"]\n    },\n    \"network\": {\n        \"allowedDomains\": [\"registry.npmjs.org\"]\n    }\n}",
+    "focus": "Each axis must be scoped independently. The naive setup allows broad write access to the home directory and network access to any GitHub domain, creating an exfiltration path via gists. The secure setup scopes filesystem writes exclusively to the build directory and network access solely to the required package registry."
+  },
+  "sources": [
+    "https://code.claude.com/docs/en/sandboxing",
+    "https://www.anthropic.com/engineering/claude-code-sandboxing",
+    "https://github.com/anthropic-experimental/sandbox-runtime"
+  ],
+  "seo": {
+    "title": "Sandboxing AI Agent Tool Execution",
+    "description": "Learn why Docker containers aren't enough for agent security, and how to implement OS-level filesystem and network isolation to prevent data exfiltration."
+  }
+}

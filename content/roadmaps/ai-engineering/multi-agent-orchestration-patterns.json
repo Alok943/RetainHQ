@@ -1,0 +1,144 @@
+{
+  "slug": "multi-agent-orchestration-patterns",
+  "title": "Multi-agent orchestration patterns",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "state-machines-for-agents"
+    ],
+    "unlocks": [
+      "when-multi-agent-underperforms"
+    ],
+    "appears_in": [
+      "System Design",
+      "GenAI Engineer interview"
+    ]
+  },
+  "seo": {
+    "title": "Multi-Agent Patterns: Supervisor Nodes and Handoffs",
+    "description": "Learn the Supervisor Pattern for multi-agent systems, how to route tasks securely, and how to transfer state between agents without losing context."
+  },
+  "glossary": [
+    {
+      "term": "supervisor node",
+      "definition": "A central agent or script that looks at the overall goal and routes the work to a specific sub-agent."
+    },
+    {
+      "term": "handoff",
+      "definition": "The exact moment control and data (state) are passed from one agent to another."
+    }
+  ],
+  "hook": {
+    "scenario": "Agent A (the supervisor) decides a document is useless and hands the job over to Agent B (the researcher). Agent B immediately re-downloads and reads the exact same useless document.",
+    "question": "Why did Agent B repeat the work? Didn't it know what Agent A just did?"
+  },
+  "mental_model": {
+    "intuition": "Multi-agent is not a chatroom; it's a corporate org chart.",
+    "description": "Agents don't just 'talk' to each other like humans on Slack. They hand over strict, structured data files. The supervisor looks at the inbox, decides who should do the work, and hands them the file. The worker only knows what is explicitly written in that file."
+  },
+  "sections": [
+    {
+      "body": "If you have a complex task, one AI model with 50 tools will get confused. Instead, we use **multi-agent orchestration**. The most common structure is the **Supervisor Pattern**: a central router that delegates work to specialized workers (like a Coder Agent and a Researcher Agent).",
+      "recap": "Supervisors route tasks to specialized sub-agents instead of using one massive model."
+    },
+    {
+      "body": "A multi-agent system is heavily structured. It is *not* just two LLMs chatting in plain text. They use programmatic handoffs, sharing a strict state object (like the Pydantic models we learned about).",
+      "recap": "Agents communicate through structured state objects, not freeform text chats."
+    },
+    {
+      "body": "Here is the golden rule of handoffs: **Context does not transfer automatically.** When the supervisor hands off to a sub-agent, the sub-agent only sees what is explicitly written in the shared state. If the supervisor thought 'this document is bad' but didn't write it in the state, the sub-agent has no idea.",
+      "recap": "A sub-agent only knows what is explicitly passed to it in the state schema."
+    },
+    {
+      "body": "Prediction: If a developer pipes the raw text output of Agent A directly into the user prompt of Agent B, Agent B loses all the structured tool schemas and historical state. This breaks the multi-agent graph entirely.",
+      "recap": "Never pass raw strings between agents; always pass structured state."
+    }
+  ],
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "supervisor",
+        "label": "Supervisor Node"
+      },
+      {
+        "id": "researcher",
+        "label": "Researcher Agent"
+      },
+      {
+        "id": "coder",
+        "label": "Coder Agent"
+      }
+    ],
+    "steps": [
+      {
+        "from": "supervisor",
+        "to": "researcher",
+        "label": "Handoff task"
+      },
+      {
+        "from": "supervisor",
+        "to": "coder",
+        "label": "Handoff task"
+      }
+    ]
+  },
+  "code_snippets": [
+    {
+      "title": "The Supervisor Pattern",
+      "language": "python",
+      "code": "def supervisor_node(state: AgentState):\n    # The supervisor decides who goes next\n    next_worker = call_llm_router(state.messages)\n    \n    if next_worker == \"need_research\":\n        return {\"next_node\": \"researcher_agent\"}\n    elif next_worker == \"need_code\":\n        return {\"next_node\": \"coder_agent\"}\n    else:\n        return {\"next_node\": \"END\"}",
+      "explanation": "This is a deterministic routing node. The AI makes the decision, but the code explicitly enforces the handoff by returning the name of the next node in the graph."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Believing multi-agent is just LLMs chatting",
+      "explanation": "Early viral demos showcased open-ended, unstructured text debates between models. Production systems are heavily structured. They use programmatic handoffs and shared typed state objects. Piping raw string output from Agent A to Agent B destroys structured state."
+    },
+    {
+      "title": "Assuming handoffs preserve unstated context",
+      "explanation": "A handoff only transfers what is explicitly written into the shared state schema. If a supervisor makes a logical deduction but doesn't write it to the state, the sub-agent will blindly repeat the work or make the same mistake."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the role of the Supervisor in a multi-agent system?",
+      "answer": "The Supervisor acts as a central router that looks at the current state and decides which specialized sub-agent should execute next.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Agent A hands off to Agent B, but Agent B immediately repeats a mistake Agent A already fixed. Why did this happen?",
+      "answer": "Because Agent A's reasoning or fix was not explicitly saved to the shared state object before the handoff, so Agent B had no context about it.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why shouldn't you connect two agents by simply passing the raw text output of Agent A into Agent B's prompt?",
+      "answer": "Because you lose the structured state (like tool histories, variables, and schemas) required to maintain a reliable, production-grade graph.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Design a system where an AI writes code and another AI reviews it. How do you ensure the reviewer knows which specific lines the coder changed?",
+      "company": "System Design",
+      "answer": "Implement a shared state schema (e.g., using Pydantic) that explicitly includes a `diff_lines` field. When the coder finishes, it writes the diff to this field before handing off to the reviewer.",
+      "approach": "Demonstrate that context only survives a handoff if it is explicitly modeled in the state schema."
+    },
+    {
+      "question": "What is the primary operational difference between an autonomous agent and a router in a multi-agent system?",
+      "company": "GenAI Engineer interview",
+      "answer": "A router acts deterministically, simply choosing which path or sub-agent to invoke next based on a single condition, whereas an autonomous agent uses a recursive ReAct loop to continually select tools until it determines the task is complete.",
+      "approach": "Distinguish between deterministic branching and probabilistic recursive loops."
+    }
+  ],
+  "sources": [
+    "https://langchain-ai.github.io/langgraph/concepts/multi_agent/"
+  ]
+}

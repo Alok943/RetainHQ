@@ -1,0 +1,94 @@
+{
+  "slug": "mcp-confused-deputy-attacks",
+  "title": "Security: The Confused Deputy Problem in MCP Proxies",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "mcp-tool-poisoning"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Securing MCP proxy servers in production architectures",
+      "Implementing safe OAuth flows for multi-tenant agent platforms"
+    ]
+  },
+  "overview": {
+    "what": "A vulnerability where an MCP proxy server with valid credentials to a third-party API is tricked into misusing those credentials on behalf of a malicious or unauthorized client.",
+    "why": "Because relying solely on a third-party API's one-time consent cookie and a static client ID allows attackers to bypass authorization screens and hijack the proxy's privileges.",
+    "where_used": [
+      "Enterprise MCP proxies",
+      "OAuth integration layers",
+      "Multi-tenant agent architectures"
+    ]
+  },
+  "why_learning_this": [
+    "Because 'confused deputy' is a distinct vulnerability class from prompt injection or tool poisoning.",
+    "To correctly implement per-client consent tracking when building MCP proxy servers.",
+    "To understand the limits of third-party OAuth one-time consent in distributed AI systems."
+  ],
+  "common_mistakes": [
+    {
+      "title": "One-time consent is permanently safe",
+      "explanation": "Developers assume that once a user approves an MCP proxy's connection to a third-party API, every future authorization request routed through that proxy is safe. In reality, a static client ID plus a consent cookie lets an attacker dynamically register a malicious client. Because the cookie is present, the third-party skips consent and hands the authorization code to the attacker. The fix is per-client consent tracking at the proxy."
+    },
+    {
+      "title": "Confused deputy is just tool poisoning",
+      "explanation": "Developers often blur these together. Confused deputy is an authorization boundary bug where the server misuses its own valid credentials. Tool poisoning is a content-trust bug where the LLM acts on malicious instructions inside a tool's response. Securing against one does not secure against the other."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "A developer builds an MCP proxy to Salesforce that shows the OAuth consent screen only the first time any user connects, then silently reuses the same static client ID. An attacker sends a link with a spoofed redirect_uri and a new client_id. What happens when the user clicks the link?",
+      "answer": "Because the browser still holds the earlier consent cookie, the third-party server skips the consent screen entirely and hands the authorization code straight to the attacker's server.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the specific mitigation the MCP specification recommends to prevent confused deputy attacks in OAuth proxies?",
+      "answer": "Per-client consent tracking at the MCP server itself. The proxy must check its own registry and show its OWN consent screen for the specific requesting client before forwarding the authorization request.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a confused deputy attack structurally differ from tool poisoning?",
+      "answer": "Confused deputy is an authorization boundary failure where a proxy misuses its own privileges on behalf of an attacker; tool poisoning is an input validation failure where malicious content from a tool tricks the LLM.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "debug-misconception",
+      "question": "A security team audits an MCP proxy and ensures that all tool descriptions are sanitized and no prompt instructions can be injected into the LLM context. Does this secure the proxy against confused deputy attacks?",
+      "answer": "No. Sanitizing tool outputs prevents tool poisoning, but it does nothing to fix authorization boundary flaws. If the proxy still uses a static client ID without per-client consent tracking, it is still vulnerable to confused deputy attacks.",
+      "why": "Confused deputy is about who the proxy authorizes with its credentials, not what content it feeds back to the LLM."
+    },
+    {
+      "type": "predict-result",
+      "question": "A proxy uses a static client ID and the user's browser holds a consent cookie from yesterday. An attacker sends the user to the third-party authorization endpoint with a malicious `redirect_uri`. Will the user see a warning screen?",
+      "answer": "No. The third-party server sees the valid cookie and assumes consent was already granted, silently redirecting the authorization code to the attacker's URI.",
+      "why": "The third-party server cannot distinguish between the proxy making a legitimate request and the attacker piggybacking on the existing session unless the proxy enforces per-client consent."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Trace the Attack Flow",
+      "prompt": "Explain how a static client ID and a consent cookie combine to bypass the OAuth consent screen in a confused deputy attack.",
+      "solution": "1. User legitimately authorizes Proxy (consent cookie set). 2. Attacker crafts a URL with the static client ID and a malicious redirect URI. 3. User clicks link. 4. Third-party sees the cookie, skips consent, and sends the authorization code to the attacker."
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def handle_auth_secure(request):\n    client_id = request.query.client_id\n    \n    # The proxy enforces its OWN consent boundary per-client\n    if not has_user_consented(user_id=request.user.id, client_id=client_id):\n        return render_proxy_consent_screen(client_id)\n    \n    # Only forward to the third-party AFTER the proxy validates consent\n    return redirect(\n        f'https://oauth.example.com/auth'\n        f'?client_id={STATIC_CLIENT_ID}'\n        f'&redirect_uri={request.query.redirect_uri}'\n    )",
+    "focus": "Notice how the secure version blocks the forwarding until the user explicitly consents to the *specific* requesting client."
+  },
+  "sources": [
+    "https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices"
+  ],
+  "seo": {
+    "title": "MCP Security: Confused Deputy Vulnerability & Fixes",
+    "description": "Learn how the confused deputy problem affects MCP OAuth proxies, how static client IDs create vulnerabilities, and how to fix it with per-client consent."
+  }
+}

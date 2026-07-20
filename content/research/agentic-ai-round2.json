@@ -1,0 +1,466 @@
+{
+  "new_lessons": [
+    {
+      "slug": "agent-trace-normalization-for-evals",
+      "title": "Normalizing Agent Traces Before Scoring",
+      "phase": "Agent Reliability & Evaluation",
+      "why_now": "Raw multi-step agent traces are full of retries, tool-call noise, and intermediate reasoning that make both code-based graders and LLM-as-judge scoring inconsistent unless the trace is reduced to a canonical shape first.",
+      "core_questions": [
+        "Why can't an LLM judge just read the raw execution transcript of an agent run?",
+        "What does 'normalizing' a trace into a canonical schema actually mean?",
+        "Which parts of a trace are signal (for grading) versus noise (retries, dead ends)?"
+      ],
+      "docs_truth": [
+        {
+          "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+          "which_sections": "Grading agent behavior, Types of graders for agents",
+          "authority": "vendor-docs"
+        },
+        {
+          "url": "https://docs.datadoghq.com/llm_observability/evaluations/custom_llm_as_a_judge_evaluations/trace_level_evaluations/",
+          "which_sections": "Trace-level evaluations definition",
+          "authority": "vendor-docs"
+        },
+        {
+          "url": "https://arxiv.org/abs/2605.21347",
+          "which_sections": "Trace import / corpus-level diagnostics methodology",
+          "authority": "none-exists"
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "raw-transcript-is-gradeable",
+          "wrong_belief": "You can hand an LLM judge the complete, unedited execution transcript (every retry, every failed tool call, every internal planning token) and trust it to correctly identify what actually happened.",
+          "why_learners_hold_it": "LLM judges are marketed as capable of reading arbitrary long context, so feeding them 'everything' feels like the safest, most complete option.",
+          "reality": "Anthropic's own eval guidance explicitly warns that graders should evaluate 'what the agent produced, not the path it took' to avoid brittleness -- unfiltered path detail (redundant retries, abandoned branches) makes graders inconsistent and penalizes agents for irrelevant noise instead of the outcome. Traces need to be reduced to a canonical shape (final state, key decisions, tool-call outcomes) before scoring.",
+          "predict_moment": "A developer's agent retries a flaky search tool 4 times before succeeding on the 5th call. Fed the raw trace, the LLM judge scores the run inconsistently across repeated grading passes -- sometimes penalizing it for the 4 failed attempts, sometimes not -- because nothing in the trace tells the judge those attempts are noise, not signal."
+        },
+        {
+          "id": "traces-are-format-uniform",
+          "wrong_belief": "Every agent framework's execution trace already comes in one consistent shape, so a single grading prompt template works across any agent you evaluate.",
+          "why_learners_hold_it": "Because \"trace\" sounds like a single well-defined artifact, learners assume the LLM SDK, LangGraph, and a custom ReAct loop all emit the same JSON structure.",
+          "reality": "Different frameworks and providers emit different raw event shapes for the same logical step (tool_use blocks vs. function_call objects vs. custom log lines). Corpus-level trace-diagnostic tooling has to import raw traces through framework-specific adapters into one shared schema (system prompt, tool schema, message list) before any cross-run comparison or scoring is meaningful.",
+          "predict_moment": "A team reuses the same LLM-judge grading prompt they built for their LangGraph agent on a new agent built directly on the Messages API. The judge silently misparses the new trace's tool-call fields and produces scores that look plausible but are grading the wrong spans -- because nothing normalized the two frameworks' traces into the same shape first."
+        }
+      ],
+      "code_moment": "A two-stage pipeline: stage 1 takes a raw provider-specific trace (list of SDK message objects with retries interleaved) and maps it into a canonical dict of {system_prompt, tool_schema, ordered_message_list, terminal_state}; stage 2 feeds only the canonical dict to the LLM-judge prompt, so the same judge template works whether the raw trace came from LangGraph, the Anthropic Messages API tool-use loop, or a custom ReAct script.",
+      "seo": {
+        "primary_phrase": "agent trace normalization",
+        "alternates": [
+          "normalizing llm agent traces",
+          "trace schema for agent evals"
+        ],
+        "serp_note": "Almost entirely unclaimed outside of observability-vendor product docs (Datadog, LangSmith) and a handful of very recent arXiv papers; no developer-education content currently explains why normalization matters before it explains how to do it."
+      },
+      "prereqs": [
+        "agent-eval-harnesses-and-scoring"
+      ],
+      "overlaps_existing": "agent-eval-harnesses-and-scoring",
+      "churn_risk": {
+        "level": "medium",
+        "what_could_change": "The specific tooling and vendor product features for trace normalization are churning fast (multiple competing observability platforms); the underlying need -- reduce heterogeneous raw traces to one schema before scoring -- is stable."
+      },
+      "interview_signals": []
+    },
+    {
+      "slug": "agent-failure-taxonomy",
+      "title": "A Taxonomy of Production Agent Failures",
+      "phase": "Agent Reliability & Evaluation",
+      "why_now": "Debugging a failing agent without a shared vocabulary for failure modes leads teams to reach for the same fix (better prompting) regardless of root cause; a documented, empirically-derived taxonomy lets engineers diagnose which category a failure belongs to before choosing a fix.",
+      "core_questions": [
+        "What are the documented categories of multi-agent system failure, and how were they derived?",
+        "Is a given agent failure a specification problem, a coordination problem, or a verification problem?",
+        "What do real production multi-agent failures look like in practice, not just in benchmarks?"
+      ],
+      "docs_truth": [
+        {
+          "url": "https://arxiv.org/abs/2503.13657",
+          "which_sections": "MAST taxonomy: 3 categories (specification issues, inter-agent misalignment, task verification), 14 failure modes",
+          "authority": "none-exists"
+        },
+        {
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+          "which_sections": "Early engineering challenges (subagent runaway, endless search, redundant coordination)",
+          "authority": "vendor-docs"
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "failures-are-all-hallucination",
+          "wrong_belief": "Every agent failure ultimately traces back to the LLM hallucinating a wrong fact or a wrong tool call.",
+          "why_learners_hold_it": "Hallucination is the most-discussed LLM failure mode elsewhere in the curriculum, so it becomes the default explanation for any agent misbehavior.",
+          "reality": "MAST (Multi-Agent System Failure Taxonomy), built from 1,600+ annotated traces across 7 frameworks with 0.88 inter-annotator agreement, groups failures into three categories that are mostly NOT hallucination: specification issues (unclear task/role definitions), inter-agent misalignment (miscommunication and context loss between agents), and task verification failures (no one checks whether the claimed outcome actually happened). Hallucination is one contributing factor, not the root taxonomy.",
+          "predict_moment": "A team's multi-agent pipeline keeps producing wrong final answers. They spend a sprint tightening prompts against hallucination, but the actual documented failure (per MAST's 'inter-agent misalignment' category) is that the worker agent's output schema silently changed and the supervisor never re-validated it -- a verification failure, not a hallucination."
+        },
+        {
+          "id": "final-answer-correctness-is-the-whole-story",
+          "wrong_belief": "If an agent run's final output was acceptable, nothing meaningfully went wrong during execution.",
+          "why_learners_hold_it": "Outcome-only evaluation (pass/fail on the final answer) is the easiest thing to check, so it becomes the only thing checked.",
+          "reality": "Anthropic's own account of building their multi-agent research system documents concrete failures that are invisible if you only check final output quality: 'Early agents made errors like spawning 50 subagents for simple queries, scouring the web endlessly for nonexistent sources, and distracting each other with excessive updates.' All three failures can co-exist with an eventually-acceptable final answer while burning enormous and unnecessary cost.",
+          "predict_moment": "A developer ships a research agent that gives a correct final answer in testing, unaware it spawned 40 redundant subagents to get there -- the failure only shows up in the API bill and the trace, never in the answer a reviewer reads."
+        }
+      ],
+      "code_moment": "A trace-tagging function that walks an agent's execution log and labels each step against MAST's three top-level categories (specification / inter-agent misalignment / task verification), producing a per-run failure-category histogram instead of a single pass/fail bit.",
+      "seo": {
+        "primary_phrase": "agent failure modes",
+        "alternates": [
+          "multi-agent system failure taxonomy",
+          "why do ai agents fail"
+        ],
+        "serp_note": "MAST is well-cited in the research community but has not yet been translated into practitioner-facing educational content; strong opportunity for an authoritative, code-grounded explainer."
+      },
+      "prereqs": [
+        "multi-agent-orchestration-patterns",
+        "agent-trajectory-vs-outcome-evals"
+      ],
+      "overlaps_existing": "when-multi-agent-underperforms",
+      "churn_risk": {
+        "level": "low",
+        "what_could_change": "Specific frameworks studied by MAST will change, but the three-category structure is derived empirically from failure mechanics (spec, coordination, verification) that are architecture-level, not framework-level."
+      },
+      "interview_signals": [
+        "How would you categorize and debug a failing multi-agent pipeline? (implicit in senior agent-engineering interviews per MAST's practitioner framing)"
+      ]
+    },
+    {
+      "slug": "mcp-confused-deputy-attacks",
+      "title": "Security: The Confused Deputy Problem in MCP Proxies",
+      "phase": "Agent Security",
+      "why_now": "MCP proxy servers that hold a single, privileged OAuth credential and forward it on behalf of many clients are a documented, spec-named vulnerability class distinct from tool poisoning or prompt injection, and the mitigation is a specific consent-tracking requirement in the MCP spec itself.",
+      "core_questions": [
+        "What is the confused deputy problem, and why does an MCP proxy server create it?",
+        "How does a static client ID plus a consent cookie let an attacker skip the user-consent screen?",
+        "How does 'confused deputy' differ from tool poisoning and from prompt injection?"
+      ],
+      "docs_truth": [
+        {
+          "url": "https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices",
+          "which_sections": "Confused Deputy Problem: vulnerable conditions, attack flow, mitigation (per-client consent)",
+          "authority": "official-sdk-docs"
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "one-time-consent-is-permanently-safe",
+          "wrong_belief": "Once a user has approved an MCP proxy server's connection to a third-party API one time, every future authorization request routed through that same proxy is automatically safe.",
+          "why_learners_hold_it": "A single approval feels like it establishes durable trust in the server, the same way approving an app's permissions once on a phone is assumed to cover all future use.",
+          "reality": "Per the MCP spec's security best practices, the vulnerability requires exactly this pattern: a static client ID plus a consent cookie set after the FIRST approval. An attacker can dynamically register a new malicious client, send the user a crafted link, and the third-party authorization server will skip the consent screen because the cookie from the earlier legitimate approval is still present -- redirecting the authorization code to the attacker's server instead. The fix is per-client consent tracking at the MCP server, not one-time consent at the third-party API.",
+          "predict_moment": "A developer builds an MCP proxy to Salesforce that shows the OAuth consent screen only the first time any user connects, then silently reuses the same static client ID for every subsequent authorization. An attacker sends a link with a spoofed redirect_uri and a newly registered client_id; because the browser still holds the earlier consent cookie, the third-party server skips consent and hands the authorization code straight to the attacker."
+        },
+        {
+          "id": "confused-deputy-is-tool-poisoning",
+          "wrong_belief": "Confused deputy attacks and MCP tool poisoning / rug-pull attacks are the same underlying vulnerability, just described with different jargon.",
+          "why_learners_hold_it": "Both are framed as 'MCP security risks' in the same blog posts and OWASP-style lists, so they blur together.",
+          "reality": "They are different root causes. Confused deputy is an authorization-boundary bug: the MCP proxy server itself has legitimate high-privilege credentials and is tricked into misusing them on behalf of an unauthorized party via OAuth flow manipulation. Tool poisoning is a content-trust bug: the LLM trusts a malicious tool description or tool response and acts on embedded instructions. One is about who the server thinks it's acting for; the other is about what the server (or its response) tells the LLM to do.",
+          "predict_moment": "A team audits their MCP proxy's tool descriptions for injected instructions (mitigating tool poisoning) and concludes their security review is complete -- while their proxy still uses a static client ID with no per-client consent tracking, leaving the confused-deputy OAuth flow completely open."
+        }
+      ],
+      "code_moment": "A sequence diagram (from the MCP spec) contrasted with a corrected implementation snippet: instead of forwarding every authorization request straight to the third-party server via a static client ID, the MCP proxy first checks a per-client consent registry keyed by the requesting client_id and only forwards the request after showing its OWN consent screen naming that specific client.",
+      "seo": {
+        "primary_phrase": "mcp confused deputy",
+        "alternates": [
+          "mcp oauth proxy vulnerability",
+          "mcp security best practices"
+        ],
+        "serp_note": "Covered only by the official spec and a handful of security-vendor blogs (Aembit, Christian Schneider); no developer-education site currently explains the attack with a worked example."
+      },
+      "prereqs": [
+        "mcp-tool-poisoning"
+      ],
+      "overlaps_existing": null,
+      "churn_risk": {
+        "level": "medium",
+        "what_could_change": "The specific OAuth mitigation requirements (cookie attributes, state parameter handling) are actively being hardened in spec revisions; the core confused-deputy mechanism (static credential misused on behalf of an unauthorized party) is a decades-old, stable security concept."
+      },
+      "interview_signals": [
+        "What security risks are specific to MCP proxy servers that forward OAuth tokens to third-party APIs? (MCP spec security best practices)"
+      ]
+    },
+    {
+      "slug": "agent-tool-execution-sandboxing",
+      "title": "Sandboxing Agent Tool Execution",
+      "phase": "Agent Security",
+      "why_now": "Once an agent can execute code or shell commands, least-privilege prompting alone is not a security boundary; production agent platforms enforce filesystem and network isolation at the OS level, and developers need to know that container-only isolation is often incomplete.",
+      "core_questions": [
+        "What OS-level primitives actually enforce a sandbox boundary around agent-executed code?",
+        "Why is filesystem isolation without network isolation (or vice versa) insufficient?",
+        "Why can a broad but 'trusted-looking' allowed domain still be a data-exfiltration path?"
+      ],
+      "docs_truth": [
+        {
+          "url": "https://code.claude.com/docs/en/sandboxing",
+          "which_sections": "How sandboxing works: filesystem isolation, network isolation, OS-level enforcement, Security limitations",
+          "authority": "vendor-docs"
+        },
+        {
+          "url": "https://www.anthropic.com/engineering/claude-code-sandboxing",
+          "which_sections": "Why both filesystem and network isolation are required together",
+          "authority": "vendor-docs"
+        },
+        {
+          "url": "https://github.com/anthropic-experimental/sandbox-runtime",
+          "which_sections": "Standalone sandbox-runtime package (bubblewrap on Linux, Seatbelt on macOS)",
+          "authority": "none-exists"
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "container-alone-is-sandboxing",
+          "wrong_belief": "Running an agent's code-execution tool inside a Docker container is, by itself, sufficient isolation against a compromised agent.",
+          "why_learners_hold_it": "Containers are the default mental model for 'isolation' in most backend engineering, so wrapping a risky process in one feels like the whole solution.",
+          "reality": "Anthropic's sandboxing documentation states plainly: 'Effective sandboxing requires both filesystem and network isolation. Without network isolation, a compromised agent could exfiltrate sensitive files like SSH keys. Without filesystem isolation, a compromised agent could backdoor system resources to gain network access.' A container with default (unrestricted) networking, or one that mounts broad host directories, provides only one half of that boundary.",
+          "predict_moment": "A developer puts an 'execute_python' tool inside a Docker container with default bridge networking and considers the exfiltration risk solved. An injected instruction has the sandboxed process read a mounted secrets file and POST it to an external URL -- nothing in the container configuration blocked the outbound network call."
+        },
+        {
+          "id": "trusted-domain-allowlist-is-safe",
+          "wrong_belief": "Adding a well-known, trusted domain (like github.com) to a sandboxed agent's network allowlist is safe because the destination itself is legitimate and reputable.",
+          "why_learners_hold_it": "Domain-based allowlisting maps naturally onto \"is this a company I trust,\" and github.com feels like an obviously safe answer.",
+          "reality": "Claude Code's sandboxing docs explicitly warn: 'Allowing broad domains such as github.com can create paths for data exfiltration,' because the sandbox proxy allows/denies based on the requested hostname without inspecting TLS-encrypted contents by default -- so a compromised agent can still create a public gist or repo on an 'allowed' host and exfiltrate data through it.",
+          "predict_moment": "A team allowlists github.com for a coding agent's sandboxed shell access, assuming a trusted host is a safe host. An injected prompt has the agent create a public GitHub gist containing exfiltrated API keys -- permitted because github.com was on the domain allowlist, and the proxy never inspected what was being sent to it."
+        }
+      ],
+      "code_moment": "A settings snippet showing sandbox.filesystem.allowWrite scoped to a single build directory alongside sandbox.network.allowedDomains scoped to only the package registry the build needs -- contrasted with a naive setup that allows write access to the home directory and network access to '*.github.com' broadly, illustrating how each axis (filesystem, network) must be scoped independently.",
+      "seo": {
+        "primary_phrase": "sandboxing ai agent tool execution",
+        "alternates": [
+          "agent code execution sandbox",
+          "claude code sandbox security"
+        ],
+        "serp_note": "Anthropic's own docs and engineering post currently dominate this space; framing the lesson around the general OS-level isolation principles (not just one vendor's product) is the differentiation opportunity."
+      },
+      "prereqs": [
+        "agent-least-privilege-and-consent"
+      ],
+      "overlaps_existing": "agent-least-privilege-and-consent",
+      "churn_risk": {
+        "level": "medium",
+        "what_could_change": "Specific sandbox product features (TLS-terminating proxies, credential masking) are actively evolving; the underlying OS primitives (Linux namespaces/bubblewrap, macOS Seatbelt) and the filesystem+network dual-isolation principle are stable."
+      },
+      "interview_signals": [
+        "How would you safely give an LLM agent the ability to execute arbitrary code? (production agent security question pattern)"
+      ]
+    },
+    {
+      "slug": "agent-memory-as-tools",
+      "title": "Memory as an Actively-Invoked Tool",
+      "phase": "Agent Memory & State",
+      "why_now": "Production agent memory is increasingly implemented as a tool the model chooses to call (view/create/edit memory files) rather than data silently prepended to every prompt, and conflating the two leads to wrong expectations about what an agent will and won't recall.",
+      "core_questions": [
+        "How does an actively-invoked memory tool differ from passively injected context?",
+        "What is the difference between semantic, episodic, and procedural agent memory?",
+        "Why does an agent sometimes fail to use memory it previously stored?"
+      ],
+      "docs_truth": [
+        {
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool",
+          "which_sections": "How it works, Tool commands, Using with compaction",
+          "authority": "official-sdk-docs"
+        },
+        {
+          "url": "https://docs.langchain.com/oss/python/concepts/memory",
+          "which_sections": "Semantic, episodic, and procedural memory definitions",
+          "authority": "vendor-docs"
+        },
+        {
+          "url": "https://langchain-ai.github.io/langmem/concepts/conceptual_guide/",
+          "which_sections": "Memory types and the create_manage_memory_tool / create_search_memory_tool primitives",
+          "authority": "vendor-docs"
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "memory-tool-is-passive-injection",
+          "wrong_belief": "Giving an agent 'memory' means the application silently prepends everything it has ever learned into the system prompt on every turn.",
+          "why_learners_hold_it": "Earlier, simpler memory patterns (stuffing a running summary into the prompt) work exactly this way, so it becomes the default mental model for any memory feature.",
+          "reality": "Anthropic's memory tool is client-side and actively invoked: the model itself decides, via a tool_use request, when to call view/create/str_replace/insert/delete/rename against files under /memories -- your application only executes the specific operation the model asked for and returns the result. Nothing is auto-injected; the model must choose to look.",
+          "predict_moment": "A developer expects a fact stored in a previous session to automatically appear in this session's context, and is confused when the agent seems unaware of it -- because the model never issued a `view` call against that specific memory file this turn; memory is retrieved on demand, not force-fed."
+        },
+        {
+          "id": "memory-is-one-undifferentiated-store",
+          "wrong_belief": "Agent memory is a single flat store of 'stuff the agent remembers,' with no meaningful distinction between different kinds of stored information.",
+          "why_learners_hold_it": "A single memory file or database table is the simplest thing to build, so it becomes the only category learners reach for.",
+          "reality": "LangChain's memory docs and LangMem both separate semantic memory (stable facts, e.g. user preferences), episodic memory (recollection of past interactions/experiences, often stored as few-shot examples of how a task was solved), and procedural memory (self-updated instructions or skills for how to perform a task) -- each with a different retrieval pattern and failure mode if conflated.",
+          "predict_moment": "A developer dumps stable user facts and detailed few-shot examples of past problem-solving into the same flat memory.txt file. As the file grows, the episodic examples get buried among static facts and stop being retrieved effectively, degrading the exact in-context learning behavior episodic memory was meant to provide."
+        }
+      ],
+      "code_moment": "A tool_use trace showing the model issuing `{\"command\": \"view\", \"path\": \"/memories\"}` before starting a task, receiving a directory listing, then choosing to `view` one specific file -- contrasted with a naive implementation that just concatenates every memory file into the system prompt regardless of relevance.",
+      "seo": {
+        "primary_phrase": "agent memory tool",
+        "alternates": [
+          "episodic vs semantic memory ai agent",
+          "claude memory tool"
+        ],
+        "serp_note": "Very recent (2025-2026) feature space; official vendor docs dominate today but there is no framework-agnostic educational treatment of active-retrieval vs passive-injection memory yet."
+      },
+      "prereqs": [
+        "agent-state-pruning-and-compaction",
+        "memory-short-and-long-term"
+      ],
+      "overlaps_existing": "memory-short-and-long-term",
+      "churn_risk": {
+        "level": "medium",
+        "what_could_change": "The specific tool names and API shapes (memory_20250818, create_manage_memory_tool) will version forward; the active-retrieval-via-tool-call vs passive-injection distinction, and the semantic/episodic/procedural taxonomy, are stable cognitive-architecture concepts."
+      },
+      "interview_signals": []
+    }
+  ],
+  "misconception_patches": [
+    {
+      "slug": "mcp-observability-and-logging",
+      "add_misconceptions": [
+        {
+          "id": "same-tool-name-resolves-unambiguously",
+          "wrong_belief": "If an MCP tool works correctly when its server is connected alone, connecting it alongside other approved MCP servers won't change which tool actually gets called.",
+          "why_learners_hold_it": "Each server is tested and approved independently, so learners assume tool identity is scoped per-server rather than shared globally.",
+          "reality": "MCP has a flat tool namespace with no protocol-mandated prefixing; documented issues show that when two connected servers expose a tool with the identical name (e.g. both a GitHub and a Linear server exposing create_issue), clients either error, hang while listing tools, or silently resolve to one server's tool over the other's. The MCP maintainers' own guidance recommends disambiguating with a server-name prefix precisely because the protocol itself does not.",
+          "predict_moment": "A developer connects both a GitHub MCP server and a Linear MCP server, each exposing create_issue. The agent calls create_issue intending to file a Linear ticket, and observability logs later show it silently hit the GitHub tool instead -- with no protocol-level error, because both tools shared one namespace."
+        }
+      ]
+    },
+    {
+      "slug": "multi-agent-orchestration-patterns",
+      "add_misconceptions": [
+        {
+          "id": "handoff-preserves-full-context-unsourced",
+          "wrong_belief": "When a supervisor hands off control to a specialized subagent, that subagent automatically has access to the full conversation history and reasoning the supervisor had.",
+          "why_learners_hold_it": "In a normal function call, the callee has access to whatever variables are in scope; developers assume agent handoffs work the same way by default.",
+          "reality": "A handoff only transfers what is explicitly written into the shared state schema (or an explicit summary/transfer object) that the graph passes between nodes -- reasoning, tool outputs, or context that was never written to state does not survive the transition. This is precisely why state-machine frameworks make reducers and explicit state schemas a first-class concern rather than an afterthought.",
+          "predict_moment": "A supervisor agent decides, based on unstated internal reasoning, that a document is irrelevant and hands off to a research subagent. The subagent, seeing only the shared state fields (not the supervisor's discarded reasoning), re-fetches and re-evaluates the same document from scratch -- redundant work caused by assuming context transferred that never did."
+        }
+      ]
+    },
+    {
+      "slug": "agent-checkpointing-and-resumability",
+      "add_misconceptions": [
+        {
+          "id": "checkpoints-are-continuous",
+          "wrong_belief": "A durable-execution checkpointer saves the agent's state continuously, so no work is ever lost regardless of when a crash happens.",
+          "why_learners_hold_it": "'Durable execution' sounds like it implies constant, fine-grained persistence, similar to a database write-ahead log.",
+          "reality": "Checkpointers save a snapshot after every superstep (each node's completed execution), not continuously within a node. If a node fails mid-execution, only the writes from other nodes that already completed at that superstep are preserved; work done inside the still-running node before its own completion is not captured until that node finishes.",
+          "predict_moment": "A developer assumes a checkpointer protects against losing any in-progress work and is surprised that a long-running single node (e.g. one making several sequential API calls before returning) loses all of that intermediate progress on a mid-node crash -- because no checkpoint was taken until the node's superstep completed."
+        }
+      ]
+    },
+    {
+      "slug": "human-in-the-loop-interrupts",
+      "add_misconceptions": [
+        {
+          "id": "code-before-interrupt-runs-once",
+          "wrong_belief": "When a graph resumes after an interrupt(), execution picks up exactly where it paused -- code written before the interrupt() call in that node does not run again.",
+          "why_learners_hold_it": "This matches how a debugger breakpoint or a paused thread behaves: resuming continues from the exact next instruction.",
+          "reality": "LangGraph's interrupt documentation states that a resumed node restarts from the beginning: any code preceding the interrupt() call inside that node re-executes on resume. This is why the docs explicitly warn against placing non-idempotent operations (like sending an email or charging a payment) before an interrupt() call within the same node.",
+          "predict_moment": "A developer places a 'send confirmation email' call, then an interrupt() approval gate, inside the same node. Every time a human approval is resumed, the node restarts from the top and the confirmation email is sent again -- once per resume, not once per run."
+        }
+      ]
+    },
+    {
+      "slug": "agent-eval-harnesses-and-scoring",
+      "add_misconceptions": [
+        {
+          "id": "raw-logs-are-harness-ready",
+          "wrong_belief": "An eval harness can score agents directly off whichever raw event log a given framework or provider happens to emit, without any restructuring step.",
+          "why_learners_hold_it": "Building the actual graders feels like the interesting engineering work, so the plumbing step of reshaping raw logs into a consistent format is assumed to be trivial or unnecessary.",
+          "reality": "Different agent frameworks and model providers emit structurally different raw traces for logically identical steps. Corpus-level agent-diagnostic tooling explicitly builds a modular importer with per-format adapters to bring heterogeneous raw traces into one shared schema before any grader (code-based or LLM-judge) runs against them -- treating this as a separate stage, not something graders handle inline.",
+          "predict_moment": "A team builds a code-based grader against their LangGraph agent's trace shape, then reuses it unmodified for a new agent built directly on a provider's raw tool-use API. The grader silently reads the wrong fields (or none at all) because nothing normalized the second framework's trace into the same shape the grader expects."
+        }
+      ]
+    },
+    {
+      "slug": "runaway-agent-protection",
+      "add_misconceptions": [
+        {
+          "id": "recursion-limit-stops-external-effects-immediately",
+          "wrong_belief": "Setting a graph's recursion_limit guarantees the agent -- and any external side effects it's triggering, like repeated API calls -- stops the moment the limit is reached.",
+          "why_learners_hold_it": "A 'limit' sounds like a hard, immediate stop on all activity, the same way a request timeout cuts off a hanging network call.",
+          "reality": "recursion_limit only bounds the number of graph supersteps (node transitions); it doesn't cancel in-flight external calls, and it does nothing to stop a retry loop implemented inside a single node's own tool-calling logic. Documented LangGraph issues show agents cycling through near-identical tool calls until the hard recursion limit itself trips, ignoring explicit stop conditions written into the prompt -- the limit is a backstop against unbounded graph traversal, not a substitute for a step/cost budget enforced at each iteration.",
+          "predict_moment": "A developer sets recursion_limit=20 expecting the agent to stop retrying a failing SQL query well before that. Instead the agent cycles through 20 near-identical queries, each one a real (billed) API call and database round-trip, and only stops because the hard limit was hit -- not because any internal stop condition fired."
+        }
+      ]
+    },
+    {
+      "slug": "mcp-tool-poisoning",
+      "add_misconceptions": [
+        {
+          "id": "description-review-covers-poisoning-risk",
+          "wrong_belief": "If you review and approve an MCP tool's description and schema once at connect time, you've covered the tool-poisoning risk for that tool going forward.",
+          "why_learners_hold_it": "Security review processes for dependencies (like auditing an npm package once before installing it) train developers to think of trust as established at install/connect time.",
+          "reality": "Per OWASP's description of the attack, the vulnerability exploits 'a trust gap between connect-time and runtime': tool descriptions get validated when the agent connects, but tool RESPONSES flow directly into the LLM's context window without equivalent security checks. A server can poison the agent through what a tool returns on a given call, completely independent of a clean description reviewed at connect time -- this is what makes 'rug pull' attacks (schema/behavior changing after approval) possible.",
+          "predict_moment": "A security team reviews and approves a 'get_weather' tool's description as safe, then treats the tool as permanently vetted. Weeks later, the same tool's runtime response for one specific city query is crafted to include embedded instructions -- the connect-time review never re-runs against that response, and the LLM acts on the injected content."
+        }
+      ]
+    },
+    {
+      "slug": "agent-least-privilege-and-consent",
+      "add_misconceptions": [
+        {
+          "id": "read-only-scope-is-automatically-low-risk",
+          "wrong_belief": "Granting an agent's tool a broad but read-only credential (e.g. files:*, db:* with read access) satisfies least-privilege, because 'read-only' sounds inherently safe.",
+          "why_learners_hold_it": "Read/write is the access-control axis most developers learn first, so 'read-only' gets treated as synonymous with 'low risk' regardless of scope breadth.",
+          "reality": "The MCP spec's Scope Minimization guidance treats omnibus scopes (wildcard or broad catalog-wide grants) as a risk independent of read/write: a stolen broad read-only token still expands blast radius (mass data access, difficult revocation, audit noise) far beyond a narrowly-scoped token. True least-privilege requires per-operation scope granularity with progressive elevation, not just a read-vs-write toggle.",
+          "predict_moment": "A developer grants an agent's database tool a read-only role scoped to the entire schema, reasoning that read-only can't cause damage. A prompt injection has the agent read and exfiltrate every customer's PII in one query -- the read-only restriction did nothing to limit the blast radius of a token with catalog-wide scope."
+        }
+      ]
+    },
+    {
+      "slug": "agent-scratchpads-and-episodic-memory",
+      "add_misconceptions": [
+        {
+          "id": "pruning-is-only-a-speed-optimization",
+          "wrong_belief": "Pruning or summarizing an agent's accumulated state before passing it to the LLM is a nice-to-have performance optimization, not something that changes correctness.",
+          "why_learners_hold_it": "Latency and cost concerns are usually framed as separate from correctness concerns, so 'trim the context to go faster' doesn't register as also being necessary for the agent to keep working at all.",
+          "reality": "Anthropic's own documentation on long-running agents treats context management as a correctness requirement, not just an optimization: client-side context editing clears stale tool results and server-side compaction summarizes the whole conversation specifically because agents run out of usable context window, at which point the agent stops functioning correctly regardless of speed. The two mechanisms have different guarantees (editing clears specific results; compaction summarizes everything), and production long-running agents combine both with a separate memory store for information that must survive summarization.",
+          "predict_moment": "A developer treats state pruning as a 'do it later if it's slow' task. Their long-running agent accumulates unpruned tool outputs across a multi-hour session, eventually exceeds the context window, and the agent doesn't just get slower -- it hits a hard context-limit error and loses the ability to continue the task at all."
+        }
+      ]
+    }
+  ],
+  "authority_fixes": [
+    {
+      "slug": "mcp-fastmcp-server-building",
+      "url": "https://gofastmcp.com/tutorials/create-mcp-server",
+      "authority": "vendor-docs"
+    },
+    {
+      "slug": "mcp-sampling-and-elicitation",
+      "url": "https://github.com/modelcontextprotocol/python-sdk/issues/1569",
+      "authority": "none-exists"
+    },
+    {
+      "slug": "agent-autonomy-spectrum",
+      "url": "https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/",
+      "authority": "vendor-docs"
+    }
+  ],
+  "other_patches": [
+    {
+      "slug": "mcp-sampling-and-elicitation",
+      "field": "churn_risk, docs_truth, misconceptions",
+      "action": "Raise churn_risk.level to 'high' with what_could_change updated: the MCP 2026-07-28 specification release candidate replaces server-initiated requests such as elicitation/create with a 'Multi Round-Trip Requests' pattern (SEP-2322) -- instead of the server holding an SSE stream open and pushing elicitation/create, a call now returns an InputRequiredResult and the client re-issues the original call with inputResponses and an echoed requestState. Add docs_truth entry {\"url\": \"https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/\", \"which_sections\": \"Multi Round-Trip Requests (SEP-2322) replacing server-initiated elicitation/create\", \"authority\": \"spec\"} (fetched and confirmed). Add this misconception: id 'elicitation-transport-is-stable', wrong_belief 'Elicitation is a settled, permanent SSE-stream-based mechanism, the same as sampling.', why_learners_hold_it 'The round-1 lesson research (mid-2026) taught elicitation/create as the current mechanism without flagging it as freshly-specified and already being revised.', reality 'The request/response CONCEPT (server asks client for input mid-call) is stable, but the 2026-07-28 spec RC already replaces the specific SSE-based transport mechanism with a stateless multi-round-trip call/response pattern -- one spec cycle after this topic was first documented.', predict_moment 'A learner implements code that manually manages an open SSE stream waiting for the elicitation response, believing this is the durable way to do it, and finds it breaks against MCP servers/clients built against the 2026-07-28+ spec.' Given the volatility, consider whether this lesson should be split so 'sampling' (stable, lower churn) and 'elicitation' (currently being re-specified) are graded/reviewed independently."
+    },
+    {
+      "slug": "indirect-prompt-injection-tool-results",
+      "field": "docs_truth",
+      "action": "Replace docs_truth[0] (https://owasp.org/www-community/attacks/MCP_Tool_Poisoning) -- confirmed via fetch to be a real page, but it specifically documents MCP-protocol tool poisoning, duplicating the separate mcp-tool-poisoning lesson's citation rather than grounding general indirect prompt injection through tool results -- with: (1) {\"url\": \"https://genai.owasp.org/llmrisk/llm01-prompt-injection/\", \"which_sections\": \"LLM01: Prompt Injection -- direct vs indirect prompt injection definitions\", \"authority\": \"none-exists\"} (verified live: defines direct injection as user input altering behavior, indirect injection as hidden instructions in externally-ingested content altering behavior); (2) {\"url\": \"https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/\", \"which_sections\": \"The three conditions: private data access, untrusted content exposure, external communication ability\", \"authority\": \"none-exists\"} (verified live, quote confirmed: 'If your agent combines these three features, an attacker can easily trick it into accessing your private data and sending it to that attacker.'). Add the 'lethal-trifecta-vs-input-sanitization' misconception (below) to misconception_patches for this slug."
+    },
+    {
+      "slug": "indirect-prompt-injection-tool-results",
+      "field": "misconceptions",
+      "action": "Add misconception: id 'sanitizing-user-input-is-sufficient', wrong_belief 'An agent is protected from data exfiltration as long as the user-facing chat input is sanitized against injection, since that is the entry point that matters.', why_learners_hold_it 'Direct prompt injection (malicious text typed by a user) is the injection vector taught first and most often, so input sanitization feels like the complete defense.', reality \"Per Simon Willison's 'lethal trifecta' framing, the danger is the CONJUNCTION of three capabilities co-existing in one agent: access to private data, exposure to untrusted content, and the ability to communicate externally. An agent can have a perfectly sanitized chat frontend and zero malicious user input, yet still be exploited the moment it reads a poisoned webpage or email (untrusted content) while it also holds both a data-access tool and an outbound-communication tool.\", predict_moment 'A team hardens their chat input box against every known direct-injection pattern and considers the system secure. The same agent has a private-email-reading tool, a customer-database tool, and a Slack-posting tool all enabled together -- an attacker never touches the chat box at all, instead emailing the victim a message the agent later reads and acts on.'"
+    },
+    {
+      "slug": "agent-scratchpads-and-episodic-memory",
+      "field": "title, slug",
+      "action": "Retitle from 'Agent State Bloat: Scratchpads and Summarization' to 'Context Bloat: Pruning and Compacting Agent State', and rename the slug from agent-scratchpads-and-episodic-memory to agent-state-pruning-and-compaction. Rationale: the lesson's core_questions, misconceptions, and code_moment as authored are entirely about state/context volume management (pruning, compaction, what goes into the prompt vs. stays in state) -- not about episodic memory as a concept, which the new agent-memory-as-tools lesson now owns explicitly. The old slug also created a naming collision risk with the new agent-memory-as-tools lesson's episodic-memory content. Update agent-memory-as-tools's prereqs entry 'agent-scratchpads-and-episodic-memory' to the new slug 'agent-state-pruning-and-compaction' if this rename is accepted."
+    },
+    {
+      "slug": "when-multi-agent-underperforms",
+      "field": "docs_truth",
+      "action": "Replace the single researchgate.net docs_truth entry (unresolvable/low-credibility citation) with two verified sources: (1) {\"url\": \"https://www.anthropic.com/engineering/multi-agent-research-system\", \"which_sections\": \"Token/cost overhead and when NOT to use multi-agent\", \"authority\": \"vendor-docs\"} -- fetched and confirmed direct quotes: 'multi-agent systems use about 15x more tokens than chats,' and multi-agent is a poor fit for 'domains that require all agents to share the same context or involve many dependencies between agents,' explicitly citing most coding tasks as an example; (2) {\"url\": \"https://cognition.com/blog/dont-build-multi-agents\", \"which_sections\": \"Context-sharing failure and miscommunication between subagents\", \"authority\": \"none-exists\"} -- verified live (redirects from cognition.ai), argues multi-agent decision-making is too dispersed and context isn't shared thoroughly enough between agents in 2025-era frameworks, illustrated with a worked Flappy-Bird-clone example of subagents producing mismatched outputs. Optionally add https://arxiv.org/abs/2503.13657 (MAST) as supporting evidence for the empirical failure-rate claim, cross-referencing the new agent-failure-taxonomy lesson."
+    },
+    {
+      "slug": "mcp-fastmcp-server-building",
+      "field": "why_now",
+      "action": "Remove the invented statistic 'FastMCP powers roughly 70% of Python-based MCP servers' -- no source was found for this figure and it should be treated as fabricated. Replace with defensible framing, e.g.: 'FastMCP's decorator-based API became the model for the official Python SDK's high-level server interface, making it the primary way Python developers build MCP servers today, independent of any specific market-share claim.'"
+    }
+  ]
+}

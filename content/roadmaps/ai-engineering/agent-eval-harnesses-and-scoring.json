@@ -1,0 +1,95 @@
+{
+  "slug": "agent-eval-harnesses-and-scoring",
+  "title": "Building Eval Harnesses for Multi-Step Tasks",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "agent-trajectory-vs-outcome-evals"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Building rigorous evaluation test suites for autonomous AI agents",
+      "Validating state changes in agent environments"
+    ]
+  },
+  "overview": {
+    "what": "An agent evaluation harness is an automated testing infrastructure that combines mock environments, execution trace normalization, and code-based graders to measure if an agent successfully achieved a multi-step task.",
+    "why": "Because agents take actions that alter state (like deleting rows or writing files), simply asking an LLM judge 'did the agent succeed?' based on a chat transcript is unreliable. You must use deterministic unit tests to verify real environment changes.",
+    "where_used": [
+      "Enterprise agent testing pipelines",
+      "Continuous integration for AI systems",
+      "Debugging multi-step agent trajectories"
+    ]
+  },
+  "why_learning_this": [
+    "You cannot safely deploy an autonomous agent if you cannot mathematically prove it reliably succeeds.",
+    "Relying purely on LLM-as-judge for agents leads to silent failures where agents hallucinate success.",
+    "Evaluating agents requires structuring raw, messy execution logs into standard schemas so graders can consistently read them."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming LLM-as-judge is sufficient for evaluation",
+      "explanation": "Many developers pass the final conversation transcript to an LLM-as-judge and ask if the agent succeeded. But agents alter state. An LLM judge cannot verify if a file was actually written or a database row deleted. Harnesses use code-based graders (unit tests) to assert environment state, combined with LLM judges for qualitative trajectory analysis. Helper names are placeholders \u2014 the control flow is the point."
+    },
+    {
+      "title": "Scoring raw logs directly without normalization",
+      "explanation": "It's a mistake to build graders that read directly off whatever raw event log a framework emits. Different frameworks emit structurally different traces. Harness tooling explicitly builds a modular importer to bring heterogeneous raw traces into one shared schema before any grader runs against them."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary difference between a trajectory evaluation and an outcome evaluation?",
+      "answer": "Trajectory evaluation assesses the quality of the steps taken by the agent, while outcome evaluation verifies if the final state was successfully reached in the environment.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why are code-based graders essential for evaluating agent outcomes?",
+      "answer": "Agents alter state (like databases or files). Only deterministic code-based assertions can verify that the actual environment changed, preventing hallucinations of success.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer reuses a code-based grader built for Agent A on Agent B's raw tool-use API, but the grader crashes. What architectural component is missing?",
+      "answer": "A trace normalizer/importer. The raw traces from Agent B must be reshaped into the same schema the grader expects.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "If you only use an LLM-as-judge on an agent's raw chat transcript, what happens when the agent hallucinates calling a refund tool?",
+      "answer": "The judge will likely score the agent as successful based on the hallucinated text, even though no refund occurred.",
+      "why": "An LLM judge reading a transcript cannot verify external state changes. It only evaluates what the agent claims happened."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "You wrote a code-based grader for a LangGraph agent, but it silently fails to read trace data when evaluating a custom REST agent. What step was skipped?",
+      "answer": "The raw execution traces were not normalized into a shared schema before grading.",
+      "why": "Different frameworks emit structurally different trace logs. A modular importer must normalize these logs into a consistent format so the grader knows where to look for data."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Build a Code-Based Grader",
+      "prompt": "Write a Python function `grade_refund_task(db_connection)` that queries the mock database for user ID 123 and asserts their `status` is 'refunded'.",
+      "starter_code": "def grade_refund_task(db_connection):\n    # Query the db and assert the status\n    pass",
+      "solution": "def grade_refund_task(db_connection):\n    user_record = db_connection.execute('SELECT status FROM users WHERE id = 123')\n    assert user_record['status'] == 'refunded', 'Agent claimed success but DB did not update'"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def test_agent_refund_task(mock_db):\n    # 1. Run the agent in a mocked environment\n    agent = RefundAgent(db=mock_db)\n    trace = agent.run(\"Refund user 123 for their last purchase\")\n\n    # 2. Extract normalized steps from the trace\n    steps = normalize_trace(trace)\n\n    # 3. Trajectory Eval (LLM Judge)\n    assert llm_judge(steps) == \"SUCCESS\", \"Agent failed to plan correctly\"\n\n    # 4. Outcome Eval (Code Grader)\n    # The actual source of truth: did the DB change?\n    user_record = mock_db.execute(\"SELECT status FROM users WHERE id = 123\")\n    assert user_record['status'] == 'refunded', \"Agent claimed success but DB didn't update\"",
+    "focus": "The separation between trajectory eval (llm_judge) and the outcome eval (code grader asserting the database state). Helper names are placeholders \u2014 the control flow is the point."
+  },
+  "sources": [
+    "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"
+  ],
+  "seo": {
+    "title": "Agent Evaluation Harnesses and Trace Normalization",
+    "description": "Learn how to build evaluation harnesses for AI agents using mock environments, trace normalization, and code-based graders versus LLM as judge."
+  }
+}

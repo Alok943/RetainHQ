@@ -1,0 +1,129 @@
+{
+  "slug": "mcp-transports-stdio-http",
+  "title": "MCP Transports: stdio and Streamable HTTP",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "MCP transports: stdio vs Streamable HTTP",
+    "description": "How MCP transports work: local stdio vs remote Streamable HTTP, why HTTP+SSE is deprecated, and the fatal stdio logging mistake to avoid."
+  },
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "mcp-architecture-hosts-clients-servers"
+    ],
+    "unlocks": [
+      "mcp-observability-and-logging"
+    ],
+    "appears_in": [
+      "Datacamp MCP Interview Guide"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "stdio transport",
+      "definition": "A local transport method where the Host boots the Server as a subprocess and they communicate directly via standard input (stdin) and standard output (stdout)."
+    },
+    {
+      "term": "Streamable HTTP transport",
+      "definition": "The current remote transport for MCP: the client POSTs JSON-RPC to a single endpoint, and the server may upgrade its response into a Server-Sent Events (SSE) stream when it needs to stream messages back."
+    }
+  ],
+  "hook": {
+    "scenario": "Your local MCP server is working perfectly. You want to see exactly when a tool is called, so you add a quick `print('fetching data')` inside the function. The next time the LLM calls the tool, the client instantly crashes with a JSON parse error and disconnects.",
+    "question": "A developer adds a simple print statement to track execution, and it instantly crashes the client. What fundamental rule of the stdio transport did they break?"
+  },
+  "mental_model": {
+    "intuition": "stdio is like whispering directly into a pipe; Streamable HTTP is like a phone line that can switch to a live stream mid-call.",
+    "description": "MCP needs a wire to send JSON-RPC messages across. It uses two main wires (transports). For local servers running on your machine, it uses `stdio`—the Host literally runs your server script and talks to it through standard input/output. For remote servers, it uses Streamable HTTP: the client POSTs to one endpoint, and the server can upgrade its response into a live SSE stream when it needs to push messages back. Because `stdio` uses standard output as the strict data pipe, any stray text printed to stdout corrupts the data stream and breaks the connection."
+  },
+  "sections": [
+    {
+      "body": "When you configure a local MCP Server (like in Claude Desktop or Cursor), you usually use the `stdio` transport. The Host application spawns your server script as a child subprocess. It writes JSON-RPC requests to your script's `stdin`, and reads the JSON-RPC responses from your script's `stdout`.",
+      "recap": "The stdio transport runs the server locally, communicating via stdin and stdout."
+    },
+    {
+      "body": "This creates a massive gotcha for logging. If you use a standard `print()` or `console.log()` statement in a `stdio` server, that plain text goes directly into `stdout`. The Host, expecting a strict JSON-RPC object, receives `fetching data{...}`. It fails to parse the JSON and instantly kills the connection.",
+      "recap": "Printing to stdout in a stdio server corrupts the JSON-RPC stream and crashes the client."
+    },
+    {
+      "body": "To safely log in a `stdio` server, you MUST direct all logs to standard error (`stderr`). The Host ignores `stderr` for protocol parsing but will often capture it for your debugging logs. The official MCP SDKs handle this automatically if you use their built-in logging methods.",
+      "recap": "All debugging logs in a stdio server must be routed to stderr, never stdout."
+    },
+    {
+      "body": "For remote servers, MCP uses **Streamable HTTP**. The client POSTs its JSON-RPC messages to a single MCP endpoint. For a quick call the server just answers with JSON. When it needs to stream — progress updates, or requests of its own back to the client — it upgrades that same response into a Server-Sent Events (SSE) stream. So SSE still exists here, but as a streaming mode *inside* one endpoint, not as a separate transport.",
+      "recap": "Remote MCP uses Streamable HTTP: one endpoint, with SSE as an optional streaming upgrade inside it."
+    },
+    {
+      "body": "You will still meet an older design in tutorials and older servers: the 2024 spec had a separate **HTTP+SSE** transport with TWO endpoints — a long-lived `/sse` stream to receive on, plus a different POST endpoint to send to. The 2025-03-26 spec revision replaced it with Streamable HTTP, and it is now deprecated. If a blog post tells you to open a persistent SSE connection *first*, before you can send anything, you are reading pre-2025 material. Either way, deploying remotely means your gateway or load balancer must tolerate long-lived streaming responses, not just quick request/response pairs.",
+      "recap": "HTTP+SSE was the pre-2025 two-endpoint transport — deprecated now, but still all over old tutorials."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The fatal error: Corrupting the stdio stream",
+      "language": "python",
+      "code": "def search_database():\n    # WRONG: This writes to stdout, corrupting the JSON-RPC stream\n    print('Executing search query...') \n    \n    # CORRECT: Write to stderr so it doesn't break the protocol\n    import sys\n    print('Executing search query...', file=sys.stderr)\n    \n    return 'Results...'",
+      "explanation": "Because stdio uses standard output exclusively for protocol messaging, a single stray print statement is enough to instantly crash the host connection."
+    },
+    {
+      "title": "Client Configuration: stdio vs Streamable HTTP",
+      "language": "python",
+      "code": "from mcp import ClientSession, StdioServerParameters\nfrom mcp.client.stdio import stdio_client\nfrom mcp.client.streamable_http import streamablehttp_client\n\n# 1. Local stdio connection\nserver_params = StdioServerParameters(command=\"python\", args=[\"server.py\"])\nasync with stdio_client(server_params) as (read, write):\n    async with ClientSession(read, write) as session:\n        await session.initialize()\n\n# 2. Remote Streamable HTTP connection\nasync with streamablehttp_client(\"https://api.example.com/mcp\") as (read, write, _):\n    async with ClientSession(read, write) as session:\n        await session.initialize()",
+      "explanation": "The Python SDK provides distinct context managers (`stdio_client` and `streamablehttp_client`) to handle the transports, while `ClientSession` remains the same. (API shape verified against modelcontextprotocol.io/docs/develop)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using standard print() to debug stdio servers",
+      "explanation": "Because printing to standard output is the default debugging method taught in every tutorial, developers instinctively use it. Reality: In an MCP stdio server, stdout is the strictly formatted JSON-RPC pipe. Printing plain text into it corrupts the stream and crashes the client. Always log to stderr."
+    },
+    {
+      "title": "Assuming remote servers use WebSockets",
+      "explanation": "Because WebSockets are the usual choice for bidirectional communication, developers assume remote MCP uses them. Reality: remote MCP uses Streamable HTTP — the client POSTs JSON-RPC to one endpoint, and the server upgrades that response to a Server-Sent Events (SSE) stream when it needs to push data back. (You may still see a separate two-endpoint HTTP+SSE transport in pre-2025 servers and tutorials — that design is deprecated.)"
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does stdio communication differ from network transports in MCP?",
+      "answer": "stdio is a local transport where the Host spawns the Server as a subprocess and they communicate directly via standard input (stdin) and standard output (stdout). Network transports (like Streamable HTTP) connect distributed systems over a network URL.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the Streamable HTTP transport handle server-to-client messages for remote servers?",
+      "answer": "The client POSTs JSON-RPC to a single MCP endpoint. For a normal call the server replies with JSON; when it needs to stream progress or send its own requests back, it upgrades that response into a Server-Sent Events (SSE) stream. SSE is a mode inside Streamable HTTP, not a separate transport.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer adds `print('fetching data')` inside an MCP tool function to track execution. The client instantly throws a JSON parse error and disconnects upon tool execution. Why?",
+      "answer": "They corrupted the stdio transport stream. A stdio server uses standard output exclusively for sending strict JSON-RPC messages back to the Host. The plain text `print()` statement interrupted the JSON object, causing a parse error.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A developer assumes they need to configure WebSockets on their API gateway to deploy a remote MCP server. Why is this incorrect?",
+      "answer": "MCP does not use WebSockets for remote transport. It uses Streamable HTTP, which operates over standard HTTP — a single POST endpoint that the server can upgrade to an SSE stream when it needs to push messages back.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What transports does MCP use today?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "MCP primarily uses two transports: `stdio` for local, subprocess-based connections (where communication happens over standard input/output), and Streamable HTTP for remote, network-based connections. Streamable HTTP uses a single endpoint, which the server can upgrade to a Server-Sent Events (SSE) stream when it needs to push messages back.",
+      "approach": "Name the two modern transports. Explicitly mention that Streamable HTTP uses one endpoint, with SSE as an optional streaming upgrade — not a separate transport."
+    },
+    {
+      "question": "Why is adding a print statement dangerous in a local MCP server?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "Local MCP servers use the `stdio` transport, meaning they send their JSON-RPC protocol messages over standard output. If you print plain text to stdout for debugging, it corrupts the JSON stream and causes the Host client to immediately crash with a parse error. All debugging logs must be written to stderr.",
+      "approach": "Explain the mechanics of the `stdio` transport. Emphasize that stdout is strictly for protocol data, and stderr is for logging."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/docs/develop/build-server"
+  ]
+}

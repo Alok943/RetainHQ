@@ -1,0 +1,98 @@
+{
+  "slug": "agent-state-pruning-and-compaction",
+  "title": "Context Bloat: Pruning and Compacting Agent State",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "state-machines-for-agents",
+      "memory-short-and-long-term",
+      "context-window"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Long-running agents",
+      "Multi-turn chatbots"
+    ]
+  },
+  "overview": {
+    "what": "Techniques for managing an agent's growing state by summarizing old context (compaction) and dropping irrelevant tool outputs (pruning) before calling the LLM.",
+    "why": "Agents accumulate state at every step. Without pruning, this unbounded state leads to context collapse, massive latency, API limits, and ultimately agent failure.",
+    "where_used": [
+      "LangGraph state machines",
+      "Multi-agent systems",
+      "Persistent AI assistants"
+    ]
+  },
+  "why_learning_this": [
+    "Unbounded state tracking causes context collapse and fatal API errors in production.",
+    "Most agent state is meant for programmatic routing, not the LLM's context window.",
+    "Anthropic treats context management as a correctness requirement, not just a speed optimization."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming all state must be in context",
+      "explanation": "Developers often believe every variable in the agent's state machine must be passed to the LLM on every turn. In reality, most state is for programmatic routing. Only a pruned version should go to the LLM."
+    },
+    {
+      "title": "Treating pruning as only a speed optimization",
+      "explanation": "Many view pruning as a 'nice-to-have' for latency. But because agents run out of usable context window, it is a correctness requirement. An unpruned agent won't just get slower; it will hit a hard limit and fail."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the difference between agent state pruning and agent state compaction?",
+      "answer": "Pruning involves dropping or filtering data (like old tool outputs) before passing it to the LLM. Compaction involves using an LLM to generate a rolling summary of older conversation history.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it dangerous to pass the entire agent state object to the LLM prompt on every turn?",
+      "answer": "It leads to unbounded state growth. As the agent loops, the payload size grows, causing massive latency, API rate-limit errors, and eventual context collapse.",
+      "tier": "tier1"
+    },
+    {
+      "q": "An agent retrieves 50 documents, storing them in its state. The next node simply calls `llm.invoke(str(state))`. What happens?",
+      "answer": "The agent passes the entire state to the LLM, resulting in a massive payload that triggers an immediate API rate-limit error, severe latency, and a huge cost spike.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "code": "state['docs'].extend(new_docs)\nresponse = llm.invoke(str(state))",
+      "question": "If an agent retrieves 50 documents and runs this code, what is the most likely outcome?",
+      "answer": "The API request fails with a `context_length_exceeded` error, or suffers massive latency.",
+      "why": "Passing the entire unbounded state dictionary directly to the LLM causes context bloat. The state must be pruned before invocation."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why would an architecture keep raw documents in the `state` dictionary if they aren't being passed to the LLM?",
+      "answer": "Because the state machine uses them for programmatic routing, metric logging, or passing to specific downstream tools.",
+      "why": "State is the system's database, while the LLM prompt is just its working memory. They do not need to be perfectly synchronized."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement a Compaction Reducer",
+      "prompt": "Write a function that takes a list of messages. If the list has more than 5 messages, replace the oldest messages with a 'summary' string, keeping the 3 most recent messages intact.",
+      "starter_code": "def compact_messages(messages):\n    pass",
+      "solution": "def compact_messages(messages):\n    if len(messages) <= 5:\n        return messages\n    summary = \"Summary of older turns...\"\n    return [summary] + messages[-3:]"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def pruned_node(state):\n    recent_msgs = state['messages'][-3:]\n    summary = state.get('summary', '')\n    return llm.invoke(f\"{summary}\\n{recent_msgs}\")",
+    "focus": "Notice how the node extracts only a slice of `messages` and a pre-computed `summary`, purposefully ignoring the rest of the massive `state` object."
+  },
+  "seo": {
+    "title": "Agent Memory Architectures: Pruning & Compaction",
+    "description": "Learn how to prevent LLM context bloat and context collapse in long-running agents using state pruning and episodic memory compaction."
+  },
+  "sources": [
+    "https://www.kalviumlabs.ai/blog/langgraph-in-production-stateful-multi-step-agents/"
+  ]
+}

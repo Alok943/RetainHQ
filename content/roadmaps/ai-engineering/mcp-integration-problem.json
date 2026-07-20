@@ -1,0 +1,133 @@
+{
+  "slug": "mcp-integration-problem",
+  "title": "The M×N integration problem and protocol necessity",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "What is Model Context Protocol? The M×N Integration Problem",
+    "description": "Understand what Model Context Protocol (MCP) is and why standardising tool discovery solves the massive M×N integration problem in modern AI applications."
+  },
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "function-tool-calling"
+    ],
+    "unlocks": [
+      "mcp-architecture-hosts-clients-servers"
+    ],
+    "appears_in": [
+      "Datacamp MCP Interview Guide"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "M×N integration problem",
+      "definition": "The architectural nightmare where connecting M different AI models to N different tools requires writing M times N custom integration scripts."
+    },
+    {
+      "term": "Model Context Protocol (MCP)",
+      "definition": "An open standard transport protocol that standardises how AI applications securely connect to and discover external data sources and tools."
+    },
+    {
+      "term": "tool discovery",
+      "definition": "The ability for a system to programmatically ask an endpoint 'what capabilities do you have?' rather than hardcoding those capabilities in advance."
+    }
+  ],
+  "hook": {
+    "scenario": "You've built an AI assistant that uses Claude to query your database, search Jira, and read Notion. Now your boss wants to swap Claude for GPT-4o. Suddenly, you have to rewrite all three tool integrations from scratch because OpenAI's tool format is slightly different than Anthropic's.",
+    "question": "Given a choice between setting up a Vector Database or an MCP Server to store and query semantic embeddings directly, what should a developer choose?"
+  },
+  "mental_model": {
+    "intuition": "MCP is like USB for AI models: instead of building a custom plug for every single device, you build one standard port.",
+    "description": "Before MCP, connecting 3 models to 3 tools meant writing 9 custom API integrations. Every model had its own way of describing tools, and every API had its own format. MCP creates a standard protocol in the middle. Tools just speak MCP. Models just speak MCP. Instead of an M×N web of custom scripts, you get an M+N standard architecture. Most importantly, MCP standardises *discovery*: the model can ask the tool 'what can you do?' at runtime."
+  },
+  "sections": [
+    {
+      "body": "The M×N integration problem happens when you try to scale AI architectures. If you have M models (Claude, GPT-4, Llama) and N data sources (Jira, GitHub, Slack), connecting them directly requires writing `M * N` custom API integrations. Every time you add a new model or a new tool, the integration code multiplies.",
+      "recap": "Direct API connections scale terribly, creating an M×N web of custom integration scripts."
+    },
+    {
+      "body": "A standard API connection is just a dumb pipe: you hardcode the exact endpoint, pass the exact JSON structure it expects, and parse the exact response. The Model Context Protocol (MCP) isn't just a different pipe; it's a standard *transport protocol* (like HTTP or USB) specifically designed for context.",
+      "recap": "MCP replaces custom API scripts with a universal, standardized transport layer."
+    },
+    {
+      "body": "Why standardise tool *discovery* instead of just execution? In a standard REST API, the developer hardcodes the tool's schema into the LLM prompt. With MCP, the host application dynamically asks the server 'what tools do you have?' and automatically translates them into the format the specific LLM needs. You write the tool once, and any MCP-compliant model can discover and use it instantly.",
+      "recap": "Standardizing discovery allows tools to be written once and instantly used by any MCP-compliant model."
+    },
+    {
+      "body": "Because MCP was initially demoed with Claude Desktop reading local codebases, many assume it's just for local files. But MCP is a universal transport: it works over local `stdio` for desktop apps, but also over Streamable HTTP for remote enterprise databases. It's a protocol for *all* context, not just local files.",
+      "recap": "MCP connects LLMs to local files via stdio AND remote databases via HTTP."
+    },
+    {
+      "body": "Crucially, MCP is purely a transport protocol. It standardises the connection to data, but it does NOT generate embeddings, orchestrate retrieval, or replace Vector Databases. You can run RAG over an MCP connection, but MCP is just the wire the data travels over.",
+      "recap": "MCP is the transport wire; it doesn't replace RAG or Vector Databases."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The M×N nightmare: Custom integrations per model",
+      "language": "python",
+      "code": "# 1. Anthropic to GitHub\nclaude_github = {'name': 'search_repo', 'description': '...', 'input_schema': {...}}\n# 2. OpenAI to GitHub\nopenai_github = {'type': 'function', 'function': {'name': 'search_repo', ...}}\n# 3. Anthropic to Jira\nclaude_jira = {'name': 'get_ticket', 'description': '...', 'input_schema': {...}}\n# 4. OpenAI to Jira\nopenai_jira = {'type': 'function', 'function': {'name': 'get_ticket', ...}}\n\n# ... 9 unique scripts for 3 models and 3 tools.",
+      "explanation": "Without a protocol, you must manually translate the tool's expected schema into the specific JSON format demanded by every single LLM provider. (API shape verified against Anthropic/OpenAI docs)"
+    },
+    {
+      "title": "The M+N solution: Standardized MCP connections",
+      "language": "json",
+      "code": "{\n    'mcpServers': {\n        'github-server': {\n            'command': 'npx',\n            'args': ['-y', '@modelcontextprotocol/server-github']\n        },\n        'jira-server': {\n            'command': 'npx',\n            'args': ['-y', '@modelcontextprotocol/server-jira']\n        }\n    }\n}",
+      "explanation": "With MCP, the host environment configures standard connections to the tool servers. The host automatically handles discovering the tools and translating their schemas into the exact format the active LLM requires. You write 0 custom API wrappers."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing MCP with RAG frameworks",
+      "explanation": "Developers often assume MCP is an alternative to RAG used for retrieving documents and storing embeddings. Reality: MCP is just a transport protocol standardizing the connection. RAG is an architectural pattern that can operate over an MCP connection, but MCP itself doesn't generate embeddings or store vectors."
+    },
+    {
+      "title": "Assuming MCP is only for local files",
+      "explanation": "Because early demos featured Claude Desktop reading local files, many believe MCP only works over local `stdio`. Reality: MCP is a universal protocol that supports remote enterprise integrations via Streamable HTTP, connecting cloud LLMs to remote databases."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the M×N integration problem in AI applications?",
+      "answer": "The architectural overhead of connecting M different LLMs to N different tools, requiring M×N unique integration scripts to handle different API formats and tool schemas.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why standardize tool discovery rather than just execution?",
+      "answer": "Standardizing discovery allows the host application to programmatically ask the server for its available tools and schemas at runtime, letting any MCP-compliant model instantly use a tool without a developer hardcoding its schema into the prompt.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer needs to connect a cloud-hosted LLM to a remote Salesforce database and rules out MCP because they believe it only works over local stdio. What are they misunderstanding?",
+      "answer": "They misunderstand the transport layer. While local file access via stdio is common, MCP also supports remote enterprise integrations via Streamable HTTP.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Given a choice between setting up a Vector Database or an MCP Server to store and query semantic embeddings directly, what should a developer choose and why?",
+      "answer": "They must choose the Vector Database. An MCP server is purely a transport layer to expose data and tools; it does not generate embeddings or orchestrate semantic retrieval logic itself.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What is MCP and why was it created?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "Model Context Protocol (MCP) is an open standard that standardizes how AI models connect to external data sources and tools. It was created to solve the M×N integration problem, replacing custom, fragile API wrappers with a universal transport protocol that allows tools to be written once and instantly discovered and used by any compliant model.",
+      "approach": "Define MCP as a standard transport protocol. Highlight the transition from an M×N custom integration architecture to an M+N standardized architecture. Mention tool discovery."
+    },
+    {
+      "question": "How does MCP differ from a regular REST API?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "A regular REST API is a custom pipe where the developer must hardcode the endpoint, manually map the data schema into the LLM's prompt, and handle the specific JSON execution format. MCP is a standardized protocol with built-in discovery (the system queries the server for its capabilities at runtime) and standardized JSON-RPC execution, eliminating custom prompt mapping.",
+      "approach": "Contrast hardcoded API integrations with dynamic discovery. Emphasize that MCP handles the translation of capabilities to the LLM automatically."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/specification/2025-11-25"
+  ]
+}

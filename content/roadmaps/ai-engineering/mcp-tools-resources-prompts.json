@@ -1,0 +1,133 @@
+{
+  "slug": "mcp-tools-resources-prompts",
+  "title": "MCP Primitives: Tools, Resources, and Prompts",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "MCP Tools vs Resources vs Prompts Explained",
+    "description": "Understand the three core MCP primitives—Tools, Resources, and Prompts—and learn why execution control determines which primitive to use for your data."
+  },
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "mcp-architecture-hosts-clients-servers"
+    ],
+    "unlocks": [
+      "mcp-fastmcp-server-building"
+    ],
+    "appears_in": [
+      "Datacamp MCP Interview Guide"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "Tool",
+      "definition": "A capability exposed by the server that the LLM autonomously chooses to execute during generation based on context."
+    },
+    {
+      "term": "Resource",
+      "definition": "Data exposed by the server that the Host application (or user) loads directly into the context window *before* the LLM acts."
+    },
+    {
+      "term": "Prompt",
+      "definition": "A reusable, user-selected template or workflow provided by the server to bootstrap an LLM session, not a system instruction."
+    }
+  ],
+  "hook": {
+    "scenario": "You want your AI assistant to automatically search your product database whenever a user asks about stock levels. You confidently expose the `search_inventory` function as an MCP Resource. A user asks 'Do we have any red shoes?', and the LLM just hallucinates an answer. It never runs your search.",
+    "question": "A developer wants the LLM to search a database autonomously during a conversation and defines the search function as a Resource. Why does the LLM ignore it?"
+  },
+  "mental_model": {
+    "intuition": "Resources are files you drag-and-drop. Prompts are templates you click to start. Tools are buttons the LLM can press itself.",
+    "description": "MCP exposes exactly three primitives. The technical distinction between them is entirely about *control*. Resources are application-controlled (you attach them before chatting). Prompts are user-controlled (you select 'Code Review Template' from a menu). Tools are model-controlled (the LLM decides to fire them mid-conversation). If you want the AI to do something autonomously, it must be a Tool."
+  },
+  "sections": [
+    {
+      "body": "A Server's capabilities are divided into three strict categories: Resources, Prompts, and Tools. When a Host connects, it explicitly asks the Server to list them via separate JSON-RPC calls (`resources/list`, `prompts/list`, `tools/list`). How the Host handles the response depends entirely on the primitive type.",
+      "recap": "A Server exposes capabilities as Resources, Prompts, or Tools."
+    },
+    {
+      "body": "Resources are static or dynamic data—like a local file, a database schema, or an API response. Crucially, Resources are *application-controlled*. The user or the Host application fetches the Resource and injects it into the context window *before* the LLM is invoked. The LLM cannot autonomously trigger a Resource fetch mid-thought.",
+      "recap": "Resources are data fetched by the application and loaded before the LLM acts."
+    },
+    {
+      "body": "Tools are functions the LLM can execute. Unlike Resources, Tools are *model-controlled*. The Host passes the tool schemas to the LLM, and the LLM autonomously decides if, when, and with what arguments to call the tool during its generation loop. If you need the AI to search a database based on a user's question, it must be a Tool.",
+      "recap": "Tools are functions the LLM autonomously chooses to execute during generation."
+    },
+    {
+      "body": "Because the word 'prompt' usually means 'system instructions', developers often assume MCP Prompts are used to set behavioral guardrails. They aren't. MCP Prompts are *user-controlled* workflow templates. The user explicitly selects a Prompt (e.g., 'Summarize Jira Ticket') from a UI menu to bootstrap a new conversation.",
+      "recap": "Prompts are user-selected templates to start workflows, not hidden system instructions."
+    },
+    {
+      "body": "The control boundary is why the distinction matters. If you expose a capability as the wrong primitive, the intended actor literally cannot see or use it. The LLM only sees Tools. The User sees Prompts and Resources.",
+      "recap": "Execution control determines the primitive: App controls Resources, User controls Prompts, Model controls Tools."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The JSON-RPC lists: How the Host parses primitives",
+      "language": "json",
+      "code": "// 1. Host asks: \"What Resources do you have?\"\n// Response: Data the user can attach (like files)\n{\n  \"method\": \"resources/list\",\n  \"result\": {\n    \"resources\": [\n      { \"uri\": \"file:///logs/app.log\", \"name\": \"Application Logs\" }\n    ]\n  }\n}\n\n// 2. Host asks: \"What Tools do you have?\"\n// Response: Functions the LLM can call autonomously\n{\n  \"method\": \"tools/list\",\n  \"result\": {\n    \"tools\": [\n      { \"name\": \"search_logs\", \"inputSchema\": { ... } }\n    ]\n  }\n}",
+      "explanation": "The Host treats these payloads completely differently. It puts Resources into a UI menu for the user to attach. It passes Tools directly into the LLM's system payload so the AI can use them."
+    },
+    {
+      "title": "The Prompt Primitive: User-selected templates",
+      "language": "json",
+      "code": "// Host asks: \"What Prompts do you have?\"\n{\n  \"method\": \"prompts/list\",\n  \"result\": {\n    \"prompts\": [\n      {\n        \"name\": \"review_code\",\n        \"description\": \"Template for reviewing PRs\",\n        \"arguments\": [ { \"name\": \"pr_number\", \"required\": true } ]\n      }\n    ]\n  }\n}",
+      "explanation": "This is not a system instruction. The Host renders this as a clickable button in the UI. When the user clicks it, they are asked for the `pr_number`, and the server returns the actual text to start the chat."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming Resources are just data-fetching tools",
+      "explanation": "Developers often think Resources and Tools are interchangeable ways to get data into the context window. Reality: The distinction is about control. The LLM cannot execute a Resource. If you want the LLM to autonomously search a database, it must be a Tool. If you want the user to click a button to load a database schema before chatting, it's a Resource."
+    },
+    {
+      "title": "Using Prompts for system instructions",
+      "explanation": "Because 'prompt' is heavily associated with 'system prompt', developers try to use MCP Prompts to enforce an agent's tone or rules. Reality: MCP Prompts are user-selected templates. If the user never explicitly clicks the Prompt template in the UI, the LLM's behavior will not change."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What dictates whether data should be exposed as a Resource or a Tool?",
+      "answer": "Execution control. If the Host application or user should load the data before the LLM is invoked, it's a Resource. If the LLM needs to autonomously fetch the data mid-conversation based on context, it must be a Tool.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do Prompts function within the protocol's lifecycle?",
+      "answer": "Prompts function as user-selected templates or workflows. They are exposed to the user in the UI, allowing them to bootstrap a conversation with predefined context, rather than acting as hidden system instructions.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer attempts to enforce an agent's tone by writing an MCP Prompt, but the LLM behavior does not change. Why?",
+      "answer": "MCP Prompts are user-controlled templates, not system instructions. The behavior didn't change because the user never explicitly invoked that Prompt template to start their session.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A developer wants the LLM to search a database autonomously during a conversation and defines the search function as a Resource. Why does the LLM ignore it?",
+      "answer": "The LLM ignores it because Resources are application-controlled, not model-controlled. The LLM cannot autonomously trigger a Resource; it can only execute Tools.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What's the actual difference between tools, resources, and prompts?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "The difference is execution control. Resources are data loaded by the Host/User before inference. Tools are functions autonomously executed by the Model during inference. Prompts are reusable conversation templates selected by the User to bootstrap a session.",
+      "approach": "Define each by *who* controls it: App/User controls Resources, Model controls Tools, User controls Prompts."
+    },
+    {
+      "question": "What kinds of resources can an MCP server expose?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "An MCP server can expose both static resources (like a specific local file or a hardcoded database schema) and dynamic resources (using URI templates like `user://{id}` to generate content on the fly based on the Host's request).",
+      "approach": "Mention that resources can be both static files and dynamically generated data, as long as they are fetched by the Host prior to model execution."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/specification/draft"
+  ]
+}

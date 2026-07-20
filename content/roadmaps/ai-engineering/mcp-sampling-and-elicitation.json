@@ -1,0 +1,127 @@
+{
+  "slug": "mcp-sampling-and-elicitation",
+  "title": "Agentic Reversals: MCP Sampling and Elicitation",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "MCP Sampling and Elicitation Explained",
+    "description": "Learn how MCP Sampling flips the architecture, allowing servers to request LLM generations from the host. Understand elicitation and high-churn transport."
+  },
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 18,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "mcp-fastmcp-server-building"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "CloudFan Interview Prep"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "Sampling",
+      "definition": "An MCP client feature that allows a server to request an LLM completion (sample) from the Host application mid-execution."
+    },
+    {
+      "term": "Elicitation",
+      "definition": "A mechanism where a server asks the Host (and therefore the user or LLM) for additional input or clarification before finishing its tool execution."
+    }
+  ],
+  "hook": {
+    "scenario": "You're writing a complex tool inside an MCP server that parses 100 pages of legal text. You want to summarize it before returning it. You implement MCP Sampling to do the summarization, but you forget to add an OpenAI API key to the server.",
+    "question": "A developer attempts to build an MCP server that uses sampling, but forgets to configure an LLM in the server code. What happens when the server samples?"
+  },
+  "mental_model": {
+    "intuition": "Sampling is a boomerang: the Server throws the data back to the Host, asks the Host's brain to process it, and catches the answer.",
+    "description": "Standard architecture flows one way: the Host's LLM asks the Server for data, and the Server replies. Sampling flips this. While the Server is executing a tool, it can pause, package up some intermediate data, and ask the Host to run an LLM completion on it. The Server never runs the LLM itself; it borrows the intelligence (and the API keys) of the Host. This allows servers to perform complex agentic loops internally without needing their own inference infrastructure."
+  },
+  "sections": [
+    {
+      "body": "Why would a Server need to invoke an LLM? Imagine a tool that queries a database and gets back 10,000 rows. Returning all 10,000 rows to the Host blows out the context window. With Sampling, the tool can ask the Host's LLM to summarize the 10,000 rows *inside the tool execution*, and then return only the 3-paragraph summary as the final tool result.",
+      "recap": "Sampling allows servers to borrow the Host's LLM to process large intermediate data before returning a final result."
+    },
+    {
+      "body": "When a server uses Sampling, it is NOT calling its own internal LLM. It sends a `sampling/createMessage` request back up the JSON-RPC pipe to the Client. The Host application (like Claude Desktop) uses its active LLM to generate the response and sends it back down to the Server. The Server is still completely stateless and model-agnostic.",
+      "recap": "Sampling uses the Host's intelligence and API keys; the Server remains model-agnostic."
+    },
+    {
+      "body": "To maintain the context loop securely, you don't need to manually pass session IDs around. Modern SDKs inject a `Context` object directly into your tool function. By calling `ctx.session.create_message()`, the framework securely routes the sample request back to the specific Host session that initiated the tool call.",
+      "recap": "The framework injects a Context object, completely hiding the session-routing boilerplate."
+    },
+    {
+      "body": "Elicitation is a similar concept but for input. Instead of asking for a summary, the Server pauses and asks the Host for clarification ('Did you mean the dev DB or prod DB?'). While the *concept* of elicitation is stable, its wire-format is highly volatile.",
+      "recap": "Elicitation allows the server to ask the Host for mid-execution clarification."
+    },
+    {
+      "body": "The transport mechanism for elicitation is currently undergoing high churn. The older mechanism relied on holding an SSE stream open while the server pushed an `elicitation/create` request. As of the 2026-07-28 spec release candidate, this is being replaced by a stateless 'Multi Round-Trip Request' pattern (SEP-2322) where the client re-issues the call with requested inputs. Relying on the old SSE mechanism will break against newer clients.",
+      "recap": "The specific wire-format for elicitation is in flux; the 2026-07 spec RC replaces SSE streams with stateless round-trips."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Sampling: Using the Host's LLM inside a tool",
+      "language": "python",
+      "code": "from mcp.server.fastmcp import FastMCP, Context\n\nmcp = FastMCP(\"DataServer\")\n\n@mcp.tool()\nasync def fetch_and_summarize_logs(date: str, ctx: Context) -> str:\n    # 1. Fetch massive data (e.g., 50MB of logs)\n    raw_logs = database.get_logs(date)\n    \n    # 2. SAMPLE: Ask the Host to summarize it. \n    # The server has NO API keys. It borrows the Host's LLM.\n    response = await ctx.session.create_message(\n        messages=[{\"role\": \"user\", \"content\": f\"Summarize these logs: {raw_logs}\"}]\n    )\n    \n    # 3. Return only the tiny summary to the main conversation\n    return response.content",
+      "explanation": "By injecting `ctx: Context`, FastMCP handles all the bidirectional JSON-RPC routing. The 50MB of raw logs never pollutes the main chat context; only the final summary does."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming the server needs an LLM for sampling",
+      "explanation": "Because it's called 'sampling', developers assume the server performs the inference. Reality: Sampling is a request sent back to the Client. The Host application uses its own LLM to generate the response and sends it back to the server. The server remains lightweight."
+    },
+    {
+      "title": "Manually constructing session context",
+      "explanation": "Developers used to standard distributed APIs often write complex boilerplate to track session IDs across network calls. Reality: The `Context` object is injected automatically by the framework. Adding `ctx: Context` to the function signature handles the secure round-trip."
+    },
+    {
+      "title": "Treating elicitation transport as permanent",
+      "explanation": "Developers implement code that manually manages an open SSE stream waiting for an elicitation response. Reality: The 2026-07-28 spec RC replaces the SSE-based transport mechanism with a stateless multi-round-trip pattern. Hardcoding the SSE method will break against modern clients."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is MCP Sampling and why would a server need to invoke an LLM?",
+      "answer": "Sampling allows an MCP server to request an LLM completion from the Host mid-execution. A server uses it to process or summarize massive amounts of intermediate data internally, preventing the main context window from blowing out.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How is the context loop maintained when a server calls back to the Host model?",
+      "answer": "The MCP framework automatically injects a `Context` object into the tool. The developer simply calls methods on `ctx.session`, and the framework handles securely routing the request back to the specific Host session.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer attempts to build an MCP server that uses sampling, but forgets to configure an LLM in the server code. What happens when the server samples?",
+      "answer": "It works perfectly. The server doesn't need an LLM or API keys. Sampling sends the request back to the Host application, which uses its own LLM to generate the response on behalf of the server.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A learner implements code that manually manages an open SSE stream waiting for the elicitation response, believing this is the durable way to do it. Why will this fail in production?",
+      "answer": "The transport mechanism for elicitation is in high churn. The 2026-07-28 spec RC deprecates the SSE stream method in favor of a stateless 'Multi Round-Trip Request' pattern, so their manual SSE code will break against newer clients.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What are the security implications of allowing servers to invoke AI models (sampling)?",
+      "company": "CloudFan Interview Prep",
+      "answer": "Sampling allows a third-party server to consume the Host's compute resources and API budget. A malicious or buggy server could trap the Host in an infinite loop of sampling requests, drastically inflating API costs. Hosts must implement strict rate limits and token budgets for server-initiated sampling to prevent abuse.",
+      "approach": "Focus on the fact that the Host pays for the inference. Highlight the risk of resource exhaustion and the need for Host-side guardrails."
+    },
+    {
+      "question": "When an MCP server uses sampling to summarize data, does it need its own API keys?",
+      "company": "CloudFan Interview Prep",
+      "answer": "No. The server sends a sampling request back to the Host application. The Host uses its own LLM and API keys to perform the completion and returns the result to the server. The server remains stateless and model-agnostic.",
+      "approach": "Clarify that the Host provides the intelligence and pays the API cost; the server just makes a JSON-RPC request."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/specification/2025-11-25",
+    "https://github.com/modelcontextprotocol/python-sdk/issues/1569",
+    "https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/"
+  ]
+}

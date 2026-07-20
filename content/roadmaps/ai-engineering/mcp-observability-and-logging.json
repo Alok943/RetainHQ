@@ -1,0 +1,140 @@
+{
+  "slug": "mcp-observability-and-logging",
+  "title": "Observability: Inspecting MCP Traffic",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "Debugging MCP: The MCP Inspector",
+    "description": "Learn why standard HTTP proxies fail to capture local MCP traffic and how to use the MCP Inspector to intercept JSON-RPC messages and fix silent errors."
+  },
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "mcp-transports-stdio-http"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Datacamp MCP Interview Guide"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "Protocol Trace",
+      "definition": "The exact, raw JSON-RPC messages sent back and forth over the transport layer (stdin/stdout or HTTP)."
+    },
+    {
+      "term": "MCP Inspector",
+      "definition": "An official debugging tool that acts as a middleman proxy, intercepting and visualizing the JSON-RPC traffic between a Host and a Server."
+    },
+    {
+      "term": "Silent Failure",
+      "definition": "A scenario where a Host disconnects from an MCP Server due to a protocol error, but the server logs show nothing because it was simply killed by the Host."
+    }
+  ],
+  "hook": {
+    "scenario": "Your local MCP server crashes instantly when Claude Desktop tries to connect. You spend two hours configuring Charles Proxy to intercept the traffic to find the bug. When you boot the server, Charles Proxy shows absolutely zero traffic, yet the server still crashes.",
+    "question": "A developer attempts to use an HTTP proxy to debug a local MCP server, but the proxy captures no traffic. Why?"
+  },
+  "mental_model": {
+    "intuition": "Standard proxies listen to phone calls. stdio servers are passing notes under the table.",
+    "description": "Because local MCP servers use the `stdio` transport, they don't use network sockets at all. They communicate via raw subprocess standard input and output. An HTTP proxy like Wireshark or Charles literally cannot see this traffic. To see what's happening, you have to use a specialized proxy (the MCP Inspector) that specifically wraps the subprocess execution to read the notes being passed under the table."
+  },
+  "sections": [
+    {
+      "body": "When a standard REST API fails, the server logs a 400 or 500 error, telling you what went wrong. (General tracing and logging was covered in the `observability-traces-logging` lesson — this is the MCP transport wrinkle.) MCP doesn't work like this. If your server returns a malformed JSON-RPC schema during the `tools/list` negotiation, the Host application immediately rejects it and terminates the subprocess.",
+      "recap": "In MCP, the Host controls execution and will abruptly kill the server if the protocol is violated."
+    },
+    {
+      "body": "Because the server is just a dumb subprocess that got killed, your Python or Node logs will be completely empty. The server has no idea why it died. This 'silent failure' drives developers crazy, making them assume the Host application is broken.",
+      "recap": "Protocol errors result in silent failures on the server side because the server is simply terminated."
+    },
+    {
+      "body": "To figure out why the Host rejected your payload, you need to see the exact JSON-RPC messages (the Protocol Trace). But as you learned in the Transports lesson, local servers use `stdio`. There is no network traffic. HTTP proxies like Wireshark are useless here.",
+      "recap": "Standard HTTP proxies cannot capture stdio traffic because there are no network sockets."
+    },
+    {
+      "body": "The solution is the official MCP Inspector. You run the inspector, and you tell the inspector to run your server. The inspector acts as a middleman Host. It spawns your server, captures the `stdio` traffic passing between them, and provides a web UI to view the exact JSON payloads.",
+      "recap": "The MCP Inspector wraps the server execution to intercept and visualize stdio traffic."
+    },
+    {
+      "body": "By viewing the raw JSON in the Inspector, you can immediately spot if your FastMCP decorator missed a required type hint, or if a rogue print statement corrupted the stdout stream before the Host could parse it.",
+      "recap": "Protocol traces in the Inspector reveal the exact formatting errors causing silent failures."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Launching the MCP Inspector",
+      "language": "bash",
+      "code": "# 1. Your normal boot command for the server:\n# python server.py\n\n# 2. Wrapping it with the Inspector:\nnpx @modelcontextprotocol/inspector python server.py\n\n# The inspector will spawn a local web server (UI defaults to http://localhost:6274, proxy on 6277)\n# Open that URL to see the intercepted JSON-RPC traffic in real-time.",
+      "explanation": "You don't change your server code. You just prefix your boot command with the inspector wrapper. (Ports verified against official README)"
+    },
+    {
+      "title": "What a Protocol Trace looks like",
+      "language": "json",
+      "code": "// Intercepted traffic shown in the Inspector UI\n// The Host (Inspector) requests tools:\n{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/list\"\n}\n\n// The Server responds (this is what you debug):\n{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"result\": {\n    \"tools\": [\n      { \"name\": \"broken_tool\", \"inputSchema\": { /* missing required fields */ } }\n    ]\n  }\n}",
+      "explanation": "If Claude Desktop was silently failing, this trace reveals exactly which tool schema is malformed."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Trying to use Wireshark on stdio",
+      "explanation": "Because they are standard industry tools, developers instinctively reach for Wireshark or Charles Proxy to debug API traffic. Reality: Local MCP servers communicate via subprocess `stdio` (standard input/output), not network sockets. Standard proxies see absolutely zero traffic. You must use the MCP Inspector."
+    },
+    {
+      "title": "Relying on server logs for protocol errors",
+      "explanation": "Developers assume that if their JSON is bad, their Python script will throw an exception and log it. Reality: The server doesn't know its JSON is bad until the Host rejects it. If the Host rejects it, it just kills the server subprocess. The server logs nothing. You must look at the protocol trace to see the rejection."
+    },
+    {
+      "title": "Assuming identical tool names resolve cleanly",
+      "explanation": "Because each server is tested independently, developers assume tool identity is scoped per-server. Reality: MCP has a flat tool namespace. If two connected servers both expose a `create_issue` tool, clients may error, hang, or silently resolve to one over the other without a protocol-level error. You must disambiguate tool names with prefixes (e.g., `github_create_issue`)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "A developer connects a GitHub MCP server and a Linear MCP server, both exposing a `create_issue` tool. What happens when the agent tries to call it?",
+      "answer": "Because MCP uses a flat tool namespace, the tool name resolves ambiguously. The client might error, hang, or silently call one server's tool instead of the other. Developers must manually prefix tool names to avoid collisions.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why do standard HTTP proxies (like Charles or Wireshark) fail to capture local MCP traffic?",
+      "answer": "Local MCP servers use the `stdio` transport, communicating via raw subprocess standard input and output. Because there are no network sockets involved, standard HTTP proxies cannot intercept the traffic.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does the MCP Inspector intercept and visualize JSON-RPC messages?",
+      "answer": "The Inspector acts as a middleman Host. You run the inspector and pass it your server's boot command. It spawns the server as a subprocess, intercepts the `stdio` messages passing between them, and visualizes them in a web UI.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer's server is instantly killed by Claude Desktop on boot. They check their Python logs, see zero errors, and assume Claude Desktop is broken. What did they misunderstand?",
+      "answer": "They misunderstood that MCP protocol errors cause silent failures on the server. If the server sends a malformed schema, the Host rejects it and terminates the subprocess. The server logs nothing because it was simply killed. They need to use the Inspector to see the protocol trace.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the fundamental difference between server logs and protocol traces in the context of debugging an MCP server?",
+      "answer": "Server logs show internal execution state (e.g., database connections, stack traces). Protocol traces show the exact JSON-RPC messages sent over the wire (or pipe). You need protocol traces to debug negotiation failures with the Host.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you debug an MCP server when standard logging fails?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "You use the official MCP Inspector. Because local servers use `stdio`, standard HTTP proxies won't work, and protocol errors cause the Host to silently kill the server without leaving server-side logs. The Inspector wraps the execution command to intercept and visualize the raw JSON-RPC traffic, allowing you to identify malformed schemas.",
+      "approach": "Explain the 'silent failure' nature of protocol errors, explicitly rule out Wireshark/Charles, and state how the Inspector acts as a middleman for stdio."
+    },
+    {
+      "question": "Why can't you use Wireshark to debug a local MCP server?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "Local MCP servers communicate with the Host over the `stdio` transport, using raw subprocess standard input and output. Wireshark only listens on network interfaces and sockets. Because `stdio` doesn't use the network stack, Wireshark cannot see the traffic.",
+      "approach": "Identify `stdio` as a subprocess communication method and note that Wireshark requires network sockets."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/docs/tools/inspector"
+  ]
+}

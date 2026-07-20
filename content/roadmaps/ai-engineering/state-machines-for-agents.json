@@ -1,0 +1,150 @@
+{
+  "slug": "state-machines-for-agents",
+  "title": "State machines for agents",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "agent-autonomy-spectrum"
+    ],
+    "unlocks": [
+      "multi-agent-orchestration-patterns",
+      "agent-checkpointing-and-resumability"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview"
+    ]
+  },
+  "seo": {
+    "title": "LangGraph State Management: Building Agent State Machines",
+    "description": "Learn how graph-based agent frameworks manage state, prevent pollution, and use reducers to merge outputs."
+  },
+  "glossary": [
+    {
+      "term": "state machine",
+      "definition": "A system that moves between different states (like nodes in a graph) while passing shared data along."
+    },
+    {
+      "term": "reducer",
+      "definition": "A function that tells the framework how to combine new data with old data (e.g., adding to a list instead of overwriting it)."
+    },
+    {
+      "term": "pollution",
+      "definition": "When rogue data accidentally gets written into the agent's state, causing unexpected crashes downstream."
+    }
+  ],
+  "hook": {
+    "scenario": "Two parallel agent nodes run at the same time. They both return a dictionary with the key `messages`. ",
+    "question": "Does one node's output accidentally overwrite the other's, causing a race condition?"
+  },
+  "mental_model": {
+    "intuition": "Think of agent state as a shared clipboard that gets passed from worker to worker.",
+    "description": "In a state machine graph, each node (agent or tool) takes the current state, does its work, and returns an update. Instead of overwriting the whole clipboard, rules called 'reducers' decide how to safely merge the new notes with the old notes."
+  },
+  "sections": [
+    {
+      "body": "Production agents no longer use basic chains; they use **directed graphs (DAGs)**. In frameworks like LangGraph, the AI and tools are 'nodes'. The shared memory passed between them is the 'state'.",
+      "recap": "Graphs pass a shared state object between execution nodes."
+    },
+    {
+      "body": "When a node finishes, it doesn't just overwrite the state variable. If it returns a list of messages, the framework needs to know: do I replace the old messages, or add to them? We solve this with **reducers** (like `add`), which safely concatenate outputs\u2014even from parallel nodes.",
+      "recap": "Reducers merge updates instead of overwriting the previous state."
+    },
+    {
+      "body": "Python's `TypedDict` is often used for state, but it has a fatal flaw: it doesn't check data at runtime. A rogue tool might inject junk data into the state, polluting it. To stop this, production systems use strict data validators like **Pydantic** to reject bad data immediately.",
+      "recap": "TypedDict allows silent state pollution; Pydantic enforces strict boundaries."
+    },
+    {
+      "body": "Prediction: If a developer uses a basic `TypedDict` and a tool accidentally returns a nested dictionary instead of a string, the agent might run fine for a minute, then crash completely three steps later when another node tries to read it.",
+      "recap": "Always use runtime validation for agent state to catch errors early."
+    }
+  ],
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "node_a",
+        "label": "Node A"
+      },
+      {
+        "id": "state",
+        "label": "Shared State"
+      },
+      {
+        "id": "node_b",
+        "label": "Node B"
+      }
+    ],
+    "steps": [
+      {
+        "from": "node_a",
+        "to": "state",
+        "label": "Returns `[\"Hello\"]` (Reducer appends)",
+        "term": "Update"
+      },
+      {
+        "from": "state",
+        "to": "node_b",
+        "label": "Reads `[\"Hello\"]`",
+        "term": "Consume"
+      }
+    ]
+  },
+  "code_snippets": [
+    {
+      "title": "A strict, reducer-enabled state schema",
+      "language": "python",
+      "code": "from pydantic import BaseModel, ConfigDict\nfrom typing import Annotated\nimport operator\n\nclass AgentState(BaseModel):\n    # Forbid extra random keys to prevent state pollution\n    model_config = ConfigDict(extra='forbid')\n    \n    # The 'add' reducer safely combines lists\n    messages: Annotated[list, operator.add]\n    current_task: str",
+      "explanation": "This Pydantic model guarantees that rogue tools cannot add illegal keys (thanks to `extra='forbid'`). The `operator.add` reducer ensures that parallel nodes returning messages will concatenate their lists rather than overwriting each other."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming state is completely overwritten",
+      "explanation": "In standard Python, `state = new_state` overwrites all prior data. In LangGraph, state is incrementally updated. Reducers instruct the graph engine to merge updates (e.g., appending a new message) rather than replacing the state. This is why parallel nodes do not cause race conditions."
+    },
+    {
+      "title": "Trusting TypedDict to prevent state pollution",
+      "explanation": "TypedDict implies strict type safety, but it does not perform runtime validation. Rogue data can pollute the state at runtime and crash downstream nodes. Production graphs use Pydantic BaseModels with `extra='forbid'` to intercept illegal state mutations instantly."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the purpose of a 'reducer' in a state machine graph?",
+      "answer": "A reducer tells the framework how to merge new data into the existing state (like concatenating a list) rather than overwriting the state completely.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Two parallel agent nodes return dictionary updates for the same key. Why doesn't this cause a race condition in LangGraph?",
+      "answer": "Because the state schema uses a reducer for that key, which instructs the framework to safely merge or append the outputs together.",
+      "tier": "tier1"
+    },
+    {
+      "q": "An agent crashes downstream because a tool injected an unexpected nested dictionary into a TypedDict state object. How do you fix this?",
+      "answer": "Replace the TypedDict with a Pydantic BaseModel and set `extra='forbid'`, which performs strict runtime validation and stops bad data immediately.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer complains that their LangGraph state is losing the early conversation history every time the agent loops. What is the most likely architectural flaw?",
+      "company": "GenAI Engineer interview",
+      "answer": "The developer likely forgot to apply an `operator.add` reducer to the messages field in their state schema, causing the framework to overwrite the list entirely on each node execution instead of appending to it.",
+      "approach": "Identify the role of reducers in graph-based state management."
+    },
+    {
+      "question": "How do you prevent a rogue tool from injecting arbitrary nested dictionaries into your agent's state?",
+      "company": "System Design",
+      "answer": "By defining the state schema using Pydantic BaseModels with `extra='forbid'` rather than Python's basic TypedDict. This enforces runtime validation and instantly rejects illegal mutations.",
+      "approach": "Focus on runtime validation boundaries versus static type hinting."
+    }
+  ],
+  "sources": [
+    "https://langchain-ai.github.io/langgraph/concepts/low_level/"
+  ]
+}

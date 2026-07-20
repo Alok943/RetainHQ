@@ -1,0 +1,97 @@
+{
+  "slug": "runaway-agent-protection",
+  "title": "Preventing Agent Runaway: Budgets and Caps",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "state-machines-for-agents",
+      "cost-and-latency-budgeting"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Production-ready LangGraph agents",
+      "Preventing out-of-control API billing"
+    ]
+  },
+  "overview": {
+    "what": "An autonomous agent without limits is like a robotic vacuum with no off switch—if it gets confused, it will relentlessly bump into the same wall until the battery runs out. Step budgets and recursion limits act as the circuit breaker, stopping an agent from entering an infinite loop of failing tool calls.",
+    "why": "Without structural limits, an agent that encounters a failing tool or logic gap can infinitely retry identical actions, rapidly consuming compute and costing thousands of dollars in API fees in mere minutes.",
+    "where_used": [
+      "LangGraph state machines",
+      "ReAct orchestration loops",
+      "Production agent deployments"
+    ]
+  },
+  "why_learning_this": [
+    "Agents operate autonomously and can rack up massive API bills instantly if they enter an infinite ReAct loop.",
+    "Controlling agent execution bounds is a non-negotiable core requirement for moving any LLM system into production.",
+    "A hard step budget protects your system from infinite loops, whereas standard text generation limits do not."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Relying on max_tokens to stop agent loops",
+      "explanation": "`max_tokens` limits a single inference generation. But an agent loop makes repeated, independent API calls. It can infinitely loop short, valid tool calls (like retrying a failing search) unless a hard step budget or recursion limit is enforced by the orchestrator."
+    },
+    {
+      "title": "Assuming recursion_limit immediately cancels external side effects",
+      "explanation": "A graph's `recursion_limit` only bounds the number of graph node transitions (supersteps). It does not cancel in-flight external tool calls, and it won't stop an infinite retry loop implemented entirely inside a single node's custom code."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the functional difference between `max_tokens` and a step budget in an agentic architecture?",
+      "answer": "`max_tokens` applies to a single text generation from the LLM, while a step budget limits the number of sequential tool-calling iterations the agent can perform across multiple inferences.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Predict what happens if you set `max_tokens=200` but an agent repeatedly receives a '404' error from a web search tool and decides to retry it.",
+      "answer": "The agent will enter an infinite loop of short tool-call generations, costing API fees and compute, because the short generations never hit the `max_tokens` boundary.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Does setting a LangGraph `recursion_limit` stop an infinite while-loop located inside a specific node's logic?",
+      "answer": "No. `recursion_limit` bounds the number of node-to-node transitions in the overall graph. It does not inspect or interrupt internal logic hidden inside a single execution node.",
+      "tier": "tier1"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "from langgraph.graph import StateGraph\n\n# Compile the graph into an executable app\napp = graph.compile()\n\n# Run the agent with a strict recursion limit to prevent infinite loops\nfinal_state = app.invoke(\n    {'messages': [('user', 'Research quantum computing')]},\n    config={'recursion_limit': 15}  # Stops execution after 15 node transitions\n)",
+    "focus": "The `recursion_limit` inside the `config` dictionary is the safety net. It explicitly halts the LangGraph execution if the agent transitions between nodes more than 15 times, definitively severing an infinite tool-calling loop."
+  },
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "An agent tries to query a SQL database, but the schema has changed. The agent catches the error and decides to try the exact same query again. You have configured the LLM with `max_tokens=500` and the LangGraph orchestrator with `recursion_limit=10`. What happens?",
+      "answer": "The agent retries the failing query repeatedly until it hits 10 node transitions, at which point the orchestrator halts the execution and throws a recursion limit exception.",
+      "why": "The `max_tokens` limit applies per-generation and won't stop the loop since each tool call generation is short. The `recursion_limit` correctly bounds the total number of cycles, acting as the ultimate circuit breaker."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why can't you just add 'stop if you fail more than 3 times' to the system prompt to prevent runaway agents?",
+      "answer": "LLMs are probabilistic and may ignore instructions, especially when context windows grow large. System prompts provide soft guidance, whereas hard structural budgets implemented in the orchestration code guarantee termination.",
+      "why": "Relying on the LLM to reliably count its own failures and halt itself is an anti-pattern. Orchestration safeguards must always be deterministic code."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement a Hard Step Cap",
+      "prompt": "Given a compiled LangGraph application `app`, invoke it with a user message to 'Analyze this data' and pass a configuration that ensures the graph will terminate if it exceeds 5 state transitions.",
+      "starter_code": "results = app.invoke({'messages': [('user', 'Analyze this data')]})",
+      "solution": "results = app.invoke({'messages': [('user', 'Analyze this data')]}, config={'recursion_limit': 5})"
+    }
+  ],
+  "sources": [
+    "https://arxiv.org/html/2603.05637v1",
+    "https://langchain-ai.github.io/langgraph/concepts/low_level/"
+  ],
+  "seo": {
+    "title": "Preventing Agent Runaway: Step Budgets and Recursion Limits",
+    "description": "Learn how to stop autonomous agents from entering infinite tool-calling loops using step budgets and recursion limits to prevent massive API bills."
+  }
+}

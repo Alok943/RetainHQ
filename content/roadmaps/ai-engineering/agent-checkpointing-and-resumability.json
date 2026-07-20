@@ -1,0 +1,157 @@
+{
+  "slug": "agent-checkpointing-and-resumability",
+  "title": "Agent checkpointing & resumability",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 10,
+    "importance": 9,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "state-machines-for-agents"
+    ],
+    "unlocks": [
+      "human-in-the-loop-interrupts"
+    ],
+    "appears_in": [
+      "System Design",
+      "GenAI Engineer interview"
+    ]
+  },
+  "seo": {
+    "title": "LangGraph Checkpointing: Agent Durable Execution",
+    "description": "Learn how checkpointers natively persist state across discrete interactions and enable durable execution for AI agents."
+  },
+  "glossary": [
+    {
+      "term": "checkpointer",
+      "definition": "A built-in database connection that automatically saves an agent's state after every node finishes running."
+    },
+    {
+      "term": "durable execution",
+      "definition": "The ability of a program to crash, restart, and pick up exactly where it left off without losing data."
+    },
+    {
+      "term": "superstep",
+      "definition": "One complete cycle in the graph\u2014when a node finishes its work and returns its state update."
+    }
+  ],
+  "hook": {
+    "scenario": "A developer writes 500 lines of custom Redis caching code to save a user's chat history with an agent.",
+    "question": "Is this massive block of custom database code necessary for agent persistence?"
+  },
+  "mental_model": {
+    "intuition": "Checkpointing is like a video game auto-save that triggers only when you finish a level.",
+    "description": "If you die in the middle of a level, you lose all the coins you collected in that level. You restart at the last auto-save. Agent checkpointers work the same way: they only save the state when a node completely finishes its work (the level). They don't save continuously."
+  },
+  "sections": [
+    {
+      "body": "Real-world agents crash, hit API limits, or need to wait for humans. If your agent is stateless, a crash means losing all progress. To fix this, we use **durable execution**. In frameworks like LangGraph, this is handled natively by a **checkpointer**.",
+      "recap": "Checkpointers save an agent's state so it can pause and resume later."
+    },
+    {
+      "body": "You do not need to build a custom caching layer to save sessions. Modern frameworks compile persistence directly into the graph. By passing a simple `checkpointer` object (like a Postgres database connection) when building the graph, the state is automatically serialized and saved to the database.",
+      "recap": "Frameworks handle state persistence natively; you don't need custom caching logic."
+    },
+    {
+      "body": "Every saved state is tied to a specific **Thread ID**. This is how the agent knows which user it is talking to. When you invoke the graph, you pass the `thread_id` in the config. The framework instantly loads the past state from the database and resumes.",
+      "recap": "Thread IDs securely separate and retrieve concurrent user sessions."
+    },
+    {
+      "body": "Prediction: A developer writes a single, massive agent node that makes 5 API calls in a row. It crashes on the 4th call. The developer assumes the checkpointer saved the first 3 calls. They are wrong. Checkpointers only save after a node *completely finishes* (a superstep). The mid-node progress is lost forever.",
+      "recap": "Checkpointers save snapshots after completed nodes, not continuously mid-execution."
+    }
+  ],
+  "animation": {
+    "type": "sequence",
+    "actors": [
+      {
+        "id": "node1",
+        "label": "Node A Runs"
+      },
+      {
+        "id": "save",
+        "label": "Auto-Save to DB"
+      },
+      {
+        "id": "crash",
+        "label": "Node B Crashes"
+      },
+      {
+        "id": "resume",
+        "label": "Resume from Node A"
+      }
+    ],
+    "steps": [
+      {
+        "from": "node1",
+        "to": "save",
+        "label": "Superstep complete"
+      },
+      {
+        "from": "save",
+        "to": "crash",
+        "label": "Starts Node B"
+      },
+      {
+        "from": "crash",
+        "to": "resume",
+        "label": "Restores state"
+      }
+    ]
+  },
+  "code_snippets": [
+    {
+      "title": "Resuming a graph automatically",
+      "language": "python",
+      "code": "# 1. We pass the thread ID in the config\nconfig = {\"configurable\": {\"thread_id\": \"user_123\"}}\n\n# 2. We invoke the graph with the new user message\n# Because we added a checkpointer when building the graph,\n# it automatically queries the DB for 'user_123' and loads the history.\nresponse = graph.invoke(\n    {\"messages\": [(\"user\", \"What was the first thing I said?\")]},\n    config=config\n)",
+      "explanation": "There is no manual database querying here. The framework's checkpointer intercepts the `thread_id`, fetches the state, injects it into the agent, and then saves the updated state back to the database when the run completes."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Building custom Redis caches for sessions",
+      "explanation": "Standard API development requires explicit caching for session memory. Modern agent frameworks compile persistence directly into the graph via checkpointers. Developers waste time writing custom serialization code, missing that simply passing `checkpointer=PostgresSaver()` handles the entire process natively."
+    },
+    {
+      "title": "Assuming checkpoints are continuous",
+      "explanation": "Checkpointers save a snapshot after every superstep (each node's completed execution), not continuously within a node. If a node fails mid-execution, work done inside the still-running node before its own completion is lost. It only resumes from the last completed node."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if a node crashes halfway through its execution?",
+      "answer": "Any progress made inside that specific node is lost. The checkpointer will resume the agent from the state saved at the end of the last fully completed node.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does an agent framework know which user's conversation history to load from the database?",
+      "answer": "By passing a `thread_id` in the configuration when invoking the graph. The checkpointer uses this ID to fetch the correct state.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it unnecessary to write custom JSON serialization logic to save an agent's memory to a database?",
+      "answer": "Because modern graph frameworks handle durable execution natively. By attaching a checkpointer to the graph, the state is automatically serialized and saved after every step.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A developer deploys an agent that reads a 100-page document and summarizes it. The agent crashes on page 99 and loses all its summaries. How should the architecture change?",
+      "company": "System Design",
+      "answer": "The developer likely put the entire 100-page loop inside a single node. Because checkpointers only save after a node completes, a crash destroys the mid-node data. They should refactor the loop into the graph itself, so each page processed represents a node completion (a superstep), triggering a durable checkpoint.",
+      "approach": "Understand that durable execution boundaries occur at the node level, not continuously."
+    },
+    {
+      "question": "How do agent frameworks differentiate state between thousands of concurrent users interacting with the same graph?",
+      "company": "System Design",
+      "answer": "Frameworks use a `thread_id` passed in the configuration for each run. The checkpointer automatically uses this ID to query the database, retrieve the specific user's isolated state, and save updates back to that exact thread.",
+      "approach": "Explain the role of thread IDs in multi-tenant state isolation."
+    }
+  ],
+  "sources": [
+    "https://reference.langchain.com/python/langgraph/checkpoints"
+  ]
+}

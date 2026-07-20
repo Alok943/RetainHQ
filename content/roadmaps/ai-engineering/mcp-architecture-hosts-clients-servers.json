@@ -1,0 +1,133 @@
+{
+  "slug": "mcp-architecture-hosts-clients-servers",
+  "title": "MCP Architecture: Hosts, Clients, and Servers",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "MCP Architecture: Hosts, Clients, and Servers Explained",
+    "description": "Understand the three-tier MCP architecture. Learn the strict differences between an MCP Host, an MCP Client, and an MCP Server to prevent routing errors."
+  },
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "mcp-integration-problem"
+    ],
+    "unlocks": [
+      "mcp-tools-resources-prompts"
+    ],
+    "appears_in": [
+      "Datacamp MCP Interview Guide"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "MCP Host",
+      "definition": "The top-level application (like Cursor or Claude Desktop) that initiates the process, holds the LLM, and manages the user interface."
+    },
+    {
+      "term": "MCP Client",
+      "definition": "An internal protocol object spawned by the Host that maintains a strict 1:1 JSON-RPC connection to exactly one MCP Server."
+    },
+    {
+      "term": "MCP Server",
+      "definition": "A lightweight, model-agnostic program that exposes data or tools over JSON-RPC, completely unaware of which LLM the Host is using."
+    }
+  ],
+  "hook": {
+    "scenario": "You're building an AI app that needs to search Jira, query Postgres, and read from GitHub. You create one 'MCP Client' object in your code and try to point it at all three servers. The protocol instantly throws routing errors.",
+    "question": "A developer tries to route traffic to three different MCP servers using a single instantiated MCP Client object and encounters protocol routing errors. What architectural rule did they break?"
+  },
+  "mental_model": {
+    "intuition": "The Host is the airport, the Client is a single boarding gate, and the Server is the specific plane.",
+    "description": "In standard web development, the user-facing app is the 'client'. MCP splits this. The user-facing app is the Host. The Host spawns multiple internal Clients. Each Client is a dedicated, isolated pipe that connects to exactly one Server. You cannot share one Client across multiple Servers. The Server itself is dumb: it just exposes tools and data. It doesn't run an LLM, and it doesn't care if the Host is using Claude or GPT-4."
+  },
+  "sections": [
+    {
+      "body": "MCP uses a strict three-tier architecture: Hosts, Clients, and Servers. The Host is your actual application—the thing the user sees. It holds the LLM API keys, manages the chat interface, and orchestrates the overall flow. Claude Desktop and Cursor are examples of Hosts.",
+      "recap": "The Host is the top-level application that manages the LLM and the user interface."
+    },
+    {
+      "body": "When the Host needs to connect to an MCP Server, it doesn't do it directly. Instead, it spawns an internal MCP Client. This Client's only job is to negotiate the strict JSON-RPC 2.0 lifecycle with one Server: initialization (where capability negotiation happens), operation (making tool/resource requests), and shutdown. The relationship is strictly 1:1.",
+      "recap": "An MCP Client maintains a strict 1:1 connection with a single MCP Server through a three-phase lifecycle."
+    },
+    {
+      "body": "This 1:1 rule prevents routing chaos. If a Host needs to talk to a Jira server, a GitHub server, and a Postgres server, the Host MUST instantiate three separate MCP Clients. Attempting to multiplex traffic to multiple servers through a single Client object violates the protocol and causes immediate errors.",
+      "recap": "One Host spawns many Clients; each Client connects to exactly one Server."
+    },
+    {
+      "body": "The MCP Server sits at the end of the line. It is completely model-agnostic. It does not run LLM inference, it does not hold OpenAI API keys, and it doesn't process natural language. It merely exposes structured data and functions, waiting to respond to the JSON-RPC requests issued by the Host's model.",
+      "recap": "Servers do not run LLMs; they just expose functions and data to the Host."
+    },
+    {
+      "body": "This separation of concerns means you can swap the LLM in the Host at any time without touching the Servers. The Servers remain lightweight, stateless tool-providers, while the Host retains all the intelligence and orchestration.",
+      "recap": "Separating Host intelligence from Server capability makes the system model-agnostic."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The broken mental model: 1-to-Many Client multiplexing",
+      "language": "python",
+      "code": "# WRONG: Attempting to share one client session across multiple servers\nasync with stdio_client(server1_params) as (read1, write1):\n    async with ClientSession(read1, write1) as session:\n        await session.initialize()\n        # Trying to route a second server through the same session object\n        await session.connect_to(server2_params)  # Pseudo-code: this does not exist!\n\n# The protocol enforces 1:1 isolation. A single session cannot route to multiple servers.",
+      "explanation": "Because a ClientSession manages a specific JSON-RPC lifecycle and capability state, pointing it at a second server is architecturally impossible. (API shape verified against MCP docs)"
+    },
+    {
+      "title": "The correct architecture: Host spawns multiple Clients",
+      "language": "python",
+      "code": "# CORRECT: The Host application orchestrates multiple isolated sessions\nasync def connect_to_servers():\n    # Instantiate separate, isolated clients for each capability\n    async with stdio_client(jira_params) as (read_j, write_j):\n        async with ClientSession(read_j, write_j) as jira_session:\n            await jira_session.initialize()\n            \n            async with stdio_client(github_params) as (read_g, write_g):\n                async with ClientSession(read_g, write_g) as github_session:\n                    await github_session.initialize()\n                    # The Host LLM routes to the correct session",
+      "explanation": "This maps exactly to the real python-sdk. The Host manages the aggregate capabilities, but the connections remain strictly isolated within their own contexts. (API shape verified against MCP docs)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing the Host with the Client",
+      "explanation": "Because standard web architecture calls the frontend the 'client', developers assume the application using the LLM is the MCP Client. Reality: The application is the Host. The Host spawns multiple internal protocol Clients, each maintaining an isolated 1:1 connection with a Server."
+    },
+    {
+      "title": "Assuming MCP Servers execute LLM inference",
+      "explanation": "Because they are often called 'AI Servers', developers attempt to pass LLM API keys to the server, expecting it to process prompts. Reality: MCP Servers are completely model-agnostic. They do not run inference; they solely expose functions and data, responding to JSON-RPC requests issued by the Host's model."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the structural difference between an MCP Host and an MCP Client?",
+      "answer": "The Host is the top-level application that holds the LLM and manages the user interface. The Client is an internal protocol object spawned by the Host to manage a 1:1 JSON-RPC connection with a single Server.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Can one client instance connect to multiple servers simultaneously?",
+      "answer": "No. The MCP architecture enforces a strict 1:1 relationship between a Client and a Server to manage the protocol lifecycle and prevent routing errors. A Host must spawn multiple Clients to talk to multiple Servers.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer attempts to pass an OpenAI API key to an MCP SQLite server, expecting the server to generate a summary of the database. Why won't this work?",
+      "answer": "MCP Servers do not perform LLM inference. They are model-agnostic endpoints that simply expose data and tools. The Host application is responsible for running the LLM and generating the summary based on the data the server returns.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A developer tries to route traffic to three different MCP servers using a single instantiated MCP Client object and encounters protocol routing errors. What architectural rule did they break?",
+      "answer": "They broke the strict 1:1 Client-to-Server rule. They should have instantiated three separate MCP Clients within their Host application, one for each Server.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What's the high-level architecture of MCP?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "MCP uses a three-tier architecture consisting of Hosts, Clients, and Servers. The Host (like an AI IDE) manages the user and the LLM. It spawns internal Clients. Each Client establishes a strict 1:1 connection with a single Server, which exposes specific data or tools without knowing anything about the LLM being used.",
+      "approach": "Break it down into the three tiers. Emphasize that the Host orchestrates, the Client connects, and the Server provides."
+    },
+    {
+      "question": "What is the difference between an MCP server and an MCP client?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "An MCP Client is a protocol object that initiates and manages a JSON-RPC session. An MCP Server sits at the other end of that connection, exposing capabilities (tools, resources). Crucially, one Client connects to exactly one Server, and the Server never executes LLM inference itself.",
+      "approach": "Highlight the 1:1 connection rule and clarify that the Server is a 'dumb' capability provider, while the Client is the active connection manager."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/specification/2025-11-25"
+  ]
+}

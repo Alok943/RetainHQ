@@ -1,0 +1,103 @@
+{
+  "slug": "agent-trace-normalization-for-evals",
+  "title": "Normalizing Agent Traces Before Scoring",
+  "roadmap": "ai-engineering",
+  "kind": "concept",
+  "tier": "tier2",
+  "runtime": "python",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "agent-eval-harnesses-and-scoring"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Trace normalization pipeline",
+      "LLM-as-judge evaluation harness"
+    ]
+  },
+  "overview": {
+    "what": "Converting raw, messy agent execution logs\u2014including retries, tool errors, and framework-specific formatting\u2014into a clean, standardized schema before passing them to a grading system.",
+    "why": "Feeding an unedited execution transcript to an LLM judge causes it to grade inconsistently. Normalization isolates the actual decisions and outcomes, preventing the grader from penalizing agents for irrelevant noise.",
+    "where_used": [
+      "Building LLM-as-judge evaluation harnesses",
+      "Comparing traces from different agent frameworks (e.g., LangGraph vs. custom ReAct loop)",
+      "Corpus-level trace diagnostic tooling"
+    ]
+  },
+  "why_learning_this": [
+    "You will understand why feeding an unfiltered execution trace to an LLM judge leads to brittle, unreliable evaluations.",
+    "You will learn to extract signal (system prompt, terminal state) from noise (retries, framework formatting) to ensure fair cross-run grading."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Raw transcript is gradeable",
+      "explanation": "You can hand an LLM judge the complete, unedited execution transcript (every retry, every failed tool call, every internal planning token) and trust it to correctly identify what actually happened. In reality, graders should evaluate 'what the agent produced, not the path it took'. Unfiltered path detail makes graders inconsistent and penalizes agents for irrelevant noise."
+    },
+    {
+      "title": "Traces are format-uniform",
+      "explanation": "Every agent framework's execution trace already comes in one consistent shape, so a single grading prompt template works across any agent you evaluate. In reality, different frameworks emit different raw event shapes (tool_use blocks vs. function_call objects). Traces must be imported through adapters into one shared schema before any cross-run comparison or scoring is meaningful."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "A developer's agent retries a flaky search tool 4 times before succeeding on the 5th call. What happens when the raw, unfiltered trace is fed directly to an LLM judge?",
+      "answer": "The LLM judge scores the run inconsistently across repeated grading passes, sometimes penalizing it for the 4 failed attempts and sometimes not.",
+      "why": "Nothing in the raw trace tells the judge those attempts are temporary environmental noise rather than a core logic failure. Unfiltered detail confuses the grader, requiring the trace to be reduced to a canonical shape first."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "A team reuses the same LLM-judge grading prompt they built for their LangGraph agent on a new agent built directly on the Anthropic Messages API. The judge silently misparses the new trace's tool-call fields and produces scores that look plausible but are grading the wrong spans. Why?",
+      "answer": "Different frameworks and providers emit different raw event shapes for the same logical step (e.g., `tool_use` blocks vs. `function_call` objects).",
+      "why": "Without normalizing the two frameworks' traces into the same shape first, the grading prompt is essentially reading the wrong structure, leading to silent failures and meaningless cross-run comparisons."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Design a Canonical Trace Schema",
+      "prompt": "You are given a raw trace containing multiple tool-use retries and framework-specific metadata. Write a Python function `normalize_trace(raw_trace: dict) -> dict` that extracts only the `system_prompt`, `tool_schema`, `ordered_message_list` (stripping out failed retries), and `terminal_state` into a canonical dictionary.",
+      "starter_code": "def normalize_trace(raw_trace: dict) -> dict:\n    # Return canonical dict shape\n    pass",
+      "solution": "def normalize_trace(raw_trace: dict) -> dict:\n    canonical = {\n        'system_prompt': raw_trace.get('system', ''),\n        'tool_schema': raw_trace.get('tools', []),\n        'terminal_state': raw_trace.get('final_output', ''),\n        'ordered_message_list': []\n    }\n    for msg in raw_trace.get('messages', []):\n        if not msg.get('is_retry_noise', False):\n            canonical['ordered_message_list'].append(msg)\n    return canonical"
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why can't an LLM judge simply read the raw execution transcript of an agent run?",
+      "answer": "Raw transcripts contain noise such as retries, failed tool calls, and intermediate reasoning. This unfiltered path detail makes LLM judges inconsistent, penalizing agents for irrelevant noise rather than the outcome.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does 'normalizing' a trace into a canonical schema actually mean?",
+      "answer": "It means importing raw traces through framework-specific adapters and converting them into one shared schema (e.g., system prompt, tool schema, message list, terminal state) before scoring.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if a developer's agent retries a flaky search tool 4 times before succeeding, and the raw trace is given to an LLM judge?",
+      "answer": "The LLM judge will score the run inconsistently, sometimes penalizing the agent for the 4 failed attempts, because nothing in the raw trace indicates that those attempts were noise rather than a core failure.",
+      "tier": "tier2"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "def run_eval_pipeline(raw_trace: list):\n    # Stage 1: Normalize a raw provider-specific trace into a canonical shape\n    canonical_trace = {\n        'system_prompt': extract_system(raw_trace),\n        'tool_schema': extract_tools(raw_trace),\n        'ordered_message_list': filter_noise_and_retries(raw_trace),\n        'terminal_state': extract_final_output(raw_trace)\n    }\n    \n    # Stage 2: Feed only the canonical dict to the LLM-judge prompt\n    judge_prompt = f\"\"\"\n    Evaluate the agent based on its final state and key decisions.\n    System Context: {canonical_trace['system_prompt']}\n    Clean Execution Path: {canonical_trace['ordered_message_list']}\n    Final Output: {canonical_trace['terminal_state']}\n    \"\"\"\n    return llm_judge.score(judge_prompt)",
+    "focus": "The pipeline is two stages: stage 1 takes a raw provider-specific trace and maps it into a canonical dictionary, filtering out noise. Stage 2 feeds only that canonical shape to the LLM-judge, ensuring the judge evaluates a clean, normalized representation. Helper names are placeholders \u2014 the control flow is the point."
+  },
+  "aha_moment": {
+    "code": "# TEMPTING: Feed the raw trace directly to the judge.\ndef grade_agent_run(raw_trace):\n    # The judge sees 4 failed API retries and penalizes the agent.\n    return llm_judge.score(f'Evaluate this trace: {raw_trace}')",
+    "prediction": "The judge will grade the run inconsistently, penalizing the agent for environmental noise like retries.",
+    "common_guess": "The LLM judge can easily read the raw transcript and understand what happened.",
+    "why": "LLM graders should evaluate 'what the agent produced, not the path it took'. Unfiltered path detail makes graders inconsistent; traces must be reduced to a canonical shape first."
+  },
+  "sources": [
+    "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+    "https://docs.datadoghq.com/llm_observability/evaluations/custom_llm_as_a_judge_evaluations/trace_level_evaluations/",
+    "https://arxiv.org/abs/2605.21347"
+  ],
+  "seo": {
+    "title": "Agent Trace Normalization for LLM Evaluation",
+    "description": "Learn why normalizing LLM agent traces is crucial before scoring, and how to build a canonical trace schema for reliable agent evals."
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "slug": "mcp-vs-function-calling",
+  "title": "When to Use MCP vs Raw Function Calling",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "MCP vs Raw Function Calling: When to use which",
+    "description": "Understand the latency tradeoffs and architectural differences between standard LLM function calling and the Model Context Protocol."
+  },
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "function-tool-calling",
+      "mcp-integration-problem"
+    ],
+    "unlocks": [],
+    "appears_in": [
+      "Datacamp MCP Interview Guide"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "Raw Function Calling",
+      "definition": "The standard process of directly passing a hardcoded JSON schema to an LLM provider's API (e.g., in the OpenAI `tools` array) without any intermediary protocol."
+    },
+    {
+      "term": "JSON-RPC Negotiation",
+      "definition": "The multi-step handshake MCP uses to discover tools dynamically before the LLM can even be invoked."
+    }
+  ],
+  "hook": {
+    "scenario": "You're building a simple, single-purpose Slack bot that checks the weather. You decide to spin up a dedicated MCP server in a Docker container just to expose the weather API to your LLM, adding complexity and latency.",
+    "question": "A developer building a single-purpose weather chatbot decides to spin up a separate MCP server instance instead of passing the weather schema directly to the LLM. Why is this structurally inefficient?"
+  },
+  "mental_model": {
+    "intuition": "Raw function calling is a direct, hardcoded wire. MCP is a universal switchboard.",
+    "description": "You built the raw execution loop in the Function/tool calling lesson. You already know how to pass a JSON schema to `client.chat.completions.create`. MCP doesn't replace that underlying mechanism; it wraps it in a switchboard. MCP is built for runtime discovery and scaling across many models and tools. But if you have a closed, single-purpose app, that switchboard is just overhead. Direct APIs are faster and cheaper."
+  },
+  "sections": [
+    {
+      "body": "In standard function calling, you hardcode the schema and send it directly in the LLM's `tools` array. The model replies instantly with a tool call. It's a single network hop. It's extremely fast and requires zero extra infrastructure.",
+      "recap": "Raw function calling is a direct, single-hop integration with zero protocol overhead."
+    },
+    {
+      "body": "MCP introduces a negotiation handshake. Before the Host can invoke the LLM, it must send an `initialize` request to the MCP Server, wait for the response, send a `tools/list` request to discover capabilities, and wait for that response. Only then does it pass the schemas to the LLM.",
+      "recap": "MCP requires a multi-step JSON-RPC negotiation phase before inference begins."
+    },
+    {
+      "body": "This handshake means MCP inherently introduces latency. It is structurally impossible for MCP to be faster than a raw, direct function call. If a developer benchmarks an MCP server against a raw API call and sees a 50ms increase, the server isn't broken\u2014that is the mathematical reality of protocol negotiation.",
+      "recap": "MCP adds latency; it does not reduce it. Its benefit is architectural scalability, not execution speed."
+    },
+    {
+      "body": "So when does MCP earn its complexity? Scale. If you are building an open ecosystem (like an AI IDE) that needs to dynamically discover tools from third-party plugins at runtime, MCP is mandatory. If you are integrating 10 different tools across 4 different LLMs, the M\u00d7N integration problem justifies the switchboard.",
+      "recap": "MCP is for open ecosystems, runtime discovery, and massive multi-tool scale."
+    },
+    {
+      "body": "Conversely, if you are building a closed system\u2014like a dedicated customer support bot with exactly two internal APIs and one LLM\u2014you should use standard raw function calling. Adding an MCP server to a closed, single-purpose system is pure over-engineering.",
+      "recap": "For single-purpose, closed systems, raw function calling is definitively faster and cheaper."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "Raw Function Calling: The single network hop",
+      "language": "python",
+      "code": "# 1. You hardcode the schema\nweather_tool = {\n    \"type\": \"function\",\n    \"function\": {\"name\": \"get_weather\", \"parameters\": {...}}\n}\n\n# 2. One direct call to the LLM provider\nresponse = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=user_messages,\n    tools=[weather_tool]\n)",
+      "explanation": "Zero discovery overhead. You know the tool exists, you format it perfectly, and you send it directly to the model. This is the lowest possible latency."
+    },
+    {
+      "title": "The MCP overhead: Multi-step negotiation",
+      "language": "python",
+      "code": "# To get the same result, the Host must first negotiate:\n# 1. Host -> Server: initialize\n# 2. Server -> Host: initialize_result\n# 3. Host -> Server: tools/list\n# 4. Server -> Host: tools_result (containing the schemas)\n\n# 5. NOW the Host translates and calls the LLM provider\nresponse = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=user_messages,\n    tools=translated_mcp_tools\n)",
+      "explanation": "Steps 1 through 4 add network latency before the LLM even sees the prompt. This overhead is only justified if you don't know what tools are available until runtime."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming MCP replaces all function calling",
+      "explanation": "Because of industry hype, developers assume MCP is universally superior and should replace standard OpenAI function calling everywhere. Reality: MCP is built for runtime discovery and standardisation across many tools. For a single, closed-system integration, a direct API call with native function calling is structurally faster, cheaper, and less complex."
+    },
+    {
+      "title": "Expecting MCP to reduce LLM latency",
+      "explanation": "Developers assume standardisation equals performance optimization, expecting their LLM to generate faster because the tools use MCP. Reality: MCP actually introduces latency overhead due to the required negotiation handshakes (`initialize`, `tools/list`). If you see a latency increase when switching to MCP, your code isn't broken; that's the cost of the protocol."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What operational and latency overhead does the Model Context Protocol introduce compared to raw function calling?",
+      "answer": "MCP requires a multi-step JSON-RPC negotiation handshake (`initialize`, `tools/list`) to dynamically discover tools before the Host can invoke the LLM, adding distinct network latency steps.",
+      "tier": "tier1"
+    },
+    {
+      "q": "At what architectural scale does MCP explicitly earn its complexity?",
+      "answer": "MCP earns its complexity in open ecosystems (where tools must be discovered at runtime from third-party plugins) or at massive scale (where the M\u00d7N problem of integrating many models with many tools becomes unmanageable).",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer benchmarks an MCP server against a raw function call, sees a 50ms increase in latency with MCP, and assumes their server code is broken. Are they correct?",
+      "answer": "No. The server isn't broken. The 50ms latency increase is the mathematical reality of the protocol's required negotiation handshakes compared to a direct, hardcoded API call.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A developer building a single-purpose weather chatbot decides to spin up a separate MCP server instance instead of passing the weather API schema directly to the LLM's tool array. Why is this a poor architectural choice?",
+      "answer": "It is over-engineering. For a single, closed-system integration where the tools are known in advance, a direct API call with raw function calling is definitively faster, cheaper, and structurally simpler.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How is MCP different from a regular REST API?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "A regular REST API integration (like raw function calling) involves hardcoding the specific tool schema and sending it directly to the LLM in a single hop. MCP is a dynamic protocol that requires the client to negotiate a connection and actively query the server to discover its capabilities at runtime before translating them to the LLM.",
+      "approach": "Contrast hardcoded schemas (REST/Function Calling) with dynamic runtime discovery (MCP). Highlight the latency tradeoff."
+    },
+    {
+      "question": "When would you choose raw function calling over MCP?",
+      "company": "Datacamp MCP Interview Guide",
+      "answer": "I would choose raw function calling when building a single-purpose, closed system where all tools are known in advance (like a dedicated customer support bot). Implementing MCP in this scenario adds unnecessary negotiation latency and infrastructure overhead without providing the runtime discovery benefits that justify the protocol.",
+      "approach": "Highlight the overhead of MCP's negotiation handshakes. Position MCP as a solution for open ecosystems, not simple closed scripts."
+    }
+  ],
+  "sources": [
+    "https://modelcontextprotocol.io/docs/concepts/architecture"
+  ]
+}

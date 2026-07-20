@@ -1,0 +1,178 @@
+{
+  "slug": "agent-autonomy-spectrum",
+  "title": "Agent autonomy spectrum",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 12,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "react-reason-act"
+    ],
+    "unlocks": [
+      "state-machines-for-agents"
+    ],
+    "appears_in": [
+      "GenAI Engineer interview",
+      "System Design"
+    ]
+  },
+  "seo": {
+    "title": "Agent vs Workflow: The AI Autonomy Spectrum",
+    "description": "Learn the exact difference between an LLM router, a deterministic workflow, and an autonomous AI agent."
+  },
+  "glossary": [
+    {
+      "term": "workflow",
+      "definition": "A strict, step-by-step path written in normal code. The AI does exactly what you tell it, in order."
+    },
+    {
+      "term": "router",
+      "definition": "A script that uses an AI only to pick which strict path to take next."
+    },
+    {
+      "term": "agent",
+      "definition": "An AI that operates in a loop, deciding for itself which tools to use and when to stop."
+    }
+  ],
+  "hook": {
+    "scenario": "A developer writes a script that strictly calls a web-search tool, then passes the raw result to an AI for a summary.",
+    "question": "Is this an autonomous AI agent or just a basic workflow?"
+  },
+  "mental_model": {
+    "intuition": "A workflow is a train on a track. An agent is a self-driving car.",
+    "description": "If you know exactly what steps need to happen, you write a workflow (the track). The AI just processes data at stops along the way. If the steps are unknown and depend on what happens next, you build an agent (the car). The agent looks around, picks its own tools, and drives itself until the goal is met."
+  },
+  "sections": [
+    {
+      "body": "Not every app using an AI tool is an agent. A **workflow** (or chain) is a fixed path: Input → Tool → AI → Output. The code controls the order. You use this when the steps never change. **Determinism always beats AI guessing.** Use normal code if you know the exact path.",
+      "recap": "Workflows are strict, predictable, and run on rails."
+    },
+    {
+      "body": "A step up is a **router**. Here, you ask the AI to pick a track: 'Is this a billing question or a tech support question?' Based on the answer, your code triggers the strict billing workflow or the strict support workflow. The AI decides *which* track, but the code still drives.",
+      "recap": "Routers use the AI only for decision branching, not execution."
+    },
+    {
+      "body": "A true **agent** has operational autonomy. It uses the ReAct (Reason + Act) loop. The agent decides *which* tool to use, sees the result, and loops back to decide its *next* tool. It stops only when it believes the task is done. The path is highly unpredictable.",
+      "recap": "Agents decide their own sequence of tools in a recursive loop."
+    },
+    {
+      "body": "Prediction: A developer uses an AI to check if a number is greater than 10. Is this a good use of an agent? No. A simple Python `if number > 10:` is instant and perfect. Using an AI adds latency and a chance of failure to basic logic.",
+      "recap": "Never use an AI agent to replace a standard code statement; next you'll see how a state machine makes an agent's loop controllable."
+    }
+  ],
+  "animation": {
+    "type": "cycle",
+    "actors": [
+      {
+        "id": "model",
+        "label": "AI Model"
+      },
+      {
+        "id": "tool",
+        "label": "Tool Execution"
+      }
+    ],
+    "steps": [
+      {
+        "from": "model",
+        "to": "model",
+        "label": "decides what to do next",
+        "term": "Reason"
+      },
+      {
+        "from": "model",
+        "to": "tool",
+        "label": "picks tool to run",
+        "term": "Act"
+      },
+      {
+        "from": "tool",
+        "to": "model",
+        "label": "reads the result",
+        "term": "Observe"
+      }
+    ]
+  },
+  "code_snippets": [
+    {
+      "title": "A strict workflow (Not an agent)",
+      "language": "python",
+      "code": "def process_ticket(user_query):\n    # 1. Strict tool call\n    user_data = fetch_db_record(user_query)\n    \n    # 2. Strict AI call\n    summary = call_llm(prompt=f\"Summarize {user_data}\")\n    \n    return summary",
+      "explanation": "This is a basic chain. The AI has zero control over what happens or what order things happen in. It just summarizes the data handed to it. Helper names are placeholders — the control flow is the point."
+    },
+    {
+      "title": "A router (Branching workflow)",
+      "language": "python",
+      "code": "def route_ticket(user_query):\n    # AI decides the category\n    category = call_llm(prompt=\"Is this billing or support?\")\n    \n    if category == \"billing\":\n        return run_billing_workflow() # Strict path\n    else:\n        return run_support_workflow() # Strict path",
+      "explanation": "The AI acts as a smart traffic cop. It makes one decision, and then hands control back to standard, predictable code logic. Helper names are placeholders — the control flow is the point."
+    },
+    {
+      "title": "A true Agent loop (ReAct)",
+      "language": "python",
+      "code": "def run_agent(goal):\n    while True:\n        # AI decides the next step based on all history\n        action = call_llm_for_next_step(goal)\n        \n        if action == \"done\":\n            break\n            \n        # Code executes the AI's choice\n        execute_tool(action)",
+      "explanation": "This is a true agent. The AI completely controls the loop. It decides what tool to run, inspects the result, and loops again until it chooses to stop. Helper names are placeholders — the control flow is the point."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Workflow",
+      "detail": "The code completely decides the path; the AI just processes data at strict steps."
+    },
+    {
+      "title": "Router",
+      "detail": "The AI makes a single branching decision, but standard code executes the resulting path."
+    },
+    {
+      "title": "Agent",
+      "detail": "The AI decides its own sequence of actions in a continuous loop until the goal is met."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Calling any AI script an agent",
+      "explanation": "Marketing materials frequently brand simple RAG implementations or single-step tool calling as 'agentic workflows'. A true agent must have the autonomy to loop and pick its own tool sequence."
+    },
+    {
+      "title": "Replacing standard code with agents",
+      "explanation": "LLMs are probabilistic and slow. Deterministic logic (workflows) should always be used when the path is known. Agents are reserved exclusively for highly ambiguous tasks where the execution path cannot be predefined."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Explain the difference between a workflow and an agent in your own words, as if to a classmate.",
+      "answer": "A workflow is a strict list of steps written in code. An agent is an AI operating in a loop, picking its own steps and tools until the job is done.",
+      "tier": "tier1"
+    },
+    {
+      "q": "When should you use a static router instead of an autonomous agent?",
+      "answer": "Use a router when the possible paths are known and strict (like billing vs support). Only use an agent when the steps to solve the problem are completely unknown in advance.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer writes a script that strictly calls a web-search tool and passes the raw result to an LLM for summarization. Is this a multi-agent framework?",
+      "answer": "No. This is a basic, deterministic workflow or chain. The AI had no autonomy to choose the search tool or loop; it merely summarized the output.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "A team builds an agent to determine if an integer is greater than 10. What architectural mistake have they made?",
+      "company": "GenAI Engineer interview",
+      "answer": "They have used a slow, probabilistic AI model for a task that requires basic, deterministic code. Normal code should always be used for known logic; agents should be reserved for ambiguous tasks.",
+      "approach": "Identify the performance and reliability cost of using an LLM where an 'if' statement suffices."
+    },
+    {
+      "question": "How does the ReAct pattern fit into the autonomy spectrum?",
+      "company": "System Design interview",
+      "answer": "ReAct represents true autonomy. Unlike a chain or router, ReAct places the AI in a continuous reason-and-act loop where it controls the sequence of tools and the termination condition.",
+      "approach": "Define ReAct as the mechanism that elevates a system from a router to a fully autonomous agent."
+    }
+  ],
+  "sources": [
+    "https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/"
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "slug": "mcp-fastmcp-server-building",
+  "title": "Building Servers: The FastMCP Framework",
+  "roadmap": "ai-engineering",
+  "kind": "engineering",
+  "tier": "tier1",
+  "seo": {
+    "title": "Build an MCP Server in Python with FastMCP",
+    "description": "Learn how to build an MCP server in Python using the FastMCP framework. See how decorator syntax auto-generates JSON schemas for tools."
+  },
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "low",
+    "prerequisites": [
+      "mcp-tools-resources-prompts"
+    ],
+    "unlocks": [
+      "mcp-sampling-and-elicitation"
+    ],
+    "appears_in": []
+  },
+  "glossary": [
+    {
+      "term": "FastMCP",
+      "definition": "A high-level Python framework that abstracts away JSON-RPC boilerplate, allowing developers to build MCP servers using simple function decorators."
+    },
+    {
+      "term": "JSON Schema",
+      "definition": "A standard format for describing the structure of JSON data. FastMCP automatically generates this from Python type hints and docstrings."
+    },
+    {
+      "term": "Resource Template",
+      "definition": "A parameterized URI (like `user://{id}`) that allows a server to dynamically generate and serve resource content based on the client's request."
+    }
+  ],
+  "hook": {
+    "scenario": "You need to expose a complex `calculate_tax` function to an LLM. Historically, this meant spending an hour writing a massive, perfectly nested JSON Schema dictionary by hand, and hoping you didn't miss a bracket.",
+    "question": "A learner is asked to expose a `calculate_tax` function to an LLM. They start writing a complex nested JSON dictionary by hand. What modern Python feature should they use instead?"
+  },
+  "mental_model": {
+    "intuition": "FastMCP is like FastAPI, but for AI agents instead of web browsers.",
+    "description": "Building an MCP server from scratch requires manually handling JSON-RPC lifecycles, parsing incoming messages, and hand-writing massive JSON Schema definitions for every tool. FastMCP abstracts all of that away. You write standard Python functions with type hints and a docstring. You add an `@mcp.tool` decorator. FastMCP automatically reads your types and docstrings, generates the required JSON Schema, validates inputs, and handles all the network plumbing."
+  },
+  "sections": [
+    {
+      "body": "Before FastMCP, exposing a tool to an LLM required writing two things: the actual execution logic, and a massive JSON dictionary describing that logic. If your code changed, you had to manually update the JSON Schema. This was error-prone and tedious.",
+      "recap": "Manual JSON Schema generation is tedious and error-prone."
+    },
+    {
+      "body": "FastMCP solves this using Python's native type hints and docstrings. When you decorate a function with `@mcp.tool`, the framework inspects your code at runtime. It maps Python types (like `str` or `int`) directly to JSON Schema types, and it extracts your docstring to serve as the tool's description for the LLM.",
+      "recap": "FastMCP auto-generates JSON Schemas from Python type hints and docstrings."
+    },
+    {
+      "body": "This means your Python docstring is literally the prompt instruction payload the LLM reads. If you write a bad docstring, the LLM won't know how to use your tool. You must write docstrings for the AI, clearly explaining what the tool does and what the parameters mean.",
+      "recap": "Your Python docstring becomes the LLM's prompt instruction."
+    },
+    {
+      "body": "FastMCP also simplifies Resources. A basic Resource serves static text (like a config file). But what if you need to expose 10,000 user profiles? You shouldn't register 10,000 static resources. Instead, FastMCP supports Resource Templates.",
+      "recap": "Resources aren't just static files; they can be dynamically generated."
+    },
+    {
+      "body": "Using a parameterized URI template like `user://{id}`, you define a function that dynamically fetches and returns the correct profile whenever the Host requests a specific ID. The Host can list the templates, and the LLM (or user) can request dynamic data on demand.",
+      "recap": "Resource Templates use parameterized URIs to serve dynamic content."
+    }
+  ],
+  "code_snippets": [
+    {
+      "title": "The manual way (Don't do this)",
+      "language": "python",
+      "code": "# The old way: Hand-writing the JSON Schema\ntool_schema = {\n    \"name\": \"calculate_tax\",\n    \"description\": \"Calculates sales tax for a given amount.\",\n    \"inputSchema\": {\n        \"type\": \"object\",\n        \"properties\": {\n            \"amount\": {\"type\": \"number\", \"description\": \"The purchase amount\"}\n        },\n        \"required\": [\"amount\"]\n    }\n}",
+      "explanation": "This boilerplate is fragile. If you change the parameter name in your code, you must remember to update this schema manually, or the LLM will fail to call it."
+    },
+    {
+      "title": "The FastMCP way: Auto-generated schemas",
+      "language": "python",
+      "code": "from mcp.server.fastmcp import FastMCP\n\nmcp = FastMCP(\"TaxServer\")\n\n@mcp.tool()\ndef calculate_tax(amount: float) -> float:\n    \"\"\"Calculates sales tax for a given amount.\n    \n    Args:\n        amount: The purchase amount in USD.\n    \"\"\"\n    return amount * 0.08",
+      "explanation": "This is all you write. FastMCP reads the `float` type hint and the docstring to dynamically generate the exact JSON Schema shown above. The LLM reads your docstring to understand the tool."
+    },
+    {
+      "title": "Dynamic Resource Templates",
+      "language": "python",
+      "code": "@mcp.resource(\"user://{user_id}\")\ndef get_user_profile(user_id: str) -> str:\n    \"\"\"Fetch a user profile by ID.\"\"\"\n    # Imagine a database call here\n    return f\"Profile data for {user_id}\"",
+      "explanation": "Instead of crashing the server by registering 10,000 static resources, this template dynamically handles any request matching the `user://{user_id}` pattern."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Manually writing JSON Schemas",
+      "explanation": "Because direct OpenAI function calling historically required passing strict JSON Schema dictionaries, developers assume MCP requires the same boilerplate. Reality: FastMCP completely eliminates this by using Python type hints and standard docstrings to automatically generate the required JSON Schema at runtime."
+    },
+    {
+      "title": "Assuming Resources are only static",
+      "explanation": "Basic tutorials usually demonstrate resources by serving a hardcoded text file. Developers needing to expose thousands of records attempt to write a loop that registers a separate static resource for each one, crashing the server. Reality: FastMCP supports Resource Templates (e.g., `user://{id}`) to dynamically generate content on demand."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "How does FastMCP map native Python functions to compliant MCP tools?",
+      "answer": "FastMCP uses an `@mcp.tool` decorator. It inspects the function's type hints and docstring at runtime to automatically generate the compliant JSON-RPC tool schema and handle the network routing.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How are JSON Schemas generated dynamically without manual configuration?",
+      "answer": "FastMCP maps native Python type hints (like `float` or `str`) to JSON Schema types, and parses the function's docstring to populate the description fields that the LLM reads.",
+      "tier": "tier1"
+    },
+    {
+      "q": "A developer needs to expose 10,000 unique user profiles and attempts to write a script that registers 10,000 separate static resources, crashing the server. What should they use instead?",
+      "answer": "They should use a Resource Template. By using a parameterized URI (like `user://{id}`), a single function can dynamically generate and serve the specific profile requested by the client.",
+      "tier": "tier2"
+    },
+    {
+      "q": "A learner is asked to expose a `calculate_tax` function to an LLM. They spend 20 minutes writing a complex nested JSON dictionary. What is the modern FastMCP alternative?",
+      "answer": "Simply writing a standard Python function with type hints and a docstring, and decorating it with `@mcp.tool`. The framework generates the dictionary automatically.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How do you avoid writing manual JSON schemas when building an MCP server in Python?",
+      "company": "GenAI Engineer interview",
+      "answer": "You use a high-level framework like FastMCP. By applying the `@mcp.tool` decorator to a function, FastMCP uses Python's runtime reflection to read the type hints and docstrings, automatically generating the required JSON schema and input validation.",
+      "approach": "Mention the `@mcp.tool` decorator. Explain that type hints and docstrings are converted directly into the JSON Schema the LLM consumes."
+    },
+    {
+      "question": "How would you serve 10,000 unique user profiles as MCP resources without overloading the server?",
+      "company": "GenAI Engineer interview",
+      "answer": "Instead of statically registering 10,000 individual resources, I would use a Resource Template. By defining a parameterized URI like `user://{id}`, the FastMCP server can dynamically generate and serve the exact profile requested by the host at runtime.",
+      "approach": "Contrast static resources with dynamic Resource Templates. Mention parameterized URIs."
+    }
+  ],
+  "sources": [
+    "https://gofastmcp.com/tutorials/create-mcp-server"
+  ]
+}
