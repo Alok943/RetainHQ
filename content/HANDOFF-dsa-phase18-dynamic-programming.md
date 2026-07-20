@@ -96,6 +96,17 @@ URLs).
 **`concept` branch required fields:** `overview {what, why}`, `why_learning_this`, `common_mistakes`,
 `recall_questions`, `practice_tasks`, `understanding_checks` (**≥2**), `sources`.
 
+**Exact shapes `validate.py` enforces (get these wrong and it errors):**
+- `why_learning_this` / `common_mistakes` / `recall_questions` / `practice_tasks` / `sources` must each
+  be a **non-empty list**. Every `sources[i]` must be a string starting with `http`.
+- `recall_questions[i]` must be an object with **both `q` and `answer`** non-empty.
+- `understanding_checks[i]` must have **all four** of `type`, `question`, `answer`, `why` non-empty, and
+  **`type` must be one of exactly:** `predict-output`, `predict-result`, `explain-behavior`, `find-bug`,
+  `choose-model`, `debug-misconception`. No other value validates.
+- `runtime: "none"` on concept nodes skips the `code_walkthrough` requirement.
+- Note: `mental_model.repeated_decision` is enforced by the validator only on lessons that HAVE a `viz`
+  block. Pass-1 lessons have no `viz`, so it won't error — but write it anyway, Pass 2 needs it.
+
 ### Phase-wide rules (these are what make DP lessons correct, not just "recursion with a cache")
 
 1. **Every trace node states its recurrence in plain text before any code/table.** e.g. `dp[i] =
@@ -418,9 +429,15 @@ hand-traceable, matching each lesson's hand-trace exactly.
 | `longest-increasing-subsequence` | 1D array | array family, `READ_CELL`-equivalent scan-back per index | the O(n^2) inner scan checking each earlier smaller element, then the max update |
 | `grid-dp-unique-paths-min-path-sum` | 2D grid | `GRID_INIT`, `FILL_CELL`, `READ_CELL` | each cell built from its up-neighbor + left-neighbor, filling row by row |
 
-`GRID_INIT { rows, cols, values? }` first for all 4 grid generators (2D DP nodes reuse the exact
-n-queens infra — no new ops needed, confirmed working). 1D nodes reuse `ARRAY_INIT`/`WRITE`/`VAR` (the
-array family already proven by `kadane.js`).
+`GRID_INIT { rows, cols, values? }` first for all 4 grid generators (2D DP nodes reuse the n-queens grid
+infra — confirmed working). 1D nodes reuse `WRITE`/`VAR` (the array family, already proven by
+`kadane.js`).
+
+> **There is NO `ARRAY_INIT` op** — the array family is
+> `['COMPARE','SWAP','MOVE','WRITE','SPLIT','MERGE_DONE','POINT','SET','WINDOW','MARK','DONE']`, and
+> `compile(input, events)` seeds `state.array` from its `input` argument. A generator returns
+> `{ input, events }`; the initial array comes from `input`, not from an init event. The GRID family
+> is different — it DOES need `GRID_INIT` as its first event.
 
 **Goldens:** determinism; one frame per event; per-algorithm — final `dp` value/table matches a
 hand-computed answer for each of the 8; knapsack/LCS/edit-distance grids match a hand-filled table
@@ -435,7 +452,7 @@ delete/replace tags render distinct colors, 1D rolling values update live, no co
 - Pass 1: touch only `content/roadmaps/dsa/*.json`, `content/_TODO-dsa.md`, and the new
   `content/RESEARCH-dsa-phase18-dynamic-programming.md`. No `viz`/`animation`/`image` in lesson JSON.
 - Pass 2: touch only `frontend/src/dsa/generators/*` + `registry.js`. Do not edit `compile.js`,
-  `events.js`, `predict.js`, or any renderer — this phase needs none of that (confirmed working infra).
+  `events.js`, `predict.js`, or any renderer — that is Pass 0, Claude-owned shared contract.
 - No commits, no pushes, no DB/seed changes.
 - If the spec fights reality, implement the closest faithful version and FLAG it in
   `content/REPORT-dsa-phase18.md` — do not silently redesign.

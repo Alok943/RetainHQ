@@ -19,13 +19,14 @@ in `content/_TODO-dsa.md` as each file lands green.
 
 ---
 
-## The 8 nodes (slugs EXACT from `_TODO-dsa.md`; difficulty is Claude's best-first call — `seed_dsa.py`
-does not have phase 20 nodes yet, that's separate Claude-side wiring)
+## The 8 nodes (slugs EXACT from `_TODO-dsa.md`; titles/difficulty from `backend/seed_dsa.py`, which
+already defines all 8 under phase `"Algorithm Design Patterns"`, sections `Approach` / `Recognize` /
+`Capstone` — do NOT invent difficulties, they are authoritative there)
 
 | slug | title | kind | difficulty |
 |---|---|---|---|
 | `brute-force-first` | Brute force first | **C** concept | easy |
-| `precomputation` | Precomputation | **C** concept | easy |
+| `precomputation` | Precomputation | **C** concept | **medium** |
 | `recognizing-divide-and-conquer` | Recognizing divide & conquer | **C** concept | medium |
 | `recognizing-two-pointers` | Recognizing two pointers | **C** concept | medium |
 | `recognizing-sliding-window` | Recognizing sliding window | **C** concept | medium |
@@ -62,6 +63,19 @@ shape of `content/roadmaps/dsa/what-is-an-algorithm.json` and sets **`runtime: "
 
 **`concept` branch required fields:** `overview {what, why}`, `why_learning_this`, `common_mistakes`,
 `recall_questions`, `practice_tasks`, `understanding_checks` (**≥2**), `sources`.
+
+**Exact shapes `validate.py` enforces — this phase is 8/8 concept nodes, so these apply to EVERY file
+here; getting the `understanding_checks` type enum wrong is the most likely way this phase fails
+validation:**
+- `why_learning_this` / `common_mistakes` / `recall_questions` / `practice_tasks` / `sources` must each
+  be a **non-empty list**. Every `sources[i]` must be a string starting with `http`.
+- `recall_questions[i]` must be an object with **both `q` and `answer`** non-empty.
+- `understanding_checks[i]` must have **all four** of `type`, `question`, `answer`, `why` non-empty, and
+  **`type` must be one of exactly:** `predict-output`, `predict-result`, `explain-behavior`, `find-bug`,
+  `choose-model`, `debug-misconception`. No other value validates. For a recognition phase, the natural
+  fits are **`choose-model`** (which pattern applies here?) and **`debug-misconception`** (why is the
+  tempting-but-wrong pattern wrong?) — lean on those two.
+- `runtime: "none"` skips the `code_walkthrough` requirement — that's why no node here needs one.
 
 ### Phase-wide rules (what makes this phase land, not just recap)
 
@@ -240,6 +254,8 @@ forward).
 ---
 
 > **After phase 20, the DSA roadmap's content is complete (110 nodes across 20 phases).** Remaining work
-> at that point is entirely Claude-side viz/infra (any Pass 0/Pass 2 items still open across phases
-> 14-19) and the standing `seed_dsa.py` wiring gap noted in every phase 17-20 table above (none of these
-> phases' nodes are in `seed_dsa.py` yet — a batch Claude-side task, not per-phase).
+> at that point is entirely Claude-side viz/infra — the Pass 0 contract fixes still open across phases
+> 16 (graph, 6 defects), 17 (interval tag key, 1 line), 18 (dp reducer + derives, 4 items) and 19 (bits
+> frame contract, 5 defects), plus their Pass 2 generators. `seed_dsa.py` already defines all 110 nodes
+> including phases 17-20, so there is **no seed wiring gap** — only the lesson JSON and the viz pipeline
+> are outstanding.

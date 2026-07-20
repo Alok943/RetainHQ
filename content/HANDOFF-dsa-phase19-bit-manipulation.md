@@ -24,13 +24,14 @@ Tick boxes in `content/_TODO-dsa.md` as each file lands green.
 
 ---
 
-## The 3 nodes (slugs EXACT from `_TODO-dsa.md`; difficulty is Claude's best-first call — `seed_dsa.py`
-does not have phase 19 nodes yet, that's separate Claude-side wiring)
+## The 3 nodes (slugs EXACT from `_TODO-dsa.md`; titles/difficulty from `backend/seed_dsa.py`, which
+already defines all 3 under phase `"Bit Manipulation"`, sections `Basics` / `Tricks` — do NOT invent
+difficulties, they are authoritative there)
 
 | slug | title | kind | difficulty | generator (pass 2) |
 |---|---|---|---|---|
 | `bitwise-operators` | Bitwise operators | **C** concept | easy | — (`runtime:"none"`) |
-| `single-number-xor` | Single number (XOR) | **D** dsa | medium | `single-number-xor` |
+| `single-number-xor` | Single number (XOR) | **D** dsa | **easy** | `single-number-xor` |
 | `counting-bits` | Counting bits | **D** dsa | medium | `counting-bits` |
 
 **Build order:** `bitwise-operators` FIRST and thoroughly — every trace node assumes AND/OR/XOR/shift are
@@ -63,6 +64,15 @@ with a hand-trace **on binary strings, not decimal**), `common_mistakes` (≥1),
 
 **`concept` branch required fields:** `overview {what, why}`, `why_learning_this`, `common_mistakes`,
 `recall_questions`, `practice_tasks`, `understanding_checks` (**≥2**), `sources`.
+
+**Exact shapes `validate.py` enforces (get these wrong and it errors):**
+- `why_learning_this` / `common_mistakes` / `recall_questions` / `practice_tasks` / `sources` must each
+  be a **non-empty list**. Every `sources[i]` must be a string starting with `http`.
+- `recall_questions[i]` must be an object with **both `q` and `answer`** non-empty.
+- `understanding_checks[i]` must have **all four** of `type`, `question`, `answer`, `why` non-empty, and
+  **`type` must be one of exactly:** `predict-output`, `predict-result`, `explain-behavior`, `find-bug`,
+  `choose-model`, `debug-misconception`. No other value validates.
+- `runtime: "none"` on concept nodes skips the `code_walkthrough` requirement.
 
 ### Phase-wide rules
 
