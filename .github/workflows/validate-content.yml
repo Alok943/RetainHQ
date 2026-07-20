@@ -1,0 +1,30 @@
+name: Validate content
+
+# Gates the two content validators (both pure stdlib, no installs) on any
+# change under content/ — the "existing content gate" that
+# SPEC-career-coach-phase2.md §3.1 assumed was already wired into CI. It
+# wasn't; this is that wiring, for both the lesson content and the new
+# career-template validator.
+
+on:
+  push:
+    paths:
+      - "content/**"
+  pull_request:
+    paths:
+      - "content/**"
+  workflow_dispatch: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate lesson content
+        run: python content/validate.py
+      - name: Validate career templates
+        run: python content/validate_career_templates.py

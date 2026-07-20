@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from './lib/theme';
 import { apiFetch } from './lib/api';
+import { useClassrooms } from './lib/ClassroomsContext';
 import { useToast } from './lib/ToastContext';
 import { getPushState, subscribePush, unsubscribePush, isPushSupported } from './lib/push';
 import { track, EVENTS } from './lib/analytics';
@@ -17,12 +18,8 @@ function Profile() {
   const [savingAudience, setSavingAudience] = useState(false);
   const [pushState, setPushState] = useState(null); // null = loading
   const [pushBusy, setPushBusy] = useState(false);
-  const [classrooms, setClassrooms] = useState(null); // { teaching, enrolled }
+  const { classrooms, refresh: loadClassrooms } = useClassrooms(); // { teaching, enrolled }
   const toast = useToast();
-
-  const loadClassrooms = () => {
-    apiFetch('/api/classrooms/mine').then(setClassrooms).catch(() => {});
-  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -30,7 +27,6 @@ function Profile() {
     });
     apiFetch('/api/prefs/').then((p) => setAudience(p.audience)).catch(() => {});
     getPushState().then(setPushState);
-    loadClassrooms();
   }, []);
 
   const handleLeaveClassroom = async (classroomId, name) => {

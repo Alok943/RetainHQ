@@ -1,0 +1,23 @@
+# RetainHQ
+
+> Spaced-repetition and active-recall learning platform for developers.
+> RetainHQ measures what you still remember, not just what you completed —
+> it schedules each review right before you'd forget, so knowledge sticks.
+
+RetainHQ's core loop: log a learning activity, capture the one key memory
+that matters, and let an FSRS-based scheduler time your reviews. A library
+of interactive lessons (Python, SQL, DSA, aptitude, core CS, physics) feeds
+cards into that loop.
+
+## Product
+
+- [Homepage](https://retainhq.app/): overview, core loop, sign-in
+- [Roadmaps](https://retainhq.app/roadmaps): browsable lesson roadmaps by subject
+
+## Notes for agents
+
+- The app is a client-rendered React SPA; most routes require sign-in
+  (Google OAuth) and render no meaningful content to an unauthenticated
+  crawler beyond the homepage.
+- Lesson content lives under versioned JSON roadmaps and is not directly
+  crawlable outside the app UI.

@@ -8,25 +8,34 @@
 //  - **No Session Replay.** Errors sampleRate 1.0, traces 0.1.
 //
 // Supply VITE_SENTRY_DSN (+ optional VITE_SENTRY_RELEASE) to turn it on.
-import * as Sentry from '@sentry/react';
-
+//
+// @sentry/react is loaded via dynamic import() rather than a static import:
+// this file's captureError export is statically imported by ErrorBoundary.jsx
+// and AuthContext.jsx, both eager, so a static `import * as Sentry` here would
+// pull the whole SDK into the entry chunk regardless of when initErrorTracking()
+// runs. The dynamic import lets Rolldown split it into its own chunk, fetched
+// only once initErrorTracking() actually executes (deferred to idle in main.jsx).
 const DSN = import.meta.env.VITE_SENTRY_DSN;
 const RELEASE = import.meta.env.VITE_SENTRY_RELEASE;
 
+let Sentry = null;
 let enabled = false;
 
 export function initErrorTracking() {
   if (enabled || !DSN) return; // no DSN → stay a no-op
-  Sentry.init({
-    dsn: DSN,
-    environment: import.meta.env.PROD ? 'production' : 'development',
-    release: RELEASE,
-    sampleRate: 1.0,
-    tracesSampleRate: 0.1,
-    sendDefaultPii: false,
-    integrations: [], // no Session Replay, no extra auto-instrumentation
+  import('@sentry/react').then((mod) => {
+    Sentry = mod;
+    Sentry.init({
+      dsn: DSN,
+      environment: import.meta.env.PROD ? 'production' : 'development',
+      release: RELEASE,
+      sampleRate: 1.0,
+      tracesSampleRate: 0.1,
+      sendDefaultPii: false,
+      integrations: [], // no Session Replay, no extra auto-instrumentation
+    });
+    enabled = true;
   });
-  enabled = true;
 }
 
 export function captureError(err, ctx) {

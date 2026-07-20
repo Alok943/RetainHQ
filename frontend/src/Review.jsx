@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb, Bell, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Brain, Sparkles, Lightbulb, Bell, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 import { useTheme } from './lib/theme';
@@ -146,6 +146,15 @@ function Review({ onBack }) {
     localStorage.setItem('reviewDepth', d);
   };
 
+  const [focusedQIndex, setFocusedQIndex] = useState(0);
+  const [expandedNotes, setExpandedNotes] = useState({});
+  const [expandRevisionNote, setExpandRevisionNote] = useState(false);
+  const [expandSubtopics, setExpandSubtopics] = useState(false);
+  // Correctly-answered questions collapse to a one-line row by default — post-
+  // reveal attention belongs on what was genuinely wrong, not a re-read of
+  // answers already known. Click a row to re-expand it.
+  const [expandedCorrect, setExpandedCorrect] = useState({});
+
   useEffect(() => {
     if (!session) {
       setLoading(false);
@@ -190,6 +199,11 @@ function Review({ onBack }) {
     setCanonicalAnswers([]);
     setQResult(null);
     setLoadingQuestions(false);
+    setFocusedQIndex(0);
+    setExpandedNotes({});
+    setExpandRevisionNote(false);
+    setExpandSubtopics(false);
+    setExpandedCorrect({});
   };
 
   // Question mode: when a new card surfaces, try to fetch grounded questions.
@@ -380,7 +394,7 @@ function Review({ onBack }) {
   if (loading) {
     return (
       <div className="flex flex-col h-full w-full max-w-3xl mx-auto p-4 md:p-8 bg-[#f9f9f6]">
-        <header className="flex flex-col gap-4 mb-8">
+        <header className="flex flex-col gap-3 mb-5">
           <div className="flex items-center justify-between">
             <div className="skeleton h-4 w-36" />
             <div className="skeleton h-3.5 w-10" />
@@ -388,7 +402,7 @@ function Review({ onBack }) {
           <div className="skeleton h-3 w-48" />
           <div className="skeleton h-1 w-full rounded-full" />
         </header>
-        <main className="flex-1 flex flex-col justify-center gap-8 mb-8">
+        <main className="flex-1 flex flex-col justify-center mb-4">
           <div className="kinetic-card min-h-[300px] flex flex-col px-6 md:px-10 py-10 relative shadow-sm border-[rgba(15,23,42,0.12)]">
             <div className="skeleton h-3 w-16 mb-4" />
             <div className="skeleton h-8 w-2/3 mb-6" />
@@ -396,7 +410,7 @@ function Review({ onBack }) {
             <div className="skeleton h-24 w-full rounded-lg mt-2" />
           </div>
         </main>
-        <footer className="w-full flex justify-center pb-8">
+        <footer className="w-full flex justify-center pb-4">
           <div className="w-full flex flex-col sm:flex-row gap-3 justify-center">
             <div className="skeleton h-12 flex-1 max-w-[180px] rounded-lg" />
             <div className="skeleton h-12 flex-1 md:max-w-[260px] rounded-lg" />
@@ -455,7 +469,7 @@ function Review({ onBack }) {
     <div className="flex flex-col h-full w-full max-w-3xl mx-auto p-4 md:p-8 bg-[#f9f9f6]">
 
       {/* Header & Progress */}
-      <header className="flex flex-col gap-4 mb-8">
+      <header className="flex flex-col gap-3 mb-5">
         <div className="flex items-center justify-between">
           <button
             onClick={onBack}
@@ -482,73 +496,90 @@ function Review({ onBack }) {
       </header>
 
       {/* Card */}
-      <main className="flex-1 flex flex-col justify-center gap-8 mb-8">
-        <div className="kinetic-card min-h-[300px] flex flex-col px-6 md:px-10 py-10 relative shadow-sm border-[rgba(15,23,42,0.12)]">
-          <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-4 flex items-center gap-1.5">
+      <main className="flex-1 flex flex-col justify-center mb-4">
+        <div className="kinetic-card min-h-[220px] flex flex-col px-5 md:px-8 py-5 md:py-7 relative shadow-sm border-[rgba(15,23,42,0.12)]">
+          <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-3 flex items-center gap-1.5">
             <Brain size={13} /> Recall
           </div>
 
           {/* Cue = the topic */}
-          <h2 className="font-sans text-2xl md:text-3xl font-semibold text-[#0F172A] leading-tight">
+          <h2 className="font-sans text-2xl md:text-3xl font-semibold text-[#0F172A] leading-tight mb-2">
             {activity.topic}
           </h2>
 
-          {/* Why this card today — the schedule must never feel like a black box. */}
-          <p className="font-sans text-xs text-[#64748B] mt-2">{whyDueLine(activity)}</p>
+          {/* Meta row: Why due + Depth toggle */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
+            <p className="font-sans text-xs text-[#64748B]">{whyDueLine(activity)}</p>
+            {!revealed && !questionModeOff && canonicalAnswers.length === 0 && (
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-xs text-[rgba(15,23,42,0.3)]">|</span>
+                <span className="font-sans text-xs text-[#64748B]">Revise:</span>
+                <div className="flex items-center gap-0.5 bg-[rgba(15,23,42,0.05)] rounded-lg p-0.5">
+                  {[['main', 'Main points'], ['deep', 'Deep']].map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => changeDepth(key)}
+                      disabled={loadingQuestions}
+                      className={`font-sans text-[11px] px-2 py-0.5 rounded-md transition-colors disabled:opacity-60 ${
+                        depth === key
+                          ? 'bg-white text-[#0F172A] font-semibold shadow-sm'
+                          : 'text-[#64748B] hover:text-[#0F172A]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {!revealed ? (
             /* ---------- RECALL GATE: commit before reveal ---------- */
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <Hint id="review_recall_gate">
                 Pulling it from memory is the workout — write what you remember before
                 you peek, even if it's rough. That effort is what makes it stick.
               </Hint>
 
-              {/* How do you want to revise? Explicit depth choice (remembered).
-                  Hidden for lesson cards — their recall questions are curated content. */}
-              {!questionModeOff && canonicalAnswers.length === 0 && (
-                <div className="flex items-center gap-2 self-start">
-                  <span className="font-sans text-xs text-[#64748B]">Revise:</span>
-                  <div className="flex items-center gap-0.5 bg-[rgba(15,23,42,0.05)] rounded-lg p-0.5">
-                    {[['main', 'Main points'], ['deep', 'Deep']].map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => changeDepth(key)}
-                        disabled={loadingQuestions}
-                        className={`font-sans text-xs px-2.5 py-1 rounded-md transition-colors disabled:opacity-60 ${
-                          depth === key
-                            ? 'bg-white text-[#0F172A] font-semibold shadow-sm'
-                            : 'text-[#64748B] hover:text-[#0F172A]'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {questionMode ? (
                 /* Question mode: answer each grounded question from memory. */
-                <div className="flex flex-col gap-5">
-                  {questions.map((q, i) => (
-                    <div key={i} className="flex flex-col gap-2">
-                      <label className="font-sans text-sm font-medium text-[#0F172A]">
-                        <span className="font-mono text-xs text-[#0891B2] mr-2">{i + 1}.</span>
-                        {q}
-                      </label>
-                      <textarea
-                        value={qAnswers[i] ?? ''}
-                        onChange={(e) =>
-                          setQAnswers((prev) => prev.map((a, j) => (j === i ? e.target.value : a)))
-                        }
-                        rows={2}
-                        autoFocus={i === 0}
-                        placeholder="Your answer from memory…"
-                        className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
-                      />
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-3">
+                  {questions.map((q, i) => {
+                    const isFocused = i === focusedQIndex;
+                    const hasAnswer = (qAnswers[i] ?? '').trim().length > 0;
+                    if (!isFocused) {
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setFocusedQIndex(i)}
+                          className="flex items-start gap-2 text-left bg-white border border-[rgba(15,23,42,0.1)] hover:border-[rgba(15,23,42,0.2)] rounded-lg px-4 py-3 transition-colors"
+                        >
+                          <span className="font-mono text-xs text-[#0891B2] mt-0.5 shrink-0">{i + 1}.</span>
+                          <span className="font-sans text-sm text-[#0F172A] line-clamp-1 flex-1">{q}</span>
+                          {hasAnswer && <CheckCircle2 size={16} className="text-[#0F766E] shrink-0 mt-0.5" />}
+                        </button>
+                      );
+                    }
+                    return (
+                      <div key={i} className="flex flex-col gap-2 p-1">
+                        <label className="font-sans text-sm font-medium text-[#0F172A] flex items-start gap-2 mb-1">
+                          <span className="font-mono text-xs text-[#0891B2] mt-0.5 shrink-0">{i + 1}.</span>
+                          <span className="flex-1">{q}</span>
+                        </label>
+                        <textarea
+                          value={qAnswers[i] ?? ''}
+                          onChange={(e) =>
+                            setQAnswers((prev) => prev.map((a, j) => (j === i ? e.target.value : a)))
+                          }
+                          rows={4}
+                          autoFocus
+                          placeholder="Your answer from memory…"
+                          className="w-full resize-none rounded-lg border border-[rgba(15,23,42,0.15)] bg-white px-4 py-3 font-sans text-sm text-[#0F172A] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/20"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : loadingQuestions && !questionModeOff ? (
                 /* Brief while we check for question mode (only stalls the first card
@@ -572,14 +603,38 @@ function Review({ onBack }) {
             </div>
           ) : (
             /* ---------- REVEAL: their attempt vs the stored answer ---------- */
-            <div className="mt-6 flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="mt-4 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {questionMode ? (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   <div className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest">Your answers</div>
                   {questions.map((q, i) => {
                     const item = qResult?.items?.find((it) => it.question === q) ?? null;
+                    // Genuinely-wrong (or ungraded — grader off/unavailable) items stay
+                    // fully expanded, since that's where attention belongs. Correct ones
+                    // collapse to a one-line row so a good session doesn't re-litigate
+                    // what's already known; click to re-expand if wanted.
+                    const isCorrect = item?.correct === true;
+                    const isOpen = !isCorrect || expandedCorrect[i];
+
+                    if (!isOpen) {
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setExpandedCorrect((prev) => ({ ...prev, [i]: true }))}
+                          className="flex items-center gap-2 text-left bg-[#0F766E]/[0.04] hover:bg-[#0F766E]/[0.08] rounded px-3 py-2 transition-colors"
+                        >
+                          <span className="font-mono text-xs text-[#0891B2] shrink-0">{i + 1}.</span>
+                          <span className="font-sans text-sm text-[#0F172A] line-clamp-1 flex-1">{q}</span>
+                          <span className="shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#0F766E]/10 text-[#0F766E]">
+                            Got it
+                          </span>
+                          <ChevronRight size={14} className="text-[#64748B] shrink-0" />
+                        </button>
+                      );
+                    }
+
                     return (
-                      <div key={i} className="bg-[rgba(15,23,42,0.03)] rounded p-3">
+                      <div key={i} className="bg-[rgba(15,23,42,0.03)] rounded p-2.5">
                         <p className="font-sans text-sm font-medium text-[#0F172A] flex items-start gap-2">
                           <span className="font-mono text-xs text-[#0891B2] mt-0.5">{i + 1}.</span>
                           <span className="flex-1">{q}</span>
@@ -590,6 +645,16 @@ function Review({ onBack }) {
                             <span className={`shrink-0 font-sans text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.correct ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-[#ba1a1a]/10 text-[#ba1a1a]'}`}>
                               {item.correct ? 'Got it' : 'Missed'}
                             </span>
+                          )}
+                          {isCorrect && (
+                            <button
+                              onClick={() => setExpandedCorrect((prev) => ({ ...prev, [i]: false }))}
+                              aria-label="Collapse"
+                              title="Collapse"
+                              className="shrink-0 text-[#64748B] hover:text-[#0F172A] mt-0.5"
+                            >
+                              <ChevronDown size={14} />
+                            </button>
                           )}
                         </p>
                         <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed mt-1.5 whitespace-pre-wrap">
@@ -603,7 +668,20 @@ function Review({ onBack }) {
                           </p>
                         )}
                         {item?.note && (
-                          <p className="font-sans text-xs text-[#64748B] mt-1.5">{item.note}</p>
+                          <div className="mt-2">
+                            <button
+                              onClick={() => setExpandedNotes({...expandedNotes, [i]: !expandedNotes[i]})}
+                              className="flex items-center gap-1 font-sans text-xs font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors"
+                            >
+                              {expandedNotes[i] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                              {expandedNotes[i] ? 'Hide note' : 'View note…'}
+                            </button>
+                            {expandedNotes[i] && (
+                              <p className="font-sans text-sm text-[#64748B] mt-1.5 pl-2 border-l-2 border-[rgba(15,23,42,0.1)] leading-relaxed">
+                                {item.note}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     );
@@ -618,7 +696,7 @@ function Review({ onBack }) {
                 </div>
               )}
 
-              <div className="pt-4 border-t border-[rgba(15,23,42,0.08)]">
+              <div className="pt-3 border-t border-[rgba(15,23,42,0.08)]">
                 <div className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5 flex items-center gap-1">
                   <CheckCircle2 size={12} /> Key Memory
                 </div>
@@ -626,7 +704,7 @@ function Review({ onBack }) {
               </div>
 
               {activity.mistake && (
-                <div className="bg-[rgba(180,83,9,0.06)] border border-[#B45309]/20 rounded p-4">
+                <div className="bg-[rgba(180,83,9,0.06)] border border-[#B45309]/20 rounded p-3">
                   <div className="font-sans text-[11px] font-bold text-[#B45309] uppercase tracking-widest mb-1.5 flex items-center gap-1">
                     <AlertTriangle size={12} /> Previous Mistake
                   </div>
@@ -639,8 +717,8 @@ function Review({ onBack }) {
       </main>
 
       {/* Controls */}
-      <footer className="w-full flex justify-center pb-8">
-        {!revealed ? (
+      {!revealed ? (
+        <footer className="w-full flex justify-center pb-4">
           <div className="w-full flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={handleSkip}
@@ -658,47 +736,95 @@ function Review({ onBack }) {
               <span className="hidden md:inline font-mono text-[10px] opacity-70 ml-2">Ctrl+↵</span>
             </button>
           </div>
-        ) : (
-          <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {/* AI grade proposal — instantly reserves space with a minimum height. */}
-            {(grading || aiResult || qResult) && (
-              <div className="w-full mb-4 rounded-xl border border-[#0891B2]/30 border-l-4 border-l-[#0891B2] bg-[#0891B2]/[0.07] p-4 shadow-sm min-h-[96px]">
-                <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
-                  <Sparkles size={12} /> AI feedback
-                </div>
-                {grading ? (
-                  <div className="flex flex-col gap-2.5 mt-3">
-                    <div className="skeleton h-3 w-4/5" />
-                    <div className="skeleton h-3 w-2/3" />
-                  </div>
-                ) : questionMode && qResult ? (
-                  <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{qResult.feedback}</p>
-                ) : aiResult ? (
-                  <>
-                    <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed">{aiResult.feedback}</p>
-                    {aiResult.revision_note && (
-                      <div className="mt-3 pt-3 border-t border-[#0891B2]/15">
-                        <div className="font-sans text-[10px] font-bold text-[#0891B2] uppercase tracking-widest mb-1.5">
-                          Revision note
+        </footer>
+      ) : (
+        <>
+          {/* Detail content — normal scrolling flow. */}
+          <footer className="w-full flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="w-full flex flex-col items-center">
+              {/* AI grade proposal — one line attached to outcomes */}
+              {(grading || aiResult || qResult) && (
+                <div className="w-full mb-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles size={16} className="text-[#0891B2] shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      {grading ? (
+                        <div className="flex flex-col gap-2.5 mt-1">
+                          <div className="skeleton h-3 w-4/5" />
+                          <div className="skeleton h-3 w-2/3" />
                         </div>
-                        <p className="font-sans text-sm text-[#1a1c1b] leading-relaxed whitespace-pre-line">
-                          {aiResult.revision_note}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ) : null}
-              </div>
-            )}
+                      ) : (
+                        <>
+                          <p className="font-sans text-sm font-medium text-[#0F172A] leading-relaxed">
+                            {questionMode ? qResult?.feedback : aiResult?.feedback}
+                          </p>
+                          {aiResult?.revision_note && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => setExpandRevisionNote(!expandRevisionNote)}
+                                className="flex items-center gap-1 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0e7490] transition-colors"
+                              >
+                                {expandRevisionNote ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                {expandRevisionNote ? 'Hide revision note' : 'View revision note…'}
+                              </button>
+                              {expandRevisionNote && (
+                                <p className="font-sans text-sm text-[#64748B] mt-2 pl-3 border-l-2 border-[#0891B2]/20 leading-relaxed whitespace-pre-line">
+                                  {aiResult.revision_note}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            <div className="w-full mb-4 mt-2">
+              {/* Suggested adjacent topics — collapsed by default. */}
+              {relatedSubtopics.length > 0 && (
+                <div className="w-full mb-1">
+                  <button
+                    onClick={() => setExpandSubtopics(!expandSubtopics)}
+                    className="flex items-center gap-2 font-sans text-sm font-semibold text-[#8B5CF6] hover:text-[#7c3aed] transition-colors w-full text-left px-2 py-2 rounded-lg hover:bg-[#8B5CF6]/[0.04]"
+                  >
+                    <Lightbulb size={14} className="shrink-0" />
+                    <span className="flex-1">{relatedSubtopics.length} related topic{relatedSubtopics.length > 1 ? 's' : ''} to explore</span>
+                    {expandSubtopics ? <ChevronDown size={14} className="text-[#64748B]" /> : <ChevronRight size={14} className="text-[#64748B]" />}
+                  </button>
+                  {expandSubtopics && (
+                    <div className="flex flex-col gap-3 mt-2 pl-4 border-l-2 border-[#8B5CF6]/20 mb-2">
+                      {relatedSubtopics.map((s, i) => (
+                        <div key={i} className="flex flex-col">
+                          <span className="font-sans text-sm font-semibold text-[#0F172A]">{s.title}</span>
+                          {s.explainer && (
+                            <span className="font-sans text-xs text-[#64748B] leading-relaxed mt-0.5">{s.explainer}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </footer>
+
+          {/* Sticky action bar — a DIRECT CHILD of the root column (not nested
+              inside the small footer wrapper above): position:sticky is bounded
+              by its own parent's box, so it needs a TALL containing block (the
+              full header+main+footer height) to have room to pin at the bottom
+              of the viewport. The outcome buttons must always be reachable, no
+              matter how much detail (a mistake note, hints, subtopics) sits
+              above them. */}
+          <div className="sticky bottom-0 z-10 w-full bg-[#f9f9f6] pt-2 pb-3 border-t border-[rgba(15,23,42,0.08)]">
+            <div className="w-full mb-2 mt-2">
               <Hint id="review_honest_rating">
                 Easy = you won't see this for weeks · Good = normal spacing · Hard = comes back soon · Missed = back tomorrow.
               </Hint>
             </div>
-            
-            <h3 className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest mb-4">How did it go?</h3>
-            <div className="flex flex-col md:flex-row gap-4 w-full mb-6">
+
+            <h3 className="font-sans text-xs font-semibold text-[#64748B] uppercase tracking-widest mb-2">How did it go?</h3>
+            <div className="flex flex-col md:flex-row gap-3 w-full">
               <div className="flex-1 flex flex-col md:border-r border-[rgba(15,23,42,0.08)] md:pr-4">
                 {(() => {
                   const o = OUTCOMES[0]; // Missed it
@@ -710,7 +836,7 @@ function Review({ onBack }) {
                       disabled={submitting}
                       title="Press 1"
                       style={{ borderColor: outcomeBorder(o), color: outcomeColor(o) }}
-                      className={`kinetic-btn relative bg-white border p-3 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
+                      className={`kinetic-btn relative bg-white border p-2.5 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; e.currentTarget.querySelector('p').style.color = 'rgba(255,255,255,0.8)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = outcomeColor(o); e.currentTarget.querySelector('p').style.color = '#64748B'; }}
                     >
@@ -738,7 +864,7 @@ function Review({ onBack }) {
                       disabled={submitting}
                       title={`Press ${i + 2}`}
                       style={{ borderColor: outcomeBorder(o), color: outcomeColor(o) }}
-                      className={`kinetic-btn relative bg-white border p-3 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
+                      className={`kinetic-btn relative bg-white border p-2.5 flex flex-col items-center justify-center transition-colors disabled:opacity-50 h-full ${isSuggested ? 'ring-2 ring-[#0891B2] ring-offset-1' : ''}`}
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = o.color; e.currentTarget.style.color = '#ffffff'; e.currentTarget.querySelector('p').style.color = 'rgba(255,255,255,0.8)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = outcomeColor(o); e.currentTarget.querySelector('p').style.color = '#64748B'; }}
                     >
@@ -757,29 +883,9 @@ function Review({ onBack }) {
                 })}
               </div>
             </div>
-
-            {/* Suggested adjacent topics — distinct accent so they stand out from the
-                feedback above. A nudge to capture these next, never part of the grade. */}
-            {relatedSubtopics.length > 0 && (
-              <div className="w-full rounded-xl border border-[#8B5CF6]/30 border-l-4 border-l-[#8B5CF6] bg-[#8B5CF6]/[0.06] p-4 mt-2">
-                <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold text-[#8B5CF6] uppercase tracking-widest mb-2.5">
-                  <Lightbulb size={12} /> Worth exploring next
-                </div>
-                <div className="flex flex-col gap-2.5">
-                  {relatedSubtopics.map((s, i) => (
-                    <div key={i} className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold text-[#0F172A]">{s.title}</span>
-                      {s.explainer && (
-                        <span className="font-sans text-xs text-[#64748B] leading-relaxed">{s.explainer}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        )}
-      </footer>
+        </>
+      )}
     </div>
   );
 }

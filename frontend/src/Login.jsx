@@ -166,6 +166,7 @@ function Login() {
           </div>
         </nav>
 
+        <main>
         {/* ---------- Hero ---------- */}
         <section className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center pt-8 md:pt-12 pb-10">
           {/* Left — problem-first, revealed left → right */}
@@ -377,7 +378,7 @@ function Login() {
                   <div className="w-12 h-12 rounded-xl bg-[#0891B2]/10 border border-[#0891B2]/20 flex items-center justify-center text-[#22D3EE] group-hover:scale-105 transition-transform">
                     {f.icon}
                   </div>
-                  <span className="font-mono text-xs text-[#475569]">0{i + 1}</span>
+                  <span className="font-mono text-xs text-[#7c839b]">0{i + 1}</span>
                 </div>
                 <h3 className="font-sans text-lg font-semibold text-white mb-1">{f.title}</h3>
                 <p className="font-sans text-sm text-[#9aa3b8] leading-relaxed">{f.body}</p>
@@ -398,6 +399,7 @@ function Login() {
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
         </section>
+        </main>
 
       </div>
     </div>

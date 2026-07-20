@@ -179,3 +179,48 @@ These rules came out of reviewing the gold reference — they apply to EVERY les
 - Does every `section` have a `recap`-worthy single idea, and does the LAST recap place the node in the bigger pipeline?
 - Reference only images that are on `_TODO-images.md` (exact filename); never invent an `asset` key.
 - Single quotes inside strings so they nest in JSON.
+
+---
+
+## AGENTIC BATCH — research-grounded authoring (26 lessons, 2026-07)
+
+The agentic expansion (phases: Model Context Protocol · Agent Architectures · Agent Reliability ·
+Agent Security · Agent Memory) is authored against a per-lesson research file:
+**`content/research/agentic-ai-curriculum.json`** (26 objects, keyed by `slug`). Every claim in it was
+source-verified 2026-07-17; it OUTRANKS your general knowledge — where your training memory disagrees
+with the research object, follow the research or flag it, never silently substitute. Rules on top of
+the base contract above:
+
+1. **Look up your lesson's object first.** `core_questions` = what the lesson must answer (your
+   sections must cover all of them). `code_moment` describes the code_snippet that makes it land —
+   implement that one, don't invent a different demo.
+2. **`misconceptions` are the spine.** Each becomes (a) a `common_mistakes` entry and (b) where marked,
+   the lesson's prediction rung: the `predict_moment` field is a ready-made `hook.question` or
+   predict-style recall item — use its concrete situation verbatim-ish, don't water it down.
+   One misconception is marked `-unsourced` (multi-agent handoff); keep it only if you can phrase it
+   as "a tempting assumption" rather than a documented error.
+3. **`docs_truth` = your sources, weighted by `authority`.** `spec`/`official-sdk-docs` claims can be
+   stated flatly; `vendor-docs` claims name the vendor ("LangGraph's checkpointer..."); `none-exists`
+   topics hedge ("current practice, still settling"). Put the URLs in `sources`. Do NOT cite anything
+   outside the object's docs_truth without checking it resolves.
+4. **`churn_risk` shapes the code.** For `medium`/`high` lessons: concepts in prose, API surfaces only
+   inside code_snippets, and name the version/date where it matters ("as of the 2025-11-25 spec").
+   `mcp-sampling-and-elicitation` is HIGH churn (a 2026-07 spec RC replaces elicitation/create —
+   see its docs_truth): teach the concept, mark the wire format as in-flux.
+5. **`overlaps_existing` = extend, don't re-teach.** Treat the named existing lesson as a hard
+   prerequisite: link to it in the teach ("you built this loop in Function/tool calling"), start at
+   the delta. Duplicating its content is a critic-fail.
+6. **`seo` feeds the SEO block.** Author a top-level `"seo": {"title", "description"}` on every
+   agentic lesson: title ≤60 chars built around `seo.primary_phrase`, description ≤158 chars folding
+   in one alternate phrasing. (Same mechanism as docs/SEO-IMPLEMENTATION.md P0-B.)
+7. **Evergreen guard.** Framework names appear as application layers only; no lesson may depend on a
+   viral tool of the moment. If the research names a tool as trend evidence, it is NOT a topic.
+
+## RUNNABLE-CLAIMS RULE (all batches, added 2026-07-18)
+**Never assert a specific program output, token split, token count, or API response you did not
+actually generate by running the code.** Both a human-committed and a rewritten version of
+tokens-and-tokenization shipped fabricated tokenizer splits stated as fact; the critic caught them
+only by executing tiktoken. If a snippet's comment claims an output (`# Output is 8`), that number
+must come from a real run — otherwise write the claim as approximate ("about", "typically") or drop
+it. Same rule for SDK surfaces: an import path or class you cannot point to in the real package's
+docs is pseudo-code and must be either fixed or explicitly captioned as an illustrative shape.

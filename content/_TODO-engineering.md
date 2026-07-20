@@ -16,7 +16,7 @@ Validate after each batch: `python content/validate.py` (must end `All content v
 ---
 
 ## LLM Foundations (6)
-- [ ] `tokens-and-tokenization` — Tokens & tokenization · easy · *prereq: —* · the unit of billing + limits
+- [x] `tokens-and-tokenization` — Tokens & tokenization · easy · *prereq: —* · the unit of billing + limits
 - [ ] `context-window` — Context window · easy · *prereq: tokens-and-tokenization*
 - [ ] `temperature-and-top-p` — Temperature & top-p · easy · *prereq: tokens-and-tokenization* · the "temp 0 ≠ fully deterministic" gotcha
 - [ ] `embeddings` — Embeddings · medium · *prereq: tokens-and-tokenization* · unlocks the whole RAG/vector track
@@ -75,3 +75,48 @@ Validate after each batch: `python content/validate.py` (must end `All content v
   function-tool-calling, tool-use-and-the-call-loop, streaming-responses. Skip animation elsewhere.
 - After generating, run validate, then the frontend `predev`/`prebuild` sync copies to `public/` and
   refreshes the sitemap automatically.
+
+---
+
+## Agentic expansion (26) — kind: "engineering", research-gated batch (2026-07-17)
+
+Contract: base `PROMPT-engineering.md` + its **AGENTIC BATCH** section. Per-lesson ground truth:
+`content/research/agentic-ai-curriculum.json` (keyed by slug — READ YOUR LESSON'S OBJECT FIRST).
+Mission brief: `content/HANDOFF-agentic-ai.md`. Node titles below are in `backend/seed_ai_engineering.py`
+and slugify exactly to these slugs — do not rename either side alone.
+
+### Model Context Protocol (8) — AUTHOR FIRST (SEO priority: "mcp server" > "langchain" in Trends)
+- [x] `mcp-integration-problem` — MCP integration problem · easy
+- [x] `mcp-architecture-hosts-clients-servers` — MCP architecture: hosts, clients, servers · medium
+- [x] `mcp-tools-resources-prompts` — MCP tools, resources & prompts · medium
+- [x] `mcp-transports-stdio-http` — MCP transports: stdio & HTTP · medium
+- [x] `mcp-fastmcp-server-building` — MCP: FastMCP server building · medium
+- [x] `mcp-sampling-and-elicitation` — MCP sampling and elicitation · hard · **HIGH churn — see research object**
+- [x] `mcp-vs-function-calling` — MCP vs function calling · medium · *extends function-tool-calling*
+- [x] `mcp-observability-and-logging` — MCP observability and logging · medium · *extends observability-traces-logging*
+
+### Agent Architectures (6)
+- [x] `agent-autonomy-spectrum` — Agent autonomy spectrum · easy
+- [x] `state-machines-for-agents` — State machines for agents · medium
+- [x] `multi-agent-orchestration-patterns` — Multi-agent orchestration patterns · medium
+- [x] `when-multi-agent-underperforms` — When multi-agent underperforms · medium
+- [x] `agent-checkpointing-and-resumability` — Agent checkpointing & resumability · medium
+- [x] `human-in-the-loop-interrupts` — Human-in-the-loop interrupts · medium
+
+### Agent Reliability (5)
+- [x] `agent-trajectory-vs-outcome-evals` — Agent trajectory vs outcome evals · medium · *extends evaluation-and-test-sets*
+- [x] `agent-eval-harnesses-and-scoring` — Agent eval harnesses and scoring · hard
+- [x] `agent-trace-normalization-for-evals` — Agent trace normalization for evals · hard
+- [x] `agent-failure-taxonomy` — Agent failure taxonomy · medium
+- [x] `runaway-agent-protection` — Runaway agent protection · medium · *extends cost-and-latency-budgeting*
+
+### Agent Security (5)
+- [x] `indirect-prompt-injection-tool-results` — Indirect prompt injection: tool results · medium · *extends prompt-injection*
+- [x] `mcp-tool-poisoning` — MCP tool poisoning · medium
+- [x] `mcp-confused-deputy-attacks` — MCP confused deputy attacks · hard
+- [x] `agent-least-privilege-and-consent` — Agent least privilege and consent · medium · *extends guardrails-and-validation*
+- [x] `agent-tool-execution-sandboxing` — Agent tool execution sandboxing · hard
+
+### Agent Memory (2)
+- [x] `agent-state-pruning-and-compaction` — Agent state pruning and compaction · medium · *extends memory-short-and-long-term*
+- [x] `agent-memory-as-tools` — Agent memory as tools · medium · *extends memory-short-and-long-term*

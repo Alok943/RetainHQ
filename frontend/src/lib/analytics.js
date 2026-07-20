@@ -10,11 +10,17 @@
 //    recording, identify by pseudonymous user id only (NO email/PII by default).
 //
 // Supply VITE_POSTHOG_KEY (+ optional VITE_POSTHOG_HOST) to turn it on.
-import posthog from 'posthog-js';
-
+//
+// posthog-js is loaded via dynamic import() rather than a static import: this
+// file's exports (pageview/trackOnce/EVENTS) are statically imported by App.jsx,
+// which is eager, so a static `import posthog from 'posthog-js'` here would pull
+// the whole SDK into the entry chunk regardless of when initAnalytics() runs.
+// The dynamic import lets Rolldown split it into its own chunk, fetched only
+// once initAnalytics() actually executes (deferred to idle in main.jsx).
 const KEY = import.meta.env.VITE_POSTHOG_KEY;
 const HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 
+let posthog = null;
 let enabled = false;
 
 // The curated event vocabulary — the core-loop funnel. Keep this small: every
@@ -62,15 +68,18 @@ export const EVENTS = {
 
 export function initAnalytics() {
   if (enabled || !KEY) return; // no key → stay a no-op
-  posthog.init(KEY, {
-    api_host: HOST,
-    autocapture: false,           // we send explicit events, not a firehose
-    capture_pageview: false,      // SPA: pageviews fired manually on route change
-    capture_pageleave: true,      // needed for Web Analytics bounce rate / session duration
-    persistence: 'localStorage',  // cookieless
-    disable_session_recording: true,
+  import('posthog-js').then(({ default: ph }) => {
+    posthog = ph;
+    posthog.init(KEY, {
+      api_host: HOST,
+      autocapture: false,           // we send explicit events, not a firehose
+      capture_pageview: false,      // SPA: pageviews fired manually on route change
+      capture_pageleave: true,      // needed for Web Analytics bounce rate / session duration
+      persistence: 'localStorage',  // cookieless
+      disable_session_recording: true,
+    });
+    enabled = true;
   });
-  enabled = true;
 }
 
 export function track(event, props) {
