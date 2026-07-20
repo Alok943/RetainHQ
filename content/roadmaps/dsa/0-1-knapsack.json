@@ -9,8 +9,13 @@
     "estimated_minutes": 30,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": ["coin-change"],
-    "unlocks": ["longest-common-subsequence", "edit-distance"],
+    "prerequisites": [
+      "coin-change"
+    ],
+    "unlocks": [
+      "longest-common-subsequence",
+      "edit-distance"
+    ],
     "project_usage": []
   },
   "why_it_exists": {
@@ -22,10 +27,16 @@
     "description": "Let `dp[i][w]` be the maximum value achievable using the first `i` items with exactly capacity `w`. The recurrence is `dp[i][w] = max(dp[i-1][w], value[i] + dp[i-1][w - weight[i]])`. If the item is heavier than `w`, `dp[i][w] = dp[i-1][w]`. The row index `i-1` in the include-branch is critical: it enforces that an item can be used at most once.",
     "repeated_decision": "For this item, does taking it (its value + the best answer for the remaining capacity, EXCLUDING this item from future consideration) beat leaving it out?"
   },
-  "explanation": "This is the classic 2D 'choice + constraint' Dynamic Programming problem.\n\nImagine tracing 3 items on a small grid. By moving row by row, we build up answers for 1 item, then 2 items, etc. \nBecause `dp[i][w]` only ever looks up at the previous row `i-1` (either directly above, or up and to the left by `weight[i]`), this enforces the 0/1 constraint. We never look at the *current* row when adding a new item, which prevents us from taking the same item multiple times.\n\nBecause we only need the previous row, we can space-optimize from an O(n*W) matrix to a single 1D array of size `W`. However, when updating this single row, we must iterate right-to-left. If we iterated left-to-right, we might read a freshly-updated value that already includes the current item, accidentally double-counting it.",
+  "explanation": "This is the classic 2D 'choice + constraint' DP problem.\n\nLet `dp[i][w]` mean: the best value using the first `i` items with a knapsack of capacity `w` -- that is, using total weight AT MOST `w`, not exactly `w`. The recurrence is:\n- `dp[i][w] = max(dp[i-1][w], value[i] + dp[i-1][w - weight[i]])` when `weight[i] <= w`\n- `dp[i][w] = dp[i-1][w]` otherwise.\n\nLet's trace 3 items: Item 1 `(w=1, v=1)`, Item 2 `(w=3, v=4)`, Item 3 `(w=4, v=5)` with `W=6`. We fill row by row, where `dp[0][*]` is 0.\n- **Row 1 (w=1, v=1):** Fits everywhere `w >= 1`. So `dp[1][1..6] = 1`.\n- **Row 2 (w=3, v=4):** For `w=1..2`, it doesn't fit, so we copy above: `dp[2][1]=1`, `dp[2][2]=1`. For `w=3`, we take `max(skip:1, take:4+dp[1][0]) = 4`. For `w=4`, we take `max(skip:1, take:4+dp[1][1]) = 5`. It stays 5 for `w=5,6`.\n- **Row 3 (w=4, v=5):** For `w=4`, `max(skip:dp[2][4], take:5+dp[2][0]) = max(5, 5) = 5`. For `w=5`, `max(skip:dp[2][5], take:5+dp[2][1]) = max(5, 5+1) = 6`. For `w=6`, `max(skip:dp[2][6], take:5+dp[2][2]) = max(5, 5+1) = 6`.\n\nNote a crucial contrast: Fractional Knapsack allows taking parts of an item, so a simple greedy approach (highest value-to-weight ratio first) works perfectly. But here in 0/1 Knapsack where items are indivisible, greedy fails, which is why we must systematically check these combinations using DP.\n\nBecause `dp[i][w]` only ever looks up at the previous row `i-1`, we never take the same item multiple times. This allows us to space-optimize to a 1D array by iterating capacities right-to-left.",
   "key_points": [
-    { "title": "Complexity", "detail": "O(n*W) time and space, where `W` is the capacity. Space can be optimized to O(W) using a rolling array." },
-    { "title": "The 0/1 Constraint", "detail": "Using `dp[i-1][...]` instead of `dp[i][...]` ensures items are not reused. This distinguishes it from unbounded knapsack." }
+    {
+      "title": "Complexity",
+      "detail": "O(n*W) time and space, where `W` is the capacity. Space can be optimized to O(W) using a rolling array."
+    },
+    {
+      "title": "The 0/1 Constraint",
+      "detail": "Using `dp[i-1][...]` instead of `dp[i][...]` ensures items are not reused. This distinguishes it from unbounded knapsack."
+    }
   ],
   "common_mistakes": [
     {
@@ -68,7 +79,9 @@
       "approach": "Identify the mechanism that enforces the constraint (the row index) and modify it to allow reuse."
     }
   ],
-  "related": ["unbounded-knapsack"],
+  "related": [
+    "unbounded-knapsack"
+  ],
   "sources": [
     "https://en.wikipedia.org/wiki/Knapsack_problem",
     "https://www.geeksforgeeks.org/0-1-knapsack-problem-dp-10/"
