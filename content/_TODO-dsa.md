@@ -138,20 +138,20 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Jump game  · D · `jump-game`
 
 ## 18. Dynamic Programming
-- [ ] Overlapping subproblems  · C · `overlapping-subproblems`
-- [ ] Optimal substructure  · C · `optimal-substructure`
-- [ ] State & transition  · C · `state-and-transition`
-- [ ] Memoization (top-down)  · C · `memoization-top-down`
-- [ ] Tabulation (bottom-up)  · C · `tabulation-bottom-up`
-- [ ] Space optimization  · C · `space-optimization`
-- [ ] Climbing stairs / Fibonacci  · D · `climbing-stairs-fibonacci`
-- [ ] House robber  · D · `house-robber`
-- [ ] Coin change  · D · `coin-change`
-- [ ] 0/1 Knapsack  · D · `0-1-knapsack`
-- [ ] Longest common subsequence  · D · `longest-common-subsequence`
-- [ ] Edit distance  · D · `edit-distance`
-- [ ] Longest increasing subsequence  · D · `longest-increasing-subsequence`
-- [ ] Grid DP (unique paths / min path sum)  · D · `grid-dp-unique-paths-min-path-sum`
+- [x] Overlapping subproblems  · C · `overlapping-subproblems`
+- [x] Optimal substructure  · C · `optimal-substructure`
+- [x] State & transition  · C · `state-and-transition`
+- [x] Memoization (top-down)  · C · `memoization-top-down`
+- [x] Tabulation (bottom-up)  · C · `tabulation-bottom-up`
+- [x] Space optimization  · C · `space-optimization`
+- [x] Climbing stairs / Fibonacci  · D · `climbing-stairs-fibonacci`
+- [x] House robber  · D · `house-robber`
+- [x] Coin change  · D · `coin-change`
+- [x] 0/1 Knapsack  · D · `0-1-knapsack`
+- [x] Longest common subsequence  · D · `longest-common-subsequence`
+- [x] Edit distance  · D · `edit-distance`
+- [x] Longest increasing subsequence  · D · `longest-increasing-subsequence`
+- [x] Grid DP (unique paths / min path sum)  · D · `grid-dp-unique-paths-min-path-sum`
 
 ## 19. Bit Manipulation
 - [ ] Bitwise operators  · C · `bitwise-operators`

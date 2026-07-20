@@ -1,0 +1,84 @@
+{
+  "slug": "edit-distance",
+  "title": "Edit distance",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["longest-common-subsequence"],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Determining the minimum number of edits to transform one string into another naively requires branching on insert, delete, or replace at every character, leading to an exponential O(3^n) time complexity.",
+    "better_idea": "Use the exact same grid shape as Longest Common Subsequence, but instead of finding common characters, assign a cost to mismatches. At each step, take the minimum cost of the three possible string operations."
+  },
+  "mental_model": {
+    "intuition": "It's the LCS grid, but you pay a cost of 1 to move up (delete), left (insert), or diagonally (replace) when characters don't match. If they match, moving diagonally is free.",
+    "description": "We build a 2D table comparing prefixes. If the characters match, no operation is needed, so we carry over the cost from the prefixes before them. If they mismatch, we find the cheapest path among three choices: replacing the character (diagonal neighbor), deleting a character from the first string (top neighbor), or inserting a character (left neighbor).",
+    "repeated_decision": "do these two characters match (free, move diagonally) -- if not, which of insert/delete/replace (each costing 1) gives the cheapest path here?"
+  },
+  "explanation": "Edit Distance (often called Levenshtein Distance) calculates the minimum operations (insert, delete, replace) to turn string `A` into string `B`.\n\nWe define our state precisely: `dp[i][j]` is the edit distance between the first `i` characters of `A` and the first `j` characters of `B`.\n\nThe recurrence maps directly to operations:\n- If `A[i-1] == B[j-1]`, no edit is needed: `dp[i][j] = dp[i-1][j-1]` (a free diagonal move).\n- Otherwise, `dp[i][j] = 1 + min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1])`.\n\nHere, `dp[i-1][j-1]` represents replacing a character. `dp[i-1][j]` represents deleting a character from `A`. `dp[i][j-1]` represents inserting a character into `A`.\n\nThe base cases define the edges: `dp[i][0] = i` because turning an `i`-length string into an empty string takes `i` deletions. `dp[0][j] = j` because turning an empty string into a `j`-length string requires `j` insertions.\n\nLike LCS, this is a 2D DP problem that takes `O(m*n)` time and space. Both top-down memoization and bottom-up tabulation are perfectly valid strategies to compute the final table.",
+  "key_points": [
+    {
+      "title": "State Definition",
+      "detail": "`dp[i][j]` represents the minimum edit operations to transform `A[0..i-1]` into `B[0..j-1]`."
+    },
+    {
+      "title": "The Three Operations",
+      "detail": "Looking up (`i-1`, `j`) is a delete. Looking left (`i`, `j-1`) is an insert. Looking diagonally up-left (`i-1`, `j-1`) is a replace."
+    },
+    {
+      "title": "Base Case Initialization",
+      "detail": "The first row and first column must be initialized to their index values (0, 1, 2, ...), representing the cost of deleting all characters to reach an empty string."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Initializing base cases to 0",
+      "explanation": "A common mistake is treating the first row and column as 0 like in LCS. In edit distance, converting a string of length 5 to an empty string costs 5, not 0."
+    },
+    {
+      "title": "Mixing up the operations",
+      "explanation": "Failing to correctly map the top, left, and diagonal neighbors to their respective delete, insert, and replace operations makes the grid trace incorrect even if the minimum happens to output the right number."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `dp[i][j]` represent in Edit Distance?",
+      "answer": "The minimum number of operations to turn the first `i` characters of string `A` into the first `j` characters of string `B`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the base cases for the first row and column, and why?",
+      "answer": "`dp[i][0] = i` and `dp[0][j] = j`. Transforming a string of length `k` to an empty string always requires `k` deletions (or insertions).",
+      "tier": "tier2"
+    },
+    {
+      "q": "Which neighbor cell corresponds to the 'replace' operation?",
+      "answer": "The diagonal neighbor, `dp[i-1][j-1]`.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given two words, return the minimum number of steps to make them match, where each step can only insert or delete a character (no replacements allowed).",
+      "answer": "Use the same grid shape but remove the diagonal replacement option from the recurrence. Mismatches only take `1 + min(dp[i-1][j], dp[i][j-1])`.",
+      "approach": "Modify the edit distance recurrence to restrict allowed operations.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Calculate string similarity for a spell-checker suggesting corrections.",
+      "answer": "Run edit distance against a dictionary and return words with the smallest distance.",
+      "approach": "Levenshtein distance is the standard metric for typographical similarity.",
+      "company": "SDE interview"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Levenshtein_distance",
+    "https://www.geeksforgeeks.org/edit-distance-dp-5/"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "slug": "state-and-transition",
+  "title": "State & transition",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["optimal-substructure"],
+    "unlocks": ["memoization-top-down", "tabulation-bottom-up"],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "The state is the minimal set of parameters that uniquely determines a subproblem's answer. The transition is the recurrence relation: how the answer for a state is built from the answers to smaller states.",
+    "why": "Defining the state and transition is the practical checklist for designing any Dynamic Programming algorithm.",
+    "where_used": ["Every DP algorithm", "Algorithm design interviews"]
+  },
+  "why_learning_this": [
+    "Tracing a given DP table is easy, but designing the state for a new problem is where most people freeze.",
+    "Learning to define `dp[state]` in plain English is the single most important skill in Dynamic Programming."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Choosing a state that is too coarse",
+      "explanation": "If your state loses information needed for the transition, you can't compute the answer. For example, in the knapsack problem, just tracking 'capacity left' isn't enough; you also need to track 'which item am I deciding on'."
+    },
+    {
+      "title": "Choosing a state that is too fine",
+      "explanation": "Including unnecessary variables in the state blows up the state space, making your algorithm use too much memory and time."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the 'state' in Dynamic Programming?",
+      "answer": "The minimal set of parameters that uniquely identifies a specific subproblem.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the 'transition' in Dynamic Programming?",
+      "answer": "The recurrence relation that defines how to build the answer for a state using the answers to smaller states.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the four steps to design a DP solution?",
+      "answer": "(1) Define `dp[state]` in one sentence, (2) write the recurrence, (3) identify base cases, (4) decide the order of computation.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Define the state in code",
+      "prompt": "Modify this naive climbing stairs function to take a `memo` dictionary. What should the key (state) be?",
+      "starter_code": "def climb(n):\n    if n <= 2: return n\n    return climb(n-1) + climb(n-2)",
+      "solution": "def climb(n, memo={}):\n    if n in memo: return memo[n]\n    if n <= 2: return n\n    memo[n] = climb(n-1, memo) + climb(n-2, memo)\n    return memo[n]"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you are trying to solve a problem where you need to maximize profit from buying and selling a stock once, what information must your state capture?",
+      "answer": "The state must capture the current day (index) and whether you currently hold a stock or not.",
+      "why": "Without knowing if you hold a stock, you don't know if your valid next transition is 'sell' or 'buy'."
+    },
+    {
+      "type": "find-bug",
+      "question": "A student defines their state for the 0/1 Knapsack problem as `dp[w] = max value for capacity w`. What's wrong?",
+      "answer": "It is too coarse. It doesn't track which items have already been used, so the transition might use the same item multiple times.",
+      "why": "0/1 Knapsack requires each item to be used at most once. The state must be `dp[i][w]` to track both the items considered so far and the remaining capacity."
+    }
+  ],
+  "challenge": {
+    "title": "Design a state",
+    "prompt": "You are given a grid and can move right or down. You need to find a path that maximizes the sum of numbers collected, but you can only collect at most one negative number. Define the state.",
+    "solution": "The state needs three parameters: `dp[r][c][used_negative]`, where `r` and `c` are the current row and column, and `used_negative` is a boolean indicating whether a negative number has been collected yet."
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Dynamic_programming",
+    "https://www.geeksforgeeks.org/solve-dynamic-programming-problem/"
+  ]
+}

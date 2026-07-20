@@ -1,0 +1,78 @@
+{
+  "slug": "climbing-stairs-fibonacci",
+  "title": "Climbing stairs / Fibonacci",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["state-and-transition", "space-optimization"],
+    "unlocks": ["house-robber", "longest-increasing-subsequence"],
+    "project_usage": []
+  },
+  "hook": {
+    "scenario": "You are climbing a staircase with `n` steps. You can either take 1 step or 2 steps at a time. How many distinct ways can you reach the top?"
+  },
+  "why_it_exists": {
+    "problem": "Generating every possible combination of 1s and 2s that sum to `n` explores the same paths repeatedly, taking exponential O(2^n) time.",
+    "better_idea": "The number of ways to get to step `i` is simply the sum of the ways to get to step `i-1` (and taking a 1-step) plus the ways to get to step `i-2` (and taking a 2-step). We can just add previous answers together."
+  },
+  "mental_model": {
+    "intuition": "To get to step `i`, you must have come from either step `i-1` or step `i-2`. Adding those two possibilities gives you the total ways.",
+    "description": "This is literally the Fibonacci sequence. The state is just the current step `i`. `dp[i]` represents the number of ways to reach step `i`. The base cases are `dp[1] = 1` and `dp[2] = 2` (or `dp[0]=1, dp[1]=1` depending on indexing), because there's 1 way to climb 1 step, and 2 ways to climb 2 steps. The transition is `dp[i] = dp[i-1] + dp[i-2]`.",
+    "repeated_decision": "To reach step `i`, did I just take one step from `i-1`, or two steps from `i-2` -- so `dp[i] = dp[i-1] + dp[i-2]`?"
+  },
+  "explanation": "This problem is the simplest possible DP recurrence and forms the template for 1D Dynamic Programming.\n\nThe top-down memoization approach evaluates `climb(i) = climb(i-1) + climb(i-2)` recursively, caching each `i` so it's only computed once. The bottom-up tabulation approach builds an array `dp` from index `1` to `n` in a `for` loop.\n\nBecause `dp[i]` only depends on `dp[i-1]` and `dp[i-2]`, we don't even need the full array. We can space-optimize to two rolling variables: `prev1` and `prev2`. We shift these variables forward at each step, yielding an O(n) time, O(1) space algorithm.",
+  "key_points": [
+    { "title": "Complexity", "detail": "O(n) time, O(1) space (when using rolling variables)." },
+    { "title": "Base cases", "detail": "`dp[1] = 1`, `dp[2] = 2`. The recursion must bottom out here so we can build the rest of the steps." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using plain unmemoized recursion",
+      "explanation": "If you don't use a cache (or a bottom-up loop), the recursion tree branches exponentially. `fib(5)` calls `fib(3)` twice and `fib(2)` three times. This results in Time Limit Exceeded (TLE) for even small values of `n`."
+    },
+    {
+      "title": "Off-by-one errors with base cases",
+      "explanation": "Make sure you know whether your `n` is 0-indexed or 1-indexed. Sometimes `dp[0]=1` and `dp[1]=1` is easier to loop with than starting at 1 and 2."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the recurrence relation for Climbing Stairs?",
+      "answer": "`dp[i] = dp[i-1] + dp[i-2]`",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does `dp[i]` represent in the Climbing Stairs problem?",
+      "answer": "The total number of distinct ways to reach step `i`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you optimize the space complexity of Climbing Stairs from O(n) to O(1)?",
+      "answer": "By using two rolling variables (e.g., `prev1` and `prev2`) to store only the two most recent states, discarding older results.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given `n` steps, what if you could take 1, 2, or 3 steps at a time?",
+      "answer": "The recurrence becomes `dp[i] = dp[i-1] + dp[i-2] + dp[i-3]`, and you would use 3 rolling variables instead of 2.",
+      "company": "SDE interview",
+      "approach": "Identify that the state is the same, but the transition expands to include the third possibility."
+    },
+    {
+      "question": "What if certain steps are 'broken' and cannot be stepped on?",
+      "answer": "Initialize a set of broken steps. During the transition, if `i` is broken, set `dp[i] = 0`.",
+      "company": "SDE interview",
+      "approach": "Modify the transition logic: a broken step has 0 ways to reach it, effectively blocking paths through it."
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/climbing-stairs/",
+    "https://en.wikipedia.org/wiki/Fibonacci_sequence"
+  ]
+}

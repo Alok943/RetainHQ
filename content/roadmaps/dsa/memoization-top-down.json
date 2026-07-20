@@ -1,0 +1,82 @@
+{
+  "slug": "memoization-top-down",
+  "title": "Memoization (top-down)",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["state-and-transition"],
+    "unlocks": ["tabulation-bottom-up"],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "Memoization is 'recursion + a cache'. You write the natural top-down recursive solution, but before recursing, you check if the state is in a cache. After computing, you store the result in the cache.",
+    "why": "It is mechanically the most minimal change from a brute-force recursive solution, taking exponential time down to polynomial time by ensuring each state is computed exactly once.",
+    "where_used": ["Dynamic Programming", "Expensive recursive functions"]
+  },
+  "why_learning_this": [
+    "It is usually much easier to write the top-down memoized version of a DP problem because it directly mirrors the mathematical recurrence."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting to check the cache BEFORE recursing",
+      "explanation": "If you do the recursive work and only check/write to the cache at the end, you defeat the entire purpose. The exponential blowup will still happen."
+    },
+    {
+      "title": "Forgetting to populate the cache AFTER computing",
+      "explanation": "If you check the cache at the start but forget to save the computed answer before returning, every call will result in a cache miss."
+    },
+    {
+      "title": "Using a mutable default argument as the cache in Python",
+      "explanation": "Defining `def solve(n, cache={})` in Python means the cache persists across entirely different top-level calls of `solve`, leading to incorrect results on subsequent test cases."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of a memoized DP solution?",
+      "answer": "O(number of distinct states * work done per state).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the space complexity of a memoized DP solution?",
+      "answer": "O(number of states) for the cache PLUS O(max recursion depth) for the call stack.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Add memoization",
+      "prompt": "Modify this recursive function to use a `memo` dictionary. Make sure to pass it down correctly and not use a mutable default argument.",
+      "starter_code": "def solve(n):\n    if n == 0: return 0\n    return solve(n-1) + 1",
+      "solution": "def solve(n, memo=None):\n    if memo is None: memo = {}\n    if n in memo: return memo[n]\n    if n == 0: return 0\n    memo[n] = solve(n-1, memo) + 1\n    return memo[n]"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "question": "Find the bug in this memoized function:\n```python\ndef fib(n, memo=None):\n    if memo is None: memo = {}\n    if n <= 1: return n\n    ans = fib(n-1, memo) + fib(n-2, memo)\n    return ans\n```",
+      "answer": "It fails to check the cache at the start, and it fails to write to the cache at the end.",
+      "why": "Without `if n in memo: return memo[n]` and `memo[n] = ans`, this is just regular exponential recursion that creates an unused dictionary."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "In Python, why is `def dfs(state, memo={})` dangerous for LeetCode problems?",
+      "answer": "The dictionary is created once when the function is defined. It will retain cached values from Test Case 1 when Test Case 2 runs, causing wrong answers.",
+      "why": "Default arguments are evaluated at function definition time in Python. Always use `memo=None` and initialize it inside the function."
+    }
+  ],
+  "challenge": {
+    "title": "Identify cache hits",
+    "prompt": "In computing `fib(5)` with memoization, the cache prevents redundant work. Which function call is the first one to trigger a cache hit (i.e. returns immediately from the cache)?",
+    "solution": "`fib(2)` is the first to hit the cache. `fib(5)` -> `fib(4)` -> `fib(3)` -> `fib(2)` -> `fib(1), fib(0)`. `fib(2)` completes and caches. Then `fib(3)` calls `fib(1)`. Then `fib(4)` calls `fib(2)` which is a cache hit."
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Memoization",
+    "https://www.geeksforgeeks.org/memoization-1d-2d-and-3d/"
+  ]
+}

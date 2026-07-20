@@ -1,0 +1,84 @@
+{
+  "slug": "grid-dp-unique-paths-min-path-sum",
+  "title": "Grid DP (unique paths / min path sum)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["space-optimization"],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Navigating a grid recursively by branching right and down from every cell duplicates work, as many paths converge on the same intermediate cells, leading to exponential time bounds.",
+    "better_idea": "A grid inherently provides overlapping subproblems. By building up the solution cell-by-cell from the top-left, we can store the result for each cell and reuse it to compute its neighbors in O(1) time."
+  },
+  "mental_model": {
+    "intuition": "To reach a cell, you must have stepped from either the cell directly above it or the cell directly to its left. Combine those two past answers to get the current answer.",
+    "description": "We traverse a 2D matrix row by row. Because paths can only move right or down, the optimal state of any cell depends strictly on the top and left neighbors. For counting paths, we sum them. For finding a minimal cost, we take the minimum of the two and add the current cell's cost.",
+    "repeated_decision": "for this cell, do I arrive by moving right (from the cell to my left) or down (from the cell above) -- and for min-path-sum, which of those two gives the cheaper total?"
+  },
+  "explanation": "Grid DP problems are the most literal visualization of dynamic programming, because the DP table perfectly overlays the problem's 2D grid. Both Unique Paths and Min Path Sum use the exact same structural shape.\n\nFor **Unique Paths**, we count the number of ways to reach the bottom-right from the top-left, moving only right and down.\nState: `dp[r][c]` is the number of unique paths to row `r`, column `c`.\nRecurrence: `dp[r][c] = dp[r-1][c] + dp[r][c-1]`.\nBase cases: `dp[0][*] = 1` and `dp[*][0] = 1`. There is only one way to move strictly along the top edge or left edge.\n\nFor **Min Path Sum**, each cell has a cost, and we want the cheapest path to the bottom-right.\nState: `dp[r][c]` is the minimum cost to reach row `r`, column `c`.\nRecurrence: `dp[r][c] = grid[r][c] + min(dp[r-1][c], dp[r][c-1])`.\nBase cases: Cells on the top row accumulate costs horizontally from the left. Cells on the left column accumulate costs vertically from above.\n\nBoth variants take `O(rows * cols)` time and space. However, notice that computing any row only strictly requires the values from the immediately preceding row. This allows us to space-optimize the `O(rows * cols)` table down to a single 1D rolling array of size `O(cols)`, a textbook application of 2D-to-1D space optimization.",
+  "key_points": [
+    {
+      "title": "DAG Structure",
+      "detail": "These problems only work with DP because moves are strictly one-directional (right/down). This prevents cycles and makes the grid a Directed Acyclic Graph (DAG)."
+    },
+    {
+      "title": "Shared Recurrence Shape",
+      "detail": "Both algorithms rely on inspecting the top and left neighbors. Summing them counts paths, while taking the minimum finds the cheapest route."
+    },
+    {
+      "title": "Space Optimization",
+      "detail": "Because row `r` only looks at row `r-1`, a 2D grid DP can almost always be optimized to use `O(cols)` space."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Out-of-bounds neighbor reads",
+      "explanation": "Forgetting to handle the first row and first column correctly causes out-of-bounds exceptions when trying to read the non-existent top or left neighbors."
+    },
+    {
+      "title": "Allowing up or left moves",
+      "explanation": "If a grid allows moving in all 4 directions, it is no longer a DP problem because cyclic dependencies exist. You must use a graph search (like BFS or Dijkstra) instead."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the recurrence relation for the Unique Paths problem?",
+      "answer": "`dp[r][c] = dp[r-1][c] + dp[r][c-1]`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why can the space complexity of Grid DP be optimized from 2D to 1D?",
+      "answer": "Because computing the current row only requires values from the current row and the immediately preceding row, allowing us to roll a single 1D array.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why would adding 'up' and 'left' moves break the DP approach?",
+      "answer": "It introduces cycles, breaking the required Directed Acyclic Graph (DAG) dependency structure. You would need a pathfinding algorithm like BFS instead.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Count unique paths from top-left to bottom-right on a grid that contains obstacles (where paths cannot pass).",
+      "answer": "If `grid[r][c]` is an obstacle, set `dp[r][c] = 0`. Otherwise, use the standard Unique Paths recurrence.",
+      "approach": "An obstacle simply means 0 valid paths pass through that specific cell.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Find the maximum path sum in a triangle of numbers, starting from the top and moving to adjacent numbers on the row below.",
+      "answer": "Process the triangle from the bottom row up to the top. `dp[r][c] = triangle[r][c] + max(dp[r+1][c], dp[r+1][c+1])`.",
+      "approach": "It's the same Grid DP shape applied to a jagged array, computed bottom-up for simplicity.",
+      "company": "SDE interview"
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/unique-paths/",
+    "https://leetcode.com/problems/minimum-path-sum/"
+  ]
+}

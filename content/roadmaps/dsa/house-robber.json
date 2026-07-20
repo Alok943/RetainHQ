@@ -1,0 +1,74 @@
+{
+  "slug": "house-robber",
+  "title": "House robber",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["climbing-stairs-fibonacci"],
+    "unlocks": ["coin-change"],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "You need to find a subsequence with maximum sum such that no two elements are adjacent. Greedily picking the largest values or every-other house fails on cases like `[2, 1, 1, 2]`.",
+    "better_idea": "Make a choice at each house: rob it (and take the max money from 2 houses ago) OR skip it (and keep the max money from the previous house). Compare these two entire strategies dynamically."
+  },
+  "mental_model": {
+    "intuition": "At every house, compare the best outcome of 'robbing here' versus 'skipping here'.",
+    "description": "Let `dp[i]` represent the maximum money you can rob from the first `i` houses. The base cases are `dp[0] = nums[0]` (only one house) and `dp[1] = max(nums[0], nums[1])` (rob the better of the first two). The transition is `dp[i] = max(dp[i-1], dp[i-2] + nums[i])`. You are not deciding if a house is 'good' in isolation; you are comparing the strategy of including it versus skipping it.",
+    "repeated_decision": "Do I rob this house (skip the previous one, take its money plus what I had 2 houses ago) or skip it (keep whatever I had at the previous house)?"
+  },
+  "explanation": "This problem introduces the classic 'include or exclude' 1D choice in Dynamic Programming. \n\nIf we hand-trace the array `[2, 7, 9, 3, 1]`:\n- `dp[0] = 2`\n- `dp[1] = max(2, 7) = 7`\n- `dp[2] = max(dp[1], dp[0] + 9) = max(7, 2 + 9) = 11`\n- `dp[3] = max(dp[2], dp[1] + 3) = max(11, 7 + 3) = 11`\n- `dp[4] = max(dp[3], dp[2] + 1) = max(11, 11 + 1) = 12`\n\nNotice that the recurrence `dp[i] = max(dp[i-1], dp[i-2] + nums[i])` only looks at the previous two states. Just like Climbing Stairs, we can space-optimize this to O(1) space by keeping two rolling variables instead of the entire `dp` array.",
+  "key_points": [
+    { "title": "Complexity", "detail": "O(n) time, O(1) space (with rolling variables). O(n) space if storing the full table." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a greedy approach",
+      "explanation": "Greedily picking the largest available elements or summing all even/odd indices fails. For example, in `[2, 1, 1, 2]`, evens give 2+1=3, odds give 1+2=3, but the optimal is 2+2=4."
+    },
+    {
+      "title": "Off-by-one on the adjacency check",
+      "explanation": "Ensure that `dp[i-2] + nums[i]` doesn't accidentally read out of bounds when `i < 2`. Properly initialize `dp[0]` and `dp[1]` before running the loop from `i=2`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `dp[i]` represent in the House Robber problem?",
+      "answer": "The maximum amount of money you can rob from the first `i` houses.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the recurrence relation for House Robber?",
+      "answer": "`dp[i] = max(dp[i-1], dp[i-2] + nums[i])`",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does a greedy approach (e.g. comparing the sum of even indices to odd indices) fail for House Robber?",
+      "answer": "Because the optimal subsequence might switch between even and odd indices, such as taking the first and fourth elements in `[2, 1, 1, 2]`.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "What if the houses are arranged in a circle, so the first and last houses are adjacent?",
+      "answer": "Run the standard House Robber algorithm twice: once from house 0 to n-2, and once from house 1 to n-1. Take the maximum of the two results.",
+      "company": "SDE interview",
+      "approach": "Break the circular dependency by isolating the two mutually exclusive scenarios."
+    },
+    {
+      "question": "How would you modify the algorithm to return the *indices* of the houses robbed?",
+      "answer": "You can no longer use O(1) space. Maintain the full `dp` array and backtrack from `dp[n-1]`: if `dp[i] == dp[i-1]`, you skipped house `i`; if `dp[i] == dp[i-2] + nums[i]`, you robbed it.",
+      "company": "SDE interview",
+      "approach": "Reconstruct the path using the final DP table by reversing the `max()` decision at each step."
+    }
+  ],
+  "sources": [
+    "https://leetcode.com/problems/house-robber/",
+    "https://en.wikipedia.org/wiki/Dynamic_programming"
+  ]
+}

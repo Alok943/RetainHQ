@@ -1,0 +1,84 @@
+{
+  "slug": "longest-increasing-subsequence",
+  "title": "Longest increasing subsequence",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["0-1-knapsack"],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Finding the longest increasing subsequence by generating all 2^n possible subsequences and validating them takes exponential time.",
+    "better_idea": "At each element, look back at all previous elements. If a previous element is strictly smaller, you can attach the current element to its longest subsequence. This reduces the problem to an O(n^2) search over previous states."
+  },
+  "mental_model": {
+    "intuition": "Build chains. At each new number, scan backwards: 'who is smaller than me?' Pick the smaller number that already has the longest chain, and add yourself to it.",
+    "description": "Maintain an array where each cell tracks the longest increasing subsequence that strictly ends at that index. To fill a cell, iterate through all preceding indices. If the preceding value is smaller than the current value, it's a valid chain to extend. Take the maximum of all valid extensions.",
+    "repeated_decision": "for this element, which earlier element (with a smaller value) gives the longest chain I can extend, or do I start fresh here?"
+  },
+  "explanation": "To solve Longest Increasing Subsequence (LIS), we must define our state precisely: `dp[i]` is the length of the longest strictly increasing subsequence ENDING AT index `i`.\n\nNote the emphasis: it does not mean 'the longest in the first `i` elements'. It must include `nums[i]` as its final element. This forces the sequence to anchor, allowing future elements to correctly check if they can append to it.\n\nThe recurrence relation requires a search over all previous states:\n`dp[i] = 1 + max(dp[j])` for all `j < i` where `nums[j] < nums[i]`.\nIf no such `j` exists, `dp[i] = 1` (the element forms a sequence of length 1 by itself).\n\nThe base case is simple: initialize the entire `dp` array to 1, since every element is a valid increasing subsequence of length 1 on its own.\n\nBecause computing `dp[i]` requires scanning `i` previous elements, computing the whole array takes `O(n^2)` time. The space complexity is `O(n)` to store the array.\n\nImportantly, the final answer is NOT `dp[n-1]`. Because the longest sequence could end anywhere in the array, the answer is `max(dp)` over the entire array.\n\nIt is possible to solve LIS in `O(n log n)` time using a patience-sorting technique that maintains a 'tails' array and uses binary search. That is a fundamentally different approach utilizing binary search, while the `O(n^2)` DP approach explicitly demonstrates how recurrences can require dynamic-width lookbacks.",
+  "key_points": [
+    {
+      "title": "State Definition",
+      "detail": "`dp[i]` is the length of the LIS ending precisely at index `i`."
+    },
+    {
+      "title": "Final Answer Extraction",
+      "detail": "Since the sequence can end at any index, you must iterate over the completed `dp` array and find the maximum value, rather than just returning the last element."
+    },
+    {
+      "title": "O(n^2) Complexity",
+      "detail": "Unlike 1D DP problems that only look back 1 or 2 steps, LIS requires scanning all `j < i` for every element, resulting in quadratic time."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Misinterpreting the state",
+      "explanation": "Assuming `dp[i]` means 'longest sequence using the first `i` elements' rather than 'ending at index `i`'. If it didn't end at `i`, you wouldn't know which value to compare the next element against."
+    },
+    {
+      "title": "Confusing subsequence with subarray",
+      "explanation": "A subarray must be contiguous (e.g., longest increasing run). A subsequence can skip elements. LIS handles skipped elements by scanning all previous indices."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the exact definition of the state `dp[i]` in the LIS DP approach?",
+      "answer": "The length of the longest strictly increasing subsequence that ends exactly at index `i`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you find the final answer after filling the LIS `dp` array?",
+      "answer": "Take the maximum value across the entire `dp` array.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of the standard DP approach to LIS?",
+      "answer": "`O(n^2)` because for each of the `n` elements, we must scan up to `n-1` previous elements.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the maximum sum of an increasing subsequence.",
+      "answer": "Change the state to store the maximum sum ending at index `i` instead of the length. `dp[i] = nums[i] + max(dp[j])` where `nums[j] < nums[i]`.",
+      "approach": "The identical O(n^2) scanning structure works, just accumulating sums rather than lengths.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Given a sequence of Russian Doll envelopes, find the maximum number of envelopes you can nest inside each other.",
+      "answer": "Sort the envelopes by width ascending, and height descending for ties, then find the LIS on the heights.",
+      "approach": "Sorting reduces a 2D nesting problem to a standard 1D LIS problem.",
+      "company": "SDE interview"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Longest_increasing_subsequence",
+    "https://www.geeksforgeeks.org/longest-increasing-subsequence-dp-3/"
+  ]
+}

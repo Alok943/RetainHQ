@@ -1,0 +1,84 @@
+{
+  "slug": "longest-common-subsequence",
+  "title": "Longest common subsequence",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["0-1-knapsack"],
+    "unlocks": ["edit-distance"]
+  },
+  "why_it_exists": {
+    "problem": "Comparing two strings to find their longest common subsequence (where characters appear in the same order, but not necessarily contiguously) by generating all subsequences takes exponential time, O(2^n).",
+    "better_idea": "Build the answer character by character from the beginning of both strings. If the current characters match, we've found a common character; if they don't, the longest sequence must come from skipping the character in one string or the other. We can cache these decisions in a 2D grid."
+  },
+  "mental_model": {
+    "intuition": "Step through a grid. Moving diagonally means the characters match; moving down or right means you skip a character in one of the strings to find a better match.",
+    "description": "We construct a 2D table where one string represents the rows and the other the columns. We compare prefixes of both strings. A character match extends the best subsequence of the previous prefixes (diagonal). A mismatch forces us to choose the best subsequence found by dropping the current character from either the first or second string (looking up or left).",
+    "repeated_decision": "do these two characters (one from each string, at the current row/col) match -- if so extend the diagonal by 1; if not, take the best of skipping one character from either string?"
+  },
+  "explanation": "To solve Longest Common Subsequence (LCS), we define our state precisely: `dp[i][j]` represents the length of the LCS of the first `i` characters of string `A` and the first `j` characters of string `B`.\n\nThe recurrence naturally follows: if `A[i-1] == B[j-1]`, we have a match, so we add 1 to the result of the prefixes before these characters: `dp[i][j] = dp[i-1][j-1] + 1`.\n\nIf they do not match, we must skip one of the characters. We take the maximum of skipping the current character in `A` (`dp[i-1][j]`) or skipping the current character in `B` (`dp[i][j-1]`): `dp[i][j] = max(dp[i-1][j], dp[i][j-1])`.\n\nThe base case is crucial: `dp[0][*] = 0` and `dp[*][0] = 0`. This represents an empty prefix for one of the strings. The LCS of any string and an empty string is always 0.\n\nYou can solve this either top-down with memoization or bottom-up with tabulation. The bottom-up table is highly visual: matching characters pull from the upper-left diagonal cell, while mismatches pull the max from the cell directly above or directly to the left. The time and space complexity for building the entire `m x n` table is `O(m*n)`.",
+  "key_points": [
+    {
+      "title": "State Definition",
+      "detail": "`dp[i][j]` is the LCS of the first `i` characters of `A` and the first `j` characters of `B`."
+    },
+    {
+      "title": "Diagonal vs Orthogonal",
+      "detail": "A match corresponds to stepping diagonally in the grid (`dp[i-1][j-1] + 1`). A mismatch corresponds to taking the best orthogonal neighbor (`max(dp[i-1][j], dp[i][j-1])`)."
+    },
+    {
+      "title": "Complexity",
+      "detail": "Time: `O(m*n)`, where `m` and `n` are the string lengths. Space: `O(m*n)` for the full grid, though it can be optimized to `O(min(m, n))` using two rolling rows."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing Subsequence with Substring",
+      "explanation": "A substring must be contiguous. A subsequence maintains order but allows gaps. LCS allows gaps, which is why we can pull the maximum from skipping characters."
+    },
+    {
+      "title": "Off-by-one errors on grid bounds",
+      "explanation": "The `dp` table must be `(m+1) x (n+1)` to accommodate the empty string base cases at row 0 and column 0, which means `dp[i][j]` corresponds to comparing `A[i-1]` and `B[j-1]`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `dp[i][j]` represent in the LCS grid?",
+      "answer": "The length of the longest common subsequence of the first `i` characters of string `A` and the first `j` characters of string `B`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the recurrence relation when `A[i-1] != B[j-1]`?",
+      "answer": "`dp[i][j] = max(dp[i-1][j], dp[i][j-1])`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What are the base cases for LCS and why?",
+      "answer": "`dp[0][j] = 0` and `dp[i][0] = 0`. Comparing any string with an empty string yields an LCS of length 0.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given two strings, find the minimum number of deletions required to make them equal.",
+      "answer": "Find the length of their LCS, then subtract it from the total lengths of both strings: `(len(A) - LCS) + (len(B) - LCS)`.",
+      "approach": "Recognize that any characters not part of the longest common subsequence must be deleted.",
+      "company": "SDE interview"
+    },
+    {
+      "question": "Find the longest palindromic subsequence of a string.",
+      "answer": "Find the LCS of the string and its reverse.",
+      "approach": "A palindrome reads the same forwards and backwards, so the common subsequence between a string and its reverse gives the longest palindrome.",
+      "company": "SDE interview"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Longest_common_subsequence_problem",
+    "https://www.geeksforgeeks.org/longest-common-subsequence-dp-4/"
+  ]
+}

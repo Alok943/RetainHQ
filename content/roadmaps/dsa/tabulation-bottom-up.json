@@ -1,0 +1,79 @@
+{
+  "slug": "tabulation-bottom-up",
+  "title": "Tabulation (bottom-up)",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["memoization-top-down"],
+    "unlocks": ["space-optimization"],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "Tabulation builds the DP table iteratively from the base cases UP to the final answer, in an order that guarantees every cell's dependencies are already filled when you reach it.",
+    "why": "It avoids recursion-call overhead and stack-depth limits (no risk of stack overflow). It is also generally easier to trace on paper and space-optimize.",
+    "where_used": ["Dynamic Programming", "High-performance systems where stack depth is a concern"]
+  },
+  "why_learning_this": [
+    "While top-down is often easier to write, bottom-up is immune to stack overflow issues.",
+    "Tabulation is a prerequisite for space optimization (collapsing a 2D table into a 1D array)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Filling the table in the wrong order",
+      "explanation": "If you read a cell before its dependency is filled, you get garbage values. You must iterate in topological order of the dependencies."
+    },
+    {
+      "title": "Assuming bottom-up is ALWAYS faster than top-down",
+      "explanation": "They have the same asymptotic time complexity. However, tabulation computes EVERY state in the table, even unreachable ones, whereas top-down only computes what it needs."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the main advantage of bottom-up tabulation over top-down memoization?",
+      "answer": "It avoids recursion overhead and the risk of stack overflow.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is a disadvantage of bottom-up tabulation compared to top-down?",
+      "answer": "Tabulation must compute all states in the table, even if some of them are never actually needed for the final answer.",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Convert to bottom-up",
+      "prompt": "Convert this top-down Fibonacci function into a bottom-up tabulated version using an array.",
+      "starter_code": "def fib(n, memo=None):\n    if memo is None: memo = {}\n    if n in memo: return memo[n]\n    if n <= 1: return n\n    memo[n] = fib(n-1, memo) + fib(n-2, memo)\n    return memo[n]",
+      "solution": "def fib(n):\n    if n <= 1: return n\n    dp = [0] * (n + 1)\n    dp[1] = 1\n    for i in range(2, n + 1):\n        dp[i] = dp[i-1] + dp[i-2]\n    return dp[n]"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "find-bug",
+      "question": "What happens if you fill a 2D DP table row by row from top to bottom, but the transition for `dp[r][c]` depends on `dp[r+1][c]`?",
+      "answer": "You will read empty/uninitialized values because the dependency (`r+1`) hasn't been computed yet.",
+      "why": "Tabulation requires filling in topological order. If it depends on `r+1`, you must iterate the rows backwards (from bottom to top)."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "If your graph of subproblems is very sparse (only a few states are actually visited), which approach is generally better: top-down or bottom-up?",
+      "answer": "Top-down memoization.",
+      "why": "Top-down only computes the states it actually visits. Bottom-up typically iterates over the entire domain and computes every possible state, wasting time on unreachable ones."
+    }
+  ],
+  "challenge": {
+    "title": "Correct Iteration Order",
+    "prompt": "Suppose your DP state depends on `dp[i+1][j]` and `dp[i][j-1]`. In what order should you iterate the rows `i` and columns `j`?",
+    "solution": "Since it depends on `i+1`, you must iterate the rows backwards (from `n` down to 0). Since it depends on `j-1`, you must iterate the columns forwards (from 0 to `m`)."
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Dynamic_programming",
+    "https://www.geeksforgeeks.org/tabulation-vs-memoization/"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "slug": "coin-change",
+  "title": "Coin change",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["house-robber"],
+    "unlocks": ["0-1-knapsack"],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "You want to make a target amount using the fewest coins possible. A greedy algorithm (picking the largest coin first) fails if the denominations aren't neat multiples.",
+    "better_idea": "For every amount from 1 up to the target, try every coin. The best answer for `amount` is 1 plus the best answer for `amount - coin`."
+  },
+  "mental_model": {
+    "intuition": "Build the cheapest way to make 1 cent, then 2 cents, all the way up to the target, using smaller answers as stepping stones.",
+    "description": "Let `dp[amt]` represent the minimum number of coins to make `amt`. The base case is `dp[0] = 0`. For all other amounts, we initialize them to `infinity` (an unreachable sentinel). The transition tries every coin: `dp[amt] = min(dp[amt], 1 + dp[amt - coin])`. This is an UNBOUNDED reuse DP because each coin can be used many times.",
+    "repeated_decision": "For this amount, does using this coin (1 + the best answer for amount-coin) beat what I already had for this amount?"
+  },
+  "explanation": "Coin Change is the classic counterexample to the Greedy algorithm. \n\nAs we saw in the greedy section, if your coins are `{1, 3, 4}` and your target is `6`, greedy picks `4` then `1` then `1` (3 coins). Dynamic Programming tries all paths and correctly finds `3 + 3` (2 coins).\n\nTo trace building `dp[]` up to `6`:\n- `dp[0] = 0`\n- `dp[1] = 1` (using 1)\n- `dp[2] = 2` (using 1+1)\n- `dp[3] = 1` (using 3)\n- `dp[4] = 1` (using 4)\n- `dp[5] = 2` (using 4+1)\n- `dp[6] = 2` (using 3+3)\n\nAt `dp[6]`, we check `1 + dp[6-1] = 1 + dp[5] = 3`, `1 + dp[6-3] = 1 + dp[3] = 2`, and `1 + dp[6-4] = 1 + dp[2] = 3`. The minimum is `2`. \n\nIf `dp[target]` remains infinity at the end, it means no combination of coins can form the amount, so we return `-1`.",
+  "key_points": [
+    { "title": "Complexity", "detail": "O(amount * number of coins) time, O(amount) space." },
+    { "title": "Unbounded reuse", "detail": "Unlike 0/1 choices where an item is consumed, we check `dp[amt - coin]` which might have already used the same coin. This allows infinite reuse." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying a greedy algorithm",
+      "explanation": "Assuming that taking the largest possible coin is always optimal. This only works for specific coin systems (like US currency), not arbitrary denominations."
+    },
+    {
+      "title": "Forgetting the unreachable sentinel",
+      "explanation": "If an amount cannot be made, its value should remain `infinity`. If you initialize with 0 or -1, `min()` comparisons will pick up invalid paths. Don't forget to handle the sentinel when returning the final answer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `dp[amt]` represent in the Coin Change problem?",
+      "answer": "The minimum number of coins needed to make the exact amount `amt`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the recurrence relation for Coin Change?",
+      "answer": "`dp[amt] = min(dp[amt], 1 + dp[amt - coin])` for each valid coin.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the base array initialized with infinity?",
+      "answer": "Because we are searching for a minimum. Initializing with infinity acts as a sentinel indicating that an amount is currently unreachable.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "How would you find the *total number of unique combinations* that make the target amount, rather than the minimum coins?",
+      "answer": "Change the state definition to 'combinations' and the transition to a sum: `dp[amt] += dp[amt - coin]`. Initialize `dp[0] = 1`.",
+      "company": "SDE interview",
+      "approach": "Recognize the shift from finding an optimal path (`min`) to counting all paths (`+`)."
+    },
+    {
+      "question": "What if you had a limited supply of each coin?",
+      "answer": "This becomes the 0/1 Knapsack problem. You must add a second dimension to the state (which coins you have considered) or iterate backwards to prevent unbounded reuse.",
+      "company": "SDE interview",
+      "approach": "Identify that restricting reuse fundamentally changes the DP state from 1D to a 2D choice."
+    }
+  ],
+  "related": ["why-greedy-fails"],
+  "sources": [
+    "https://leetcode.com/problems/coin-change/",
+    "https://en.wikipedia.org/wiki/Change-making_problem"
+  ]
+}

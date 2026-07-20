@@ -1,0 +1,70 @@
+{
+  "slug": "overlapping-subproblems",
+  "title": "Overlapping subproblems",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["recursive-tree-thinking"],
+    "unlocks": ["optimal-substructure", "memoization-top-down"],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "A problem has overlapping subproblems if a naive recursive solution calls the same subproblem with the same arguments more than once.",
+    "why": "It tells you when caching (memoization) will speed up an algorithm, turning an exponential time complexity into polynomial time.",
+    "where_used": ["Dynamic Programming algorithms", "Recursive algorithms that recalculate results"]
+  },
+  "why_learning_this": [
+    "It is the first diagnostic test to determine if Dynamic Programming will help.",
+    "You will learn to recognize why a simple recursive Fibonacci function is dangerously slow."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying DP to all recursive problems",
+      "explanation": "Dynamic Programming only helps if subproblems overlap. Plain merge sort makes recursive calls, but each `(lo, hi)` pair is visited exactly once, so caching buys nothing."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does it mean for a problem to have overlapping subproblems?",
+      "answer": "A naive recursive solution calls the same subproblem with the same arguments multiple times.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Add an operation counter",
+      "prompt": "Modify this naive Fibonacci function to increment a global counter every time it is called. See how fast the counter grows for `n=10` vs `n=20` to prove overlapping subproblems.",
+      "starter_code": "calls = 0\n\ndef fib(n):\n    if n <= 1: return n\n    return fib(n-1) + fib(n-2)",
+      "solution": "calls = 0\n\ndef fib(n):\n    global calls\n    calls += 1\n    if n <= 1: return n\n    return fib(n-1) + fib(n-2)"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "Does Dynamic Programming speed up EVERY recursive algorithm? Why or why not?",
+      "answer": "No. Dynamic Programming only speeds up recursive algorithms that have overlapping subproblems. If each subproblem is distinct (like in merge sort), caching does nothing.",
+      "why": "Understanding when NOT to use DP is just as important as knowing how to use it."
+    },
+    {
+      "type": "predict-result",
+      "question": "If you calculate `fib(5)` using naive recursion, how many times is `fib(2)` evaluated?",
+      "answer": "Three times.",
+      "why": "`fib(5)` calls `fib(4)` and `fib(3)`. `fib(4)` calls `fib(3)` and `fib(2)`. The first `fib(3)` calls `fib(2)` and `fib(1)`. The second `fib(3)` calls `fib(2)` and `fib(1)`. Total: 3 times."
+    }
+  ],
+  "challenge": {
+    "title": "Identify Overlap",
+    "prompt": "Look at the recursion tree for `fib(4)`. Write down the number of times `fib(1)` is called.",
+    "solution": "`fib(4)` calls `fib(3)` and `fib(2)`. `fib(3)` calls `fib(2)` and `fib(1)`. `fib(2)` (from `fib(4)`) calls `fib(1)` and `fib(0)`. `fib(2)` (from `fib(3)`) calls `fib(1)` and `fib(0)`. `fib(1)` is called 3 times."
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Overlapping_subproblems",
+    "https://www.geeksforgeeks.org/overlapping-subproblems-property-in-dynamic-programming-dp-1/"
+  ]
+}

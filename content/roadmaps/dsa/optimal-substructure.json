@@ -1,0 +1,79 @@
+{
+  "slug": "optimal-substructure",
+  "title": "Optimal substructure",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["overlapping-subproblems"],
+    "unlocks": ["state-and-transition"],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "A problem has optimal substructure if an optimal solution to it contains optimal solutions to its subproblems.",
+    "why": "It tells you that cached sub-answers can be safely combined to form the final correct answer.",
+    "where_used": ["Dynamic Programming", "Greedy Algorithms", "Shortest path algorithms"]
+  },
+  "why_learning_this": [
+    "It is the second diagnostic test to confirm if a problem is a DP problem.",
+    "Together with overlapping subproblems, this proves that breaking a problem down and caching its pieces will yield the mathematically correct optimal answer."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Conflating overlapping subproblems and optimal substructure",
+      "explanation": "They are different properties. Overlapping subproblems means caching helps performance. Optimal substructure means the problem can be solved by combining optimal sub-answers. Both are required for DP."
+    },
+    {
+      "title": "Assuming all path problems have it",
+      "explanation": "Shortest simple path has optimal substructure (a sub-path of a shortest path is also shortest). Longest simple path does NOT have optimal substructure, because the sub-paths cannot be independently combined without creating cycles."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does it mean for a problem to have optimal substructure?",
+      "answer": "An optimal solution to the overall problem can be constructed directly from optimal solutions to its subproblems.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What two properties must a problem have to be solvable by Dynamic Programming?",
+      "answer": "Overlapping subproblems and optimal substructure.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Shortest Path composition",
+      "prompt": "Modify this recursive shortest-path function to return not just the distance, but the path itself, demonstrating that the optimal path is built from optimal sub-paths.",
+      "starter_code": "def shortest_path(u, target, graph):\n    if u == target: return 0\n    return min(graph[u][v] + shortest_path(v, target, graph) for v in graph[u])",
+      "solution": "def shortest_path(u, target, graph):\n    if u == target: return (0, [u])\n    best_dist, best_path = float('inf'), []\n    for v in graph[u]:\n        dist, path = shortest_path(v, target, graph)\n        if graph[u][v] + dist < best_dist:\n            best_dist = graph[u][v] + dist\n            best_path = [u] + path\n    return (best_dist, best_path)"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If a problem has overlapping subproblems but lacks optimal substructure, can you use DP?",
+      "answer": "No. You can cache the subproblems (overlapping), but combining those cached answers won't give you the correct optimal answer for the larger problem (lacks optimal substructure).",
+      "why": "DP requires both properties: caching to save time, and optimal substructure for correctness."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A classmate says: 'Merge sort uses optimal substructure because it combines two sorted halves to sort the full array. That makes it DP.' Why are they wrong?",
+      "answer": "They are correct that merge sort has optimal substructure. However, it lacks overlapping subproblems (every recursive call sorts a unique portion of the array). Therefore, DP caching doesn't help.",
+      "why": "Optimal substructure is required for DP, but it is also present in Divide and Conquer algorithms. The lack of overlapping subproblems is why merge sort isn't DP."
+    }
+  ],
+  "challenge": {
+    "title": "Longest Simple Path",
+    "prompt": "Explain why the longest simple path problem does not have optimal substructure.",
+    "solution": "The longest simple path from A to C might be A->B->C. However, the longest simple path from A to B could use nodes that are also required to go from B to C. Because paths cannot revisit nodes, the subproblems are not independent and cannot simply be combined."
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Optimal_substructure",
+    "https://www.geeksforgeeks.org/optimal-substructure-property-in-dynamic-programming-dp-2/"
+  ]
+}

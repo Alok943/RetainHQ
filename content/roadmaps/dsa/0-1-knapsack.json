@@ -1,0 +1,76 @@
+{
+  "slug": "0-1-knapsack",
+  "title": "0/1 Knapsack",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["coin-change"],
+    "unlocks": ["longest-common-subsequence", "edit-distance"],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "You have a bag with a weight capacity and items with value and weight. You want to maximize value without exceeding capacity. Fractional knapsack can use greedy, but if you must take items whole (0/1), greedy fails.",
+    "better_idea": "Use a 2D grid to track choices. At each item, compare the best value we can get if we include it (and deduct its weight from capacity) versus if we exclude it."
+  },
+  "mental_model": {
+    "intuition": "For each item and every possible capacity, pick the winner: the item's value plus the best we could do with the remaining capacity, OR the best we did without this item.",
+    "description": "Let `dp[i][w]` be the maximum value achievable using the first `i` items with exactly capacity `w`. The recurrence is `dp[i][w] = max(dp[i-1][w], value[i] + dp[i-1][w - weight[i]])`. If the item is heavier than `w`, `dp[i][w] = dp[i-1][w]`. The row index `i-1` in the include-branch is critical: it enforces that an item can be used at most once.",
+    "repeated_decision": "For this item, does taking it (its value + the best answer for the remaining capacity, EXCLUDING this item from future consideration) beat leaving it out?"
+  },
+  "explanation": "This is the classic 2D 'choice + constraint' Dynamic Programming problem.\n\nImagine tracing 3 items on a small grid. By moving row by row, we build up answers for 1 item, then 2 items, etc. \nBecause `dp[i][w]` only ever looks up at the previous row `i-1` (either directly above, or up and to the left by `weight[i]`), this enforces the 0/1 constraint. We never look at the *current* row when adding a new item, which prevents us from taking the same item multiple times.\n\nBecause we only need the previous row, we can space-optimize from an O(n*W) matrix to a single 1D array of size `W`. However, when updating this single row, we must iterate right-to-left. If we iterated left-to-right, we might read a freshly-updated value that already includes the current item, accidentally double-counting it.",
+  "key_points": [
+    { "title": "Complexity", "detail": "O(n*W) time and space, where `W` is the capacity. Space can be optimized to O(W) using a rolling array." },
+    { "title": "The 0/1 Constraint", "detail": "Using `dp[i-1][...]` instead of `dp[i][...]` ensures items are not reused. This distinguishes it from unbounded knapsack." }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Iterating left-to-right in space optimization",
+      "explanation": "When collapsing the 2D grid to a 1D array, scanning capacity left-to-right means `dp[w - weight[i]]` might have already been updated with item `i`. Scanning right-to-left ensures we only read values from the 'previous row' state."
+    },
+    {
+      "title": "Confusing 0/1 with unbounded knapsack",
+      "explanation": "If the recurrence was `dp[i][w] = max(dp[i-1][w], value[i] + dp[i][w - weight[i]])`, you would be allowed to reuse items (Unbounded Knapsack)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `dp[i][w]` represent in the 2D Knapsack problem?",
+      "answer": "The maximum value achievable using a subset of the first `i` items, with a total weight not exceeding `w`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the recurrence relation for 0/1 Knapsack?",
+      "answer": "`dp[i][w] = max(dp[i-1][w], value[i] + dp[i-1][w - weight[i]])`",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must you scan right-to-left when space-optimizing 0/1 Knapsack to a 1D array?",
+      "answer": "To prevent reading a value that has already been updated for the current item, which would incorrectly allow using the item multiple times.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given an array of positive integers, can you partition it into two subsets with equal sums?",
+      "answer": "Yes, this is 0/1 Knapsack where the target capacity `w` is exactly half the total sum of the array, and the weights/values are the numbers themselves.",
+      "company": "SDE interview",
+      "approach": "Recognize that 'finding a subset that sums to X' is a specialized case of Knapsack."
+    },
+    {
+      "question": "What if you can use each item an unlimited number of times?",
+      "answer": "This is Unbounded Knapsack. You simply change the transition to look at the current row: `value[i] + dp[i][w - weight[i]]`.",
+      "company": "SDE interview",
+      "approach": "Identify the mechanism that enforces the constraint (the row index) and modify it to allow reuse."
+    }
+  ],
+  "related": ["unbounded-knapsack"],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Knapsack_problem",
+    "https://www.geeksforgeeks.org/0-1-knapsack-problem-dp-10/"
+  ]
+}

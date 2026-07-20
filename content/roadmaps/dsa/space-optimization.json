@@ -1,0 +1,77 @@
+{
+  "slug": "space-optimization",
+  "title": "Space optimization",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "high",
+    "prerequisites": ["tabulation-bottom-up"],
+    "unlocks": ["climbing-stairs-fibonacci", "house-robber"],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "If `dp[i]`'s transition only reads a FIXED small window of previous states, you don't need to keep the whole table. A few rolling variables or rows will suffice.",
+    "why": "It reduces the space complexity of bottom-up DP significantly. A 1D array collapses from O(n) space to O(1) space, and a 2D matrix collapses from O(m*n) to O(n) space.",
+    "where_used": []
+  },
+  "why_learning_this": [
+    "In an interview, coming up with the O(n) space DP is the pass. Reducing it to O(1) space is the strong hire.",
+    "Space-optimized DP is often used in real memory-constrained environments where allocating a huge matrix is impossible."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying it blindly to unbounded lookbacks",
+      "explanation": "If `dp[i]` depends on a value arbitrarily far back in the table (like in Longest Increasing Subsequence, where `dp[i]` checks every `j < i`), you cannot collapse it to a fixed window. It only works if the lookback distance is a constant."
+    },
+    {
+      "title": "Losing the ability to reconstruct the path",
+      "explanation": "When you space-optimize, you throw away older states. You only retain the numeric answer. If the problem asks you to return the actual path (e.g. which items were selected), you cannot space-optimize without extra bookkeeping."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the generalizable rule for when you can space-optimize a DP table?",
+      "answer": "You can optimize space if the recurrence depends only on a fixed, constant window of previous states (like just `i-1` and `i-2`, or just the previous row).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary trade-off of space optimization?",
+      "answer": "You lose the ability to reconstruct the actual solution path (e.g., which items were chosen), as the older states needed for backtracking are discarded.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How does a 2D grid DP table (like unique paths) space-optimize?",
+      "answer": "If `dp[i][j]` only depends on the current row and the row above it (`i-1`), the entire `m * n` matrix can be collapsed to just two `n`-length rows, dropping space from O(m*n) to O(n).",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Analyze space optimization applicability",
+      "prompt": "Look at this recurrence: `dp[i] = dp[i-1] + max(dp[0...i-2])`. Can you space-optimize this to O(1) variables?",
+      "solution": "No, because computing `dp[i]` requires looking at potentially *all* previous states `dp[0...i-2]`, not just a fixed window. You must keep the full array."
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-result",
+      "question": "A DP algorithm uses a 1D array where `dp[i]` is computed using only `dp[i-1]`, `dp[i-2]`, and `dp[i-3]`. What is the minimum space complexity we can achieve?",
+      "answer": "O(1)",
+      "why": "The transition only looks back 3 steps. We can maintain 3 rolling variables instead of an array of size `n`. 3 variables is a constant, hence O(1) space."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer space-optimizes a knapsack DP to one row, but iterates left-to-right. Why does this give the wrong answer for 0/1 knapsack?",
+      "answer": "Iterating left-to-right overwrites the row with current-item data, so cells later in the row read values that ALREADY include the current item.",
+      "why": "0/1 knapsack requires the item to be used at most once. By scanning right-to-left, we ensure we only read the PREVIOUS item's state before we overwrite it."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Dynamic_programming"
+  ]
+}
