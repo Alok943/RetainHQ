@@ -299,6 +299,7 @@ def main():
         return 0
 
     files = sorted(ROOT.glob("*/*.json"))
+    files = [f for f in files if f.name != "_foundations.json"]
     # Also discover phase-end numericals + test banks stored one level deeper.
     files += sorted(ROOT.glob("*/_numericals/*.json"))
     files += sorted(ROOT.glob("*/_test/*.json"))
@@ -387,9 +388,17 @@ def main():
                     sv = seo.get(sf)
                     if sv is not None and (not isinstance(sv, str) or not sv.strip()):
                         err(rel, f"seo.{sf}, if present, must be a non-empty string")
+                # Hard limits, not warnings: an over-length title/description is silently
+                # truncated by Google, wasting the keyword work that went into it. These were
+                # warnings until 2026-07-18 and were ignored by three separate authoring passes
+                # — enforcement is the only thing that actually holds the line. Limits come from
+                # docs/SEO-IMPLEMENTATION.md P0-B (SERP truncation ~60 / ~158 chars).
                 seo_title = seo.get("title")
-                if isinstance(seo_title, str) and len(seo_title) > 65:
-                    warn(rel, f"seo.title is {len(seo_title)} chars — SERPs truncate around ~60 chars")
+                if isinstance(seo_title, str) and len(seo_title) > 60:
+                    err(rel, f"seo.title is {len(seo_title)} chars — max 60 (SERPs truncate past that)")
+                seo_desc = seo.get("description")
+                if isinstance(seo_desc, str) and len(seo_desc) > 158:
+                    err(rel, f"seo.description is {len(seo_desc)} chars — max 158 (SERPs truncate past that)")
                 seo_desc = seo.get("description")
                 if isinstance(seo_desc, str) and len(seo_desc) > 158:
                     warn(rel, f"seo.description is {len(seo_desc)} chars — SERPs truncate around ~155-160 chars")
@@ -1200,6 +1209,31 @@ def main():
             for slug in m.get(edge, []) or []:
                 if slug not in known:
                     warn(rel, f"{edge} '{slug}' not curated yet in this roadmap")
+
+    # Third pass: check _foundations.json specifically.
+    foundations = sorted(ROOT.glob("*/_foundations.json"))
+    for path in foundations:
+        rel = path.relative_to(ROOT.parent)
+        try:
+            d = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as e:
+            err(rel, f"invalid JSON: {e}")
+            continue
+        req(d, "roadmap", rel, str)
+        req(d, "title", rel, str)
+        req(d, "description", rel, str)
+        if "lessons" not in d or not isinstance(d["lessons"], list):
+            err(rel, "missing or invalid 'lessons' list")
+        else:
+            for i, l in enumerate(d["lessons"]):
+                if not isinstance(l, dict) or not l.get("roadmap") or not l.get("slug") or not l.get("why"):
+                    err(rel, f"lessons[{i}] must be an object with roadmap, slug, and why")
+                elif not isinstance(l.get("why"), str) or len(l["why"].split()) > 12:
+                    err(rel, f"lessons[{i}].why must be <= 12 words")
+                else:
+                    target = ROOT / l["roadmap"] / f"{l['slug']}.json"
+                    if not target.exists():
+                        err(rel, f"lessons[{i}] references missing file {l['roadmap']}/{l['slug']}.json")
 
     print(f"Checked {len(files)} topic file(s).\n")
     if warnings:

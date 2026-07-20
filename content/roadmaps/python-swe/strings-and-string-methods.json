@@ -1,0 +1,107 @@
+{
+  "slug": "strings-and-string-methods",
+  "title": "Strings & string methods",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["primitive-types", "lists"],
+    "unlocks": ["slicing"],
+    "project_usage": [
+      "parsing log messages",
+      "formatting UI responses",
+      "cleaning user input"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "immutable",
+      "definition": "An object whose state cannot be changed after creation. In Python, modifying a string always creates a new string."
+    }
+  ],
+  "overview": {
+    "what": "A string is an immutable sequence of characters. You can access characters by zero-based indexing (`s[0]` for the first, `s[-1]` for the last), loop over them with `for char in s:`, and measure them with `len(s)`.\n\nBecause strings are immutable, you cannot change a character in place (`s[0] = 'X'` raises a `TypeError`). Instead, you build a new string. Python provides powerful string methods that return new strings:\n\n- `s.lower()` / `s.upper()`: Case conversion (great for case-insensitive matching).\n- `s.strip()`: Removes leading and trailing whitespace.\n- `s.split(sep)`: Splits the string into a list of strings by the separator (defaults to whitespace).\n- `sep.join(list_of_strings)`: Joins a list of strings into a single string using `sep` as glue.\n- `s.count(sub)`: Counts non-overlapping occurrences of a substring.\n\nYou can also check for substrings easily with the `in` operator (e.g., `'a' in 'banana'`). When you need to build output that mixes variables and text, use f-strings: `f\"Hello {name}\"`.",
+    "why": "Strings are everywhere. From parsing CSV rows to building API URLs, string manipulation is fundamental. In DSA interviews, string problems (like checking for palindromes or counting anagrams) are extremely common and test whether you understand how to efficiently iterate and transform immutable sequences.",
+    "where_used": [
+      "Parsing user input",
+      "Formatting log lines",
+      "Validating API requests"
+    ]
+  },
+  "why_learning_this": [
+    "You need strings to parse almost any text input.",
+    "String immutability is a frequent interview 'gotcha' — knowing to build a list of chars and `.join()` instead of repeatedly appending to a string saves massive amounts of time (O(N) vs O(N^2))."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Trying to modify a string in place",
+      "explanation": "`s[0] = 'H'` raises a TypeError. You must build a new string, e.g. `'H' + s[1:]`."
+    },
+    {
+      "title": "Forgetting that string methods return new strings",
+      "explanation": "Calling `s.lower()` does not change `s`. You must reassign it: `s = s.lower()`."
+    },
+    {
+      "title": "Using .split() wrong",
+      "explanation": "`\"a,b,c\".split()` (no arguments) splits on whitespace, returning `[\"a,b,c\"]`. You need `\"a,b,c\".split(\",\")` to get `[\"a\", \"b\", \"c\"]`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What happens if you try to assign `s[0] = 'x'` to a string?",
+      "answer": "It raises a TypeError because strings are immutable.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you check if the letter 'z' is in the string `word`?",
+      "answer": "Use the `in` operator: `'z' in word`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Does calling `s.strip()` change the original string `s`?",
+      "answer": "No, it returns a new string with whitespace removed.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the string formatting",
+      "prompt": "The function below should take a name and return a properly capitalized greeting, but it tries to mutate the string in place. Fix it so it returns a new correctly formatted f-string.",
+      "starter_code": "def greet(name):\n    name[0] = name[0].upper()\n    return f\"Hello, {name}!\"\n\nprint(greet(\"alice\"))",
+      "solution": "def greet(name):\n    capitalized = name[0].upper() + name[1:] if name else \"\"\n    return f\"Hello, {capitalized}!\"\n\nprint(greet(\"alice\"))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "text = \"  hello world  \"\ncleaned = text.strip()\nwords = cleaned.split()\nmessage = \"-\".join(words)\nprint(message)",
+    "focus": "Notice how each method returns a new string or list. `strip()` removes spaces, `split()` creates a list `['hello', 'world']`, and `join()` glues them with a hyphen."
+  },
+  "aha_moment": {
+    "code": "s = \"racecar\"\nis_palindrome = (s == s[::-1])\nprint(is_palindrome)",
+    "prediction": "What does this output?",
+    "common_guess": "True",
+    "why": "Strings can be sliced exactly like lists. `s[::-1]` creates a reversed copy of the string, making a palindrome check a trivial one-liner."
+  },
+  "sources": [
+    "https://docs.python.org/3/library/stdtypes.html#string-methods"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "word = \"banana\"\nword.upper()\nprint(word)",
+      "question": "What does this code print?",
+      "answer": "banana",
+      "why": "Strings are immutable. `word.upper()` returns a new string `\"BANANA\"`, but since we don't assign it back to `word`, the original string is unchanged."
+    },
+    {
+      "type": "find-bug",
+      "code": "data = \"apple,orange,banana\"\nfruits = data.split()\nprint(len(fruits))",
+      "question": "Why does this print 1 instead of 3?",
+      "answer": "Because `.split()` with no arguments splits on whitespace, not commas.",
+      "why": "To split by commas, you must explicitly provide the separator: `data.split(',')`."
+    }
+  ]
+}

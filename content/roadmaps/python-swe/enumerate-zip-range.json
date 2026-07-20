@@ -1,0 +1,106 @@
+{
+  "slug": "enumerate-zip-range",
+  "title": "Loop idioms: range, enumerate, zip",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 35,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["loops", "lists", "tuples"],
+    "unlocks": [],
+    "project_usage": [
+      "iterating multiple lists in parallel",
+      "generating index-based sequences"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "unpacking",
+      "definition": "Extracting values from a tuple or list into multiple variables at once, e.g., `for idx, val in enumerate(arr):` unpacks the tuple `(idx, val)` yielded by `enumerate`."
+    }
+  ],
+  "overview": {
+    "what": "Python's `for` loop iterates directly over values (`for x in arr:`). But what if you need the index too? Or what if you need to iterate over two arrays at once? Python provides three built-in tools for this:\n\n1. **`range(start, stop, step)`**: Generates a sequence of numbers. \n   - `range(n)` goes from `0` to `n-1`.\n   - `range(len(arr))` is the C-style way to get indices, but it's generally discouraged in Python unless you *only* need the index or are doing index math (like binary search).\n   - Reverse traversal: `range(n - 1, -1, -1)` starts at the last index and goes down to 0.\n\n2. **`enumerate(iterable)`**: Yields pairs of `(index, value)`. This is the Pythonic way to get both the index and the item simultaneously. \n   - `for i, val in enumerate(arr):` unpacks the pair cleanly in the loop header.\n\n3. **`zip(iterA, iterB)`**: Pairs up elements from multiple iterables in lockstep. \n   - `for a, b in zip(list1, list2):` processes the first element of both, then the second, and so on. It stops when the *shortest* iterable is exhausted.",
+    "why": "These three functions are the vocabulary of array traversal. `enumerate` prevents messy manual index counters (`i = 0` before the loop). `zip` cleanly handles lockstep traversal without needing to use `range(len(a))` and indexing both arrays. `range` is essential when you need pure index math (like jumping by 2, or searching backward).",
+    "where_used": [
+      "Two-pointer array problems",
+      "Iterating over rows and columns",
+      "Pairing keys and values"
+    ]
+  },
+  "why_learning_this": [
+    "Knowing `enumerate` saves you from `for i in range(len(arr)): val = arr[i]`.",
+    "Using `zip` prevents `IndexError` when iterating over two lists of different lengths, as it safely stops at the shortest one."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using range(len(a)) when you also need values",
+      "explanation": "`for i in range(len(arr)): print(arr[i])` works, but `for i, val in enumerate(arr): print(val)` is faster, safer, and idiomatic."
+    },
+    {
+      "title": "Off-by-one in reverse ranges",
+      "explanation": "`range(n, 0, -1)` stops at 1. To reach index 0, the stop argument must be `-1`: `range(n-1, -1, -1)`."
+    },
+    {
+      "title": "Forgetting that zip stops early",
+      "explanation": "If `a` has 5 items and `b` has 3, `zip(a, b)` will only loop 3 times. The remaining 2 items in `a` are ignored."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What function should you use if you need both the index and the value while looping over a list?",
+      "answer": "`enumerate(list)`",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the stop condition for `zip(a, b)`?",
+      "answer": "It stops as soon as the shortest iterable is exhausted.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you loop backwards from index 5 down to 0 using `range`?",
+      "answer": "`range(5, -1, -1)`",
+      "tier": "tier2"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Refactor to enumerate",
+      "prompt": "The loop below uses the C-style `range(len())` to print the index and value. Refactor it to use `enumerate()` and unpacking.",
+      "starter_code": "words = ['apple', 'banana', 'cherry']\nfor i in range(len(words)):\n    word = words[i]\n    print(f\"{i}: {word}\")",
+      "solution": "words = ['apple', 'banana', 'cherry']\nfor i, word in enumerate(words):\n    print(f\"{i}: {word}\")"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "names = ['Alice', 'Bob']\nscores = [85, 92, 100]\nfor name, score in zip(names, scores):\n    print(f\"{name} got {score}\")",
+    "focus": "The loop runs exactly twice. The third score (100) is ignored because `names` only has two elements, and `zip` stops at the shortest list."
+  },
+  "aha_moment": {
+    "code": "arr = ['A', 'B', 'C']\nfor tup in enumerate(arr):\n    print(tup)",
+    "prediction": "What does `tup` look like on each iteration?",
+    "common_guess": "It prints A, B, C",
+    "why": "`enumerate` actually yields tuples: `(0, 'A')`, `(1, 'B')`, `(2, 'C')`. We normally unpack these immediately by writing `for i, val in enumerate(arr):`."
+  },
+  "sources": [
+    "https://docs.python.org/3/library/functions.html#enumerate"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "nums = [10, 20]\nchars = ['a', 'b', 'c']\nfor n, c in zip(nums, chars):\n    print(n)\n    print(c)",
+      "question": "What is the last thing printed by this loop?",
+      "answer": "b",
+      "why": "The loop pairs 10 with 'a' and 20 with 'b'. It stops there because `nums` is out of elements. So it prints 10, 'a', 20, 'b'."
+    },
+    {
+      "type": "predict-output",
+      "code": "for i in range(3, 0, -1):\n    print(i)",
+      "question": "What numbers are printed?",
+      "answer": "3, 2, 1",
+      "why": "The `start` is 3, the `step` is -1. The `stop` is 0, which is exclusive, so it stops before hitting 0."
+    }
+  ]
+}

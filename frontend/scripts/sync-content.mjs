@@ -117,6 +117,11 @@ async function main() {
       // Copy the file
       await cp(srcPath, destPath, { force: true });
 
+      // `_`-prefixed files are roadmap-level sidecars (e.g. _foundations.json), not
+      // lessons: copied so the app can fetch them, but they get no manifest entry and
+      // no sitemap URL — there is no /learn/_foundations page for a crawler to reach.
+      if (file.startsWith('_')) continue;
+
       // Parse to build the manifest entry
       try {
         const raw = await readFile(srcPath, 'utf-8');

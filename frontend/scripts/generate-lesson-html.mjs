@@ -506,7 +506,10 @@ async function main() {
     const srcDir = join(CONTENT_ROOT, roadmapKey);
 
     const files = await readdir(srcDir);
-    const lessonFiles = files.filter(f => f.endsWith('.json'));
+    // `_`-prefixed files are roadmap-level sidecars (e.g. _foundations.json), not
+    // lessons — they have a `title` but no lesson body, so they must not get a
+    // prerendered /learn/ page.
+    const lessonFiles = files.filter(f => f.endsWith('.json') && !f.startsWith('_'));
 
     // First pass: Build slug -> title index for this roadmap
     const slugMap = new Map();

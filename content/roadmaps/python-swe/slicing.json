@@ -1,0 +1,107 @@
+{
+  "slug": "slicing",
+  "title": "Slicing lists & strings",
+  "roadmap": "python-swe",
+  "kind": "concept",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["lists", "strings-and-string-methods"],
+    "unlocks": ["shallow-vs-deep-copy"],
+    "project_usage": [
+      "pagination",
+      "data chunking",
+      "parsing text prefixes"
+    ]
+  },
+  "glossary": [
+    {
+      "term": "slice",
+      "definition": "A subset of a sequence extracted using `[start:stop:step]` notation. It always returns a new sequence (a shallow copy) of the same type."
+    }
+  ],
+  "overview": {
+    "what": "Slicing lets you extract a portion of a sequence (like a list, string, or tuple) using the syntax `seq[start:stop:step]`. \n\n- **start**: The index to begin at (inclusive). Defaults to 0.\n- **stop**: The index to end before (exclusive). Defaults to the length of the sequence.\n- **step**: The stride. Defaults to 1.\n\nThink of the indices as pointing *between* elements (fence-posts). `a[1:3]` extracts from the first fence-post up to the third. Because `stop` is exclusive, `a[:n]` gives you the first `n` elements, and `a[1:]` gives you everything except the first element.\n\nNegative indices count from the end. `a[-3:]` gives the last 3 elements. `a[:-1]` gives everything *except* the last element.\n\nThe `step` argument lets you skip elements or reverse. `a[::2]` gets every second element. `a[::-1]` reverses the sequence.\n\nCrucially, a slice creates a **shallow copy**. `copy = a[:]` makes a new outer list. Modifying `copy[0]` won't affect `a`, but if `a` contains nested lists, both slices point to the same inner lists.",
+    "why": "Slicing is heavily used in algorithmic code. Need to check if a string is a palindrome? `s == s[::-1]`. Need to skip the header row of a CSV? `rows[1:]`. Need to implement pagination? `results[page*10:(page+1)*10]`. It's idiomatic, fast, and prevents off-by-one loop errors.",
+    "where_used": [
+      "Extracting prefix/suffix of strings",
+      "Reversing sequences",
+      "Copying matrix rows"
+    ]
+  },
+  "why_learning_this": [
+    "You will see `arr[1:]` and `arr[::-1]` in almost every recursive or array-based algorithm.",
+    "It safely handles out-of-bounds errors — `arr[100:200]` returns an empty list instead of crashing, which is often exactly what you want."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Thinking the stop index is included",
+      "explanation": "`a[0:3]` includes indices 0, 1, and 2. It does not include 3."
+    },
+    {
+      "title": "Confusing a slice with an alias",
+      "explanation": "`b = a` means `b` and `a` are the exact same list. `b = a[:]` means `b` is a *new* list (shallow copy) containing the same elements."
+    },
+    {
+      "title": "Off-by-one errors with negative steps",
+      "explanation": "When using a negative step, `start` must be greater than `stop`. `a[5:1:-1]` goes backwards from 5 down to 2 (exclusive of 1)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What does `a[::-1]` do?",
+      "answer": "It returns a reversed copy of the sequence.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If `len(a) == 5`, does `a[1:10]` raise an error?",
+      "answer": "No, slicing gracefully clamps to the sequence boundaries and would just return from index 1 to the end.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Is the `stop` index inclusive or exclusive in `a[start:stop]`?",
+      "answer": "Exclusive.",
+      "tier": "tier1"
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Extract the middle",
+      "prompt": "Modify the `get_middle` function to return a slice containing all elements except the first and the last.",
+      "starter_code": "def get_middle(arr):\n    # Return a slice excluding the first and last elements\n    return arr\n\nprint(get_middle([1, 2, 3, 4, 5]))",
+      "solution": "def get_middle(arr):\n    return arr[1:-1]\n\nprint(get_middle([1, 2, 3, 4, 5]))"
+    }
+  ],
+  "code_walkthrough": {
+    "code": "data = [0, 10, 20, 30, 40, 50]\nfirst_three = data[:3]\nlast_two = data[-2:]\nreversed_copy = data[::-1]\nprint(first_three, last_two, reversed_copy)",
+    "focus": "Notice how `[:3]` gets indices 0, 1, 2. `[-2:]` grabs the last two elements. `[::-1]` uses a negative step to reverse."
+  },
+  "aha_moment": {
+    "code": "a = [1, 2, 3]\nb = a[:]\nb[0] = 99\nprint(a)",
+    "prediction": "What does this print?",
+    "common_guess": "[99, 2, 3]",
+    "why": "It prints `[1, 2, 3]`. `a[:]` creates a new shallow copy. Modifying the slots of `b` does not affect `a`. (However, if they contained nested lists, mutating the *contents* of a nested list would affect both)."
+  },
+  "sources": [
+    "https://docs.python.org/3/tutorial/introduction.html#strings"
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "code": "text = \"Python\"\nprint(text[1:4])",
+      "question": "What does this slice output?",
+      "answer": "yth",
+      "why": "Indices 1, 2, and 3 correspond to 'y', 't', and 'h'. The stop index 4 ('o') is exclusive."
+    },
+    {
+      "type": "predict-output",
+      "code": "nums = [10, 20, 30]\nprint(nums[5:10])",
+      "question": "What does this print?",
+      "answer": "[]",
+      "why": "Slicing past the end of a list does not raise an IndexError; it simply returns an empty list."
+    }
+  ]
+}
