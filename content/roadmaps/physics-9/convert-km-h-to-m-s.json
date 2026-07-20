@@ -20,93 +20,93 @@
     ]
   },
   "hook": {
-    "scenario": "Aap highway par gaadi mein baith kar speedometer dekhte ho toh speed km/h mein likhi hoti hai. Par physics ke problems mein humein aksar speed m/s mein chahiye hoti hai.",
+    "scenario": "Aap highway par gaadi mein baith kar speedometer dekhte ho toh speed `km/h` mein likhi hoti hai. Par physics ke problems mein humein aksar speed `m/s` mein chahiye hoti hai.",
     "question": "Speed ko ek unit se dusri unit mein fast kaise badlein bina lamba calculation kiye?"
   },
   "mental_model": {
-    "intuition": "km/h se m/s jaane ke liye bas 5/18 se multiply karna hai â€“ yeh ek magic multiplier hai.",
-    "description": "Jab bhi aap speed ko convert karte ho, aap basically 1 km ko 1000 m aur 1 hour ko 3600 s mein badal rahe ho. 1000/3600 ko simplify karne par 5/18 milta hai. Yeh fraction yaad rakhna calculations fast kar deta hai."
+    "intuition": "`km/h` se `m/s` jaane ke liye bas `5/18` se multiply karna hai — yeh ek magic multiplier hai.",
+    "description": "Jab bhi aap speed ko convert karte ho, aap basically `1 km` ko `1000 m` aur `1 hour` ko `3600 s` mein badal rahe ho. `1000 / 3600` ko simplify karne par `5/18` milta hai. Yeh fraction yaad rakhna calculations fast kar deta hai."
   },
-  "explanation": "Physics mein motion padhte waqt aapko hamesha units ka dhyan rakhna padta hai. Bahut saare practical scenarios mein, jaise car ya train ki speed, hum values ko km/h mein measure karte hain. Par SI unit system mein, hum distance ko m mein aur time ko s mein measure karte hain. Isliye, kisi bhi formula mein value daalne se pehle usko m/s mein convert karna zaroori hota hai.\n\nAgar hum basic se sochein, toh 1 km = 1000 m aur 1 hour = 60 minute = 3600 s hota hai. Iska matlab 1 km/h ki speed asal mein 1000 m / 3600 s hoti hai. Jab aap 1000 ko 3600 se divide karke simplify karte ho, toh numerator aur denominator ko 200 se cut karne par 5/18 aata hai. Isliye, 1 km/h exactly 5/18 m/s ke barabar hota hai.\n\nYeh ek bohot powerful shortcut hai. Jab bhi aapko koi speed km/h mein di gayi ho, usko m/s mein convert karne ke liye sidha us value ko 5/18 se multiply kar do. Example ke liye, agar aapko 36 km/h ko m/s mein badalna hai, toh aapko bas 36 Ã— (5/18) karna hoga. Yahan 18 denominator mein hai jo 36 ko easily 2 se divide kar dega, aur aapko seedha 10 m/s mil jayega.\n\nWaise hi, agar aapko kabhi ulta karna ho, yaani m/s se km/h mein aana ho, toh aap iss multiplier ko flip kar sakte ho. Tab aapko 18/5 se multiply karna hoga. Yeh fraction trick aapko exams mein bohot time bachayegi kyunki CBSE mein aksar values (jaise 18, 36, 54, 72, 90) aisi di jaati hain jo 18 ke table mein aati hain, jisse calculation ekdum smooth ho jaata hai.",
+  "explanation": "Physics mein motion padhte waqt aapko hamesha units ka dhyan rakhna padta hai. Bahut saare practical scenarios mein, jaise car ya train ki speed, hum values ko `km/h` mein measure karte hain. Par SI unit system mein, hum distance ko `m` mein aur time ko `s` mein measure karte hain. Isliye, kisi bhi formula mein value daalne se pehle usko `m/s` mein convert karna zaroori hota hai.\n\nAgar hum basic se sochein, toh `1 km = 1000 m` aur `1 hour = 60 min = 3600 s` hota hai. Iska matlab `1 km/h` ki speed asal mein `1000 m / 3600 s` hoti hai:\n\n    1 km/h = 1000 m / 3600 s\n    1 km/h = 5/18 m/s\n\nJab aap `1000` ko `3600` se divide karke simplify karte ho, toh numerator aur denominator ko `200` se cut karne par `5/18` aata hai. Isliye, `1 km/h` exactly `5/18 m/s` ke barabar hota hai.\n\nYeh ek bohot powerful shortcut hai. Jab bhi aapko koi speed `km/h` mein di gayi ho, usko `m/s` mein convert karne ke liye sidha us value ko `5/18` se multiply kar do. Example ke liye, agar aapko `36 km/h` ko `m/s` mein badalna hai, toh aapko bas `36 × (5/18)` karna hoga. Yahan `18` denominator mein hai jo `36` ko easily `2` se divide kar dega, aur aapko seedha `10 m/s` mil jayega.\n\nWaise hi, agar aapko kabhi ulta karna ho, yaani `m/s` se `km/h` mein aana ho, toh aap iss multiplier ko flip kar sakte ho. Tab aapko `18/5` se multiply karna hoga. Yeh fraction trick aapko exams mein bohot time bachayegi kyunki CBSE mein aksar values (jaise `18`, `36`, `54`, `72`, `90`) aisi di jaati hain jo `18` ke table mein aati hain, jisse calculation ekdum smooth ho jaata hai.",
   "key_points": [
     {
       "title": "The magic fraction",
-      "detail": "To convert km/h to m/s, multiply the given value by 5/18."
+      "detail": "To convert `km/h` to `m/s`, multiply the given value by `5/18`."
     },
     {
       "title": "Reverse conversion",
-      "detail": "To convert m/s to km/h, multiply the given value by 18/5."
+      "detail": "To convert `m/s` to `km/h`, multiply the given value by `18/5`."
     }
   ],
   "worked_example": [
     {
-      "problem": "A train is travelling at a speed of 90 km/h. Convert this speed into m/s.",
+      "problem": "A train is travelling at a speed of `90 km/h`. Convert this speed into `m/s`.",
       "steps": [
         {
-          "narration": "Given speed ko 5/18 se multiply karke m/s mein convert karte hain.",
+          "narration": "Given speed ko `5/18` se multiply karke `m/s` mein convert karte hain.",
           "math": "Speed = 90 * (5 / 18)"
         },
         {
-          "narration": "90 ko 18 se divide karne par 5 aata hai. Fir 5 ko 5 se multiply karte hain.",
+          "narration": "`90` ko `18` se divide karne par `5` aata hai. Fir `5` ko `5` se multiply karte hain.",
           "math": "Speed = 5 * 5"
         }
       ],
-      "answer": "25 m/s"
+      "answer": "`25 m/s`"
     },
     {
-      "problem": "An athlete is running with a speed of 10 m/s. Express this speed in km/h.",
+      "problem": "An athlete is running with a speed of `10 m/s`. Express this speed in `km/h`.",
       "steps": [
         {
-          "narration": "m/s se km/h mein jaane ke liye multiplier ulta kar dete hain, yaani 18/5 se multiply karte hain.",
+          "narration": "`m/s` se `km/h` mein jaane ke liye multiplier ulta kar dete hain, yaani `18/5` se multiply karte hain.",
           "math": "Speed = 10 * (18 / 5)"
         },
         {
-          "narration": "10 ko 5 se divide karne par 2 milta hai. 2 ko 18 se multiply karke final answer nikalte hain.",
+          "narration": "`10` ko `5` se divide karne par `2` milta hai. `2` ko `18` se multiply karke final answer nikalte hain.",
           "math": "Speed = 2 * 18"
         }
       ],
-      "answer": "36 km/h"
+      "answer": "`36 km/h`"
     }
   ],
   "common_mistakes": [
     {
       "title": "Using the wrong fraction",
-      "explanation": "Students often get confused between 5/18 and 18/5. Yaad rakhein ki 'km' ek badi unit hai aur 'm' chhoti unit hai, toh choti value lane ke liye chote fraction (5/18, which is < 1) se multiply karna hota hai."
+      "explanation": "Students often get confused between `5/18` and `18/5`. Yaad rakhein ki 'km' ek badi unit hai aur 'm' chhoti unit hai, toh choti value lane ke liye chote fraction (`5/18`, which is `< 1`) se multiply karna hota hai."
     },
     {
       "title": "Forgetting to convert before applying formulas",
-      "explanation": "Problem solve karte waqt agar time 's' mein diya ho aur speed 'km/h' mein, toh units mismatch hone se answer wrong aayega. Hamesha ensure karein ki units consistent ho."
+      "explanation": "Problem solve karte waqt agar time `s` (seconds) mein diya ho aur speed `km/h` mein, toh units mismatch hone se answer wrong aayega. Hamesha ensure karein ki units consistent ho."
     }
   ],
   "recall_questions": [
     {
-      "q": "What fraction is used to convert km/h to m/s?",
-      "answer": "5/18",
+      "q": "What fraction is used to convert `km/h` to `m/s`?",
+      "answer": "`5/18`",
       "tier": "tier1"
     },
     {
-      "q": "What is 36 km/h in m/s?",
-      "answer": "10 m/s",
+      "q": "What is `36 km/h` in `m/s`?",
+      "answer": "`10 m/s`",
       "tier": "tier1"
     },
     {
-      "q": "Does multiplying by 5/18 increase or decrease the numerical value?",
-      "answer": "Decrease (since 5/18 < 1).",
+      "q": "Does multiplying by `5/18` increase or decrease the numerical value?",
+      "answer": "Decrease (since `5/18 < 1`).",
       "tier": "tier2"
     }
   ],
   "oa_questions": [
     {
       "source": "NCERT Exercise",
-      "question": "Convert the speed of 72 km/h into m/s.",
-      "answer": "20 m/s",
-      "approach": "Multiply 72 by 5/18. 72 divided by 18 is 4. Multiply 4 by 5 to get 20."
+      "question": "Convert the speed of `72 km/h` into `m/s`.",
+      "answer": "`20 m/s`",
+      "approach": "Multiply `72` by `5/18`. `72` divided by `18` is `4`. Multiply `4` by `5` to get `20`."
     },
     {
       "source": "CBSE 2023",
-      "question": "A car travels at 54 km/h. What is its speed in SI units?",
-      "answer": "15 m/s",
-      "approach": "Multiply 54 by 5/18. 54/18 = 3. 3 * 5 = 15."
+      "question": "A car travels at `54 km/h`. What is its speed in SI units?",
+      "answer": "`15 m/s`",
+      "approach": "Multiply `54` by `5/18`. `54 / 18 = 3`. `3 × 5 = 15`."
     }
   ],
   "sources": [

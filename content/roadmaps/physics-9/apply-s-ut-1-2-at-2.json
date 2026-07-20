@@ -20,56 +20,56 @@
     ]
   },
   "hook": {
-    "scenario": "Aap ek building ki chhat se pathar girate ho. Wo 3 seconds hawa me rehta hai aur phir zameen par girta hai.",
+    "scenario": "Aap ek building ki chhat se pathar girate ho. Wo `3 seconds` hawa me rehta hai aur phir zameen par girta hai.",
     "question": "Bina kisi tape measure ke, sirf pathar ke time se us building ki total height kaise nikalenge?"
   },
   "mental_model": {
     "intuition": "Total distance = (Speed bina acceleration ke chalne wala distance) + (Acceleration se extra cover kiya gaya distance).",
-    "description": "Ye equation essentially graph ke area formula se hi aati hai. (ut) wala part us rectangle ka area hai, aur (1/2 at^2) uske upar bane triangle ka area hai. Dono ko add karne se aapko pure waqt ka total displacement (s) milta hai."
+    "description": "Ye equation essentially graph ke area formula se hi aati hai. (`ut`) wala part us rectangle ka area hai, aur (`1/2 at^2`) uske upar bane triangle ka area hai. Dono ko add karne se aapko pure waqt ka total displacement (`s`) milta hai."
   },
-  "explanation": "Second equation of motion (s = ut + 1/2 at^2) ek bohot powerful formula hai. Ise tab use karte hain jab aapse distance (s) puchi gayi ho, aur aapko final velocity (v) ke bare me kuch na pata ho aur na hi nikalni ho.\n\nIs formula ke do tukde hote hain. Pehla hissa hai 'ut'. Ye wo distance hai jo object cover karta agar wo apni initial speed (u) par bina change hue chalta rehta. Dusra hissa hai '1/2 at^2'. Ye wo additional distance hai jo acceleration (speed badhne) ke kaaran add hota hai. Jab dono ko add karte hain, tab total distance (s) aata hai.\n\nEk special case jo numericals mein bahut aata hai, wo hai jab koi object 'rest' se start hota hai. Aise me initial velocity 'u' = 0 ban jati hai. Jiske chalte pehla pura hissa (ut) zero ho jata hai. Equation sikud kar sirf s = 1/2 at^2 ban jati hai. Yeh physics ki kayi calculations (jaise falling bodies) ko bohot asaan kar deta hai.\n\nDhyan rakhne wali baat ye hai ki is equation mein time 't' ka square (t^2) hota hai. Calculations me BODMAS rule apply karna padta hai: pehle time ka square karein, fir acceleration se multiply karein, aur end mein usko half (1/2) karein. Agar sign conventions me galti ki, ya time ko bina square kiye multiply kar diya, toh poora answer kharab ho jayega.",
+  "explanation": "Second equation of motion (`s = ut + 1/2 at^2`) ek bohot powerful formula hai. Ise tab use karte hain jab aapse distance (`s`) puchi gayi ho, aur aapko final velocity (`v`) ke bare me kuch na pata ho aur na hi nikalni ho.\n\nIs formula ke do tukde hote hain. Pehla hissa hai `ut`. Ye wo distance hai jo object cover karta agar wo apni initial speed (`u`) par bina change hue chalta rehta. Dusra hissa hai `1/2 at^2`. Ye wo additional distance hai jo acceleration (speed badhne) ke kaaran add hota hai. Jab dono ko add karte hain, tab total distance (`s`) aata hai.\n\nEk special case jo numericals mein bahut aata hai, wo hai jab koi object 'rest' se start hota hai. Aise me initial velocity `u = 0` ban jati hai. Jiske chalte pehla pura hissa (`ut`) zero ho jata hai. Equation sikud kar sirf `s = 1/2 at^2` ban jati hai. Yeh physics ki kayi calculations (jaise falling bodies) ko bohot asaan kar deta hai.\n\nDhyan rakhne wali baat ye hai ki is equation mein time `t` ka square (`t^2`) hota hai. Calculations me BODMAS rule apply karna padta hai: pehle time ka square karein, fir acceleration se multiply karein, aur end mein usko half (`1/2`) karein. Agar sign conventions me galti ki, ya time ko bina square kiye multiply kar diya, toh poora answer kharab ho jayega.",
   "key_points": [
     {
       "title": "Second Equation of Motion",
-      "detail": "s = ut + 1/2 at^2. It relates displacement, initial velocity, time, and acceleration without involving final velocity."
+      "detail": "`s = ut + 1/2 at^2`. It relates displacement, initial velocity, time, and acceleration without involving final velocity."
     },
     {
       "title": "Starting from rest",
-      "detail": "If u = 0, the equation simplifies dramatically to s = 1/2 at^2."
+      "detail": "If `u = 0`, the equation simplifies dramatically to `s = 1/2 at^2`."
     },
     {
       "title": "Order of operations",
-      "detail": "Remember to square the time 't' first before multiplying with 'a' and dividing by 2."
+      "detail": "Remember to square the time `t` first before multiplying with `a` and dividing by `2`."
     }
   ],
   "worked_example": [
     {
-      "problem": "A car starts from rest and moves with a uniform acceleration of 3 m/s^2 for 4 seconds. Find the distance travelled.",
+      "problem": "A car starts from rest and moves with a uniform acceleration of `3 m/s^2` for `4 seconds`. Find the distance travelled.",
       "steps": [
         {
-          "narration": "Starts from rest means u = 0, a = 3, t = 4. Distance puchi hai aur final velocity nahi di. Second equation lagegi.",
+          "narration": "Starts from rest means `u = 0`, `a = 3`, `t = 4`. Distance puchi hai aur final velocity nahi di. Second equation lagegi.",
           "math": "s = (0 * 4) + (1/2 * 3 * 4^2)"
         },
         {
-          "narration": "Pehle time ka square karein (4^2 = 16).",
+          "narration": "Pehle time ka square karein (`4^2 = 16`).",
           "math": "s = 0 + (1/2 * 3 * 16)"
         },
         {
-          "narration": "Ab simplify karein. 1/2 * 16 hota hai 8. 8 * 3 hota hai 24.",
+          "narration": "Ab simplify karein. `1/2 * 16` hota hai `8`. `8 * 3` hota hai `24`.",
           "math": "s = 24"
         }
       ],
-      "answer": "24 m"
+      "answer": "`24 m`"
     },
     {
-      "problem": "An airplane touching down on a runway at 60 m/s applies reverse thrust, decelerating at 4 m/s^2. How far does it travel in 10 seconds?",
+      "problem": "An airplane touching down on a runway at `60 m/s` applies reverse thrust, decelerating at `4 m/s^2`. How far does it travel in `10 seconds`?",
       "steps": [
         {
-          "narration": "Initial velocity u = 60 m/s, deceleration hai to a = -4 m/s^2, aur time t = 10 s diya hai.",
+          "narration": "Initial velocity `u = 60 m/s`, deceleration hai to `a = -4 m/s^2`, aur time `t = 10 s` diya hai.",
           "math": "u = 60, a = -4, t = 10"
         },
         {
-          "narration": "Second equation s = ut + (1/2)at^2 lagayenge.",
+          "narration": "Second equation `s = ut + (1/2)at^2` lagayenge.",
           "math": "s = (60 * 10) + (1/2 * (-4) * 10^2)"
         },
         {
@@ -77,48 +77,48 @@
           "math": "s = 600 + (-2 * 100) = 600 - 200 = 400"
         }
       ],
-      "answer": "400 m"
+      "answer": "`400 m`"
     }
   ],
   "common_mistakes": [
     {
       "title": "Squaring the whole 'at' term",
-      "explanation": "Bache aksar (at)^2 kar dete hain. Square sirf aur sirf time 't' ke upar hai, 'a' ke upar nahi."
+      "explanation": "Bache aksar `(at)^2` kar dete hain. Square sirf aur sirf time `t` ke upar hai, `a` ke upar nahi."
     },
     {
       "title": "Using the wrong equation",
-      "explanation": "Agar question me final velocity (v) di ho par time (t) nahi, to second equation me phase mat rahiye. Waha teesri equation (2as = v^2 - u^2) seedha answer degi."
+      "explanation": "Agar question me final velocity (`v`) di ho par time (`t`) nahi, to second equation me phase mat rahiye. Waha teesri equation (`2as = v^2 - u^2`) seedha answer degi."
     }
   ],
   "recall_questions": [
     {
       "q": "State the second equation of motion.",
-      "answer": "s = ut + 1/2 at^2",
+      "answer": "`s = ut + 1/2 at^2`",
       "tier": "tier1"
     },
     {
       "q": "If a body starts from rest, what does the second equation of motion simplify to?",
-      "answer": "s = 1/2 at^2",
+      "answer": "`s = 1/2 at^2`",
       "tier": "tier1"
     },
     {
       "q": "What is the SI unit of acceleration?",
-      "answer": "m/s^2",
+      "answer": "`m/s^2`",
       "tier": "tier1"
     }
   ],
   "oa_questions": [
     {
       "source": "NCERT Exercise",
-      "question": "A motorboat starting from rest on a lake accelerates in a straight line at a constant rate of 3.0 m s-2 for 8.0 s. How far does the boat travel during this time?",
-      "answer": "96 m",
-      "approach": "Identify u = 0, a = 3.0, t = 8.0. Since we need distance, use s = ut + 1/2 at^2. s = 0 + 1/2 * 3 * (8^2) = 1.5 * 64 = 96 m."
+      "question": "A motorboat starting from rest on a lake accelerates in a straight line at a constant rate of `3.0 m s^-2` for `8.0 s`. How far does the boat travel during this time?",
+      "answer": "`96 m`",
+      "approach": "Identify `u = 0`, `a = 3.0`, `t = 8.0`. Since we need distance, use `s = ut + 1/2 at^2`. `s = 0 + 1/2 * 3 * (8^2) = 1.5 * 64 = 96 m`."
     },
     {
       "source": "CBSE 2020",
-      "question": "A body dropped from a building takes 2 s to reach the ground. If g = 9.8 m/s^2, find the height of the building.",
-      "answer": "19.6 m",
-      "approach": "Dropped means u = 0. t = 2. a = 9.8. Height is displacement. h = 1/2 * g * t^2 = 1/2 * 9.8 * (2^2) = 4.9 * 4 = 19.6 m."
+      "question": "A body dropped from a building takes `2 s` to reach the ground. If `g = 9.8 m/s^2`, find the height of the building.",
+      "answer": "`19.6 m`",
+      "approach": "Dropped means `u = 0`. `t = 2`. `a = 9.8`. Height is displacement. `h = 1/2 * g * t^2 = 1/2 * 9.8 * (2^2) = 4.9 * 4 = 19.6 m`."
     }
   ],
   "sources": [

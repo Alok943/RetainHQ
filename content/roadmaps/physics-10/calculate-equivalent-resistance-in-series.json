@@ -21,14 +21,14 @@
     ]
   },
   "hook": {
-    "scenario": "Traffic ek single road par move kar raha hai. Agar us raaste par 3 toll booths laga diye jayein, toh kya hoga?",
+    "scenario": "Traffic ek single road par move kar raha hai. Agar us raaste par `3` toll booths laga diye jayein, toh kya hoga?",
     "question": "Gaadiyon ko teeno toll booths cross karne hi padenge. Waise hi series circuit mein current ke paas ek hi rasta hota hai."
   },
   "mental_model": {
     "intuition": "Series circuit ek single highway ki tarah hai. Saare resistors ek ke baad ek chain mein lage hote hain.",
     "description": "Kyunki current ko kahin aur mudne ka raasta nahi milta, sabhi resistors se ek jaisa current gujarta hai. Par har resistor toll booth ki tarah total voltage (battery ki energy) ka kuch hissa khaa leta hai."
   },
-  "explanation": "Jab do ya do se zyada resistors end-to-end connect hote hain, toh unhe series mein kaha jata hai. Series circuit ki sabse khaas baat yeh hai ki pure circuit mein current (I) same rehta hai.\n\nLekin potential difference (Voltage) har resistor ke across bat (divide ho) jata hai. Agar battery ka voltage V hai, toh V = V1 + V2 + V3.\n\nOhm's law (V = IR) apply karne par: IR_s = IR1 + IR2 + IR3. I common nikal kar cancel ho jata hai, jisse equivalent resistance ka formula banta hai: Rs = R1 + R2 + R3.\n\nIska matlab hai ki series mein lagaye gaye resistors ka total sum humesha kisi bhi individual resistor se bada hota hai. Isliye series combination use karne se circuit ka overall current decrease ho jata hai.",
+  "explanation": "Jab do ya do se zyada resistors end-to-end connect hote hain, toh unhe series mein kaha jata hai. Series circuit ki sabse khaas baat yeh hai ki pure circuit mein current (`I`) same rehta hai.\n\nLekin potential difference (Voltage) har resistor ke across bat (divide ho) jata hai. Agar battery ka voltage `V` hai, toh:\n\n    V = V_1 + V_2 + V_3\n\nOhm's law (`V = I R`) apply karne par:\n\n    I R_s = I R_1 + I R_2 + I R_3\n\n`I` common nikal kar cancel ho jata hai, jisse equivalent resistance ka formula banta hai:\n\n    R_s = R_1 + R_2 + R_3\n\nIska matlab hai ki series mein lagaye gaye resistors ka total sum humesha kisi bhi individual resistor se bada hota hai. Isliye series combination use karne se circuit ka overall current decrease ho jata hai.",
   "key_points": [
     {
       "title": "Constant Current",
@@ -36,16 +36,16 @@
     },
     {
       "title": "Voltage Adds Up",
-      "detail": "The total voltage is the sum of voltages across each resistor (V = V1 + V2 + V3)."
+      "detail": "The total voltage is the sum of voltages across each resistor (`V = V_1 + V_2 + V_3`)."
     },
     {
       "title": "Equivalent Resistance Formula",
-      "detail": "Rs = R1 + R2 + R3"
+      "detail": "`R_s = R_1 + R_2 + R_3`"
     }
   ],
   "worked_example": [
     {
-      "problem": "Draw a schematic diagram of a circuit consisting of a battery of three cells of 2 V each, a 5 Ω resistor, an 8 Ω resistor, and a 12 Ω resistor, and a plug key, all connected in series. Find total resistance.",
+      "problem": "Draw a schematic diagram of a circuit consisting of a battery of three cells of `2 V` each, a `5 Ω` resistor, an `8 Ω` resistor, and a `12 Ω` resistor, and a plug key, all connected in series. Find total resistance.",
       "steps": [
         {
           "narration": "Resistors series mein hain, isliye seedhe jodte hain.",
@@ -60,25 +60,25 @@
           "math": "Rs = 25 ohm"
         }
       ],
-      "answer": "25 ohm"
+      "answer": "`25 Ω`"
     },
     {
-      "problem": "An electric lamp, whose resistance is 20 ohm, and a conductor of 4 ohm resistance are connected to a 6 V battery in series. Calculate the total resistance of the circuit and current through the circuit.",
+      "problem": "An electric lamp, whose resistance is `20 Ω`, and a conductor of `4 Ω` resistance are connected to a `6 V` battery in series. Calculate the total resistance of the circuit and current through the circuit.",
       "steps": [
         {
-          "narration": "Dono resistances ko add karke total Rs nikalte hain.",
+          "narration": "Dono resistances ko add karke total `R_s` nikalte hain.",
           "math": "Rs = 20 + 4 = 24 ohm"
         },
         {
-          "narration": "Battery ki voltage (V) di gayi hai.",
+          "narration": "Battery ki voltage (`V`) di gayi hai.",
           "math": "V = 6 V"
         },
         {
-          "narration": "Circuit ka total current nikalne ke liye Ohm's law I = V/Rs use karte hain.",
+          "narration": "Circuit ka total current nikalne ke liye Ohm's law `I = V / R_s` use karte hain.",
           "math": "I = 6 / 24 = 0.25 A"
         }
       ],
-      "answer": "Total Resistance = 24 ohm, Current = 0.25 A"
+      "answer": "Total Resistance = `24 Ω`, Current = `0.25 A`"
     }
   ],
   "common_mistakes": [
@@ -94,8 +94,8 @@
       "tier": "tier1"
     },
     {
-      "q": "What is the equivalent resistance of 2 ohm and 4 ohm in series?",
-      "answer": "6 ohm",
+      "q": "What is the equivalent resistance of `2 Ω` and `4 Ω` in series?",
+      "answer": "`6 Ω`",
       "tier": "tier1"
     },
     {
@@ -107,15 +107,15 @@
   "oa_questions": [
     {
       "source": "NCERT",
-      "question": "Draw a schematic diagram of a circuit consisting of a battery of three cells of 2 V each, a 5 ohm resistor, an 8 ohm resistor, and a 12 ohm resistor, and a plug key, all connected in series.",
-      "answer": "Total battery voltage = 6V. All components are in one closed loop.",
+      "question": "Draw a schematic diagram of a circuit consisting of a battery of three cells of `2 V` each, a `5 Ω` resistor, an `8 Ω` resistor, and a `12 Ω` resistor, and a plug key, all connected in series.",
+      "answer": "Total battery voltage = `6 V`. All components are in one closed loop.",
       "approach": "Sum the cells for the battery voltage, place elements sequentially."
     },
     {
       "source": "Board Exam",
-      "question": "Three resistors of 2Ω, 3Ω, and 5Ω are in series. Find the total resistance.",
-      "answer": "10 Ω",
-      "approach": "Rs = 2 + 3 + 5 = 10 Ω."
+      "question": "Three resistors of `2 Ω`, `3 Ω`, and `5 Ω` are in series. Find the total resistance.",
+      "answer": "`10 Ω`",
+      "approach": "`R_s = 2 + 3 + 5 = 10 Ω`."
     }
   ],
   "sources": [

@@ -46,6 +46,12 @@ English.** This is not optional flavour — it is the retention design.
 - Wrap every formula, symbol, unit, and value in `backticks` (`v = u + at`, `9.8 m/s^2`, `n = c/v`)
   in ALL prose fields — they render as inline code chips, which keeps the English exam layer
   visually separate from the Hinglish narration.
+- **NEVER solve in prose.** A solving chain — two or more `=` steps walking a calculation forward
+  (`-5 × -3 = v × 2, yani 15 = 2v`) — must NOT appear inside a paragraph. It either belongs in
+  `worked_example` (the renderer gives it a reveal card with numbered steps + highlighted math), or,
+  when a short derivation is genuinely part of the teach (e.g. deriving `1/Rp = 1/R1 + 1/R2`), put
+  each equation line on its own **indented line** — indented lines render as a highlighted display
+  block. Prose states and motivates formulas; it never runs the algebra.
 - MISCONCEPTION FLAGS: the teach must flag the classic board traps WHERE they arise (mass vs weight,
   sign convention, "current flows in electron direction" galat hai) — 1-2 sentences + a tiny example,
   with a forward pointer when a later KC owns the full story. Don't save every trap for
