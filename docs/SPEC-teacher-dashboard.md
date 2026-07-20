@@ -163,9 +163,9 @@ Prerequisite edges (`roadmap_node_prerequisites`) upgrade the gap map from descr
 5. **Seed script: demo classroom** — "Class 9-A Physics", ~12 members with 3 personas (strong/average/struggling) × realistic 3-week review+test history against `physics-9-10`. This is the artifact projected in the pitch room. (Seed must use the progress-safe upsert pattern, not the destructive delete-reinsert — see BACKLOG's seed warning.)
 
 **Phase 1 — pilot-ready (before real students):**
-6. Student drill-down page + retention trend; at-risk reasons UI; member remove/rename; code regeneration UI.
-7. Join-attempt throttle; extend the DPDP one-pager with the classroom visibility model.
-8. Weekly teacher email digest (reuse `mailer.py`/`reminders.py` claim pattern): "3 students went inactive, class weak-spot: Equations of Motion."
+6. ~~Student drill-down page + retention trend; at-risk reasons UI; member remove/rename; code regeneration UI.~~ **Done 2026-07-17** — `TeachStudentDetail.jsx` + wired the 3 endpoints (rename/remove/regen) that Phase 0 built but never surfaced. At-risk reasons UI was already done in Phase 0.
+7. Join-attempt throttle; extend the DPDP one-pager with the classroom visibility model. **Not started** — `classrooms.py`'s `join_classroom` still carries the explicit deferral comment.
+8. Weekly teacher email digest (reuse `mailer.py`/`reminders.py` claim pattern): "3 students went inactive, class weak-spot: Equations of Motion." **Not started.**
 
 **Phase 2 — post-pilot:**
 9. CSV/PDF export of the gap map + roster (SMC/parent-meeting artifact).

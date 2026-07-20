@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Presentation, ArrowLeft, Users, Copy, Grid3x3, TrendingUp, ListChecks,
   BookOpen, AlertTriangle, ShieldAlert, Target, X, ChevronUp, ChevronDown,
-  ArrowUpDown,
+  ArrowUpDown, RefreshCw, Pencil, Trash2, Check,
 } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import { useClassrooms } from './lib/ClassroomsContext';
 import { useToast } from './lib/ToastContext';
 
 /**
@@ -29,10 +30,18 @@ function TeachClassroom() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [meta, setMeta] = useState(null);
-  const [metaLoading, setMetaLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  // Classroom meta (name/school_name/join_code/member_count) is read by finding
+  // this id in the shared /mine list rather than a dedicated single-classroom
+  // GET (none exists). Comes from ClassroomsContext, already fetched for the nav.
+  const { classrooms, loading: classroomsLoading, refresh: refreshClassrooms } = useClassrooms();
+  const meta = useMemo(
+    () => (classrooms?.teaching || []).find((c) => c.id === id) || null,
+    [classrooms, id],
+  );
+  const metaLoading = classroomsLoading;
+  const notFound = !classroomsLoading && !meta;
   const [tab, setTab] = useState('overview');
+  const [regenerating, setRegenerating] = useState(false);
 
   const [roadmapInfo, setRoadmapInfo] = useState(null); // { roadmap_ids, available }
   const [roadmapLoading, setRoadmapLoading] = useState(true);
@@ -63,18 +72,6 @@ function TeachClassroom() {
   };
 
   useEffect(() => {
-    setMeta(null);
-    setNotFound(false);
-    setMetaLoading(true);
-    apiFetch('/api/classrooms/mine')
-      .then((d) => {
-        const found = (d.teaching || []).find((c) => c.id === id);
-        if (!found) setNotFound(true);
-        else setMeta(found);
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setMetaLoading(false));
-
     setRoadmapLoading(true);
     apiFetch(`/api/classrooms/${id}/roadmaps`)
       .then(setRoadmapInfo)
@@ -154,6 +151,30 @@ function TeachClassroom() {
               <span className="font-mono text-xs font-semibold text-[#0F172A] tracking-wider">{meta.join_code}</span>
               <Copy size={12} className="text-[#64748B]" />
             </button>
+            <button
+              title="Generate a new join code — the old one stops working"
+              disabled={regenerating}
+              onClick={async () => {
+                if (!window.confirm('Generate a new join code? The current code stops working immediately — anyone with the old code (e.g. shared on a WhatsApp group) can no longer join.')) return;
+                setRegenerating(true);
+                try {
+                  const updated = await apiFetch(`/api/classrooms/${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ regenerate_join_code: true }),
+                  });
+                  refreshClassrooms();
+                  toast.success('New join code generated.');
+                } catch {
+                  // apiFetch already toasts server-side failures
+                } finally {
+                  setRegenerating(false);
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[#64748B] hover:text-[#0891B2] hover:bg-[rgba(15,23,42,0.04)] transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={regenerating ? 'animate-spin' : ''} />
+              <span className="font-sans text-xs font-semibold hidden sm:inline">New code</span>
+            </button>
             {hasRoadmaps && (
               <button
                 onClick={() => setShowAssignForm((v) => !v)}
@@ -202,7 +223,14 @@ function TeachClassroom() {
         ) : !hasRoadmaps ? (
           <AssignGate available={roadmapInfo?.available || []} classroomId={id} onSaved={handleRoadmapsSaved} />
         ) : (
-          <StudentsTab roster={roster} loading={rosterLoading} error={rosterError} memberCount={meta.member_count} />
+          <StudentsTab
+            classroomId={id}
+            roster={roster}
+            loading={rosterLoading}
+            error={rosterError}
+            memberCount={meta.member_count}
+            onChanged={loadRoster}
+          />
         )
       )}
     </div>
@@ -567,10 +595,51 @@ const SORTERS = {
   at_risk: (s) => (s.at_risk ? 1 : 0),
 };
 
-function StudentsTab({ roster, loading, error, memberCount }) {
+function StudentsTab({ classroomId, roster, loading, error, memberCount, onChanged }) {
+  const toast = useToast();
   const [sortKey, setSortKey] = useState('at_risk');
   const [sortDir, setSortDir] = useState('desc');
   const [expanded, setExpanded] = useState(null);
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [busyId, setBusyId] = useState(null); // member_id currently saving/removing
+
+  const startRename = (s) => {
+    setRenamingId(s.member_id);
+    setRenameValue(s.display_name);
+  };
+
+  const saveRename = async (memberId) => {
+    const name = renameValue.trim();
+    if (!name) return;
+    setBusyId(memberId);
+    try {
+      await apiFetch(`/api/classrooms/${classroomId}/members/${memberId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ display_name: name }),
+      });
+      setRenamingId(null);
+      onChanged();
+    } catch {
+      // apiFetch already toasts server-side failures
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const removeMember = async (s) => {
+    if (!window.confirm(`Remove "${s.display_name}" from this class? They lose access to nothing of their own — you just stop seeing their progress here. They can rejoin later with the class code.`)) return;
+    setBusyId(s.member_id);
+    try {
+      await apiFetch(`/api/classrooms/${classroomId}/members/${s.member_id}`, { method: 'DELETE' });
+      toast.success(`Removed ${s.display_name}.`);
+      onChanged();
+    } catch {
+      // apiFetch already toasts server-side failures
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const sorted = useMemo(() => {
     if (!roster) return [];
@@ -604,7 +673,7 @@ function StudentsTab({ roster, loading, error, memberCount }) {
 
   return (
     <div className="kinetic-card bg-white overflow-x-auto p-0">
-      <table className="w-full min-w-[760px] border-collapse">
+      <table className="w-full min-w-[860px] border-collapse">
         <thead>
           <tr className="border-b border-[rgba(15,23,42,0.08)]">
             <Th label="Student" k="display_name" sortKey={sortKey} sortDir={sortDir} onSort={onSort} align="left" />
@@ -615,13 +684,48 @@ function StudentsTab({ roster, loading, error, memberCount }) {
             <Th label="Weak topics" k="weak_node_count" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
             <Th label="Overdue" k="overdue_count" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
             <Th label="At risk" k="at_risk" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <th className="px-4 py-3 font-sans text-[10px] font-bold uppercase tracking-widest text-[#64748B] text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((s) => (
             <React.Fragment key={s.member_id}>
               <tr className="border-b border-[rgba(15,23,42,0.05)] last:border-b-0 hover:bg-[rgba(15,23,42,0.02)] transition-colors">
-                <td className="px-4 py-3 font-sans text-sm font-semibold text-[#0F172A] whitespace-nowrap">{s.display_name}</td>
+                <td className="px-4 py-3 font-sans text-sm font-semibold text-[#0F172A] whitespace-nowrap">
+                  {renamingId === s.member_id ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveRename(s.member_id);
+                          if (e.key === 'Escape') setRenamingId(null);
+                        }}
+                        maxLength={120}
+                        className="px-2 py-1 rounded border border-[#0891B2] font-sans text-sm text-[#0F172A] focus:outline-none w-32"
+                      />
+                      <button
+                        onClick={() => saveRename(s.member_id)}
+                        disabled={busyId === s.member_id || !renameValue.trim()}
+                        title="Save"
+                        className="text-[#0F766E] hover:text-[#0F766E]/70 disabled:opacity-40 shrink-0"
+                      >
+                        <Check size={15} />
+                      </button>
+                      <button onClick={() => setRenamingId(null)} title="Cancel" className="text-[#64748B] hover:text-[#0F172A] shrink-0">
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      to={`/teach/${classroomId}/students/${s.member_id}`}
+                      className="hover:text-[#0891B2] transition-colors"
+                    >
+                      {s.display_name}
+                    </Link>
+                  )}
+                </td>
                 <td className="px-4 py-3 font-mono text-xs text-[#64748B] text-center whitespace-nowrap">{formatLastActive(s.last_active_at)}</td>
                 <td className="px-4 py-3 font-mono text-sm text-[#0F172A] text-center">{s.reviews_completed_7d}</td>
                 <td className="px-4 py-3 font-mono text-sm text-[#0F172A] text-center">
@@ -645,10 +749,30 @@ function StudentsTab({ roster, loading, error, memberCount }) {
                     <span className="text-[#94A3B8]">—</span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      onClick={() => startRename(s)}
+                      disabled={busyId === s.member_id}
+                      title="Rename"
+                      className="p-1.5 rounded text-[#64748B] hover:text-[#0891B2] hover:bg-[rgba(15,23,42,0.04)] transition-colors disabled:opacity-40"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => removeMember(s)}
+                      disabled={busyId === s.member_id}
+                      title="Remove from class"
+                      className="p-1.5 rounded text-[#64748B] hover:text-[#B91C1C] hover:bg-[rgba(185,28,28,0.06)] transition-colors disabled:opacity-40"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </td>
               </tr>
               {expanded === s.member_id && (
                 <tr className="bg-[rgba(185,28,28,0.04)]">
-                  <td colSpan={8} className="px-4 py-2.5">
+                  <td colSpan={9} className="px-4 py-2.5">
                     <ul className="font-sans text-xs text-[#B91C1C] flex flex-col gap-0.5">
                       {s.at_risk_reasons.map((r) => <li key={r}>· {r}</li>)}
                     </ul>

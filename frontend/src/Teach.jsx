@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Presentation, Plus, Users, Copy, LogIn, X } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
+import { useClassrooms } from './lib/ClassroomsContext';
 import { useToast } from './lib/ToastContext';
 
 /**
@@ -16,21 +17,10 @@ function Teach() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [data, setData] = useState(null); // { teaching, enrolled }
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Shared with the nav + Profile — see ClassroomsContext. `load` (create/leave)
+  // refreshes that one cache instead of firing an independent fetch here.
+  const { classrooms: data, loading, error, refresh: load } = useClassrooms();
   const [showCreate, setShowCreate] = useState(false);
-
-  const load = () => {
-    if (!session) { setLoading(false); return; }
-    setLoading(true);
-    apiFetch('/api/classrooms/mine')
-      .then(setData)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(load, [session]);
 
   const handleLeave = async (classroomId, name) => {
     if (!window.confirm(`Leave "${name}"? Your teacher loses visibility into your progress immediately — nothing else changes.`)) return;
