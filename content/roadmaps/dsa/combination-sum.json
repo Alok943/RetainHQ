@@ -9,7 +9,9 @@
     "estimated_minutes": 25,
     "importance": 9,
     "interview_frequency": "high",
-    "prerequisites": ["backtracking-template"],
+    "prerequisites": [
+      "backtracking-template"
+    ],
     "unlocks": []
   },
   "why_it_exists": {
@@ -23,12 +25,23 @@
   },
   "viz": {
     "generator": "combination-sum",
-    "default_input": { "candidates": [2, 3, 6, 7], "target": 7 },
+    "default_input": {
+      "candidates": [
+        2,
+        3,
+        6,
+        7
+      ],
+      "target": 7
+    },
     "invariants": {
       "inv-prune": "If candidate > remaining target, prune the branch."
     },
     "steps": [
-      { "id": 1, "label": "Combination Sum search" }
+      {
+        "id": 1,
+        "label": "Combination Sum search"
+      }
     ],
     "predictions": [
       {
@@ -40,7 +53,7 @@
       }
     ]
   },
-  "explanation": "Combination Sum introduces a twist: unbounded element reuse.\n\nIn standard subsets, when you pick an element at index `i`, you recurse with `i + 1` so you don't pick it again. Here, you recurse with the SAME index `i`.\n\nBut wait, if we can reuse elements, why don't we get duplicates like `[2, 3]` and `[3, 2]`? \nThe answer is the `start_index`. The loop always starts at `start_index`, never earlier. This enforces a strictly non-decreasing sequence in our path. The path can never contain a smaller index *after* a larger one. Thus, each multiset is produced exactly once, in one canonical order.\n\n**Pruning:**\nIf we sort the input array ascending, we unlock massive pruning. Inside the loop, if `candidates[i] > remaining_target`, we don't just skip it—we `break` the entire loop. Because the array is sorted, every subsequent candidate will also be too large. This cuts off massive dead branches instantly.\n\n**Hand-trace:** `candidates=[2,3,6,7]`, `target=7`\n- Choose 2, remaining 5. Recurse (index 0).\n  - Choose 2, remaining 3. Recurse (index 0).\n    - Choose 2, remaining 1. Recurse (index 0).\n      - Choose 2, remaining -1. Dead end.\n    - Choose 3. remaining 0. Record `[2,2,3]`.\n- Skip 2, choose 3... etc.\n- Skip up to 7, choose 7. Record `[7]`.",
+  "explanation": "Combination Sum introduces a twist: unbounded element reuse.\n\nIn standard subsets, when you pick an element at index `i`, you recurse with `i + 1` so you don't pick it again. Here, you recurse with the SAME index `i`.\n\nBut wait, if we can reuse elements, why don't we get duplicates like `[2, 3]` and `[3, 2]`? \nThe answer is the `start_index`. The loop always starts at `start_index`, never earlier. This enforces a strictly non-decreasing sequence in our path. The path can never contain a smaller index *after* a larger one. Thus, each multiset is produced exactly once, in one canonical order.\n\n**Pruning:**\nIf we sort the input array ascending, we unlock massive pruning. Inside the loop, if `candidates[i] > remaining_target`, we don't just skip it\u2014we `break` the entire loop. Because the array is sorted, every subsequent candidate will also be too large. This cuts off massive dead branches instantly.\n\n**Hand-trace:** `candidates=[2,3,6,7]`, `target=7`\n\n- Choose 2, remaining 5. Recurse (index 0).\n  - Choose 2, remaining 3. Recurse (index 0).\n    - Choose 2, remaining 1. Recurse (index 0).\n      - Choose 2, remaining -1. Dead end.\n    - Choose 3. remaining 0. Record `[2,2,3]`.\n- Skip 2, choose 3... etc.\n- Skip up to 7, choose 7. Record `[7]`.",
   "common_mistakes": [
     {
       "title": "Recursing with i + 1",
@@ -60,7 +73,10 @@
   ],
   "pattern": {
     "name": "Target-Driven Unbounded Backtracking",
-    "recognition_cues": ["Elements can be reused an unlimited number of times", "Find all combinations summing to target"]
+    "recognition_cues": [
+      "Elements can be reused an unlimited number of times",
+      "Find all combinations summing to target"
+    ]
   },
   "recall_questions": [
     {

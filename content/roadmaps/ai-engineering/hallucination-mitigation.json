@@ -34,19 +34,19 @@
   ],
   "hook": {
     "scenario": "Your customer service bot confidently tells a user: 'Yes, we offer a lifetime warranty on all products!' The user buys the product. You do not offer a lifetime warranty. Before you read on, predict: did the model 'lie', and how do you prevent this?",
-    "question": "Think about how LLMs generate text — then read on to understand why hallucinations happen and how to minimize them."
+    "question": "Think about how LLMs generate text \u2014 then read on to understand why hallucinations happen and how to minimize them."
   },
   "mental_model": {
-    "intuition": "Hallucinations are not lies — they are the model's autocomplete guessing what sounds plausible. You reduce them by shrinking the space of allowed guesses.",
-    "description": "LLMs do not have a database of facts. They have a statistical map of language. When they do not know the answer, they do not naturally say 'I don't know' — they predict the next most likely word that fits the pattern. To stop this, you constrain their environment: force them to read from provided context (RAG), explicitly instruct them to refuse ungrounded questions, and set temperature to 0 to remove creative randomness."
+    "intuition": "Hallucinations are not lies \u2014 they are the model's autocomplete guessing what sounds plausible. You reduce them by shrinking the space of allowed guesses.",
+    "description": "LLMs do not have a database of facts. They have a statistical map of language. When they do not know the answer, they do not naturally say 'I don't know' \u2014 they predict the next most likely word that fits the pattern. To stop this, you constrain their environment: force them to read from provided context (RAG), explicitly instruct them to refuse ungrounded questions, and set temperature to 0 to remove creative randomness."
   },
   "sections": [
     {
-      "body": "Models do not know when they are wrong. They are designed to be helpful — so if you ask 'What is our SLA for enterprise customers?' without providing the actual SLA document, the model will predict the most likely-sounding SLA percentage. This is hallucination. It is not a bug; it is next-word prediction working exactly as designed.",
+      "body": "Models do not know when they are wrong. They are designed to be helpful \u2014 so if you ask 'What is our SLA for enterprise customers?' without providing the actual SLA document, the model will predict the most likely-sounding SLA percentage. This is hallucination. It is not a bug; it is next-word prediction working exactly as designed.",
       "recap": "Models default to plausible-sounding answers rather than admitting ignorance."
     },
     {
-      "body": "The strongest defense is grounding. Inject the exact facts into the prompt and instruct the model to use ONLY that context. But providing context alone is not enough — you must explicitly forbid the model from using outside knowledge. An instruction like 'Answer ONLY using the provided context. Do not use any knowledge beyond what is given here' is essential.",
+      "body": "The strongest defense is grounding. Inject the exact facts into the prompt and instruct the model to use ONLY that context. But providing context alone is not enough \u2014 you must explicitly forbid the model from using outside knowledge. An instruction like 'Answer ONLY using the provided context. Do not use any knowledge beyond what is given here' is essential.",
       "recap": "Provide the facts AND explicitly forbid the model from using outside knowledge."
     },
     {
@@ -54,12 +54,12 @@
       "recap": "Give the model permission to fail gracefully with an explicit 'I don't know' instruction."
     },
     {
-      "body": "`temperature=0` removes randomness from word selection. A high temperature (0.8) encourages creative, diverse text — perfect for poems, terrible for facts. Temperature 0 forces the model to always pick the highest-probability next word. This does not guarantee zero hallucinations — the most probable word can still be wrong — but it removes creative guessing and makes output deterministic.",
+      "body": "`temperature=0` removes randomness from word selection. A high temperature (0.8) encourages creative, diverse text \u2014 perfect for poems, terrible for facts. Temperature 0 forces the model to always pick the highest-probability next word. This does not guarantee zero hallucinations \u2014 the most probable word can still be wrong \u2014 but it removes creative guessing and makes output deterministic.",
       "recap": "Set temperature=0 for factual tasks. It removes creative randomness but does not eliminate all hallucination."
     },
     {
       "body": "For high-stakes pipelines, add a verification step. Before showing the answer to the user, have the model (or a smaller fast model) check that every claim in the generated answer can be traced to a quote in the source context. If verification fails, block the response or show a 'I couldn't verify this' fallback.",
-      "recap": "Pipeline: Grounding → Strict prompt + I-don't-know → temperature=0 → (optional) verification."
+      "recap": "Pipeline: Grounding \u2192 Strict prompt + I-don't-know \u2192 temperature=0 \u2192 (optional) verification."
     }
   ],
   "code_snippets": [
@@ -67,18 +67,18 @@
       "title": "Anti-hallucination system prompt",
       "language": "python",
       "code": "system_prompt = \"\"\"\nYou are a strict, factual support assistant.\nAnswer the user's question using ONLY the provided context.\n\nContext:\n{retrieved_docs}\n\nCRITICAL INSTRUCTIONS:\n1. If the answer is not fully in the context, reply EXACTLY: \"I don't know.\"\n2. Do not use any knowledge beyond the context above.\n3. Do not guess or infer.\n\"\"\"",
-      "explanation": "Three elements work together: a strict boundary ('ONLY the context'), an explicit failure mode ('reply EXACTLY: I don't know'), and a prohibition on guessing. All three are needed — omitting any one increases hallucination risk."
+      "explanation": "Three elements work together: a strict boundary ('ONLY the context'), an explicit failure mode ('reply EXACTLY: I don't know'), and a prohibition on guessing. All three are needed \u2014 omitting any one increases hallucination risk."
     },
     {
       "title": "Setting temperature=0 for factual tasks",
       "language": "python",
       "code": "from openai import OpenAI\nclient = OpenAI()\n\nresp = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[\n        {'role': 'system', 'content': system_prompt},\n        {'role': 'user',   'content': 'What is your refund policy?'}\n    ],\n    temperature=0.0   # removes creative randomness for factual tasks\n)\nprint(resp.choices[0].message.content)",
-      "explanation": "temperature=0 makes the model deterministic — the same prompt always produces the same output. This removes the random variation that can produce creative but incorrect answers. Note: it does not prevent hallucination when the model's highest-probability word is itself wrong."
+      "explanation": "temperature=0 makes the model deterministic \u2014 the same prompt always produces the same output. This removes the random variation that can produce creative but incorrect answers. Note: it does not prevent hallucination when the model's highest-probability word is itself wrong."
     },
     {
       "title": "Citation-first chain-of-thought to ground the output",
       "language": "python",
-      "code": "citation_prompt = \"\"\"\nAnswer the user's question using the provided context.\nFirst, extract the exact quotes from the context that support your answer.\n\nFormat:\nQUOTES:\n- [quote 1]\n- [quote 2]\nANSWER:\n[Your final answer]\n\"\"\"",
+      "code": "citation_prompt = \"\"\"\nAnswer the user's question using the provided context.\nFirst, extract the exact quotes from the context that support your answer.\n\nFormat:\nQUOTES:\n\n- [quote 1]\n- [quote 2]\n\nANSWER:\n[Your final answer]\n\"\"\"",
       "explanation": "By writing the quotes first, the model attends to the source text before generating the final answer. This chain-of-thought heavily grounds the output because the model cannot easily write a quote that does not exist in the context."
     }
   ],
@@ -89,7 +89,7 @@
     },
     {
       "title": "The explicit escape",
-      "detail": "Tell the model exactly what to say when the answer is absent — 'I don't know' — so it has a safe fallback."
+      "detail": "Tell the model exactly what to say when the answer is absent \u2014 'I don't know' \u2014 so it has a safe fallback."
     },
     {
       "title": "temperature=0",
@@ -97,13 +97,13 @@
     },
     {
       "title": "Citations first",
-      "detail": "Ask the model to quote the source before answering — this chains its attention to the facts before it writes."
+      "detail": "Ask the model to quote the source before answering \u2014 this chains its attention to the facts before it writes."
     }
   ],
   "common_mistakes": [
     {
       "title": "Assuming temperature=0 eliminates hallucinations completely",
-      "explanation": "temperature=0 makes the model deterministic — it will make exactly the same mistake every time. If the most statistically probable next word is factually wrong, the model will still produce it confidently. Grounding and the explicit 'I don't know' instruction are the primary defenses."
+      "explanation": "temperature=0 makes the model deterministic \u2014 it will make exactly the same mistake every time. If the most statistically probable next word is factually wrong, the model will still produce it confidently. Grounding and the explicit 'I don't know' instruction are the primary defenses."
     },
     {
       "title": "Telling the model 'don't hallucinate'",
@@ -113,12 +113,12 @@
   "recall_questions": [
     {
       "q": "Explain why LLMs hallucinate, as if to a classmate.",
-      "answer": "LLMs do not have a database of facts — they have a statistical model of language. When they do not know the answer, they predict the next most likely word that would fit the pattern of the conversation. This produces confident, plausible-sounding text that is factually wrong. They have no internal mechanism for knowing what they do not know.",
+      "answer": "LLMs do not have a database of facts \u2014 they have a statistical model of language. When they do not know the answer, they predict the next most likely word that would fit the pattern of the conversation. This produces confident, plausible-sounding text that is factually wrong. They have no internal mechanism for knowing what they do not know.",
       "tier": "tier1"
     },
     {
       "q": "What is the purpose of setting temperature to 0 for factual tasks?",
-      "answer": "It removes randomness from the model's word selection, forcing it to pick the highest-probability next word. This makes output deterministic and removes creative variation that can produce incorrect answers. It does not guarantee zero hallucinations — the most probable word can still be wrong.",
+      "answer": "It removes randomness from the model's word selection, forcing it to pick the highest-probability next word. This makes output deterministic and removes creative variation that can produce incorrect answers. It does not guarantee zero hallucinations \u2014 the most probable word can still be wrong.",
       "tier": "tier1"
     },
     {
@@ -128,7 +128,7 @@
     },
     {
       "q": "Your RAG bot retrieves the correct context but still adds unverified extra details to its answers. Predict two things you should check and fix.",
-      "answer": "First: check that temperature is set to 0, removing creative additions. Second: check the system prompt — it must explicitly forbid outside knowledge ('Answer ONLY from the provided context') and provide an explicit fallback ('If the answer is not in the context, say I don't know'). A vague 'be accurate' instruction is not enough.",
+      "answer": "First: check that temperature is set to 0, removing creative additions. Second: check the system prompt \u2014 it must explicitly forbid outside knowledge ('Answer ONLY from the provided context') and provide an explicit fallback ('If the answer is not in the context, say I don't know'). A vague 'be accurate' instruction is not enough.",
       "tier": "tier2"
     }
   ],
@@ -136,14 +136,14 @@
     {
       "question": "Your RAG system retrieves the correct context, but the model still adds extra, unverified details to the answer. How do you fix this?",
       "company": "GenAI / LLM Engineer interview",
-      "answer": "Three fixes: set temperature=0 to remove creative variation. Tighten the system prompt to explicitly forbid using outside knowledge and mandate an 'I don't know' fallback. Ask the model to quote the supporting context before writing the final answer — this chains its attention to the source text.",
+      "answer": "Three fixes: set temperature=0 to remove creative variation. Tighten the system prompt to explicitly forbid using outside knowledge and mandate an 'I don't know' fallback. Ask the model to quote the supporting context before writing the final answer \u2014 this chains its attention to the source text.",
       "approach": "Address both the API parameter (temperature) and the prompt constraints. Interviewers want to see you know how to lock down model behavior at multiple levels."
     },
     {
       "question": "Is it possible for a model running at temperature=0 to hallucinate? Why or why not?",
       "company": "RAG system design",
-      "answer": "Yes. temperature=0 makes the model deterministic — it will always predict the same highest-probability next word. But if the prompt is ambiguous, the context is contradictory, or the model's pre-trained bias is strong enough, the most probable word is still factually incorrect. temperature=0 means the model makes the same mistake every time, not zero mistakes.",
-      "approach": "Dispel the myth that temperature=0 equals perfect accuracy. The fix for hallucination is grounding — not temperature alone."
+      "answer": "Yes. temperature=0 makes the model deterministic \u2014 it will always predict the same highest-probability next word. But if the prompt is ambiguous, the context is contradictory, or the model's pre-trained bias is strong enough, the most probable word is still factually incorrect. temperature=0 means the model makes the same mistake every time, not zero mistakes.",
+      "approach": "Dispel the myth that temperature=0 equals perfect accuracy. The fix for hallucination is grounding \u2014 not temperature alone."
     }
   ],
   "sources": [

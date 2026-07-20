@@ -18,19 +18,30 @@
   },
   "viz": {
     "generator": "upper-bound",
-    "default_input": [2, 4, 4, 4, 7, 9, 11],
+    "default_input": [
+      1,
+      2,
+      2,
+      2,
+      5
+    ],
     "invariants": {
-      "inv-window": "The upper-bound index (the first element strictly > target) always lies within the current [lo, hi) window.",
-      "inv-upper": "A value EQUAL to target is not the answer, so equal values get pushed left too -- the only change from lower-bound.",
-      "inv-land": "When lo == hi, lo is the landing index -- it sits AFTER any run of values equal to target."
+      "inv-window": "If the target exists, it always lies inside the current [lo, hi] window."
     },
     "steps": [
-      { "id": "start", "label": "lo = 0, hi = n" },
-      { "id": "window", "label": "answer lies in [lo, hi)" },
-      { "id": "probe", "label": "compare arr[mid] to target" },
-      { "id": "discard", "label": "arr[mid] > target -> hi = mid, else lo = mid + 1" },
-      { "id": "land", "label": "first index with arr[i] > target" },
-      { "id": "done", "label": "search finished" }
+      {
+        "id": "start",
+        "label": "lo = 0, hi = end"
+      }
+    ],
+    "predictions": [
+      {
+        "at_op": "WINDOW",
+        "occurrence": "first",
+        "prompt": "Does the search go left or right?",
+        "derive": "branch_binary",
+        "level": "medium"
+      }
     ]
   },
   "glossary": [
@@ -57,30 +68,11 @@
     "better_idea": "Use Upper Bound to find the exact exclusive limit (the first element STRICTLY GREATER than the target) in O(log N) time. Subtracting the Lower Bound index from the Upper Bound index gives the exact frequency instantly."
   },
   "mental_model": {
-    "intuition": "If Lower Bound finds the front door of a building, Upper Bound finds the back door—specifically, the first step outside the back door.",
+    "intuition": "If Lower Bound finds the front door of a building, Upper Bound finds the back door\u2014specifically, the first step outside the back door.",
     "description": "Upper Bound returns the index of the first element that is STRICTLY GREATER THAN the target. Even if the current element matches the target, the algorithm treats it as 'too small' (or 'not great enough') and pushes the `low` pointer rightward (`low = mid + 1`). It only updates the potential answer when it finds an element definitively larger than the target.",
     "repeated_decision": "Is `arr[mid] > target`? If yes, the boundary is at `mid` or to its left (`high = mid`). If no (meaning it is `<= target`), the boundary is strictly to the right (`low = mid + 1`)."
   },
-  "viz": {
-    "generator": "upper-bound",
-    "default_input": [1, 2, 2, 2, 5],
-    "invariants": {
-      "inv-window": "If the target exists, it always lies inside the current [lo, hi] window."
-    },
-    "steps": [
-      { "id": "start", "label": "lo = 0, hi = end" }
-    ],
-    "predictions": [
-      {
-        "at_op": "WINDOW",
-        "occurrence": "first",
-        "prompt": "Does the search go left or right?",
-        "derive": "branch_binary",
-        "level": "medium"
-      }
-    ]
-  },
-  "explanation": "The only difference between Lower Bound and Upper Bound is the relational operator in the predicate. \n- Lower Bound predicate: `element < target` (Finds first element `>= target`)\n- Upper Bound predicate: `target < element` (Finds first element `> target`)\n\nIf the target value does not exist in the array at all, both Lower Bound and Upper Bound will return the exact same index (the insertion point).\n\nIn computer science, combining these two algorithms creates a 'Half-Open Interval': `[start, end)`. Half-open intervals are the standard for loop boundaries because they prevent off-by-one errors. You can loop over all duplicates safely using `for (int i = lower; i < upper; i++)`. Because `upper` points one index *past* the target, the loop terminates exactly when it should.",
+  "explanation": "The only difference between Lower Bound and Upper Bound is the relational operator in the predicate. \n\n- Lower Bound predicate: `element < target` (Finds first element `>= target`)\n- Upper Bound predicate: `target < element` (Finds first element `> target`)\n\nIf the target value does not exist in the array at all, both Lower Bound and Upper Bound will return the exact same index (the insertion point).\n\nIn computer science, combining these two algorithms creates a 'Half-Open Interval': `[start, end)`. Half-open intervals are the standard for loop boundaries because they prevent off-by-one errors. You can loop over all duplicates safely using `for (int i = lower; i < upper; i++)`. Because `upper` points one index *past* the target, the loop terminates exactly when it should.",
   "key_points": [
     {
       "title": "Strictly Greater",

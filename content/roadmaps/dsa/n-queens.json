@@ -9,7 +9,9 @@
     "estimated_minutes": 30,
     "importance": 8,
     "interview_frequency": "medium",
-    "prerequisites": ["backtracking-template"],
+    "prerequisites": [
+      "backtracking-template"
+    ],
     "unlocks": []
   },
   "why_it_exists": {
@@ -29,7 +31,10 @@
       "inv-safe": "A queen is placed only if it's not attacked by any previously placed queen."
     },
     "steps": [
-      { "id": 1, "label": "Backtracking trace" }
+      {
+        "id": 1,
+        "label": "Backtracking trace"
+      }
     ],
     "predictions": [
       {
@@ -41,7 +46,7 @@
       }
     ]
   },
-  "explanation": "N-Queens is the flagship backtracking problem because it demonstrates how profoundly pruning reduces a search space.\n\n**1. Why row-by-row?**\nSince queens attack horizontally, two queens can never share a row. Therefore, we MUST place exactly one queen per row. By making the recursion depth equal to the row index, we get the row constraint for free and shrink the search from 'combinations of 64 squares' to 'N branches per row, depth N'.\n\n**2. The O(1) Attack Sets**\nTo place a queen at `(row, col)`, we must check if that cell is safe. Scanning the board takes O(N). Instead, we track three sets:\n- `cols`: columns currently occupied.\n- `diag1`: the primary diagonal. Notice that for any cell, `row - col` is constant along its top-left to bottom-right diagonal.\n- `diag2`: the anti-diagonal. For any cell, `row + col` is constant along its top-right to bottom-left diagonal.\n\nChecking safety becomes three O(1) set lookups.\n\n**3. The Loop**\n```python\nfor col in range(N):\n    if col in cols or (row - col) in diag1 or (row + col) in diag2:\n        continue\n    # Choose\n    cols.add(col); diag1.add(row-col); diag2.add(row+col)\n    board[row][col] = 'Q'\n    # Recurse\n    backtrack(row + 1)\n    # Un-choose\n    cols.remove(col); diag1.remove(row-col); diag2.remove(row+col)\n    board[row][col] = '.'\n```\n\n**4. Hand-Trace (4x4 Board)**\nN=4 is the smallest solvable board (N=2 and N=3 have no solutions!).\n- Row 0: Place Q at (0, 0).\n- Row 1: Columns 0 and 1 are attacked. Place Q at (1, 2).\n- Row 2: All columns 0, 1, 2, 3 are attacked! Dead end.\n- Backtrack to Row 1, move Q to (1, 3).\n- Row 2: Place Q at (2, 1).\n- Row 3: All columns attacked. Dead end.\n- Backtrack all the way to Row 0, move Q to (0, 1). This eventually finds a solution.",
+  "explanation": "N-Queens is the flagship backtracking problem because it demonstrates how profoundly pruning reduces a search space.\n\n**1. Why row-by-row?**\nSince queens attack horizontally, two queens can never share a row. Therefore, we MUST place exactly one queen per row. By making the recursion depth equal to the row index, we get the row constraint for free and shrink the search from 'combinations of 64 squares' to 'N branches per row, depth N'.\n\n**2. The O(1) Attack Sets**\nTo place a queen at `(row, col)`, we must check if that cell is safe. Scanning the board takes O(N). Instead, we track three sets:\n\n- `cols`: columns currently occupied.\n- `diag1`: the primary diagonal. Notice that for any cell, `row - col` is constant along its top-left to bottom-right diagonal.\n- `diag2`: the anti-diagonal. For any cell, `row + col` is constant along its top-right to bottom-left diagonal.\n\nChecking safety becomes three O(1) set lookups.\n\n**3. The Loop**\n```python\nfor col in range(N):\n    if col in cols or (row - col) in diag1 or (row + col) in diag2:\n        continue\n    # Choose\n    cols.add(col); diag1.add(row-col); diag2.add(row+col)\n    board[row][col] = 'Q'\n    # Recurse\n    backtrack(row + 1)\n    # Un-choose\n    cols.remove(col); diag1.remove(row-col); diag2.remove(row+col)\n    board[row][col] = '.'\n```\n\n**4. Hand-Trace (4x4 Board)**\nN=4 is the smallest solvable board (N=2 and N=3 have no solutions!).\n\n- Row 0: Place Q at (0, 0).\n- Row 1: Columns 0 and 1 are attacked. Place Q at (1, 2).\n- Row 2: All columns 0, 1, 2, 3 are attacked! Dead end.\n- Backtrack to Row 1, move Q to (1, 3).\n- Row 2: Place Q at (2, 1).\n- Row 3: All columns attacked. Dead end.\n- Backtrack all the way to Row 0, move Q to (0, 1). This eventually finds a solution.",
   "common_mistakes": [
     {
       "title": "Scanning the board to check safety",
@@ -61,7 +66,10 @@
   ],
   "pattern": {
     "name": "Constraint Satisfaction Backtracking",
-    "recognition_cues": ["Place N items on a grid", "Complex non-overlapping constraints"]
+    "recognition_cues": [
+      "Place N items on a grid",
+      "Complex non-overlapping constraints"
+    ]
   },
   "recall_questions": [
     {
