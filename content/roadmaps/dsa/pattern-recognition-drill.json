@@ -1,0 +1,82 @@
+{
+  "slug": "pattern-recognition-drill",
+  "title": "Pattern recognition drill",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "recognizing-divide-and-conquer",
+      "recognizing-two-pointers",
+      "recognizing-sliding-window",
+      "recognizing-greedy-vs-dp",
+      "recognizing-graph-problems"
+    ],
+    "unlocks": [],
+    "project_usage": [
+      "Architectural system design diagnostics",
+      "Translating ambiguous product requirements into optimized engineering models"
+    ]
+  },
+  "overview": {
+    "what": "The capstone diagnostic drill: identifying the correct algorithmic pattern from raw problem statements without writing code.",
+    "why": "In real-world engineering and technical assessments, no one tells you which algorithm to use. Rote memorization fails. You must extract constraints, objective functions, and input structures to definitively pinpoint the required template.",
+    "where_used": [
+      "Technical interviews at top-tier firms, where diagnosing the optimal approach takes up the first crucial 10 minutes.",
+      "Automated code generation tools (AI copilots) rely on parsing these exact contextual constraint tokens to map to DSA templates."
+    ]
+  },
+  "why_learning_this": [
+    "It forces you to practice the meta-cognitive diagnostic flowchart: input structure + objective function + Big-O bounds = specific pattern.",
+    "It proves your mastery of the entire roadmap by successfully navigating plausible distractor problems."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Memorizing specific problems instead of constraints",
+      "explanation": "If you memorize that 'longest common subsequence' is DP, but fail to recognize why 'longest contiguous subarray' is sliding window, you will fail when the problem is slightly rephrased."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If a problem specifies an array size of N = 10^5, what time complexity bounds are mathematically enforced?",
+      "answer": "It enforces O(n) or O(n log n). An O(n^2) approach will require 10 billion operations and time out.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a problem requires finding the 'Top K' or 'Kth Largest' elements in a streaming dataset, what pattern is mandated?",
+      "answer": "A Heap (Priority Queue), to maintain the running extrema efficiently without fully sorting.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "Diagnostic Drill 1: 'Given a list of airline tickets represented as [from, to], reconstruct the itinerary in order. If there are multiple valid paths, return the one that is lexicographically smallest.' What is the pattern?",
+      "answer": "This is a Graph problem (specifically, Eulerian Path using DFS). Nodes are airports, directed edges are flights. The 'lexicographically smallest' constraint means sorting adjacency lists before DFS.",
+      "why": "The input explicitly describes entities with directional relationships (edges), which is the absolute signal for graph modeling."
+    },
+    {
+      "type": "choose-model",
+      "question": "Diagnostic Drill 2: 'Given an array of positive integers, find the minimum length of a contiguous subarray whose sum is greater than or equal to a target.' What is the pattern?",
+      "answer": "Sliding Window (variable size). The keywords 'contiguous subarray' and 'minimum length' over an array of positive integers (which guarantees a monotonic sum) perfectly fit the elastic window pattern.",
+      "why": "It's not DP because the monotonic property holds, and it's not Two Pointers from opposite ends because the search is over contiguous segments."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Extract the constraint signals",
+      "prompt": "Read this problem statement: 'You are given an array of N integers where N <= 20. Find all unique combinations that sum to target K.' In the starter code, return a string naming the exact algorithmic pattern dictated by that specific N bound.",
+      "starter_code": "def identify_pattern():\n    # Return a string with the pattern name\n    pass",
+      "solution": "def identify_pattern():\n    return 'Backtracking'"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Algorithmic_paradigm",
+    "https://github.com/Chanda-Abdul/Several-Coding-Patterns-for-Solving-Data-Structures-and-Algorithms-Problems-during-Interviews"
+  ]
+}

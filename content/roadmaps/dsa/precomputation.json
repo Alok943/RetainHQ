@@ -1,0 +1,81 @@
+{
+  "slug": "precomputation",
+  "title": "Precomputation",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "prefix-sums",
+      "hash-tables"
+    ],
+    "unlocks": [
+      "pattern-recognition-drill"
+    ],
+    "project_usage": [
+      "High-frequency financial time-series analysis",
+      "Viola-Jones Haar-cascade facial recognition"
+    ]
+  },
+  "overview": {
+    "what": "Precomputation involves doing expensive work once upfront (trading space for time) so that subsequent repetitive queries become significantly cheaper.",
+    "why": "When the same kind of question is asked many times over the same fixed data, recalculating the answer iteratively incurs a massive penalty. Precomputing aggregates (like prefix sums) reduces O(n) queries to O(1).",
+    "where_used": [
+      "Real-time pattern matching in continuous data streams.",
+      "Computer vision algorithms, such as Integral Images, which calculate pixel sums inside arbitrary rectangles in O(1) time."
+    ]
+  },
+  "why_learning_this": [
+    "It embodies a foundational engineering trade-off: sacrificing memory to permanently reduce time complexity.",
+    "It is the recognition signal for when a problem asks for the SAME kind of answer over many different ranges/windows of the same fixed input."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying precomputation for a single query",
+      "explanation": "If there is only one query, the upfront cost of precomputation is pure overhead with no payoff. The technique only wins when the upfront cost is amortized over multiple queries."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary trade-off made in precomputation techniques?",
+      "answer": "Sacrificing memory (space complexity) and upfront processing time to permanently reduce the time complexity of repetitive queries.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the surface recognition signal that precomputation might be required?",
+      "answer": "The problem asks for the same kind of answer over many different ranges, windows, or pairs of the same fixed input.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "debug-misconception",
+      "question": "A developer uses a prefix sum array to find the sum of a subarray, but the problem only asks for one single subarray sum. Why is this a poor design choice?",
+      "answer": "Because building the prefix sum array takes O(n) time and O(n) space. For a single query, a simple O(n) iteration requires only O(1) space, making the precomputation pure overhead.",
+      "why": "Precomputation is an amortization strategy; its benefits only materialize when the upfront cost is spread across multiple subsequent O(1) queries."
+    },
+    {
+      "type": "choose-model",
+      "question": "You need to repeatedly check if a user has access to various files based on a complex inheritance hierarchy. Should you traverse the hierarchy on every request, or flatten the permissions into a hash map on startup?",
+      "answer": "Flatten into a hash map on startup. Traversing the hierarchy per request is an O(depth) operation, whereas precomputing the access map allows O(1) lookups for the high-frequency authorization checks.",
+      "why": "This is a classic space-time trade-off. Authorization checks are frequent and must be fast, making them perfect candidates for upfront precomputation."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Amortize the cost",
+      "prompt": "Modify the given `query_frequencies` function. Instead of calling `.count()` on the array for every query (which is O(n * q)), precompute a frequency map once and use it to answer the queries in O(1) time.",
+      "starter_code": "def query_frequencies(arr, queries):\n    return [arr.count(q) for q in queries]",
+      "solution": "def query_frequencies(arr, queries):\n    freq = {}\n    for x in arr:\n        freq[x] = freq.get(x, 0) + 1\n    return [freq.get(q, 0) for q in queries]"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Summed-area_table",
+    "https://www.geeksforgeeks.org/dsa/precomputation-techniques-for-competitive-programming/"
+  ]
+}

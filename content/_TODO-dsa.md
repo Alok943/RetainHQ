@@ -154,26 +154,30 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Grid DP (unique paths / min path sum)  · D · `grid-dp-unique-paths-min-path-sum`
 
 ## 19. Bit Manipulation
-- [ ] Bitwise operators  · C · `bitwise-operators`
-- [ ] Single number (XOR)  · D · `single-number-xor`
-- [ ] Counting bits  · D · `counting-bits`
+- [x] Bitwise operators  · C · `bitwise-operators`
+- [x] Single number (XOR)  · D · `single-number-xor`
+- [x] Counting bits  · D · `counting-bits`
 
 ## 20. Algorithm Design Patterns  (all `C` — recognition capstone)
-- [ ] Brute force first  · C · `brute-force-first`
-- [ ] Precomputation  · C · `precomputation`
-- [ ] Recognizing divide & conquer  · C · `recognizing-divide-and-conquer`
-- [ ] Recognizing two pointers  · C · `recognizing-two-pointers`
-- [ ] Recognizing sliding window  · C · `recognizing-sliding-window`
-- [ ] Recognizing greedy vs DP  · C · `recognizing-greedy-vs-dp`
-- [ ] Recognizing graph problems  · C · `recognizing-graph-problems`
-- [ ] Pattern recognition drill  · C · `pattern-recognition-drill`
+- [x] Brute force first  · C · `brute-force-first`
+- [x] Precomputation  · C · `precomputation`
+- [x] Recognizing divide & conquer  · C · `recognizing-divide-and-conquer`
+- [x] Recognizing two pointers  · C · `recognizing-two-pointers`
+- [x] Recognizing sliding window  · C · `recognizing-sliding-window`
+- [x] Recognizing greedy vs DP  · C · `recognizing-greedy-vs-dp`
+- [x] Recognizing graph problems  · C · `recognizing-graph-problems`
+- [x] Pattern recognition drill  · C · `pattern-recognition-drill`
 
 ---
 
-**110 nodes total · 41 done (incl. merge-sort by Claude) · 69 open.** Split: ~40 `C` (concept) · ~67 `D` (dsa).
-Note: checkbox state was last reconciled against `content/roadmaps/dsa/*.json` on 2026-07-12 — the file
-count (51) exceeds 41 because some shipped lessons aren't tracked as distinct TODO nodes (e.g.
+**110 nodes total · 95 done · 15 open.** Split: ~40 `C` (concept) · ~67 `D` (dsa).
+Note: checkbox state reconciled against `content/roadmaps/dsa/*.json` on 2026-07-21 — 104 lesson files
+exist for 95 ticked nodes because some shipped lessons aren't tracked as distinct TODO nodes (e.g.
 `two-pointers-on-strings` vs the still-open generic `two-pointers`).
+**All 15 remaining open nodes are in phases 1-15**; phases 16-20 are content-complete (pass 1).
+Phase 8 (Two Pointers & Windows, 5 nodes) is the highest-priority gap: phase-20's
+`recognizing-two-pointers` / `recognizing-sliding-window` list its nodes as prerequisites, so those
+edges currently dangle (validator warns, does not error).
 Kind tags are a best-first call — if a `D` node has no real trace to step through (pure idea), flag it
 and treat it as `C`; if a `C` node clearly wants a step-through, flag it for Claude.
 

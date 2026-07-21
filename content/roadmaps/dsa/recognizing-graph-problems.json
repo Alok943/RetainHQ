@@ -1,0 +1,84 @@
+{
+  "slug": "recognizing-graph-problems",
+  "title": "Recognizing graph problems",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "graph-representations",
+      "bfs-on-graphs",
+      "dfs-on-graphs",
+      "topological-sort",
+      "union-find"
+    ],
+    "unlocks": [
+      "pattern-recognition-drill"
+    ],
+    "project_usage": [
+      "CI/CD pipelines and package managers (NPM, Docker build matrices)",
+      "Minimum-hop routing in peer-to-peer networks"
+    ]
+  },
+  "overview": {
+    "what": "The skill of identifying that a problem is 'secretly a graph problem' even when the input isn't explicitly drawn as an adjacency list or matrix.",
+    "why": "Many problems are disguised. A grid of cells where you can move adjacently IS a graph. A set of words transformed by one edit IS a graph. Once modeled as a graph, universal algorithms (BFS, DFS, Union Find) instantly apply.",
+    "where_used": [
+      "Package managers (NPM, Cargo) rely on Topological Sorting to resolve complex dependency graphs into perfectly sequential execution scripts.",
+      "Garbage collection mark-and-sweep phases rely on DFS state traversals."
+    ]
+  },
+  "why_learning_this": [
+    "The true difficulty of graph algorithms is rarely the traversal logic; it is the cognitive translation required to map a word problem into a formal Vertex and Edge structure.",
+    "It teaches the surface signals: entities with RELATIONSHIPS, 'minimum steps/cost between states', or 'valid order given dependencies'."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Failing to recognize a grid as a graph",
+      "explanation": "If you have a 2D matrix representing a maze, land/water, or puzzle states, it is a graph. Nodes = cells, Edges = valid moves. You do not need to build an explicit adjacency list to run BFS/DFS on it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the primary surface signal that a problem requires a Topological Sort?",
+      "answer": "The problem asks for a valid ORDER or sequence of entities given strict DEPENDENCY constraints (e.g., 'Course A must be taken before Course B').",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a problem asks for the minimum number of transformations to turn word A into word B, what is the implicit graph structure?",
+      "answer": "Nodes are the words; Edges exist between any two words that are exactly one edit/transformation apart. It's a shortest-path problem requiring BFS.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You have a list of network computers and connections between them. You need to quickly count how many entirely isolated network groups (subnets) exist. Should you run a full DFS/BFS traversal, or is there a lighter tool?",
+      "answer": "While DFS/BFS works, Union-Find (Disjoint Set) is the optimal tool here. You don't need actual paths or traversal orders, just connectivity grouping.",
+      "why": "Both 'look like graphs,' but the precise constraint (just grouping vs actual pathfinding) decides whether full traversal or lightweight Union-Find is appropriate."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A candidate is asked to find the shortest exit path in a 2D maze. They model the maze perfectly but use Depth-First Search (DFS) to find the path. Why will this fail to find the *shortest* path?",
+      "answer": "DFS explores a single path until exhaustion. It will find *a* path to the exit, but there is no guarantee it is the shortest. Breadth-First Search (BFS) explores level-by-level, guaranteeing the first time the exit is reached, it is via the shortest path.",
+      "why": "Matching the right traversal algorithm to the objective function (shortest path = BFS; full traversal/connectivity = DFS) is the core of graph pattern recognition."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Define the implicit edges",
+      "prompt": "For a 'Word Ladder' problem where you transition from 'hit' to 'cog', write a helper function that returns all valid 'neighbor' nodes (edges) for a given word by changing one letter at a time, assuming a provided dictionary `word_set`.",
+      "starter_code": "def get_neighbors(word, word_set):\n    # Return a list of valid neighbors\n    pass",
+      "solution": "def get_neighbors(word, word_set):\n    neighbors = []\n    for i in range(len(word)):\n        for char in 'abcdefghijklmnopqrstuvwxyz':\n            new_word = word[:i] + char + word[i+1:]\n            if new_word in word_set and new_word != word:\n                neighbors.append(new_word)\n    return neighbors"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Graph_theory",
+    "https://github.com/Chanda-Abdul/Several-Coding-Patterns-for-Solving-Data-Structures-and-Algorithms-Problems-during-Interviews"
+  ]
+}

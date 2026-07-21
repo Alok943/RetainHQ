@@ -1,0 +1,76 @@
+{
+  "slug": "single-number-xor",
+  "title": "Single number (XOR)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "bitwise-operators"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Given an array where every element appears exactly twice except for one, finding the unique element using a hash set or frequency map takes O(n) auxiliary space.",
+    "naive_solution": "Count frequencies with a hash map, or sort the array first (taking O(n log n) time).",
+    "better_idea": "Use the bitwise XOR operator to create a self-canceling accumulator. Because XOR is commutative and associative, all duplicate pairs will cancel each other out to 0, leaving only the single unique number. This achieves O(n) time and O(1) space."
+  },
+  "mental_model": {
+    "intuition": "Pairs annihilate each other. If you throw everything into a blender, the identical twins cancel out, and only the single child remains.",
+    "description": "Initialize a running result to 0. XOR every element into this running result. Since `x ^ x = 0` and `x ^ 0 = x`, order doesn't matter. The duplicates will zero each other out, and the accumulator will hold the unique element at the end.",
+    "repeated_decision": "XOR this number into my running result -- for any value that appears twice, its two XORs will cancel to 0, so whatever survives at the end is the answer."
+  },
+  "explanation": "To understand how XOR isolates the unique number, we must trace it at the binary level. Remember two core rules of XOR: anything XORed with itself is 0 (`a ^ a = 0`), and anything XORed with 0 is itself (`a ^ 0 = a`). Furthermore, XOR is commutative and associative, meaning `a ^ b ^ a` is the exact same as `a ^ a ^ b` (which reduces to `0 ^ b`, which is `b`).\n\nLet's trace this on a small array: `[4, 1, 2, 1, 2]`.\nWe initialize our accumulator to 0 (`000`).\n\nStep 1: XOR 4 (`100`)\n`000 ^ 100 = 100` (accumulator is now 4)\n\nStep 2: XOR 1 (`001`)\n`100 ^ 001 = 101` (accumulator is now 5)\n\nStep 3: XOR 2 (`010`)\n`101 ^ 010 = 111` (accumulator is now 7)\n\nStep 4: XOR 1 (`001`)\n`111 ^ 001 = 110` (accumulator is now 6). Notice what happened: the `001` bit we added in step 2 just got toggled back off! The two 1s canceled each other.\n\nStep 5: XOR 2 (`010`)\n`110 ^ 010 = 100` (accumulator is now 4). The `010` bit we added in step 3 toggled off. The two 2s canceled each other.\n\nAt the end, all paired numbers vanished, and the accumulator holds `100` (decimal 4) -- our unique number. We found it in a single O(n) pass, using strictly O(1) space.",
+  "common_mistakes": [
+    {
+      "title": "Trying to use a running SUM instead of XOR",
+      "explanation": "A running sum does not cancel duplicates unless you know what the duplicates are and subtract them. Adding them just creates a larger number that can potentially overflow, and doesn't isolate the unique element."
+    },
+    {
+      "title": "Assuming this generalizes to 'appears three times'",
+      "explanation": "If every element appears THREE times except one, simple XOR completely fails because `x ^ x ^ x = x`. That requires a different, significantly more complex multi-state bit manipulation trick (Single Number II)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why does the XOR trick find the single number?",
+      "answer": "Because XOR is commutative and associative, and `x ^ x = 0`. All duplicate pairs cancel to 0, and `0 ^ unique_number = unique_number`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time and space complexity of the XOR single number approach?",
+      "answer": "O(n) time to iterate the array, and O(1) space because it only uses a single accumulator variable.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is the XOR approach preferred over using a hash set?",
+      "answer": "A hash set requires O(n) auxiliary space to track seen elements, whereas the XOR trick uses O(1) constant space.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the unique element in an array where every other element appears exactly twice.",
+      "company": "SDE interview",
+      "answer": "Iterate through the array, XORing every element into a single accumulator variable initially set to 0. Return the accumulator.",
+      "approach": "Direct application of the XOR cancellation trick."
+    },
+    {
+      "question": "Given an array containing n distinct numbers taken from 0, 1, 2, ..., n, find the one that is missing.",
+      "company": "SDE interview",
+      "answer": "XOR all the array elements together, and also XOR that result with all numbers from 0 to n. The paired numbers cancel, leaving the missing number.",
+      "approach": "Pattern transfer: use XOR cancellation against an expected baseline to find a missing item, avoiding sum overflow."
+    }
+  ],
+  "related": [
+    "hash-sets-vs-maps"
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Exclusive_or",
+    "https://leetcode.com/problems/single-number/"
+  ]
+}

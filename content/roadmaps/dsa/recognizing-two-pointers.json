@@ -1,0 +1,82 @@
+{
+  "slug": "recognizing-two-pointers",
+  "title": "Recognizing two pointers",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "two-pointers",
+      "fast-and-slow-pointers"
+    ],
+    "unlocks": [
+      "pattern-recognition-drill"
+    ],
+    "project_usage": [
+      "Database query optimization on indexed, sorted primary keys",
+      "Infinite loop detection in autonomous state machines"
+    ]
+  },
+  "overview": {
+    "what": "Recognizing when to use two bounded iterators to prune a search space from O(n^2) to O(n).",
+    "why": "The surface signal is a SORTED array (or one that can cheaply be sorted) where the problem asks about PAIRS satisfying a condition. One pointer starts at each end, moving based on a comparison, safely discarding rows/columns of invalid pairings without explicitly checking them.",
+    "where_used": [
+      "Memory management protocols, like Cheney's Garbage Collection (Semispace Compaction), which uses a scan and an allocate pointer.",
+      "Cycle detection (Floyd's Tortoise and Hare) in networked state machines."
+    ]
+  },
+  "why_learning_this": [
+    "It differentiates the 'opposite-end convergence' pattern on sorted arrays from the 'fast/slow' pattern used for cycle detection.",
+    "It teaches you to recognize distractors: unsorted problems where sorting destroys needed information (like original indices) cannot directly use two pointers."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Mixing up two-pointers with sliding window",
+      "explanation": "Two pointers typically move from OPPOSITE ends toward each other over a sorted, static structure. Sliding window moves both pointers in the SAME direction over a contiguous range. They are distinct patterns."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What strict precondition must usually be met to use the opposite-end convergence two-pointer technique?",
+      "answer": "The input array must be sorted.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the primary recognition signal for the fast/slow (Tortoise and Hare) pointer variant?",
+      "answer": "The problem asks for cycle detection or finding the midpoint of a linked/sequential structure.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You are given an UNSORTED array of integers and asked to find two indices that sum to a target value. The problem explicitly states you must return the original array indices. Should you sort the array and use two pointers?",
+      "answer": "No. Sorting the array destroys the original indices required for the output. Because you cannot sort, the two-pointer technique is invalid here; a hash map should be used instead.",
+      "why": "Recognizing when a pattern is structurally invalidated by constraints (like needing original indices) is critical for diagnosing the right approach."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer is using two pointers, starting at index 0 and moving both to the right, to find pairs that sum to K in a sorted array. Why is this structurally flawed for finding pairs?",
+      "answer": "Moving both pointers to the right is a sliding window mechanic, meant for contiguous subsets, not discrete pairs. For pairs in a sorted array, opposite-end convergence (one at 0, one at N-1) is required to systematically increase or decrease the sum.",
+      "why": "Conflating the mechanical movement of sliding window with two pointers breaks the mathematical invariant that allows O(n^2) to be pruned to O(n)."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the pointer movement",
+      "prompt": "The given two-pointer implementation for finding a target sum in a sorted array moves the wrong pointers. Fix the comparison logic so it correctly converges from opposite ends.",
+      "starter_code": "def two_sum_sorted(arr, target):\n    l, r = 0, len(arr) - 1\n    while l < r:\n        s = arr[l] + arr[r]\n        if s == target: return True\n        elif s < target: r -= 1 # Incorrect\n        else: l += 1 # Incorrect\n    return False",
+      "solution": "def two_sum_sorted(arr, target):\n    l, r = 0, len(arr) - 1\n    while l < r:\n        s = arr[l] + arr[r]\n        if s == target: return True\n        elif s < target: l += 1\n        else: r -= 1\n    return False"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cheney%27s_algorithm",
+    "https://en.wikipedia.org/wiki/Cycle_detection",
+    "https://www.geeksforgeeks.org/dsa/two-pointers-technique/"
+  ]
+}

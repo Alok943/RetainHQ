@@ -1,0 +1,81 @@
+{
+  "slug": "recognizing-divide-and-conquer",
+  "title": "Recognizing divide & conquer",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "merge-sort",
+      "recursive-tree-thinking"
+    ],
+    "unlocks": [
+      "pattern-recognition-drill"
+    ],
+    "project_usage": [
+      "MapReduce distributed processing",
+      "Fast Fourier Transform (FFT) in digital signal processing"
+    ]
+  },
+  "overview": {
+    "what": "Recognizing when a problem can be split into independent (or nearly independent) halves whose answers combine cheaply into the whole answer.",
+    "why": "Divide and conquer breaks the O(n^2) barrier, reducing complexity to O(n log n). The fundamental prerequisite is subproblem independence — the task must shatter into completely isolated, smaller instances of the same problem.",
+    "where_used": [
+      "MapReduce architectures, which distribute data chunks to isolated cluster nodes (Map) and aggregate them (Reduce).",
+      "Cooley-Tukey FFT algorithm, splitting discrete signals into independent even and odd indices."
+    ]
+  },
+  "why_learning_this": [
+    "It trains you to spot the surface signal: a naive solution's recurrence looking like T(n) = 2T(n/2) + O(n).",
+    "It helps you avoid the common trap of applying divide and conquer to problems where halves are NOT independent."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Conflating 'any recursive solution' with 'divide and conquer'",
+      "explanation": "Recursion is the mechanism, but divide and conquer specifically requires the INDEPENDENT-halves structure. If subproblems overlap, you need dynamic programming, not divide and conquer."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the fundamental prerequisite for a problem to be solvable via Divide & Conquer?",
+      "answer": "Subproblem independence: the task must be able to be split into completely isolated, smaller instances of the same problem.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens if the 'combine' step of a divide and conquer algorithm is too expensive?",
+      "answer": "The performance benefit of the division is negated, and the algorithm may degrade to O(n^2) or worse, defeating the purpose of the split.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You need to find the maximum sum of a contiguous subarray (which may contain negative numbers). Can you easily split this into two completely independent halves and combine the max of the left and max of the right?",
+      "answer": "No. The maximum subarray might span across the exact middle boundary where you split the array. The halves are not truly independent regarding the global maximum.",
+      "why": "Because a running sum can cross the split point, the independence prerequisite is violated. This is why Kadane's algorithm (a single linear scan) is preferred for the maximum subarray problem."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A student claims that calculating the nth Fibonacci number recursively is a great example of Divide and Conquer because it splits into fib(n-1) and fib(n-2). Why is this wrong?",
+      "answer": "Fibonacci subproblems overlap heavily (e.g., fib(n-1) also needs fib(n-2)). Divide and Conquer requires independent, non-overlapping subproblems. Overlapping subproblems require Dynamic Programming.",
+      "why": "Conflating any recursion with Divide and Conquer masks the core structural requirement of the pattern: independence."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Spot the independence violation",
+      "prompt": "Identify why the provided recursive function fails to correctly count the total number of '1's in a binary array when split in half. Modify it to correctly combine the results of the left and right halves.",
+      "starter_code": "def count_ones(arr):\n    if len(arr) <= 1:\n        return arr[0] if arr and arr[0] == 1 else 0\n    mid = len(arr) // 2\n    left = count_ones(arr[:mid])\n    right = count_ones(arr[mid:])\n    return max(left, right) # Incorrect combine step",
+      "solution": "def count_ones(arr):\n    if len(arr) <= 1:\n        return 1 if arr and arr[0] == 1 else 0\n    mid = len(arr) // 2\n    left = count_ones(arr[:mid])\n    right = count_ones(arr[mid:])\n    return left + right"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Divide-and-conquer_algorithm",
+    "https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm"
+  ]
+}

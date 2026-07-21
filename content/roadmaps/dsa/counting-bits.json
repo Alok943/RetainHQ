@@ -1,0 +1,76 @@
+{
+  "slug": "counting-bits",
+  "title": "Counting bits",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "bitwise-operators"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Given a number `n`, you need to count the number of set bits (1s) for every integer from `0` to `n`. Naively counting bits for each number independently takes O(n log n) time.",
+    "naive_solution": "Loop through `1` to `n`, and use a while loop shifting bits right to count the 1s for each number.",
+    "better_idea": "Notice that the binary representation of any number `i` is just the binary representation of `i >> 1` (its integer half) with one extra bit at the end. We can reuse the bit count we already computed for `i >> 1` and add 1 if `i` is odd. This calculates all counts in O(n) time."
+  },
+  "mental_model": {
+    "intuition": "Every number is just a smaller number shifted left, with a potential 1 tacked onto the end. Re-use the smaller number's bit count!",
+    "description": "Initialize an array `bits` of size `n+1`. To find the bit count of `i`, look up the bit count of `i >> 1` (which we already computed since it's smaller), and add 1 if `i` has a 1 in the lowest bit position (`i & 1`).",
+    "repeated_decision": "Can I reuse the bit-count I already computed for a smaller number that this one is built from, instead of recounting from scratch?"
+  },
+  "explanation": "To solve this efficiently, we employ Dynamic Programming (state and transition). Our state is the number of set bits for a given integer `i`. Our transition is reusing the answer for `i >> 1`.\n\nThe core recurrence is:\n`bits[i] = bits[i >> 1] + (i & 1)`\n\nLet's hand-trace building this array from `0` to `7`:\n- `i = 0` (`000`): Base case. `bits[0] = 0`.\n- `i = 1` (`001`): `bits[1 >> 1] + (1 & 1)` -> `bits[0] + 1 = 1`.\n- `i = 2` (`010`): `bits[2 >> 1] + (2 & 1)` -> `bits[1] + 0 = 1`.\n- `i = 3` (`011`): `bits[3 >> 1] + (3 & 1)` -> `bits[1] + 1 = 2`.\n- `i = 4` (`100`): `bits[4 >> 1] + (4 & 1)` -> `bits[2] + 0 = 1`.\n- `i = 5` (`101`): `bits[5 >> 1] + (5 & 1)` -> `bits[2] + 1 = 2`.\n- `i = 6` (`110`): `bits[6 >> 1] + (6 & 1)` -> `bits[3] + 0 = 2`.\n- `i = 7` (`111`): `bits[7 >> 1] + (7 & 1)` -> `bits[3] + 1 = 3`.\n\nNotice that the bit count of `110` (6) is exactly the bit count of `011` (3) because shifting left just adds a `0` to the end, which doesn't increase the number of 1s. The only time the bit count increases is when the lowest bit is a `1`, which we capture with `(i & 1)`.\n\nAlternatively, for counting bits of a SINGLE isolated number, you can use **Brian Kernighan's algorithm**: `x & (x - 1)` clears the lowest set bit. Looping this until `x` is `0` counts bits in exactly O(popcount) steps. However, for a sequence from `0` to `n`, the DP recurrence is faster because it reuses previous answers.",
+  "common_mistakes": [
+    {
+      "title": "Recomputing each count independently",
+      "explanation": "Writing a helper function to count bits and calling it `n` times misses the whole point of the problem. This node exists specifically to demonstrate reusing smaller subproblem answers (1D DP in disguise)."
+    },
+    {
+      "title": "Getting the recurrence direction backwards",
+      "explanation": "You must build the array iteratively from `1` up to `n`. `i >> 1` is a SMALLER index, which guarantees that `bits[i >> 1]` has already been computed by the time you need it."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the O(n) DP recurrence for counting bits from 0 to n?",
+      "answer": "`bits[i] = bits[i >> 1] + (i & 1)`. The bit count of `i` is the bit count of its integer half, plus 1 if `i` is odd.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does `bits[i] = bits[i >> 1] + (i & 1)` work?",
+      "answer": "Shifting `i` right by 1 removes the lowest bit. The remaining bits are identical to `i >> 1`. We add back the lowest bit's value using `i & 1`.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What does Brian Kernighan's trick `x & (x - 1)` do?",
+      "answer": "It clears the lowest set bit (turns the rightmost `1` into a `0`).",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Return an array of the number of 1s in the binary representation of every number in the range [0, n].",
+      "company": "SDE interview",
+      "answer": "Initialize an array of size n+1. Iterate from 1 to n, setting `ans[i] = ans[i >> 1] + (i & 1)`. Return the array.",
+      "approach": "Direct application of the DP counting bits recurrence."
+    },
+    {
+      "question": "Determine the number of set bits in a single large integer as fast as possible.",
+      "company": "SDE interview",
+      "answer": "Use Brian Kernighan's algorithm: repeatedly apply `x = x & (x - 1)` and increment a counter until `x` is 0.",
+      "approach": "When not computing a range, Kernighan's trick jumps straight to the 1s, taking O(set bits) time instead of O(total bits)."
+    }
+  ],
+  "related": [
+    "state-and-transition"
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Hamming_weight",
+    "https://leetcode.com/problems/counting-bits/"
+  ]
+}

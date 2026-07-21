@@ -1,0 +1,99 @@
+{
+  "slug": "bitwise-operators",
+  "title": "Bitwise operators",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "medium",
+    "prerequisites": [
+      "logarithms-and-powers-of-two"
+    ],
+    "unlocks": [
+      "single-number-xor",
+      "counting-bits"
+    ]
+  },
+  "overview": {
+    "what": "Bitwise operators bypass high-level data abstractions to manipulate the individual ones and zeros (bits) that make up a number at the CPU level. Instead of treating `5` and `3` as whole values, they evaluate their binary representations (`101` and `011`) bit by bit in parallel.",
+    "why": "Processing data at the register level allows for operations on 32 or 64 individual binary flags simultaneously within a single clock cycle. This creates profound performance optimizations and memory compressions, forming the backbone of cryptography, embedded systems, and efficient algorithm design."
+  },
+  "why_learning_this": [
+    "Bitwise manipulation unlocks massive O(1) space optimizations for specific algorithmic problems.",
+    "Understanding bit-level representation is critical for avoiding language-specific integer overflow and type coercion bugs.",
+    "It forms the foundational vocabulary required to understand advanced topics like Bloom filters, cryptography, and network protocols."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing AND (`&`) with OR (`|`)",
+      "explanation": "AND is for **masking or checking** bits (clearing unwanted bits to 0). OR is for **setting** bits (forcing specific flags to 1). Mixing them up completely breaks the intended logic."
+    },
+    {
+      "title": "Mixing up shift direction",
+      "explanation": "Left shift (`<<`) multiplies by powers of two. Right shift (`>>`) divides by powers of two. A common trap is using the wrong shift to extract vs pack data."
+    },
+    {
+      "title": "Arithmetic vs logical right shift",
+      "explanation": "Right-shifting a NEGATIVE signed number behaves differently across languages. An arithmetic shift preserves the sign bit (filling with 1s), while a logical shift fills with 0s. This can accidentally transform a negative number into a massive positive number depending on the language's specific rules."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the result of `x ^ x` (XORing a number with itself)?",
+      "answer": "0. Every corresponding bit is identical, and XOR returns 0 for matching bits.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the result of `x ^ 0`?",
+      "answer": "x. XORing with 0 leaves the original bits unchanged.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you multiply an integer by `2^k` using bitwise operators?",
+      "answer": "Use a left shift: `x << k`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What does the expression `x & 1` evaluate?",
+      "answer": "It tests if the lowest bit is set, which determines if the number is odd (1) or even (0).",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the binary result of `1010 & 0110`?",
+      "answer": "`0010` (only the second bit from the right is 1 in both).",
+      "why": "The bitwise AND operator evaluates each pair of bits vertically, returning 1 only if BOTH bits are 1."
+    },
+    {
+      "type": "explain-behavior",
+      "question": "Why does `~5` (bitwise NOT of 5) often output `-6` instead of just flipping bits to a positive number?",
+      "answer": "Because modern computing uses two's-complement to represent signed integers. The mathematical rule for two's complement is `~x = -x - 1`.",
+      "why": "Inversion flips the sign bit (the highest bit) in a signed integer, turning a positive number into a negative one."
+    },
+    {
+      "type": "predict-result",
+      "question": "If you apply `x = x | (1 << 3)` to the binary number `0000`, what does `x` become?",
+      "answer": "`1000` (binary) or 8 (decimal).",
+      "why": "The expression `(1 << 3)` creates a mask with only the 3rd bit set (`1000`). The OR operator `|` uses this mask to turn that specific bit ON in `x`, leaving all other bits unchanged."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the flag check",
+      "prompt": "The code below attempts to check if the 'READ' permission flag (which is the 2nd bit) is set. However, it is using the wrong bitwise operator. Modify the code to correctly use a bitwise AND for masking.",
+      "starter_code": "def can_read(permissions):\n    READ_FLAG = 1 << 1  # 0010\n    return (permissions | READ_FLAG) == READ_FLAG",
+      "solution": "Replace `|` with `&`. The correct check is `(permissions & READ_FLAG) == READ_FLAG` or simply `(permissions & READ_FLAG) != 0`."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Bitwise_operation",
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_NOT",
+    "https://www.geeksforgeeks.org/dsa/all-about-bit-manipulation/"
+  ]
+}

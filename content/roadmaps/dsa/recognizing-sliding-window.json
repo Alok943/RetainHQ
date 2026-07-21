@@ -1,0 +1,82 @@
+{
+  "slug": "recognizing-sliding-window",
+  "title": "Recognizing sliding window",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "sliding-window-fixed",
+      "sliding-window-variable",
+      "kadane-s-algorithm"
+    ],
+    "unlocks": [
+      "pattern-recognition-drill"
+    ],
+    "project_usage": [
+      "TCP Flow and Congestion Control algorithms (AIMD)",
+      "Rate limiting algorithms (e.g., sliding window log)"
+    ]
+  },
+  "overview": {
+    "what": "Recognizing when to use an elastic boundary over data to optimize continuous subsets in linear time.",
+    "why": "The surface signal is a problem asking about a CONTIGUOUS subarray or substring with a size or optimality constraint. Both pointers move in the SAME direction, the window only grows/shrinks, and never resets to scan from scratch, guaranteeing O(n) execution.",
+    "where_used": [
+      "TCP sliding windows regulate the number of unacknowledged bytes a sender can transmit, maximizing throughput while avoiding congestion.",
+      "Streaming data analytics, calculating moving averages over fixed time intervals."
+    ]
+  },
+  "why_learning_this": [
+    "It forms the sharpest contrast pair with two-pointers in the whole roadmap: window implies contiguous, same-direction pointers.",
+    "It trains you to spot distractors: if a 'contiguous subarray' problem needs negative numbers where a window's sum isn't monotonic as it grows, the window fails (requiring Kadane's DP approach instead)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying sliding window to a NON-contiguous subsequence problem",
+      "explanation": "Windows are contiguous by definition. A subsequence-with-gaps problem needs a different technique entirely, often dynamic programming like Longest Increasing Subsequence."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the key word in a problem statement that strongly signals a Sliding Window approach over Two Pointers?",
+      "answer": "Contiguous (subarray or substring).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is sliding window guaranteed to be O(n) even though it typically uses a nested while loop inside a for loop?",
+      "answer": "Because the left pointer only ever moves forward. Each element is added to the window at most once and removed at most once, bounding total operations to 2N.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You need to find the longest subarray that sums to exactly K, but the array contains BOTH positive and negative integers. Should you use a variable sliding window?",
+      "answer": "No. Sliding window requires monotonic growth/shrink properties. Adding a negative number decreases the sum, breaking the rule that 'expanding the window always increases the state.' You must use a Prefix Sum with a Hash Map instead.",
+      "why": "Recognizing when negative constraints destroy the monotonic invariant is the most common way engineers pass or fail sliding window interviews."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A developer is trying to find the longest common subsequence between two strings and immediately starts setting up left and right pointers to form a sliding window. What is the fundamental flaw?",
+      "answer": "A subsequence is NOT contiguous. A sliding window physically cannot model gaps. This is a classic overlapping subproblems scenario requiring 2D Dynamic Programming.",
+      "why": "Conflating 'substring' (contiguous) with 'subsequence' (gaps allowed) leads to applying the entirely wrong algorithmic pattern."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Fix the O(n^2) window reset",
+      "prompt": "The provided code attempts a sliding window but inadvertently resets the left pointer, making it O(n^2). Fix the logic so the left pointer only moves forward, maintaining the O(n) bound.",
+      "starter_code": "def max_sum_subarray(arr, k):\n    max_sum = 0\n    for i in range(len(arr) - k + 1):\n        window_sum = 0\n        for j in range(i, i + k): # Resets scanning\n            window_sum += arr[j]\n        max_sum = max(max_sum, window_sum)\n    return max_sum",
+      "solution": "def max_sum_subarray(arr, k):\n    if len(arr) < k: return 0\n    window_sum = sum(arr[:k])\n    max_sum = window_sum\n    for i in range(k, len(arr)):\n        window_sum += arr[i] - arr[i - k]\n        max_sum = max(max_sum, window_sum)\n    return max_sum"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Sliding_window_protocol",
+    "https://en.wikipedia.org/wiki/TCP_congestion_control"
+  ]
+}

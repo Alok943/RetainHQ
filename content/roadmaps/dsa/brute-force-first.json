@@ -1,0 +1,86 @@
+{
+  "slug": "brute-force-first",
+  "title": "Brute force first",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "what-is-an-algorithm",
+      "big-o-notation"
+    ],
+    "unlocks": [
+      "precomputation",
+      "recognizing-divide-and-conquer",
+      "recognizing-two-pointers",
+      "recognizing-sliding-window",
+      "recognizing-greedy-vs-dp",
+      "recognizing-graph-problems"
+    ],
+    "project_usage": [
+      "Correctness oracles for property-based testing",
+      "Baseline bounds in system benchmarking"
+    ]
+  },
+  "overview": {
+    "what": "Before reaching for any clever technique, stating the obvious, always-correct, usually-slow solution first — such as nested loops or try-everything recursion.",
+    "why": "It establishes a correctness baseline to test faster solutions against. Furthermore, its structure often reveals exactly which optimization applies; for example, a brute force that recomputes the same subproblem repeatedly signals the need for dynamic programming.",
+    "where_used": [
+      "Property-based testing: running complex algorithms alongside slow, trivially correct brute-force ones on restricted datasets to verify correctness.",
+      "Cryptographic security relies on brute-force limits, ensuring exhaustive key-space traversal is computationally impossible."
+    ]
+  },
+  "why_learning_this": [
+    "It establishes the theoretical ceiling of time complexity and the baseline for absolute correctness.",
+    "Stating the brute force's complexity first allows you to ask 'what is this complexity wasting?' — the exact question that leads to the optimal pattern."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Skipping straight to a 'clever trick'",
+      "explanation": "If you cannot state why the brute force is too slow for the given constraints, you cannot mathematically justify the optimization either. Interviewers look for this baseline."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is it valuable to define the brute-force solution before optimizing?",
+      "answer": "It provides an absolute correctness baseline, and its structure (like repeated work or nested loops) reveals exactly which optimization pattern to apply.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the critical question to ask after stating the brute-force complexity?",
+      "answer": "What is this complexity wasting? (e.g., recomputing the same values, checking invalid paths).",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "debug-misconception",
+      "question": "A candidate immediately starts writing an O(n log n) divide and conquer approach for a novel problem. What critical step did they skip, and why is it dangerous?",
+      "answer": "They skipped establishing the brute-force baseline. Without it, they cannot prove their optimization is necessary, nor do they have a simple, trivially correct oracle to test their complex logic against.",
+      "why": "Jumping to optimizations without a baseline often leads to over-engineering or solving the wrong problem, as the candidate hasn't fully explored the search space."
+    },
+    {
+      "type": "choose-model",
+      "question": "You are asked to find if two numbers in an array sum to a target K. Should you instantly write the O(n) hash map solution, or first describe the O(n^2) nested loops?",
+      "answer": "First describe the O(n^2) nested loops. This establishes the theoretical ceiling and explicitly identifies the wasted work (scanning the rest of the array repeatedly), which perfectly justifies introducing the hash map.",
+      "why": "Interviewers evaluate the problem-solving journey, not just the final code. Proving *why* the hash map is needed by showing the flaws of brute force is a stronger signal of engineering maturity."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Identify the wasted work",
+      "prompt": "Given a naive O(n^2) function that finds duplicates by comparing every element to every other element, modify the code structure to return the *number of redundant comparisons* made, rather than the duplicates themselves, to quantify the waste.",
+      "starter_code": "def count_redundant(arr):\n    # Modify this to count redundant checks\n    pass",
+      "solution": "def count_redundant(arr):\n    return (len(arr) * (len(arr) - 1)) // 2"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Brute-force_search",
+    "https://en.wikipedia.org/wiki/Algorithmic_paradigm"
+  ]
+}

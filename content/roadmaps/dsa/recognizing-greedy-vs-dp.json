@@ -1,0 +1,87 @@
+{
+  "slug": "recognizing-greedy-vs-dp",
+  "title": "Recognizing greedy vs DP",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier1",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "why-greedy-works",
+      "why-greedy-fails",
+      "overlapping-subproblems",
+      "optimal-substructure"
+    ],
+    "unlocks": [
+      "pattern-recognition-drill"
+    ],
+    "project_usage": [
+      "Packet routing (Dijkstra's Greedy)",
+      "Image resizing / Seam Carving (DP)"
+    ]
+  },
+  "overview": {
+    "what": "The single highest-value diagnostic skill: differentiating between problems that can be solved with a fast Greedy approach versus those requiring exhaustive Dynamic Programming.",
+    "why": "Both patterns optimize for a maximum or minimum answer. If you use DP when Greedy works, you waste massive memory and time. If you use Greedy when DP is required, your algorithm will confidently return the wrong answer because it gets trapped in local maxima.",
+    "where_used": [
+      "Network routing (BGP/OSPF) uses Dijkstra's greedy approach because non-negative latency guarantees local choices are globally optimal.",
+      "Content-aware image resizing (Seam Carving) requires DP; a greedy pixel choice might force the seam through the main subject."
+    ]
+  },
+  "why_learning_this": [
+    "It operationalizes a strict decision procedure: (1) Does an exchange argument prove local choices never foreclose better global outcomes? If yes, Greedy. (2) If choices foreclose paths, are there overlapping subproblems? If yes, DP.",
+    "It proves that recognizing patterns requires analyzing precise constraints, not just 'vibes' (e.g., Fractional Knapsack is Greedy; 0/1 Knapsack is DP)."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming 'sounds greedy' is sufficient justification",
+      "explanation": "It never is. Without a mathematical exchange argument proving that a greedy choice is always safe, you are just guessing. If a choice CAN foreclose a better outcome, Greedy fails."
+    },
+    {
+      "title": "Jumping to DP without checking for a greedy proof",
+      "explanation": "DP is overkill for simple matroids. Always check if a greedy choice is mathematically viable before committing to building O(n^2) memoization tables."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the core prerequisite required to safely use a Greedy algorithm?",
+      "answer": "The Greedy Choice Property, usually proven via an exchange argument: making the locally optimal choice permanently never forecloses the globally optimal solution.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does the 0/1 Knapsack problem require Dynamic Programming, while the Fractional Knapsack can be solved with a Greedy algorithm?",
+      "answer": "Because 0/1 items cannot be split. A greedy choice might pick a large item that leaves an awkward void in the bag, foreclosing the possibility of fitting multiple smaller, cumulatively more valuable items.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You are given a list of meetings with start and end times and asked to find the maximum number of non-overlapping meetings you can attend. Do you need DP to explore all combinations, or can you use a Greedy approach?",
+      "answer": "You can use a Greedy approach (sort by earliest end time). The exchange argument holds: picking the meeting that ends earliest leaves the maximum possible free time for any subsequent meetings. It never forecloses a better total count.",
+      "why": "Interval scheduling is the canonical example of a problem that looks like it requires combinatorial exploration (DP) but is mathematically solvable via Greedy."
+    },
+    {
+      "type": "debug-misconception",
+      "question": "A student attempts to solve the 'Coin Change' problem (finding the minimum number of coins to make a target amount) using a Greedy approach: always picking the largest coin possible first. Will this always work?",
+      "answer": "No. It fails if the coin denominations are not canonical. For example, with coins [1, 3, 4] and a target of 6, Greedy picks [4, 1, 1] (3 coins), but the optimal DP solution finds [3, 3] (2 coins).",
+      "why": "This is the classic failure signal of Greedy. The local optimal choice (picking 4) foreclosed the global optimal path (picking two 3s). Overlapping subproblems demand DP here."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Greedy failure demonstration",
+      "prompt": "Modify the given greedy coin change algorithm to instead return a boolean indicating whether the greedy approach yielded the optimal result compared to the provided DP answer, for the inputs coins=[1, 3, 4], target=6.",
+      "starter_code": "def is_greedy_optimal(coins, target, dp_optimal_count):\n    # Implement greedy approach and compare\n    pass",
+      "solution": "def is_greedy_optimal(coins, target, dp_optimal_count):\n    coins.sort(reverse=True)\n    greedy_count = 0\n    rem = target\n    for c in coins:\n        greedy_count += rem // c\n        rem %= c\n    return greedy_count == dp_optimal_count # Returns False"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Greedy_algorithm",
+    "https://courses.cs.washington.edu/courses/cse373/23su/projects/seamcarving/DP/"
+  ]
+}
