@@ -1,0 +1,115 @@
+import uuid
+from typing import Optional, Literal
+from pydantic import BaseModel
+from google import genai
+from google.genai import types
+
+from app.core.config import settings
+
+# Companion classification always runs on Flash-Lite (fast, cheap).
+COMPANION_CLASSIFIER_MODEL = "gemini-2.0-flash-lite"
+COMPANION_PROMPT_VERSION = "v1"
+
+class CandidateRank(BaseModel):
+    node: str
+    rank: int
+
+class ClassificationResult(BaseModel):
+    candidates: list[CandidateRank]
+    selected: Optional[str]
+    confidence_band: Literal["high", "medium", "low"]
+    study_type: str
+    assistance_level: Optional[Literal["none", "hint", "llm_assisted", "solution_seen"]]
+    reason: str
+
+async def classify_session(
+    title_sample: str, 
+    sources: list[str], 
+    candidates: list[dict], 
+    memory: list[str] = None
+) -> ClassificationResult:
+    """
+    Rung 3 of the Classification Ladder.
+    Uses Gemini Flash-Lite to evaluate the top-K candidate nodes from the embedding search,
+    and returns a structured JSON response assigning the session to a node (or dropping it).
+    """
+    if not settings.GEMINI_API_KEY:
+        # Fallback to triage if no LLM configured
+        return ClassificationResult(
+            candidates=[],
+            selected=None,
+            confidence_band="medium",
+            study_type="unknown",
+            assistance_level=None,
+            reason="LLM not configured"
+        )
+        
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    
+    # Format candidates for the prompt
+    candidates_text = ""
+    valid_uuids = set()
+    for i, c in enumerate(candidates):
+        candidates_text += f"[{i+1}] Node ID: {c['node_id']}\nTitle: {c['title']}\nDescription: {c.get('description', '')}\n\n"
+        valid_uuids.add(str(c["node_id"]))
+        
+    prompt = f"""
+You are a career coaching AI. Your job is to classify a user's web browser study session and map it to exactly ONE of their predefined career roadmap nodes, IF it matches.
+
+# Session Data
+Sources: {", ".join(sources)}
+Title/Metadata: {title_sample}
+Recent topics (memory): {", ".join(memory) if memory else "None"}
+
+# Candidate Nodes (Top {len(candidates)} Matches)
+{candidates_text}
+
+# Task
+Evaluate the session metadata against the candidate nodes.
+1. Does this session clearly map to one of the candidates?
+2. What type of studying was this? (e.g. video_lecture, practice_problem, reading)
+3. Did the user receive assistance? (For LLM chats, assume "llm_assisted". For LeetCode solutions, "solution_seen".)
+
+Return ONLY JSON matching the requested schema.
+- `candidates`: list of nodes you considered, with your ranking (1 is best).
+- `selected`: the Node ID of the best match. MUST BE EXACTLY ONE OF THE PROVIDED NODE IDs. If no node matches well, set to null.
+- `confidence_band`: 
+   - "high" if you are certain this maps directly to the selected node.
+   - "medium" if it might match, but requires human triage.
+   - "low" if this is unrelated to any candidate and unrelated to career development.
+- `study_type`: a short string categorizing the activity.
+- `assistance_level`: "none", "hint", "llm_assisted", or "solution_seen". (Default to "llm_assisted" if it's a ChatGPT/Claude/Gemini source unless obvious otherwise).
+- `reason`: a 1-sentence explanation of your choice.
+"""
+
+    try:
+        response = client.models.generate_content(
+            model=COMPANION_CLASSIFIER_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ClassificationResult,
+                temperature=0.0
+            ),
+        )
+        
+        result = response.parsed
+        
+        # Validation: Never invent a node
+        if result.selected and result.selected not in valid_uuids:
+            result.selected = None
+            result.confidence_band = "medium"
+            result.reason = f"System override: LLM hallucinated node {result.selected}"
+            
+        return result
+        
+    except Exception as e:
+        # Failsafe: drop to triage
+        return ClassificationResult(
+            candidates=[],
+            selected=None,
+            confidence_band="medium",
+            study_type="unknown",
+            assistance_level=None,
+            reason=f"LLM Classification failed: {str(e)}"
+        )

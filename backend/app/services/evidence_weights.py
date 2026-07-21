@@ -21,7 +21,7 @@ EVENT_TYPES = (
 TRUST_TIERS = ("T1_verified_external", "T2_verified_internal", "T3_observed", "T4_claimed")
 SOURCES = (
     "leetcode", "retainhq_review", "retainhq_coach", "github",
-    "manual", "companion_desktop", "companion_android",
+    "manual", "companion_desktop", "companion_android", "companion_browser",
 )
 
 WEIGHTS_VERSION = "v0"

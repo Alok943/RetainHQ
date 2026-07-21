@@ -395,4 +395,5 @@ class NodeMeta(SQLModel, table=True):
     subject: str                          # top-level grouping for phase-3 balance: 'dsa' | 'os' | 'dbms' | ...
     review_policy: str = Field(default="default")  # parent A7: per-node FSRS tuning, consumed later
     user_edited: bool = Field(default=False)       # protects user edits from template upgrades
+    embedding: Optional[list] = Field(default=None, sa_column=Column(_JSONB))
     created_at: datetime = Field(default_factory=datetime.utcnow)

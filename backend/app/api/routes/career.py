@@ -32,7 +32,7 @@ from app.schemas.career import (
     TreeGenerateIn,
     UnmappedActivityOut,
 )
-from app.services import evidence, metrics, topic_mapping
+from app.services import evidence, metrics, topic_mapping, embeddings
 from app.services.career_tree import CareerTreeDraft, CareerTreeError, _load_template, generate_career_tree, list_templates
 from app.services.grader import GraderError, grade_recall
 
@@ -255,6 +255,23 @@ async def commit_tree(
     roadmap_nodes: list[RoadmapNode] = []
     node_metas: list[NodeMeta] = []
     order = 0
+    
+    # Pre-compute embeddings for all nodes
+    flat_nodes_text = []
+    for subject in body.subjects:
+        for node in subject.nodes:
+            # We embed title only since template/draft nodes have no description field.
+            flat_nodes_text.append(node.title)
+    
+    node_embeddings = []
+    if flat_nodes_text:
+        try:
+            node_embeddings = embeddings.embed_batch(flat_nodes_text)
+        except Exception:
+            # If embedding fails (no key, rate limit, etc), fall back to empty to not break commit
+            node_embeddings = [[] for _ in flat_nodes_text]
+            
+    flat_index = 0
     for subject in body.subjects:
         for node in subject.nodes:
             rn = RoadmapNode(
@@ -272,8 +289,10 @@ async def commit_tree(
                 priority=node.priority,
                 est_effort_min=node.est_effort_min,
                 subject=subject.key,
+                embedding=node_embeddings[flat_index] if flat_index < len(node_embeddings) else []
             ))
             order += 1
+            flat_index += 1
 
     prerequisites: list[RoadmapNodePrerequisite] = []
     for subject in body.subjects:

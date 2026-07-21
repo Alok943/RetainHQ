@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback, internal, prefs, tests, syllabus, push, metrics, classrooms, evidence, career
+from app.api.routes import activities, reviews, dashboard, roadmaps, admin, feedback, internal, prefs, tests, syllabus, push, metrics, classrooms, evidence, career, companion
 from app.services import analytics
 
 # So Render's log stream carries tracebacks even with Sentry off — logging is
@@ -66,6 +66,7 @@ app.include_router(metrics.router, prefix="/api/metrics", tags=["metrics"])
 app.include_router(classrooms.router, prefix="/api/classrooms", tags=["classrooms"])
 app.include_router(evidence.router, prefix="/api/evidence", tags=["evidence"])
 app.include_router(career.router, prefix="/api/career", tags=["career"])
+app.include_router(companion.router, prefix="/api/companion", tags=["companion"])
 
 @app.get("/me")
 async def get_me(current_user: SupabaseUser = Depends(get_current_user)):

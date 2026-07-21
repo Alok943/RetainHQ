@@ -11,17 +11,7 @@ module is what SPENDS that finding:
   below it, and leaving anything lower in the unmapped bucket (Tier 3).
   Tier 3 — the unmapped bucket: a human assigns a node by hand via
   routes/career.py's /unmapped endpoints.
-
-Tier 2's similarity function is deliberately NOT a real embedding call.
-pgvector is available on this Supabase project but NOT installed (confirmed
-via list_extensions before writing this), and the spec explicitly says not
-to enable it just for <=90 in-tree vectors. Word-overlap similarity is the
-placeholder; a real embedding call (e.g. Gemini's embed_content — the same
-provider already wired for syllabus extraction) is the natural upgrade once
-triage volume on real data justifies the added cost — swapping it in only
-touches `_similarity`.
 """
-import re
 import uuid
 from typing import Optional, TypedDict
 
@@ -29,15 +19,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.models import Activity, CareerGoal, NodeMeta, Review, RoadmapNode
-from app.services import evidence
+from app.services import evidence, embeddings
 
-# §5 thresholds — named config constants. The parent doc marks these as an
-# open question to tune on the owner's own triage logs; ship the numbers,
-# don't hardcode the decision path around them.
+# §5 thresholds — tuned via backfill_career_mapping.py over ground truth
 AUTO_MAP_THRESHOLD = 0.75
-TRIAGE_THRESHOLD = 0.55
-
-_WORD_RE = re.compile(r"[a-z0-9]+")
+TRIAGE_THRESHOLD = 0.65
 
 
 class CandidateNode(TypedDict):
@@ -45,27 +31,16 @@ class CandidateNode(TypedDict):
     stable_key: str
     title: str
     description: Optional[str]
+    embedding: list[float]
 
 
 class MappingSuggestion(TypedDict):
     node_id: uuid.UUID
     stable_key: str
     title: str
+    description: Optional[str]
     confidence: float
     tier: str  # 'auto' | 'triage'
-
-
-def _tokens(text: str) -> set:
-    return set(_WORD_RE.findall((text or "").lower()))
-
-
-def _similarity(text_a: str, text_b: str) -> float:
-    """Jaccard word overlap — see module docstring for why this isn't a real
-    embedding call yet."""
-    a, b = _tokens(text_a), _tokens(text_b)
-    if not a or not b:
-        return 0.0
-    return len(a & b) / len(a | b)
 
 
 async def candidate_nodes_for_active_goal(db: AsyncSession, user_id: uuid.UUID) -> list:
@@ -88,7 +63,13 @@ async def candidate_nodes_for_active_goal(db: AsyncSession, user_id: uuid.UUID) 
         )
     ).all()
     return [
-        {"node_id": rn.id, "stable_key": meta.stable_key, "title": rn.title, "description": rn.description}
+        {
+            "node_id": rn.id,
+            "stable_key": meta.stable_key,
+            "title": rn.title,
+            "description": rn.description,
+            "embedding": meta.embedding or []
+        }
         for meta, rn in rows
     ]
 
@@ -97,11 +78,23 @@ def suggest_node(topic_text: str, candidate_nodes: list) -> Optional[MappingSugg
     """Best-matching node for `topic_text` among `candidate_nodes` (a user's
     committed career tree). Returns None if nothing scores >= TRIAGE_THRESHOLD
     — i.e. Tier 3, the unmapped bucket, is where this belongs."""
+    if not candidate_nodes:
+        return None
+        
+    try:
+        topic_embedding = embeddings.embed(topic_text)
+    except Exception:
+        # If embedding fails (e.g. rate limit, config missing), we fall back to no-match
+        return None
+
     best = None
     best_score = 0.0
     for node in candidate_nodes:
-        text = f"{node['title']} {node.get('description') or ''}"
-        score = _similarity(topic_text, text)
+        # Fallback to 0 if node was created before embeddings were added
+        if not node.get("embedding"):
+            continue
+            
+        score = embeddings.similarity(topic_embedding, node["embedding"])
         if score > best_score:
             best_score = score
             best = node
@@ -112,8 +105,73 @@ def suggest_node(topic_text: str, candidate_nodes: list) -> Optional[MappingSugg
     tier = "auto" if best_score >= AUTO_MAP_THRESHOLD else "triage"
     return MappingSuggestion(
         node_id=best["node_id"], stable_key=best["stable_key"], title=best["title"],
-        confidence=best_score, tier=tier,
+        description=best["description"], confidence=best_score, tier=tier,
     )
+
+async def candidate_nodes_for_user(db: AsyncSession, user_id: uuid.UUID) -> list:
+    """Returns ALL nodes a user has access to (their active career goal + any personal roadmaps)."""
+    from app.models.models import Roadmap
+    
+    # 1. Get personal roadmaps
+    personal_stmt = select(Roadmap.id).where(Roadmap.user_id == user_id)
+    personal_ids = (await db.execute(personal_stmt)).scalars().all()
+    
+    # 2. Get active catalog roadmap from career goal
+    goal = (
+        await db.execute(select(CareerGoal).where(CareerGoal.user_id == user_id, CareerGoal.status == "active"))
+    ).scalar_one_or_none()
+    
+    roadmap_ids = list(personal_ids)
+    if goal and goal.roadmap_id and goal.roadmap_id not in roadmap_ids:
+        roadmap_ids.append(goal.roadmap_id)
+        
+    if not roadmap_ids:
+        return []
+        
+    rows = (
+        await db.execute(
+            select(NodeMeta, RoadmapNode)
+            .join(RoadmapNode, RoadmapNode.id == NodeMeta.node_id)
+            .where(RoadmapNode.roadmap_id.in_(roadmap_ids))
+        )
+    ).all()
+    
+    return [
+        {
+            "node_id": rn.id,
+            "stable_key": meta.stable_key,
+            "title": rn.title,
+            "description": rn.description,
+            "embedding": meta.embedding or []
+        }
+        for meta, rn in rows
+    ]
+
+def top_k_suggested_nodes(topic_text: str, candidate_nodes: list, k: int = 5) -> list[MappingSuggestion]:
+    """Returns the top K best-matching nodes for `topic_text` among `candidate_nodes`
+    using embedding similarity."""
+    if not candidate_nodes:
+        return []
+        
+    try:
+        topic_embedding = embeddings.embed(topic_text)
+    except Exception:
+        return []
+
+    scored_nodes = []
+    for node in candidate_nodes:
+        if not node.get("embedding"):
+            continue
+            
+        score = embeddings.similarity(topic_embedding, node["embedding"])
+        tier = "auto" if score >= AUTO_MAP_THRESHOLD else "triage"
+        scored_nodes.append(MappingSuggestion(
+            node_id=node["node_id"], stable_key=node["stable_key"], title=node["title"],
+            description=node.get("description"), confidence=score, tier=tier,
+        ))
+
+    scored_nodes.sort(key=lambda x: x["confidence"], reverse=True)
+    return scored_nodes[:k]
 
 
 async def backfill_activity(
