@@ -1,0 +1,91 @@
+{
+  "slug": "fast-and-slow-pointers",
+  "title": "Fast & slow pointers",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "two-pointers"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "You need to find the middle of a linked list or detect if it has a cycle. Without knowing the length in advance, finding the middle requires two passes (one to count, one to seek), and detecting cycles with a hash set requires O(n) auxiliary space.",
+    "better_idea": "Use two pointers moving at different speeds (Floyd's tortoise and hare). For finding the middle, when the fast pointer hits the end, the slow pointer is exactly halfway. For cycles, if the fast pointer catches the slow pointer from behind, a loop exists. This drops space complexity to O(1) while maintaining O(n) time."
+  },
+  "mental_model": {
+    "intuition": "If you drive at 50 mph and I drive at 100 mph, when I reach the finish line, you are exactly halfway there.",
+    "description": "Initialize two pointers at the start of the sequence. The slow pointer advances one step at a time, while the fast pointer advances two steps. If finding a midpoint, you stop when the fast pointer can no longer take a full two-step hop. If detecting a cycle, you stop when the pointers meet. Once both are inside a cycle, the gap between them closes by exactly one node per step, guaranteeing they will meet -- the fast pointer cannot jump over the slow pointer.",
+    "repeated_decision": "advance slow by one and fast by two -- did they land on the same node?"
+  },
+  "viz": {
+    "generator": "fast-slow-pointers",
+    "default_input": [10, 20, 30, 40, 50, 60],
+    "invariants": {
+      "inv-two-speeds": "Fast moves twice as fast as slow. The distance traveled by fast is always 2x the distance traveled by slow.",
+      "inv-middle": "When fast reaches the end, slow has traveled exactly half the total distance, placing it at the middle node."
+    },
+    "steps": [
+      { "id": "start", "label": "slow = 0, fast = 0" },
+      { "id": "advance", "label": "slow += 1, fast += 2" },
+      { "id": "middle", "label": "fast hit the end -- slow is the middle" },
+      { "id": "done", "label": "return middle" }
+    ],
+    "predictions": [
+      {
+        "at_step": "advance",
+        "occurrence": "first",
+        "level": "easy",
+        "prompt": "After this step, what are the new positions of slow and fast?",
+        "derive": "next_step_id"
+      }
+    ]
+  },
+  "explanation": "Floyd's tortoise and hare technique has two primary uses: cycle detection and finding the middle of a sequence (like an array or linked list). We will trace the 'find the middle' variant here, but the principle is identical: two pointers moving at different speeds.\n\nImagine an array [10, 20, 30, 40, 50, 60]. We want to find the lower-middle index, which is floor((6-1)/2) = 2.\n\nStep 0: slow=0, fast=0\nStep 1: slow=1, fast=2\nStep 2: slow=2, fast=4\n\nAt this point, fast is at index 4. The next two-step hop would take it to index 6. Since fast+2=6 > 5 (n-1), so stop. Middle = index 2 (value 30).\n\nThis technique operates in O(n) time and O(1) space. The alternative for cycle detection is keeping a hash set of visited nodes, which takes O(n) space. For finding the middle, the alternative is scanning the entire list once to count the nodes, then scanning halfway again, which takes two passes instead of one.\n\nWhy must they meet if there is a cycle? Think about the relative speed. Once both pointers are in the loop, the fast pointer is moving exactly one step faster than the slow pointer per iteration. This means the gap between them closes by exactly one node per step, so meeting is guaranteed -- it cannot be jumped over.",
+  "common_mistakes": [
+    {
+      "title": "Assuming the meeting point is the cycle's start",
+      "explanation": "When the pointers meet in a cycle, that meeting point confirms a cycle exists, but it is NOT necessarily the entry point to the cycle. Finding the actual start of the loop requires a second phase where one pointer resets to the beginning and both then move at the same speed until they meet again -- that second meeting point is the cycle's entry."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What are the time and space complexities of the fast and slow pointer technique?",
+      "answer": "O(n) time and O(1) space, avoiding the O(n) space of a hash-set alternative.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a cycle exists, why can't the fast pointer just skip over the slow pointer?",
+      "answer": "Because the fast pointer moves exactly one step more than the slow pointer each iteration. This relative speed of 1 means the distance between them shrinks by exactly one node per step, guaranteeing they will meet.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What happens when the fast pointer reaches the end of the list?",
+      "answer": "The slow pointer is at the midpoint. Because the fast pointer travels twice as fast, it covers twice the distance.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given the head of a linked list, return the middle node.",
+      "company": "SDE interview",
+      "answer": "Use two pointers, slow and fast. Advance slow by one and fast by two. When fast reaches the end, slow is at the middle. O(n) time, O(1) space.",
+      "approach": "This is the classic fast/slow pointer application for finding a midpoint in a single pass."
+    },
+    {
+      "question": "Given head, the head of a linked list, determine if the linked list has a cycle in it.",
+      "company": "SDE interview",
+      "answer": "Initialize slow and fast pointers. While fast and fast.next are not null, advance slow by 1 and fast by 2. If they ever point to the same node, a cycle exists. O(n) time, O(1) space.",
+      "approach": "Apply Floyd's cycle-finding algorithm (tortoise and hare)."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare",
+    "https://leetcode.com/articles/linked-list-cycle/"
+  ]
+}

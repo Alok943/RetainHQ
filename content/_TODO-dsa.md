@@ -63,11 +63,11 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Binary search on the answer  · D · `binary-search-on-the-answer`
 
 ## 8. Two Pointers & Windows  (all `D`)
-- [ ] Two pointers  · D · `two-pointers`
-- [ ] Fast & slow pointers  · D · `fast-and-slow-pointers`
-- [ ] Sliding window (fixed)  · D · `sliding-window-fixed`
-- [ ] Sliding window (variable)  · D · `sliding-window-variable`
-- [ ] Kadane's algorithm  · D · `kadane-s-algorithm`
+- [x] Two pointers  · D · `two-pointers`
+- [x] Fast & slow pointers  · D · `fast-and-slow-pointers`
+- [x] Sliding window (fixed)  · D · `sliding-window-fixed`
+- [x] Sliding window (variable)  · D · `sliding-window-variable`
+- [x] Kadane's algorithm  · D · `kadane-s-algorithm`
 
 ## 9. Stacks & Queues  (all `D`)
 - [x] Stack fundamentals  · D · `stack-fundamentals`
@@ -170,7 +170,7 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 
 ---
 
-**110 nodes total · 95 done · 15 open.** Split: ~40 `C` (concept) · ~67 `D` (dsa).
+**110 nodes total · 100 done · 10 open.** Split: ~40 `C` (concept) · ~67 `D` (dsa).
 Note: checkbox state reconciled against `content/roadmaps/dsa/*.json` on 2026-07-21 — 104 lesson files
 exist for 95 ticked nodes because some shipped lessons aren't tracked as distinct TODO nodes (e.g.
 `two-pointers-on-strings` vs the still-open generic `two-pointers`).

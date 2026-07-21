@@ -1,0 +1,98 @@
+{
+  "slug": "two-pointers",
+  "title": "Two pointers",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "easy",
+    "estimated_minutes": 15,
+    "importance": 10,
+    "interview_frequency": "high",
+    "prerequisites": ["arrays-and-memory"],
+    "unlocks": ["fast-and-slow-pointers", "sliding-window-fixed"]
+  },
+  "viz": {
+    "generator": "two-pointers",
+    "default_input": [4, 1, 7, 3, 9, 2],
+    "invariants": ["inv-sorted-halves", "inv-converge", "inv-found"],
+    "steps": [
+      {"id": "start", "label": "lo = 0, hi = end"},
+      {"id": "compare", "label": "sum = arr[lo] + arr[hi]"},
+      {"id": "move", "label": "move lo or hi inward"},
+      {"id": "found", "label": "pair found!"},
+      {"id": "done", "label": "pointers met, no pair"}
+    ],
+    "predictions": [
+      {
+        "at_step": "compare",
+        "occurrence": "first",
+        "level": "easy",
+        "prompt": "The sum is compared to the target. What happens next -- does a pointer move, or is the pair found?",
+        "derive": "next_op"
+      }
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Given a target sum and an array, find two elements that add up to the target.",
+    "naive_solution": "Check every possible pair with nested loops, taking O(n^2) time.",
+    "better_idea": "If the array is sorted, we can put pointers at the ends and move them inward, ruling out O(n) invalid pairs at every step to solve it in O(n) time."
+  },
+  "mental_model": {
+    "intuition": "Imagine playing a guessing game where you need to hit an exact weight. If you are too heavy, you swap a heavier item for a lighter one. If you are too light, you swap a lighter one for a heavier one.",
+    "description": "Two pointers places a 'lo' pointer at the start and a 'hi' pointer at the end of a sorted array. You check their sum against the target. Depending on whether it is too big or too small, you increment 'lo' or decrement 'hi'.",
+    "repeated_decision": "is the current pair's sum too big (move right in) or too small (move left in)?"
+  },
+  "explanation": "To use the two pointers technique, your array MUST be sorted. This is the crucial precondition. Without it, you cannot safely eliminate elements.\n\nHere is how you find a pair adding to a target:\n1. Sort the array (if not already sorted). This takes O(n log n).\n2. Place `lo` at index 0 and `hi` at the last index.\n3. Loop while `lo < hi`.\n4. Calculate `sum = arr[lo] + arr[hi]`.\n5. If `sum == target`, you found it! Return the pair.\n6. If `sum < target`, the pair is too small. Since the array is sorted, any pair with `arr[lo]` and an index less than `hi` will be even smaller. Thus, `arr[lo]` can never form a valid pair. Move `lo` right (`lo++`) to increase the sum.\n7. If `sum > target`, the pair is too big. Any pair with `arr[hi]` and an index greater than `lo` will be even bigger. Thus, `arr[hi]` can never form a valid pair. Move `hi` left (`hi--`) to decrease the sum.\n\nWhy is a move safe? If `arr[lo] + arr[hi]` is too large, no pair using `arr[hi]` can work because every remaining partner is >= `arr[lo]`. So the whole column is discarded -- that is how O(n^2) becomes O(n). The time complexity of the scan is O(n), and the space complexity is O(1). This contrasts with the hash-map approach, which works on unsorted arrays but costs O(n) space.\n\nLet's hand-trace an example with a sorted array: `[1, 2, 3, 4, 7, 9]` and target = 9.\n\n- `lo=0` (value 1), `hi=5` (value 9)\n- `sum = 1 + 9 = 10`\n- `10 > 9`, so the sum is too big. Move `hi` left: `hi--`\n- `lo=0` (value 1), `hi=4` (value 7)\n- `sum = 1 + 7 = 8`\n- `8 < 9`, so the sum is too small. Move `lo` right: `lo++`\n- `lo=1` (value 2), `hi=4` (value 7)\n- `sum = 2 + 7 = 9`\n- `9 == 9`. Found it: the values 2 and 7 (at indices `lo=1` and `hi=4`) add to the target.",
+  "common_mistakes": [
+    {
+      "title": "Applying two pointers to an unsorted array",
+      "explanation": "Two pointers relies entirely on the sorted property to safely eliminate candidates. If the array is unsorted, you must use a hash map or sort it first."
+    },
+    {
+      "title": "Using lo <= hi in the loop condition",
+      "explanation": "A pair requires two distinct elements. If lo == hi, you are using the same element twice. The loop condition must be lo < hi."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the crucial precondition for the two pointers sum technique?",
+      "answer": "The array must be sorted.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If the current sum is greater than the target, which pointer moves?",
+      "answer": "The 'hi' pointer moves left (decrements) to decrease the sum.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is it safe to discard a pointer when the sum is too large?",
+      "answer": "Because the array is sorted, every remaining partner for the 'hi' pointer is at least as large as 'lo', so they will all result in a sum that is also too large.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What is the space complexity of the two pointers technique compared to a hash map?",
+      "answer": "Two pointers uses O(1) space, while a hash map uses O(n) space.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Given a sorted array of distinct integers and a target value, return the indices of the two numbers such that they add up to target.",
+      "answer": "Use two pointers, lo at 0 and hi at length - 1. While lo < hi, check the sum. If it equals target, return [lo, hi]. If it is less, increment lo. If it is greater, decrement hi.",
+      "approach": "Two pointers inward scan.",
+      "company": "Amazon"
+    },
+    {
+      "question": "Given an array of integers, find if there is a triplet that sums to zero.",
+      "answer": "Sort the array. Iterate through the array with a loop variable 'i'. For each 'i', use two pointers 'lo = i + 1' and 'hi = length - 1' to find a pair that sums to '-arr[i]'.",
+      "approach": "Sort then fix one element and use two pointers for the remaining sum.",
+      "company": "Meta"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Two-pointer_technique",
+    "https://www.geeksforgeeks.org/two-pointers-technique/"
+  ],
+  "related": ["fast-and-slow-pointers", "two-pointers-on-strings"]
+}

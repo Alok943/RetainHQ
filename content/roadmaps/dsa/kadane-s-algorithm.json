@@ -1,0 +1,127 @@
+{
+  "slug": "kadane-s-algorithm",
+  "title": "Kadane's algorithm",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "prefix-sums",
+      "two-pointers"
+    ],
+    "unlocks": []
+  },
+  "why_it_exists": {
+    "problem": "Finding the maximum subarray sum in a naive way takes O(n^2) by checking all possible windows.",
+    "naive_solution": "Check all pairs of (start, end) indices and compute their sum.",
+    "better_idea": "Keep a running total of the current subarray sum. If adding the current element makes the running total smaller than the element itself, it's better to just start a new subarray from the current element. This reduces the problem to a single O(n) pass."
+  },
+  "mental_model": {
+    "intuition": "At each step, you decide whether to extend the current contiguous subarray or start a new one.",
+    "description": "Walk through the array keeping track of the best sum ending at the current position. At each new number, you have a choice: either add it to the existing running subarray, or abandon the existing subarray and start fresh with just the new number. You start fresh if the new number alone is larger than the existing subarray plus the new number.",
+    "repeated_decision": "extend the current subarray with this element, or restart the subarray from it? -> `current = max(nums[i], current + nums[i])`."
+  },
+  "viz": {
+    "generator": "kadane",
+    "default_input": [
+      -2,
+      1,
+      -3,
+      4,
+      -1,
+      2,
+      1,
+      -5,
+      4
+    ],
+    "invariants": {
+      "inv-current": "current always holds the maximum subarray sum ending at the current index -- either by extending the previous run or restarting here.",
+      "inv-best": "best is the largest current ever seen -- it never decreases."
+    },
+    "steps": [
+      {
+        "id": "start",
+        "label": "current = arr[0], best = arr[0]"
+      },
+      {
+        "id": "extend",
+        "label": "current + arr[i] >= arr[i]: extend the run"
+      },
+      {
+        "id": "restart",
+        "label": "arr[i] alone > current + arr[i]: restart here"
+      },
+      {
+        "id": "record",
+        "label": "current beats best -- update best"
+      },
+      {
+        "id": "done",
+        "label": "return best"
+      }
+    ],
+    "predictions": [
+      {
+        "at_op": "POINT",
+        "occurrence": 2,
+        "level": "medium",
+        "prompt": "Does Kadane extend the current subarray or restart from this element?",
+        "derive": "next_step_id"
+      }
+    ]
+  },
+  "explanation": "Kadane's algorithm solves the maximum contiguous subarray sum problem in O(n) time and O(1) space. It is fundamentally a dynamic programming approach where the state is optimized to a single variable.\n\nTwo running values are maintained: `current` (the best subarray sum ending at the exact current position) and `best` (the overall best subarray sum seen anywhere so far). It is crucial to keep these distinct -- conflating them is the classic bug.\n\nAt each index `i`, we make a single choice: do we extend the previous subarray by adding `nums[i]`, or do we restart a new subarray beginning at `nums[i]`? We restart if `nums[i]` alone is strictly greater than `current + nums[i]`.\n\nLet's hand-trace on `[-2, 1, -3, 4, -1, 2, 1, -5, 4]`:\n  i=0: current=-2, best=-2 (start)\n  i=1: -2+1=-1 < 1 -> restart. current=1, best=1\n  i=2: 1+(-3)=-2 >= -3 -> extend. current=-2, best=1\n  i=3: -2+4=2 < 4 -> restart. current=4, best=4\n  i=4: 4+(-1)=3 >= -1 -> extend. current=3, best=4\n  i=5: 3+2=5 >= 2 -> extend. current=5, best=5\n  i=6: 5+1=6 >= 1 -> extend. current=6, best=6\n  i=7: 6+(-5)=1 >= -5 -> extend. current=1, best=6\n  i=8: 1+4=5 >= 4 -> extend. current=5, best=6\n\nAnswer: 6 (subarray [4, -1, 2, 1] at indices 3..6)\n\nThe DP connection: this is a 1D dynamic-programming solution with the table collapsed to a single variable. The DP state would be \"best subarray sum ending at index i\", and since that state only ever reads the value at `i-1`, the whole array collapses to one rolling number -- the same space optimization covered in Space optimization and State and transition.",
+  "common_mistakes": [
+    {
+      "title": "Failing on an all-negative array",
+      "explanation": "The all-negative case is the trap: initialize `best` to `nums[0]`, not `0`, or an all-negative array wrongly returns `0`."
+    },
+    {
+      "title": "Conflating current and best",
+      "explanation": "Mixing up the sum ending *here* versus the global maximum sum. You must maintain both separately."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the repeated decision made at each step in Kadane's algorithm?",
+      "answer": "Whether to extend the current subarray with the current element, or restart the subarray from the current element.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How is Kadane's algorithm related to dynamic programming?",
+      "answer": "It is a 1D dynamic programming solution where the DP table is collapsed to a single variable (space optimization) because you only need the previous state to compute the next.",
+      "tier": "tier2"
+    },
+    {
+      "q": "What happens if you initialize the maximum sum to 0 instead of the first element?",
+      "answer": "If the array contains all negative numbers, the algorithm will wrongly return 0 instead of the largest negative number.",
+      "tier": "tier1"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the maximum contiguous subarray sum in an array of integers.",
+      "company": "SDE interview",
+      "answer": "Use Kadane's algorithm. Maintain a running sum and a global max. At each step, update the running sum to max(num, running sum + num), then update global max.",
+      "approach": "This is the direct application of Kadane's algorithm."
+    },
+    {
+      "question": "Find the maximum contiguous subarray product.",
+      "company": "SDE interview",
+      "answer": "Similar to Kadane's, but maintain both a running maximum and running minimum (since two negative numbers multiplied yield a positive).",
+      "approach": "Adapt the Kadane's pattern to track both extremes due to signs flipping on multiplication."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Maximum_subarray_problem",
+    "https://www.geeksforgeeks.org/largest-sum-contiguous-subarray/"
+  ],
+  "related": [
+    "space-optimization",
+    "state-and-transition"
+  ]
+}

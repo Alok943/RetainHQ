@@ -1,0 +1,109 @@
+{
+  "slug": "sliding-window-variable",
+  "title": "Sliding window (variable)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": [
+      "sliding-window-fixed"
+    ],
+    "unlocks": [
+      "recognizing-sliding-window"
+    ]
+  },
+  "why_it_exists": {
+    "problem": "Finding a variable-length contiguous sequence that satisfies a condition (e.g., shortest subarray with sum >= target). A naive approach tries all pairs of indices, taking O(n^2) time.",
+    "better_idea": "Use a sliding window with two pointers (left and right). Expand the right pointer until the condition is met. Then, shrink the left pointer as long as the condition holds to find the optimal length. Since both pointers only move forward, this takes O(n) time."
+  },
+  "mental_model": {
+    "intuition": "Like a caterpillar crawling over leaves. The front (right pointer) stretches forward to satisfy the condition. Once it has enough, the back (left pointer) scrunches forward to see how tight it can get without losing the meal.",
+    "description": "Initialize both `lo` and `hi` pointers at the start. The right pointer (`hi`) moves forward to expand the window and add elements to the running sum. As soon as the sum reaches or exceeds the target, you record the window length. Then, you try to shrink the window by moving the left pointer (`lo`) forward, updating the minimum length if it still meets the target, until the sum drops below the target. Both pointers only ever move forward, which is why it stays O(n) despite the nested-looking shape.",
+    "repeated_decision": "Does the window still satisfy the constraint -- expand right if not yet violated, shrink from left if violated?"
+  },
+  "viz": {
+    "generator": "sliding-window-variable",
+    "default_input": [2, 4, 1, 5, 3, 6],
+    "invariants": {
+      "inv-monotone-sum": "All values are positive, so the window sum only grows as the window expands and only shrinks as the window contracts.",
+      "inv-shrink-safe": "Shrinking from the left removes the smallest possible contribution -- the window can only get tighter, never needs to reset."
+    },
+    "steps": [
+      {
+        "id": "expand",
+        "label": "sum < target: expand hi to bring in next element"
+      },
+      {
+        "id": "record",
+        "label": "sum >= target: record length, try to shrink"
+      },
+      {
+        "id": "shrink",
+        "label": "remove left element, check if still qualifying"
+      },
+      {
+        "id": "done",
+        "label": "shortest qualifying window found"
+      }
+    ],
+    "predictions": [
+      {
+        "at_step": "expand",
+        "occurrence": 2,
+        "level": "medium",
+        "prompt": "The current window sum is below the target. After bringing in the next element, does the window need to expand further or can it start shrinking?",
+        "derive": "branch_window"
+      }
+    ]
+  },
+  "explanation": "A variable-size sliding window is used when you need to find the longest, shortest, or optimal contiguous subarray that meets a certain constraint. Instead of a fixed length, the window dynamically grows and shrinks.\n\nThe algorithm uses two pointers, usually `lo` and `hi`. The `hi` pointer expands the window to the right until the condition is satisfied. Once satisfied, the `lo` pointer shrinks the window from the left as long as the condition holds. This shrinking phase is crucial for finding the shortest valid subarray (or dropping invalid elements for longest valid subarray problems).\n\nLet's hand-trace on the array `[2, 4, 1, 5, 3, 6]`, target = 11:\nexpand: hi=0, sum=2 < 11\nexpand: hi=1, sum=6 < 11\nexpand: hi=2, sum=7 < 11\nexpand: hi=3, sum=12 >= 11 -> record len=4, best=4\nshrink: remove arr[0]=2, sum=10 < 11 -> stop shrinking, lo=1\nexpand: hi=4, sum=13 >= 11 -> record len=4, best still 4\nshrink: remove arr[1]=4, sum=9 < 11 -> stop, lo=2\nexpand: hi=5, sum=15 >= 11 -> record len=4, best still 4\nshrink: remove arr[2]=1, sum=14 >= 11 -> record len=3, best=3\nshrink: remove arr[3]=5, sum=9 < 11 -> stop, lo=4\nDone: shortest qualifying window is [3..5] length 3.\n\nThe window grows and shrinks; both pointers only ever move FORWARD, which is why it stays O(n) despite the nested-looking shape. Even though there is a `while` loop inside a `for` loop, the `lo` pointer moves at most `n` times across the entire algorithm.",
+  "common_mistakes": [
+    {
+      "title": "Resetting the left pointer",
+      "explanation": "Resetting `left` back to the start after a violation (turns it O(n^2)). The left pointer should only move forward."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "Why is the variable sliding window O(n) despite having a nested loop?",
+      "answer": "Because both the `hi` (right) and `lo` (left) pointers only ever move forward. The `lo` pointer moves at most `n` times across all iterations of the outer loop.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the repeated decision made at each step in a variable sliding window?",
+      "answer": "Does the window still satisfy the constraint -- expand right if not yet violated, shrink from left if violated?",
+      "tier": "tier1"
+    },
+    {
+      "q": "When do you expand the right pointer, and when do you shrink the left pointer?",
+      "answer": "Expand the right pointer to build up the window until it satisfies the condition. Shrink the left pointer to optimize the window (e.g., find the shortest length) while the condition is still satisfied.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the shortest subarray with sum at least target. Why can we use a sliding window?",
+      "company": "SDE interview",
+      "answer": "Because the array only contains positive numbers, the window sum increases as we expand right and decreases as we shrink left. This monotonic property allows us to find the shortest valid window by moving pointers strictly forward.",
+      "approach": "Mention the monotonicity requirement for the sliding window to work."
+    },
+    {
+      "question": "What happens to the sliding window approach if the array contains negative numbers (and you want sum >= target)?",
+      "company": "SDE interview",
+      "answer": "The sliding window fails because the running sum is no longer monotonic. Expanding the window might decrease the sum, and shrinking it might increase it. You would need a different approach, like prefix sums with a monotonic queue.",
+      "approach": "Highlight that variable sliding window relies on monotonic changes."
+    }
+  ],
+  "related": [
+    "recognizing-sliding-window",
+    "sliding-window-fixed"
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Streaming_algorithm",
+    "https://leetcode.com/discuss/study-guide/17730/think-like-a-programmer-sliding-window-pattern"
+  ]
+}

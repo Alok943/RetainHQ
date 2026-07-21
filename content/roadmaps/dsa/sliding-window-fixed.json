@@ -1,0 +1,100 @@
+{
+  "slug": "sliding-window-fixed",
+  "title": "Sliding window (fixed)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 15,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["prefix-sums"],
+    "unlocks": ["sliding-window-variable"]
+  },
+  "why_it_exists": {
+    "problem": "When you need to find something like the maximum sum of a contiguous subarray of fixed size k, calculating the sum of every possible window of size k from scratch takes O(n*k) time, doing redundant work.",
+    "better_idea": "Use a fixed-size sliding window. Keep a running sum. When the window slides right, subtract the element that leaves the window on the left and add the element that enters on the right. O(n*k) becomes O(n)."
+  },
+  "mental_model": {
+    "intuition": "Imagine looking at a row of numbers through a window of size k. As you slide the window one position to the right, only one number drops out of view and one new number comes into view. The middle numbers stay the same.",
+    "description": "Initialize the first window by summing the first k elements. For every subsequent window, do not recompute the whole sum. Instead, take the previous sum, subtract the outgoing element (left side), and add the incoming element (right side). Keep track of the best window found so far.",
+    "repeated_decision": "slide the window one step: which element leaves, which enters, and what does that do to the running total?"
+  },
+  "viz": {
+    "generator": "sliding-window-fixed",
+    "default_input": [2, 4, 1, 5, 3, 6],
+    "invariants": {
+      "inv-window-sum": "The running sum always equals the sum of the current k elements -- never recomputed from scratch."
+    },
+    "steps": [
+      {
+        "id": "init",
+        "label": "first window [0..k-1], compute initial sum"
+      },
+      {
+        "id": "slide",
+        "label": "slide right: subtract leaving, add entering"
+      },
+      {
+        "id": "done",
+        "label": "best window found"
+      }
+    ],
+    "predictions": [
+      {
+        "at_step": "slide",
+        "occurrence": "first",
+        "level": "easy",
+        "prompt": "The window slides one step right. What element leaves and what enters -- what is the new sum?",
+        "derive": "next_op"
+      }
+    ]
+  },
+  "explanation": "A fixed-size sliding window is a powerful technique for optimizing problems that ask for some aggregate property (like sum, average, or max) over all contiguous sub-segments of a fixed length k.\n\nThe core insight is to avoid redundant work. If you compute the sum of [2, 4, 1] and then slide the window to [4, 1, 5], re-adding 4 + 1 + 5 is wasteful. The overlapping part 4 + 1 was already computed! Instead, you can take your previous sum, subtract the element that fell out on the left (2), and add the element that came in on the right (5).\n\nLet's hand-trace finding the maximum sum of any contiguous subarray of size k=3 on the array [2, 4, 1, 5, 3, 6]:\n\nStep 0 (init): The first window is [0..2] = {2, 4, 1}. The initial sum is 7. We record this as our best sum so far: best = 7.\n\nStep 1 (slide): We slide one step right. The element leaving the window is arr[0] = 2. The element entering is arr[3] = 5. The new sum is 7 - 2 + 5 = 10. We update our best sum: best = 10.\n\nStep 2 (slide): We slide right again. Outgoing is arr[1] = 4, incoming is arr[4] = 3. The new sum is 10 - 4 + 3 = 9. This is less than 10, so best remains 10.\n\nStep 3 (slide): Final slide. Outgoing is arr[2] = 1, incoming is arr[5] = 6. The new sum is 9 - 1 + 6 = 14. We update our best sum: best = 14.\n\nDone: We've reached the end of the array. The best window sum is 14, which corresponds to the subarray [3..5]. By reusing our previous work, we processed the entire array in a single pass, dropping the time complexity from O(n*k) to O(n).",
+  "common_mistakes": [
+    {
+      "title": "Rebuilding the sum each slide",
+      "explanation": "This is the exact waste this pattern exists to remove. If you have an inner loop going from 0 to k for every window, your code is O(n*k). You must track the running total and update it with just one subtraction and one addition."
+    },
+    {
+      "title": "Off-by-one errors with indices",
+      "explanation": "When the window starts at index i, the incoming element is typically at i, and the outgoing element is at i - k. Carefully tracing a small example on paper helps nail down the exact indices."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of the fixed sliding window pattern?",
+      "answer": "O(n). Each element is added once and subtracted once as the window slides across the array.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you calculate the sum of the new window when sliding right by one position?",
+      "answer": "Take the previous window's sum, subtract the element that leaves on the left, and add the element that enters on the right.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is sliding window better than the naive approach for fixed-size subarrays?",
+      "answer": "The naive approach re-evaluates the overlapping parts of adjacent windows from scratch, doing O(n*k) work. Sliding window reuses the overlap, doing O(n) work.",
+      "tier": "tier2"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Find the maximum average subarray of size k.",
+      "company": "SDE interview",
+      "answer": "Use a fixed sliding window to track the running sum of size k. After the initial sum, slide the window, updating the max sum seen. At the end, divide the max sum by k to get the max average.",
+      "approach": "Identify the fixed size k and the need to evaluate all contiguous subarrays of that size."
+    },
+    {
+      "question": "Count the number of anagrams of a string p in a string s.",
+      "company": "SDE interview",
+      "answer": "Use a fixed sliding window of size len(p) on string s. Maintain a frequency map of characters in the window and compare it with the frequency map of p. Update the map incrementally as the window slides by adding the incoming char and removing the outgoing char.",
+      "approach": "Recognize that 'anagram' means same character counts, and the window size is fixed to the length of the pattern."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Streaming_algorithm",
+    "https://www.geeksforgeeks.org/window-sliding-technique/"
+  ]
+}
