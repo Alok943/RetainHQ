@@ -4,6 +4,8 @@ Tree generation follows syllabus.py's two-step shape: /tree/generate is a
 PROPOSAL — nothing is saved — and a separate /tree/commit (added alongside
 the commit-transaction work) persists the user-edited draft.
 """
+import asyncio
+import logging
 import uuid
 from datetime import date, datetime
 
@@ -37,6 +39,7 @@ from app.services.career_tree import CareerTreeDraft, CareerTreeError, _load_tem
 from app.services.grader import GraderError, grade_recall
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # 5-8 items (§4) — the template SHOULD have >=5 probe-bearing nodes (the
 # validator warns otherwise); this is just the display ceiling.
@@ -266,9 +269,14 @@ async def commit_tree(
     node_embeddings = []
     if flat_nodes_text:
         try:
-            node_embeddings = embeddings.embed_batch(flat_nodes_text)
+            # embed_batch is a synchronous SDK call, self-bounded to
+            # embeddings._EMBED_TIMEOUT_SEC — run it off the event loop so a
+            # slow/unreachable Gemini endpoint can't stall every other
+            # request this worker is handling while it waits out that bound.
+            node_embeddings = await asyncio.to_thread(embeddings.embed_batch, flat_nodes_text)
         except Exception:
-            # If embedding fails (no key, rate limit, etc), fall back to empty to not break commit
+            # If embedding fails (no key, rate limit, timeout, etc), fall back to empty to not break commit
+            logger.warning("Tree-commit embedding pre-compute failed; committing with empty embeddings", exc_info=True)
             node_embeddings = [[] for _ in flat_nodes_text]
             
     flat_index = 0

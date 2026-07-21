@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, Extra
@@ -31,6 +32,7 @@ class CompanionSessionIn(BaseModel):
     session_id: UUID = Field(description="Idempotency key for deduplication")
     node_id: Optional[UUID] = Field(None, description="Matched roadmap node; None means it goes to triage")
     duration_min: int = Field(..., ge=0)
+    occurred_at: datetime = Field(description="When the session ended (stitcher's `end`), not when it synced — sessions sync in batches after offline gaps")
     payload: CompanionSessionPayload
 
 

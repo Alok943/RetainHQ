@@ -21,7 +21,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Activity, CareerGoal, NodeMeta, Review, RoadmapNode
 from app.services import evidence, embeddings
 
-# §5 thresholds — tuned via backfill_career_mapping.py over ground truth
+# §5 thresholds — provisional, NOT yet gated against ground truth. §1.3's
+# validation gate (re-run backfill_career_mapping.py, owner judges the 6
+# known-unmapped activities) has not been run since these moved off the
+# Jaccard-era defaults. Do not treat these as tuned until that gate passes.
 AUTO_MAP_THRESHOLD = 0.75
 TRIAGE_THRESHOLD = 0.65
 

@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Optional, Literal
 from pydantic import BaseModel
@@ -9,6 +10,10 @@ from app.core.config import settings
 # Companion classification always runs on Flash-Lite (fast, cheap).
 COMPANION_CLASSIFIER_MODEL = "gemini-2.0-flash-lite"
 COMPANION_PROMPT_VERSION = "v1"
+
+# Without this, the SDK's HTTP client has no timeout — a stalled connection
+# would hang the whole session-sync request (see embeddings.py's same fix).
+_REQUEST_TIMEOUT_MS = 8_000
 
 class CandidateRank(BaseModel):
     node: str
@@ -44,7 +49,10 @@ async def classify_session(
             reason="LLM not configured"
         )
         
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    client = genai.Client(
+        api_key=settings.GEMINI_API_KEY,
+        http_options=types.HttpOptions(timeout=_REQUEST_TIMEOUT_MS),
+    )
     
     # Format candidates for the prompt
     candidates_text = ""
@@ -83,24 +91,32 @@ Return ONLY JSON matching the requested schema.
 """
 
     try:
-        response = client.models.generate_content(
-            model=COMPANION_CLASSIFIER_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ClassificationResult,
-                temperature=0.0
+        # .aio is real async I/O (unlike embeddings.embed_batch's sync SDK
+        # call), so wait_for's cancellation actually reaches the underlying
+        # connection — this bounds the request instead of merely hoping the
+        # SDK's own http_options.timeout is honored end-to-end.
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model=COMPANION_CLASSIFIER_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=ClassificationResult,
+                    temperature=0.0
+                ),
             ),
+            timeout=_REQUEST_TIMEOUT_MS / 1000,
         )
-        
+
         result = response.parsed
-        
+
         # Validation: Never invent a node
         if result.selected and result.selected not in valid_uuids:
+            hallucinated = result.selected
             result.selected = None
             result.confidence_band = "medium"
-            result.reason = f"System override: LLM hallucinated node {result.selected}"
-            
+            result.reason = f"System override: LLM hallucinated node {hallucinated}"
+
         return result
         
     except Exception as e:

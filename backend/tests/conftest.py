@@ -22,6 +22,13 @@ import uuid
 os.environ["DEBUG"] = "false"
 os.environ["DEV_AUTH_BYPASS"] = "false"
 os.environ["GRADER_ENABLED"] = "false"
+# Blank, not left to .env's real key: without this, embeddings.embed_batch
+# and llm_classifier.classify_session attempt genuine Gemini calls during
+# tests. Both have their own fallback paths for a missing key (immediate
+# ValueError / "not configured" result) — with a real key those paths are
+# skipped and the test instead pays each call's full network round-trip
+# (or its multi-second timeout, if the sandbox has no egress at all).
+os.environ["GEMINI_API_KEY"] = ""
 os.environ["ADMIN_EMAIL"] = "admin@example.com"
 os.environ["CRON_SECRET"] = "test-cron-secret"
 os.environ.setdefault("SUPABASE_URL", "https://test-project.supabase.co")

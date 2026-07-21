@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -57,6 +58,13 @@ async def sync_sessions(
     synced = 0
     ignored = 0
 
+    # Fetched once per request (not per session) — same candidate set applies
+    # to every unmapped session in this batch, and the query touches every
+    # roadmap node meta the user has, so doing it per-session was an N+1.
+    candidates = None
+    if any(session.node_id is None for session in body.sessions):
+        candidates = await candidate_nodes_for_user(db, user_uuid)
+
     for session in body.sessions:
         if session.node_id:
             # Validate ownership of the node
@@ -81,10 +89,11 @@ async def sync_sessions(
             sources = session.payload.sources or []
             
             # Rung 1: Metadata rules (exact match skipped for now, rely on LLM for exact match if needed)
-            
-            # Rung 2: Embeddings
-            candidates = await candidate_nodes_for_user(db, user_uuid)
-            shortlist = top_k_suggested_nodes(title_sample, candidates, k=5)
+
+            # Rung 2: Embeddings. Calls out to Gemini synchronously (bounded
+            # internally by embeddings._EMBED_TIMEOUT_SEC) — off the event
+            # loop so a slow Gemini response doesn't stall other requests.
+            shortlist = await asyncio.to_thread(top_k_suggested_nodes, title_sample, candidates, k=5)
             
             if shortlist:
                 shortlist_dicts = [
@@ -117,6 +126,12 @@ async def sync_sessions(
                 payload["confidence_band"] = "medium"
                 payload["reason"] = "No candidate nodes found"
 
+        # DB column is naive-UTC (CLAUDE.md convention); the extension sends
+        # tz-aware ISO timestamps, so normalize before it reaches record_event.
+        occurred_at = session.occurred_at
+        if occurred_at.tzinfo is not None:
+            occurred_at = occurred_at.astimezone(timezone.utc).replace(tzinfo=None)
+
         event = await record_event(
             db,
             user_uuid,
@@ -126,6 +141,7 @@ async def sync_sessions(
             node_id=session.node_id,
             duration_min=session.duration_min,
             entity_id=session.session_id,
+            occurred_at=occurred_at,
             payload=payload,
         )
         if event is None:
