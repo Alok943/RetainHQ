@@ -149,19 +149,31 @@ export default function Player({
 }) {
   const generator = getGenerator(generatorKey);
   const isString = inputMode === 'string';
+  // Most generators take an ARRAY, but the backtracking family takes a scalar (n-queens N,
+  // template depth) or an object (combination-sum {candidates, target}). Those have no
+  // array to seed the array-family renderers with, and no sensible comma-separated edit box.
+  const isArrayInput = Array.isArray(defaultInput);
   const [input, setInput] = useState(defaultInput);
-  const [draft, setDraft] = useState(defaultInput.join(isString ? '' : ', '));
+  const [draft, setDraft] = useState(isArrayInput ? defaultInput.join(isString ? '' : ', ') : '');
   const [step, setStep] = useState(0);
   const [animatedStep, setAnimatedStep] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   const { frames, events } = useMemo(() => {
     if (!generator) return { frames: [], events: [] };
-    // Use the generator's RETURNED input — some generators transform it (e.g. binary
-    // search sorts first), and compile must materialize from that same array.
-    const { input: genInput, events: evs } = generator(input);
-    return { frames: compile(genInput ?? input, evs), events: evs };
-  }, [generator, input]);
+    // TWO generator return conventions are in the wild: most return `{ input, events }`
+    // (the returned input matters — e.g. binary search sorts first, and compile must
+    // materialize from that same array), but the backtracking family returns a BARE
+    // events array. Accept both; destructuring a bare array silently yields undefined.
+    const out = generator(input);
+    const isBare = Array.isArray(out);
+    const evs = (isBare ? out : out?.events) || [];
+    const genInput = isBare ? undefined : out?.input;
+    // compile() spreads its first arg, so it needs an iterable. A scalar/object input has
+    // no backing array — pass [] (the convention n-queens.golden.mjs already uses).
+    const seed = genInput ?? (isArrayInput ? input : []);
+    return { frames: compile(Array.isArray(seed) ? seed : [], evs), events: evs };
+  }, [generator, input, isArrayInput]);
 
   // Gates: checkpoints resolved against the live trace. A checkpoint that doesn't occur for this
   // input evaluates to null and is silently skipped.
@@ -406,13 +418,17 @@ export default function Player({
           below the controls; on lg it renders inside the right rail instead (see above). */}
       {renderExplain('flex lg:hidden')}
 
-      {/* tweak the values */}
-      <div className="px-5 py-3 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6] flex items-center gap-2">
-        <span className="font-sans text-[12px] font-semibold text-[#475569] shrink-0">{isString ? 'Try a word:' : 'Tweak input:'}</span>
-        <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyInput()}
-          className="flex-1 min-w-[120px] font-mono text-[13px] rounded-md border border-[rgba(15,23,42,0.15)] px-2.5 py-1.5 bg-white" placeholder={isString ? 'racecar' : '5, 2, 8, 1, 9, 3'} />
-        <button className={btn} onClick={applyInput}>Run</button>
-      </div>
+      {/* tweak the values — array inputs only. A scalar (n-queens N) or object
+          (combination-sum {candidates, target}) input can't be parsed back out of a
+          comma-separated box, and applying one would hand the generator the wrong shape. */}
+      {isArrayInput && (
+        <div className="px-5 py-3 border-t border-[rgba(15,23,42,0.06)] bg-[#f9f9f6] flex items-center gap-2">
+          <span className="font-sans text-[12px] font-semibold text-[#475569] shrink-0">{isString ? 'Try a word:' : 'Tweak input:'}</span>
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyInput()}
+            className="flex-1 min-w-[120px] font-mono text-[13px] rounded-md border border-[rgba(15,23,42,0.15)] px-2.5 py-1.5 bg-white" placeholder={isString ? 'racecar' : '5, 2, 8, 1, 9, 3'} />
+          <button className={btn} onClick={applyInput}>Run</button>
+        </div>
+      )}
     </div>
   );
 }

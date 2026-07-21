@@ -373,8 +373,14 @@ function bitsReducer(state, op, args) {
 const REDUCERS = [recursionMergeReducer, arrayReducer, hashingReducer, scalarReducer, stackQueueReducer, treeReducer, gridReducer, graphReducer, listReducer, intervalsReducer, bitsReducer];
 
 export function compile(input, events) {
+  // Tolerate the two shapes generators legitimately take: an ARRAY (the array family, whose
+  // values seed state.array) and a scalar/object (the backtracking family — n-queens' N,
+  // combination-sum's {candidates, target}), which has no backing array to render. Spreading
+  // a non-iterable used to throw here and take the whole lesson down with it.
+  const seed = Array.isArray(input) ? input : [];
+  const evs = events || [];
   const state = {
-    array: [...input],       // mutated by WRITE / SWAP / SET
+    array: [...seed],        // mutated by WRITE / SWAP / SET
     callStack: [],           // for the StateMachine renderer (recursion / call stack)
     regions: [],             // brackets under the array: left/right/merging/sorted
     sorted: new Set(),       // indices known sorted/finalized (MERGE_DONE / DONE / SET / MARK)
@@ -411,7 +417,7 @@ export function compile(input, events) {
   };
   const frames = [];
 
-  for (const ev of events) {
+  for (const ev of evs) {
     const { op, args = {}, step_id = null, invariant = null, note } = ev;
 
     let result = null;
