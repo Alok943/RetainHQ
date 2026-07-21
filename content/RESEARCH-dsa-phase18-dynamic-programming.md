@@ -34,63 +34,23 @@ Research each node into one JSON object per the schema. Kind tag per node:
 
 ## PHASE-SPECIFIC EMPHASIS (do NOT skip)
 
-DP is the largest, most feared phase in most DSA curricula because it's usually taught as 14
-unrelated tricks. Research to counter that directly:
+Dynamic Programming is about identifying overlapping subproblems and optimal substructure, then caching results to avoid exponential blowup. The 6 concept nodes are the thinking process; the 8 trace nodes are proof-by-example.
 
-- **The 6 concept nodes are a PROCESS, not background theory** — `overlapping-subproblems` +
-  `optimal-substructure` are the two-part DIAGNOSTIC ("is this a DP problem at all?"),
-  `state-and-transition` is the DESIGN skill ("how do I start solving one?"),
-  `memoization-top-down`/`tabulation-bottom-up` are the two IMPLEMENTATION strategies, and
-  `space-optimization` is the follow-up refinement. Research each with this role in mind, not
-  as an isolated definition.
+- **`overlapping-subproblems`**: Define it, show Fibonacci recursion tree, contrast with Merge Sort.
+- **`optimal-substructure`**: Define it, contrast with longest simple path.
+- **`state-and-transition`**: How to name a state and find the recurrence.
+- **`memoization-top-down`**: Recursion + cache. Top-down approach.
+- **`tabulation-bottom-up`**: Fill table in dependency order. Iterative approach.
+- **`space-optimization`**: Sliding window of variables. When we only need the last few states.
 
-- **Every trace node needs its state defined in one precise sentence** ("what does `dp[i]`
-  represent?") BEFORE the recurrence — this is the single highest-leverage fact to extract per
-  node. Also extract: the recurrence in plain-text form, the base case(s) and why they're the
-  base case, time AND space complexity separately, and whether space can be rolled to O(1) or
-  O(n) (name which prior/adjacent states the recurrence actually reads).
+**Trace nodes repeated decisions:**
+- `climbing-stairs-fibonacci`: "to reach step i, did I just take one step from i-1, or two steps from i-2?"
+- `house-robber`: "do I rob this house (skip prev) or skip it (keep prev)?"
+- `coin-change`: "does using this coin beat what I had for this amount?"
+- `0-1-knapsack`: "does taking this item beat leaving it out?"
+- `longest-common-subsequence`: "do chars match (diagonal) or not (skip one from either)?"
+- `edit-distance`: "match (free) or which of insert/delete/replace gives cheapest path?"
+- `longest-increasing-subsequence`: "which earlier smaller element gives longest chain, or start fresh?"
+- `grid-dp-unique-paths-min-path-sum`: "arrive by moving right or down, which is cheaper/how many ways?"
 
-- **`coin-change` must explicitly research the classic greedy-fails counterexample**
-  (denominations `{1,3,4}`, target `6`) and confirm DP gets `3+3`=2 coins where greedy gets
-  `4+1+1`=3 — this is the phase's explicit callback to phase 17's `why-greedy-fails`. Make sure
-  the research captures WHY greedy fails here (no exchange argument exists once a locally-best
-  coin can block a better combination).
-
-- **`0-1-knapsack` must research the 0/1 vs UNBOUNDED vs FRACTIONAL distinction precisely** —
-  which variant does greedy solve correctly (fractional only) and why (splittable items admit an
-  exchange argument on value/weight ratio; 0/1 does not). Also research why the DP recurrence
-  must read the PREVIOUS row (`dp[i-1][...]`), not the current row, to enforce "each item once."
-
-- **`longest-common-subsequence` and `edit-distance` should be researched together** — same 2D
-  grid shape, LCS is match-or-skip (binary), edit-distance adds a cost to the skip case and 3
-  named operations (insert/delete/replace). Research the exact recurrence and base-case indexing
-  convention for both (the `(m+1) x (n+1)` grid holding the empty-prefix base case).
-
-- **`longest-increasing-subsequence` should research BOTH the O(n^2) DP formulation (`dp[i]` =
-  LIS ending AT i) and name (without fully deriving) the O(n log n) patience-sorting/binary-search
-  improvement** as a forward-pointer, not the primary trace.
-
-- **`grid-dp-unique-paths-min-path-sum` should research both named variants as the SAME shape**
-  (sum-of-neighbors vs min-of-neighbors) — this is meant to be the phase's clearest "these are a
-  small family of reusable recurrence shapes" demonstration.
-
-- **`prediction_checkpoints`** should pause right before a cell is filled and ask "what value goes
-  here, and which neighbor(s) does it read?" — the reader holding the wrong recurrence answers
-  wrong. For the 6 concept nodes, prediction is not applicable (`runtime:"none"`).
-
-- **Renderer hints (`visualization.renderer`):** the 4 two-dimensional nodes (`0-1-knapsack`,
-  `longest-common-subsequence`, `edit-distance`, `grid-dp-unique-paths-min-path-sum`) → `grid`
-  (a filled DP table, already proven working infra — reuse the n-queens-style grid renderer). The
-  4 one-dimensional nodes (`climbing-stairs-fibonacci`, `house-robber`, `coin-change`,
-  `longest-increasing-subsequence`) → `array` (cells filling left to right, rolling-variable
-  callouts for the space-optimized versions). Give 2–3 `interactive_inputs` each (a clean case, an
-  edge case like an empty/minimal input, a case that exercises the trickiest branch) with one-line
-  `why`.
-
-- **`failure_signals` / `when_not_to_use`:** name when a problem LOOKS like DP but a simpler
-  technique dominates (e.g. a problem with no overlapping subproblems doesn't need memoization at
-  all — plain recursion or a single pass suffices).
-
-Complexity as plain text (`O(n)`, `O(n*W)`, `O(m*n)`, state time AND space separately for every
-trace node). Cite CLRS (DP chapter) / Wikipedia / a reputable competitive-programming reference as
-primary. Return the JSON array only (plus a short "Sources consulted" list).
+Complexity as plain text (e.g. O(n*W), O(m*n), O(n)). Cite CLRS / Wikipedia as primary. Return the JSON array only (plus a short "Sources consulted" list).

@@ -1,0 +1,1886 @@
+[
+  {
+    "slug": "overlapping-subproblems",
+    "title": "Overlapping Subproblems",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard DP theory.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Exponential time complexity O(2^n) in naive recursive algorithms that re-evaluate the same state.",
+      "naive_solution": "Running standard recursion on interdependent state spaces generates a massively redundant execution tree.",
+      "better_idea": "Intercept redundant executions. If a state was evaluated, reuse the answer, collapsing the tree into a Directed Acyclic Graph (DAG)."
+    },
+    "mental_model": {
+      "intuition": "Never evaluate the exact same mathematical state more than once.",
+      "description": "Imagine solving a complex math problem, then being asked the same problem again minutes later. Instead of recalculating, you just read the answer you wrote down. Overlapping subproblems mean the problem naturally asks you the same questions repeatedly.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [],
+    "complexity": {
+      "time": "N/A",
+      "space": "N/A",
+      "note": "Concept node."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Divide & Conquer algorithms like Merge Sort.",
+        "reason": "Subproblems are strictly independent and non-overlapping; the left and right halves share zero data dependencies."
+      }
+    ],
+    "common_mistakes": [],
+    "misconceptions": [
+      {
+        "false_belief": "Dynamic Programming and Divide & Conquer are the same paradigm.",
+        "reality": "Divide & Conquer operates on non-overlapping, independent subproblems. DP requires subproblems to intersect recursively.",
+        "would_be_caught_by": "asking if Merge Sort subproblems overlap"
+      }
+    ],
+    "failure_signals": [
+      "Your recursive algorithm re-evaluates identical parameters.",
+      "Your time complexity is O(2^n) but the total number of unique states is small."
+    ],
+    "engineering_examples": [],
+    "pattern": {
+      "name": "Overlapping Subproblems",
+      "recognition_cues": [
+        "recursive call stack branches into identical function signatures"
+      ]
+    },
+    "related": [
+      "optimal-substructure",
+      "memoization-top-down",
+      "tabulation-bottom-up"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "recursion-tree",
+        "the-call-stack"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "memoization-top-down",
+        "tabulation-bottom-up"
+      ]
+    },
+    "visualization": {
+      "renderer": "none"
+    },
+    "interesting_facts": [
+      "Drawing the recursion tree physically exposes duplicated nodes, which is the best way to prove the need for dynamic programming."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Core prerequisite for all DP questions."
+    },
+    "practice": [],
+    "interview_questions": [
+      {
+        "q": "How do you distinguish between Divide & Conquer and Dynamic Programming?",
+        "answer": "Divide & Conquer subproblems are independent; DP subproblems overlap.",
+        "approach": "Contrast Merge Sort with Fibonacci."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Draw out the recursion tree for a small example (like n=4) to physically spot the duplicated node evaluations.",
+      "common_followups": [],
+      "beginner_mistake": "Failing to draw the recursion tree and thus missing the duplicated states entirely.",
+      "experienced_mistake": "Jumping straight to code without verifying if the subproblems actually overlap."
+    },
+    "author_notes": {
+      "lesson_focus": "Defining overlap and demonstrating it visually via the recursion tree.",
+      "avoid_teaching": "Full DP solutions; focus purely on the overlap concept.",
+      "student_confusion": "Conflating DP with Divide & Conquer."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Dynamic_programming",
+        "https://web.mit.edu/15.053/www/AMP-Chapter-11.pdf"
+      ],
+      "secondary": [
+        "https://catonmat.net/mit-introduction-to-algorithms-part-ten"
+      ]
+    }
+  },
+  {
+    "slug": "optimal-substructure",
+    "title": "Optimal Substructure",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Fundamental DP property.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Complex global optimizations cannot be solved directly; they must be built from simpler pieces.",
+      "naive_solution": "Trying to evaluate the entire global state at once without breaking it down.",
+      "better_idea": "Construct the globally optimal solution directly from the optimal solutions of its constituent subproblems."
+    },
+    "mental_model": {
+      "intuition": "The best way from A to C through B must include the best way from A to B.",
+      "description": "If you find the absolute best overall outcome, every step you took along the way must also have been the absolute best choice for that specific segment. A global optimum cannot contain sub-optimal parts.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [],
+    "complexity": {
+      "time": "N/A",
+      "space": "N/A",
+      "note": "Concept node."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Finding the longest simple path in a graph.",
+        "reason": "The longest simple path lacks optimal substructure because subpaths might share vertices, violating independence."
+      }
+    ],
+    "common_mistakes": [],
+    "misconceptions": [
+      {
+        "false_belief": "Optimal substructure implies a Greedy approach is valid.",
+        "reality": "Greedy requires the greedy choice property (making one irrevocable local choice). DP evaluates all feasible combinations bottom-up when local greed fails.",
+        "would_be_caught_by": "asking if we can just pick the local maximum at each step"
+      }
+    ],
+    "failure_signals": [
+      "The problem demands a maximum, minimum, or optimal combinatorial count where larger paths strictly depend on smaller valid paths."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Network Packet Routing",
+        "problem": "Finding shortest paths across a network.",
+        "why_this_algorithm": "The shortest path from node u to w through v inherently contains the optimal path from u to v."
+      }
+    ],
+    "pattern": {
+      "name": "Optimal Substructure",
+      "recognition_cues": [
+        "maximum, minimum, or optimal combinatorial count required",
+        "can be proved by cut-and-paste contradiction"
+      ]
+    },
+    "related": [
+      "overlapping-subproblems",
+      "why-greedy-fails"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "recursion-tree"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "state-and-transition"
+      ]
+    },
+    "visualization": {
+      "renderer": "none"
+    },
+    "interesting_facts": [
+      "Optimal substructure is rigorously validated using a cut-and-paste mathematical proof: if a sub-solution wasn't optimal, you could cut it out and paste in a better one, contradicting the global optimum."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Theoretical foundation for deciding if DP or Greedy is applicable."
+    },
+    "practice": [],
+    "interview_questions": [
+      {
+        "q": "Does optimal substructure mean you can use a greedy algorithm?",
+        "answer": "Not necessarily. Greedy requires the greedy choice property. DP is used when optimal substructure exists but greedy fails.",
+        "approach": "Contrast finding a shortest path (DP/Dijkstra) with Coin Change where greedy fails on arbitrary denominations."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Look for minimization/maximization. Check if solving a smaller version of the problem gives you a piece of the final answer.",
+      "common_followups": [],
+      "beginner_mistake": "Assuming optimal substructure always means greedy is safe.",
+      "experienced_mistake": "Failing to rigorously prove (even informally) that the subproblems can be combined to form the global optimum."
+    },
+    "author_notes": {
+      "lesson_focus": "The cut-and-paste proof concept and contrasting with longest simple path.",
+      "avoid_teaching": "Formal mathematical induction proofs; keep it intuitive.",
+      "student_confusion": "Confusing optimal substructure with the greedy choice property."
+    },
+    "sources": {
+      "primary": [
+        "https://web.stanford.edu/class/archive/cs/cs161/cs161.1204/Lectures/Lecture13/Lecture13-compressed.pdf"
+      ],
+      "secondary": [
+        "https://www2.hawaii.edu/~suthers/courses/ics311f20/Notes/Topic-13.html"
+      ]
+    }
+  },
+  {
+    "slug": "state-and-transition",
+    "title": "State and Transition",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Core DP mechanics.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "You cannot systematically solve overlapping subproblems without defining exactly what a subproblem is and how it connects to others.",
+      "naive_solution": "Guessing recursive parameters, leading to over-parameterization and memory bloat.",
+      "better_idea": "Define a minimal 'state' snapshot and a mathematical 'transition' (recurrence relation) connecting current states to prior sub-states."
+    },
+    "mental_model": {
+      "intuition": "The state is a snapshot of exactly where you are; the transition is the rulebook for how you move to the next state.",
+      "description": "A state encapsulates the absolute minimum historical information needed to calculate future outcomes. The transition is the formula that links the current snapshot to smaller snapshots.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [],
+    "complexity": {
+      "time": "N/A",
+      "space": "N/A",
+      "note": "Concept node."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Problems with no sequential decision making.",
+        "reason": "If there are no overlapping subproblems or optimal substructure, states and transitions are unnecessary overhead."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Over-parameterizing the state",
+        "explanation": "Including unnecessary historical dimensions (like the exact path taken) instead of just what is needed for the future, which blows up memory and time."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "The transition function is just the code you write.",
+        "reality": "The transition function is a strict mathematical recurrence relation that establishes the edges of the underlying DAG.",
+        "would_be_caught_by": "asking to write the math formula before writing code"
+      }
+    ],
+    "failure_signals": [
+      "You are unable to formulate the transition reliably, which signals an incomplete or incorrect state definition."
+    ],
+    "engineering_examples": [],
+    "pattern": {
+      "name": "State and Transition Formulation",
+      "recognition_cues": [
+        "dynamic programming required",
+        "identifying dp[i] meaning"
+      ]
+    },
+    "related": [
+      "memoization-top-down",
+      "tabulation-bottom-up"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "optimal-substructure",
+        "overlapping-subproblems"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "memoization-top-down",
+        "tabulation-bottom-up"
+      ]
+    },
+    "visualization": {
+      "renderer": "none"
+    },
+    "interesting_facts": [
+      "Experienced candidates vocalize exactly what the state array dp[i] represents in plain English before writing any transition code to prevent logic drift."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "The most critical step in solving any DP interview problem."
+    },
+    "practice": [],
+    "interview_questions": [
+      {
+        "q": "What happens if you include the exact path taken in your DP state?",
+        "answer": "The state space blows up exponentially, ruining the polynomial time complexity of DP.",
+        "approach": "Explain that state must encapsulate the *minimum* information needed for the future."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Write down a plain English sentence defining exactly what dp[i] or dp[i][j] means before writing any code.",
+      "common_followups": [],
+      "beginner_mistake": "Writing code before strictly defining what the state variables represent.",
+      "experienced_mistake": "Adding unnecessary parameters to the state (e.g., carrying visited sets when monotonic progress already prevents cycles)."
+    },
+    "author_notes": {
+      "lesson_focus": "Defining the state minimally in plain English and deriving the math formula from it.",
+      "avoid_teaching": "Syntax; focus purely on the conceptual design.",
+      "student_confusion": "Over-parameterizing states."
+    },
+    "sources": {
+      "primary": [
+        "https://levelop.dev/blog/dynamic-programming-state-transition-not-memorization"
+      ],
+      "secondary": [
+        "https://algomaster.io/learn/dsa/dp-introduction"
+      ]
+    }
+  },
+  {
+    "slug": "memoization-top-down",
+    "title": "Memoization (Top-Down)",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard definition.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Naive recursion evaluates overlapping subproblems redundantly.",
+      "naive_solution": "Running the pure recursive function, generating an O(2^n) tree.",
+      "better_idea": "Introduce a centralized cache (hash map or array) to intercept and return previously evaluated states in O(1) time."
+    },
+    "mental_model": {
+      "intuition": "Work backwards from the goal, writing down answers as you find them so you never calculate the same thing twice.",
+      "description": "It preserves the natural depth-first search of recursion. When a state is requested, check the cache. If it is there, return it instantly. If not, compute it, save it, and then return it.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [],
+    "complexity": {
+      "time": "N/A",
+      "space": "N/A",
+      "note": "Concept node."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Deeply nested or highly dense continuous datasets in production.",
+        "reason": "Memoization introduces call-stack overhead and poses a significant risk of stack overflow faults."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Forgetting to return the cached value",
+        "explanation": "Computing the value and caching it, but failing to add the check at the very top of the function to return it early."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "Memoization is always worse than tabulation due to recursion overhead.",
+        "reality": "Memoization is superior in highly sparse state spaces because it only computes states that are actually reachable or mathematically required.",
+        "would_be_caught_by": "asking which to use for a sparse state matrix"
+      }
+    ],
+    "failure_signals": [
+      "Stack overflow exceptions during execution.",
+      "High call-stack memory overhead."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Sparse state evaluation",
+        "problem": "State spaces where the theoretical matrix is massive but few states are reachable.",
+        "why_this_algorithm": "Memoization ensures memory and CPU cycles are exclusively allocated to necessary computations on demand."
+      }
+    ],
+    "pattern": {
+      "name": "Top-Down DP",
+      "recognition_cues": [
+        "natural recursive formulation",
+        "sparse state space",
+        "quick to implement in interviews"
+      ]
+    },
+    "related": [
+      "tabulation-bottom-up",
+      "state-and-transition"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "state-and-transition"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "climbing-stairs-fibonacci"
+      ]
+    },
+    "visualization": {
+      "renderer": "none"
+    },
+    "interesting_facts": [
+      "Memoization surgically prunes the recursive tree, collapsing exponential branches into a DAG."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Often the first acceptable DP solution an interviewee will write before optimizing to tabulation."
+    },
+    "practice": [],
+    "interview_questions": [
+      {
+        "q": "When would you prefer memoization over tabulation?",
+        "answer": "When the state space is sparse and you do not need to visit every subproblem, or when the recursive logic is significantly more intuitive.",
+        "approach": "Contrast sparse vs dense state spaces."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Write the naive recursive solution first, then add a dictionary/array cache check at the top.",
+      "common_followups": [
+        "convert this memoized solution to bottom-up tabulation"
+      ],
+      "beginner_mistake": "Initializing the cache array inside the recursive function call instead of passing it globally.",
+      "experienced_mistake": "Using a hash map for dense integer states when a fixed array would be much faster."
+    },
+    "author_notes": {
+      "lesson_focus": "The mechanics of caching: check first, compute, save, return.",
+      "avoid_teaching": "Complex state logic here; use Fibonacci as the dummy example.",
+      "student_confusion": "Where to place the cache check (must be the very first thing after base cases)."
+    },
+    "sources": {
+      "primary": [
+        "https://web.mit.edu/15.053/www/AMP-Chapter-11.pdf"
+      ],
+      "secondary": [
+        "https://cioinfluence.com/it-and-devops/memoization-vs-tabulation-the-dynamic-programming-debate-for-it-architects/"
+      ]
+    }
+  },
+  {
+    "slug": "tabulation-bottom-up",
+    "title": "Tabulation (Bottom-Up)",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard DP technique.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Memoization risks stack overflow and introduces heavy call-stack overhead.",
+      "naive_solution": "Using top-down recursion for dense state spaces.",
+      "better_idea": "Identify the absolute smallest subproblems (base cases) and systematically evaluate every reachable state in a progressive loop until the target is satisfied."
+    },
+    "mental_model": {
+      "intuition": "Start from the very beginning and build a table up to the final answer.",
+      "description": "Operating entirely through iteration, it builds the answer from the ground up, guaranteeing optimal hardware cache locality and no recursion depth limits.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [],
+    "complexity": {
+      "time": "N/A",
+      "space": "N/A",
+      "note": "Concept node."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Highly sparse state spaces.",
+        "reason": "Tabulation may compute thousands of irrelevant subproblems if large chunks of the state matrix are unreachable."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Incorrect topological sorting",
+        "explanation": "Querying a state before its dependencies have been fully resolved in the loop."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "Tabulation always uses less memory than memoization.",
+        "reality": "Both naturally use O(n) or O(n^2) memory. Tabulation saves call-stack memory and allows for space optimization, but in sparse graphs, tabulation allocates full matrices while memoization only stores visited states.",
+        "would_be_caught_by": "asking about memory usage in sparse environments"
+      }
+    ],
+    "failure_signals": [
+      "You need to optimize space complexity using a rolling array (only possible with tabulation)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Dense mathematical matrices",
+        "problem": "Evaluating dense state spaces where every subproblem must inevitably be computed.",
+        "why_this_algorithm": "Superior cache locality at the hardware processor level, as contiguous arrays are accessed sequentially."
+      }
+    ],
+    "pattern": {
+      "name": "Bottom-Up DP",
+      "recognition_cues": [
+        "dense state space",
+        "space optimization needed",
+        "recursion limit concerns"
+      ]
+    },
+    "related": [
+      "memoization-top-down",
+      "space-optimization"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "memoization-top-down"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "space-optimization"
+      ]
+    },
+    "visualization": {
+      "renderer": "none"
+    },
+    "interesting_facts": [
+      "The primary engineering difficulty of tabulation lies in identifying the correct topological sorting order to iterate through the states."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "The ultimate expected form for most 1D and 2D DP interview questions."
+    },
+    "practice": [],
+    "interview_questions": [
+      {
+        "q": "Why does tabulation have better cache locality than memoization?",
+        "answer": "Tabulation accesses contiguous arrays sequentially in memory, prefetching data efficiently at the CPU level, whereas memoization jumps around the heap randomly based on the recursive tree.",
+        "approach": "Discuss hardware cache lines."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Figure out the base cases first, set them in the array, and write a for-loop that starts right after the base cases.",
+      "common_followups": [
+        "Can you optimize the space complexity?"
+      ],
+      "beginner_mistake": "Messing up the loop bounds or array indexing.",
+      "experienced_mistake": "Forgetting to initialize the DP array with appropriate default values (like infinity for minimization problems)."
+    },
+    "author_notes": {
+      "lesson_focus": "Filling a table iteratively in topological order.",
+      "avoid_teaching": "Space optimization here; save it for the next node.",
+      "student_confusion": "Translating the recursive recurrence relation into a for-loop."
+    },
+    "sources": {
+      "primary": [
+        "https://pwskills.com/blog/python/memoization-vs-tabulation"
+      ],
+      "secondary": [
+        "https://www.baeldung.com/cs/tabulation-vs-memoization"
+      ]
+    }
+  },
+  {
+    "slug": "space-optimization",
+    "title": "Space Optimization",
+    "kind_hint": "concept",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard technique.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Tabulation allocates full O(n) or O(n^2) arrays, which is wasteful if we only look at the last few states.",
+      "naive_solution": "Keeping the entire historical DP array in memory when only the immediate prior row or steps are needed.",
+      "better_idea": "Use a sliding window of variables or a rolling 1D array to overwrite outdated historical data, dropping asymptotic space complexity."
+    },
+    "mental_model": {
+      "intuition": "If you only need yesterday's data to calculate today's, you can throw away last week's data.",
+      "description": "A sliding window over dynamic variables that actively compresses memory without altering time complexity.",
+      "repeated_decision": "N/A"
+    },
+    "invariants": [],
+    "complexity": {
+      "time": "N/A",
+      "space": "N/A",
+      "note": "Concept node."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "When you need to reconstruct the actual path of choices (e.g., the specific items chosen in Knapsack).",
+        "reason": "Space optimization destroys the historical state matrix required for backtracking the path."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Incorrectly swapping variables",
+        "explanation": "Overwriting a rolling variable before its data has been passed to the next variable in the sequence."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "Space optimization changes the time complexity.",
+        "reality": "It purely reduces asymptotic space complexity without altering the temporal time complexity.",
+        "would_be_caught_by": "asking about the Big-O time of optimized Fibonacci"
+      }
+    ],
+    "failure_signals": [
+      "The recurrence relation relies exclusively on a severely restricted, continuous subset of previous states (e.g., dp[i-1] and dp[i-2])."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Embedded systems and high-performance computing",
+        "problem": "Executing DP algorithms where memory is strictly bounded.",
+        "why_this_algorithm": "Compresses O(m*n) matrices to O(n) or O(n) arrays to O(1) space, crucial for limited hardware."
+      }
+    ],
+    "pattern": {
+      "name": "Sliding State Variables",
+      "recognition_cues": [
+        "transition only needs i-1 and i-2",
+        "transition only needs current row and previous row"
+      ]
+    },
+    "related": [
+      "tabulation-bottom-up"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "house-robber"
+      ]
+    },
+    "visualization": {
+      "renderer": "none"
+    },
+    "interesting_facts": [
+      "In 2D grids, space complexity is compressed from O(m*n) to O(n) by maintaining only two active 1D arrays (current and previous rows), using modulo indexing or pointer swapping."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Always the final follow-up question for standard 1D and 2D DP problems."
+    },
+    "practice": [],
+    "interview_questions": [
+      {
+        "q": "How do you optimize the space of a 2D DP matrix?",
+        "answer": "If the current row only depends on the row immediately above it, you only need to store two 1D arrays (current and previous) and swap them each iteration.",
+        "approach": "Draw the dependency visually."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Look at the indices in the transition relation. If they are constants like i-1, i-2, you can optimize space.",
+      "common_followups": [],
+      "beginner_mistake": "Attempting space optimization while using memoization (top-down).",
+      "experienced_mistake": "Mishandling the edge cases when assigning the initial rolling variables."
+    },
+    "author_notes": {
+      "lesson_focus": "Visualizing the sliding window of state variables.",
+      "avoid_teaching": "Overly complex 2D optimizations immediately; start with Fibonacci O(1) space.",
+      "student_confusion": "The order in which to update the rolling variables."
+    },
+    "sources": {
+      "primary": [
+        "https://pwskills.com/blog/java/complete-dynamic-programming-dynamic-programming-part-2"
+      ],
+      "secondary": [
+        "https://algodaily.com/lessons/dynamic-programming-in-real-world-applications-3fdc2ef8"
+      ]
+    }
+  },
+  {
+    "slug": "climbing-stairs-fibonacci",
+    "title": "Climbing Stairs / Fibonacci",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical introductory DP.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Calculating combinatorial possibilities branches exponentially.",
+      "naive_solution": "Recursive tree simulating every path yields O(2^n).",
+      "better_idea": "The number of ways to reach step n is simply the sum of ways to reach n-1 and n-2. Cache or tabulate this to hit O(n) time and O(1) space."
+    },
+    "mental_model": {
+      "intuition": "To find how many ways to get here, sum the ways to get to the places I could have just come from.",
+      "description": "If you can only arrive at step n from step n-1 or step n-2, then the total paths to n is strictly the paths to n-1 plus the paths to n-2.",
+      "repeated_decision": "to reach step i, did I just take one step from i-1, or two steps from i-2?"
+    },
+    "invariants": [
+      {
+        "statement": "Every valid contiguous path to step n must unconditionally pass through either n-1 or n-2 as its final penultimate state.",
+        "why_violation_breaks": "If there was a leap from n-3 directly to n, the recurrence relation dp[i] = dp[i-1] + dp[i-2] would undercount the paths."
+      }
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "note": "With space optimization."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "When you need the exact sequence of steps taken.",
+        "reason": "Combinatorial DP only counts the number of ways; it does not store the permutations. Backtracking is required to list them."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Incorrect base cases",
+        "explanation": "Failing to initialize step 0 and step 1 properly."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "The algorithm calculates the length or cost of the path.",
+        "reality": "It calculates the raw combinatorial count of distinct pathways, not their length.",
+        "would_be_caught_by": "asking what the final number represents physically"
+      }
+    ],
+    "failure_signals": [
+      "You are asked to count distinct ways to reach a target using a fixed set of allowed steps."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Combinatorial state counting",
+        "problem": "Determining the number of valid states in a constrained system.",
+        "why_this_algorithm": "Fibonacci models the raw combinatorial growth precisely."
+      }
+    ],
+    "pattern": {
+      "name": "1D Combinatorics",
+      "recognition_cues": [
+        "count the number of ways",
+        "reach a target with specific steps"
+      ]
+    },
+    "related": [
+      "house-robber"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up",
+        "space-optimization"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "house-robber",
+        "coin-change"
+      ]
+    },
+    "visualization": {
+      "renderer": "array",
+      "difficulty": "easy",
+      "key_animation": "summing the two previous array cells into the current one",
+      "interactive_inputs": [
+        {
+          "input": "4",
+          "why": "small enough to trace the sum clearly"
+        },
+        {
+          "input": "1",
+          "why": "base case test"
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "step 3",
+          "prompt_idea": "what two values are summed to find this state?",
+          "level": "easy",
+          "misconception_caught": "adding the step number instead of the previous counts"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "The recurrence relation dp[i] = dp[i-1] + dp[i-2] is mathematically identical to the Fibonacci sequence."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "The canonical introductory DP problem on LeetCode."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 70,
+        "title": "Climbing Stairs",
+        "difficulty": "easy",
+        "url": "https://leetcode.com/problems/climbing-stairs/",
+        "why": "Direct implementation of Fibonacci combinatorics."
+      },
+      {
+        "platform": "LeetCode",
+        "id": 746,
+        "title": "Min Cost Climbing Stairs",
+        "difficulty": "easy",
+        "url": "https://leetcode.com/problems/min-cost-climbing-stairs/",
+        "why": "Transitions from counting to optimization."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "How would you change this if you could take 1, 2, or 3 steps?",
+        "answer": "Expand the state lookback to dp[i] = dp[i-1] + dp[i-2] + dp[i-3] and maintain three rolling variables.",
+        "approach": "Demonstrate how the recurrence maps directly to physical constraints."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "See \"number of ways\" + restricted choices -> think DP combinatorics.",
+      "common_followups": [
+        "allow 1, 2, or 3 steps",
+        "optimize space to O(1)"
+      ],
+      "beginner_mistake": "Writing recursion without memoization (TLE).",
+      "experienced_mistake": "Not using space optimization to O(1)."
+    },
+    "author_notes": {
+      "lesson_focus": "Mapping the physical constraint (1 or 2 steps) to the mathematical recurrence relation.",
+      "avoid_teaching": "Math induction proofs of Fibonacci.",
+      "student_confusion": "Why dp[0] is 1."
+    },
+    "sources": {
+      "primary": [
+        "https://algo.monster/liteproblems/70"
+      ],
+      "secondary": [
+        "https://blog.devgenius.io/four-ways-to-solve-the-climbing-stairs-problem-638bf2358319"
+      ]
+    }
+  },
+  {
+    "slug": "house-robber",
+    "title": "House Robber",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical 1D DP.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Maximizing sum under mutual exclusivity constraints (cannot pick adjacent elements).",
+      "naive_solution": "Greedy heuristic (picking the largest numbers) fails if it locks out superior adjacent clusters.",
+      "better_idea": "At every node, evaluate the maximum potential of keeping the previous node vs taking the current node plus the node two spaces back. dp[i] = max(dp[i-1], dp[i-2] + nums[i])."
+    },
+    "mental_model": {
+      "intuition": "At each house, you have a binary choice: rob it (and add its value to whatever you had two houses ago) or skip it (keeping whatever you had one house ago).",
+      "description": "You carry forward the absolute maximum profit possible at each step. You don't decide right away; you evaluate the maximum of both divergent branches.",
+      "repeated_decision": "do I rob this house (skip prev) or skip it (keep prev)?"
+    },
+    "invariants": [
+      {
+        "statement": "The state dp[i] represents the absolute maximum accumulation possible using a subset of houses from index 0 to i.",
+        "why_violation_breaks": "If it only tracked the current house's value, you could not look back to make optimal combinations."
+      }
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "note": "With space optimization using prev1 and prev2."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "No adjacency constraint.",
+        "reason": "If you can pick anything, just sum all positive numbers."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Failing to initialize base cases properly",
+        "explanation": "Crashing on arrays of size 0 or 1 because dp[1] or dp[0] is out of bounds."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "You can just take the max of all even indices vs all odd indices.",
+        "reality": "You can skip TWO houses in a row to get better combinations (e.g., [2, 1, 1, 2] -> take first and last = 4).",
+        "would_be_caught_by": "testing the array [2, 1, 1, 2]"
+      }
+    ],
+    "failure_signals": [
+      "Greedy selection fails because taking a local maximum prevents taking a better combination of neighbors."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Parallel Task Scheduling",
+        "problem": "Resource allocation requiring physical or temporal distancing.",
+        "why_this_algorithm": "Schedules tasks to avoid contiguous CPU overlap."
+      },
+      {
+        "title": "Maximum Independent Set",
+        "problem": "Finding the largest set of non-adjacent vertices in bipartite graphs.",
+        "why_this_algorithm": "Operates exactly on the non-adjacency constraint."
+      }
+    ],
+    "pattern": {
+      "name": "1D Max/Min DP",
+      "recognition_cues": [
+        "maximize sum",
+        "non-adjacent elements",
+        "mutual exclusivity constraint"
+      ]
+    },
+    "related": [
+      "climbing-stairs-fibonacci"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "climbing-stairs-fibonacci"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "0-1-knapsack"
+      ]
+    },
+    "visualization": {
+      "renderer": "array",
+      "difficulty": "medium",
+      "key_animation": "comparing dp[i-1] vs dp[i-2] + current, crossing out the loser",
+      "interactive_inputs": [
+        {
+          "input": "[2,7,9,3,1]",
+          "why": "standard mixed array"
+        },
+        {
+          "input": "[2,1,1,2]",
+          "why": "forces skipping two houses (proves even/odd logic wrong)"
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "index 2 of [2,1,1,2]",
+          "prompt_idea": "will we skip this house even though it is odd/even?",
+          "level": "medium",
+          "misconception_caught": "just taking all even or all odd indices"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "The circular variant (House Robber II) introduces a ring topology, solved by running the standard linear DP twice (excluding first, then excluding last) and taking the global max."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Extremely common pattern testing 1D state transitions."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 198,
+        "title": "House Robber",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/house-robber/",
+        "why": "Core linear non-adjacent DP."
+      },
+      {
+        "platform": "LeetCode",
+        "id": 213,
+        "title": "House Robber II",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/house-robber-ii/",
+        "why": "Teaches how to handle circular dependencies."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "How do you solve this if the houses are arranged in a circle?",
+        "answer": "Run the algorithm twice: once from index 0 to n-2, and once from index 1 to n-1. Return the max of both.",
+        "approach": "Identify that the first and last are mutually exclusive."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Non-adjacency constraint + max sum -> House Robber pattern.",
+      "common_followups": [
+        "circular array",
+        "binary tree topology"
+      ],
+      "beginner_mistake": "Trying to write a greedy algorithm.",
+      "experienced_mistake": "Not optimizing the space to O(1) immediately."
+    },
+    "author_notes": {
+      "lesson_focus": "The max() decision making at each step and refuting the even/odd misconception.",
+      "avoid_teaching": "Tree topologies here (House Robber III); stick to arrays.",
+      "student_confusion": "Why we can skip two houses."
+    },
+    "sources": {
+      "primary": [
+        "https://algo.monster/liteproblems/198"
+      ],
+      "secondary": [
+        "https://algomaster.io/learn/dsa/house-robber"
+      ]
+    }
+  },
+  {
+    "slug": "coin-change",
+    "title": "Coin Change",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical unbounded knapsack variant.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Finding minimum coins for a target amount when a greedy algorithm fails (e.g. denominations {1,4,5} target 8).",
+      "naive_solution": "Greedy algorithm selects largest coins first (5+1+1+1 = 4 coins), completely missing the optimal combination (4+4 = 2 coins).",
+      "better_idea": "Test every coin denomination against the current amount. dp[i] = min(dp[i], dp[i-c] + 1)."
+    },
+    "mental_model": {
+      "intuition": "For any amount, simulate subtracting each available coin. The best choice is the coin that leaves you with a remainder you already solved efficiently.",
+      "description": "Build up from 0 to the target amount. For each amount, look back at the answers for (amount - coin_value) for all coins. Pick the one that used the fewest coins and add 1.",
+      "repeated_decision": "does using this coin beat what I had for this amount?"
+    },
+    "invariants": [
+      {
+        "statement": "dp[i] holds the absolute minimum number of coins to make amount i.",
+        "why_violation_breaks": "If it held a sub-optimal count, future amounts building on it would also be sub-optimal."
+      }
+    ],
+    "complexity": {
+      "time": "O(amount * coins.length)",
+      "space": "O(amount)",
+      "note": "Unbounded knapsack."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Canonical coin systems (like US currency).",
+        "reason": "A greedy algorithm actually works perfectly and faster for standard denominations like {1, 5, 10, 25}."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Initializing the DP array with 0 instead of infinity",
+        "explanation": "Because we are looking for the minimum, initializing with 0 makes the min() function always return 0."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "Sorting the coin denominations will force a Greedy approach to succeed.",
+        "reality": "Sorting has zero impact on the mathematical necessity of the DP matrix; greedy still fails on sets like {1,4,5}.",
+        "would_be_caught_by": "asking if sorting the input fixes the greedy failure"
+      }
+    ],
+    "failure_signals": [
+      "Greedy approach fails on specific inputs.",
+      "Problem assumes an infinite/unbounded supply of elements to reach an exact target."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Financial transaction balancing",
+        "problem": "Resolving combinations where local maximal consumption does not guarantee optimal systemic packing.",
+        "why_this_algorithm": "Guarantees the absolute minimum fragmentation."
+      }
+    ],
+    "pattern": {
+      "name": "Unbounded Knapsack",
+      "recognition_cues": [
+        "infinite supply of items",
+        "exact target amount",
+        "minimize/maximize count"
+      ]
+    },
+    "related": [
+      "0-1-knapsack"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "0-1-knapsack"
+      ]
+    },
+    "visualization": {
+      "renderer": "array",
+      "difficulty": "medium",
+      "key_animation": "looking back `c` steps in the array and taking the min + 1",
+      "interactive_inputs": [
+        {
+          "input": "coins=[1,4,5], target=8",
+          "why": "The canonical greedy-killer input"
+        },
+        {
+          "input": "coins=[2], target=3",
+          "why": "Tests the impossible target (returns -1)"
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "target=8 with coins [1,4,5]",
+          "prompt_idea": "will the algorithm pick the 5 coin here?",
+          "level": "medium",
+          "misconception_caught": "Greedy bias (picking the largest coin first)"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "If the target index remains at infinity after execution, the specific target amount is mathematically impossible to construct with the provided denominations."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "A top 5 most frequently asked DP question."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 322,
+        "title": "Coin Change",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/coin-change/",
+        "why": "The standard minimum unbounded knapsack problem."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "Why does a greedy approach work for US coins but not for arbitrary denominations?",
+        "answer": "US coins are a canonical system where every denomination is larger than the sum of maximal optimal lower denominations. Arbitrary sets like {1,4,5} lack this property.",
+        "approach": "Explain the mathematical edge case of greedy failure."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Look for \"minimum items\", \"exact target\", and \"unlimited supply\".",
+      "common_followups": [
+        "Return the actual coins used (requires a parent pointer array)"
+      ],
+      "beginner_mistake": "Trying to make greedy work with complex back-tracking logic.",
+      "experienced_mistake": "Initializing dp array with Integer.MAX_VALUE and causing integer overflow when doing + 1."
+    },
+    "author_notes": {
+      "lesson_focus": "Why greedy fails mathematically and how the DP array perfectly maps to the \"remainder\" concept.",
+      "avoid_teaching": "2D DP for this problem; 1D array is strictly better and standard.",
+      "student_confusion": "Why we initialize with amount + 1 or infinity."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Change-making_problem"
+      ],
+      "secondary": [
+        "https://medium.com/@prajun_t/dynamic-programming-coin-change-problem-39514d943427"
+      ]
+    }
+  },
+  {
+    "slug": "0-1-knapsack",
+    "title": "0/1 Knapsack",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "The definitive DP problem.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Maximizing utility under a strict physical capacity limit where items cannot be fractured.",
+      "naive_solution": "Using greedy ratios (value/weight) fails because you cannot take fractional pieces to fill remaining capacity.",
+      "better_idea": "Evaluate a 2D matrix of subsets vs capacities. For each item, decide: exclude it or include it (adding its value to the optimal state of the remaining capacity)."
+    },
+    "mental_model": {
+      "intuition": "For every item, you spawn two universes: one where you put it in the bag, and one where you leave it on the table. You keep the universe that results in higher value without breaking the bag.",
+      "description": "You test every capacity from 0 to the limit. At each step, if the item fits, you check if its value PLUS the best you could do with the remaining space is better than just ignoring the item.",
+      "repeated_decision": "does taking this item beat leaving it out?"
+    },
+    "invariants": [
+      {
+        "statement": "Every item is evaluated exactly once in sequence.",
+        "why_violation_breaks": "This is the \"0/1\" constraint. If evaluated multiple times in the same loop, it becomes an Unbounded Knapsack problem."
+      }
+    ],
+    "complexity": {
+      "time": "O(n * W)",
+      "space": "O(W)",
+      "note": "Time is pseudo-polynomial. Space is O(W) using the 1D right-to-left rolling array."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "Fractional Knapsack (items can be split, like water or gold dust).",
+        "reason": "A simple Greedy algorithm based on value/weight ratio is strictly optimal and runs in O(n log n)."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Iterating the 1D optimized array left-to-right",
+        "explanation": "This allows an item to be picked multiple times, inadvertently solving the Unbounded Knapsack problem. It MUST be iterated right-to-left."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "The algorithm runs in true polynomial time.",
+        "reality": "It runs in pseudo-polynomial time O(n * W). If W is a massive number (e.g., capacity is 10^9), the matrix is huge and the algorithm is too slow.",
+        "would_be_caught_by": "asking what happens if the capacity W is 1 billion"
+      }
+    ],
+    "failure_signals": [
+      "You have a strict limit (weight, time, cost) and must select a subset of items to maximize a different metric (value, score, profit)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Cloud Infrastructure Provisioning",
+        "problem": "Maximizing server utility under rigid memory constraints.",
+        "why_this_algorithm": "Packs discrete processes perfectly."
+      },
+      {
+        "title": "Edge Caching",
+        "problem": "Storing the most requested files under finite physical storage limits.",
+        "why_this_algorithm": "Files cannot be fractionally cached to be useful."
+      }
+    ],
+    "pattern": {
+      "name": "0/1 Knapsack",
+      "recognition_cues": [
+        "pick or do not pick",
+        "hard mathematical limit/capacity",
+        "items cannot be fractured"
+      ]
+    },
+    "related": [
+      "coin-change"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up"
+      ],
+      "helpful": [
+        "space-optimization"
+      ],
+      "unlocks": []
+    },
+    "visualization": {
+      "renderer": "grid",
+      "difficulty": "hard",
+      "key_animation": "comparing the cell directly above (exclude) vs looking up and left (include) and taking the max",
+      "interactive_inputs": [
+        {
+          "input": "weights=[1,3,4,5], values=[1,4,5,7], W=7",
+          "why": "Standard problem showing multiple inclusion choices."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "evaluating an item that doesn't fit the current column capacity",
+          "prompt_idea": "what value does this cell take?",
+          "level": "easy",
+          "misconception_caught": "trying to calculate inclusion when the item physically cannot fit (it must just take the value from above)"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "The \"0/1\" designation strictly enforces the binary condition: take it entirely or leave it entirely. This mathematically kills the greedy ratio approach."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "The foundation for a massive class of DP problems (Target Sum, Partition Equal Subset Sum)."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 416,
+        "title": "Partition Equal Subset Sum",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/partition-equal-subset-sum/",
+        "why": "A clever disguise of the 0/1 Knapsack pattern (target capacity is half the sum)."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "How do you compress the 2D Knapsack matrix into a 1D array?",
+        "answer": "Use a 1D array of size W. Iterate through the items, but for each item, iterate the capacity loop backwards (from W down to the item weight) so you do not reuse the same item's updated value.",
+        "approach": "Explain the overwrite danger."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Linguistic \"pick or do not pick\" + a constrained budget -> 0/1 Knapsack.",
+      "common_followups": [
+        "Optimize space to 1D array"
+      ],
+      "beginner_mistake": "Writing a greedy value/weight ratio sort.",
+      "experienced_mistake": "Looping the 1D array left-to-right, accidentally allowing duplicate items."
+    },
+    "author_notes": {
+      "lesson_focus": "The fork in the universe: dp[i-1][w] vs dp[i-1][w-weight] + value.",
+      "avoid_teaching": "Fractional knapsack in depth; just mention it fails here.",
+      "student_confusion": "Why we look up and *left* in the matrix."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Knapsack_problem"
+      ],
+      "secondary": [
+        "https://adhyantini.medium.com/0-1-knapsack-problem-8cc1e6447122"
+      ]
+    }
+  },
+  {
+    "slug": "longest-common-subsequence",
+    "title": "Longest Common Subsequence",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical 2D string DP.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Finding the longest sequence of characters appearing in the exact same relative temporal order across two strings, without requiring contiguity.",
+      "naive_solution": "Generating all 2^n subsequences of string 1 and searching for them in string 2.",
+      "better_idea": "Use a 2D matrix. If chars match, take diagonal + 1. If mismatch, take the max of excluding the char from string A or string B (left or top cell)."
+    },
+    "mental_model": {
+      "intuition": "Use two pointers. A character match locks the data in and moves both pointers diagonally; a mismatch forks the universe laterally into two possibilities (skip string A char or skip string B char) and keeps the optimal branch.",
+      "description": "You are aligning two sequences. When they share a piece, you score a point. When they diverge, you look at the best alignment you had by dropping one side or the other, and carry that forward.",
+      "repeated_decision": "do chars match (diagonal) or not (skip one from either)?"
+    },
+    "invariants": [
+      {
+        "statement": "The state dp[i][j] represents the LCS of the prefix of string A up to index i and string B up to index j.",
+        "why_violation_breaks": "If it didn't represent prefixes, you couldn't build upon prior matched subsequences."
+      }
+    ],
+    "complexity": {
+      "time": "O(m * n)",
+      "space": "O(m * n)",
+      "note": "Space is optimizable to O(min(m, n)) utilizing two-row state buffering."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "When characters must be strictly contiguous (next to each other).",
+        "reason": "That is the Longest Common Substring problem, which requires resetting the count to zero on any mismatch."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Indexing errors with string length vs array size",
+        "explanation": "The DP matrix must be (m+1) x (n+1) to accommodate the empty string base cases (0 length prefixes)."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "LCS is the same as Longest Common Substring.",
+        "reality": "Subsequence characters do not have to be contiguous; they just must be in relative order. Substrings reset to zero on a mismatch; subsequences carry forward the max historical value.",
+        "would_be_caught_by": "asking what happens to the DP score when a character mismatch occurs"
+      }
+    ],
+    "failure_signals": [
+      "You need to align data resiliently to noise (insertions/deletions)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Version control merging (git diff)",
+        "problem": "Mapping code drift and identifying unchanged lines between two commits.",
+        "why_this_algorithm": "LCS isolates the exact unchanged sequence of code lines, treating edits as noise."
+      },
+      {
+        "title": "Bioinformatic sequence alignment",
+        "problem": "Identifying evolutionary gene similarities.",
+        "why_this_algorithm": "Handles DNA mutations (gaps) without losing the core sequence match."
+      }
+    ],
+    "pattern": {
+      "name": "2D String Alignment",
+      "recognition_cues": [
+        "two strings/arrays",
+        "relative order matters",
+        "subsequence/non-contiguous allowed"
+      ]
+    },
+    "related": [
+      "edit-distance"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up"
+      ],
+      "helpful": [],
+      "unlocks": [
+        "edit-distance"
+      ]
+    },
+    "visualization": {
+      "renderer": "grid",
+      "difficulty": "medium",
+      "key_animation": "match draws an arrow from diagonal; mismatch draws arrows from top and left (taking max)",
+      "interactive_inputs": [
+        {
+          "input": "s1=\"abcde\", s2=\"ace\"",
+          "why": "Canonical example showing non-contiguous matches (a, c, e)."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "a mismatch cell",
+          "prompt_idea": "where does this cell get its value from?",
+          "level": "easy",
+          "misconception_caught": "resetting to zero (substring thinking) instead of inheriting the max from top/left"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "The algorithm is incredibly resilient to noise, which is why it is the underlying mechanism for standard git diff operations."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Core string DP algorithm taught universally."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 1143,
+        "title": "Longest Common Subsequence",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/longest-common-subsequence/",
+        "why": "Direct implementation."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "What is the difference between Longest Common Substring and Longest Common Subsequence?",
+        "answer": "Substring requires contiguous characters (resets on mismatch). Subsequence only requires relative temporal order (inherits max on mismatch).",
+        "approach": "Draw the mismatch transition."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Two strings + \"subsequence\" + max length -> 2D matrix comparing characters.",
+      "common_followups": [
+        "Print out the actual subsequence",
+        "Optimize space to O(min(m, n))"
+      ],
+      "beginner_mistake": "Using a 1D array incorrectly.",
+      "experienced_mistake": "Not padding the DP table with an extra row/col of zeros for the empty string cases."
+    },
+    "author_notes": {
+      "lesson_focus": "The dichotomy: match -> diagonal + 1; mismatch -> max(top, left).",
+      "avoid_teaching": "Hirschberg's algorithm (too advanced); stick to the standard 2D matrix or 2-row optimization.",
+      "student_confusion": "Why we look at diagonal for matches but top/left for mismatches."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Longest_common_subsequence"
+      ],
+      "secondary": [
+        "https://www.emergentmind.com/topics/longest-common-subsequence-lcs-method"
+      ]
+    }
+  },
+  {
+    "slug": "edit-distance",
+    "title": "Edit Distance",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical string comparison DP.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Calculating the absolute minimum computational operations to transform one string into another.",
+      "naive_solution": "Trying every combination of insert/delete/replace operations exponentially.",
+      "better_idea": "Build a 2D matrix. If chars match, cost is free (take diagonal). If mismatch, add 1 to the minimum of insert (left), delete (top), or replace (diagonal)."
+    },
+    "mental_model": {
+      "intuition": "You are a spell checker. At any letter, if it matches, great, move on. If it doesn't, you test what would happen if you inserted the right letter, deleted the wrong one, or swapped it, taking whichever path costs the least.",
+      "description": "Similar to LCS, we evaluate prefixes. The cost to fix a mismatch is 1 plus the cheapest way to fix the remaining prefixes in the three possible parallel universes.",
+      "repeated_decision": "match (free) or which of insert/delete/replace gives cheapest path?"
+    },
+    "invariants": [
+      {
+        "statement": "The base cases (0th row and column) unconditionally initialize to incrementally increasing values.",
+        "why_violation_breaks": "This represents the raw cost of deleting all remaining characters to reach an empty string. If initialized to 0, deletes are incorrectly treated as free."
+      }
+    ],
+    "complexity": {
+      "time": "O(m * n)",
+      "space": "O(m * n)",
+      "note": "Aggressively optimizable to O(min(m, n)) by retaining only current and previous rows."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "When operations have vastly different weights (e.g., typos on a QWERTY keyboard).",
+        "reason": "Standard Levenshtein assumes cost 1 for all ops; weighted edit distance requires a modified Dijkstra or A* approach if weights vary wildly."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Mismapping the operations",
+        "explanation": "Forgetting which adjacent cell corresponds to insert (left) vs delete (top) vs replace (diagonal)."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "Insert into string A is a different mathematical operation than delete from string B.",
+        "reality": "Insertion into one string is mathematically identical to a deletion in the opposite string. The DP grid exploits this symmetry.",
+        "would_be_caught_by": "asking to map operations to grid directions"
+      }
+    ],
+    "failure_signals": [
+      "You need a robust metric for string similarity that accounts for all typographical errors (typos, omissions, extra characters)."
+    ],
+    "engineering_examples": [
+      {
+        "title": "NLP Spell Checkers",
+        "problem": "Resolving human typos.",
+        "why_this_algorithm": "Calculates the Levenshtein distance to find the closest dictionary word."
+      },
+      {
+        "title": "Search Engine Autocomplete",
+        "problem": "\"Did you mean?\" suggestions.",
+        "why_this_algorithm": "Ranks suggested queries by minimal edit distance."
+      }
+    ],
+    "pattern": {
+      "name": "2D String Transformation",
+      "recognition_cues": [
+        "convert string A to string B",
+        "insert, delete, replace operations allowed"
+      ]
+    },
+    "related": [
+      "longest-common-subsequence"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "longest-common-subsequence"
+      ],
+      "helpful": [],
+      "unlocks": []
+    },
+    "visualization": {
+      "renderer": "grid",
+      "difficulty": "hard",
+      "key_animation": "mismatch cell checks top, left, diagonal, highlights the min, and adds 1",
+      "interactive_inputs": [
+        {
+          "input": "s1=\"horse\", s2=\"ros\"",
+          "why": "Canonical LeetCode example covering all 3 operations."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "the 0th row/col initialization",
+          "prompt_idea": "what values go here?",
+          "level": "medium",
+          "misconception_caught": "initializing with zeros instead of incremental costs (1,2,3...)"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "Understanding the symmetry—that inserting into string A is identical to deleting from string B—halves the cognitive load of formulating the transition logic."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Considered the definitive \"hard\" string DP question."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 72,
+        "title": "Edit Distance",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/edit-distance/",
+        "why": "The exact implementation of Levenshtein distance."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "Which matrix cells correspond to insert, delete, and replace?",
+        "answer": "Left is insert, top is delete, diagonal is replace.",
+        "approach": "Draw a 2x2 grid and trace a 1-character difference."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Two strings + \"minimum operations to convert\" -> Edit Distance.",
+      "common_followups": [
+        "What if replacements cost 2 instead of 1?",
+        "Optimize space to O(N)"
+      ],
+      "beginner_mistake": "Over-complicating the logic to detect when to swap instead of just taking the min of all 3.",
+      "experienced_mistake": "Mixing up the initialization loops for row 0 and col 0."
+    },
+    "author_notes": {
+      "lesson_focus": "Mapping the 3 operations to the 3 adjacent grid cells (left, top, diagonal).",
+      "avoid_teaching": "Tracking the exact operations taken unless as a brief bonus; focus on calculating the minimum cost.",
+      "student_confusion": "Why the base cases aren't all zeros."
+    },
+    "sources": {
+      "primary": [
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC2648743/"
+      ],
+      "secondary": [
+        "https://algodaily.com/lessons/dynamic-programming-in-real-world-applications-3fdc2ef8"
+      ]
+    }
+  },
+  {
+    "slug": "longest-increasing-subsequence",
+    "title": "Longest Increasing Subsequence",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Standard array DP with notable O(n log n) optimization.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Finding the longest ascending sequence in chaotic data without requiring elements to be contiguous.",
+      "naive_solution": "Checking all 2^n subsequences to see if they are sorted.",
+      "better_idea": "At every element, look back at all previous smaller elements, find the longest chain ending there, and add 1 to it. dp[i] = max(dp[i], dp[j] + 1)."
+    },
+    "mental_model": {
+      "intuition": "Look back at every smaller numerical element before you. Discover the longest continuous chain ending at that specific element, and definitively tack yourself onto the end of it.",
+      "description": "For each number, scan all previous numbers. If a previous number is smaller, you can legally extend its sequence. Take the max of all such legal extensions.",
+      "repeated_decision": "which earlier smaller element gives longest chain, or start fresh?"
+    },
+    "invariants": [
+      {
+        "statement": "dp[i] represents the length of the longest increasing subsequence that strictly ENDS at index i.",
+        "why_violation_breaks": "If it didn't end at i, you couldn't safely guarantee the next element nums[j] is greater than the tail of the sequence."
+      }
+    ],
+    "complexity": {
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "note": "Time drops to O(n log n) utilizing Patience Sorting (binary search tracking arrays)."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "When time constraints demand better than O(n^2) on massive datasets.",
+        "reason": "Standard DP formulation takes O(n^2). You must pivot to Patience Sorting + Binary Search to hit O(n log n)."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Returning dp[n-1] as the answer",
+        "explanation": "The longest sequence might not end at the very last element of the array. You must return the global maximum of the entire DP array."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "The DP array stores the actual elements of the subsequence.",
+        "reality": "The DP array only stores the LENGTH of the subsequence ending at i. To get the actual elements, you need a secondary parent-pointer array.",
+        "would_be_caught_by": "asking to print the sequence"
+      }
+    ],
+    "failure_signals": [
+      "You need to find a monotonic trend (ascending/descending) hidden within disordered data."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Anomaly detection algorithms",
+        "problem": "Measuring the structural disorder of a time-series sequence.",
+        "why_this_algorithm": "Isolates the core ascending trend."
+      }
+    ],
+    "pattern": {
+      "name": "1D Sequential Lookback",
+      "recognition_cues": [
+        "longest increasing/decreasing subsequence",
+        "array elements not contiguous"
+      ]
+    },
+    "related": [
+      "longest-common-subsequence"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up"
+      ],
+      "helpful": [
+        "binary-search"
+      ],
+      "unlocks": []
+    },
+    "visualization": {
+      "renderer": "array",
+      "difficulty": "medium",
+      "key_animation": "inner loop j scanning from 0 to i-1, drawing a link if nums[j] < nums[i]",
+      "interactive_inputs": [
+        {
+          "input": "[10,9,2,5,3,7,101,18]",
+          "why": "Canonical test case with multiple competing subsequences."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "evaluating an element smaller than all previous elements",
+          "prompt_idea": "what is the LIS ending here?",
+          "level": "easy",
+          "misconception_caught": "initializing DP array to 0 instead of 1 (every element is an LIS of length 1 by itself)"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "The optimized O(n log n) Patience Sorting method builds distinct mathematical \"piles\" that correspond intimately with the advanced Robinson-Schensted correspondence in algebraic combinatorics."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Extremely common; tests both DP and Binary Search depending on required complexity."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 300,
+        "title": "Longest Increasing Subsequence",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/longest-increasing-subsequence/",
+        "why": "The canonical LIS problem."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "Why does the standard DP approach take O(n^2)?",
+        "answer": "Because for every element i, you must do an exhaustive sequential lookback at every prior element j (from 0 to i-1) to find the best chain to extend.",
+        "approach": "Describe the nested for-loops."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Array + \"longest increasing\" + \"subsequence\" (not subarray) -> LIS.",
+      "common_followups": [
+        "Can you do this in O(n log n) time? (Patience sort)"
+      ],
+      "beginner_mistake": "Thinking it's a substring problem and resetting to 1 when a smaller element is found.",
+      "experienced_mistake": "Forgetting to initialize the DP array with 1s."
+    },
+    "author_notes": {
+      "lesson_focus": "The O(n^2) DP approach: looking back at all valid j < i and taking max(dp[j]) + 1.",
+      "avoid_teaching": "Deep dive into Patience Sorting / binary search unless explicitly building a dedicated O(n log n) section; the DP logic is the primary focus here.",
+      "student_confusion": "Why we must search all j < i instead of just looking at i-1."
+    },
+    "sources": {
+      "primary": [
+        "https://en.wikipedia.org/wiki/Longest_increasing_subsequence"
+      ],
+      "secondary": [
+        "https://dmj.one/edu/su/course/csu083/theory/longest-increasing-subsequence-lis-patience-sorting"
+      ]
+    }
+  },
+  {
+    "slug": "grid-dp-unique-paths-min-path-sum",
+    "title": "Grid DP (Unique Paths / Min Path Sum)",
+    "kind_hint": "trace",
+    "confidence": {
+      "overall": "high",
+      "reason": "Canonical 2D grid DP.",
+      "low_confidence_fields": []
+    },
+    "why_it_exists": {
+      "problem": "Evaluating autonomous navigational decisions across 2D matrices without simulating every possible exponential path.",
+      "naive_solution": "DFS/Recursion exploring every path from start to end (O(2^(m+n))).",
+      "better_idea": "Build a matrix where each cell represents the optimal state to reach it. dp[i][j] relies only on the cell above it and left of it."
+    },
+    "mental_model": {
+      "intuition": "Water flowing downhill. You can only arrive at a spot from directly above or directly left. So the best way (or total ways) to get here is just the combination of the best ways to get to those two adjacent spots.",
+      "description": "Iterate through the grid left-to-right, top-to-bottom. For combinatorics (Unique Paths), sum the ways from top and left. For optimization (Min Path Sum), take the minimum of top and left, and add the current cell's cost.",
+      "repeated_decision": "arrive by moving right or down, which is cheaper/how many ways?"
+    },
+    "invariants": [
+      {
+        "statement": "Topological sorting is inherently guaranteed simply by utilizing standard row-by-column matrix iteration loops.",
+        "why_violation_breaks": "Because physical motion is restricted monotonically (strictly down or right), a standard nested loop naturally processes dependencies before they are needed."
+      }
+    ],
+    "complexity": {
+      "time": "O(m * n)",
+      "space": "O(m * n)",
+      "note": "Space compresses cleanly to O(n) using space optimization (keeping only current and previous rows)."
+    },
+    "when_not_to_use": [
+      {
+        "scenario": "When movement in all 4 directions (up/down/left/right) is allowed.",
+        "reason": "DP cannot resolve cycles. Graph algorithms like Dijkstra or BFS are strictly required when cyclical traversal is physically possible."
+      }
+    ],
+    "common_mistakes": [
+      {
+        "title": "Mishandling the borders (row 0, col 0)",
+        "explanation": "Failing to initialize the top row and left column correctly, as they only have one valid direction of entry."
+      }
+    ],
+    "misconceptions": [
+      {
+        "false_belief": "Obstacles require complex logic to bypass.",
+        "reality": "Any state coordinate containing an obstacle is simply nullified to 0, immediately and permanently severing that branch of paths.",
+        "would_be_caught_by": "asking how to handle a rock in the grid"
+      }
+    ],
+    "failure_signals": [
+      "You are restricted to moving exclusively rightward or downward (or left/up) in a 2D space."
+    ],
+    "engineering_examples": [
+      {
+        "title": "Robotic Autonomous Navigation",
+        "problem": "Determining lowest-energy paths across varied terrain maps.",
+        "why_this_algorithm": "Evaluates cost constraints perfectly for monotonic movement."
+      },
+      {
+        "title": "Network Packet Routing",
+        "problem": "Routing across variable-latency topographical maps.",
+        "why_this_algorithm": "Calculates minimum latency paths."
+      }
+    ],
+    "pattern": {
+      "name": "2D Grid DP",
+      "recognition_cues": [
+        "2D grid/matrix",
+        "move right or down",
+        "min cost or total ways"
+      ]
+    },
+    "related": [
+      "climbing-stairs-fibonacci",
+      "space-optimization"
+    ],
+    "learning_graph": {
+      "must_know": [
+        "tabulation-bottom-up"
+      ],
+      "helpful": [
+        "space-optimization"
+      ],
+      "unlocks": []
+    },
+    "visualization": {
+      "renderer": "grid",
+      "difficulty": "easy",
+      "key_animation": "cell drawing values from top neighbor and left neighbor to resolve its own state",
+      "interactive_inputs": [
+        {
+          "input": "grid=3x7",
+          "why": "Standard unique paths board."
+        },
+        {
+          "input": "grid=3x3 with obstacle at (1,1)",
+          "why": "Tests obstacle nullification."
+        }
+      ],
+      "prediction_checkpoints": [
+        {
+          "at": "cell directly below an obstacle",
+          "prompt_idea": "how many paths come from the obstacle cell?",
+          "level": "easy",
+          "misconception_caught": "propagating values through an obstacle instead of treating it as 0"
+        }
+      ]
+    },
+    "interesting_facts": [
+      "Attempting to force dynamic programming when all four directional movements are permitted is a classic catastrophic failure in interviews; it requires Dijkstra/BFS."
+    ],
+    "interview_frequency": {
+      "level": "high",
+      "evidence": "Unique Paths and Min Path Sum are highly standardized screening questions."
+    },
+    "practice": [
+      {
+        "platform": "LeetCode",
+        "id": 62,
+        "title": "Unique Paths",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/unique-paths/",
+        "why": "Core grid combinatorics."
+      },
+      {
+        "platform": "LeetCode",
+        "id": 64,
+        "title": "Minimum Path Sum",
+        "difficulty": "medium",
+        "url": "https://leetcode.com/problems/minimum-path-sum/",
+        "why": "Core grid optimization."
+      }
+    ],
+    "interview_questions": [
+      {
+        "q": "What happens if we can also move UP or LEFT?",
+        "answer": "We can no longer use Dynamic Programming because cycles are introduced. We must switch to a shortest-path graph algorithm like BFS (if unweighted) or Dijkstra (if weighted).",
+        "approach": "Emphasize that DP requires a Directed Acyclic Graph (DAG)."
+      }
+    ],
+    "interview_thinking": {
+      "recognition_strategy": "Grid + strictly moving Right/Down -> 2D Grid DP.",
+      "common_followups": [
+        "Add obstacles (Unique Paths II)",
+        "Optimize space to O(N) using a 1D array"
+      ],
+      "beginner_mistake": "Writing DFS without memoization (TLE on large grids).",
+      "experienced_mistake": "Writing redundant code for the top row / left col instead of elegantly handling out-of-bounds in the main loop."
+    },
+    "author_notes": {
+      "lesson_focus": "The physical constraint (right/down) maps perfectly to the DP transitions (look left, look up).",
+      "avoid_teaching": "Graph theory/Dijkstra here; just mention it as a boundary for when DP fails.",
+      "student_confusion": "How to space-optimize a 2D grid into a 1D array."
+    },
+    "sources": {
+      "primary": [
+        "https://algo.monster/liteproblems/62",
+        "https://algo.monster/liteproblems/64"
+      ],
+      "secondary": [
+        "https://medium.com/@calebduniya45/leetcode-62-unique-paths-java-solution-d056ebc915d2"
+      ]
+    }
+  }
+]
