@@ -10,7 +10,7 @@
 > **⛔ You do NOT author visualization.** No `viz`, no `animation`, no `image`/`illustration`. Claude
 > layers all visuals afterward. See the BOUNDARY section in `PROMPT-dsa.md`.
 
-Source of truth for nodes/titles/order: `backend/seed_dsa.py` (110 nodes, 20 phases).
+Source of truth for nodes/titles/order: `backend/seed_dsa.py` (124 nodes, 21 phases).
 **Build order = phase order** (the curriculum is a beginner on-ramp: Foundations → Complexity →
 Arrays first; recursion deferred to phase 11). Do one phase per research run.
 
@@ -99,18 +99,18 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 
 ## 13. Sorting — Divide & Conquer
 - [x] Merge sort  · D · `merge-sort` — authored by Claude as the gold exemplar
-- [ ] Quick sort  · D · `quick-sort`
-- [ ] Counting sort  · D · `counting-sort`
+- [ ] Non-comparison sorts  · D · `non-comparison-sorts`
+- [ ] Quicksort & partition  · D · `quicksort-and-partition`
 
 ## 14. Trees
-- [ ] Recursive tree thinking  · C · `recursive-tree-thinking`
-- [ ] Binary tree & traversals  · D · `binary-tree-and-traversals`
-- [ ] DFS: pre / in / post  · D · `dfs-pre-in-post`
-- [ ] Level-order (BFS)  · D · `level-order-bfs`
-- [ ] BST: insert & search  · D · `bst-insert-and-search`
-- [ ] Validate a BST  · D · `validate-a-bst`
-- [ ] Lowest common ancestor  · D · `lowest-common-ancestor`
-- [ ] Height & diameter  · D · `height-and-diameter`
+- [x] Recursive tree thinking  · C · `recursive-tree-thinking`
+- [x] Binary tree & traversals  · D · `binary-tree-and-traversals`
+- [x] DFS: pre / in / post  · D · `dfs-pre-in-post`
+- [x] Level-order (BFS)  · D · `level-order-bfs`
+- [x] BST: insert & search  · D · `bst-insert-and-search`
+- [x] Validate a BST  · D · `validate-a-bst`
+- [x] Lowest common ancestor  · D · `lowest-common-ancestor`
+- [x] Height & diameter  · D · `height-and-diameter`
 
 ## 15. Heaps  (all `D`)
 - [x] Binary heap  · D · `binary-heap`
@@ -168,22 +168,22 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Recognizing graph problems  · C · `recognizing-graph-problems`
 - [x] Pattern recognition drill  · C · `pattern-recognition-drill`
 
+## 21. Advanced (14 nodes)
+- [ ] Quickselect  · D · `quickselect`
+- [ ] Trie (prefix tree)  · D · `trie-prefix-tree`
+- [ ] Designing data structures  · C · `designing-data-structures`
+- [ ] GCD, LCM & modular arithmetic  · C · `gcd-lcm-and-modular-arithmetic`
+- [ ] Tree DP  · D · `tree-dp`
+- [ ] Linked list rewiring  · D · `linked-list-rewiring`
+- [ ] Difference array  · D · `difference-array`
+- [ ] Segment tree  · D · `segment-tree`
+- [ ] Fenwick tree (BIT)  · D · `fenwick-tree-bit`
+- [ ] Ordered sets & sorted containers  · C · `ordered-sets-and-sorted-containers`
+- [ ] Combinatorics & counting  · C · `combinatorics-and-counting`
+- [ ] Bitmask DP  · D · `bitmask-dp`
+- [ ] Monotonic deque  · D · `monotonic-deque`
+- [ ] Rolling hash (Rabin-Karp)  · D · `rolling-hash-rabin-karp`
+
 ---
 
-**110 nodes total · 100 done · 10 open.** Split: ~40 `C` (concept) · ~67 `D` (dsa).
-Note: checkbox state reconciled against `content/roadmaps/dsa/*.json` on 2026-07-21 — 104 lesson files
-exist for 95 ticked nodes because some shipped lessons aren't tracked as distinct TODO nodes (e.g.
-`two-pointers-on-strings` vs the still-open generic `two-pointers`).
-**All 15 remaining open nodes are in phases 1-15**; phases 16-20 are content-complete (pass 1).
-Phase 8 (Two Pointers & Windows, 5 nodes) is the highest-priority gap: phase-20's
-`recognizing-two-pointers` / `recognizing-sliding-window` list its nodes as prerequisites, so those
-edges currently dangle (validator warns, does not error).
-Kind tags are a best-first call — if a `D` node has no real trace to step through (pure idea), flag it
-and treat it as `C`; if a `C` node clearly wants a step-through, flag it for Claude.
-
-## Wiring (Claude-side, not Antigravity)
-- The `kind:"dsa"` render path in `LessonView.jsx` (five-questions blocks + lazy execution-trace Player)
-  — **in progress.** Concept render path already works.
-- `viz` generators per trace node in `frontend/src/dsa/` (events → compile → renderers) — Claude.
-- `seed_dsa.py` must be run on the DB (user hand-off) for roadmap nodes to link to these lessons.
-- `sync-content.mjs` copies `content/roadmaps/dsa/` → `frontend/public/content/`; live on next push.
+**124 nodes total · 108 done · 16 open.** Split: ~44 `C` (concept) · ~82 `D` (dsa).

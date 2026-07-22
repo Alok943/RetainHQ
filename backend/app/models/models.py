@@ -110,6 +110,8 @@ class Activity(SQLModel, table=True):
     last_reviewed_at: Optional[datetime] = None  # set on each review completion
     next_review_at: Optional[datetime] = None    # mirrors the open due review (cheap dashboard queries)
 
+    concept_card_id: Optional[uuid.UUID] = Field(default=None, foreign_key="concept_cards.id")
+
     track: Optional[Track] = Relationship(back_populates="activities")
     reviews: List["Review"] = Relationship(back_populates="activity")
 
@@ -397,3 +399,59 @@ class NodeMeta(SQLModel, table=True):
     user_edited: bool = Field(default=False)       # protects user edits from template upgrades
     embedding: Optional[list] = Field(default=None, sa_column=Column(_JSONB))
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class Problem(SQLModel, table=True):
+    """Catalog of LeetCode problems (metadata only). Shared across all users."""
+    __tablename__ = "problems"
+    __table_args__ = (UniqueConstraint("source", "external_id", name="uq_problem_source_ext"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    source: str = Field(default="leetcode")
+    external_id: int
+    slug: str
+    title: str
+    difficulty: str  # 'easy' | 'medium' | 'hard'
+    tags: Optional[list] = Field(default=None, sa_column=Column(_JSONB))
+    url: Optional[str] = None
+    acceptance: Optional[float] = None
+    paid_only: bool = Field(default=False)
+    catalog_version: str
+
+    concepts: List["ProblemConcept"] = Relationship(back_populates="problem")
+    concept_cards: List["ConceptCard"] = Relationship(back_populates="problem")
+
+
+class ProblemConcept(SQLModel, table=True):
+    """Mapping between a Problem and a RoadmapNode. Hand-curated via a versioned classification run."""
+    __tablename__ = "problem_concepts"
+    __table_args__ = (UniqueConstraint("problem_id", "node_id", name="uq_problem_concept"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    problem_id: uuid.UUID = Field(foreign_key="problems.id", ondelete="CASCADE")
+    node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE")
+    role: str  # 'primary' | 'supporting'
+    confidence: float
+    reviewed_by: Optional[str] = None  # 'human' or None
+    teaching_role: Optional[str] = None  # 'canonical' | 'practice' | 'variant' | 'synthesis'
+    order_in_concept: Optional[int] = None
+    assumes: Optional[list] = Field(default=None, sa_column=Column(_JSONB))
+    alternatives: Optional[list] = Field(default=None, sa_column=Column(_JSONB))
+    mapping_version: str
+
+    problem: Optional[Problem] = Relationship(back_populates="concepts")
+    node: Optional["RoadmapNode"] = Relationship()
+
+
+class ConceptCard(SQLModel, table=True):
+    """Shared card bank for concept-first review. Authored once, served to all users."""
+    __tablename__ = "concept_cards"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE")
+    problem_id: Optional[uuid.UUID] = Field(default=None, foreign_key="problems.id", ondelete="CASCADE")
+    card_type: str  # 'intuition' | 'complexity' | 'edge_case' | 'transfer'
+    prompt: str
+    model_answer: str
+    discriminates_from: Optional[list] = Field(default=None, sa_column=Column(_JSONB))
+    status: str = Field(default="draft")
+    version: int = Field(default=1)
+
+    node: Optional["RoadmapNode"] = Relationship()
+    problem: Optional[Problem] = Relationship(back_populates="concept_cards")

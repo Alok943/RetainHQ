@@ -5,104 +5,137 @@
   "kind": "dsa",
   "tier": "tier1",
   "metadata": {
-    "difficulty": "easy",
+    "difficulty": "medium",
     "estimated_minutes": 15,
     "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": [
-      "recursive-tree-thinking"
-    ],
-    "unlocks": [
-      "validate-a-bst"
-    ]
+    "prerequisites": ["binary-search", "binary-tree-and-traversals"],
+    "unlocks": ["validate-a-bst", "lowest-common-ancestor"]
+  },
+  "hook": {
+    "scenario": "Searching an unsorted list takes O(n) time. Binary search on a sorted array takes O(log n), but inserting a new element takes O(n) shift time. How can we get O(log n) search AND O(log n) insertion?",
+    "question": "How does a tree structure allow both searching and inserting in log-n time?"
   },
   "why_it_exists": {
-    "problem": "Searching for a specific value in a generic binary tree takes O(n) time because you have no way to know which branch the target lies down—you might have to check every node.",
-    "better_idea": "A Binary Search Tree (BST) enforces a strict relational invariant: all nodes in the left subtree must be strictly less than the parent, and all nodes in the right subtree strictly greater. This allows you to prune half the remaining search space at every step, dropping search and insert times to O(log n)."
+    "problem": "Sorted arrays allow O(log n) search via binary search, but inserting a new item requires O(n) array element shifting. Unsorted lists allow fast insertion but slow O(n) searches.",
+    "naive_solution": "Using sorted arrays for lookup and re-sorting or shifting array entries on every insert.",
+    "better_idea": "Use a Binary Search Tree (BST) where left subtree < node < right subtree. Descending the tree halves the search space at each step, achieving O(log n) lookup and dynamic O(log n) pointer-based insertion."
   },
   "mental_model": {
-    "intuition": "Binary search on an array, but built into a physical tree structure.",
-    "description": "At every node, you compare your target value to the node's value. If the target is smaller, you discard the entire right subtree and recursively step left. If larger, you discard the left and step right. Insertion uses the exact same logic to find the appropriate empty spot (null child) to attach the new node.",
-    "repeated_decision": "Is the target less than me (go left), greater than me (go right), or equal (found it)?"
+    "intuition": "Binary search turned into a dynamic pointer tree structure.",
+    "description": "At each node, compare the target key to `node.val`. If target is smaller, move to `node.left` (discarding the entire right subtree). If larger, move to `node.right` (discarding the entire left subtree). For insertion, follow this search path until reaching a null child reference, then attach the new node there.",
+    "repeated_decision": "target vs this node -- go LEFT (smaller) or RIGHT (larger)?"
   },
-  "explanation": "To search in a BST, you start at the root. If the target is less than the root's value, you recurse into `node.left`. If it's greater, you recurse into `node.right`. You stop when you find the target, or when you hit `None` (meaning the target does not exist). Because you eliminate a branch at each step, you only travel down a single path from root to leaf.\n\nInsertion is identical to search. You walk down the tree looking for the value you want to insert. Because it isn't there yet, you will inevitably hit a `None` pointer. That exact `None` pointer is the correct location for the new node. You simply replace `None` with a new `Node(value)` and return it up the call stack to stitch it to the parent.\n\nThe time complexity of both operations is bounded by the tree's height, O(h). If the tree is balanced, h = log(n). However, if you insert already sorted data (e.g., 1, 2, 3, 4, 5), the tree degenerates into a single-branch linked list, making the height O(n) and ruining the performance.",
+  "explanation": "A Binary Search Tree (BST) is a binary tree that satisfies the strict BST Ordering Invariant at EVERY node:\n- All keys in `node.left` subtree are strictly LESS than `node.val`.\n- All keys in `node.right` subtree are strictly GREATER than `node.val`.\n\nSearching in a BST:\n1. If `node is None`, target is not present (return None).\n2. If `target == node.val`, target found (return node).\n3. If `target < node.val`, recurse `search(node.left, target)`.\n4. If `target > node.val`, recurse `search(node.right, target)`.\n\nInserting in a BST:\nTo insert key `val`:\n1. Follow the search path for `val`.\n2. When you reach a `None` child slot, create `TreeNode(val)` and attach it to the parent.\n3. Insertion always lands at a new leaf node at a unique deterministic spot.\n\nWalkthrough on BST Search and Insert:\nGiven BST:\n       8\n      / \\\n     3   10\n    / \\\n   1   6\n\nSearch for target `6`:\n- Compare 6 vs 8: 6 < 8 -> go left to 3.\n- Compare 6 vs 3: 6 > 3 -> go right to 6.\n- Compare 6 vs 6: 6 == 6 -> Found!\n\nInsert target `7`:\n- Compare 7 vs 8 -> go left to 3.\n- Compare 7 vs 3 -> go right to 6.\n- Compare 7 vs 6 -> go right to 6.right (which is None).\n- Attach `TreeNode(7)` as 6.right.\n\nThe Critical Degradation Caveat (Spindly Tree Trap):\nIf elements are inserted in already sorted order (e.g. `1, 2, 3, 4, 5`), the BST degrades into a single long line (a linked list). In this worst case, tree height `h = n`, and search/insert cost degrades from `O(log n)` to `O(n)`. Self-balancing BSTs (AVL, Red-Black trees) fix this by rebalancing during insertions.",
   "key_points": [
     {
-      "title": "Invariant",
-      "detail": "Left subtree < Parent < Right subtree. This rule must hold recursively for every single node in the entire tree."
+      "title": "BST Invariant",
+      "detail": "For every node: max(left subtree) < node.val < min(right subtree)."
     },
     {
-      "title": "O(log n) average, O(n) worst",
-      "detail": "BST performance relies entirely on the tree being reasonably balanced. A skewed BST degrades to O(n) for searches and inserts."
+      "title": "Time Complexity",
+      "detail": "O(h) for search and insert, where h is tree height. O(log n) when balanced; O(n) worst-case when skewed."
+    },
+    {
+      "title": "Unique Insertion Spot",
+      "detail": "Every key has exactly one valid null slot where it can be inserted as a leaf while preserving the BST property."
     }
   ],
   "common_mistakes": [
     {
-      "title": "Inserting duplicate values",
-      "explanation": "Standard BSTs typically do not handle duplicate values well. Most implementations either strictly forbid duplicates, overwrite the existing node, or store a `count` frequency variable on the node itself. Tucking duplicates into the left or right subtree breaks standard O(log n) assumptions."
+      "title": "Assuming BST operations are ALWAYS O(log n)",
+      "explanation": "Standard BSTs have no self-balancing mechanism. Unbalanced insertion of sorted data creates a spindly tree with O(n) performance."
     },
     {
-      "title": "Assuming BST means guaranteed O(log n)",
-      "explanation": "A vanilla BST offers NO balance guarantees. An attacker (or bad luck) can feed you sorted data to force a worst-case O(n) skewed tree. You need advanced variants (like AVL or Red-Black trees) for guaranteed O(log n)."
+      "title": "Thinking insertion can reorder existing nodes",
+      "explanation": "Standard BST insertion never shifts or modifies existing tree nodes; it simply attaches a new leaf at the unique empty child slot."
+    },
+    {
+      "title": "Unclear duplicate handling",
+      "explanation": "Failing to define how duplicates are handled. Standard practice either rejects duplicates or consistently routes them to the right subtree."
     }
   ],
+  "when_not_to_use": [
+    {
+      "scenario": "Data is already fully static and index lookups are constant",
+      "reason": "Use a sorted array with binary search if no insertions take place (better cache locality)."
+    },
+    {
+      "scenario": "O(1) average lookup is needed without range queries",
+      "reason": "Use a Hash Map for O(1) key lookups if ordering and min/max/range queries are not needed."
+    }
+  ],
+  "failure_signals": [
+    "You need dynamic insertions/deletions while maintaining sorted order.",
+    "You need to quickly query minimum, maximum, predecessor, or successor elements."
+  ],
+  "engineering_examples": [
+    {
+      "title": "C++ `std::set` / Java `TreeMap`",
+      "problem": "Maintain a dynamically changing collection of unique items in sorted order with range query support.",
+      "why_this_algorithm": "Under the hood, `std::set` and `TreeMap` use self-balancing BSTs (Red-Black trees) to guarantee O(log n) insert, search, and delete."
+    },
+    {
+      "title": "Database B-Tree Indexes",
+      "problem": "Perform fast disk lookups and range scans on database column keys.",
+      "why_this_algorithm": "B-Trees are multi-way generalizations of BSTs optimized for block storage, keeping search and insert logarithmic."
+    }
+  ],
+  "pattern": {
+    "name": "BST Search and Insert",
+    "recognition_cues": ["sorted tree property", "halving search space by comparison", "dynamic ordered set"]
+  },
   "recall_questions": [
     {
-      "q": "What is the defining relational invariant of a Binary Search Tree?",
-      "answer": "For any given node, all values in its left subtree must be strictly less than its value, and all values in its right subtree must be strictly greater.",
+      "q": "What is the core ordering invariant of a Binary Search Tree?",
+      "answer": "For every node, all left subtree values are strictly less than node.val, and all right subtree values are strictly greater than node.val.",
       "tier": "tier1"
     },
     {
-      "q": "What happens if you insert data into a standard BST in already sorted order?",
-      "answer": "The tree degenerates into a skewed right-leaning linked list, and the time complexity degrades from O(log n) to O(n).",
+      "q": "What is the worst-case time complexity of searching a non-balancing BST, and when does it occur?",
+      "answer": "O(n) time complexity, which occurs when keys are inserted in sorted or reverse-sorted order, creating a linear spindly tree.",
       "tier": "tier2"
     },
     {
-      "q": "Why is the insertion logic in a BST nearly identical to the search logic?",
-      "answer": "Because to insert a new value while maintaining the BST invariant, you must search for it until you 'fall off' the tree (hit a null child); that exact null position is where the new node belongs.",
+      "q": "Where does a new key land during a standard BST insertion?",
+      "answer": "It always lands as a new leaf node at the first null child slot reached along the search path.",
       "tier": "tier1"
     }
   ],
   "oa_questions": [
     {
-      "question": "Given the root of a binary search tree and an integer val, insert it into the BST and return the root.",
+      "question": "Search in a Binary Search Tree: Given the root of a BST and a target integer val, return the node with that value.",
       "company": "SDE interview",
-      "answer": "Write a recursive function: if node is null, return a new Node(val). If val < node.val, set node.left = insert(node.left). Else set node.right = insert(node.right). Return node.",
-      "approach": "Rely on the leap of faith: the recursive calls correctly return the updated subtree roots to stitch back onto the parent."
+      "answer": "Compare target with current node value. If target < node.val recurse left; if target > node.val recurse right; if equal return node.",
+      "approach": "BST search path using ordering invariant."
     },
     {
-      "question": "Search in a Binary Search Tree for a specific value.",
+      "question": "Insert into a Binary Search Tree: Insert a value into a BST and return the root.",
       "company": "SDE interview",
-      "answer": "Start at root. While node is not null, if val == node.val return node. If val < node.val, node = node.left. Else node = node.right. Return null if loop exits.",
-      "approach": "You can solve this iteratively with no extra memory, because you never need to backtrack."
-    }
-  ],
-  "engineering_examples": [
-    {
-      "title": "Language-Level Sets and Maps",
-      "problem": "Implementing `std::map` in C++ or `TreeMap` in Java to provide sorted key-value storage.",
-      "why_this_algorithm": "These structures use Self-Balancing Binary Search Trees (specifically Red-Black trees) to guarantee O(log n) lookups and ordered iteration."
-    },
-    {
-      "title": "Database Indexes",
-      "problem": "Finding a specific row by its Primary Key quickly in a database table of 100 million rows.",
-      "why_this_algorithm": "Databases use B-Trees, a wider, disk-optimized generalization of the BST concept, pruning the search space logarithmically without scanning the entire table."
+      "answer": "Traverse to the correct null child slot, instantiate a new TreeNode(val), attach it to the parent, and return root.",
+      "approach": "Recursive or iterative BST search down to a null child reference."
     }
   ],
   "practice": [
     {
       "title": "Search in a Binary Search Tree",
       "url": "https://leetcode.com/problems/search-in-a-binary-search-tree/",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "why": "Fundamental BST search"
     },
     {
       "title": "Insert into a Binary Search Tree",
       "url": "https://leetcode.com/problems/insert-into-a-binary-search-tree/",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "why": "Fundamental BST insertion"
     }
+  ],
+  "related": ["binary-search", "binary-tree-and-traversals", "validate-a-bst", "lowest-common-ancestor"],
+  "interesting_facts": [
+    "Even though simple BSTs can degrade to O(n), randomly built BSTs (inserting keys in random permutation) have an expected height of ~2.99 log2(n), making them balanced on average!"
   ],
   "sources": [
     "https://en.wikipedia.org/wiki/Binary_search_tree",
-    "https://www.geeksforgeeks.org/insertion-in-binary-search-tree/"
+    "https://www.geeksforgeeks.org/binary-search-tree-data-structure/"
   ]
 }

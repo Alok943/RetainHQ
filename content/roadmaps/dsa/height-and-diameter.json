@@ -1,106 +1,143 @@
 {
   "slug": "height-and-diameter",
-  "title": "Height & Diameter",
+  "title": "Height & diameter",
   "roadmap": "dsa",
   "kind": "dsa",
   "tier": "tier2",
   "metadata": {
     "difficulty": "medium",
-    "estimated_minutes": 20,
-    "importance": 8,
+    "estimated_minutes": 15,
+    "importance": 10,
     "interview_frequency": "high",
-    "prerequisites": [
-      "dfs-pre-in-post"
-    ],
-    "unlocks": []
+    "prerequisites": ["binary-tree-and-traversals", "dfs-pre-in-post"],
+    "unlocks": ["binary-heap"]
+  },
+  "hook": {
+    "scenario": "To find the longest communication path between any two computers in a network tree, a developer calls `get_height(left) + get_height(right)` at every single node, causing their program to run in painfully slow O(n^2) time.",
+    "question": "How do you calculate tree height and global diameter simultaneously in a single O(n) pass?"
   },
   "why_it_exists": {
-    "problem": "To understand the bounding dimensions of a hierarchical structure (like maximum latency, longest decision path, or physical rendering size), you need to measure its extremities.",
-    "better_idea": "The 'height' measures the longest path from the root to a leaf, dictating maximum recursive depth. The 'diameter' measures the longest path between ANY two nodes in the tree, representing the absolute maximum distance across the structure."
+    "problem": "Calculating tree height separately at every node to find the maximum diameter results in repetitive subtree traversals taking O(n^2) time.",
+    "naive_solution": "For every node in the tree, call a helper function `height(node.left)` and `height(node.right)`.",
+    "better_idea": "Use a bottom-up post-order traversal. Each recursive step returns the node's own height `1 + max(left_h, right_h)` while simultaneously updating a global diameter variable `max_diameter = max(max_diameter, left_h + right_h)`."
   },
   "mental_model": {
-    "intuition": "Height is reaching straight down as far as possible. Diameter is stretching your arms out to the left and right as far as possible.",
-    "description": "A node calculates its height bottom-up: it asks its children for their heights, takes the maximum, and adds 1 for itself. While doing this, the node simultaneously calculates its local diameter (left child's height + right child's height) and updates a global tracker if its local stretch is the widest seen so far.",
-    "repeated_decision": "My height is 1 + max(left, right). My local diameter is left + right. Is my diameter the new global max?"
+    "intuition": "Return more than you are asked: return subtree height upwards to your parent, while side-effecting global max diameter at your node.",
+    "description": "At each node, compute `left_height` and `right_height` from post-order child returns. The longest path passing THROUGH this node is `left_height + right_height` (edges). Update `global_diameter = max(global_diameter, left_height + right_height)`. Then return `1 + max(left_height, right_height)` to the parent so it can compute its own height.",
+    "repeated_decision": "at this node, combine left and right subtree HEIGHTS -- update the best diameter, then return the node's own height."
   },
-  "explanation": "Height and diameter are intimately connected. In fact, the most efficient way to find the diameter is to piggyback it onto a standard height-calculation function.\n\nThe height of a node is defined as the number of edges on the longest downward path from the node to a leaf. A leaf has a height of 0. A null pointer is mathematically considered to have a height of -1 (or 0, depending on edge vs. node counting conventions). The recursive formula is `height = 1 + max(height(node.left), height(node.right))`.\n\nThe diameter of a tree is the length of the longest path between any two nodes. This path may or may not pass through the root! However, the path MUST pass through *some* node acting as the peak (the highest node on that specific path). For any given node acting as a peak, the longest path passing through it is exactly `height(node.left) + height(node.right) + 2` (assuming heights of leaves are 0). \n\nBy running a post-order traversal to calculate height, you can pause at every node, calculate its local diameter, update a global `max_diameter` variable, and then return the height upward. This solves both problems simultaneously in O(N) time.",
+  "explanation": "Definitions:\n- Height of a Node: Number of edges on the longest downward path to a leaf (null node height = 0 for node-count framing or -1 for edge-count framing; here we use height as depth level where null = 0).\n- Diameter of a Tree: The length of the longest path between ANY two nodes in a tree (measured in number of edges). The path does NOT necessarily have to pass through the root.\n- Height Invariant: `height(node) = 1 + max(height(node.left), height(node.right))`\n- Diameter-Through-Node Invariant: `diameter_at_node = height(node.left) + height(node.right)`\n\nWhy Naive O(n^2) is Bad:\n`def diameter(root):`\n  `if not root: return 0`\n  `d_root = height(root.left) + height(root.right)`\n  `return max(d_root, diameter(root.left), diameter(root.right))`\nBecause `height()` takes O(n) time and is called at every node, total time is O(n^2).\n\nOptimal O(n) Single-Pass Pattern:\nMaintain a non-local variable `max_diameter = 0`:\n`def get_height(node):`\n  `if not node: return 0`\n  `left_h = get_height(node.left)`\n  `right_h = get_height(node.right)`\n  `max_diameter = max(max_diameter, left_h + right_h)`\n  `return 1 + max(left_h, right_h)`\n\nWalkthrough on a Skewed Tree where Diameter Dodges Root:\nTree:\n        1\n       /\n      2\n     / \\\n    3   4\n   /     \\\n  5       6\n\n- At node `3`: `left_h = 1` (leaf 5), `right_h = 0`. Returns `2`. Diameter at 3 = 1.\n- At node `4`: `left_h = 0`, `right_h = 1` (leaf 6). Returns `2`. Diameter at 4 = 1.\n- At node `2`: `left_h = 2` (sub-tree at 3), `right_h = 2` (sub-tree at 4).\n  - Diameter through `2` = `left_h + right_h = 2 + 2 = 4` edges (path: 5 -> 3 -> 2 -> 4 -> 6).\n  - `max_diameter` updated to 4!\n  - Node `2` returns height `1 + max(2, 2) = 3` to root `1`.\n- At root `1`: `left_h = 3`, `right_h = 0`. Diameter through root = 3. `max_diameter` remains 4!\nNotice the longest path dodges root `1` completely!\n\nRelated Application - Height-Balanced Check:\nThe same bottom-up post-order return pattern determines if a tree is height-balanced (where subtrees of every node differ in height by at most 1). At each node, compute `left_h` and `right_h`. If `abs(left_h - right_h) > 1` (or if either child returned -1), return -1 to signal imbalance upwards immediately. Otherwise return `1 + max(left_h, right_h)`. This checks balance in O(n) time instead of naive O(n^2).",
   "key_points": [
     {
-      "title": "Post-order synthesis",
-      "detail": "Calculating height fundamentally requires Post-order traversal. A parent cannot know its height until the children have completely computed and returned theirs."
+      "title": "Post-Order Single Pass",
+      "detail": "Bottom-up traversal processes children first, allowing height return and diameter update in O(n) time."
     },
     {
-      "title": "Diameter doesn't always include the root",
-      "detail": "In a highly unbalanced tree, the longest path might be entirely contained within a massive left subtree, completely ignoring the absolute root."
+      "title": "Root Independence",
+      "detail": "Tree diameter does NOT necessarily pass through the root node."
+    },
+    {
+      "title": "Return Value vs Global Side-Effect",
+      "detail": "Function return value feeds parent height calculations; global side-effect records maximum path across all nodes."
     }
   ],
   "common_mistakes": [
     {
-      "title": "The O(N^2) trap",
-      "explanation": "A common mistake is writing a `diameter` function that internally calls a separate `height` function on `node.left` and `node.right`. Because `height` traverses the whole subtree, doing this at every node results in O(N^2) time. You must compute diameter *inside* the height function to achieve O(N)."
+      "title": "Assuming the diameter always passes through the root",
+      "explanation": "In skewed or unbalanced trees, the longest path between two leaves often exists entirely inside a deep left or right subtree."
     },
     {
-      "title": "Assuming the diameter passes through the root",
-      "explanation": "Don't just calculate `height(root.left) + height(root.right)`. You must check the local diameter at *every single node* in the tree."
+      "title": "Recomputing height at every node (O(n^2) naive trap)",
+      "explanation": "Calling a helper `height()` inside a recursive `diameter()` function re-traverses subtrees redundantly, ballooning runtime to O(n^2)."
+    },
+    {
+      "title": "Confusing edge count vs node count",
+      "explanation": "Edge count diameter = node count on path - 1. Pay close attention to whether the problem asks for number of edges or number of nodes."
     }
   ],
+  "when_not_to_use": [
+    {
+      "scenario": "Graphs with cycles or non-tree structures",
+      "reason": "Graph diameter requires all-pairs shortest path algorithms (Floyd-Warshall or BFS from all vertices)."
+    }
+  ],
+  "failure_signals": [
+    "Problem asks for the longest path between any two nodes in a binary tree.",
+    "Problem asks to check if a binary tree is height-balanced."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Network Latency Bound in Hierarchy",
+      "problem": "Calculate the worst-case message propagation delay between any two nodes in a hierarchical network.",
+      "why_this_algorithm": "Network latency is proportional to the tree diameter (the longest hop path between any two terminal nodes)."
+    },
+    {
+      "title": "UI Tree Layout Budgeting",
+      "problem": "Determine maximum depth rendering bounds for deeply nested UI trees.",
+      "why_this_algorithm": "Height calculations establish container layout budgets in single-pass tree passes."
+    }
+  ],
+  "pattern": {
+    "name": "Single-Pass Post-Order Aggregation",
+    "recognition_cues": ["tree diameter / longest path", "height-balanced tree check", "bottom-up return-value with max tracking"]
+  },
   "recall_questions": [
     {
-      "q": "What is the recursive formula for the height of a binary tree node?",
-      "answer": "1 + max(height(node.left), height(node.right))",
+      "q": "What is the relationship between node height and the heights of its subtrees?",
+      "answer": "height(node) = 1 + max(height(node.left), height(node.right)).",
       "tier": "tier1"
     },
     {
-      "q": "Why is it inefficient to call a separate `height()` helper function from within a recursive `diameter()` function?",
-      "answer": "Because `height()` traverses the entire subtree, calling it at every node recalculates the same heights repeatedly, degrading the time complexity to O(N^2).",
+      "q": "Does the diameter of a binary tree always pass through the root node?",
+      "answer": "No. In unbalanced or skewed trees, the longest path between two leaves may lie entirely within a single deep subtree.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is computing diameter in a single post-order pass O(n) instead of O(n^2)?",
+      "answer": "Because each node computes its height and updates the running max diameter simultaneously in one pass, without re-traversing subtrees.",
       "tier": "tier2"
-    },
-    {
-      "q": "Does the longest path (diameter) of a binary tree always pass through the root node?",
-      "answer": "No. In an unbalanced tree, the longest path might be entirely contained within one of the subtrees, acting like an umbrella completely underneath the root.",
-      "tier": "tier1"
     }
   ],
   "oa_questions": [
     {
-      "question": "Given the root of a binary tree, return the length of the diameter of the tree.",
+      "question": "Diameter of Binary Tree: Given the root of a binary tree, return the length of the diameter of the tree in edges.",
       "company": "SDE interview",
-      "answer": "Create a `max_d = 0` variable. Write a `dfs(node)` function that returns 0 if null. Let `left = dfs(node.left)` and `right = dfs(node.right)`. Update `max_d = max(max_d, left + right)`. Return `1 + max(left, right)`. Finally, return `max_d`.",
-      "approach": "Piggyback the diameter calculation onto a standard post-order height calculation to achieve O(N) time."
+      "answer": "Use post-order DFS helper that returns height `1 + max(left, right)` and updates global `max_diameter = max(max_diameter, left + right)`. Return `max_diameter`.",
+      "approach": "Single-pass bottom-up post-order DFS with global max tracker."
     },
     {
-      "question": "Given the root of a binary tree, return its maximum depth.",
+      "question": "Balanced Binary Tree: Determine if a binary tree is height-balanced (subtrees of every node differ in height by at most 1).",
       "company": "SDE interview",
-      "answer": "If root is null, return 0. Otherwise, return 1 + max(maxDepth(root.left), maxDepth(root.right)).",
-      "approach": "This is the purest application of the post-order synthesis mental model."
-    }
-  ],
-  "engineering_examples": [
-    {
-      "title": "UI Layout Engines",
-      "problem": "Calculating the total bounding box size of a nested UI component (like a flexbox container).",
-      "why_this_algorithm": "The layout engine performs a post-order traversal to calculate the height and width of children before it can determine the final dimensions of the parent container."
-    },
-    {
-      "title": "Network Latency Analysis",
-      "problem": "Finding the maximum possible communication delay in a hierarchical routing network.",
-      "why_this_algorithm": "The diameter of the routing tree represents the absolute worst-case hop count (latency) between any two nodes in the network."
+      "answer": "Use post-order DFS helper returning height. If `abs(left_h - right_h) > 1`, return -1 to signal imbalance upwards early.",
+      "approach": "Post-order bottom-up DFS returning -1 on imbalance."
     }
   ],
   "practice": [
     {
-      "title": "Maximum Depth of Binary Tree",
-      "url": "https://leetcode.com/problems/maximum-depth-of-binary-tree/",
-      "difficulty": "easy"
-    },
-    {
       "title": "Diameter of Binary Tree",
       "url": "https://leetcode.com/problems/diameter-of-binary-tree/",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "why": "Canonical tree diameter problem"
+    },
+    {
+      "title": "Balanced Binary Tree",
+      "url": "https://leetcode.com/problems/balanced-binary-tree/",
+      "difficulty": "easy",
+      "why": "Height balance bottom-up application"
+    },
+    {
+      "title": "Binary Tree Maximum Path Sum",
+      "url": "https://leetcode.com/problems/binary-tree-maximum-path-sum/",
+      "difficulty": "hard",
+      "why": "Advanced single-pass post-order return-vs-side-effect pattern"
     }
   ],
+  "related": ["binary-tree-and-traversals", "dfs-pre-in-post", "lowest-common-ancestor"],
+  "interesting_facts": [
+    "The exact same single-pass pattern (returning max branch path while updating global path sum) is used to solve LeetCode Hard 'Binary Tree Maximum Path Sum'."
+  ],
   "sources": [
-    "https://leetcode.com/problems/diameter-of-binary-tree/solution/",
+    "https://en.wikipedia.org/wiki/Distance_(graph_theory)",
     "https://www.geeksforgeeks.org/diameter-of-a-binary-tree/"
   ]
 }

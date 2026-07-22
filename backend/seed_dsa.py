@@ -192,6 +192,24 @@ NODES = [
     ("Algorithm Design Patterns", "Recognize", "Recognizing greedy vs DP", "hard", "Tell when local choices suffice vs when you must explore states."),
     ("Algorithm Design Patterns", "Recognize", "Recognizing graph problems", "medium", "Spot the hidden graph (states/edges) in a word problem."),
     ("Algorithm Design Patterns", "Capstone", "Pattern recognition drill", "hard", "Given a problem, name the pattern before coding — the interview superpower."),
+
+    # ---------------- Advanced / LeetCode Mappings (V2) ----------------
+    ("Advanced", "Trees", "Segment tree", "hard", "Range queries and point updates in O(log n)."),
+    ("Advanced", "Trees", "Fenwick tree (BIT)", "hard", "Binary indexed tree for fast prefix sums with updates."),
+    ("Advanced", "Trees", "Trie (Prefix tree)", "medium", "Tree for fast string prefix matching."),
+    ("Advanced", "Strings", "Rolling hash (Rabin-Karp)", "hard", "String matching in O(n) using a rolling integer hash."),
+    ("Advanced", "Sorting", "Quickselect", "medium", "Find the k-th smallest element in O(n) on average."),
+    ("Advanced", "Sorting", "Non-comparison sorts", "medium", "Radix sort, bucket sort — beating O(n log n) with constraints."),
+    ("Advanced", "Sorting", "Quicksort & partition", "medium", "Partition around a pivot, recurse on each side."),
+    ("Advanced", "Math", "GCD, LCM & modular arithmetic", "medium", "Euclidean algorithm and working under modulo."),
+    ("Advanced", "Math", "Combinatorics & counting", "medium", "Permutations, combinations, nCr math."),
+    ("Advanced", "Arrays", "Difference array", "medium", "Range updates in O(1) by marking start/end boundaries."),
+    ("Advanced", "Dynamic Programming", "Bitmask DP", "hard", "Use an integer bitmask to represent visited states in DP."),
+    ("Advanced", "Dynamic Programming", "Tree DP", "hard", "Dynamic programming on trees, often combining children's states."),
+    ("Advanced", "Data Structures", "Monotonic deque", "hard", "Double-ended queue for sliding window maximums."),
+    ("Advanced", "Data Structures", "Ordered sets & sorted containers", "hard", "Balanced BST operations via language built-ins."),
+    ("Advanced", "Data Structures", "Designing data structures", "hard", "Combine multiple primitives (hash map + doubly linked list) to hit time constraints."),
+    ("Advanced", "Linked Lists", "Linked list rewiring", "medium", "Careful pointer manipulation to reorder nodes."),
 ]
 
 
