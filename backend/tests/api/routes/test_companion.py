@@ -55,6 +55,10 @@ async def test_companion_sync_success(client: AsyncClient, db: AsyncSession, off
                 "occurred_at": datetime.now(timezone.utc).isoformat(),
                 "payload": {
                     "sources": ["leetcode.com"],
+                    # A client-supplied node_id means no server classification
+                    # ran — these AI-attribution fields are forgeable client
+                    # input and must never reach the stored event verbatim
+                    # (see test_companion_sync_strips_client_supplied_ai_fields).
                     "study_type": "coding",
                     "assistance_level": "none",
                     "confidence_band": "high",
@@ -76,7 +80,45 @@ async def test_companion_sync_success(client: AsyncClient, db: AsyncSession, off
     assert event.trust_tier == "T3_observed"
     assert event.source == "companion_browser"
     assert event.duration_min == 25
-    assert event.payload["classifier"] == "gemini-3.1-flash-lite"
+    assert "classifier" not in event.payload
+    assert "confidence_band" not in event.payload
+
+
+async def test_companion_sync_strips_client_supplied_ai_fields(client: AsyncClient, db: AsyncSession, official_node: RoadmapNode):
+    # A client that supplies node_id directly must not be able to forge
+    # server-verified-looking classification provenance (confidence_band,
+    # classifier, reason, candidates, etc.) — those fields are only ever
+    # legitimately written by the classification ladder itself.
+    session_id = uuid.uuid4()
+    payload = {
+        "sessions": [
+            {
+                "session_id": str(session_id),
+                "node_id": str(official_node.id),
+                "duration_min": 25,
+                "occurred_at": datetime.now(timezone.utc).isoformat(),
+                "payload": {
+                    "sources": ["leetcode.com"],
+                    "confidence_band": "high",
+                    "classifier": "gemini-3.1-flash-lite",
+                    "prompt_version": "v99-forged",
+                    "embedding_model": "forged-model",
+                    "reason": "forged reason",
+                    "candidates": [{"node": "forged", "rank": 1}],
+                    "study_type": "forged",
+                    "assistance_level": "none",
+                }
+            }
+        ]
+    }
+    resp = await client.post("/api/companion/sessions", json=payload)
+    assert resp.status_code == 200, resp.text
+
+    stmt = select(LearningEvent).where(LearningEvent.entity_id == session_id)
+    event = (await db.execute(stmt)).scalar_one()
+    for forged_field in ("classifier", "prompt_version", "embedding_model", "confidence_band", "candidates", "reason", "study_type", "assistance_level"):
+        assert forged_field not in event.payload, f"{forged_field} should have been stripped from client-supplied payload"
+    assert event.payload["sources"] == ["leetcode.com"]
 
 
 async def test_companion_sync_dedupe(client: AsyncClient, official_node: RoadmapNode):

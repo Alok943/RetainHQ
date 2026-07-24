@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, Sparkles, Target } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from './lib/api';
@@ -73,6 +73,11 @@ function Home({ onStartReviews }) {
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  // Distinct from "loaded and genuinely empty" — a failed fetch must never
+  // be treated as confirmed-zero. Conflating the two is what made a backend
+  // hiccup render the brand-new-user state for an existing user's Home.
+  const [activitiesError, setActivitiesError] = useState(false);
+  const [dashboardError, setDashboardError] = useState(false);
   const { session, requireAuth } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
   const [skipFirstCapture, setSkipFirstCapture] = useState(
@@ -92,7 +97,10 @@ function Home({ onStartReviews }) {
       .catch(() => setNeedsAudiencePick(false)); // fail open: never block Home on prefs
   }, [session]);
 
-  useEffect(() => {
+  // Named (not inline in the effect) so a failed section can offer a real
+  // "Retry" that re-runs exactly this, instead of asking the user to reload
+  // the whole page.
+  const loadHomeData = useCallback(() => {
     if (!session) {
       setLoadingReviews(false);
       setLoadingActivities(false);
@@ -100,19 +108,22 @@ function Home({ onStartReviews }) {
       return;
     }
 
+    setLoadingReviews(true);
     apiFetch('/api/reviews/due')
-      .then(setDueReviews)
+      .then((data) => { setDueReviews(data); setFetchError(null); })
       .catch((err) => setFetchError(err.message))
       .finally(() => setLoadingReviews(false));
 
+    setLoadingActivities(true);
     apiFetch('/api/activities/')
-      .then(setActivities)
-      .catch(() => {})
+      .then((data) => { setActivities(data); setActivitiesError(false); })
+      .catch(() => setActivitiesError(true))
       .finally(() => setLoadingActivities(false));
 
+    setLoadingDashboard(true);
     apiFetch('/api/dashboard/')
-      .then(setDashboard)
-      .catch(() => {})
+      .then((data) => { setDashboard(data); setDashboardError(false); })
+      .catch(() => setDashboardError(true))
       .finally(() => setLoadingDashboard(false));
 
     apiFetch('/api/roadmaps/', { optionalAuth: true })
@@ -124,6 +135,13 @@ function Home({ onStartReviews }) {
     apiFetch('/api/dashboard/focus-areas')
       .then((d) => setFocusAreas(Array.isArray(d?.areas) ? d.areas : []))
       .catch(() => {});
+  }, [session]);
+
+  useEffect(() => {
+    loadHomeData();
+    // Matches the original effect's intent (run once per session become
+    // available) — loadHomeData is stable per session via useCallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [contentManifest, setContentManifest] = useState(null);
@@ -253,7 +271,7 @@ function Home({ onStartReviews }) {
   // shows people bouncing. Guests (no session) still get the normal explorable
   // Home. We wait for the dashboard count so we don't flash the empty dashboard.
   const isFirstRun =
-    session && !loadingDashboard && dashboard?.total_activities === 0 && !skipFirstCapture;
+    session && !loadingDashboard && !dashboardError && dashboard?.total_activities === 0 && !skipFirstCapture;
 
   // Catalog choice comes before everything else for a brand-new user: it decides
   // which roadmaps (and therefore which first-capture suggestions) they see.
@@ -283,7 +301,10 @@ function Home({ onStartReviews }) {
   }
 
   // Guests (no session at all) and any signed-in user with zero activities: brand-new state.
-  const isBrandNew = !session || (!loadingActivities && activities.length === 0);
+  // !activitiesError is load-bearing — a failed fetch must never look like a
+  // confirmed-empty account (that's what showed an existing user the
+  // first-time-viewer Home during a backend hiccup).
+  const isBrandNew = !session || (!loadingActivities && !activitiesError && activities.length === 0);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pb-20 md:pb-8">
@@ -309,9 +330,17 @@ function Home({ onStartReviews }) {
                 </div>
                 <div className="skeleton h-10 w-24 rounded shrink-0" />
               </div>
-            ) : fetchError ? (
+            ) : (fetchError || dashboardError) ? (
               <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4 text-[#ba1a1a]">
-                <span className="font-sans text-sm">Failed to load reviews: {fetchError}</span>
+                <span className="font-sans text-sm flex-1">
+                  {fetchError ? `Failed to load reviews: ${fetchError}` : "Couldn't load your stats."}
+                </span>
+                <button
+                  onClick={loadHomeData}
+                  className="font-sans text-sm font-semibold underline underline-offset-4 shrink-0"
+                >
+                  Retry
+                </button>
               </div>
             ) : (
               <DueSessionCard
@@ -403,6 +432,8 @@ function Home({ onStartReviews }) {
         <aside className="flex flex-col gap-4 min-w-0">
           <StatStrip
             loading={loadingDashboard}
+            error={dashboardError}
+            onRetry={loadHomeData}
             dueCount={dueCount}
             doneToday={doneToday}
             consistency={consistency}
@@ -410,6 +441,8 @@ function Home({ onStartReviews }) {
           />
           <RecentRail
             loading={loadingActivities}
+            error={activitiesError}
+            onRetry={loadHomeData}
             activities={activities}
             to="/vault"
           />
@@ -678,7 +711,17 @@ function RoadmapTile({ rm, to }) {
 }
 
 // Right-rail vertical stat strip — three stats separated by hairline dividers.
-function StatStrip({ loading, dueCount, doneToday, consistency, totalActivities }) {
+function StatStrip({ loading, error, onRetry, dueCount, doneToday, consistency, totalActivities }) {
+  if (!loading && error) {
+    return (
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 text-[#ba1a1a]">
+        <div className="font-sans text-xs mb-2">Couldn't load your stats.</div>
+        <button onClick={onRetry} className="font-sans text-xs font-semibold underline underline-offset-4">
+          Retry
+        </button>
+      </div>
+    );
+  }
   const total = doneToday + dueCount;
   const reviewsValue = loading ? '…' : dueCount > 0 ? `${doneToday}/${total} done` : 'All clear';
   return (
@@ -709,7 +752,7 @@ function StatRow({ value, label, emphasis, mono, isLast }) {
 }
 
 // Right-rail recent captures — up to 3 single-line entries linking to the Vault.
-function RecentRail({ loading, activities, to }) {
+function RecentRail({ loading, error, onRetry, activities, to }) {
   const recent = activities.slice(0, 3);
   return (
     <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4">
@@ -724,6 +767,13 @@ function RecentRail({ loading, activities, to }) {
               <div className="skeleton h-3 w-10" />
             </div>
           ))}
+        </div>
+      ) : error ? (
+        <div className="text-[#ba1a1a]">
+          <div className="font-sans text-xs mb-2">Couldn't load recent activity.</div>
+          <button onClick={onRetry} className="font-sans text-xs font-semibold underline underline-offset-4">
+            Retry
+          </button>
         </div>
       ) : recent.length === 0 ? (
         <div className="font-sans text-xs text-[#64748B]">No captures yet</div>

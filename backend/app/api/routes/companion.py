@@ -82,7 +82,18 @@ async def sync_sessions(
         
         # Record event
         payload = session.payload.model_dump(exclude_unset=True)
-        
+
+        # AI-attribution fields are only ever legitimately set by the
+        # classification step below — a client (this extension, or anyone
+        # else hitting this API) must never be able to forge
+        # confidence_band/classifier/reason etc. and have them stored as if
+        # the server had verified them. That would corrupt the exact metric
+        # §4 uses to gate C2 promotion (audited precision of high-band
+        # classifications), and node-attribution is IDOR-adjacent if a
+        # client could claim "high confidence, server said so" for free.
+        for _ai_field in ("classifier", "prompt_version", "embedding_model", "confidence_band", "candidates", "reason", "study_type", "assistance_level"):
+            payload.pop(_ai_field, None)
+
         # Classification Ladder
         if not session.node_id:
             title_sample = payload.get("title_sample", "")
