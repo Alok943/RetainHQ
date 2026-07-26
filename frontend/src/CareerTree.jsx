@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TreePine, ChevronDown, ChevronRight, X, Inbox, CheckCircle2, ArrowRight, Loader2, RefreshCw,
+  ListChecks, Minus, Plus,
 } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import AttachedRoadmaps from './AttachRoadmaps';
 
 // Career tree view + unmapped triage (SPEC-career-coach-phase2.md §8). Renders
 // the committed tree grouped by subject with phase-1 mastery state badges;
@@ -75,7 +78,7 @@ function EventLog({ nodeId }) {
 
 function NodeRow({ node, expanded, onToggle }) {
   return (
-    <div className="border-t border-[rgba(15,23,42,0.04)] first:border-t-0">
+    <div id={`node-row-${node.node_id}`} className="border-t border-[rgba(15,23,42,0.04)] first:border-t-0">
       <button onClick={onToggle} className="w-full flex items-center justify-between gap-2 py-2.5 text-left hover:bg-[rgba(15,23,42,0.01)] transition-colors">
         <span className="font-sans text-sm text-[#0F172A] truncate">{node.title}</span>
         <div className="flex items-center gap-2 shrink-0">
@@ -88,8 +91,11 @@ function NodeRow({ node, expanded, onToggle }) {
   );
 }
 
-function SubjectSection({ subject, nodes, expandedNode, setExpandedNode }) {
+function SubjectSection({ subject, nodes, expandedNode, setExpandedNode, forceOpenSignal }) {
   const [open, setOpen] = useState(false);
+  // A Today-card deep-link bumps forceOpenSignal for this section — force it
+  // open without taking over ordinary clicks (which stay purely local state).
+  useEffect(() => { if (forceOpenSignal) setOpen(true); }, [forceOpenSignal]);
   const counts = useMemo(() => {
     const c = {};
     for (const n of nodes) c[n.state] = (c[n.state] || 0) + 1;
@@ -202,11 +208,183 @@ function UnmappedTriage({ roadmapId, allNodes }) {
   );
 }
 
+// Today card (SPEC-career-coach-phase3.md §4/§7): an ordered checklist on
+// top of the tree — reviews link to /reviews, study/balance items deep-link
+// to the node (handled by the parent via onSelectNode, since there's no
+// separate node page). Never a new page/route — Today is a section here.
+
+function PlanItemRow({ item, onSelectNode }) {
+  const navigate = useNavigate();
+  const isReview = item.kind === 'review';
+  const isBalance = item.kind === 'balance';
+  const dotColor = isReview ? 'bg-[#0891B2]' : isBalance ? 'bg-[#94A3B8]' : 'bg-[#0F766E]';
+
+  return (
+    <button
+      onClick={() => (isReview ? navigate('/reviews') : item.node_id && onSelectNode(item.node_id))}
+      className="w-full text-left flex items-start gap-3 py-2.5 px-1 -mx-1 hover:bg-[rgba(15,23,42,0.01)] rounded-lg transition-colors"
+    >
+      <div className={`mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-sans text-sm text-[#0F172A] truncate">{item.label}</span>
+          {isBalance && (
+            // Quiet, not alarming — a small neutral label, never a colored badge (§7).
+            <span className="font-sans text-[9px] font-semibold uppercase tracking-wider text-[#64748B] bg-[rgba(15,23,42,0.05)] px-1.5 py-0.5 rounded-full shrink-0">
+              Catch-up
+            </span>
+          )}
+        </div>
+        {/* The reason is the trust surface, not decoration — never truncated, even on mobile. */}
+        <p className="font-sans text-xs text-[#64748B] mt-0.5">{item.reason}</p>
+      </div>
+      <ArrowRight size={14} className="text-[#94A3B8] shrink-0 mt-1.5" />
+    </button>
+  );
+}
+
+function BalanceStrip({ balance }) {
+  const entries = Object.entries(balance || {});
+  if (entries.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-3 mt-1 border-t border-[rgba(15,23,42,0.06)]">
+      {entries.map(([subject, value]) => {
+        const pct = Math.round(value * 100);
+        const isNeg = value < 0;
+        return (
+          <div key={subject} className="flex items-center gap-1.5">
+            <span className="font-sans text-[11px] text-[#64748B]">{subject.replace(/_/g, ' ')}</span>
+            <span className={`font-mono text-[11px] font-medium ${isNeg ? 'text-[#B45309]' : 'text-[#0F766E]'}`}>
+              {isNeg ? '' : '+'}{pct}%
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TodayCard({ onSelectNode }) {
+  const [plan, setPlan] = useState(null);
+  // Fetch failure tracked separately from genuine emptiness (Home.jsx
+  // 2026-07-24 pattern) — a failed /today must never render as "nothing to do".
+  const [fetchError, setFetchError] = useState(null);
+  const [minutesDraft, setMinutesDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const load = () => {
+    setFetchError(null);
+    return apiFetch('/api/career/today')
+      .then((data) => { setPlan(data); setMinutesDraft(data.daily_minutes); })
+      .catch((err) => setFetchError(err.message));
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  const commitMinutes = async (value) => {
+    const clamped = Math.max(30, Math.min(240, value));
+    setMinutesDraft(clamped);
+    setSaving(true);
+    try {
+      await apiFetch('/api/career/goals/active', {
+        method: 'PATCH',
+        body: JSON.stringify({ daily_minutes: clamped }),
+      });
+      await load();
+    } catch (err) {
+      // apiFetch already toasts server errors (5xx); nothing further to do.
+    }
+    setSaving(false);
+  };
+
+  if (plan === null && !fetchError) {
+    return (
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-2xl shadow-sm p-4 md:p-5 flex flex-col gap-2">
+        <div className="skeleton h-4 w-20" />
+        <div className="skeleton h-10 w-full" />
+        <div className="skeleton h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-2xl shadow-sm p-4 md:p-5 flex items-center gap-3">
+        <span className="font-sans text-sm text-red-700 flex-1">Couldn't load today's plan: {fetchError}</span>
+        <button onClick={load} className="font-sans text-xs font-semibold text-[#0891B2] underline underline-offset-4 shrink-0">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-2xl shadow-sm p-4 md:p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <ListChecks size={16} className="text-[#0891B2]" />
+          <h3 className="font-sans text-sm font-semibold text-[#0F172A]">Today</h3>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => commitMinutes(minutesDraft - 15)}
+            disabled={saving || minutesDraft <= 30}
+            title="15 fewer minutes"
+            className="text-[#64748B] hover:text-[#0F172A] disabled:opacity-30 p-1 rounded-full hover:bg-[rgba(15,23,42,0.04)]"
+          >
+            <Minus size={13} />
+          </button>
+          <span className="font-mono text-xs text-[#64748B] w-14 text-center">{minutesDraft} min</span>
+          <button
+            onClick={() => commitMinutes(minutesDraft + 15)}
+            disabled={saving || minutesDraft >= 240}
+            title="15 more minutes"
+            className="text-[#64748B] hover:text-[#0F172A] disabled:opacity-30 p-1 rounded-full hover:bg-[rgba(15,23,42,0.04)]"
+          >
+            <Plus size={13} />
+          </button>
+        </div>
+      </div>
+
+      {plan.overflow && (
+        <p className="font-sans text-sm text-[#64748B]">Today's reviews fill your time — no new material.</p>
+      )}
+      {!plan.overflow && plan.tree_complete && (
+        <p className="font-sans text-sm text-[#64748B]">Nothing new to study. Reviews only.</p>
+      )}
+
+      {plan.items.length === 0 ? (
+        <p className="font-sans text-sm text-[#94A3B8]">Nothing due right now.</p>
+      ) : (
+        <div className="flex flex-col divide-y divide-[rgba(15,23,42,0.04)]">
+          {plan.items.map((item, idx) => (
+            <PlanItemRow
+              key={`${item.kind}-${item.review_id || item.node_id}-${idx}`}
+              item={item}
+              onSelectNode={onSelectNode}
+            />
+          ))}
+        </div>
+      )}
+
+      <BalanceStrip balance={plan.balance} />
+    </div>
+  );
+}
+
 function CareerTree({ goal, onGoalChanged }) {
   const [nodes, setNodes] = useState(null);
   const [error, setError] = useState('');
   const [expandedNode, setExpandedNode] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  // { subject, nonce } — a Today-card click forces that node's SubjectSection
+  // open and scrolls its row into view. nonce just guarantees the effect
+  // re-fires on a repeat click into an already-open section.
+  const [deepLink, setDeepLink] = useState(null);
+  // Attaching/detaching changes what the planner can schedule, so the Today
+  // card must refetch — remounting it via key is the smallest way to do that
+  // without lifting its whole fetch into this component.
+  const [attachNonce, setAttachNonce] = useState(0);
 
   const load = async () => {
     try {
@@ -234,6 +412,27 @@ function CareerTree({ goal, onGoalChanged }) {
     await load();
     setRefreshing(false);
   };
+
+  // Today items carry node_meta.subject (a key, e.g. "dsa"); SubjectSection
+  // groups by RoadmapNode.phase (a title, e.g. "Data Structures & Algorithms")
+  // — two different strings for the same concept. Resolve via the already-
+  // loaded `nodes` list rather than trusting the plan's subject string.
+  const selectNode = (nodeId) => {
+    const node = (nodes || []).find((n) => n.node_id === nodeId);
+    if (!node) return;
+    setExpandedNode(nodeId);
+    setDeepLink({ subject: node.subject, nonce: Date.now() });
+  };
+
+  useEffect(() => {
+    if (!deepLink) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`node-row-${expandedNode}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80); // let the SubjectSection's forced-open render land first
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLink]);
 
   const bySubject = useMemo(() => {
     if (!nodes) return [];
@@ -297,6 +496,8 @@ function CareerTree({ goal, onGoalChanged }) {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          <TodayCard key={attachNonce} onSelectNode={selectNode} />
+          <AttachedRoadmaps onChanged={() => setAttachNonce((n) => n + 1)} />
           <UnmappedTriage roadmapId={goal.roadmap_id} allNodes={nodes} />
           <div className="flex flex-col gap-2">
             {bySubject.map(([subject, subjectNodes]) => (
@@ -306,6 +507,7 @@ function CareerTree({ goal, onGoalChanged }) {
                 nodes={subjectNodes}
                 expandedNode={expandedNode}
                 setExpandedNode={setExpandedNode}
+                forceOpenSignal={deepLink?.subject === subject ? deepLink.nonce : null}
               />
             ))}
           </div>

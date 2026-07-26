@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronRight, Trash2, RotateCcw, SkipForward,
 } from 'lucide-react';
 import { apiFetch } from './lib/api';
+import AttachedRoadmaps from './AttachRoadmaps';
 
 // Career Coach onboarding — SPEC-career-coach-phase2.md §8: four steps, aimed
 // at under 5 minutes total. Step 3 (tree review) is where that budget is won
@@ -313,6 +314,8 @@ function TreeStep({
             </button>
           </div>
 
+          <AttachedRoadmaps />
+
           <button
             onClick={onContinue}
             disabled={totalNodes === 0}
@@ -321,6 +324,24 @@ function TreeStep({
             Continue <ArrowRight size={14} />
           </button>
         </>
+      )}
+
+      {/* The state that used to render NOTHING. The auto-generate effect is keyed
+          on [step], so a failed first generation left this step permanently blank
+          with no control to retry — the user's only escape was to navigate away
+          and back. Always offer a way forward. */}
+      {!generating && !draft && (
+        <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center gap-3">
+          <p className="font-sans text-sm text-[#64748B]">
+            {error ? "That didn't work." : 'No tree yet.'} You can try again — nothing has been saved.
+          </p>
+          <button
+            onClick={onRegenerate}
+            className="flex items-center gap-1.5 bg-[#0891B2] hover:bg-[#0E7490] text-white font-sans text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <RotateCcw size={14} /> Try again
+          </button>
+        </div>
       )}
     </div>
   );
@@ -440,6 +461,13 @@ function CareerOnboarding({ existingGoal, onCommitted }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
+  // Deliberately does NOT clear the draft first. `generating` already drives the
+  // loading card, and clearing it meant a failed regenerate left
+  // draft=null + generating=false — a state NO render branch matched, so the
+  // tree, the context box and Continue all vanished at once with no way back
+  // (this effect is keyed on [step], so it never re-fires to recover).
+  const regenerateTree = () => generateTree(freeText);
+
   const createGoal = async () => {
     setBusy(true);
     setError('');
@@ -539,7 +567,7 @@ function CareerOnboarding({ existingGoal, onCommitted }) {
           expandedSubjects={expandedSubjects} toggleSubject={toggleSubject}
           updateNode={updateNode} deleteNode={deleteNode}
           freeText={freeText} setFreeText={setFreeText}
-          onRegenerate={() => { setDraft(null); generateTree(freeText); }}
+          onRegenerate={regenerateTree}
           onContinue={() => setStep('confirm')}
         />
       )}

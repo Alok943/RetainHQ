@@ -376,9 +376,33 @@ class CareerGoal(SQLModel, table=True):
     # phase 3. Suppresses balance flags until the end date.
     sprint_node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
     sprint_until: Optional[date] = None
+    # Phase 3 scheduler's daily study budget. DB CHECK enforces the 30-240
+    # range; the route ALSO clamps server-side (a slider overshoot shouldn't 422).
+    daily_minutes: int = Field(default=60, ge=30, le=240)
     status: str = Field(default="active")   # 'active' | 'archived'
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CareerGoalRoadmap(SQLModel, table=True):
+    """A roadmap this goal draws its plan from, on top of its own generated tree.
+
+    Nodes stay in their home roadmap — attaching creates only `node_meta` sidecar
+    rows, never copies of `roadmap_nodes`. Copying would break lesson deep-links
+    (which resolve /<roadmap-slug>/learn/<lesson-slug>), fork `user_progress`, and
+    split FSRS history across two node ids for the same concept.
+
+    `subject` is the balance bucket the attached nodes fold into; two roadmaps
+    given the same subject merge into one bar on the balance strip.
+    """
+    __tablename__ = "career_goal_roadmaps"
+    __table_args__ = (UniqueConstraint("goal_id", "roadmap_id", name="uq_goal_roadmap"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    goal_id: uuid.UUID = Field(foreign_key="career_goals.id", ondelete="CASCADE", index=True)
+    roadmap_id: uuid.UUID = Field(foreign_key="roadmaps.id", ondelete="CASCADE", index=True)
+    subject: str
+    default_priority: int = Field(default=3, ge=1, le=5)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class NodeMeta(SQLModel, table=True):

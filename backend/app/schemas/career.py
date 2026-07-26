@@ -39,6 +39,7 @@ class CareerGoalOut(BaseModel):
     template_version: Optional[str] = None
     sprint_node_id: Optional[uuid.UUID] = None
     sprint_until: Optional[date] = None
+    daily_minutes: int = 60
     status: str
     created_at: datetime
     updated_at: datetime
@@ -124,3 +125,68 @@ class NodeOut(BaseModel):
     priority: int
     est_effort_min: int
     user_edited: bool
+
+
+# --- Phase 3: Scheduler & Today screen (SPEC-career-coach-phase3.md §4) ------
+
+class PlanItemOut(BaseModel):
+    kind: str                                  # 'review' | 'study' | 'balance'
+    review_id: Optional[uuid.UUID] = None
+    node_id: Optional[uuid.UUID] = None
+    label: str
+    reason: str
+    est_share: float
+
+
+class TodayPlanOut(BaseModel):
+    items: list[PlanItemOut]
+    balance: dict[str, float]
+    overflow: bool
+    tree_complete: bool
+    daily_minutes: int
+
+
+class GoalPatchIn(BaseModel):
+    """daily_minutes only, deliberately unconstrained here — the route clamps
+    to 30-240 server-side rather than 422ing on an overshoot (§6)."""
+    daily_minutes: int
+
+
+class TodayFeedbackIn(BaseModel):
+    item_ref: str
+    action: str  # 'done' | 'skipped'
+
+
+# --- Attached roadmaps (IMPLEMENTATION-career-attached-roadmaps.md) ----------
+
+class AvailableRoadmapOut(BaseModel):
+    id: uuid.UUID
+    slug: Optional[str] = None
+    title: str
+    node_count: int
+    source: str  # 'inbuilt' | 'mine'
+
+
+class AvailableRoadmapsOut(BaseModel):
+    inbuilt: list[AvailableRoadmapOut]
+    mine: list[AvailableRoadmapOut]
+
+
+class AttachRoadmapIn(BaseModel):
+    """One-click attach: roadmap_id is the only required field. `subject` and
+    `default_priority` are derived from the roadmap when omitted, so the UI can
+    be a single button rather than a form."""
+    roadmap_id: uuid.UUID
+    subject: Optional[str] = None
+    default_priority: Optional[int] = None
+
+
+class AttachedRoadmapOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    roadmap_id: uuid.UUID
+    slug: Optional[str] = None
+    title: str
+    subject: str
+    default_priority: int
+    node_count: int
+    nodes_added: int = 0

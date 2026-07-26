@@ -7,36 +7,49 @@ the commit-transaction work) persists the user-edited draft.
 import asyncio
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, get_current_user
 from app.core.config import settings
 from app.core.security import SupabaseUser
-from app.models.models import Activity, CareerGoal, LearningEvent, MetricEvent, NodeMeta, Roadmap, RoadmapNode, RoadmapNodePrerequisite, UserPref
+from app.models.models import (
+    Activity, CareerGoal, CareerGoalRoadmap, LearningEvent, MetricEvent, NodeMastery,
+    NodeMeta, Review, Roadmap, RoadmapNode, RoadmapNodePrerequisite, UserPref,
+)
 from app.schemas.career import (
     AssignNodeIn,
     AssignNodeOut,
+    AttachedRoadmapOut,
+    AttachRoadmapIn,
+    AvailableRoadmapOut,
+    AvailableRoadmapsOut,
     CareerGoalIn,
     CareerGoalOut,
     CareerTemplateOut,
     DiagnosticAnswerIn,
     DiagnosticProbeOut,
     DiagnosticResultOut,
+    GoalPatchIn,
     NodeOut,
     NodePatchIn,
+    PlanItemOut,
     SprintIn,
     SuggestedNodeOut,
+    TodayFeedbackIn,
+    TodayPlanOut,
     TreeCommitIn,
     TreeGenerateIn,
     UnmappedActivityOut,
 )
-from app.services import evidence, metrics, topic_mapping, embeddings
+from app.services import evidence, metrics, planner, topic_mapping, embeddings
 from app.services.career_tree import CareerTreeDraft, CareerTreeError, _load_template, generate_career_tree, list_templates
 from app.services.grader import GraderError, grade_recall
+from app.services.scheduler import REVIEW_SESSION_CAP
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -569,3 +582,446 @@ async def declare_sprint(
     await db.commit()
     await db.refresh(goal)
     return goal
+
+
+# --- Phase 3: Scheduler & Today screen (SPEC-career-coach-phase3.md §4) ------
+# services/planner.py is the pure core (no DB, no clock) — this route owns
+# both, assembling PlanInputs in one query pass and handing off to build_plan.
+
+async def _get_active_goal_with_tree(db: AsyncSession, user_id: uuid.UUID) -> CareerGoal:
+    """No goal, or a goal with no committed tree yet, is the same 404 — the
+    plan function must never see a treeless goal (§6 step 1)."""
+    goal = (
+        await db.execute(select(CareerGoal).where(CareerGoal.user_id == user_id, CareerGoal.status == "active"))
+    ).scalar_one_or_none()
+    if goal is None or goal.roadmap_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active goal with a committed tree")
+    return goal
+
+
+def _plan_item_out(item) -> PlanItemOut:
+    return PlanItemOut(
+        kind=item.kind, review_id=item.review_id, node_id=item.node_id,
+        label=item.label, reason=item.reason, est_share=item.est_share,
+    )
+
+
+@router.get("/today", response_model=TodayPlanOut)
+async def get_today_plan(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    user_id = uuid.UUID(current_user.id)
+    now = datetime.utcnow()
+    goal = await _get_active_goal_with_tree(db, user_id)
+
+    # Lazily clear an expired sprint BEFORE building inputs (§6 step 6) — a
+    # stale sprint_until must never leak into the plan we're about to build.
+    if goal.sprint_until is not None and goal.sprint_until < now.date():
+        goal.sprint_node_id = None
+        goal.sprint_until = None
+        goal.updated_at = now
+        db.add(goal)
+        await db.commit()
+        await db.refresh(goal)
+
+    node_rows = (
+        await db.execute(
+            select(RoadmapNode, NodeMeta, NodeMastery)
+            .join(NodeMeta, NodeMeta.node_id == RoadmapNode.id)
+            .outerjoin(
+                NodeMastery,
+                and_(NodeMastery.node_id == RoadmapNode.id, NodeMastery.user_id == user_id),
+            )
+            # The goal's own tree PLUS anything attached. node_ids flows on into
+            # the balance-window filter below, so an attached roadmap the user
+            # actively studies contributes its minutes — without that, attaching
+            # a roadmap would make its own subject look permanently neglected.
+            .where(RoadmapNode.roadmap_id.in_([goal.roadmap_id, *await _attached_roadmap_ids(db, goal.id)]))
+        )
+    ).all()
+    node_ids = [row.RoadmapNode.id for row in node_rows]
+
+    prereqs_by_node: dict = {}
+    if node_ids:
+        prereq_rows = (
+            await db.execute(
+                select(RoadmapNodePrerequisite).where(RoadmapNodePrerequisite.node_id.in_(node_ids))
+            )
+        ).scalars().all()
+        for pr in prereq_rows:
+            prereqs_by_node.setdefault(pr.node_id, []).append(pr.prerequisite_node_id)
+
+    activities_by_node = {}
+    if node_ids:
+        activities_by_node = {
+            a.node_id: a
+            for a in (
+                await db.execute(select(Activity).where(Activity.user_id == user_id, Activity.node_id.in_(node_ids)))
+            ).scalars().all()
+        }
+
+    # m per node: m_learned * retrievability, via the phase-1 read-side — the
+    # planner never re-derives decay math (§6 step 3).
+    plan_nodes = []
+    for row in node_rows:
+        node, meta, nm = row.RoadmapNode, row.NodeMeta, row.NodeMastery
+        m_learned = nm.m_learned if nm is not None else 0.0
+        r = evidence.retrievability_for(activities_by_node.get(node.id), now)
+        m = evidence.displayed_mastery(m_learned, r)
+        plan_nodes.append(planner.PlanNode(
+            node_id=str(node.id), title=node.title, subject=meta.subject, priority=meta.priority,
+            est_effort_min=meta.est_effort_min, order_index=node.order_index,
+            m_learned=m_learned, m=m,
+            prereq_ids=tuple(str(p) for p in prereqs_by_node.get(node.id, [])),
+        ))
+
+    # subject_time_shares (§6 step 4): trailing-window minutes per subject,
+    # normalized; total_window_minutes is the RAW total behind those shares —
+    # the planner needs the magnitude (not just the ratios) for the §3.8a floor.
+    window_start = now - timedelta(days=planner.BALANCE_WINDOW_DAYS)
+    duration_rows = (
+        await db.execute(
+            select(NodeMeta.subject, func.sum(LearningEvent.duration_min))
+            .join(LearningEvent, LearningEvent.node_id == NodeMeta.node_id)
+            .where(
+                LearningEvent.user_id == user_id,
+                LearningEvent.deleted_at.is_(None),
+                LearningEvent.occurred_at >= window_start,
+                # Scope to THIS goal's tree. node_meta rows survive goal archival,
+                # so without this an old tree's events inflate total_window_minutes
+                # while contributing a_s under subjects the current tree may not
+                # have. p_s is normalized over the current tree only, so every
+                # current subject's a_s is deflated and balance_s = a_s - p_s
+                # skews negative — manufacturing "you're neglecting X" nudges for
+                # anyone who has ever switched career goals.
+                LearningEvent.node_id.in_(node_ids),
+            )
+            .group_by(NodeMeta.subject)
+        )
+    ).all()
+    total_window_minutes = sum(minutes or 0 for _, minutes in duration_rows)
+    subject_time_shares = (
+        {subject: (minutes or 0) / total_window_minutes for subject, minutes in duration_rows}
+        if total_window_minutes > 0 else {}
+    )
+
+    # Due reviews (§6 step 5) — same shape as GET /api/reviews/due: oldest-first, capped.
+    review_rows = (
+        await db.execute(
+            select(Review, RoadmapNode.title.label("node_title"))
+            .join(Activity, Review.activity_id == Activity.id)
+            .outerjoin(RoadmapNode, Activity.node_id == RoadmapNode.id)
+            .where(Review.user_id == user_id, Review.status == "due", Review.scheduled_for <= now)
+            .options(selectinload(Review.activity))
+            .order_by(Review.scheduled_for.asc())
+            .limit(REVIEW_SESSION_CAP)
+        )
+    ).all()
+    due_reviews = tuple(
+        planner.PlanReview(
+            review_id=str(row.Review.id),
+            label=row.node_title or row.Review.activity.topic,
+            scheduled_for=row.Review.scheduled_for,
+        )
+        for row in review_rows
+    )
+
+    inputs = planner.PlanInputs(
+        nodes=tuple(plan_nodes),
+        due_reviews=due_reviews,
+        subject_time_shares=subject_time_shares,
+        total_window_minutes=total_window_minutes,
+        sprint_node_id=str(goal.sprint_node_id) if goal.sprint_node_id else None,
+        sprint_until=goal.sprint_until,
+        target_date=goal.target_date,
+        daily_minutes=goal.daily_minutes,
+        now=now,
+    )
+    plan = planner.build_plan(inputs)
+
+    return TodayPlanOut(
+        items=[_plan_item_out(item) for item in plan.items],
+        balance=plan.balance,
+        overflow=plan.overflow,
+        tree_complete=plan.tree_complete,
+        daily_minutes=goal.daily_minutes,
+    )
+
+
+@router.patch("/goals/active", response_model=CareerGoalOut)
+async def patch_active_goal(
+    body: GoalPatchIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Clamp, don't merely validate — a slider that overshoots 30-240 should
+    silently land in range, not 422 (§6)."""
+    user_id = uuid.UUID(current_user.id)
+    goal = (
+        await db.execute(select(CareerGoal).where(CareerGoal.user_id == user_id, CareerGoal.status == "active"))
+    ).scalar_one_or_none()
+    if goal is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active goal")
+
+    goal.daily_minutes = max(30, min(240, body.daily_minutes))
+    goal.updated_at = datetime.utcnow()
+    db.add(goal)
+    await db.commit()
+    await db.refresh(goal)
+    return goal
+
+
+@router.post("/today/feedback", status_code=status.HTTP_204_NO_CONTENT)
+async def post_today_feedback(
+    body: TodayFeedbackIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Telemetry only — mutates no plan state. The plan is derived, never
+    stored, so the next GET /today recomputes from scratch regardless."""
+    user_id = uuid.UUID(current_user.id)
+    await metrics.record_metric_event(
+        db, user_id, event_type="plan_item_feedback",
+        payload={"item_ref": body.item_ref, "action": body.action},
+    )
+    await db.commit()
+
+
+# --- Attached roadmaps (IMPLEMENTATION-career-attached-roadmaps.md) ----------
+# A goal plans from its generated tree PLUS any roadmaps the user attaches.
+# The planner INNER JOINs node_meta and cannot score a node without
+# subject/priority/effort, and catalog nodes have no node_meta at all — so
+# attaching means creating sidecar rows, never copying roadmap_nodes.
+
+MAX_ATTACHED_ROADMAPS = 5
+_ATTACHED_EFFORT_MIN = 60  # flat: effort only ever *proportions* a session (spec §0)
+
+
+def _attached_key(roadmap: Roadmap) -> str:
+    """Prefix identifying node_meta rows this feature generated, so detach can
+    remove exactly its own and nothing a template tree owns."""
+    return f"attached.{roadmap.slug or roadmap.id}"
+
+
+async def _caller_audience(db: AsyncSession, user_id: uuid.UUID) -> str:
+    pref = (
+        await db.execute(select(UserPref.audience).where(UserPref.user_id == user_id))
+    ).scalar_one_or_none()
+    return pref or "career"
+
+
+async def _get_active_goal(db: AsyncSession, user_id: uuid.UUID) -> CareerGoal:
+    """Active goal, tree or not — deliberately weaker than
+    `_get_active_goal_with_tree`.
+
+    Attaching needs only `career_goals.id`; the committed tree is irrelevant to
+    it. Requiring one locked the picker out of onboarding, which is precisely
+    where users discover the gap that makes them want it (the AI Engineer
+    template carries no DSA subject at all, and generation may not invent one —
+    an invented subject is a hard-rule violation in career_tree.py). The goal row
+    exists from onboarding step 1; only `roadmap_id` is NULL until commit.
+    """
+    goal = (
+        await db.execute(
+            select(CareerGoal).where(CareerGoal.user_id == user_id, CareerGoal.status == "active")
+        )
+    ).scalar_one_or_none()
+    if goal is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active goal")
+    return goal
+
+
+async def _attached_roadmap_ids(db: AsyncSession, goal_id: uuid.UUID) -> list[uuid.UUID]:
+    return list(
+        (
+            await db.execute(
+                select(CareerGoalRoadmap.roadmap_id).where(CareerGoalRoadmap.goal_id == goal_id)
+            )
+        ).scalars().all()
+    )
+
+
+@router.get("/roadmaps/available", response_model=AvailableRoadmapsOut)
+async def list_available_roadmaps(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """What this goal may attach, minus anything already attached and its own tree."""
+    user_id = uuid.UUID(current_user.id)
+    goal = await _get_active_goal(db, user_id)
+    audience = await _caller_audience(db, user_id)
+    excluded = set(await _attached_roadmap_ids(db, goal.id)) | {goal.roadmap_id}
+
+    # Same visibility rule as GET /api/roadmaps/: official catalog for the
+    # caller's audience, plus the caller's own. A school user must never be
+    # offered career roadmaps.
+    rows = (
+        await db.execute(
+            select(Roadmap, func.count(RoadmapNode.id).label("node_count"))
+            .outerjoin(RoadmapNode, RoadmapNode.roadmap_id == Roadmap.id)
+            .where(
+                or_(
+                    and_(Roadmap.user_id.is_(None), Roadmap.audience == audience),
+                    Roadmap.user_id == user_id,
+                )
+            )
+            .group_by(Roadmap.id)
+            .order_by(Roadmap.title.asc())
+        )
+    ).all()
+
+    inbuilt, mine = [], []
+    for row in rows:
+        rm = row.Roadmap
+        if rm.id in excluded:
+            continue
+        item = AvailableRoadmapOut(
+            id=rm.id, slug=rm.slug, title=rm.title, node_count=row.node_count,
+            source="mine" if rm.user_id is not None else "inbuilt",
+        )
+        (mine if rm.user_id is not None else inbuilt).append(item)
+    return AvailableRoadmapsOut(inbuilt=inbuilt, mine=mine)
+
+
+@router.get("/roadmaps/", response_model=list[AttachedRoadmapOut])
+async def list_attached_roadmaps(
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    user_id = uuid.UUID(current_user.id)
+    goal = await _get_active_goal(db, user_id)
+    rows = (
+        await db.execute(
+            select(CareerGoalRoadmap, Roadmap, func.count(RoadmapNode.id).label("node_count"))
+            .join(Roadmap, Roadmap.id == CareerGoalRoadmap.roadmap_id)
+            .outerjoin(RoadmapNode, RoadmapNode.roadmap_id == Roadmap.id)
+            .where(CareerGoalRoadmap.goal_id == goal.id)
+            .group_by(CareerGoalRoadmap.id, Roadmap.id)
+            .order_by(CareerGoalRoadmap.created_at.asc())
+        )
+    ).all()
+    return [
+        AttachedRoadmapOut(
+            roadmap_id=r.Roadmap.id, slug=r.Roadmap.slug, title=r.Roadmap.title,
+            subject=r.CareerGoalRoadmap.subject,
+            default_priority=r.CareerGoalRoadmap.default_priority,
+            node_count=r.node_count,
+        )
+        for r in rows
+    ]
+
+
+@router.post("/roadmaps/", response_model=AttachedRoadmapOut, status_code=status.HTTP_201_CREATED)
+async def attach_roadmap(
+    body: AttachRoadmapIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Attach in one click: only roadmap_id is required. Subject defaults to the
+    roadmap's slug (or its lowercased title) and priority to 3, so the UI needs
+    no form — the user can refine both afterwards."""
+    user_id = uuid.UUID(current_user.id)
+    goal = await _get_active_goal(db, user_id)
+
+    roadmap = (
+        await db.execute(select(Roadmap).where(Roadmap.id == body.roadmap_id))
+    ).scalar_one_or_none()
+    if roadmap is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+
+    # THE IDOR GATE for this feature. Without it any user could attach — and so
+    # read the node titles of — any other user's private syllabus roadmap.
+    if roadmap.user_id is not None and roadmap.user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your roadmap")
+
+    if roadmap.id == goal.roadmap_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="That roadmap is already this goal's tree",
+        )
+
+    existing = await _attached_roadmap_ids(db, goal.id)
+    if roadmap.id in existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already attached")
+    if len(existing) >= MAX_ATTACHED_ROADMAPS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"At most {MAX_ATTACHED_ROADMAPS} roadmaps can be attached to a goal",
+        )
+
+    subject = (body.subject or roadmap.slug or roadmap.title).strip().lower()
+    priority = body.default_priority or 3
+    db.add(CareerGoalRoadmap(
+        goal_id=goal.id, roadmap_id=roadmap.id, subject=subject, default_priority=priority,
+    ))
+
+    # Sidecars for every node that lacks one. Never overwrite an existing
+    # node_meta — it may be a template row carrying user_edited=True.
+    nodes = (
+        await db.execute(select(RoadmapNode).where(RoadmapNode.roadmap_id == roadmap.id))
+    ).scalars().all()
+    node_ids = [n.id for n in nodes]
+    already_meta = set()
+    if node_ids:
+        already_meta = set(
+            (
+                await db.execute(select(NodeMeta.node_id).where(NodeMeta.node_id.in_(node_ids)))
+            ).scalars().all()
+        )
+    prefix = _attached_key(roadmap)
+    nodes_added = 0
+    for n in nodes:
+        if n.id in already_meta:
+            continue
+        db.add(NodeMeta(
+            node_id=n.id, stable_key=f"{prefix}.{n.id}", subject=subject,
+            priority=priority, est_effort_min=_ATTACHED_EFFORT_MIN,
+        ))
+        nodes_added += 1
+
+    await db.commit()
+    return AttachedRoadmapOut(
+        roadmap_id=roadmap.id, slug=roadmap.slug, title=roadmap.title, subject=subject,
+        default_priority=priority, node_count=len(nodes), nodes_added=nodes_added,
+    )
+
+
+@router.delete("/roadmaps/{roadmap_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def detach_roadmap(
+    roadmap_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Stops planning from this roadmap. Deliberately leaves learning_events,
+    node_mastery, activities and user_progress alone — evidence is append-only
+    (ARCHITECTURE-learning-system.md), and detaching must not erase the fact
+    that the user studied something."""
+    user_id = uuid.UUID(current_user.id)
+    goal = await _get_active_goal(db, user_id)
+
+    link = (
+        await db.execute(
+            select(CareerGoalRoadmap).where(
+                CareerGoalRoadmap.goal_id == goal.id,
+                CareerGoalRoadmap.roadmap_id == roadmap_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if link is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not attached")
+
+    roadmap = (
+        await db.execute(select(Roadmap).where(Roadmap.id == roadmap_id))
+    ).scalar_one_or_none()
+    if roadmap is not None:
+        # Only the sidecars THIS feature generated, and never one the user has
+        # since edited by hand.
+        await db.execute(
+            delete(NodeMeta).where(
+                NodeMeta.stable_key.like(f"{_attached_key(roadmap)}.%"),
+                NodeMeta.user_edited.is_(False),
+            )
+        )
+    await db.delete(link)
+    await db.commit()
