@@ -1,0 +1,170 @@
+name: Nightly DB backup
+
+# Encrypted nightly logical backup of the production Postgres, plus a data-loss
+# canary. Written after the 2026-07-26 incident (D-039), in which a
+# `TRUNCATE ... CASCADE` emptied every user's activities and reviews and there
+# was no backup of any kind to restore from — the Supabase project is on the
+# free plan, which has neither daily backups nor PITR.
+#
+# Two jobs in one, deliberately:
+#   1. BACKUP  — pg_dump the public schema, encrypt, keep as a 90-day artifact.
+#   2. CANARY  — fail loudly if a critical table has zero rows. The last incident
+#      went unnoticed until Home visibly broke; this turns silent data loss into
+#      a failed workflow (and therefore a GitHub notification email) within 24h.
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   BACKUP_DATABASE_URL  Supabase SESSION pooler URI, port 5432, NOT the app's
+#                        transaction-pooler URL. See the note below — this is the
+#                        single most likely thing to get wrong.
+#   BACKUP_PASSPHRASE    Long random string. Store it somewhere OUTSIDE GitHub
+#                        (password manager). A backup you cannot decrypt because
+#                        the passphrase lived only next to it is not a backup.
+#
+# WHY A SEPARATE DATABASE URL: the app's DATABASE_URL is the *transaction* pooler
+# (port 6543). pg_dump cannot run through it — transaction pooling gives no
+# session state, so it fails or silently produces garbage. The *direct* host
+# (db.<ref>.supabase.co) is IPv6-only and GitHub runners are IPv4-only, so that
+# fails too. The session pooler (port 5432, user postgres.<project-ref>) is the
+# only one of the three that works from Actions:
+#   postgresql://postgres.<ref>:<password>@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+#
+# Restore procedure: docs/RUNBOOK-backup-restore.md — and restore is UNTESTED
+# until someone actually runs a drill. Do the drill.
+
+on:
+  schedule:
+    - cron: "0 19 * * *"   # 19:00 UTC = 00:30 IST; clear of reminders.yml at 01:30 UTC
+  workflow_dispatch: {}      # run on demand from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PGURI: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      # Tables that must never legitimately be empty once the app has users.
+      # A zero here means something truncated or deleted them — the exact
+      # signature of the 2026-07-26 incident.
+      CANARY_TABLES: "activities reviews user_progress roadmap_nodes roadmaps"
+    steps:
+      - name: Check secrets are set
+        run: |
+          if [ -z "$PGURI" ]; then
+            echo "::error::BACKUP_DATABASE_URL repo secret is empty or unset."
+            exit 1
+          fi
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::BACKUP_PASSPHRASE repo secret is empty or unset."
+            exit 1
+          fi
+          # Fail fast on the classic mistake rather than producing a broken dump.
+          case "$PGURI" in
+            *:6543/*)
+              echo "::error::BACKUP_DATABASE_URL points at the transaction pooler (:6543). pg_dump needs the SESSION pooler (:5432)."
+              exit 1
+              ;;
+            *db.*.supabase.co*)
+              echo "::error::BACKUP_DATABASE_URL points at the direct host, which is IPv6-only and unreachable from GitHub runners. Use the session pooler."
+              exit 1
+              ;;
+          esac
+
+      # Server is PostgreSQL 17.6; ubuntu-latest ships an older client, and
+      # pg_dump refuses to dump a server newer than itself.
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc > /dev/null
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Canary — critical tables must not be empty
+        run: |
+          fail=0
+          {
+            echo "| table | rows |"
+            echo "|---|---:|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for t in $CANARY_TABLES; do
+            n=$(psql "$PGURI" -tAc "SELECT count(*) FROM public.$t;") || {
+              echo "::error::Could not read public.$t — check the connection URI."
+              exit 1
+            }
+            echo "| $t | $n |" >> "$GITHUB_STEP_SUMMARY"
+            echo "$t = $n"
+            if [ "$n" -eq 0 ]; then
+              echo "::error::public.$t has ZERO rows. This is the data-loss signature — investigate before trusting tonight's backup."
+              fail=1
+            fi
+          done
+          # Deliberately exit 0 here so the dump below still runs — a backup of a
+          # damaged DB is still worth having, and it is evidence. The final step
+          # turns the run red so it actually gets noticed.
+          if [ "$fail" -ne 0 ]; then
+            echo "CANARY_FAILED=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Dump public schema
+        run: |
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          pg_dump "$PGURI" \
+            --schema=public \
+            --no-owner --no-privileges \
+            --format=custom \
+            --file="retainhq-public-$stamp.dump"
+          ls -lh "retainhq-public-$stamp.dump"
+
+      # auth.users is Supabase-managed. This copy is for RECONCILIATION (knowing
+      # which accounts existed and their ids), not a drop-in restore — restoring
+      # into Supabase's auth schema needs care. See the runbook.
+      - name: Dump auth.users (reference only)
+        run: |
+          pg_dump "$PGURI" \
+            --data-only --table=auth.users \
+            --no-owner --no-privileges \
+            --file="retainhq-authusers-$STAMP.sql"
+          ls -lh "retainhq-authusers-$STAMP.sql"
+
+      - name: Verify the dump is readable before trusting it
+        run: |
+          # A dump that pg_restore cannot list is not a backup. Also assert the
+          # tables that were lost last time are actually present in the archive.
+          pg_restore --list "retainhq-public-$STAMP.dump" > toc.txt
+          for t in activities reviews user_progress; do
+            grep -qE "TABLE DATA public $t " toc.txt || {
+              echo "::error::Dump has no TABLE DATA entry for $t — the backup is incomplete."
+              exit 1
+            }
+          done
+          echo "Dump verified: $(wc -l < toc.txt) archive entries."
+
+      - name: Encrypt
+        run: |
+          for f in "retainhq-public-$STAMP.dump" "retainhq-authusers-$STAMP.sql"; do
+            printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --quiet \
+              --symmetric --cipher-algo AES256 \
+              --passphrase-fd 0 \
+              --output "$f.gpg" "$f"
+            rm -f "$f"          # never let the plaintext reach the artifact
+          done
+          ls -lh ./*.gpg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ env.STAMP }}
+          path: ./*.gpg
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Fail the run if the canary tripped
+        run: |
+          if [ "${CANARY_FAILED:-0}" = "1" ]; then
+            echo "::error::Backup was taken, but a critical table was empty. Read the canary step above."
+            exit 1
+          fi
