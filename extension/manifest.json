@@ -2,10 +2,15 @@
   "manifest_version": 3,
   "name": "RetainHQ Companion",
   "version": "1.0.0",
-  "description": "Ambient intelligence tracking for RetainHQ. You study, RetainHQ notices.",
+  "description": "Tracks your study activity (titles, domains, durations) so RetainHQ can schedule spaced reviews for you.",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
   "permissions": [
     "storage",
-    "tabs",
     "identity",
     "alarms"
   ],
@@ -13,11 +18,13 @@
     "*://*.youtube.com/*",
     "*://*.leetcode.com/*",
     "*://*.coursera.org/*",
-    "*://*.chatgpt.com/*",
-    "*://claude.ai/*",
-    "*://gemini.google.com/*",
     "https://retainhq.onrender.com/*",
     "http://localhost:8000/*"
+  ],
+  "optional_host_permissions": [
+    "*://*.chatgpt.com/*",
+    "*://claude.ai/*",
+    "*://gemini.google.com/*"
   ],
   "background": {
     "service_worker": "src/background/service_worker.ts",

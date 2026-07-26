@@ -85,23 +85,55 @@ async def get_templates():
 @router.post("/tree/generate", response_model=CareerTreeDraft)
 async def generate_tree(
     body: TreeGenerateIn,
+    db: AsyncSession = Depends(get_db),
     current_user: SupabaseUser = Depends(get_current_user),
 ):
     """Draft tree — proposal only, writes nothing (§3.3/§6). Rate-limited to
     CAREER_TREE_DAILY_LIMIT/user/day; regeneration during onboarding is
-    expected (users try a goal, dislike the tree, retry)."""
+    expected (users try a goal, dislike the tree, retry).
+
+    The db session here writes ONE telemetry row and never the tree — the
+    proposal-only guarantee is a property of generate_career_tree, which still
+    takes no session (tests/test_career.py::test_generation_never_touches_the_db).
+    It exists because the fallback to the unmodified template used to be
+    completely silent: a misconfigured or simply weak model degraded every user
+    to the generic tree while the endpoint returned a valid 200. Without this
+    row there is no way to answer "is the new model actually adapting?" — which
+    makes every provider or cost-driven model switch an unmeasurable bet.
+    """
+    user_id = uuid.UUID(current_user.id)
     _check_and_bump_daily_limit(current_user.id)
 
+    captured: dict = {}
+
+    def _capture(outcome: str, role_key: str, violations: list) -> None:
+        captured.update(outcome=outcome, role_key=role_key, violations=violations[:5])
+
     try:
-        return await generate_career_tree(
+        draft = await generate_career_tree(
             role_key=body.role_key,
             goal_title=body.goal_title,
             target_date=body.target_date,
             diagnostic_results=body.diagnostic_results,
             free_text=body.free_text,
+            on_outcome=_capture,
         )
     except CareerTreeError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    if captured:
+        await metrics.record_metric_event(
+            db, user_id,
+            event_type="career_tree_generated",
+            payload={
+                "outcome": captured["outcome"],          # adapted | adapted_after_retry | fallback_*
+                "role_key": captured["role_key"],
+                "model": settings.CAREER_TREE_MODEL,
+                "violations": captured["violations"],
+            },
+        )
+        await db.commit()
+    return draft
 
 
 @router.post("/goals/", response_model=CareerGoalOut, status_code=status.HTTP_201_CREATED)

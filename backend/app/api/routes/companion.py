@@ -9,6 +9,7 @@ from app.core.security import SupabaseUser
 from app.models.models import LearningEvent, Roadmap, RoadmapNode
 from app.schemas.companion import CompanionBatchIn
 from app.services.evidence import record_event
+from app.services.metrics import get_latest_consent_tier
 from app.services.topic_mapping import candidate_nodes_for_user, top_k_suggested_nodes
 from app.services.llm_classifier import classify_session, COMPANION_CLASSIFIER_MODEL, COMPANION_PROMPT_VERSION
 
@@ -62,8 +63,15 @@ async def sync_sessions(
     # to every unmapped session in this batch, and the query touches every
     # roadmap node meta the user has, so doing it per-session was an N+1.
     candidates = None
+    consent_tier = None
     if any(session.node_id is None for session in body.sessions):
         candidates = await candidate_nodes_for_user(db, user_uuid)
+        # Metadata classification (title_sample) needs no consent tier at all
+        # (SPEC-companion-phase1.md §6) — this is fetched purely so it can be
+        # threaded into classify_session's content-gate, which today never
+        # trips (no producer sets `content`) but must already have the tier
+        # available for when phase-6 adds one.
+        consent_tier = await get_latest_consent_tier(db, user_uuid)
 
     for session in body.sessions:
         if session.node_id:
@@ -114,7 +122,9 @@ async def sync_sessions(
                 
                 # Rung 3: LLM Classification
                 # Using a dummy memory for now since we don't have recent topics yet
-                classification = await classify_session(title_sample, sources, shortlist_dicts, memory=[])
+                classification = await classify_session(
+                    title_sample, sources, shortlist_dicts, memory=[], consent_tier=consent_tier,
+                )
                 
                 payload["classifier"] = COMPANION_CLASSIFIER_MODEL
                 payload["prompt_version"] = COMPANION_PROMPT_VERSION

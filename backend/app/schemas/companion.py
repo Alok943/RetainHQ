@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field, Extra
+from pydantic import BaseModel, ConfigDict, Field
 
 class CompanionSessionPayload(BaseModel):
     """
@@ -10,6 +10,8 @@ class CompanionSessionPayload(BaseModel):
     It prevents any raw chat content or unbounded text fields from being accidentally
     persisted to the database.
     """
+    model_config = ConfigDict(extra="forbid")
+
     sources: List[str] = Field(description="List of domains or app surfaces e.g. ['leetcode.com', 'claude.ai']")
     study_type: Optional[str] = None
     assistance_level: Optional[str] = None
@@ -20,9 +22,6 @@ class CompanionSessionPayload(BaseModel):
     classifier: Optional[str] = None
     prompt_version: Optional[str] = None
     embedding_model: Optional[str] = None
-
-    class Config:
-        extra = "forbid"
 
 
 class CompanionSessionIn(BaseModel):

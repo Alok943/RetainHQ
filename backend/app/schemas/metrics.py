@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 # call record_metric_event() directly and aren't bound by this list — it only
 # gates the POST /api/metrics/events endpoint, so an arbitrary client can't
 # write arbitrary event_type strings into the table.
-CLIENT_EVENT_TYPES = {"review_depth_chosen"}
+CLIENT_EVENT_TYPES = {"review_depth_chosen", "companion_consent"}
 
 MAX_PAYLOAD_BYTES = 2048
 

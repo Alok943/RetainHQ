@@ -28,16 +28,29 @@ class ClassificationResult(BaseModel):
     reason: str
 
 async def classify_session(
-    title_sample: str, 
-    sources: list[str], 
-    candidates: list[dict], 
-    memory: list[str] = None
+    title_sample: str,
+    sources: list[str],
+    candidates: list[dict],
+    memory: list[str] = None,
+    *,
+    consent_tier: Optional[str] = None,
+    content: Optional[str] = None,
 ) -> ClassificationResult:
     """
     Rung 3 of the Classification Ladder.
     Uses Gemini Flash-Lite to evaluate the top-K candidate nodes from the embedding search,
     and returns a structured JSON response assigning the session to a node (or dropping it).
+
+    `content`/`consent_tier` (IMPLEMENTATION-companion-consent.md §4.3): no producer
+    sets `content` today — `title_sample` is metadata (a page title), not chat
+    content, and metadata classification needs no consent at all
+    (SPEC-companion-phase1.md §6). This guard exists for the phase-6 feature
+    that WILL add a real content-bearing field, written now while the
+    invariant (no content field exists yet) is still true and cheap to keep.
     """
+    if content is not None and consent_tier != "cloud":
+        raise ValueError("content-bearing classification requires the 'cloud' consent tier")
+
     if not settings.GEMINI_API_KEY:
         # Fallback to triage if no LLM configured
         return ClassificationResult(

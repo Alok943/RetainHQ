@@ -1,6 +1,7 @@
 import { partitionClosedSessions, stitchSegments } from './stitcher'
 import type { Segment, Session, CompanionSessionIn } from '../types'
 import { createClient } from '@supabase/supabase-js'
+import { getConsentTier } from '../consent'
 
 // Constants
 const SESSION_GAP_MS = 15 * 60 * 1000 // 15 mins
@@ -63,6 +64,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     }
   }
 })
+
+async function maybeShowConsentNudgeBadge(): Promise<void> {
+  const tier = await getConsentTier()
+  if (tier !== null) return
+  chrome.action.setBadgeText({ text: '!' })
+  chrome.action.setBadgeBackgroundColor({ color: '#F59E0B' })
+  chrome.action.setTitle({ title: 'RetainHQ Companion: choose how to understand your AI chats' })
+}
 
 async function getBuffer(): Promise<Segment[]> {
   const data = await chrome.storage.local.get([STORAGE_KEY_BUFFER])
@@ -203,6 +212,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       chrome.action.setBadgeBackgroundColor({ color: '#FF0000' })
       const displayTitle = segment.title_metadata || segment.url_domain
       chrome.action.setTitle({ title: `Recording: ${displayTitle}\nClick to correct/stop.` })
+    } else {
+      // No LLM host permission until a tier is chosen (§2), so there's no
+      // way to detect "first visit to an LLM surface" anymore — the choice
+      // screen moves into the popup instead, badged on the first ANY tracked
+      // activity so it's noticeable without being a notification/prompt
+      // (BACKLOG rule: no notifications, ever). Only shown once the active-
+      // recording badge above has cleared, so it never fights that indicator.
+      maybeShowConsentNudgeBadge()
     }
   } else if (message.type === 'LEETCODE_SOLVED') {
     // Must report success back: the content script keeps the solve in a durable queue

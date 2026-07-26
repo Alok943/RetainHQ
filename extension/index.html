@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      width: 300px;
+      width: 340px;
       padding: 16px;
       margin: 0;
       color: #333;
@@ -33,15 +33,116 @@
     button:hover {
       background-color: #333;
     }
+    #consentScreen {
+      display: none;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    #consentScreen h3 {
+      font-size: 14px;
+      margin: 0 0 10px;
+    }
+    .tier-option {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .tier-option.recommended {
+      border-color: #863bff;
+      background: #f6f1ff;
+    }
+    .tier-option strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+    .tier-option p {
+      font-size: 12px;
+      color: #555;
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+    .tier-option button {
+      width: auto;
+      padding: 6px 12px;
+      font-size: 12px;
+      background-color: #863bff;
+    }
+    .tier-option button:hover {
+      background-color: #6f2fe0;
+    }
+    .tier-option.recommended button {
+      background-color: #863bff;
+    }
+    #consentScreen .fine-print {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+    #settingsRow {
+      display: none;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+    }
+    #settingsRow .current-tier {
+      color: #555;
+      margin-bottom: 6px;
+    }
+    #settingsRow select {
+      width: 100%;
+      padding: 4px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
   <h2>RetainHQ Companion</h2>
+
+  <!-- SPEC-companion-phase1.md §6, copy verbatim. Shown once, on first popup
+       open after any tracked activity (not at install) — badged from the
+       service worker so it's noticeable without being a notification/prompt. -->
+  <div id="consentScreen">
+    <h3>How should RetainHQ understand your AI chats?</h3>
+
+    <div class="tier-option recommended">
+      <strong>⭐ Smart tracking (Recommended)</strong>
+      <p>Your chats are analyzed by Google's Gemini to tell <em>learning</em> from <em>getting answers</em> — so your mastery scores stay honest and your daily plan targets what you actually need. Chat text is processed in the moment and <strong>never stored by RetainHQ, and never used to train models</strong>.</p>
+      <button id="tierCloudBtn" type="button">Turn on</button>
+    </div>
+
+    <div class="tier-option">
+      <strong>On-device AI</strong>
+      <p>Same understanding, running entirely inside Chrome (when your browser supports it). Nothing leaves your machine.</p>
+      <button id="tierNanoBtn" type="button">Use on-device</button>
+    </div>
+
+    <div class="tier-option">
+      <strong>Titles only</strong>
+      <p>We only look at what you can see in the tab bar. Most private; can't tell studying from copy-pasting, so tracking is less accurate.</p>
+      <button id="tierTitlesBtn" type="button">Keep it minimal</button>
+    </div>
+
+    <p class="fine-print">Change anytime in settings. Every tracked session shows up in your evidence log and can be deleted with one tap.</p>
+  </div>
+
+  <div id="settingsRow">
+    <div class="current-tier">AI chat understanding: <strong id="currentTierLabel"></strong></div>
+    <select id="tierSelect">
+      <option value="cloud">Smart tracking (cloud)</option>
+      <option value="nano">On-device AI</option>
+      <option value="titles">Titles only</option>
+    </select>
+  </div>
+
   <div id="status" class="status">Loading...</div>
   <button id="loginBtn" style="display: none;">Sign in with Supabase</button>
   <button id="logoutBtn" style="display: none;">Sign out</button>
   <button id="syncLeetCodeBtn" style="display: none; margin-top: 8px;">Sync LeetCode</button>
-  
+
   <script type="module" src="/src/popup/popup.ts"></script>
 </body>
 </html>
