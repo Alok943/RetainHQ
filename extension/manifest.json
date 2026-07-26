@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "RetainHQ Companion",
+  "version": "1.0.0",
+  "description": "Ambient intelligence tracking for RetainHQ. You study, RetainHQ notices.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "identity",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.leetcode.com/*",
+    "*://*.coursera.org/*",
+    "*://*.chatgpt.com/*",
+    "*://claude.ai/*",
+    "*://gemini.google.com/*",
+    "https://retainhq.onrender.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service_worker.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/watch*"
+      ],
+      "js": [
+        "src/content/youtube.ts"
+      ]
+    },
+    {
+      "matches": [
+        "*://*.leetcode.com/problems/*"
+      ],
+      "js": [
+        "src/content/leetcode_probe.ts"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.leetcode.com/problems/*"
+      ],
+      "js": [
+        "src/content/leetcode.ts"
+      ]
+    },
+    {
+      "matches": [
+        "*://*.coursera.org/learn/*"
+      ],
+      "js": [
+        "src/content/coursera.ts"
+      ]
+    },
+    {
+      "matches": [
+        "*://*.chatgpt.com/*",
+        "*://claude.ai/*",
+        "*://gemini.google.com/*"
+      ],
+      "js": [
+        "src/content/llm_metadata.ts"
+      ]
+    },
+    {
+      "matches": [
+        "*://*/*.pdf",
+        "*://*/*.pdf?*",
+        "file:///*.pdf"
+      ],
+      "js": [
+        "src/content/pdf.ts"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "index.html"
+  }
+}
