@@ -14,9 +14,14 @@ from app.schemas.evidence import (
     EvidenceSummaryOut,
     ManualEvidenceIn,
     NodeMasteryOut,
+    NodeMasteryOut,
     RecomputeOut,
+    LeetCodeSolveIn,
+    LeetCodeBackfillIn
 )
+from app.models.models import Problem, ProblemConcept
 from app.services import evidence
+from app.services.metrics import record_metric_event
 from app.services.evidence_weights import WEIGHTS_VERSION
 
 router = APIRouter()
@@ -239,4 +244,145 @@ async def delete_event(
     db.add(event)
     if event.node_id is not None:
         await evidence.recompute_node(db, user_id, event.node_id)
+    await db.commit()
+
+
+@router.post("/leetcode/solve", status_code=status.HTTP_204_NO_CONTENT)
+async def log_leetcode_solve(
+    body: LeetCodeSolveIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Producer C (LeetCode Extension) — EXTERNAL_SOLVE/T1_verified_external."""
+    user_id = uuid.UUID(current_user.id)
+    
+    # 1. Lookup problem
+    stmt = select(Problem).where(Problem.slug == body.problem_slug)
+    problem = (await db.execute(stmt)).scalars().first()
+    if not problem:
+        # We don't have this problem in our catalog, log as unmapped
+        await record_metric_event(
+            db, user_id,
+            event_type="evidence_unmapped",
+            payload={"problem_slug": body.problem_slug, "duration_min": body.duration_min, "source": "leetcode"}
+        )
+        await db.commit()
+        return
+
+    # 2. Lookup primary concept mapping
+    stmt = select(ProblemConcept).where(ProblemConcept.problem_id == problem.id, ProblemConcept.role == "primary")
+    pc = (await db.execute(stmt)).scalars().first()
+    
+    if not pc:
+        # Problem exists but has no primary mapping
+        await record_metric_event(
+            db, user_id,
+            event_type="evidence_unmapped",
+            payload={"problem_slug": body.problem_slug, "problem_id": str(problem.id), "duration_min": body.duration_min, "source": "leetcode"}
+        )
+        await db.commit()
+        return
+        
+    # 3. Log the event
+    occurred_at = body.occurred_at or datetime.utcnow()
+    # Normalize naive-UTC
+    if occurred_at.tzinfo is not None:
+        from datetime import timezone
+        occurred_at = occurred_at.astimezone(timezone.utc).replace(tzinfo=None)
+        
+    # Difficulty comes from OUR catalog, never from the client - the extension cannot be
+    # trusted to report it and the weight table is keyed on (difficulty, assistance).
+    difficulty = problem.difficulty
+
+    # Assistance is derived from the reflection. When the user skipped it we must NOT
+    # assume a clean solve: `assistance="none"` is the most generous row in the weight
+    # table (0.25-0.35), so defaulting to it silently inflates every unreflected solve.
+    # Fall back to evidence_weights._DEFAULT_ASSISTANCE ("llm_assisted", 0.06) instead -
+    # understate, never overstate (Design law, ARCHITECTURE-learning-system.md §0).
+    if body.needed_hint is True:
+        assistance = "hint"
+    elif body.needed_hint is False:
+        assistance = "none"
+    else:
+        assistance = "llm_assisted"
+
+    await evidence.record_event(
+        db, user_id,
+        event_type="PROBLEM_SOLVED",
+        trust_tier="T1_verified_external",
+        source="leetcode",
+        node_id=pc.node_id,
+        duration_min=body.duration_min,
+        difficulty=difficulty,
+        outcome="pass",
+        assistance=assistance,
+        entity_id=problem.id, # idempotency key: one logged solve per problem
+        occurred_at=occurred_at,
+        payload={
+            "problem_slug": body.problem_slug,
+            "submission_id": body.submission_id,
+            "confidence": body.confidence,
+            "needed_hint": body.needed_hint,
+            "mistake": body.mistake,
+            "reflected": body.needed_hint is not None or body.confidence is not None,
+        },
+    )
+    await db.commit()
+
+
+@router.post("/leetcode/backfill", status_code=status.HTTP_204_NO_CONTENT)
+async def log_leetcode_backfill(
+    body: LeetCodeBackfillIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Bulk import of historic solves from the LeetCode extension."""
+    user_id = uuid.UUID(current_user.id)
+    
+    if not body.solved_slugs:
+        return
+        
+    # Difficulty comes from OUR catalog for the same reason it does in /solve:
+    # the weight table is keyed on (difficulty, assistance), and omitting it
+    # silently folds every backfilled solve at _DEFAULT_DIFFICULTY.
+    stmt = select(Problem.id, Problem.slug, Problem.difficulty).where(Problem.slug.in_(body.solved_slugs))
+    problems = (await db.execute(stmt)).all()
+    problem_ids = [p.id for p in problems]
+    slug_map = {p.id: p.slug for p in problems}
+    difficulty_map = {p.id: p.difficulty for p in problems}
+    
+    if not problem_ids:
+        return
+        
+    # Find all primary concepts for these problems
+    stmt = select(ProblemConcept.problem_id, ProblemConcept.node_id).where(
+        ProblemConcept.problem_id.in_(problem_ids), 
+        ProblemConcept.role == "primary"
+    )
+    mappings = (await db.execute(stmt)).all()
+    
+    now = datetime.utcnow()
+    for mapping in mappings:
+        problem_slug = slug_map[mapping.problem_id]
+        
+        await evidence.record_event(
+            db, user_id,
+            event_type="PROBLEM_SOLVED",
+            trust_tier="T1_verified_external",
+            source="leetcode",
+            node_id=mapping.node_id,
+            outcome="pass",
+            difficulty=difficulty_map[mapping.problem_id],
+            # NOT "none". A historic solve carries even less information than a
+            # live unreflected one — we have no idea whether it was hint-free —
+            # and "none" is the most generous row in the weight table, so it
+            # would inflate mastery for every problem the user ever touched at
+            # import time. Same understate-never-overstate default /solve uses
+            # (evidence_weights._DEFAULT_ASSISTANCE).
+            assistance="llm_assisted",
+            entity_id=mapping.problem_id,
+            occurred_at=now,
+            payload={"problem_slug": problem_slug, "backfilled": True}
+        )
+        
     await db.commit()
