@@ -22,6 +22,7 @@ runtime: Render's backend service deploys with root=backend/, so the sibling
 content/ directory is outside the Docker build context).
 """
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Optional
@@ -29,6 +30,8 @@ from typing import Optional
 from pydantic import BaseModel, Field, ValidationError
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).resolve().parents[1] / "data" / "career_templates"
 _ROLE_TEMPLATE_RE = re.compile(r"^([a-z][a-z0-9_]*)\.v(\d+)\.json$")
@@ -226,12 +229,35 @@ def _restore_diagnostic_fields(draft: CareerTreeDraft, template: dict) -> None:
 
 # --- Model call ---------------------------------------------------------------
 
-def _uses_gemini() -> bool:
-    return settings.CAREER_TREE_MODEL.lower().startswith("gemini")
+def _provider() -> str:
+    """Route by model id: 'gemini*' -> Google, 'claude*' -> Anthropic, anything
+    else -> an OpenAI-compatible endpoint.
+
+    The previous rule was "gemini* -> Google, EVERYTHING else -> Anthropic",
+    which silently sent a DeepSeek/Qwen/GLM id to Anthropic and failed on an
+    unknown-model error that named the wrong vendor. Being explicit about all
+    three keeps a cost-driven provider switch to an env change.
+    """
+    model = settings.CAREER_TREE_MODEL.lower()
+    if model.startswith("gemini"):
+        return "gemini"
+    if model.startswith("claude"):
+        return "anthropic"
+    return "openai_compat"
 
 
 def generation_configured() -> bool:
-    return bool(settings.GEMINI_API_KEY) if _uses_gemini() else bool(settings.ANTHROPIC_API_KEY)
+    provider = _provider()
+    if provider == "gemini":
+        return bool(settings.GEMINI_API_KEY)
+    if provider == "anthropic":
+        return bool(settings.ANTHROPIC_API_KEY)
+    return bool(settings.OPENAI_COMPAT_BASE_URL and settings.OPENAI_COMPAT_API_KEY)
+
+
+def _uses_gemini() -> bool:
+    """Kept for callers/tests that predate the three-way router."""
+    return _provider() == "gemini"
 
 
 _SYSTEM_PROMPT = (
@@ -362,10 +388,93 @@ async def _call_gemini(prompt: str) -> str:
     return out
 
 
+# The lowercase word "json" in here is LOAD-BEARING, not styling. DeepSeek's and
+# Qwen/DashScope's JSON modes both require the literal token "json" to appear in
+# the messages; DashScope validates it server-side and returns 400 without it.
+# The serialized schema below cannot be relied on to supply it (Pydantic emits
+# "properties"/"type"/"$defs", not necessarily "json"), and an uppercase-only
+# "JSON" is not worth betting a 400 on. Verified 2026-07-26 against both vendors'
+# docs — see DECISIONS D-044.
+_JSON_ONLY_INSTRUCTION = (
+    "\n\nRespond with json only: a single json object matching this schema, "
+    "with no prose and no markdown fences.\n"
+)
+
+
+async def _call_openai_compatible(prompt: str) -> str:
+    """Any OpenAI-compatible /chat/completions endpoint (DeepSeek, Qwen, Moonshot,
+    Zhipu, Together, local vLLM).
+
+    Spoken over httpx rather than the `openai` SDK: this is one unstreamed JSON
+    POST, and the wire protocol is what's portable, not the client library.
+
+    Structured output is `response_format={"type":"json_object"}` — JSON mode, NOT
+    strict `json_schema`. Strict nested-schema support varies sharply across these
+    providers and several accept the parameter while ignoring the constraints,
+    which fails *silently* and is worse than not asking. So the schema is put in
+    the prompt and correctness is enforced downstream by _validate_draft + the
+    retry. That is a genuinely weaker guarantee than Gemini's native
+    response_schema — the instrumentation in generate_career_tree exists so the
+    difference is measurable rather than assumed.
+    """
+    import httpx
+
+    schema = json.dumps(CareerTreeDraft.model_json_schema())
+    body = {
+        "model": settings.CAREER_TREE_MODEL,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": prompt + _JSON_ONLY_INSTRUCTION + schema,
+            },
+        ],
+        "response_format": {"type": "json_object"},
+        "max_tokens": settings.OPENAI_COMPAT_MAX_TOKENS,
+    }
+    url = settings.OPENAI_COMPAT_BASE_URL.rstrip("/") + "/chat/completions"
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                url,
+                json=body,
+                headers={"Authorization": f"Bearer {settings.OPENAI_COMPAT_API_KEY}"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        raise CareerTreeError(f"Career tree generation call failed: {e}") from e
+
+    try:
+        out = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as e:
+        raise CareerTreeError(f"Unexpected response shape from {url}: {str(data)[:200]}") from e
+    if not out:
+        raise CareerTreeError("The model returned no usable output.")
+    return out
+
+
 async def _call_model(prompt: str) -> str:
     """The one seam tests monkeypatch — dispatches to whichever provider
     CAREER_TREE_MODEL routes to. Never called if generation_configured() is False."""
-    return await (_call_gemini(prompt) if _uses_gemini() else _call_anthropic(prompt))
+    provider = _provider()
+    if provider == "gemini":
+        return await _call_gemini(prompt)
+    if provider == "anthropic":
+        return await _call_anthropic(prompt)
+    return await _call_openai_compatible(prompt)
+
+
+def _report(on_outcome, outcome: str, role_key: str, violations: list) -> None:
+    """Hand the generation outcome to the caller (the route records a
+    metric_event). Optional and failure-isolated: observability must never be
+    able to break generation itself."""
+    if on_outcome is None:
+        return
+    try:
+        on_outcome(outcome, role_key, violations)
+    except Exception:
+        logger.exception("career-tree outcome reporter failed (ignored)")
 
 
 async def generate_career_tree(
@@ -374,6 +483,7 @@ async def generate_career_tree(
     target_date=None,
     diagnostic_results: Optional[list[dict]] = None,
     free_text: Optional[str] = None,
+    on_outcome=None,
 ) -> CareerTreeDraft:
     """Draft tree: template + goal + diagnostic + free text -> validated,
     adapted tree. NEVER touches the DB. NEVER raises for onboarding — an
@@ -383,6 +493,7 @@ async def generate_career_tree(
     template = _load_template(role_key)
 
     if not generation_configured():
+        _report(on_outcome, 'fallback_unconfigured', role_key, [])
         return _template_to_draft(role_key, template)
 
     prompt = _build_prompt(template, goal_title, target_date, diagnostic_results, free_text)
@@ -398,12 +509,34 @@ async def generate_career_tree(
             _restore_diagnostic_fields(draft, template)
             violations = _validate_draft(draft, template)
             if not violations:
+                _report(
+                    on_outcome,
+                    "adapted" if attempt == 0 else "adapted_after_retry",
+                    role_key, [],
+                )
                 return draft
 
+        logger.warning(
+            "Career tree attempt %d/2 rejected for %s (%s): %s",
+            attempt + 1, role_key, settings.CAREER_TREE_MODEL, "; ".join(violations)[:500],
+        )
         if attempt == 0:
             prompt = prompt + (
                 f"\n\nYour previous attempt was REJECTED for: {'; '.join(violations)}. "
                 "Fix this and return a corrected tree."
             )
 
+    # Both attempts failed. The user still gets a usable tree — but it is the
+    # UNMODIFIED template, identical for every learner of this role, and until
+    # this was instrumented that was indistinguishable from a good adaptation:
+    # the endpoint returned 200 with a valid tree and nothing was logged. A model
+    # that is misconfigured, deprecated, or simply bad at nested JSON degrades
+    # every user to the generic template in total silence. Never let that be
+    # quiet again — this is the signal that makes a provider swap measurable.
+    logger.error(
+        "Career tree FELL BACK to the unmodified template for %s (model=%s) — "
+        "every learner of this role gets an identical tree until this is fixed. Last violations: %s",
+        role_key, settings.CAREER_TREE_MODEL, "; ".join(violations)[:500],
+    )
+    _report(on_outcome, "fallback_validation", role_key, violations)
     return _template_to_draft(role_key, template)

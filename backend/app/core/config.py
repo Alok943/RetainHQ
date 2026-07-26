@@ -55,6 +55,30 @@ class Settings(BaseSettings):
     # (SYLLABUS_MODEL=claude-*) routes back without a code change.
     ANTHROPIC_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
+
+    # Third provider branch: any OpenAI-compatible /chat/completions endpoint —
+    # DeepSeek, Qwen/DashScope, Moonshot, Zhipu, Together, a local vLLM. Reached
+    # when the model id is neither "gemini*" nor "claude*". Deliberately spoken
+    # over httpx (already a dependency) rather than the `openai` SDK: this is one
+    # unstreamed JSON POST, and the wire protocol is the thing that's portable,
+    # not the client library.
+    #
+    # Structured output on this branch is `response_format={"type":"json_object"}`
+    # plus the schema in the prompt — NOT strict `json_schema`, whose nested-schema
+    # support varies sharply across these providers. Correctness therefore leans on
+    # _validate_draft + the retry, which is exactly why the generation path is now
+    # instrumented (see services/career_tree.py): swapping providers must be a
+    # measurement, not a bet.
+    OPENAI_COMPAT_BASE_URL: str = ""   # e.g. https://api.deepseek.com/v1
+    OPENAI_COMPAT_API_KEY: str = ""
+    # NOT 32000 (the Gemini path's value) — output caps here are per-vendor AND
+    # per-API-tier, not a single number: DeepSeek documents 8K on its Beta API
+    # while its V4 models go far higher. 8192 is a deliberately conservative
+    # default that every compatible provider accepts. A 90-node tree is large, so
+    # if trees start falling back, raise this FIRST: truncation surfaces as a JSON
+    # parse failure, which is indistinguishable from "the model is bad" until you
+    # rule it out. Checked against vendor docs 2026-07-26.
+    OPENAI_COMPAT_MAX_TOKENS: int = 8192
     SYLLABUS_MODEL: str = "gemini-3.5-flash"  # e.g. "claude-opus-4-8" to route to Anthropic
     SYLLABUS_MAX_PDF_MB: int = 10
     SYLLABUS_DAILY_LIMIT: int = 5  # extractions per user per UTC day (API-budget guard)

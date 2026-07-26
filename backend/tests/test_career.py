@@ -636,3 +636,100 @@ def test_probe_selection_is_deterministic():
     first = [n["stable_key"] for n in career_routes._select_diagnostic_probes(template)]
     second = [n["stable_key"] for n in career_routes._select_diagnostic_probes(template)]
     assert first == second and len(first) == career_routes.DIAGNOSTIC_PROBE_COUNT
+
+
+# --- Provider routing + generation observability -----------------------------
+
+def test_provider_routes_three_ways(monkeypatch):
+    """The old rule was 'gemini* -> Google, EVERYTHING else -> Anthropic', so a
+    DeepSeek/Qwen/GLM id silently went to Anthropic and failed naming the wrong
+    vendor. Cost-driven provider switches have to be an env change, not a code one."""
+    from app.core.config import settings as s
+
+    for model, expected in [
+        ("gemini-3.6-flash", "gemini"),
+        ("claude-opus-4-8", "anthropic"),
+        ("deepseek-chat", "openai_compat"),
+        ("qwen-max", "openai_compat"),
+        ("glm-4-plus", "openai_compat"),
+    ]:
+        monkeypatch.setattr(s, "CAREER_TREE_MODEL", model)
+        assert career_tree._provider() == expected, model
+
+
+def test_generation_configured_per_provider(monkeypatch):
+    from app.core.config import settings as s
+
+    monkeypatch.setattr(s, "CAREER_TREE_MODEL", "deepseek-chat")
+    monkeypatch.setattr(s, "OPENAI_COMPAT_BASE_URL", "")
+    monkeypatch.setattr(s, "OPENAI_COMPAT_API_KEY", "")
+    assert career_tree.generation_configured() is False, "must not claim configured without a base_url"
+
+    monkeypatch.setattr(s, "OPENAI_COMPAT_BASE_URL", "https://api.deepseek.com/v1")
+    monkeypatch.setattr(s, "OPENAI_COMPAT_API_KEY", "sk-test")
+    assert career_tree.generation_configured() is True
+
+
+async def test_fallback_reports_its_outcome(monkeypatch, force_configured):
+    """The load-bearing one. A model that fails validation twice degrades every
+    learner of a role to the identical unmodified template — and used to do it
+    in total silence, returning a valid 200 with nothing logged. That made any
+    model swap unmeasurable."""
+    seen: list = []
+
+    async def fake_call(prompt):
+        return '{"role_key":"x","template_version":"v1","title":"t","subjects":[{"key":"INVENTED","title":"n","default_priority":3,"nodes":[]}]}'
+
+    monkeypatch.setattr(career_tree, "_call_model", fake_call)
+    draft = await generate_career_tree(
+        BACKEND_ROLE, "Backend SDE",
+        on_outcome=lambda outcome, role_key, violations: seen.append((outcome, violations)),
+    )
+
+    assert seen, "the fallback must report — silence here is the bug"
+    outcome, violations = seen[0]
+    assert outcome == "fallback_validation"
+    assert any("invented" in v for v in violations)
+    # Still returns a usable tree: never fail onboarding with an error screen.
+    assert draft.model_dump() == _template_to_draft(BACKEND_ROLE, _load_template(BACKEND_ROLE)).model_dump()
+
+
+async def test_clean_generation_reports_adapted(monkeypatch, force_configured):
+    seen: list = []
+    template = _load_template(BACKEND_ROLE)
+
+    async def fake_call(prompt):
+        return _draft_json(BACKEND_ROLE, template)
+
+    monkeypatch.setattr(career_tree, "_call_model", fake_call)
+    await generate_career_tree(
+        BACKEND_ROLE, "Backend SDE",
+        on_outcome=lambda outcome, role_key, violations: seen.append(outcome),
+    )
+    assert seen == ["adapted"]
+
+
+async def test_outcome_reporter_failure_never_breaks_generation(monkeypatch, force_configured):
+    """Observability must not be able to take down the feature it observes."""
+    template = _load_template(BACKEND_ROLE)
+
+    async def fake_call(prompt):
+        return _draft_json(BACKEND_ROLE, template)
+
+    def exploding(outcome, role_key, violations):
+        raise RuntimeError("telemetry is down")
+
+    monkeypatch.setattr(career_tree, "_call_model", fake_call)
+    draft = await generate_career_tree(BACKEND_ROLE, "Backend SDE", on_outcome=exploding)
+    assert isinstance(draft, CareerTreeDraft)
+
+
+def test_openai_compat_prompt_carries_the_lowercase_json_token():
+    """DeepSeek's and Qwen/DashScope's JSON modes both require the literal token
+    "json" in the messages — DashScope validates it server-side and 400s without
+    it. The serialized Pydantic schema cannot be relied on to supply it, so the
+    instruction must. Regression guard: rewording this string without keeping a
+    lowercase "json" breaks every OpenAI-compatible provider at once, and the
+    failure looks like a generic 400, not like a prompt bug.
+    """
+    assert "json" in career_tree._JSON_ONLY_INSTRUCTION
