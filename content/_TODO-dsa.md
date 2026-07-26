@@ -99,8 +99,8 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 
 ## 13. Sorting — Divide & Conquer
 - [x] Merge sort  · D · `merge-sort` — authored by Claude as the gold exemplar
-- [ ] Non-comparison sorts  · D · `non-comparison-sorts`
-- [ ] Quicksort & partition  · D · `quicksort-and-partition`
+- [x] Non-comparison sorts  · D · `non-comparison-sorts`
+- [x] Quicksort & partition  · D · `quicksort-and-partition`
 
 ## 14. Trees
 - [x] Recursive tree thinking  · C · `recursive-tree-thinking`
@@ -169,20 +169,20 @@ Legend: `[x]` done & green · `C` concept · `D` dsa(trace) · slug in `code`.
 - [x] Pattern recognition drill  · C · `pattern-recognition-drill`
 
 ## 21. Advanced (14 nodes)
-- [ ] Quickselect  · D · `quickselect`
-- [ ] Trie (prefix tree)  · D · `trie-prefix-tree`
-- [ ] Designing data structures  · C · `designing-data-structures`
-- [ ] GCD, LCM & modular arithmetic  · C · `gcd-lcm-and-modular-arithmetic`
-- [ ] Tree DP  · D · `tree-dp`
-- [ ] Linked list rewiring  · D · `linked-list-rewiring`
-- [ ] Difference array  · D · `difference-array`
-- [ ] Segment tree  · D · `segment-tree`
-- [ ] Fenwick tree (BIT)  · D · `fenwick-tree-bit`
-- [ ] Ordered sets & sorted containers  · C · `ordered-sets-and-sorted-containers`
-- [ ] Combinatorics & counting  · C · `combinatorics-and-counting`
-- [ ] Bitmask DP  · D · `bitmask-dp`
-- [ ] Monotonic deque  · D · `monotonic-deque`
-- [ ] Rolling hash (Rabin-Karp)  · D · `rolling-hash-rabin-karp`
+- [x] Quickselect  · D · `quickselect`
+- [x] Trie (prefix tree)  · D · `trie-prefix-tree`
+- [x] Designing data structures  · C · `designing-data-structures`
+- [x] GCD, LCM & modular arithmetic  · C · `gcd-lcm-and-modular-arithmetic`
+- [x] Tree DP  · D · `tree-dp`
+- [x] Linked list rewiring  · D · `linked-list-rewiring`
+- [x] Difference array  · D · `difference-array`
+- [x] Segment tree  · D · `segment-tree`
+- [x] Fenwick tree (BIT)  · D · `fenwick-tree-bit`
+- [x] Ordered sets & sorted containers  · C · `ordered-sets-and-sorted-containers`
+- [x] Combinatorics & counting  · C · `combinatorics-and-counting`
+- [x] Bitmask DP  · D · `bitmask-dp`
+- [x] Monotonic deque  · D · `monotonic-deque`
+- [x] Rolling hash (Rabin-Karp)  · D · `rolling-hash-rabin-karp`
 
 ---
 

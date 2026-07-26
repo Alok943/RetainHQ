@@ -1,0 +1,125 @@
+{
+  "slug": "tree-dp",
+  "title": "Tree DP",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 35,
+    "importance": 6,
+    "interview_frequency": "low",
+    "prerequisites": ["binary-tree-and-traversals", "optimal-substructure"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We need to optimize a value across a tree structure (like max independent set, or min vertex cover), but greedy choices fail because picking a parent node restricts the children.",
+    "naive_solution": "Exhaustively try all subsets of nodes and check if they are valid, which is O(2^n).",
+    "better_idea": "Use Dynamic Programming on the tree using DFS. Since trees have no cycles, the subproblem at any node only depends on the subproblems of its immediate children. A node returns multiple states (e.g., 'max value if I am included' and 'max value if I am excluded')."
+  },
+  "mental_model": {
+    "intuition": "The boss (parent node) asks their employees (children nodes): 'Give me your best score if I join the project, and your best score if I don't.' The boss then makes the optimal local choice.",
+    "description": "Tree DP is usually implemented as a Post-Order DFS. We recurse to the leaves, which compute their base cases. As the recursion unwinds, each parent aggregates the optimal answers from its children based on the state transition rules.",
+    "repeated_decision": "Based on my children's best scores for state X and state Y, what is my best score for state X and state Y?"
+  },
+  "overview": {
+    "what": "Dynamic Programming applied to tree structures, where the state transitions flow from children to parents (or sometimes parents to children).",
+    "why": "Trees naturally possess overlapping subproblems and optimal substructure, allowing O(n) solutions to seemingly exponential problems.",
+    "where_used": ["Network routing optimizations", "Organizational hierarchy problems"]
+  },
+  "why_learning_this": [
+    "It merges two major paradigms: Trees and Dynamic Programming.",
+    "It is a common pattern in hard interview questions (like House Robber III)."
+  ],
+  "sections": [
+    {
+      "body": "Tree DP problems almost always ask for the maximum or minimum of something across a tree. Because a tree is a directed acyclic graph where each node is the root of its own subtree, we can define our DP state around a node and its relationship to its parent.\n\nThe most common pattern is tracking two states per node: `dp[node][0]` and `dp[node][1]`. For example, in the 'House Robber III' problem where you cannot rob adjacent nodes:\n- `dp[node][0]` = maximum money robbed from this subtree if we DO NOT rob the current node.\n- `dp[node][1]` = maximum money robbed from this subtree if we DO rob the current node.\n\nTo compute these, we do a post-order traversal (process children first). When we are at a node:\n- If we rob it, we cannot rob its children. So `dp[node][1] = node.val + dp[left][0] + dp[right][0]`.\n- If we don't rob it, its children can either be robbed or not. So `dp[node][0] = max(dp[left][0], dp[left][1]) + max(dp[right][0], dp[right][1])`.\n\nThe node then returns these two values to its parent. The time complexity is `O(n)` because we visit each node once, and the space complexity is `O(h)` for the recursion stack."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Post-order Traversal",
+      "detail": "Information flows bottom-up. A parent cannot compute its DP state until its children have computed theirs."
+    },
+    {
+      "title": "State passing",
+      "detail": "Instead of a global memoization table, state is often just returned directly from the recursive DFS function as a tuple or array."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using a global memoization table unnecessarily",
+      "explanation": "Because a tree has no cycles and only one path to each node, subproblems don't actually overlap across different branches. We don't need a global `HashMap`; returning the states directly to the parent is enough."
+    },
+    {
+      "title": "Forgetting that 'not picked' doesn't force children to be 'picked'",
+      "explanation": "If a parent is not selected in a max independent set problem, the children *can* be selected, but they don't *have* to be. We must take the max of the child's picked and not-picked states."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Graphs with cycles",
+      "reason": "If the graph has cycles, a simple bottom-up DP fails because the dependency graph has loops. You need general graph algorithms or bitmask DP instead."
+    }
+  ],
+  "failure_signals": [
+    "The data structure is not a tree."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Hierarchical Aggregation",
+      "problem": "Computing the most cost-effective way to distribute resources in a corporate hierarchy.",
+      "why_this_algorithm": "The corporate structure is a tree, and optimal budget distribution exhibits optimal substructure."
+    }
+  ],
+  "pattern": {
+    "name": "Tree DP (Post-order State Machine)",
+    "recognition_cues": ["Find max/min value in a binary tree", "Constraint involves adjacent nodes (parent/child)"]
+  },
+  "recall_questions": [
+    {
+      "q": "Why is post-order traversal used for bottom-up Tree DP?",
+      "answer": "Because a parent's DP state depends on the results of its children's DP states. Post-order visits children before the parent.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why do Tree DP functions often return an array or tuple instead of a single integer?",
+      "answer": "To pass multiple states up to the parent (e.g., [max_if_included, max_if_excluded]), so the parent has all the information needed to make its own transition.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "In a Tree DP problem where we return `[exclude_val, include_val]`, what should a null leaf node return?",
+      "answer": "`[0, 0]`.",
+      "why": "A non-existent node contributes 0 to any sum or max calculation, serving as the base case for the DP."
+    },
+    {
+      "type": "find-bug",
+      "question": "A student computes the 'exclude' state of a parent as `left_include + right_include`. Why is this suboptimal?",
+      "answer": "If the parent is excluded, the children *can* be included, but they could also be excluded if that yields a higher value. It should be `max(left_inc, left_exc) + max(right_inc, right_exc)`.",
+      "why": "Forgetting to take the max artificially constrains the search space, potentially missing the optimal solution."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "House Robber III",
+      "company": "SDE interview",
+      "answer": "This is the canonical Tree DP problem. Return `[rob_this, skip_this]` for every node.",
+      "approach": "Use a helper function that does a post-order DFS and returns a tuple of two integers."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "House Robber III",
+      "prompt": "Given the root of a binary tree, return the maximum amount of money you can rob without robbing two directly-linked nodes.",
+      "starter_code": "def rob(root):\n    pass",
+      "solution": "def rob(root):\n    def dfs(node):\n        if not node:\n            return (0, 0)\n        left = dfs(node.left)\n        right = dfs(node.right)\n        rob_node = node.val + left[1] + right[1]\n        skip_node = max(left) + max(right)\n        return (rob_node, skip_node)\n    return max(dfs(root))"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Dynamic_programming"
+  ]
+}

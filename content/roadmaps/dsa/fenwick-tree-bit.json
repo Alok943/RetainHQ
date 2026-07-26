@@ -1,0 +1,130 @@
+{
+  "slug": "fenwick-tree-bit",
+  "title": "Fenwick tree (BIT)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": ["bitwise-operators"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "Segment Trees solve Mutable Range Queries in O(log n), but they are heavily verbose to code and require 4N space. We want a lighter, faster array structure that does the same thing.",
+    "naive_solution": "Use a Segment Tree, writing 30 lines of recursive code.",
+    "better_idea": "Use the bits of the array indices themselves to represent segment bounds. A Fenwick Tree (Binary Indexed Tree) stores partial sums in exactly N space, and updates/queries take just a 3-line while loop using bitwise operations."
+  },
+  "mental_model": {
+    "intuition": "Every number can be decomposed into a sum of powers of two (e.g., 7 = 4 + 2 + 1). A Fenwick tree decomposes a range `[1, 7]` into 3 pre-calculated segments of lengths 4, 2, and 1.",
+    "description": "A 1-indexed array where index `i` stores the sum of `[i - LSB(i) + 1, i]`. LSB is the Least Significant Bit. To query the prefix sum up to `i`, we repeatedly subtract the LSB to jump backwards. To update `i`, we repeatedly add the LSB to jump forwards and update all segments that cover `i`.",
+    "repeated_decision": "Querying? Strip off the lowest bit to find the next segment. Updating? Add the lowest bit to find the next parent segment."
+  },
+  "overview": {
+    "what": "A data structure that can efficiently update elements and calculate prefix sums in a table of numbers, using bitwise tricks.",
+    "why": "It requires exactly O(N) space and has extremely small constant factors, making it faster and much easier to code than a Segment Tree (for sum queries).",
+    "where_used": ["Inversion counting", "Frequency tables in compression algorithms (Arithmetic coding)"]
+  },
+  "why_learning_this": [
+    "It is the fastest way to implement a mutable prefix sum in a competitive programming context.",
+    "It demonstrates a brilliant use of two's complement bit manipulation."
+  ],
+  "sections": [
+    {
+      "body": "The magic of a Fenwick Tree relies entirely on the bitwise isolation trick: `i & (-i)`. In two's complement arithmetic, `-i` inverts all bits and adds 1. When you AND that with `i`, it extracts the Least Significant 1-Bit (LSB). For example, if `i = 10` (binary `1010`), the LSB is `2` (`0010`).\n\nThe tree is just a 1-indexed array of size `N + 1`. The value at `tree[i]` stores the sum of a specific block of elements. The size of this block is exactly `LSB(i)`. So `tree[10]` stores the sum of a block of size 2, specifically the original array elements at index 9 and 10.\n\n**To query the prefix sum up to index `i`:** You add `tree[i]` to a running total, then strip the LSB from `i` (`i -= i & (-i)`). This jumps backwards to the previous adjacent block. You repeat until `i == 0`.\n\n**To update an element at index `i` by `val`:** You add `val` to `tree[i]`, then ADD the LSB to `i` (`i += i & (-i)`). This jumps forwards to the next larger block that completely contains the current block, and you update that too. Repeat until `i > N`.\n\nBoth operations traverse at most the number of bits in `N`, so they run in `O(log N)` time."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Time is O(log N) for point update and prefix query. Space is O(N). Construction can be O(N) but is usually done via N point-updates in O(N log N)."
+    },
+    {
+      "title": "1-Indexed Requirement",
+      "detail": "Fenwick Trees absolutely MUST be 1-indexed. If `i = 0`, `i & (-i)` is 0, and `i += 0` causes an infinite loop."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using 0-based indexing",
+      "explanation": "If you try to update or query index 0, the bitwise LSB operation fails and loops infinitely. Always offset your queries by +1."
+    },
+    {
+      "title": "Using it for Range Minimum Query (RMQ)",
+      "explanation": "Fenwick trees rely on the fact that `Sum(L, R) = Sum(R) - Sum(L-1)`. This requires an inverse operation (subtraction). Min/Max operations do not have an inverse. While RMQ Fenwick Trees are technically possible, they are highly restricted; use a Segment Tree for Min/Max."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Non-invertible operations",
+      "reason": "It natively only supports operations where `Query(L, R)` can be derived from `Prefix(R)` inverse `Prefix(L-1)`. For Min/Max, you should use a Segment Tree."
+    }
+  ],
+  "failure_signals": [
+    "The problem requires Range Updates and Range Queries (Fenwick can do this, but it requires two synchronized trees, which is very complex)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Data compression",
+      "problem": "Arithmetic coding needs to dynamically maintain cumulative frequencies of characters.",
+      "why_this_algorithm": "Fenwick Trees provide exactly this cumulative frequency distribution with fast updates."
+    }
+  ],
+  "pattern": {
+    "name": "Fenwick Tree / BIT",
+    "recognition_cues": ["Mutable Prefix Sums", "Counting inversions in an array"]
+  },
+  "recall_questions": [
+    {
+      "q": "What bitwise trick is used to isolate the Least Significant 1-Bit in a Fenwick Tree?",
+      "answer": "`i & (-i)`",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why must a Fenwick tree be 1-indexed?",
+      "answer": "Because the LSB of 0 is 0. Adding or subtracting the LSB from 0 would result in an infinite loop.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is a Fenwick Tree better than a Segment Tree for simple sum queries?",
+      "answer": "It requires only O(N) space (instead of 4N), has incredibly small constant factors (just bitwise logic in a while loop), and is much faster to type.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you query a Fenwick tree at index 7 (binary `0111`), what indices are accessed in the tree array?",
+      "answer": "Indices 7, 6, and 4.",
+      "why": "7 is `0111`. Strip LSB: `0110` (6). Strip LSB: `0100` (4). Strip LSB: `0000` (0, stop). It sums three blocks."
+    },
+    {
+      "type": "predict-result",
+      "question": "What is the value of `i & (-i)` for `i = 12`?",
+      "answer": "4.",
+      "why": "12 in binary is `1100`. The lowest set bit is the `100` bit, which has a decimal value of 4."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Count Inversions in an Array",
+      "company": "SDE interview",
+      "answer": "Iterate backwards. Ask a BIT 'how many numbers smaller than me have we seen so far?', then update the BIT to include yourself.",
+      "approach": "Coordinate compression is usually required if the numbers are large, because the BIT array size is proportional to the maximum value in the array."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Range Sum Query - Mutable",
+      "prompt": "Implement a class `NumArray` that supports updating an element and calculating the sum of elements in `[left, right]`. Try doing it with a Fenwick Tree this time.",
+      "starter_code": "class NumArray:\n    def __init__(self, nums):\n        pass",
+      "solution": "class NumArray:\n    def __init__(self, nums):\n        self.n = len(nums)\n        self.tree = [0] * (self.n + 1)\n        self.nums = [0] * self.n\n        for i, val in enumerate(nums):\n            self.update(i, val)\n\n    def update(self, index, val):\n        delta = val - self.nums[index]\n        self.nums[index] = val\n        i = index + 1\n        while i <= self.n:\n            self.tree[i] += delta\n            i += i & (-i)\n\n    def query(self, i):\n        s = 0\n        while i > 0:\n            s += self.tree[i]\n            i -= i & (-i)\n        return s\n\n    def sumRange(self, left, right):\n        return self.query(right + 1) - self.query(left)"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Fenwick_tree"
+  ]
+}

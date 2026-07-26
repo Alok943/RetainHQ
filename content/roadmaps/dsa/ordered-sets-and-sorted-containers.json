@@ -1,0 +1,74 @@
+{
+  "slug": "ordered-sets-and-sorted-containers",
+  "title": "Ordered sets & sorted containers",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier3",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": ["hash-sets-vs-maps", "binary-search"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "Data structures that maintain elements in sorted order while allowing fast (O(log n)) insertions, deletions, and lookups.",
+    "why": "Standard arrays are O(n) to insert into. Hash sets are O(1) to insert but lose ordering. Sorted containers provide the best of both worlds for dynamic data that must remain ordered.",
+    "where_used": ["Leaderboards", "Interval sweeping algorithms", "Finding the closest value to a target dynamically"]
+  },
+  "why_learning_this": [
+    "It teaches you about the capabilities of Balanced Binary Search Trees (like Red-Black Trees).",
+    "Knowing when your language has (or lacks) this built-in is crucial for interviews.",
+    "It bridges the gap between searching and dynamic updates."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Assuming Python has a built-in Balanced BST",
+      "explanation": "C++ has `std::set`, Java has `TreeSet`, but Python standard library lacks a true balanced BST. You must rely on external libraries (like `sortedcontainers`), use a heap, or use `bisect` on a list (which takes O(N) for insertion)."
+    },
+    {
+      "title": "Using them instead of Hash Sets for exact lookups",
+      "explanation": "If you only need to check if an element exists, a Hash Set is O(1). A Sorted Set is O(log N). Don't pay the logarithmic penalty if you don't care about the ordering."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the typical time complexity for insert, delete, and search in a Sorted Set (like C++ `std::set`)?",
+      "answer": "O(log N).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What underlying data structure usually powers standard library sorted containers?",
+      "answer": "A self-balancing Binary Search Tree, most commonly a Red-Black Tree.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You are receiving a stream of integers. At any point, you need to find the element currently in the stream that is strictly greater than `X`. Should you use a Max Heap, a Hash Set, or a Sorted Set?",
+      "answer": "A Sorted Set.",
+      "why": "A Hash Set has no order. A Max Heap only gives you the absolute maximum, not the 'next largest after X'. A Sorted Set allows logarithmic search (e.g., `upper_bound`) for arbitrary targets."
+    },
+    {
+      "type": "predict-result",
+      "question": "If you use `bisect.insort` to maintain a sorted list in Python, what is the time complexity of adding a new element?",
+      "answer": "O(N).",
+      "why": "While `bisect` finds the insertion point in O(log N) time via binary search, actually inserting the element into a contiguous array requires shifting all subsequent elements, which is O(N)."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "My Calendar I",
+      "prompt": "Design a calendar system that allows you to add new events (start, end) only if they do not double-book an existing event. (Conceptualize how a Sorted Set of intervals solves this).",
+      "starter_code": "class MyCalendar:\n    pass",
+      "solution": "# In C++ this is trivial with std::set. In Python, you often just use a list and bisect (O(N) insert), or write a custom BST."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree"
+  ]
+}

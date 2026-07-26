@@ -1,0 +1,125 @@
+{
+  "slug": "monotonic-deque",
+  "title": "Monotonic deque",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 35,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": ["queue-and-deque", "monotonic-stack", "sliding-window-fixed"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We want to find the maximum (or minimum) element in every sliding window of size `K` across an array. A Max Heap gives O(N log K), but we want O(N).",
+    "naive_solution": "For each window of size K, scan the K elements to find the max. Total time O(N * K).",
+    "better_idea": "Keep a Double-Ended Queue (Deque) that stores elements in strictly decreasing order. The maximum element of the window is always at the front, and we remove smaller useless elements from the back."
+  },
+  "mental_model": {
+    "intuition": "If a newer, taller candidate arrives in the window, all older, shorter candidates are instantly irrelevant—they can never be the maximum anymore. Fire them immediately.",
+    "description": "We use a Deque to store array indices. When sliding the window, we first remove indices from the front that are out of the window bounds. Then, from the back, we remove indices whose array values are less than or equal to the incoming value. Finally, we push the incoming index to the back. The front of the deque is always the maximum for the current window.",
+    "repeated_decision": "Is the guy at the back of the queue smaller than me? If yes, kick him out, because he's older than me AND smaller, so he'll never be the maximum of any future window."
+  },
+  "overview": {
+    "what": "A combination of a Deque and the Monotonic concept. Elements inside the deque are kept in strictly increasing or decreasing order.",
+    "why": "It allows O(1) amortized tracking of the minimum or maximum over a sliding window.",
+    "where_used": ["Stock market tick data analysis (moving max/min)", "Network packet buffer management"]
+  },
+  "why_learning_this": [
+    "It is the optimal, O(N) solution to the famous 'Sliding Window Maximum' interview question.",
+    "It combines sliding window pointer management with monotonic stack logic."
+  ],
+  "sections": [
+    {
+      "body": "The Monotonic Deque is a direct evolution of the Monotonic Stack. A Monotonic Stack is great for finding the 'Next Greater Element'. But a stack only lets you pop from the top. In a sliding window, elements expire from the *back* of the window, so we need to pop from both ends—hence, a Deque.\n\nSuppose we want the maximum in a window of size `K`. We maintain a deque of indices. The values at these indices will be strictly decreasing.\n\nFor every new element `arr[i]`:\n1. **Clean up expired elements:** If the index at the front of the deque is `<= i - K`, it has fallen out of our window. Pop it from the front.\n2. **Maintain monotonicity:** While the deque is not empty and `arr[i]` is `>=` the element at the back of the deque, pop from the back. (Why? Because `arr[i]` is both newer AND larger. The smaller element can never be the maximum of any window from now on).\n3. **Push:** Append `i` to the back.\n4. **Report:** If our window has reached size `K`, the maximum is simply the element at the front of the deque.\n\nEvery element is pushed and popped at most once, making the algorithm strictly `O(N)`."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Time is O(N) overall (O(1) amortized per element). Space is O(K) for the deque."
+    },
+    {
+      "title": "Store Indices",
+      "detail": "Always store array INDICES in the deque, not values. You need the index to determine if an element has fallen out of the sliding window boundary."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Storing values instead of indices",
+      "explanation": "If you just store the value `5` in the deque, you won't know when that `5` has expired out of the window's left edge."
+    },
+    {
+      "title": "Popping from the wrong side",
+      "explanation": "Expired items are popped from the FRONT (the oldest end). Monotonic maintenance (kicking out smaller items) happens at the BACK (the newest end)."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "When you need the median or sum",
+      "reason": "A Monotonic Deque only works for Min or Max queries where elements can totally dominate others. For sliding sums, use Prefix Sums. For sliding medians, use two Heaps."
+    }
+  ],
+  "failure_signals": [
+    "The problem asks for something other than a strict monotonic property (like median or average)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Real-time Metrics",
+      "problem": "Tracking the highest latency request in the last 5 minutes.",
+      "why_this_algorithm": "A monotonic deque can maintain this rolling maximum efficiently without recalculating."
+    }
+  ],
+  "pattern": {
+    "name": "Monotonic Deque",
+    "recognition_cues": ["Sliding Window Maximum", "Find min/max in every contiguous subarray of size K"]
+  },
+  "recall_questions": [
+    {
+      "q": "Why must you store indices in a Monotonic Deque instead of the actual array values?",
+      "answer": "Because you need to check if the element at the front of the deque has expired from the sliding window. You can't do that without its original index.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the time complexity of Sliding Window Maximum using a Monotonic Deque?",
+      "answer": "O(N), because each element is pushed to and popped from the deque at most once.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "When building a 'Sliding Window Maximum' deque, you encounter a new element that is smaller than the back of the deque. Do you kick out the back of the deque?",
+      "answer": "No. You just append the new element.",
+      "why": "The new element is smaller, but it is newer. When the larger elements expire and leave the window, this smaller element might become the new maximum."
+    },
+    {
+      "type": "predict-output",
+      "question": "If your window size is 3 and your array is `[5, 4, 3, 2, 1]`, what does the deque do?",
+      "answer": "It never kicks anything out for being too small. It only kicks out elements from the front as they expire.",
+      "why": "The array is strictly decreasing, so every new element is smaller than the back of the deque. The deque just stores the window elements."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Sliding Window Maximum",
+      "company": "SDE interview",
+      "answer": "The canonical problem. Use a deque to keep a decreasing monotonic sequence of indices.",
+      "approach": "Clean expired indices from front, pop smaller values from back, append current index, read front."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Sliding Window Maximum",
+      "prompt": "You are given an array of integers `nums`, there is a sliding window of size `k` which is moving from the very left of the array to the very right. Return the max sliding window.",
+      "starter_code": "def maxSlidingWindow(nums, k):\n    pass",
+      "solution": "from collections import deque\ndef maxSlidingWindow(nums, k):\n    q = deque()\n    res = []\n    for i, num in enumerate(nums):\n        while q and q[0] <= i - k:\n            q.popleft()\n        while q and nums[q[-1]] <= num:\n            q.pop()\n        q.append(i)\n        if i >= k - 1:\n            res.append(nums[q[0]])\n    return res"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Double-ended_queue"
+  ]
+}

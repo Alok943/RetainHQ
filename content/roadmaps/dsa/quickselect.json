@@ -1,0 +1,130 @@
+{
+  "slug": "quickselect",
+  "title": "Quickselect",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["quicksort-and-partition"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We want to find the k-th smallest (or largest) element in an unsorted array. Sorting the whole array takes O(n log n). Using a heap takes O(n log k). Can we do it in linear time O(n)?",
+    "naive_solution": "Sort the array and return `arr[k]`, taking O(n log n) time.",
+    "better_idea": "Use Quicksort's partition step! If the pivot lands exactly at index k, we're done. If it lands before k, we only recurse on the right half. If it lands after k, we only recurse on the left half."
+  },
+  "mental_model": {
+    "intuition": "It's binary search mixed with Quicksort. Partition the array around a pivot. The pivot's final index tells us which half contains the k-th element, so we throw away the other half entirely.",
+    "description": "Partition the array exactly like in Quicksort. The pivot ends up at index `p`. If `p == k`, return the pivot. If `p < k`, the answer must be in the right partition. If `p > k`, the answer is in the left partition. Because we only recurse into one side, the average size of the subarray halves each time.",
+    "repeated_decision": "Did the pivot land on the target index k? If not, do I need to search the left partition or the right partition?"
+  },
+  "overview": {
+    "what": "A selection algorithm to find the k-th smallest element in an unordered list, combining the partitioning from Quicksort with the halving strategy of Binary Search.",
+    "why": "It achieves O(n) average time complexity, which is theoretically optimal for finding a single order statistic.",
+    "where_used": ["Finding the median of an array without fully sorting it", "Top-K algorithms (when you don't need the top K elements sorted among themselves)"]
+  },
+  "why_learning_this": [
+    "It teaches you how to optimize divide-and-conquer by pruning unnecessary recursive branches.",
+    "It's a classic follow-up in interviews when you propose an O(n log n) sorting solution for a Top-K problem."
+  ],
+  "sections": [
+    {
+      "body": "Quickselect borrows the `partition` subroutine directly from Quicksort. Remember that `partition` picks a pivot and places it in its final sorted position, say index `p`. All elements to the left are smaller, and all elements to the right are larger.\n\nIf we want the `k`-th smallest element (which corresponds to index `k` in a 0-indexed sorted array), we can just look at `p`.\n- If `p == k`: The pivot is the `k`-th smallest element! We found it.\n- If `p > k`: The element we want is in the left subarray. We recursively call Quickselect on the left.\n- If `p < k`: The element we want is in the right subarray. We recursively call Quickselect on the right.\n\nIn Quicksort, we recurse on *both* halves. In Quickselect, we only recurse on *one* half. This makes a massive difference in time complexity. Instead of doing `n + n/2 + n/4 ...` work on all branches, we only do work on one branch. The sum of the series `n + n/2 + n/4 + ...` converges to `2n`, which is `O(n)`.\n\nLike Quicksort, Quickselect has a worst-case time complexity of `O(n^2)` if we repeatedly pick the worst possible pivot (e.g., the largest element every time). To prevent this in practice, we pick a random pivot."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Average Time is O(n). Worst-case Time is O(n^2). Space is O(1) if implemented iteratively (or O(log n) average if recursive)."
+    },
+    {
+      "title": "In-place but mutates",
+      "detail": "It operates in-place, meaning it uses O(1) auxiliary space, but it scrambles the original array."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Translating Kth largest to an index",
+      "explanation": "If a problem asks for the 'k-th largest' element, that corresponds to the index `len(arr) - k` if the array was sorted in ascending order. Failing to convert this index correctly leads to the wrong answer."
+    },
+    {
+      "title": "Forgetting that the Top K aren't sorted",
+      "explanation": "Quickselect can find the k-th element, and as a side effect, all elements to its left are smaller. However, those smaller elements are NOT sorted. If the problem requires the top K elements in sorted order, you must sort them afterward (which takes O(k log k))."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Streaming data",
+      "reason": "If data is arriving continuously and you need to keep track of the running median or top K, Quickselect is useless. Use a Heap instead."
+    }
+  ],
+  "failure_signals": [
+    "The array is immutable or you cannot mutate the input (Quickselect partitions in-place)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Median finding in standard libraries",
+      "problem": "C++ std::nth_element finds the element that would be at the nth position if the array were sorted.",
+      "why_this_algorithm": "It uses Introselect (a hybrid of Quickselect and Median of Medians) to guarantee O(n) performance without fully sorting."
+    }
+  ],
+  "pattern": {
+    "name": "Quickselect / Pruned Partitioning",
+    "recognition_cues": ["Find the k-th largest/smallest element", "Find the median of an unsorted array"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the average and worst-case time complexity of Quickselect?",
+      "answer": "Average is O(n). Worst-case is O(n^2).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Quickselect O(n) on average while Quicksort is O(n log n)?",
+      "answer": "Quicksort recurses on both partitions. Quickselect acts like binary search and only recurses on one partition, making the work sum to a geometric series that bounds to O(n).",
+      "tier": "tier1"
+    },
+    {
+      "q": "If we want the K-th LARGEST element in an array of size N, what 0-indexed position do we target in ascending Quickselect?",
+      "answer": "We target the index `N - K`.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you are looking for the median (index n/2) and the first partition step places the pivot at index n/4, which half do you search next?",
+      "answer": "The right half.",
+      "why": "The target index (n/2) is greater than the pivot index (n/4), so the element we want must be among the elements larger than the pivot."
+    },
+    {
+      "type": "find-bug",
+      "question": "A developer writes `return quickselect(arr, k)` but it fails for 'find the 2nd largest element'. Why?",
+      "answer": "They didn't convert 'k-th largest' to the correct 0-indexed position. It should be `quickselect(arr, len(arr) - k)`.",
+      "why": "Quickselect, by default, partitions smaller elements to the left and larger to the right, finding the k-th SMALLEST element."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Kth Largest Element in an Array",
+      "company": "SDE interview",
+      "answer": "Use Quickselect targeting index `len(nums) - k`. A heap is also acceptable, but Quickselect provides O(n) average time vs O(n log k) for a heap.",
+      "approach": "Implement standard partition, then conditionally recurse left or right."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Kth Largest Element in an Array",
+      "prompt": "Given an integer array `nums` and an integer `k`, return the `kth` largest element in the array. Can you solve it without sorting in O(n) time?",
+      "starter_code": "def findKthLargest(nums, k):\n    pass",
+      "solution": "import random\ndef findKthLargest(nums, k):\n    def quickselect(low, high, target_idx):\n        if low == high:\n            return nums[low]\n        pivot_idx = random.randint(low, high)\n        nums[pivot_idx], nums[high] = nums[high], nums[pivot_idx]\n        pivot = nums[high]\n        i = low\n        for j in range(low, high):\n            if nums[j] < pivot:\n                nums[i], nums[j] = nums[j], nums[i]\n                i += 1\n        nums[i], nums[high] = nums[high], nums[i]\n        if i == target_idx:\n            return nums[i]\n        elif i < target_idx:\n            return quickselect(i + 1, high, target_idx)\n        else:\n            return quickselect(low, i - 1, target_idx)\n    return quickselect(0, len(nums) - 1, len(nums) - k)"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Quickselect"
+  ]
+}

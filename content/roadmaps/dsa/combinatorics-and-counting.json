@@ -1,0 +1,74 @@
+{
+  "slug": "combinatorics-and-counting",
+  "title": "Combinatorics & counting",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier3",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 25,
+    "importance": 4,
+    "interview_frequency": "low",
+    "prerequisites": ["recursive-tree-thinking"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "The mathematics of counting possible configurations: permutations (order matters) and combinations (order doesn't matter).",
+    "why": "Many probability and 'find the number of ways' DP problems rely on understanding when to multiply independent choices or how to compute nCr quickly.",
+    "where_used": ["Probability calculations", "Dynamic Programming optimizations"]
+  },
+  "why_learning_this": [
+    "It helps you calculate the theoretical upper bound of Brute Force algorithms before you even code them.",
+    "You need it to solve 'Count the number of valid X' math problems in O(1) instead of using backtracking."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Confusing Permutations and Combinations",
+      "explanation": "If the problem asks 'How many ways to select a team of 3 from 10 people?', order doesn't matter (10C3). If it asks 'How many ways to award Gold, Silver, and Bronze?', order matters (10P3). Choosing the wrong one drastically changes the answer."
+    },
+    {
+      "title": "Integer Overflow in factorials",
+      "explanation": "Computing `100!` directly is impossible in many languages (e.g., Java, C++) without a BigInt class. You must compute combinations by alternating multiplication and division, or by using Pascal's Triangle (DP)."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the formula for 'n choose k' (combinations)?",
+      "answer": "n! / (k! * (n-k)!)",
+      "tier": "tier1"
+    },
+    {
+      "q": "If you have 3 shirts and 4 pants, how many outfits can you make, and what rule is this?",
+      "answer": "12 outfits. This is the Rule of Product (multiplication principle).",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "How many ways can you arrange the letters in the word 'DOG'?",
+      "answer": "6 ways.",
+      "why": "It's a permutation of 3 distinct items, so 3! = 3 * 2 * 1 = 6.",
+      "code": "import math\nprint(math.factorial(3))"
+    },
+    {
+      "type": "explain-behavior",
+      "question": "When computing combinations `nCr(n, r)` using a loop, why should you interleave multiplying by `(n-i)` and dividing by `(i+1)` instead of doing all multiplications first?",
+      "answer": "To keep the intermediate values as small as possible and avoid integer overflow.",
+      "why": "Factorials grow extremely fast. Interleaving division ensures the running product never gets unnecessarily huge, while mathematically guaranteeing it always remains an integer."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Unique Paths",
+      "prompt": "A robot is located at the top-left corner of a `m x n` grid. It can only move either down or right at any point in time. Use combinatorics (nCr) to find the number of unique paths to the bottom-right corner in O(m) time.",
+      "starter_code": "def uniquePaths(m: int, n: int) -> int:\n    pass",
+      "solution": "import math\ndef uniquePaths(m: int, n: int) -> int:\n    # The robot must take exactly (m-1) down steps and (n-1) right steps.\n    # Total steps = (m-1) + (n-1)\n    # The answer is (total steps) Choose (down steps)\n    return math.comb(m + n - 2, m - 1)"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Combinatorics"
+  ]
+}

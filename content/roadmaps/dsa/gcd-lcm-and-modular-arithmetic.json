@@ -1,0 +1,76 @@
+{
+  "slug": "gcd-lcm-and-modular-arithmetic",
+  "title": "GCD, LCM & modular arithmetic",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier2",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": ["big-o-notation"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "Fundamental number theory algorithms: Greatest Common Divisor (Euclidean algorithm), Least Common Multiple, and math under a modulus.",
+    "why": "Many competitive programming or math-heavy algorithms require computing divisors quickly or preventing integer overflow when answering 'modulo 10^9 + 7'.",
+    "where_used": ["Cryptography (RSA)", "Hashing functions", "Handling extremely large numbers in algorithms"]
+  },
+  "why_learning_this": [
+    "The Euclidean algorithm is one of the oldest and most elegant algorithms in computer science.",
+    "Modular arithmetic is essential to prevent overflow in languages with fixed-size integers.",
+    "GCD and LCM often appear in puzzle-style interview questions."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Applying modulo at the end instead of every step",
+      "explanation": "If a problem asks for `(A * B) % M`, and `A * B` overflows your language's integer limit, computing `(A * B)` first will crash. You must apply the modulo rules during the operations: `((A % M) * (B % M)) % M`."
+    },
+    {
+      "title": "Wrong LCM formula",
+      "explanation": "LCM(a, b) is `(a * b) / GCD(a, b)`. If you compute `a * b` first, it might overflow. Better to compute `a / GCD(a, b) * b`."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of the Euclidean algorithm for GCD(a, b)?",
+      "answer": "O(log(min(a, b))).",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you safely compute LCM(a, b) to avoid intermediate overflow?",
+      "answer": "Compute `a / GCD(a, b) * b` rather than `(a * b) / GCD(a, b)`.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "What is the sequence of calls when finding `gcd(48, 18)` using the Euclidean algorithm `gcd(a, b) = gcd(b, a % b)`?",
+      "answer": "gcd(48, 18) -> gcd(18, 12) -> gcd(12, 6) -> gcd(6, 0). Returns 6.",
+      "why": "Each step replaces `a` with `b`, and `b` with the remainder of `a / b`. When `b` is 0, `a` is the GCD.",
+      "code": "def gcd(a, b):\n    if b == 0:\n        return a\n    return gcd(b, a % b)\nprint(gcd(48, 18))"
+    },
+    {
+      "type": "explain-behavior",
+      "question": "In modular addition, is `(A + B) % M` always equal to `((A % M) + (B % M)) % M`?",
+      "answer": "Yes.",
+      "why": "Addition and multiplication are distributive over the modulo operator. This property allows us to keep intermediate values small."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Water Jug Problem",
+      "prompt": "Determine if it's possible to measure exactly `targetCapacity` liters using two jugs with capacities `x` and `y`. (Hint: use GCD).",
+      "starter_code": "def canMeasureWater(x: int, y: int, target: int) -> bool:\n    pass",
+      "solution": "import math\ndef canMeasureWater(x: int, y: int, target: int) -> bool:\n    if x + y < target: return False\n    if x == target or y == target or x + y == target: return True\n    return target % math.gcd(x, y) == 0"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Euclidean_algorithm",
+    "https://en.wikipedia.org/wiki/Modular_arithmetic"
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "slug": "trie-prefix-tree",
+  "title": "Trie (prefix tree)",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 30,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["hash-tables", "recursive-tree-thinking"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We want to store a dictionary of words and quickly check if a word or a prefix exists. A Hash Set can check exact words in O(L) time, but it cannot efficiently find if any word STARTS with a specific prefix.",
+    "naive_solution": "Iterate through all words in an array to check prefixes, taking O(N * L) time.",
+    "better_idea": "Store words character by character in a tree structure. All words sharing a prefix share the same ancestor nodes. This is called a Trie (from 'retrieval')."
+  },
+  "mental_model": {
+    "intuition": "Think of a physical dictionary index tabs. You open to 'C', then 'A', then 'T'. You follow a path character by character. If the path ends and is marked as a word, you found it.",
+    "description": "A Trie is a tree where each node represents a character. The root is empty. Each node has up to 26 children (for lowercase English). Traversing down a path spells a word. A boolean flag at a node indicates if a complete word ends there.",
+    "repeated_decision": "Does the current node have a child for the next character in my string? If yes, move to it. If no, the word/prefix does not exist."
+  },
+  "overview": {
+    "what": "A tree data structure used to efficiently store and retrieve keys in a dataset of strings.",
+    "why": "It allows O(L) time complexity (where L is word length) for both exact matches and prefix searches, making it perfect for autocomplete systems.",
+    "where_used": ["Autocomplete and typeahead suggestions", "Spell checkers", "IP routing (Longest prefix match)"]
+  },
+  "why_learning_this": [
+    "It is the standard answer to any 'autocomplete' or 'dictionary search' system design or algorithm question.",
+    "It demonstrates how to combine Trees with Hash Maps (as node children)."
+  ],
+  "sections": [
+    {
+      "body": "A Trie (pronounced 'try') is a specialized tree. Unlike a binary tree where nodes have at most two children, a Trie node can have many children—often represented as a Hash Map of `Character -> TrieNode` or an array of size 26.\n\nTo **insert** the word 'APPLE':\n1. Start at the root.\n2. Look for an 'A' child. If it doesn't exist, create it. Move to 'A'.\n3. Look for a 'P' child. Create it, move to it. Continue until the last 'E'.\n4. At the node for the final 'E', set `is_end_of_word = True`. This flag is crucial because the word 'APP' might also be in the Trie, ending at the first 'P'.\n\nTo **search** for a word or prefix, you follow the same path. If at any point the next character's node doesn't exist, the word is not in the Trie. For a prefix search, you just need to successfully traverse all characters. For an exact word search, the final node you reach must also have `is_end_of_word == True`.\n\nThe time complexity for inserting or searching is `O(L)`, where `L` is the length of the word. This is independent of how many millions of words are stored in the Trie. The tradeoff is space: Tries can consume a lot of memory because each character requires its own node object and children pointers."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Time is O(L) for insert, search, and startsWith, where L is the length of the string. Space is O(N * L * C) where N is number of words, L is average length, and C is the alphabet size."
+    },
+    {
+      "title": "Structure",
+      "detail": "The root node contains no character. The path from the root to a node defines the string associated with that node."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Forgetting the is_end_of_word flag",
+      "explanation": "If you only add nodes for characters, you can't distinguish between a word ('APP') and a prefix of a longer word ('APPLE'). The boolean flag is strictly required."
+    },
+    {
+      "title": "Storing the whole word in every node",
+      "explanation": "Nodes only need to store their children pointers (and implicitly, the character that leads to them). They do not need to store the prefix string itself, as the path implies it."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "When memory is severely constrained",
+      "reason": "Tries have massive memory overhead due to object allocation and pointer storage. A compressed Trie (Radix Tree) or a sorted array with binary search might save space."
+    }
+  ],
+  "failure_signals": [
+    "The problem asks for exact matches only (use a Hash Set instead, it has much less memory overhead)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Network Routers",
+      "problem": "Finding the longest matching IP prefix for a routing table.",
+      "why_this_algorithm": "Routers use specialized binary Tries (Radix Trees) to do 'longest prefix matching' in hardware at wire speed."
+    }
+  ],
+  "pattern": {
+    "name": "Prefix matching",
+    "recognition_cues": ["Design an autocomplete system", "Check if a string is a prefix of any word", "Word search games (like Boggle)"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the time complexity to insert a word of length L into a Trie?",
+      "answer": "O(L).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does a Trie node need an `is_end_of_word` boolean flag?",
+      "answer": "To differentiate between a complete word and a prefix of a longer word. For example, 'APP' is a prefix of 'APPLE', but might not be a valid word itself in the dictionary.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the main disadvantage of a Trie compared to a Hash Set?",
+      "answer": "Memory overhead. A Trie creates many node objects and arrays/maps for children, whereas a Hash Set just stores the strings.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you insert 'CAT' and 'CAR' into an empty Trie, how many nodes (including the root) will be created?",
+      "answer": "5 nodes: Root -> C -> A -> T, and from A -> R.",
+      "why": "'CAT' and 'CAR' share the prefix 'CA'. The root is 1 node. C and A add 2 more nodes. Then T and R branch off from A, adding 2 more. 1 + 2 + 2 = 5."
+    },
+    {
+      "type": "find-bug",
+      "question": "A student's `search(word)` function traverses the Trie successfully to the last character of the word and returns `True`. What edge case did they miss?",
+      "answer": "They didn't check if `node.is_end_of_word` is True at the final node.",
+      "why": "If 'APPLE' is in the Trie, searching for 'APP' will successfully traverse the letters A-P-P, but 'APP' is not a valid word unless explicitly inserted."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Implement a Trie (Prefix Tree)",
+      "company": "SDE interview",
+      "answer": "Create a `TrieNode` class with a children map/array and a boolean `isEnd`. Implement `insert`, `search`, and `startsWith` methods by walking the tree.",
+      "approach": "Iterate through the characters of the word, creating nodes if they don't exist."
+    },
+    {
+      "question": "Word Search II",
+      "company": "SDE interview",
+      "answer": "Instead of doing a DFS for every word in a list (which is too slow), build a Trie of all target words. Then do a single DFS on the grid, traversing the Trie simultaneously.",
+      "approach": "Combine a Grid DFS with a Trie. The Trie allows you to prune DFS paths immediately if no words share the current grid prefix."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Implement Trie",
+      "prompt": "Implement the `Trie` class with `insert(word)`, `search(word)`, and `startsWith(prefix)` methods.",
+      "starter_code": "class Trie:\n    def __init__(self):\n        pass\n    def insert(self, word: str) -> None:\n        pass\n    def search(self, word: str) -> bool:\n        pass\n    def startsWith(self, prefix: str) -> bool:\n        pass",
+      "solution": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.is_end = False\n\nclass Trie:\n    def __init__(self):\n        self.root = TrieNode()\n\n    def insert(self, word: str) -> None:\n        curr = self.root\n        for char in word:\n            if char not in curr.children:\n                curr.children[char] = TrieNode()\n            curr = curr.children[char]\n        curr.is_end = True\n\n    def search(self, word: str) -> bool:\n        curr = self.root\n        for char in word:\n            if char not in curr.children:\n                return False\n            curr = curr.children[char]\n        return curr.is_end\n\n    def startsWith(self, prefix: str) -> bool:\n        curr = self.root\n        for char in prefix:\n            if char not in curr.children:\n                return False\n            curr = curr.children[char]\n        return True"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Trie"
+  ]
+}

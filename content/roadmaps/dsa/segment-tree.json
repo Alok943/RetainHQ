@@ -1,0 +1,130 @@
+{
+  "slug": "segment-tree",
+  "title": "Segment tree",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 45,
+    "importance": 7,
+    "interview_frequency": "low",
+    "prerequisites": ["recursive-tree-thinking"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We need to repeatedly update elements in an array AND query range sums/mins/maxes interleaved. Prefix sums give O(1) queries but O(n) updates. Arrays give O(1) updates but O(n) queries.",
+    "naive_solution": "Use a standard array (O(n) queries) or prefix sum array (O(n) updates).",
+    "better_idea": "Build a binary tree over the array where each node represents a range (segment). Updating a leaf takes O(log n) as we bubble up. Querying a range takes O(log n) by combining covering segments."
+  },
+  "mental_model": {
+    "intuition": "It's like a corporate management hierarchy. The CEO knows the total revenue. VPs know the revenue of their halves. Managers know quarters. If one employee updates their sales, the change bubbles up to the CEO in O(log n) time.",
+    "description": "A Segment Tree stores intervals. The root stores the sum (or min/max) of the whole array `[0, N-1]`. Its left child stores `[0, mid]`, and right child `[mid+1, N-1]`. Leaves are single elements. Range queries recursively combine segments that perfectly cover the target range.",
+    "repeated_decision": "Does this node's segment perfectly overlap with the query? If yes, return its value. If partial, split the query to the children. If none, return a null/zero value."
+  },
+  "overview": {
+    "what": "A binary tree used for storing intervals or segments, allowing querying and updating of array intervals in logarithmic time.",
+    "why": "It bridges the gap between fast updates and fast queries, providing O(log n) for both.",
+    "where_used": ["Computational geometry (stabbing queries)", "Dynamic Range Minimum Query (RMQ)", "Game development (collision detection)"]
+  },
+  "why_learning_this": [
+    "It is the ultimate hammer for any 'range query with updates' problem.",
+    "It teaches how to map tree structures into flat arrays."
+  ],
+  "sections": [
+    {
+      "body": "A Segment Tree is a full binary tree. Even though it's a tree, we rarely use Node classes with `left` and `right` pointers. Instead, like a Binary Heap, we map it into a flat array of size `4N`.\n\nThe root is at index `1` (representing the whole array). For any node at index `i`, its left child is at `2i` and its right child is at `2i + 1`. The value at a node is the sum (or min, or max) of its children.\n\n**To Update:** Start at the root and recursively find the leaf representing the index you want to update. Change the leaf's value. As the recursion unwinds, update the parent's value based on the new child values. This touches one path from root to leaf, taking `O(log n)`.\n\n**To Query:** Start at the root. You are given a target range `[L, R]`. \n- If the node's range is entirely inside `[L, R]`, just return the node's value!\n- If the node's range is entirely outside `[L, R]`, return a neutral value (0 for sum, infinity for min).\n- If it partially overlaps, ask both children and combine their answers.\nBecause we grab pre-computed chunks whenever they fit perfectly, we only explore at most `O(log n)` nodes per query."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Build takes O(N). Point Updates and Range Queries take O(log N). Space takes O(N) (specifically, an array of size 4N is safe)."
+    },
+    {
+      "title": "Lazy Propagation",
+      "detail": "If you need to update a RANGE of elements at once, standard Segment Trees take O(N). You must use an advanced technique called 'Lazy Propagation' to defer updates, bringing Range Updates down to O(log N)."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Array size is too small",
+      "explanation": "A segment tree requires an array of size `4 * N` to guarantee enough space for all leaves and internal nodes. Using `2 * N` will cause out-of-bounds errors on non-power-of-two arrays."
+    },
+    {
+      "title": "Wrong default return for outside ranges",
+      "explanation": "If a query goes completely outside the target range, it must return a value that doesn't affect the result. For sum, return `0`. For min, return `infinity`. Returning `0` for a min-query will incorrectly make 0 the minimum."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Static Arrays (No updates)",
+      "reason": "If the array never changes, just use Prefix Sums (for sum) or a Sparse Table (for min/max) which give O(1) queries and are much easier to code."
+    }
+  ],
+  "failure_signals": [
+    "The data is highly multi-dimensional (requires 2D/3D trees, which are complex)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Database indexing",
+      "problem": "Finding all events that overlap with a specific time window.",
+      "why_this_algorithm": "Segment trees (or Interval Trees) can quickly find all intervals overlapping a query point or range."
+    }
+  ],
+  "pattern": {
+    "name": "Segment Tree",
+    "recognition_cues": ["Update an element", "Query a range", "Data changes over time"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of a Range Query in a Segment Tree?",
+      "answer": "O(log n).",
+      "tier": "tier1"
+    },
+    {
+      "q": "What size array should you allocate for a Segment Tree covering N elements?",
+      "answer": "4 * N.",
+      "tier": "tier1"
+    },
+    {
+      "q": "If a query perfectly covers a segment tree node's range, what does the recursive function do?",
+      "answer": "It immediately returns the node's precomputed value and stops recursing down that branch.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "You have a Segment Tree built for Range Minimum Query. What value should a node return if its segment is completely outside the requested query range?",
+      "answer": "Positive infinity.",
+      "why": "Infinity acts as the identity element for the `min` operation. When combined via `min(infinity, valid_child_result)`, it safely ignores the outside path."
+    },
+    {
+      "type": "predict-result",
+      "question": "If you update the element at index 3 in a Segment Tree of size 8, how many nodes in the tree will be modified?",
+      "answer": "4 nodes (the leaf at index 3, its parent, its grandparent, and the root).",
+      "why": "A point update modifies exactly one path from the leaf to the root. Since the depth is log2(8) = 3, the path length is 4."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Range Sum Query - Mutable",
+      "company": "SDE interview",
+      "answer": "This is the exact definition of a Segment Tree (or Fenwick Tree).",
+      "approach": "Implement `build()`, `update()`, and `query()` using the recursive divide-and-conquer template."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Range Sum Query - Mutable",
+      "prompt": "Implement a class `NumArray` that supports updating an element and calculating the sum of elements in `[left, right]`.",
+      "starter_code": "class NumArray:\n    def __init__(self, nums):\n        pass\n    def update(self, index, val):\n        pass\n    def sumRange(self, left, right):\n        pass",
+      "solution": "class NumArray:\n    def __init__(self, nums):\n        self.n = len(nums)\n        self.tree = [0] * (4 * self.n)\n        self.build(nums, 1, 0, self.n - 1)\n\n    def build(self, nums, node, start, end):\n        if start == end:\n            self.tree[node] = nums[start]\n        else:\n            mid = (start + end) // 2\n            self.build(nums, 2 * node, start, mid)\n            self.build(nums, 2 * node + 1, mid + 1, end)\n            self.tree[node] = self.tree[2 * node] + self.tree[2 * node + 1]\n\n    def update(self, index, val, node=1, start=0, end=None):\n        if end is None: end = self.n - 1\n        if start == end:\n            self.tree[node] = val\n        else:\n            mid = (start + end) // 2\n            if start <= index <= mid:\n                self.update(index, val, 2 * node, start, mid)\n            else:\n                self.update(index, val, 2 * node + 1, mid + 1, end)\n            self.tree[node] = self.tree[2 * node] + self.tree[2 * node + 1]\n\n    def sumRange(self, l, r, node=1, start=0, end=None):\n        if end is None: end = self.n - 1\n        if r < start or l > end:\n            return 0\n        if l <= start and end <= r:\n            return self.tree[node]\n        mid = (start + end) // 2\n        p1 = self.sumRange(l, r, 2 * node, start, mid)\n        p2 = self.sumRange(l, r, 2 * node + 1, mid + 1, end)\n        return p1 + p2"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Segment_tree"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "slug": "linked-list-rewiring",
+  "title": "Linked list rewiring",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 7,
+    "interview_frequency": "medium",
+    "prerequisites": ["traversal-and-reversal"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We need to deeply manipulate the structure of a linked list (like reversing sublists, swapping nodes in pairs, or rotating). Re-creating the list wastes O(n) memory.",
+    "naive_solution": "Copy the values into an array, manipulate the array, and build a new linked list.",
+    "better_idea": "Manipulate the `next` pointers of the existing nodes directly in-place. Use a dummy head to handle edge cases easily."
+  },
+  "mental_model": {
+    "intuition": "It's like unhooking train cars and hooking them up in a different order while the train is still on the tracks.",
+    "description": "Rewiring requires tracking multiple adjacent nodes (prev, curr, next). We carefully sever a `next` pointer and point it elsewhere, but we must save a reference to the severed tail first, or we lose the rest of the list.",
+    "repeated_decision": "Have I saved the reference to the next node before overwriting my current node's next pointer?"
+  },
+  "overview": {
+    "what": "Techniques for safely changing the `next` pointers of linked list nodes to achieve complex structural changes in O(1) space.",
+    "why": "It is the core mechanic behind all intermediate and advanced linked list interview questions.",
+    "where_used": ["In-place memory defragmentation", "Functional programming list manipulation"]
+  },
+  "why_learning_this": [
+    "Pointer manipulation is a fundamental skill in systems programming (C/C++).",
+    "It rigorously tests your attention to detail and edge cases (like null pointers)."
+  ],
+  "sections": [
+    {
+      "body": "Rewiring a linked list is a dance of temporary variables. If you want node `A` to point to node `C` instead of `B`, you can write `A.next = C`. But if no other variable points to `B`, node `B` (and the rest of the list) is lost in memory. The golden rule of rewiring is: **always grab a reference to the next node before you break the link**.\n\nFor complex operations like Reversing a Sublist or Swapping Nodes in Pairs, we frequently use a `dummy` node. A dummy node is a fake head (`dummy = Node(0, head)`) that guarantees the list always has a node before the actual head. This eliminates the need for special `if head == target` branches when rewiring affects the first element.\n\nWhen reversing a sublist (from position `m` to `n`), we first traverse to the node right before `m` (let's call it `prev`). Then, we do a standard reversal for `n - m` steps. Finally, we reconnect the broken ends: `prev` points to the new head of the reversed sublist, and the old head of the sublist points to the node right after `n`."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Dummy Head",
+      "detail": "Always use a dummy head when the operation might change the head of the list. It turns edge cases into standard cases."
+    },
+    {
+      "title": "Temporary Pointers",
+      "detail": "You almost always need `prev`, `curr`, and `nxt` pointers to safely rewire without orphans."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Losing the rest of the list",
+      "explanation": "Overwriting `curr.next` before storing `curr.next` in a temporary variable orphans the remainder of the list, leading to a memory leak or wrong answer."
+    },
+    {
+      "title": "Null pointer exceptions",
+      "explanation": "Trying to access `curr.next.next` without first checking if `curr` and `curr.next` are not `None`."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "When read access speed is prioritized over memory",
+      "reason": "If you need fast random access during the rewiring logic, copying to an array might be better in real systems, though it fails the O(1) space constraint of interviews."
+    }
+  ],
+  "failure_signals": [
+    "You are using a `while` loop but getting a `NoneType has no attribute 'next'` error."
+  ],
+  "engineering_examples": [
+    {
+      "title": "OS Memory Management",
+      "problem": "Managing blocks of free memory.",
+      "why_this_algorithm": "Free lists are often implemented as linked lists. Allocating and merging blocks involves complex rewiring of pointers."
+    }
+  ],
+  "pattern": {
+    "name": "Pointer Rewiring (Dummy Head)",
+    "recognition_cues": ["Modify a linked list in-place", "Reverse parts of a list", "Swap adjacent nodes"]
+  },
+  "recall_questions": [
+    {
+      "q": "Why is a dummy head node useful in linked list rewiring?",
+      "answer": "It provides a guaranteed 'previous' node for the head, removing the need for special edge-case logic when the head itself is modified or deleted.",
+      "tier": "tier1"
+    },
+    {
+      "q": "What is the golden rule of breaking a `next` pointer?",
+      "answer": "Always store the `next` node in a temporary variable before overwriting the pointer, so you don't lose the rest of the list.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If you write `curr.next = prev`, then `prev = curr`, then `curr = curr.next`, what happens to the traversal?",
+      "answer": "It goes backwards or enters an infinite loop.",
+      "why": "You just set `curr.next` to point backwards to `prev`. When you do `curr = curr.next`, you travel back to the node you just came from. You forgot to save the *original* `curr.next`."
+    },
+    {
+      "type": "predict-result",
+      "question": "What is the space complexity of reversing a sublist of length M in a linked list of length N?",
+      "answer": "O(1) space.",
+      "why": "We only use a few constant pointers (prev, curr, nxt), regardless of the length of the list."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Swap Nodes in Pairs",
+      "company": "SDE interview",
+      "answer": "Use a dummy head. Iterate in steps of 2, rewiring `prev.next`, `curr.next`, and `nxt.next`.",
+      "approach": "Draw out the 3 pointers before coding. Save `curr.next.next`."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Swap Nodes in Pairs",
+      "prompt": "Given a linked list, swap every two adjacent nodes and return its head. You must solve the problem without modifying the values in the list's nodes.",
+      "starter_code": "def swapPairs(head):\n    pass",
+      "solution": "class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\ndef swapPairs(head):\n    dummy = ListNode(0, head)\n    prev = dummy\n    curr = head\n    while curr and curr.next:\n        nxt_pair = curr.next.next\n        second = curr.next\n        second.next = curr\n        curr.next = nxt_pair\n        prev.next = second\n        prev = curr\n        curr = nxt_pair\n    return dummy.next"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Linked_list"
+  ]
+}

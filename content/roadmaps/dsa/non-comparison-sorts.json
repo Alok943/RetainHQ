@@ -1,0 +1,140 @@
+{
+  "slug": "non-comparison-sorts",
+  "title": "Non-comparison sorts",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 20,
+    "importance": 6,
+    "interview_frequency": "medium",
+    "prerequisites": ["big-o-notation"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "Comparison-based sorts like Merge Sort and Quick Sort have a theoretical lower bound of O(n log n). We cannot sort faster if we rely purely on comparing elements a <= b.",
+    "naive_solution": "Use a comparison sort, accepting O(n log n) as the speed limit.",
+    "better_idea": "If we know something about the data (e.g., it only contains integers from 0 to 100), we can skip comparisons altogether and just count occurrences or place items into buckets, achieving O(n) time."
+  },
+  "mental_model": {
+    "intuition": "Instead of weighing items against each other, just tally how many of each item exist and write them out in order.",
+    "description": "Counting sort creates a frequency array (histogram) where the index represents the value and the array holds the count. Radix sort groups numbers by individual digits, sorting them digit-by-digit from least to most significant.",
+    "repeated_decision": "For each element, what bucket or count tally does this value belong in?"
+  },
+  "overview": {
+    "what": "Algorithms like Counting Sort, Bucket Sort, and Radix Sort that sort data without comparing elements against each other.",
+    "why": "To beat the O(n log n) time barrier and sort in O(n) time when data properties (like small integer ranges) allow it.",
+    "where_used": ["Sorting integers in a known small range", "Suffix array construction", "Sorting strings by length or character"]
+  },
+  "why_learning_this": [
+    "To understand the fundamental limits of comparison sorting.",
+    "To know when O(n) sorting is possible in interviews.",
+    "To learn how to use frequency arrays for more than just counting."
+  ],
+  "sections": [
+    {
+      "body": "The mathematical limit for any sorting algorithm that only uses `<` or `>` comparisons is `O(n log n)`. To break this limit, we have to cheat. We 'cheat' by using the values themselves as direct memory addresses or indices.\n\nIn **Counting Sort**, if we know all numbers are between `0` and `k`, we create an array of size `k + 1`. We iterate through our data, incrementing the count at index `x` for each number `x`. Finally, we walk through the frequency array from `0` to `k` and output the values. The time complexity is `O(n + k)`. If `k` is small, this is effectively `O(n)`. However, if the range `k` is a billion, we would waste a billion memory slots, making it impractical.\n\n**Radix Sort** solves the memory problem for large integers. Instead of one giant counting sort, it does several small counting sorts—one for each digit. By sorting all numbers by their 1s digit, then 10s digit, then 100s digit (using a stable sort like Counting Sort), the entire array becomes sorted. The time complexity is `O(d * (n + b))` where `d` is the number of digits and `b` is the base (e.g., 10).\n\nBoth algorithms trade space for time. They require `O(n)` extra space (or `O(n + k)` for Counting Sort) and are typically not done in-place."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Time is O(n + k) for Counting Sort. Space is O(n + k). For Radix Sort, Time is O(d * (n + b))."
+    },
+    {
+      "title": "Stability is Required",
+      "detail": "Radix sort only works if the underlying sort (usually Counting Sort) is stable, meaning it preserves the relative order of equal keys."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Using it on large ranges",
+      "explanation": "Using Counting Sort when the input is `[1, 1000000000]` will allocate a massive array for just two elements, wasting space and time."
+    },
+    {
+      "title": "Negative numbers",
+      "explanation": "Basic Counting Sort uses values as array indices, so negative numbers will cause out-of-bounds errors. You must offset all values by the minimum element to make them non-negative."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Sorting floats or arbitrary objects",
+      "reason": "These algorithms rely on discrete integer keys. They don't easily adapt to objects without an integer mapping."
+    }
+  ],
+  "failure_signals": [
+    "The range of numbers is very large compared to `n`.",
+    "The data consists of floating point numbers or complex objects."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Suffix Arrays",
+      "problem": "Sorting a massive number of string suffixes for text search algorithms.",
+      "why_this_algorithm": "Radix sort is used to sort string prefixes in O(n) time, crucial for fast suffix array construction."
+    }
+  ],
+  "pattern": {
+    "name": "Frequency array sorting",
+    "recognition_cues": ["Sort an array in O(n) time", "Elements are bounded in a small range 1 to 100", "Sorting colors or categorical data"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the time complexity of Counting Sort?",
+      "answer": "O(n + k), where n is the number of elements and k is the range of possible values.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why does Radix Sort require a stable subroutine?",
+      "answer": "When sorting by the 10s digit, numbers with the same 10s digit must remain sorted by their 1s digit. A non-stable sort would scramble the previous passes.",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why don't we always use Counting Sort?",
+      "answer": "Because it requires O(k) extra space. If the range k is huge (e.g., 32-bit integers), it would waste too much memory.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "If you use Counting Sort on the array `[3, 1, 3, 2]`, what is the frequency array generated?",
+      "answer": "It is `[0, 1, 1, 2]` (index 0 has 0, index 1 has 1, index 2 has 1, index 3 has 2).",
+      "why": "The frequency array records how many times each value appears in the input.",
+      "code": "def make_freq(arr):\n  freq = [0] * 4\n  for x in arr:\n    freq[x] += 1\n  return freq\n\nprint(make_freq([3, 1, 3, 2]))"
+    },
+    {
+      "type": "explain-behavior",
+      "question": "What happens if you run Counting Sort on an array containing negative numbers without offsetting them?",
+      "answer": "The program will crash or behave unexpectedly due to negative array indexing.",
+      "why": "Counting Sort uses the element values directly as array indices. Negative indices are invalid or access elements from the back of the array."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Sort an array of colors represented by 0, 1, and 2 in O(n) time.",
+      "company": "SDE interview",
+      "answer": "Use counting sort (or the Dutch National Flag algorithm) since the range is exactly 3.",
+      "approach": "Count the occurrences of 0, 1, and 2, then overwrite the array with that many 0s, 1s, and 2s."
+    },
+    {
+      "question": "Given an array of n integers between 1 and n, find the duplicate number in linear time.",
+      "company": "SDE interview",
+      "answer": "Because the range is small and bounded by n, we can use the array itself as a frequency table (often by negating values at the index corresponding to each number).",
+      "approach": "Recognize that small ranges allow elements to act as their own keys."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Sort Colors",
+      "prompt": "Given an array `nums` with n objects colored red, white, or blue (represented as 0, 1, 2), sort them in-place so that objects of the same color are adjacent. Can you do this in O(n) using counting?",
+      "starter_code": "def sortColors(nums):\n    pass",
+      "solution": "def sortColors(nums):\n    counts = [0, 0, 0]\n    for num in nums:\n        counts[num] += 1\n    idx = 0\n    for color in range(3):\n        for _ in range(counts[color]):\n            nums[idx] = color\n            idx += 1"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Counting_sort",
+    "https://en.wikipedia.org/wiki/Radix_sort"
+  ]
+}

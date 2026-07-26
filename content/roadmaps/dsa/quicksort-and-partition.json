@@ -1,0 +1,140 @@
+{
+  "slug": "quicksort-and-partition",
+  "title": "Quicksort & partition",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier1",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 9,
+    "interview_frequency": "high",
+    "prerequisites": ["two-pointers", "recursive-tree-thinking"],
+    "unlocks": ["quickselect"],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "Merge Sort is O(n log n) and consistent, but it requires O(n) extra memory to merge the arrays. We want an O(n log n) sort that works entirely in-place.",
+    "naive_solution": "Use an in-place O(n^2) sort like Insertion or Selection sort.",
+    "better_idea": "Pick an element (the pivot). Move everything smaller than the pivot to its left, and everything larger to its right. The pivot is now in its final sorted position. Recursively do this for the left and right halves."
+  },
+  "mental_model": {
+    "intuition": "Pick a leader (pivot), put all the smaller elements on the left, larger on the right. Now the leader is exactly where it belongs. Repeat for the two groups.",
+    "description": "Quicksort revolves around the Partition operation. We maintain a boundary of 'elements smaller than pivot'. As we scan, if we find a small element, we swap it into the small boundary. Once partitioned, we recurse on the left and right partitions.",
+    "repeated_decision": "Is the current element smaller than the pivot? If yes, swap it into the 'small' section."
+  },
+  "overview": {
+    "what": "An efficient, in-place, divide-and-conquer sorting algorithm that partitions an array around a pivot.",
+    "why": "It is usually the fastest sorting algorithm in practice for in-memory arrays because of excellent cache locality and zero extra space allocation (ignoring the call stack).",
+    "where_used": ["Default sorting algorithm in many language standard libraries (like C's qsort, C++'s std::sort, though often hybridized)", "Systems where memory allocation is expensive"]
+  },
+  "why_learning_this": [
+    "The partition subroutine is a heavily tested interview pattern on its own.",
+    "It teaches you how to think about in-place array manipulation.",
+    "It introduces worst-case vs expected time complexity."
+  ],
+  "sections": [
+    {
+      "body": "Quicksort is a divide-and-conquer algorithm like Merge Sort, but it does all the hard work *before* the recursive calls rather than after. The core of Quicksort is the **Partition** step.\n\nTo partition an array, we first pick a `pivot` (often the last element). We use two pointers: one pointer (`i`) keeps track of the boundary of elements smaller than the pivot, and the other pointer (`j`) scans the array. Whenever `j` finds an element smaller than the pivot, we swap it with the element at `i`, and increment `i`. At the end, we swap the pivot itself into position `i`. The pivot is now exactly where it belongs in the final sorted array.\n\nBecause the pivot is in its final place, we can recursively call Quicksort on the elements to its left and the elements to its right. If the pivot happens to perfectly divide the array in half each time, the depth of the recursion tree is `O(log n)`. At each level, we do `O(n)` work to partition. This gives an expected time complexity of `O(n log n)`.\n\nHowever, if the array is already sorted and we always pick the last element as the pivot, the left partition will have `n - 1` elements and the right will have `0`. The recursion tree becomes a straight line of depth `n`, resulting in a worst-case time complexity of `O(n^2)`. This is why modern Quicksort implementations pick a random pivot or the median of three."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Expected Time is O(n log n). Worst-case Time is O(n^2). Space is O(log n) for the recursion call stack (or O(n) worst case)."
+    },
+    {
+      "title": "In-place but Unstable",
+      "detail": "Quicksort uses no extra array allocations, but the swapping during partition destroys the relative order of equal elements, making it an unstable sort."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Infinite recursion",
+      "explanation": "If the partition function includes the pivot in one of the recursive calls, it can lead to infinite recursion. The recursive calls must strictly be `[start, pivot_index - 1]` and `[pivot_index + 1, end]`."
+    },
+    {
+      "title": "Choosing a bad pivot",
+      "explanation": "Always picking the first or last element as the pivot causes O(n^2) behavior on already sorted arrays (a common edge case in real systems)."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "When stability is required",
+      "reason": "Quicksort swaps elements across distances, so equal elements might switch relative order. Merge Sort is preferred when stability is needed."
+    }
+  ],
+  "failure_signals": [
+    "The data is extremely large and does not fit in memory (external sorting needs Merge Sort).",
+    "You absolutely cannot afford an O(n^2) worst-case delay."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Language Standard Libraries",
+      "problem": "Providing a fast generic sorting function.",
+      "why_this_algorithm": "Languages like C++ use Introsort (a hybrid of Quicksort and Heapsort). It runs Quicksort for speed but falls back to Heapsort if the recursion goes too deep, guaranteeing O(n log n) worst-case."
+    }
+  ],
+  "pattern": {
+    "name": "Partitioning",
+    "recognition_cues": ["Segregate elements based on a condition", "Sort an array in-place without extra memory"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the expected and worst-case time complexity of Quicksort?",
+      "answer": "Expected is O(n log n). Worst-case is O(n^2) (when the pivot consistently splits the array unevenly).",
+      "tier": "tier1"
+    },
+    {
+      "q": "Why is Quicksort generally faster than Merge Sort in practice despite the same average time complexity?",
+      "answer": "Quicksort sorts in-place, which provides excellent cache locality and avoids the overhead of allocating and copying memory.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How can you prevent the O(n^2) worst-case scenario in Quicksort?",
+      "answer": "By choosing the pivot randomly, or by using the 'median of three' method for pivot selection.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "In the partition step, after we finish scanning and swap the pivot into its final place, what guarantee do we have about the elements to its left and right?",
+      "answer": "All elements to the left are less than or equal to the pivot, and all elements to the right are greater than the pivot.",
+      "why": "This is the core invariant of the partition step. It ensures the pivot is in its globally correct sorted position."
+    },
+    {
+      "type": "find-bug",
+      "question": "A student wrote a recursive Quicksort call like this: `quicksort(arr, low, p)` and `quicksort(arr, p, high)`. What is wrong?",
+      "answer": "It will infinitely recurse. The pivot `p` is already in its final position, so the calls should be `quicksort(arr, low, p - 1)` and `quicksort(arr, p + 1, high)`.",
+      "why": "Including the pivot in the subarrays means the subarray size might not shrink, leading to a stack overflow.",
+      "code": "def quicksort(arr, low, high):\n  if low < high:\n    p = partition(arr, low, high)\n    quicksort(arr, low, p) # Bug!\n    quicksort(arr, p, high) # Bug!"
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Sort Colors (Dutch National Flag)",
+      "company": "SDE interview",
+      "answer": "This is a 3-way partition variation of Quicksort's partitioning step.",
+      "approach": "Maintain three pointers: one for the end of 0s, one for the start of 2s, and a current scanner."
+    },
+    {
+      "question": "Move Zeroes to End",
+      "company": "SDE interview",
+      "answer": "Use the exact same logic as Quicksort's partition. Treat '0' as the pivot value, and swap non-zero elements to the front.",
+      "approach": "Maintain a pointer for the boundary of non-zero elements and swap as you iterate."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Sort an Array",
+      "prompt": "Implement a sorting algorithm to sort the array `nums` in O(n log n) time. Try implementing Quicksort with a random pivot.",
+      "starter_code": "def sortArray(nums):\n    pass",
+      "solution": "import random\ndef sortArray(nums):\n    def quicksort(low, high):\n        if low < high:\n            pivot_idx = random.randint(low, high)\n            nums[pivot_idx], nums[high] = nums[high], nums[pivot_idx]\n            p = partition(low, high)\n            quicksort(low, p - 1)\n            quicksort(p + 1, high)\n    def partition(low, high):\n        pivot = nums[high]\n        i = low\n        for j in range(low, high):\n            if nums[j] < pivot:\n                nums[i], nums[j] = nums[j], nums[i]\n                i += 1\n        nums[i], nums[high] = nums[high], nums[i]\n        return i\n    quicksort(0, len(nums) - 1)\n    return nums"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Quicksort",
+    "https://www.geeksforgeeks.org/quick-sort/"
+  ]
+}

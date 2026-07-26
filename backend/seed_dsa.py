@@ -124,8 +124,6 @@ NODES = [
 
     # ---------------- Sorting — Divide & Conquer (needs recursion) ----------------
     ("Sorting — Divide & Conquer", "Efficient", "Merge sort", "medium", "Split to single elements, then merge sorted halves."),
-    ("Sorting — Divide & Conquer", "Efficient", "Quick sort", "medium", "Partition around a pivot, recurse on each side."),
-    ("Sorting — Divide & Conquer", "Non-comparison", "Counting sort", "medium", "Count occurrences, reconstruct in order. O(n+k)."),
 
     # ---------------- Trees ----------------
     ("Trees", "Thinking", "Recursive tree thinking", "medium", "See a tree as a node plus two smaller subtrees — solve it recursively."),
@@ -199,8 +197,8 @@ NODES = [
     ("Advanced", "Trees", "Trie (Prefix tree)", "medium", "Tree for fast string prefix matching."),
     ("Advanced", "Strings", "Rolling hash (Rabin-Karp)", "hard", "String matching in O(n) using a rolling integer hash."),
     ("Advanced", "Sorting", "Quickselect", "medium", "Find the k-th smallest element in O(n) on average."),
-    ("Advanced", "Sorting", "Non-comparison sorts", "medium", "Radix sort, bucket sort — beating O(n log n) with constraints."),
-    ("Advanced", "Sorting", "Quicksort & partition", "medium", "Partition around a pivot, recurse on each side."),
+    ("Sorting — Divide & Conquer", "Non-comparison", "Non-comparison sorts", "medium", "Counting, radix and bucket sort — beating O(n log n) with constraints."),
+    ("Sorting — Divide & Conquer", "Efficient", "Quicksort & partition", "medium", "Partition around a pivot, recurse on each side."),
     ("Advanced", "Math", "GCD, LCM & modular arithmetic", "medium", "Euclidean algorithm and working under modulo."),
     ("Advanced", "Math", "Combinatorics & counting", "medium", "Permutations, combinations, nCr math."),
     ("Advanced", "Arrays", "Difference array", "medium", "Range updates in O(1) by marking start/end boundaries."),

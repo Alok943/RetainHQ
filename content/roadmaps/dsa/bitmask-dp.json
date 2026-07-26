@@ -1,0 +1,124 @@
+{
+  "slug": "bitmask-dp",
+  "title": "Bitmask DP",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier3",
+  "metadata": {
+    "difficulty": "hard",
+    "estimated_minutes": 30,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": ["bitwise-operators", "state-and-transition"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "In some DP problems (like Traveling Salesperson), the 'state' you need to track is the exact set of items/cities you have visited so far. Tracking a `Set` or `List` in DP memoization is incredibly slow and takes too much memory.",
+    "naive_solution": "Use a `Set<Integer>` as part of your memoization key.",
+    "better_idea": "Represent the set of visited items as a single integer by treating its bits as boolean flags. For N items, a single integer from 0 to 2^N - 1 perfectly encodes every possible subset. This allows O(1) state transitions and array-based memoization."
+  },
+  "mental_model": {
+    "intuition": "You have a dashboard with 10 light switches. Instead of writing down 'Switches 1, 3, and 4 are ON', you just read the binary number `0000001101` and call it state 13.",
+    "description": "Bitmask DP compresses a boolean array of length N into a single integer. The DP state usually looks like `dp(mask, last_visited)`. To mark the i-th item as visited, we use bitwise OR: `mask | (1 << i)`. To check if the i-th item is visited, we use bitwise AND: `mask & (1 << i)`.",
+    "repeated_decision": "Which unvisited item (where the i-th bit in the mask is 0) should I visit next to minimize/maximize the score?"
+  },
+  "overview": {
+    "what": "A Dynamic Programming technique that uses integers to represent subsets of items, enabling fast array indexing for state memoization.",
+    "why": "It transforms a problem that looks like O(N!) (like permutations of N items) into O(2^N * N^2). It's only viable when N is very small (usually N <= 20).",
+    "where_used": ["Traveling Salesperson Problem", "Assignment Problem (bipartite matching)"]
+  },
+  "why_learning_this": [
+    "It is the standard solution for NP-hard problems where N is suspiciously small (10-20) in competitive programming."
+  ],
+  "sections": [
+    {
+      "body": "When you see constraints like `1 <= N <= 15`, it's a massive hint. An `O(N^2)` or `O(N^3)` algorithm is too fast for N=15, and an `O(N!)` backtracking algorithm is too slow (`15! > 10^12`). The sweet spot is `O(2^N)`, which points directly to Bitmask DP.\n\nA bitmask is just an integer. If we have 4 items, the integer `5` in binary is `0101`. This means the 0th item and the 2nd item have been selected. \n\nIn the famous Traveling Salesperson Problem, you need to visit all cities with minimum cost. The DP state is `(mask, last_city)`. \n`mask` tells us which cities we've visited so far. \n`last_city` tells us where we are right now, so we know how much it costs to travel to the next city.\n\nFrom state `(mask, u)`, we loop over all cities `v`. If the `v`-th bit in `mask` is `0` (meaning `v` is unvisited), we can travel to `v`. The cost is `dist[u][v] + dp(mask | (1 << v), v)`. We take the minimum over all valid `v`. By memoizing this, we avoid recalculating paths for the same subset of cities, cutting the time from `O(N!)` down to `O(2^N * N^2)`."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Time is usually O(2^N * N) or O(2^N * N^2). Space is O(2^N * N) for the memoization table. N must be small (N <= 20)."
+    },
+    {
+      "title": "Bitwise Operations",
+      "detail": "Check if i-th bit is set: `mask & (1 << i) != 0`. Set the i-th bit: `mask | (1 << i)`. Toggle the i-th bit: `mask ^ (1 << i)`."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Operator precedence bugs",
+      "explanation": "Bitwise operators like `&` and `|` have lower precedence than equality `==` in many languages. Always wrap bitwise checks in parentheses: `if ((mask & (1 << i)) != 0)`."
+    },
+    {
+      "title": "Applying it when N is too large",
+      "explanation": "If N is 30, `2^30` is a billion. An array of size 1 billion will cause a Memory Limit Exceeded error. Bitmask DP is strictly for small N."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "When N > 20",
+      "reason": "The memory for `2^21` integers starts exceeding standard competitive programming limits, and time complexity balloons."
+    }
+  ],
+  "failure_signals": [
+    "The constraints say N can be up to 1000. (Bitmasking is impossible; look for greedy or standard DP)."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Delivery Routing",
+      "problem": "Finding the optimal route for a delivery truck with 12 stops.",
+      "why_this_algorithm": "12 stops is small enough for the Traveling Salesperson Problem to be solved exactly using Bitmask DP in milliseconds."
+    }
+  ],
+  "pattern": {
+    "name": "Bitmask DP",
+    "recognition_cues": ["Find permutations/subsets", "Constraint N <= 20", "Problem is NP-Hard but constraints are suspiciously small"]
+  },
+  "recall_questions": [
+    {
+      "q": "What is the maximum typical value for N in a Bitmask DP problem?",
+      "answer": "Usually N <= 20, because 2^20 is about 1 million, which easily fits in memory and time limits.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you check if the `i`-th item is already in the bitmask?",
+      "answer": "By evaluating `(mask & (1 << i)) != 0`.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "explain-behavior",
+      "question": "If your mask is `10` (binary `1010`) and you visit city 0, what is your new mask?",
+      "answer": "11 (binary `1011`).",
+      "why": "City 0 corresponds to the 0th bit (the 1s place). `1010 | 0001` becomes `1011`, which is 11 in decimal."
+    },
+    {
+      "type": "find-bug",
+      "question": "A developer checks if an item is unvisited using `if mask & (1 << i) == 0:`. In Python this works, but in C++ it might fail. Why?",
+      "answer": "Operator precedence. In C++, `==` evaluates before `&`.",
+      "why": "It evaluates as `mask & ((1 << i) == 0)`. Since `1 << i` is never 0, it becomes `mask & 0`, which is always 0."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Shortest Path Visiting All Nodes",
+      "company": "SDE interview",
+      "answer": "Use BFS, but instead of marking nodes as visited, mark `(node, mask)` states as visited.",
+      "approach": "When the mask reaches `(1 << N) - 1`, you have visited all nodes."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Matchsticks to Square",
+      "prompt": "You are given an integer array matchsticks. You want to use all the matchsticks to make one square. Return true if you can make this square and false otherwise. (Hint: N <= 15).",
+      "starter_code": "def makesquare(matchsticks):\n    pass",
+      "solution": "# Implementation omitted due to length. It uses memoization over the bitmask of used matchsticks."
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Dynamic_programming"
+  ]
+}

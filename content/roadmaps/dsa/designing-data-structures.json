@@ -1,0 +1,74 @@
+{
+  "slug": "designing-data-structures",
+  "title": "Designing data structures",
+  "roadmap": "dsa",
+  "kind": "concept",
+  "tier": "tier2",
+  "runtime": "none",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 8,
+    "interview_frequency": "high",
+    "prerequisites": ["hash-tables", "queue-and-deque"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "overview": {
+    "what": "The process of combining primitive data structures (like arrays, hash maps, and linked lists) into a composite structure to achieve specific time complexity goals for various operations.",
+    "why": "No single built-in data structure is perfectly fast at everything. To build a system that can quickly insert, delete, and fetch the minimum element, you must weave multiple structures together.",
+    "where_used": ["LRU Caches (Hash Map + Doubly Linked List)", "Rate Limiters", "Task Schedulers"]
+  },
+  "why_learning_this": [
+    "It tests your deep understanding of the tradeoffs of every primitive structure.",
+    "'Design X' is one of the most common formats for senior-level coding interviews.",
+    "It mirrors real-world object-oriented class design."
+  ],
+  "common_mistakes": [
+    {
+      "title": "Ignoring state synchronization",
+      "explanation": "When using two structures (e.g., a Hash Map and an Array), inserting or deleting an item must update BOTH structures. Forgetting to keep them perfectly in sync leads to dangling pointers or ghost data."
+    },
+    {
+      "title": "Not starting from the constraints",
+      "explanation": "If a problem asks for O(1) retrieval, you almost certainly need a Hash Map. If it asks for O(1) removal of the oldest item, you need a Queue or Linked List. Not mapping constraints to primitives first is a planning failure."
+    }
+  ],
+  "recall_questions": [
+    {
+      "q": "If you need O(1) lookups and O(1) deletion from the middle of a sequence, what composite structure should you use?",
+      "answer": "A Hash Map containing pointers to nodes of a Doubly Linked List.",
+      "tier": "tier2"
+    },
+    {
+      "q": "Why is an array poor for O(1) arbitrary deletion, and how can a Hash Map help if order doesn't matter?",
+      "answer": "Arrays require O(N) shifts to delete. If order doesn't matter, you can swap the element to delete with the last element and pop it in O(1). A Hash Map tracks the array indices of each element so you know what to swap.",
+      "tier": "tier2"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "choose-model",
+      "question": "You need a data structure that supports `insert(val)`, `remove(val)`, and `getRandom()` all in O(1) average time. Which composition of structures should you use?",
+      "answer": "A Hash Map and an Array (Dynamic Array / List).",
+      "why": "`getRandom()` in O(1) requires an Array for contiguous indexing. `insert` and `remove` in O(1) require a Hash Map to find elements in the array to swap-and-pop."
+    },
+    {
+      "type": "predict-result",
+      "question": "In an LRU Cache made of a Hash Map and Doubly Linked List, what happens to the Linked List when an existing key is accessed?",
+      "answer": "The node representing that key is unlinked from its current position and moved to the 'most recently used' end (usually the head or tail, depending on convention).",
+      "why": "Accessing an item refreshes its status, pushing it as far away from eviction as possible."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Design LRU Cache",
+      "prompt": "Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.",
+      "starter_code": "class LRUCache:\n    def __init__(self, capacity: int):\n        pass",
+      "solution": "# Implementation omitted for brevity, requires dict and doubly linked list"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cache_replacement_policies#LRU"
+  ]
+}

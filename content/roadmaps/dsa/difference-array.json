@@ -1,0 +1,126 @@
+{
+  "slug": "difference-array",
+  "title": "Difference array",
+  "roadmap": "dsa",
+  "kind": "dsa",
+  "tier": "tier2",
+  "metadata": {
+    "difficulty": "medium",
+    "estimated_minutes": 25,
+    "importance": 5,
+    "interview_frequency": "low",
+    "prerequisites": ["prefix-sums"],
+    "unlocks": [],
+    "project_usage": []
+  },
+  "why_it_exists": {
+    "problem": "We need to add a value `V` to all elements in an array between indices `L` and `R`, multiple times. Doing this Naively takes O(N) per query, which is too slow for many queries.",
+    "naive_solution": "Run a for-loop from `L` to `R` and add `V` to each element, taking O(N) time per range update.",
+    "better_idea": "Instead of updating all elements, just mark the start of the range with `+V` and the element just after the end of the range with `-V`. Later, we can recover the final array by computing the prefix sum of these marks."
+  },
+  "mental_model": {
+    "intuition": "Like putting a 'Start adding V here' sign at index L, and a 'Stop adding V here' sign at index R+1. When you walk down the street (prefix sum), you accumulate the active signs.",
+    "description": "A difference array `diff` tracks the change between adjacent elements of the original array. To add `V` to `[L, R]`, we only update `diff[L] += V` and `diff[R + 1] -= V`. After all range updates, a prefix sum over `diff` reconstructs the final values.",
+    "repeated_decision": "Where do I start the addition, and where do I cancel it out?"
+  },
+  "overview": {
+    "what": "An array representing the differences between adjacent elements, used to apply multiple range additions in O(1) time each.",
+    "why": "It reduces O(N) range updates to O(1).",
+    "where_used": ["Flight booking systems", "Cumulative ticket counting"]
+  },
+  "why_learning_this": [
+    "It is the direct inverse of the Prefix Sum pattern.",
+    "It teaches you how to defer expensive operations (lazy evaluation) until they are actually needed."
+  ],
+  "sections": [
+    {
+      "body": "A difference array is exactly what it sounds like: `diff[i] = arr[i] - arr[i-1]`. Because of this definition, if we compute the prefix sum of `diff`, we get the original `arr` back.\n\nThe magic happens when we want to update a range. Suppose we want to add 10 to every element from index 2 to 5. Instead of doing 4 additions, we add 10 to `diff[2]`. When we eventually compute the prefix sum, every element from index 2 onwards will be 10 higher. But we only wanted to add 10 up to index 5! So, we subtract 10 from `diff[6]`. This 'cancels out' the addition for everything after index 5.\n\nBy doing `diff[L] += V` and `diff[R + 1] -= V`, we process any range update in `O(1)` time. After millions of these O(1) updates, we do a single `O(N)` prefix sum pass to read the final array.\n\nThis technique is an offline algorithm—it assumes you know all the updates in advance and only need the final array at the end. If you need to interleave updates and reads, you need a Segment Tree or Fenwick Tree."
+    }
+  ],
+  "key_points": [
+    {
+      "title": "Complexity",
+      "detail": "Range Update is O(1). Final Array Reconstruction is O(N). Space is O(N)."
+    },
+    {
+      "title": "Offline Only",
+      "detail": "You cannot easily query the value of a specific element *during* the updates without doing an O(N) prefix sum. It's meant for batch updates."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "title": "Off-by-one on the cancellation index",
+      "explanation": "If the range is `[L, R]`, the subtraction happens at `R + 1`, not `R`. Subtracting at `R` would mean the value at index `R` doesn't get the addition."
+    },
+    {
+      "title": "Out of bounds on R + 1",
+      "explanation": "If the range extends to the very end of the array, `R + 1` might be out of bounds. You should allocate the difference array with size `N + 1` to safely handle this."
+    }
+  ],
+  "when_not_to_use": [
+    {
+      "scenario": "Online Queries",
+      "reason": "If you need to query the array's state in between updates, the difference array fails because reading requires an O(N) sweep."
+    }
+  ],
+  "failure_signals": [
+    "The problem requires both updates AND point/range queries interleaved."
+  ],
+  "engineering_examples": [
+    {
+      "title": "Data stream batching",
+      "problem": "Applying thousands of overlapping discount codes to a catalog of products.",
+      "why_this_algorithm": "Instead of locking and updating database rows for every discount, we record the start and end of the discount ranges and apply them in one linear sweep."
+    }
+  ],
+  "pattern": {
+    "name": "Difference Array",
+    "recognition_cues": ["Apply multiple range additions", "Return the final array after all operations are done"]
+  },
+  "recall_questions": [
+    {
+      "q": "What two operations are needed to add `V` to the range `[L, R]` in a difference array?",
+      "answer": "`diff[L] += V` and `diff[R + 1] -= V`.",
+      "tier": "tier1"
+    },
+    {
+      "q": "How do you recover the final array from a fully populated difference array?",
+      "answer": "By taking the running sum (prefix sum) of the difference array from left to right.",
+      "tier": "tier1"
+    }
+  ],
+  "understanding_checks": [
+    {
+      "type": "predict-output",
+      "question": "An array of 5 zeros is updated with `diff[1] += 5` and `diff[3] -= 5`. What is the prefix sum array?",
+      "answer": "`[0, 5, 5, 0, 0]`.",
+      "why": "Index 0 is 0. Index 1 adds 5 (total 5). Index 2 adds 0 (total 5). Index 3 adds -5 (total 0). Index 4 adds 0 (total 0).",
+      "code": "diff = [0, 5, 0, -5, 0]\nres = []\ncurr = 0\nfor x in diff:\n  curr += x\n  res.append(curr)\nprint(res)"
+    },
+    {
+      "type": "find-bug",
+      "question": "To add 10 to indices 2 through 4, a dev writes `diff[2] += 10; diff[4] -= 10;`. What's the bug?",
+      "answer": "Index 4 will NOT receive the +10 in the final prefix sum. It should be `diff[5] -= 10`.",
+      "why": "The subtraction acts as an instruction to 'stop adding from this point forward'. If you stop at 4, index 4 misses out."
+    }
+  ],
+  "oa_questions": [
+    {
+      "question": "Corporate Flight Bookings",
+      "company": "SDE interview",
+      "answer": "This is a pure difference array problem. Add passengers at the start flight, subtract at end_flight + 1.",
+      "approach": "Create an array of size N+1. Process bookings in O(1). Return the prefix sum."
+    }
+  ],
+  "practice_tasks": [
+    {
+      "title": "Corporate Flight Bookings",
+      "prompt": "You are given `n` flights and an array `bookings` where `bookings[i] = [first, last, seats]`. Return an array of size n with the total number of seats booked on each flight.",
+      "starter_code": "def corpFlightBookings(bookings, n):\n    pass",
+      "solution": "def corpFlightBookings(bookings, n):\n    diff = [0] * (n + 1)\n    for first, last, seats in bookings:\n        diff[first - 1] += seats\n        diff[last] -= seats\n    for i in range(1, n):\n        diff[i] += diff[i - 1]\n    return diff[:-1]"
+    }
+  ],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Prefix_sum"
+  ]
+}
