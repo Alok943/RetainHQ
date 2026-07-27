@@ -2,6 +2,7 @@ import { partitionClosedSessions, stitchSegments } from './stitcher'
 import type { Segment, Session, CompanionSessionIn } from '../types'
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier } from '../consent'
+import { storageLocalGet, storageLocalSet } from '../browser_api'
 
 // Constants
 const SESSION_GAP_MS = 15 * 60 * 1000 // 15 mins
@@ -74,12 +75,12 @@ async function maybeShowConsentNudgeBadge(): Promise<void> {
 }
 
 async function getBuffer(): Promise<Segment[]> {
-  const data = await chrome.storage.local.get([STORAGE_KEY_BUFFER])
+  const data = await storageLocalGet([STORAGE_KEY_BUFFER])
   return (data[STORAGE_KEY_BUFFER] as Segment[] | undefined) || []
 }
 
 async function setBuffer(segments: Segment[]): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY_BUFFER]: segments })
+  await storageLocalSet({ [STORAGE_KEY_BUFFER]: segments })
 }
 
 function sessionToPayload(session: Session): CompanionSessionIn {
@@ -114,7 +115,7 @@ async function flushClosedSessions(): Promise<void> {
     return
   }
 
-  const data = await chrome.storage.local.get([STORAGE_KEY_QUEUE])
+  const data = await storageLocalGet([STORAGE_KEY_QUEUE])
   const queue: QueuedSession[] = (data[STORAGE_KEY_QUEUE] as QueuedSession[] | undefined) || []
 
   for (const group of closed) {
@@ -129,14 +130,14 @@ async function flushClosedSessions(): Promise<void> {
     queue.splice(0, overflow)
   }
 
-  await chrome.storage.local.set({ [STORAGE_KEY_QUEUE]: queue })
+  await storageLocalSet({ [STORAGE_KEY_QUEUE]: queue })
   await setBuffer(live)
 
   processQueue()
 }
 
 async function processQueue(): Promise<void> {
-  const data = await chrome.storage.local.get([STORAGE_KEY_QUEUE])
+  const data = await storageLocalGet([STORAGE_KEY_QUEUE])
   const queue: QueuedSession[] = (data[STORAGE_KEY_QUEUE] as QueuedSession[] | undefined) || []
   if (queue.length === 0) return
 
@@ -163,7 +164,7 @@ async function processQueue(): Promise<void> {
 
     if (response.ok) {
       console.log(`Successfully synced ${chunk.length} session(s)`)
-      await chrome.storage.local.set({ [STORAGE_KEY_QUEUE]: rest })
+      await storageLocalSet({ [STORAGE_KEY_QUEUE]: rest })
       // More may be waiting behind this chunk — keep draining.
       if (rest.length > 0) processQueue()
       return
@@ -188,7 +189,7 @@ async function processQueue(): Promise<void> {
       }
       return true
     })
-    await chrome.storage.local.set({ [STORAGE_KEY_QUEUE]: [...survivors, ...rest] })
+    await storageLocalSet({ [STORAGE_KEY_QUEUE]: [...survivors, ...rest] })
   } catch (error) {
     // Network error (offline, DNS, etc.) — transient, don't burn attempts.
     console.error('Error syncing session batch (network offline?)', error)

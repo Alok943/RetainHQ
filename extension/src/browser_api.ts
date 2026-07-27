@@ -1,0 +1,38 @@
+// Cross-browser Promise wrappers for the handful of WebExtension calls this
+// codebase `await`s (IMPLEMENTATION-companion-firefox.md §2).
+//
+// Chrome's `chrome.*` API resolves these as native promises when no callback
+// is passed — already relied on throughout this codebase. Firefox's `chrome.*`
+// is a callback-only compat alias: the SAME call, awaited with no callback,
+// silently resolves to `undefined` instead of the real value or a thrown
+// error — a silent-wrong-value bug, not a crash (confirmed against MDN
+// `background`/`optional_permissions`, checked 2026-07-26). Firefox's native
+// `browser.*` global IS promise-based and exists only on Firefox, so `typeof
+// browser` picks the right one on either engine without a build-time branch.
+declare const browser: typeof chrome | undefined
+
+// Resolved per-call, not once at module load: vitest's `chrome` mock is
+// (re)stubbed per-test via `vi.stubGlobal` in `beforeEach`, which runs after
+// this module is first imported — a module-scope constant would capture
+// whatever (or nothing) was global at import time and never see it.
+function getApi(): typeof chrome {
+  return typeof browser !== 'undefined' ? browser : chrome
+}
+
+export const storageLocalGet = (keys: string | string[]): Promise<Record<string, unknown>> =>
+  getApi().storage.local.get(keys)
+
+export const storageLocalSet = (items: Record<string, unknown>): Promise<void> =>
+  getApi().storage.local.set(items)
+
+export const permissionsRequest = (permissions: chrome.permissions.Permissions): Promise<boolean> =>
+  getApi().permissions.request(permissions)
+
+export const permissionsRemove = (permissions: chrome.permissions.Permissions): Promise<boolean> =>
+  getApi().permissions.remove(permissions)
+
+export const permissionsContains = (permissions: chrome.permissions.Permissions): Promise<boolean> =>
+  getApi().permissions.contains(permissions)
+
+export const runtimeSendMessage = <T = unknown>(message: unknown): Promise<T> =>
+  getApi().runtime.sendMessage(message)

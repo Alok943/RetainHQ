@@ -1,4 +1,5 @@
 import { startActivityTracking } from './activity_tracker'
+import { storageLocalGet, storageLocalSet, runtimeSendMessage } from '../browser_api'
 
 /**
  * LeetCode solve capture + reflection (SPEC-leetcode-retention.md §4, §4.1).
@@ -59,12 +60,12 @@ function currentSlug(): string | null {
 }
 
 async function readQueue(): Promise<PendingSolve[]> {
-  const got = await chrome.storage.local.get(QUEUE_KEY)
+  const got = await storageLocalGet(QUEUE_KEY)
   return (got[QUEUE_KEY] as PendingSolve[]) ?? []
 }
 
 async function writeQueue(q: PendingSolve[]): Promise<void> {
-  await chrome.storage.local.set({ [QUEUE_KEY]: q })
+  await storageLocalSet({ [QUEUE_KEY]: q })
 }
 
 /** Send everything queued, dropping each item only after it is handed off. */
@@ -77,7 +78,7 @@ async function flushQueue(): Promise<void> {
     try {
       // Drop ONLY on a confirmed 2xx. Signed out, offline, or a 5xx all keep the
       // solve queued for the next flush rather than losing it.
-      const res = await chrome.runtime.sendMessage({ type: 'LEETCODE_SOLVED', payload: item })
+      const res = await runtimeSendMessage<{ ok?: boolean }>({ type: 'LEETCODE_SOLVED', payload: item })
       delivered = res?.ok === true
     } catch {
       delivered = false // service worker asleep

@@ -27,6 +27,8 @@
 // grant generally) and gives the identical enforcement guarantee — no grant,
 // no injection — without a broken build or the extra "scripting" permission.
 
+import { storageLocalGet, storageLocalSet, permissionsRequest, permissionsRemove, permissionsContains } from './browser_api'
+
 export type ConsentTier = 'cloud' | 'nano' | 'titles'
 
 export const LLM_ORIGINS = [
@@ -38,16 +40,16 @@ export const LLM_ORIGINS = [
 const STORAGE_KEY_CONSENT = 'consentTier'
 
 export async function getConsentTier(): Promise<ConsentTier | null> {
-  const data = await chrome.storage.local.get([STORAGE_KEY_CONSENT])
+  const data = await storageLocalGet([STORAGE_KEY_CONSENT])
   return (data[STORAGE_KEY_CONSENT] as ConsentTier | undefined) ?? null
 }
 
 export async function setConsentTier(tier: ConsentTier): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY_CONSENT]: tier })
+  await storageLocalSet({ [STORAGE_KEY_CONSENT]: tier })
 }
 
 export async function hasLlmOriginPermission(): Promise<boolean> {
-  return chrome.permissions.contains({ origins: LLM_ORIGINS })
+  return permissionsContains({ origins: LLM_ORIGINS })
 }
 
 /**
@@ -68,7 +70,7 @@ export async function switchConsentTier(
   const hadOrigins = currentTier === 'cloud' || currentTier === 'nano'
 
   if (needsOrigins && !hadOrigins) {
-    const granted = await chrome.permissions.request({ origins: LLM_ORIGINS })
+    const granted = await permissionsRequest({ origins: LLM_ORIGINS })
     if (!granted) {
       // A denied permission prompt is still a choice, and must be logged as
       // one — the requested tier never took effect, so record what's true.
@@ -76,7 +78,7 @@ export async function switchConsentTier(
       return 'titles'
     }
   } else if (!needsOrigins && hadOrigins) {
-    await chrome.permissions.remove({ origins: LLM_ORIGINS })
+    await permissionsRemove({ origins: LLM_ORIGINS })
   }
 
   await setConsentTier(newTier)

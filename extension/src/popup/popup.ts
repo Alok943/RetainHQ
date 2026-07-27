@@ -125,6 +125,11 @@ loginBtn.addEventListener('click', async () => {
   statusEl.textContent = 'Signing in...'
   try {
     const redirectUrl = chrome.identity.getRedirectURL()
+    // Derived from the extension/add-on id, so it differs by browser
+    // (chromiumapp.org vs Firefox's own redirect domain) — logged rather
+    // than guessed so the real Firefox value can be added to Supabase's
+    // allowed-redirect list (IMPLEMENTATION-companion-firefox.md §5).
+    console.log('[RetainHQ] OAuth redirect URL for this build/browser:', redirectUrl)
     const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`
     
     chrome.identity.launchWebAuthFlow(
