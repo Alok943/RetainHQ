@@ -22,4 +22,11 @@ describe('manifest — dual Chrome/Firefox target', () => {
   it('declares data collection permissions (mandatory for new Firefox extensions since Nov 2025)', () => {
     expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual(['browsingActivity'])
   })
+
+  it('declares the LeetCode reflection free-text note as optional personallyIdentifyingInfo, separate from the base browsingActivity track', () => {
+    // The "biggest mistake" field (src/content/leetcode.ts) is unconstrained
+    // user-typed free text, unlike titles/domains/durations — Mozilla's opt-in
+    // rule for personal data means it can't ride on `required` (IMPLEMENTATION-amo-submission.md §2).
+    expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional).toEqual(['personallyIdentifyingInfo'])
+  })
 })

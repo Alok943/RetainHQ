@@ -18,6 +18,7 @@ import Login from './Login';
 import Logo from './Logo';
 import WelcomeModal from './WelcomeModal';
 import JoinClassroom from './JoinClassroom';
+import PrivacyCompanion from './PrivacyCompanion';
 
 const Home = lazy(() => import('./Home'));
 const Review = lazy(() => import('./Review'));
@@ -440,6 +441,9 @@ function Root() {
       {/* Top-level (outside AppLayout) — a student may follow a join code before
           ever signing in, so this can't sit behind the authed shell's routing. */}
       <Route path="/join/:code" element={<JoinClassroom />} />
+      {/* Public AMO/reviewer-facing policy page — no session check, no app shell
+          (IMPLEMENTATION-amo-submission.md §1: must be reachable without logging in). */}
+      <Route path="/privacy/companion" element={<PrivacyCompanion />} />
       <Route path="/*" element={<AppLayout />} />
     </Routes>
   );

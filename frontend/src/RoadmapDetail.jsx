@@ -870,6 +870,11 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
   const phases = [];
   topLevel.forEach((n) => { if (!phases.includes(n.phase)) phases.push(n.phase); });
 
+  // LeetCode problem mappings only exist for the DSA catalog roadmap's nodes
+  // (problem_concepts.node_id) — showing the section on every other roadmap
+  // would just be a guaranteed-empty state on every node of every roadmap.
+  const showProblems = contentKey === 'dsa';
+
   // For physics roadmaps, we show a "Practice numericals" link per phase (that
   // content only exists for physics- roadmaps today; startsWith covers physics-9,
   // physics-10, and future physics-11/physics-12 without another edit here).
@@ -922,6 +927,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                           learnSlug={lessonSlugForNode(slugByTitle, n.title)}
                           roadmapId={roadmapId}
                           contentKey={contentKey}
+                          showProblems={showProblems}
                         />
                         {(childrenByParent[n.id] || []).map((c) => (
                           <TopicRow
@@ -935,6 +941,7 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
                             learnSlug={lessonSlugForNode(slugByTitle, c.title)}
                             roadmapId={roadmapId}
                             contentKey={contentKey}
+                            showProblems={showProblems}
                           />
                         ))}
                       </React.Fragment>
@@ -973,13 +980,14 @@ function ListView({ rawNodes, statusMap, childrenByParent, collapsedPhases, onTo
   );
 }
 
-function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, roadmapId, contentKey }) {
+function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, roadmapId, contentKey, showProblems }) {
   const navigate = useNavigate();
   const desc = node.description;
   const hasInfo = Boolean(desc);
   const isLink = hasInfo && /^https?:\/\//.test(desc.trim());
   const isNeetcode = isLink && desc.includes('neetcode.io');
   const tierColor = TIER_COLORS[node.tier];
+  const expandable = hasInfo || showProblems;
 
   return (
     <div className={`border-t border-[rgba(15,23,42,0.05)] ${isChild ? 'pl-6' : ''}`}>
@@ -995,7 +1003,7 @@ function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, road
         </button>
 
         <button
-          onClick={hasInfo ? onOpen : onToggle}
+          onClick={expandable ? onOpen : onToggle}
           className={`flex-1 min-w-0 text-left font-sans text-sm leading-snug ${done ? 'text-[#94a3b8] line-through' : 'text-[#0F172A]'}`}
         >
           {node.title}
@@ -1012,29 +1020,199 @@ function TopicRow({ node, done, open, onOpen, onToggle, isChild, learnSlug, road
           </Link>
         )}
         {tierColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tierColor }} title={node.tier} />}
-        {hasInfo && (
-          <button onClick={onOpen} aria-label="Show notes" className="text-[#94a3b8] hover:text-[#0F172A] shrink-0">
-            {open ? <ChevronDown size={14} /> : <StickyNote size={13} />}
+        {expandable && (
+          <button onClick={onOpen} aria-label={hasInfo ? 'Show notes' : 'Show problems'} className="text-[#94a3b8] hover:text-[#0F172A] shrink-0">
+            {open ? <ChevronDown size={14} /> : hasInfo ? <StickyNote size={13} /> : <ChevronRight size={13} />}
           </button>
         )}
       </div>
 
-      {open && hasInfo && (
+      {open && expandable && (
         <div className="px-4 pb-3 pl-12 animate-in fade-in duration-150">
-          {isLink ? (
-            <a
-              href={desc.trim()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
-            >
-              <ExternalLink size={13} /> {isNeetcode ? 'Solve on NeetCode' : 'Open link'}
-            </a>
-          ) : (
-            <p className="font-sans text-xs text-[#475569] leading-relaxed">{desc}</p>
+          {hasInfo && (
+            isLink ? (
+              <a
+                href={desc.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#0891B2] hover:text-[#0F172A] transition-colors"
+              >
+                <ExternalLink size={13} /> {isNeetcode ? 'Solve on NeetCode' : 'Open link'}
+              </a>
+            ) : (
+              <p className="font-sans text-xs text-[#475569] leading-relaxed">{desc}</p>
+            )
           )}
+          {showProblems && <ProblemsSection nodeId={node.id} />}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------------- LeetCode problems on a DSA node ---------------- */
+
+const DIFFICULTY_RANK = { easy: 0, medium: 1, hard: 2 };
+
+function ProblemsSection({ nodeId }) {
+  const { requireAuth } = useAuth();
+  const [problems, setProblems] = useState(null); // null = loading
+  const [fetchError, setFetchError] = useState(false);
+  const [sortBy, setSortBy] = useState('difficulty'); // 'difficulty' | 'number'
+  const [showSupporting, setShowSupporting] = useState(false);
+  const [showAlternative, setShowAlternative] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProblems(null);
+    setFetchError(false);
+    apiFetch(`/api/problems/by-node/${nodeId}`, { optionalAuth: true })
+      .then((data) => { if (!cancelled) setProblems(data); })
+      .catch((err) => {
+        console.error('Failed to load problems:', err);
+        if (!cancelled) setFetchError(true);
+      });
+    return () => { cancelled = true; };
+  }, [nodeId]);
+
+  const toggleMark = useCallback(async (problem) => {
+    if (!requireAuth()) return;
+    const wasMarked = Boolean(problem.marked_status);
+    setProblems((cur) => cur.map((p) => (p.id === problem.id ? { ...p, marked_status: wasMarked ? null : 'solved' } : p)));
+    try {
+      if (wasMarked) {
+        await apiFetch(`/api/problems/${problem.id}/mark`, { method: 'DELETE' });
+      } else {
+        await apiFetch(`/api/problems/${problem.id}/mark`, { method: 'POST', body: JSON.stringify({ status: 'solved' }) });
+      }
+    } catch (err) {
+      console.error('Failed to save problem mark:', err);
+      setProblems((cur) => cur.map((p) => (p.id === problem.id ? { ...p, marked_status: wasMarked ? 'solved' : null } : p)));
+    }
+  }, [requireAuth]);
+
+  // Distinct from "loaded and genuinely empty" (Home.jsx's post-2026-07-24
+  // pattern) — a failed fetch must never render as "no problems mapped."
+  if (fetchError) {
+    return (
+      <div className="mt-3 pt-3 border-t border-[rgba(15,23,42,0.06)]">
+        <p className="font-sans text-xs text-[#ba1a1a]">Couldn't load problems.</p>
+      </div>
+    );
+  }
+  if (problems === null) {
+    return (
+      <div className="mt-3 pt-3 border-t border-[rgba(15,23,42,0.06)]">
+        <p className="font-sans text-xs text-[#64748B]">Loading problems…</p>
+      </div>
+    );
+  }
+  if (problems.length === 0) {
+    return (
+      <div className="mt-3 pt-3 border-t border-[rgba(15,23,42,0.06)]">
+        <p className="font-sans text-xs text-[#64748B]">No problems mapped to this concept yet.</p>
+      </div>
+    );
+  }
+
+  const sorted = [...problems].sort((a, b) =>
+    sortBy === 'difficulty' && DIFFICULTY_RANK[a.difficulty] !== DIFFICULTY_RANK[b.difficulty]
+      ? DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty]
+      : a.external_id - b.external_id
+  );
+  const byRole = { primary: [], supporting: [], alternative: [] };
+  sorted.forEach((p) => { (byRole[p.role] ||= []).push(p); });
+
+  return (
+    <div className="mt-3 pt-3 border-t border-[rgba(15,23,42,0.06)]">
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <span className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest shrink-0">
+          Problems ({problems.length})
+        </span>
+        <div className="flex rounded border border-[rgba(15,23,42,0.12)] overflow-hidden text-[10px] shrink-0">
+          <button
+            onClick={() => setSortBy('difficulty')}
+            className={`px-2 py-1 font-semibold transition-colors ${sortBy === 'difficulty' ? 'bg-[rgba(15,23,42,0.06)] text-[#0F172A]' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+          >
+            Difficulty
+          </button>
+          <button
+            onClick={() => setSortBy('number')}
+            className={`px-2 py-1 font-semibold border-l border-[rgba(15,23,42,0.12)] transition-colors ${sortBy === 'number' ? 'bg-[rgba(15,23,42,0.06)] text-[#0F172A]' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+          >
+            Number
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-0.5">
+        {byRole.primary.map((p) => (
+          <ProblemRow key={p.id} problem={p} onToggle={() => toggleMark(p)} />
+        ))}
+      </div>
+
+      {byRole.supporting.length > 0 && (
+        <ProblemGroup label={`Supporting (${byRole.supporting.length})`} open={showSupporting} onToggle={() => setShowSupporting((s) => !s)}>
+          {byRole.supporting.map((p) => (
+            <ProblemRow key={p.id} problem={p} onToggle={() => toggleMark(p)} />
+          ))}
+        </ProblemGroup>
+      )}
+      {byRole.alternative.length > 0 && (
+        <ProblemGroup label={`Alternative (${byRole.alternative.length})`} open={showAlternative} onToggle={() => setShowAlternative((s) => !s)}>
+          {byRole.alternative.map((p) => (
+            <ProblemRow key={p.id} problem={p} onToggle={() => toggleMark(p)} />
+          ))}
+        </ProblemGroup>
+      )}
+    </div>
+  );
+}
+
+function ProblemGroup({ label, open, onToggle, children }) {
+  return (
+    <div className="mt-2">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-1 font-sans text-[10px] font-semibold text-[#64748B] hover:text-[#0F172A] uppercase tracking-wide transition-colors"
+      >
+        {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />} {label}
+      </button>
+      {open && <div className="flex flex-col gap-0.5 mt-1">{children}</div>}
+    </div>
+  );
+}
+
+function ProblemRow({ problem, onToggle }) {
+  const done = problem.marked_status === 'solved';
+  const tierColor = TIER_COLORS[problem.difficulty];
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <button
+        onClick={onToggle}
+        aria-label={done ? 'Unmark as solved' : 'Mark as solved'}
+        className={`w-4 h-4 rounded shrink-0 flex items-center justify-center border transition-colors ${
+          done ? 'bg-[#0F766E] border-[#0F766E]' : 'border-[rgba(15,23,42,0.3)] hover:border-[#0891B2]'
+        }`}
+      >
+        {done && <Check size={10} className="text-white" />}
+      </button>
+      <a
+        href={problem.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className={`flex-1 min-w-0 font-sans text-xs truncate transition-colors ${done ? 'text-[#94a3b8] line-through' : 'text-[#0F172A] hover:text-[#0891B2]'}`}
+      >
+        {problem.title}
+      </a>
+      {problem.paid_only && (
+        <span className="font-sans text-[9px] font-semibold text-[#B45309] bg-[#B45309]/10 rounded px-1.5 py-0.5 shrink-0">
+          Paid
+        </span>
+      )}
+      {tierColor && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tierColor }} title={problem.difficulty} />}
+      <ExternalLink size={11} className="text-[#94a3b8] shrink-0" />
     </div>
   );
 }

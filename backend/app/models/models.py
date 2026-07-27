@@ -451,7 +451,7 @@ class ProblemConcept(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     problem_id: uuid.UUID = Field(foreign_key="problems.id", ondelete="CASCADE")
     node_id: uuid.UUID = Field(foreign_key="roadmap_nodes.id", ondelete="CASCADE")
-    role: str  # 'primary' | 'supporting'
+    role: str  # 'primary' | 'supporting' | 'alternative'
     confidence: float
     reviewed_by: Optional[str] = None  # 'human' or None
     teaching_role: Optional[str] = None  # 'canonical' | 'practice' | 'variant' | 'synthesis'
@@ -479,3 +479,17 @@ class ConceptCard(SQLModel, table=True):
 
     node: Optional["RoadmapNode"] = Relationship()
     problem: Optional[Problem] = Relationship(back_populates="concept_cards")
+
+
+class ProblemAttempt(SQLModel, table=True):
+    """Manual 'I solved this' marks. Deliberately NOT evidence: the extension's
+    verified-submission path writes learning_events (T1_verified_external) and
+    moves node_mastery; this table never does either (IMPLEMENTATION-problem-capture.md
+    §1) — it is the completion checkbox, not the evidence spine."""
+    __tablename__ = "problem_attempts"
+    __table_args__ = (UniqueConstraint("user_id", "problem_id", name="uq_problem_attempt"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(index=True)
+    problem_id: uuid.UUID = Field(foreign_key="problems.id", ondelete="CASCADE", index=True)
+    status: str = Field(default="solved")     # 'solved' | 'attempted'
+    marked_at: datetime = Field(default_factory=datetime.utcnow)
