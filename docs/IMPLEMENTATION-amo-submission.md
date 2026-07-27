@@ -95,8 +95,27 @@ soften or inflate them:
 - **Deletion:** every tracked session appears in the in-app evidence log and can be deleted there.
 - **Not sold, not shared with third parties, not used for advertising.**
 
-Do not claim "never used to train models" unless the Gemini API tier in use actually guarantees it —
-verify before writing that sentence, and omit it rather than ship a false claim.
+### The one claim that can make this document false
+
+`PrivacyCompanion.jsx` currently states that Google's **paid-tier** terms mean the data is not used
+to train models. Verified against Google's terms on 2026-07-26 and accurate **for the paid tier**:
+
+- **Paid Gemini API / Vertex AI** — Google does not use prompts or responses to improve its
+  products; processed under the Cloud Data Processing Addendum.
+- **Free tier** — Google *does* use submitted content to provide, improve and develop its products,
+  **and human reviewers may see it.**
+
+So the sentence is true or false depending entirely on the billing status of the `GEMINI_API_KEY`
+set on Render. If that key is on the free tier, the published privacy policy is a false statement,
+and page titles the user studied are human-reviewable by a third party — which is materially worse
+than the training question alone.
+
+The EEA/Switzerland/UK exception (paid terms applied to free tiers) does **not** cover India.
+
+**Pre-submission gate — confirm the key is on a paid/billed Google Cloud project.** If it is not,
+either enable billing or change the copy to state what is actually true. Never leave the claim
+standing unverified: it is the kind of statement that reads as reassurance and functions as
+liability.
 
 ---
 
