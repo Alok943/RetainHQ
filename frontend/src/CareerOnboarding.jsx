@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Loader2, Sparkles, Target, ClipboardList, TreePine, CheckCircle2,
   ChevronDown, ChevronRight, Trash2, RotateCcw, SkipForward,
@@ -60,9 +61,23 @@ function ErrorBanner({ error }) {
   );
 }
 
-function GoalStep({ templates, roleKey, setRoleKey, goalTitle, setGoalTitle, targetDate, setTargetDate, busy, error, onContinue }) {
+function BackButton({ onClick, disabled, label = 'Back' }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center gap-1.5 font-sans text-sm text-[#64748B] hover:text-[#0F172A] transition-colors disabled:opacity-40 -mt-1"
+    >
+      <ArrowLeft size={14} /> {label}
+    </button>
+  );
+}
+
+function GoalStep({ templates, roleKey, setRoleKey, goalTitle, setGoalTitle, targetDate, setTargetDate, busy, error, onBack, onContinue }) {
   return (
     <div className="flex flex-col gap-6">
+      <BackButton onClick={onBack} disabled={busy} label="Back to dashboard" />
+
       <header>
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
           <Sparkles size={22} className="text-[#0891B2]" /> What are you preparing for?
@@ -127,10 +142,12 @@ function GoalStep({ templates, roleKey, setRoleKey, goalTitle, setGoalTitle, tar
   );
 }
 
-function DiagnosticStep({ probes, probesLoaded, answers, setAnswer, busy, error, onSubmit, onSkip }) {
+function DiagnosticStep({ probes, probesLoaded, answers, setAnswer, busy, error, onBack, onSubmit, onSkip }) {
   const answeredCount = probes.filter((p) => (answers[p.stable_key] || '').trim()).length;
   return (
     <div className="flex flex-col gap-6">
+      <BackButton onClick={onBack} disabled={busy} />
+
       <header>
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
           <ClipboardList size={22} className="text-[#0891B2]" /> Quick diagnostic
@@ -255,13 +272,15 @@ function SubjectGroup({ subject, expanded, onToggle, onChangeNode, onDeleteNode 
 
 function TreeStep({
   draft, generating, error, expandedSubjects, toggleSubject, updateNode, deleteNode,
-  freeText, setFreeText, onRegenerate, onContinue,
+  freeText, setFreeText, onBack, onRegenerate, onContinue,
 }) {
   const totalNodes = draft ? draft.subjects.reduce((n, s) => n + s.nodes.length, 0) : 0;
   const totalHours = draft ? Math.round(draft.subjects.reduce((sum, s) => sum + s.nodes.reduce((a, n) => a + (n.est_effort_min || 0), 0), 0) / 60) : 0;
 
   return (
     <div className="flex flex-col gap-6">
+      <BackButton onClick={onBack} disabled={generating} />
+
       <header>
         <h2 className="font-sans text-2xl font-semibold text-[#0F172A] flex items-center gap-2">
           <TreePine size={22} className="text-[#0891B2]" /> Review your tree
@@ -397,6 +416,7 @@ function ConfirmStep({ draft, busy, error, onBack, onConfirm }) {
 }
 
 function CareerOnboarding({ existingGoal, onCommitted }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(existingGoal ? 'diagnostic' : 'goal');
   const [templates, setTemplates] = useState([]);
   const [error, setError] = useState('');
@@ -547,6 +567,7 @@ function CareerOnboarding({ existingGoal, onCommitted }) {
           goalTitle={goalTitle} setGoalTitle={setGoalTitle}
           targetDate={targetDate} setTargetDate={setTargetDate}
           busy={busy} error={error}
+          onBack={() => navigate('/dashboard')}
           onContinue={createGoal}
         />
       )}
@@ -556,6 +577,7 @@ function CareerOnboarding({ existingGoal, onCommitted }) {
           probes={probes} probesLoaded={probesLoaded}
           answers={answers} setAnswer={(k, v) => setAnswers((a) => ({ ...a, [k]: v }))}
           busy={busy} error={error}
+          onBack={() => setStep('goal')}
           onSubmit={submitDiagnostic}
           onSkip={() => setStep('tree')}
         />
@@ -567,6 +589,7 @@ function CareerOnboarding({ existingGoal, onCommitted }) {
           expandedSubjects={expandedSubjects} toggleSubject={toggleSubject}
           updateNode={updateNode} deleteNode={deleteNode}
           freeText={freeText} setFreeText={setFreeText}
+          onBack={() => setStep('diagnostic')}
           onRegenerate={regenerateTree}
           onContinue={() => setStep('confirm')}
         />
