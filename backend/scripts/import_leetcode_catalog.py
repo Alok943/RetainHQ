@@ -37,6 +37,54 @@ SCAFFOLD_SLUGS = frozenset({
     "what-is-an-algorithm",
 })
 
+def plan_stale_primary_cleanup(existing_roles, intended_primary_node_id, intended_secondary):
+    """Decide what to do with a problem's EXISTING rows once its primary moves.
+
+    The importer upserts on (problem_id, node_id). That key is correct for the
+    row it writes and blind to every row it doesn't: when a problem's `primary`
+    moves to a different concept — or becomes `out_of_scope`/scaffold, so no new
+    primary is written at all — the row at the OLD node_id is simply never
+    visited, and silently stays `role='primary'`.
+
+    Both failures reached production in the v1.2 merge (2026-07-30) and had to be
+    cleaned up by hand:
+      - 311 problems ended up with TWO role='primary' rows (primary moved to a
+        new node). Two primaries breaks the one-primary-per-problem rule that
+        `learning_events.node_id` resolution depends on
+        (SPEC-leetcode-retention.md §3.2.-1) — a solve would double-count or
+        pick arbitrarily.
+      - 34 problems kept a stale primary pointing at a TEACHING-SCAFFOLD node
+        after their mapping became `out_of_scope` — the exact rows the scaffold
+        guard above exists to prevent, surviving because nothing ever revisits
+        them.
+
+    Scoped deliberately to `primary`. A supporting/alternative row the mapping
+    no longer lists is left alone: it is not an integrity violation, and deleting
+    on absence would silently discard curation from earlier mapping versions.
+
+    Args:
+        existing_roles: {node_id: role} already in the DB for this problem.
+        intended_primary_node_id: node_id the file now wants as primary, or None.
+        intended_secondary: {node_id: 'supporting'|'alternative'} from the file.
+
+    Returns:
+        (to_delete, to_demote) — node_ids to remove, and {node_id: new_role} for
+        rows that survive with a corrected role.
+    """
+    to_delete = set()
+    to_demote = {}
+    for node_id, role in existing_roles.items():
+        if node_id == intended_primary_node_id:
+            continue  # the primary upsert path owns this row
+        if role != "primary":
+            continue  # only primaries are reconciled here — see docstring
+        if node_id in intended_secondary:
+            to_demote[node_id] = intended_secondary[node_id]
+        else:
+            to_delete.add(node_id)
+    return to_delete, to_demote
+
+
 async def import_catalog(db: AsyncSession):
     catalog_path = CONTENT_DIR / "catalog.v1.json"
     if not catalog_path.exists():
@@ -112,8 +160,17 @@ async def import_catalog(db: AsyncSession):
         # after every problem had already been committed. Accept both shapes.
         if isinstance(raw_mapping, dict):
             mapping_data = raw_mapping["mappings"]
+            # Was hardcoded "v1" below regardless of what actually got imported —
+            # so a merge like the v3-tail pass-3 correction (mapping_version bumped
+            # to "v1.2" in the file) would still write "v1" into every
+            # problem_concepts row, breaking the traceability
+            # SPEC-leetcode-retention.md §3.2.1 requires ("why did mastery move?"
+            # must be answerable as "mapping v1 -> v2 moved X's primary from Y to
+            # Z"). Read it from the file instead.
+            mapping_version = raw_mapping.get("mapping_version", "v1")
         else:
             mapping_data = raw_mapping
+            mapping_version = "v1"
 
         logger.info(f"Importing {len(mapping_data)} problem concepts from {mapping_path}")
         
@@ -206,8 +263,17 @@ async def import_catalog(db: AsyncSession):
         }
         logger.info(f"Preloaded {len(existing_pcs)} existing problem_concepts")
 
+        # Reverse index so a problem's OTHER rows are reachable — the (problem_id,
+        # node_id) key above only ever finds the one row being written, which is
+        # exactly why stale primaries survived. See plan_stale_primary_cleanup.
+        pcs_by_problem: dict[uuid.UUID, dict[uuid.UUID, ProblemConcept]] = {}
+        for (_pid, _nid), _pc in existing_pcs.items():
+            pcs_by_problem.setdefault(_pid, {})[_nid] = _pc
+
         concepts_upserted = 0
         out_of_scope = 0
+        stale_primaries_removed = 0
+        stale_primaries_demoted = 0
         unknown_slugs: dict[str, int] = {}
         scaffold_primaries: dict[str, int] = {}
         for processed, m_data in enumerate(mapping_data, start=1):
@@ -236,8 +302,38 @@ async def import_catalog(db: AsyncSession):
             primary_slug = m_data.get("primary")
             if primary_slug in SCAFFOLD_SLUGS:
                 primary_slug = None
-            if primary_slug and primary_slug in slug_to_node_id:
-                node_id = slug_to_node_id[primary_slug]
+            intended_primary_node_id = slug_to_node_id.get(primary_slug) if primary_slug else None
+
+            # Reconcile BEFORE upserting: a primary that moved (or vanished into
+            # out_of_scope) leaves its old row behind otherwise. Runs even when
+            # there is no new primary to write — that's the case that stranded 34
+            # scaffold rows in prod. See plan_stale_primary_cleanup.
+            _existing_for_problem = pcs_by_problem.get(problem_id, {})
+            if _existing_for_problem:
+                _intended_secondary = {}
+                for _role_type in ("alternatives", "supporting"):
+                    _role = "supporting" if _role_type == "supporting" else "alternative"
+                    for _slug in m_data.get(_role_type, []):
+                        _nid = slug_to_node_id.get(_slug)
+                        if _nid is not None and _nid != intended_primary_node_id:
+                            _intended_secondary.setdefault(_nid, _role)
+
+                _to_delete, _to_demote = plan_stale_primary_cleanup(
+                    {nid: pc.role for nid, pc in _existing_for_problem.items()},
+                    intended_primary_node_id,
+                    _intended_secondary,
+                )
+                for _nid in _to_delete:
+                    await db.delete(_existing_for_problem.pop(_nid))
+                    existing_pcs.pop((problem_id, _nid), None)
+                    stale_primaries_removed += 1
+                for _nid, _new_role in _to_demote.items():
+                    _existing_for_problem[_nid].role = _new_role
+                    _existing_for_problem[_nid].mapping_version = mapping_version
+                    stale_primaries_demoted += 1
+
+            if primary_slug and intended_primary_node_id is not None:
+                node_id = intended_primary_node_id
                 pc = existing_pcs.get((problem_id, node_id))
                 if not pc:
                     pc = ProblemConcept(
@@ -246,18 +342,19 @@ async def import_catalog(db: AsyncSession):
                         role="primary",
                         confidence=_confidence(m_data.get("confidence")),
                         reviewed_by=m_data.get("reviewed_by"),
-                        mapping_version="v1"
+                        mapping_version=mapping_version
                     )
                     db.add(pc)
                     # Register immediately: a problem whose `primary` and one of its
                     # `alternatives` resolve to the SAME node would otherwise insert
                     # twice and trip uq_problem_concept.
                     existing_pcs[(problem_id, node_id)] = pc
+                    pcs_by_problem.setdefault(problem_id, {})[node_id] = pc
                 else:
                     pc.role = "primary"
                     pc.confidence = _confidence(m_data.get("confidence"))
                     pc.reviewed_by = m_data.get("reviewed_by")
-                    pc.mapping_version = "v1"
+                    pc.mapping_version = mapping_version
                 
                 concepts_upserted += 1
 
@@ -273,16 +370,19 @@ async def import_catalog(db: AsyncSession):
                                 node_id=node_id,
                                 role="supporting" if role_type == "supporting" else "alternative",
                                 confidence=0.8, # fallback
-                                mapping_version="v1"
+                                mapping_version=mapping_version
                             )
                             db.add(pc)
                             existing_pcs[(problem_id, node_id)] = pc
+                            pcs_by_problem.setdefault(problem_id, {})[node_id] = pc
                         concepts_upserted += 1
                         
         await db.commit()
         logger.info(
             f"Upserted {concepts_upserted} problem concepts "
-            f"({out_of_scope} problems deliberately out-of-scope)."
+            f"({out_of_scope} problems deliberately out-of-scope). "
+            f"Stale primaries: {stale_primaries_removed} removed, "
+            f"{stale_primaries_demoted} demoted to supporting/alternative."
         )
 
         # Same reasoning as the unresolved-slug guard above: a mapping that looks
