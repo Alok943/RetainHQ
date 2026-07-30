@@ -1,21 +1,8 @@
-import React, { useState } from 'react';
-import { Puzzle, X } from 'lucide-react';
+import React from 'react';
+import { Puzzle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const DISMISS_KEY = 'retainhq_companion_banner_dismissed';
-
 function CompanionInstallBanner() {
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(DISMISS_KEY) === 'true'
-  );
-
-  if (dismissed) return null;
-
-  const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, 'true');
-    setDismissed(true);
-  };
-
   return (
     <div className="fixed bottom-24 right-6 z-40 w-72 rounded-lg border border-[#0891B2]/25 bg-white p-4 flex items-start gap-3 shadow-xl">
       <div className="w-8 h-8 rounded-full bg-[#0891B2]/10 flex items-center justify-center text-[#0891B2] shrink-0">
@@ -35,13 +22,6 @@ function CompanionInstallBanner() {
           Get the extension
         </Link>
       </div>
-      <button
-        onClick={dismiss}
-        aria-label="Dismiss"
-        className="shrink-0 text-[#64748B] hover:text-[#0F172A]"
-      >
-        <X size={14} />
-      </button>
     </div>
   );
 }
