@@ -86,16 +86,20 @@ export async function switchConsentTier(
   _currentTier: ConsentTier | null,
 ): Promise<ConsentTier> {
   const needsOrigins = newTier === 'cloud'
-  // Queried live rather than trusted from the caller's cached `currentTier`:
-  // getConsentTier() returns null for a tier stored under a stale
-  // CONSENT_COPY_VERSION (§ above) even though the browser permission grant
-  // from that earlier choice is still live. Deriving hadOrigins from the
-  // actual permission state — not the possibly-stale cached tier — is what
-  // guarantees a re-prompted v1 'cloud' user who now picks 'titles' actually
-  // has the dangling grant revoked instead of silently keeping it.
-  const hadOrigins = await hasLlmOriginPermission()
 
-  if (needsOrigins && !hadOrigins) {
+  if (needsOrigins) {
+    // permissions.request() must be the FIRST await anywhere in this call
+    // chain. Firefox requires it to run within a direct user-gesture context
+    // (confirmed 2026-07-30: "permissions.request may only be called from a
+    // user input handler"), and awaiting ANYTHING first — even a fast,
+    // non-gesture-sensitive call like permissions.contains() below — already
+    // spends that gesture before request() ever runs. The popup's click
+    // handler already avoids an await before calling switchConsentTier (see
+    // cachedTier in popup.ts); this was the same mistake one level deeper.
+    // No need to check hasLlmOriginPermission() first to skip a redundant
+    // prompt — request() is documented to resolve true with no dialog at all
+    // when the permission is already granted, so calling it unconditionally
+    // here is both simpler and gesture-safe.
     const granted = await permissionsRequest({ origins: LLM_ORIGINS })
     if (!granted) {
       // A denied permission prompt is still a choice, and must be logged as
@@ -103,8 +107,19 @@ export async function switchConsentTier(
       await setConsentTier('titles')
       return 'titles'
     }
-  } else if (!needsOrigins && hadOrigins) {
-    await permissionsRemove({ origins: LLM_ORIGINS })
+  } else {
+    // Queried live rather than trusted from the caller's cached `currentTier`:
+    // getConsentTier() returns null for a tier stored under a stale
+    // CONSENT_COPY_VERSION (§ above) even though the browser permission grant
+    // from that earlier choice is still live. Deriving hadOrigins from the
+    // actual permission state — not the possibly-stale cached tier — is what
+    // guarantees a re-prompted v1 'cloud' user who now picks 'titles' actually
+    // has the dangling grant revoked instead of silently keeping it. Safe to
+    // await here, unlike above: this branch never calls permissions.request().
+    const hadOrigins = await hasLlmOriginPermission()
+    if (hadOrigins) {
+      await permissionsRemove({ origins: LLM_ORIGINS })
+    }
   }
 
   await setConsentTier(newTier)
