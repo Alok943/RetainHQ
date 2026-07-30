@@ -354,7 +354,12 @@ function LogActivity() {
                     {problemOptions.map(p => (
                       <div
                         key={p.id}
-                        onClick={() => { setSelectedProblem(p); setShowDropdown(false); setTopic(`LeetCode ${p.external_id}: ${p.title}`); }}
+                        onMouseDown={(e) => { 
+                          e.preventDefault(); // Prevent input from losing focus
+                          setSelectedProblem(p); 
+                          setShowDropdown(false); 
+                          setTopic(`LeetCode ${p.external_id}: ${p.title}`); 
+                        }}
                         className="px-4 py-2 hover:bg-[rgba(15,23,42,0.02)] cursor-pointer flex flex-col gap-1 border-b border-[rgba(15,23,42,0.04)] last:border-0"
                       >
                         <div className="flex items-center justify-between">
