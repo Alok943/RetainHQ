@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getConsentTier, switchConsentTier, hasLlmOriginPermission, LLM_ORIGINS } from './consent'
+import { CONSENT_COPY_VERSION } from './consent'
 
 // chrome.* isn't available under vitest's Node environment — a minimal mock
 // standing in for chrome.storage.local and chrome.permissions, backed by
@@ -86,20 +87,35 @@ describe('switchConsentTier', () => {
     expect(await hasLlmOriginPermission()).toBe(false)
   })
 
-  it('switching up from titles to nano requests a fresh grant (symmetric both ways)', async () => {
-    await switchConsentTier('titles', null)
-    const result = await switchConsentTier('nano', 'titles')
-    expect(result).toBe('nano')
-    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: LLM_ORIGINS })
+  it('revokes a dangling origin grant even when the caller passes a stale/wrong currentTier', async () => {
+    // Simulates the copy-version re-prompt case: the browser still holds the
+    // grant from an earlier choice, but the caller's cached tier value can't
+    // be trusted to reflect that — switchConsentTier must check the real
+    // permission state itself, not the argument.
+    await switchConsentTier('cloud', null)
     expect(await hasLlmOriginPermission()).toBe(true)
+
+    const result = await switchConsentTier('titles', null) // null, not 'cloud'
+    expect(result).toBe('titles')
+    expect(chrome.permissions.remove).toHaveBeenCalledWith({ origins: LLM_ORIGINS })
+    expect(await hasLlmOriginPermission()).toBe(false)
+  })
+})
+
+describe('consent copy versioning', () => {
+  it('a tier chosen under a stale copy version reads back as unset', async () => {
+    await switchConsentTier('cloud', null)
+    expect(await getConsentTier()).toBe('cloud')
+
+    // Simulate a v1 install: the tier key exists but predates the
+    // copy-version key entirely.
+    delete storage.consentCopyVersion
+    expect(await getConsentTier()).toBeNull()
   })
 
-  it('switching between cloud and nano (both origin-gated) does not re-request or remove', async () => {
-    await switchConsentTier('cloud', null)
-    const result = await switchConsentTier('nano', 'cloud')
-    expect(result).toBe('nano')
-    expect(chrome.permissions.request).toHaveBeenCalledTimes(1) // only the initial grant
-    expect(chrome.permissions.remove).not.toHaveBeenCalled()
-    expect(await hasLlmOriginPermission()).toBe(true)
+  it('a tier chosen under the current copy version reads back normally', async () => {
+    await switchConsentTier('titles', null)
+    expect(storage.consentCopyVersion).toBe(CONSENT_COPY_VERSION)
+    expect(await getConsentTier()).toBe('titles')
   })
 })

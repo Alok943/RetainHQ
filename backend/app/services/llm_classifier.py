@@ -7,8 +7,9 @@ from google.genai import types
 
 from app.core.config import settings
 
-# Companion classification always runs on Flash-Lite (fast, cheap).
-COMPANION_CLASSIFIER_MODEL = "gemini-2.0-flash-lite"
+# Companion classification always runs on a lite-tier model (fast, cheap) —
+# overridable via COMPANION_LITE_MODEL (config.py) without a code change.
+COMPANION_CLASSIFIER_MODEL = settings.COMPANION_LITE_MODEL
 COMPANION_PROMPT_VERSION = "v1"
 
 # Without this, the SDK's HTTP client has no timeout — a stalled connection

@@ -657,7 +657,9 @@ async def get_today_plan(
         await db.commit()
         await db.refresh(goal)
 
-    node_rows = (
+    # Template-tree nodes carry a real node_meta sidecar (subject/priority/
+    # est_effort_min authored at commit time) — unchanged, still an INNER JOIN.
+    template_rows = (
         await db.execute(
             select(RoadmapNode, NodeMeta, NodeMastery)
             .join(NodeMeta, NodeMeta.node_id == RoadmapNode.id)
@@ -665,14 +667,44 @@ async def get_today_plan(
                 NodeMastery,
                 and_(NodeMastery.node_id == RoadmapNode.id, NodeMastery.user_id == user_id),
             )
-            # The goal's own tree PLUS anything attached. node_ids flows on into
-            # the balance-window filter below, so an attached roadmap the user
-            # actively studies contributes its minutes — without that, attaching
-            # a roadmap would make its own subject look permanently neglected.
-            .where(RoadmapNode.roadmap_id.in_([goal.roadmap_id, *await _attached_roadmap_ids(db, goal.id)]))
+            .where(RoadmapNode.roadmap_id == goal.roadmap_id)
         )
     ).all()
-    node_ids = [row.RoadmapNode.id for row in node_rows]
+
+    # Attached-roadmap nodes have NO node_meta row (A1/Q1 option b —
+    # BUGFIX-career-coach-docs-review.md): every node in one attachment shares
+    # its CareerGoalRoadmap link's subject/priority, synthesized below rather
+    # than read from a per-node sidecar. node_ids flows on into the
+    # balance-window aggregation further down, so an attached roadmap the
+    # user actively studies still contributes its minutes — without that,
+    # attaching a roadmap would make its own subject look permanently
+    # neglected.
+    attached_links = {
+        link.roadmap_id: link
+        for link in (
+            await db.execute(select(CareerGoalRoadmap).where(CareerGoalRoadmap.goal_id == goal.id))
+        ).scalars().all()
+    }
+    attached_rows = []
+    if attached_links:
+        attached_rows = (
+            await db.execute(
+                select(RoadmapNode, NodeMastery)
+                .outerjoin(
+                    NodeMastery,
+                    and_(NodeMastery.node_id == RoadmapNode.id, NodeMastery.user_id == user_id),
+                )
+                .where(RoadmapNode.roadmap_id.in_(attached_links.keys()))
+            )
+        ).all()
+
+    node_ids = [row.RoadmapNode.id for row in template_rows] + [row.RoadmapNode.id for row in attached_rows]
+    # node_id -> subject, used by the balance-window aggregation below.
+    # Populated from both sources since neither alone covers every planned node.
+    node_subject: dict = {row.RoadmapNode.id: row.NodeMeta.subject for row in template_rows}
+    node_subject.update({
+        row.RoadmapNode.id: attached_links[row.RoadmapNode.roadmap_id].subject for row in attached_rows
+    })
 
     prereqs_by_node: dict = {}
     if node_ids:
@@ -696,7 +728,7 @@ async def get_today_plan(
     # m per node: m_learned * retrievability, via the phase-1 read-side — the
     # planner never re-derives decay math (§6 step 3).
     plan_nodes = []
-    for row in node_rows:
+    for row in template_rows:
         node, meta, nm = row.RoadmapNode, row.NodeMeta, row.NodeMastery
         m_learned = nm.m_learned if nm is not None else 0.0
         r = evidence.retrievability_for(activities_by_node.get(node.id), now)
@@ -707,34 +739,61 @@ async def get_today_plan(
             m_learned=m_learned, m=m,
             prereq_ids=tuple(str(p) for p in prereqs_by_node.get(node.id, [])),
         ))
+    for row in attached_rows:
+        node, nm = row.RoadmapNode, row.NodeMastery
+        link = attached_links[node.roadmap_id]
+        m_learned = nm.m_learned if nm is not None else 0.0
+        r = evidence.retrievability_for(activities_by_node.get(node.id), now)
+        m = evidence.displayed_mastery(m_learned, r)
+        plan_nodes.append(planner.PlanNode(
+            node_id=str(node.id), title=node.title, subject=link.subject, priority=link.default_priority,
+            est_effort_min=_ATTACHED_EFFORT_MIN, order_index=node.order_index,
+            m_learned=m_learned, m=m,
+            prereq_ids=tuple(str(p) for p in prereqs_by_node.get(node.id, [])),
+        ))
 
     # subject_time_shares (§6 step 4): trailing-window minutes per subject,
     # normalized; total_window_minutes is the RAW total behind those shares —
     # the planner needs the magnitude (not just the ratios) for the §3.8a floor.
     window_start = now - timedelta(days=planner.BALANCE_WINDOW_DAYS)
-    duration_rows = (
+    # Aggregated by subject in Python via node_subject (built above from BOTH
+    # template node_meta rows and attached-roadmap links), not by a NodeMeta
+    # JOIN — attached nodes have no node_meta row to join against (A1/Q1
+    # option b), and that join would silently drop their minutes from the
+    # balance window, making an actively-studied attached subject look
+    # permanently neglected (exactly what test_attached_roadmap_minutes_
+    # reach_the_balance_window guards).
+    duration_by_node = (
         await db.execute(
-            select(NodeMeta.subject, func.sum(LearningEvent.duration_min))
-            .join(LearningEvent, LearningEvent.node_id == NodeMeta.node_id)
+            select(LearningEvent.node_id, func.sum(LearningEvent.duration_min))
             .where(
                 LearningEvent.user_id == user_id,
                 LearningEvent.deleted_at.is_(None),
                 LearningEvent.occurred_at >= window_start,
-                # Scope to THIS goal's tree. node_meta rows survive goal archival,
-                # so without this an old tree's events inflate total_window_minutes
-                # while contributing a_s under subjects the current tree may not
-                # have. p_s is normalized over the current tree only, so every
-                # current subject's a_s is deflated and balance_s = a_s - p_s
-                # skews negative — manufacturing "you're neglecting X" nudges for
-                # anyone who has ever switched career goals.
+                # Scope to THIS goal's tree + its attachments. node_meta rows
+                # survive goal archival, so without this an old tree's events
+                # inflate total_window_minutes while contributing a_s under
+                # subjects the current tree may not have. p_s is normalized
+                # over the current tree only, so every current subject's a_s
+                # is deflated and balance_s = a_s - p_s skews negative —
+                # manufacturing "you're neglecting X" nudges for anyone who
+                # has ever switched career goals.
                 LearningEvent.node_id.in_(node_ids),
             )
-            .group_by(NodeMeta.subject)
+            .group_by(LearningEvent.node_id)
         )
-    ).all()
-    total_window_minutes = sum(minutes or 0 for _, minutes in duration_rows)
+    ).all() if node_ids else []
+
+    subject_minutes: dict = {}
+    for node_id, minutes in duration_by_node:
+        subject = node_subject.get(node_id)
+        if subject is None:
+            continue
+        subject_minutes[subject] = subject_minutes.get(subject, 0) + (minutes or 0)
+
+    total_window_minutes = sum(subject_minutes.values())
     subject_time_shares = (
-        {subject: (minutes or 0) / total_window_minutes for subject, minutes in duration_rows}
+        {subject: minutes / total_window_minutes for subject, minutes in subject_minutes.items()}
         if total_window_minutes > 0 else {}
     )
 
@@ -828,12 +887,6 @@ async def post_today_feedback(
 
 MAX_ATTACHED_ROADMAPS = 5
 _ATTACHED_EFFORT_MIN = 60  # flat: effort only ever *proportions* a session (spec §0)
-
-
-def _attached_key(roadmap: Roadmap) -> str:
-    """Prefix identifying node_meta rows this feature generated, so detach can
-    remove exactly its own and nothing a template tree owns."""
-    return f"attached.{roadmap.slug or roadmap.id}"
 
 
 async def _caller_audience(db: AsyncSession, user_id: uuid.UUID) -> str:
@@ -988,34 +1041,21 @@ async def attach_roadmap(
         goal_id=goal.id, roadmap_id=roadmap.id, subject=subject, default_priority=priority,
     ))
 
-    # Sidecars for every node that lacks one. Never overwrite an existing
-    # node_meta — it may be a template row carrying user_edited=True.
-    nodes = (
-        await db.execute(select(RoadmapNode).where(RoadmapNode.roadmap_id == roadmap.id))
-    ).scalars().all()
-    node_ids = [n.id for n in nodes]
-    already_meta = set()
-    if node_ids:
-        already_meta = set(
-            (
-                await db.execute(select(NodeMeta.node_id).where(NodeMeta.node_id.in_(node_ids)))
-            ).scalars().all()
-        )
-    prefix = _attached_key(roadmap)
-    nodes_added = 0
-    for n in nodes:
-        if n.id in already_meta:
-            continue
-        db.add(NodeMeta(
-            node_id=n.id, stable_key=f"{prefix}.{n.id}", subject=subject,
-            priority=priority, est_effort_min=_ATTACHED_EFFORT_MIN,
-        ))
-        nodes_added += 1
+    # No per-node sidecar rows (A1/Q1 option b — BUGFIX-career-coach-docs-review.md):
+    # this CareerGoalRoadmap row IS the attachment's per-node metadata, read at
+    # /today time and applied uniformly to every node in the roadmap. Writing a
+    # node_meta row per node here is what let one user's detach delete rows a
+    # second user's plan depended on, since node_meta has no user/goal column.
+    node_count = (
+        await db.execute(select(func.count(RoadmapNode.id)).where(RoadmapNode.roadmap_id == roadmap.id))
+    ).scalar() or 0
 
     await db.commit()
     return AttachedRoadmapOut(
         roadmap_id=roadmap.id, slug=roadmap.slug, title=roadmap.title, subject=subject,
-        default_priority=priority, node_count=len(nodes), nodes_added=nodes_added,
+        # nodes_added is vestigial (kept for API stability): there is no
+        # per-node state left to distinguish "new" from "already had one".
+        default_priority=priority, node_count=node_count, nodes_added=node_count,
     )
 
 
@@ -1028,7 +1068,11 @@ async def detach_roadmap(
     """Stops planning from this roadmap. Deliberately leaves learning_events,
     node_mastery, activities and user_progress alone — evidence is append-only
     (ARCHITECTURE-learning-system.md), and detaching must not erase the fact
-    that the user studied something."""
+    that the user studied something.
+
+    Deletes only this goal's CareerGoalRoadmap link — there is no node_meta
+    sidecar to clean up (A1/Q1 option b: attachments carry no per-node state),
+    so this can never delete anything another user's plan depends on."""
     user_id = uuid.UUID(current_user.id)
     goal = await _get_active_goal(db, user_id)
 
@@ -1043,17 +1087,5 @@ async def detach_roadmap(
     if link is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not attached")
 
-    roadmap = (
-        await db.execute(select(Roadmap).where(Roadmap.id == roadmap_id))
-    ).scalar_one_or_none()
-    if roadmap is not None:
-        # Only the sidecars THIS feature generated, and never one the user has
-        # since edited by hand.
-        await db.execute(
-            delete(NodeMeta).where(
-                NodeMeta.stable_key.like(f"{_attached_key(roadmap)}.%"),
-                NodeMeta.user_edited.is_(False),
-            )
-        )
     await db.delete(link)
     await db.commit()

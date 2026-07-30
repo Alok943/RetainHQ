@@ -36,3 +36,17 @@ export const permissionsContains = (permissions: chrome.permissions.Permissions)
 
 export const runtimeSendMessage = <T = unknown>(message: unknown): Promise<T> =>
   getApi().runtime.sendMessage(message)
+
+/**
+ * Firefox implements `identity.launchWebAuthFlow` as PROMISE-ONLY. Passing a
+ * callback there does not throw — the callback is simply never invoked, so the
+ * OAuth window opens, the user picks an account, and then nothing happens at
+ * all. That was the symptom on Firefox 2026-07-26.
+ *
+ * The `await chrome.` guard test cannot catch this: the broken form was a
+ * callback, not an await. Route every identity call through here.
+ */
+export const launchWebAuthFlow = (details: { url: string; interactive: boolean }): Promise<string> =>
+  getApi().identity.launchWebAuthFlow(details) as unknown as Promise<string>
+
+export const getRedirectURL = (): string => getApi().identity.getRedirectURL()

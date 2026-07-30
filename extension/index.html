@@ -5,143 +5,320 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RetainHQ Companion</title>
   <style>
+    /* Design tokens mirror docs/design-bible.md §04/§05: warm paper, slate ink,
+       cyan = action, purple = AI advisory ONLY, red = error, amber = caution,
+       teal = success. Radius 4/8/full. One curve, 150/200ms.
+
+       Deviation from the bible, deliberate: IBM Plex Sans is NOT bundled. A
+       popup cannot fetch a webfont (no network at paint, and the extension CSP
+       forbids remote font origins), and shipping the woff2 would add ~100KB to
+       every AMO upload for ~14px of chrome. System UI stack instead; the mono
+       stack carries the data role, which is where the typographic signal
+       actually matters. */
+    :root {
+      --paper: #f9f9f6;
+      --surface: #ffffff;
+      --ink: #0F172A;
+      --ink-muted: #64748B;
+      --ink-faint: #94A3B8;
+      --hairline: #E2E8F0;
+      --action: #0891B2;
+      --action-hover: #0E7490;
+      --ai: #8B5CF6;
+      --ai-hover: #7C3AED;
+      --ai-wash: #F5F3FF;
+      --error: #ba1a1a;
+      --caution: #F59E0B;
+      --success: #0F766E;
+      --curve: cubic-bezier(0.22, 1, 0.36, 1);
+      --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #0F172A;
+        --surface: #1E293B;
+        --ink: #F1F5F9;
+        --ink-muted: #94A3B8;
+        --ink-faint: #64748B;
+        --hairline: #334155;
+        --action: #22D3EE;
+        --action-hover: #67E8F9;
+        --ai: #A78BFA;
+        --ai-hover: #C4B5FD;
+        --ai-wash: #2A2140;
+        --error: #F87171;
+        --success: #2DD4BF;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      width: 340px;
-      padding: 16px;
+      width: 360px;
       margin: 0;
-      color: #333;
-    }
-    h2 {
-      margin-top: 0;
-      font-size: 16px;
-    }
-    .status {
-      margin-bottom: 16px;
+      padding: 0;
+      background: var(--paper);
+      color: var(--ink);
       font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* --- header ----------------------------------------------------------- */
+    .head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .mark {
+      /* The PNG already bakes in its own navy rounded-square + white R —
+         no CSS background/text needed, just sizing. */
+      width: 22px; height: 22px;
+      border-radius: 4px;
+      display: block;
+      flex: none;
+    }
+    .head h1 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+
+    /* Pill states are the ONE place color carries meaning in the chrome:
+       amber = needs a decision, red = recording, muted = idle. */
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--hairline);
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+    .pill .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex: none; }
+    .pill[data-state="recording"] { color: var(--error); border-color: color-mix(in srgb, var(--error) 35%, transparent); }
+    .pill[data-state="attention"] { color: var(--caution); border-color: color-mix(in srgb, var(--caution) 45%, transparent); }
+    .pill[data-state="paused"] { color: var(--ink-faint); }
+
+    /* --- layout ----------------------------------------------------------- */
+    .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+    .section { display: flex; flex-direction: column; gap: 8px; }
+    .label {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .card .title {
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card .meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-muted);
+      margin-top: 3px;
+    }
+    .card.empty .title { font-weight: 400; color: var(--ink-muted); }
+
+    /* --- buttons ---------------------------------------------------------- */
     button {
-      background-color: #000;
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
       border-radius: 4px;
       cursor: pointer;
+      padding: 9px 14px;
       width: 100%;
-      font-weight: bold;
+      border: 1px solid transparent;
+      transition: background-color 150ms var(--curve), border-color 150ms var(--curve), color 150ms var(--curve);
     }
-    button:hover {
-      background-color: #333;
+    button:focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
+    button[disabled] { opacity: 0.55; cursor: default; }
+
+    .btn-primary { background: var(--action); color: #fff; }
+    .btn-primary:hover:not([disabled]) { background: var(--action-hover); }
+    @media (prefers-color-scheme: dark) { .btn-primary { color: #06232B; } }
+
+    .btn-secondary { background: transparent; color: var(--ink); border-color: var(--hairline); }
+    .btn-secondary:hover:not([disabled]) { border-color: var(--ink-faint); }
+
+    .btn-ai { background: var(--ai); color: #fff; width: auto; padding: 7px 12px; font-size: 12px; }
+    .btn-ai:hover:not([disabled]) { background: var(--ai-hover); }
+    .btn-ai.quiet { background: transparent; color: var(--ai); border-color: color-mix(in srgb, var(--ai) 40%, transparent); }
+    .btn-ai.quiet:hover:not([disabled]) { background: var(--ai-wash); }
+
+    .btn-ghost {
+      background: none; border: none; padding: 0; width: auto;
+      color: var(--ink-muted); font-size: 12px; text-decoration: underline;
+      text-underline-offset: 2px;
     }
-    #consentScreen {
-      display: none;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #eee;
+    .btn-ghost:hover { color: var(--ink); }
+
+    /* --- account row ------------------------------------------------------ */
+    .account {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 12px; color: var(--ink-muted);
     }
-    #consentScreen h3 {
-      font-size: 14px;
-      margin: 0 0 10px;
+    .account .who {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-family: var(--mono); font-size: 11px;
     }
-    .tier-option {
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
+
+    /* --- consent (AI advisory layer — purple, and ONLY here) --------------- */
+    #consentScreen { display: none; flex-direction: column; gap: 10px; }
+    #consentScreen h2 {
+      font-size: 14px; font-weight: 600; margin: 0; letter-spacing: -0.01em;
     }
-    .tier-option.recommended {
-      border-color: #863bff;
-      background: #f6f1ff;
+    .tier {
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: var(--surface);
     }
-    .tier-option strong {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 3px;
+    /* Exactly one elevated element per screen (bible §04) — the recommended
+       tier is it, and it earns the raise by being the default choice. */
+    .tier.recommended {
+      border-color: color-mix(in srgb, var(--ai) 45%, transparent);
+      background: var(--ai-wash);
     }
-    .tier-option p {
-      font-size: 12px;
-      color: #555;
-      margin: 0 0 8px;
-      line-height: 1.4;
+    .tier strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .tier p { font-size: 12px; color: var(--ink-muted); margin: 0 0 10px; }
+    .tier .tag {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ai); margin-left: 6px;
     }
-    .tier-option button {
-      width: auto;
-      padding: 6px 12px;
-      font-size: 12px;
-      background-color: #863bff;
-    }
-    .tier-option button:hover {
-      background-color: #6f2fe0;
-    }
-    .tier-option.recommended button {
-      background-color: #863bff;
-    }
-    #consentScreen .fine-print {
-      font-size: 11px;
-      color: #888;
-      margin-top: 4px;
-    }
-    #settingsRow {
-      display: none;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #eee;
-      font-size: 12px;
-    }
-    #settingsRow .current-tier {
-      color: #555;
-      margin-bottom: 6px;
-    }
-    #settingsRow select {
+    .fine-print { font-size: 11px; color: var(--ink-faint); margin: 0; }
+
+    /* --- settings row ----------------------------------------------------- */
+    #settingsRow { display: none; flex-direction: column; gap: 6px; }
+    select {
+      font: inherit; font-size: 12px;
       width: 100%;
-      padding: 4px;
-      font-size: 12px;
+      padding: 7px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--hairline);
+      background: var(--surface);
+      color: var(--ink);
     }
+    select:focus-visible { outline: 2px solid var(--action); outline-offset: 1px; }
+
+    .foot {
+      border-top: 1px solid var(--hairline);
+      padding: 10px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .foot a { color: var(--ink-muted); font-size: 11px; text-decoration: none; }
+    .foot a:hover { color: var(--action); }
+    .foot .version { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <h2>RetainHQ Companion</h2>
-
-  <!-- SPEC-companion-phase1.md §6, copy verbatim. Shown once, on first popup
-       open after any tracked activity (not at install) — badged from the
-       service worker so it's noticeable without being a notification/prompt. -->
-  <div id="consentScreen">
-    <h3>How should RetainHQ understand your AI chats?</h3>
-
-    <div class="tier-option recommended">
-      <strong>⭐ Smart tracking (Recommended)</strong>
-      <p>Your chats are analyzed by Google's Gemini to tell <em>learning</em> from <em>getting answers</em> — so your mastery scores stay honest and your daily plan targets what you actually need. Chat text is processed in the moment and <strong>never stored by RetainHQ, and never used to train models</strong>.</p>
-      <button id="tierCloudBtn" type="button">Turn on</button>
-    </div>
-
-    <div class="tier-option">
-      <strong>On-device AI</strong>
-      <p>Same understanding, running entirely inside Chrome (when your browser supports it). Nothing leaves your machine.</p>
-      <button id="tierNanoBtn" type="button">Use on-device</button>
-    </div>
-
-    <div class="tier-option">
-      <strong>Titles only</strong>
-      <p>We only look at what you can see in the tab bar. Most private; can't tell studying from copy-pasting, so tracking is less accurate.</p>
-      <button id="tierTitlesBtn" type="button">Keep it minimal</button>
-    </div>
-
-    <p class="fine-print">Change anytime in settings. Every tracked session shows up in your evidence log and can be deleted with one tap.</p>
+  <div class="head">
+    <img class="mark" src="/icons/48.png" alt="RetainHQ">
+    <h1>RetainHQ Companion</h1>
+    <span class="pill" id="statePill"><span class="dot"></span><span id="statePillText">Idle</span></span>
   </div>
 
-  <div id="settingsRow">
-    <div class="current-tier">AI chat understanding: <strong id="currentTierLabel"></strong></div>
-    <select id="tierSelect">
-      <option value="cloud">Smart tracking (cloud)</option>
-      <option value="nano">On-device AI</option>
-      <option value="titles">Titles only</option>
-    </select>
+  <div class="body">
+    <!-- Signed out ------------------------------------------------------- -->
+    <div class="section hidden" id="signedOut">
+      <div class="card empty">
+        <div class="title">Sign in to start capturing what you study.</div>
+        <div class="meta" id="signInDetail">Uses your RetainHQ account.</div>
+      </div>
+      <button id="loginBtn" class="btn-primary" type="button">Sign in with Google</button>
+    </div>
+
+    <!-- Signed in -------------------------------------------------------- -->
+    <div class="section hidden" id="signedIn">
+      <div class="section">
+        <span class="label">Now</span>
+        <div class="card" id="nowCard">
+          <div class="title" id="nowTitle">Nothing tracked yet</div>
+          <div class="meta" id="nowMeta">Open a video, course or LeetCode problem.</div>
+        </div>
+        <!-- Global on/off — a page like Notion mixes personal notes with study
+             material and there's no way to tell those apart from the DOM, so
+             the user gets a manual switch instead of a guess. -->
+        <button id="pauseToggleBtn" class="btn-secondary" type="button">Pause tracking</button>
+      </div>
+
+      <div class="section">
+        <span class="label">Sync</span>
+        <div class="card">
+          <div class="title" id="syncTitle">Up to date</div>
+          <div class="meta" id="syncMeta">Sessions upload after 15 min of inactivity.</div>
+        </div>
+      </div>
+
+      <button id="syncLeetCodeBtn" class="btn-secondary" type="button">Import solved LeetCode problems</button>
+
+      <div class="account">
+        <span class="who" id="accountEmail"></span>
+        <button id="logoutBtn" class="btn-ghost" type="button">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Consent lives OUTSIDE the signed-in block on purpose: the tier governs
+         local capture and an optional host permission, neither of which depends
+         on a session. A signed-out user must still be able to turn it off. -->
+    <div id="consentScreen">
+        <h2>How should RetainHQ understand your AI chats?</h2>
+
+        <div class="tier recommended">
+          <strong>Smart tracking<span class="tag">recommended</span></strong>
+          <p>Your chats are analyzed by Google's Gemini to tell <em>learning</em> from <em>getting answers</em> — so your mastery scores stay honest and your daily plan targets what you actually need. Chat text is processed in the moment and <strong>never stored by RetainHQ, and never used to train models</strong>.</p>
+          <button id="tierCloudBtn" class="btn-ai" type="button">Turn on</button>
+        </div>
+
+        <div class="tier">
+          <strong>Titles only</strong>
+          <p>We only look at what you can see in the tab bar. Most private; can't tell studying from copy-pasting, so tracking is less accurate.</p>
+          <button id="tierTitlesBtn" class="btn-ai quiet" type="button">Keep it minimal</button>
+        </div>
+
+        <p class="fine-print">Change anytime below. Every tracked session shows up in your evidence log and can be deleted with one tap.</p>
+      </div>
+
+    <div id="settingsRow">
+      <span class="label">AI chat understanding — <span id="currentTierLabel"></span></span>
+      <select id="tierSelect">
+        <option value="cloud">Smart tracking (cloud)</option>
+        <option value="titles">Titles only</option>
+      </select>
+    </div>
+
+    <!-- Transient status line: errors and in-flight states only. -->
+    <div class="label hidden" id="status"></div>
   </div>
 
-  <div id="status" class="status">Loading...</div>
-  <button id="loginBtn" style="display: none;">Sign in with Supabase</button>
-  <button id="logoutBtn" style="display: none;">Sign out</button>
-  <button id="syncLeetCodeBtn" style="display: none; margin-top: 8px;">Sync LeetCode</button>
+  <div class="foot">
+    <a href="https://retainhq.app" target="_blank" rel="noopener">Open RetainHQ &rarr;</a>
+    <span class="version" id="version"></span>
+  </div>
 
   <script type="module" src="/src/popup/popup.ts"></script>
 </body>

@@ -1,23 +1,36 @@
 # RetainHQ
 
-> Spaced-repetition and active-recall learning platform for developers.
-> RetainHQ measures what you still remember, not just what you completed —
-> it schedules each review right before you'd forget, so knowledge sticks.
+> A study tracker that logs what you learn automatically, then quizzes you on
+> it right before you'd forget. RetainHQ measures what you still remember, not
+> just what you completed.
 
-RetainHQ's core loop: log a learning activity, capture the one key memory
-that matters, and let an FSRS-based scheduler time your reviews. A library
-of interactive lessons (Python, SQL, DSA, aptitude, core CS, physics) feeds
-cards into that loop.
+The core loop: your study activity is logged (automatically by the RetainHQ
+Companion browser extension, or by hand in a few seconds), RetainHQ captures
+the one key memory that matters from it, and an FSRS-based scheduler brings
+each topic back as a short review right before you'd forget it. A library of
+interactive lessons (Python, SQL, DSA, aptitude, core CS, physics) feeds
+extra cards into the same loop.
+
+## Automatic logging
+
+- The RetainHQ Companion is a browser extension (Chrome and Firefox) that
+  turns the tutorials you watch, the docs you read, and the AI chats you learn
+  from into study-log entries without any manual input.
+- It is opt-in and consent-tiered; what it reads is described at
+  https://retainhq.app/privacy/companion
+- Anything the extension can't see can still be logged manually in the app.
 
 ## Product
 
 - [Homepage](https://retainhq.app/): overview, core loop, sign-in
 - [Roadmaps](https://retainhq.app/roadmaps): browsable lesson roadmaps by subject
+- [Companion privacy policy](https://retainhq.app/privacy/companion): what the
+  browser extension collects
 
 ## Notes for agents
 
 - The app is a client-rendered React SPA; most routes require sign-in
   (Google OAuth) and render no meaningful content to an unauthenticated
-  crawler beyond the homepage.
+  crawler beyond the homepage and the companion privacy policy.
 - Lesson content lives under versioned JSON roadmaps and is not directly
   crawlable outside the app UI.

@@ -79,7 +79,10 @@ class Settings(BaseSettings):
     # parse failure, which is indistinguishable from "the model is bad" until you
     # rule it out. Checked against vendor docs 2026-07-26.
     OPENAI_COMPAT_MAX_TOKENS: int = 8192
-    SYLLABUS_MODEL: str = "gemini-3.5-flash"  # e.g. "claude-opus-4-8" to route to Anthropic
+    # gemini-3.6-flash (GA 2026-07-21) — same or lower cost than 3.5-flash per
+    # Google's own benchmarks, so this is a straight upgrade, not a tradeoff.
+    # e.g. "claude-opus-4-8" to route to Anthropic instead.
+    SYLLABUS_MODEL: str = "gemini-3.6-flash"
     SYLLABUS_MAX_PDF_MB: int = 10
     SYLLABUS_DAILY_LIMIT: int = 5  # extractions per user per UTC day (API-budget guard)
     SYLLABUS_LIFETIME_LIMIT: int = 3  # personal roadmaps per user, LIFETIME (delete ≠ refund)
@@ -93,8 +96,27 @@ class Settings(BaseSettings):
     # "gemini*" way as SYLLABUS_MODEL (D-037).
     # Quota-exempt (it's the primary onboarding path, not abuse-prone like a
     # syllabus PDF) — rate-limited daily instead, per user.
-    CAREER_TREE_MODEL: str = "gemini-3.5-flash"
+    CAREER_TREE_MODEL: str = "gemini-3.6-flash"
     CAREER_TREE_DAILY_LIMIT: int = 3
+
+    # Companion (services/llm_classifier.py, services/topic_segmentation.py):
+    # ingesting a whole session/chat and picking cheap structured labels
+    # (which node, which topics) is exactly the kind of high-volume,
+    # low-reasoning call a lite-tier model is for — the heavier models
+    # (SYLLABUS_MODEL/CAREER_TREE_MODEL above) stay reserved for the one-shot
+    # generation work that actually needs them.
+    #
+    # DELIBERATELY NOT bumped to gemini-3.6-flash alongside the two above.
+    # Checked 2026-07-27: Google's 2026-07-21 release shipped gemini-3.6-flash
+    # (the mid-tier model, replacing 3.5-flash) and gemini-3.5-flash-lite (the
+    # lite tier — still versioned 3.5; Google did not release a 3.6 lite
+    # variant). "gemini-3.6-flash-lite" does not exist. Setting this to
+    # gemini-3.6-flash instead of the lite tier would be a straight 5x/3x
+    # input/output cost increase on every companion sync for no benefit —
+    # ingestion/classification doesn't need mid-tier reasoning. Override via
+    # env once a newer lite-tier id is confirmed to actually exist; don't
+    # guess one in.
+    COMPANION_LITE_MODEL: str = "gemini-3.5-flash-lite"
 
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
     # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger

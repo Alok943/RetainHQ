@@ -42,6 +42,15 @@ manifest.background = {
   type: manifest.background.type,
 }
 
+// `use_dynamic_url` is another crxjs/Chrome-only key (obscures web-accessible
+// resource URLs behind a per-load random UUID) — Firefox's MV3
+// web_accessible_resources has no such concept and logs "unexpected property"
+// for it. Harmless (Firefox just ignores the field and serves the resources
+// normally), but it's noise on every load; strip it same as background above.
+for (const entry of manifest.web_accessible_resources ?? []) {
+  delete entry.use_dynamic_url
+}
+
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 
 console.log(`Firefox build written to ${firefoxDir} (background.scripts: ${manifest.background.scripts[0]})`)

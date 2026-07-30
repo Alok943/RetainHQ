@@ -1,4 +1,5 @@
-import type { Segment } from '../types'
+import type { ChapterWatch, Segment } from '../types'
+import { isTrackingPaused, onTrackingPausedChanged } from '../pause_state'
 
 const INACTIVITY_TIMEOUT_MS = 3 * 60 * 1000 // 3 minutes
 const EMIT_INTERVAL_MS = 5 * 60 * 1000 // Emit segment every 5 minutes if active
@@ -7,19 +8,33 @@ export interface TrackerOptions {
   surface: string
   url_domain: string
   getTitle: () => string
+  // Cloud-tier chat content (chat_extract.ts) — optional, only llm_metadata.ts
+  // provides one. Called at the same cadence as getTitle (each segment
+  // emit); the caller is responsible for its own live consent-tier check
+  // since this module has no opinion on tiers.
+  getContent?: () => string | undefined
+  // YouTube only (chapter_extract.ts + youtube.ts's sampler). Returns the
+  // watched-seconds-per-chapter DELTA accumulated since the last call, and
+  // resets its own internal accumulator — unlike getContent, this is never a
+  // cumulative snapshot, so it's safe to attach to every emitted segment.
+  getChapterProgress?: () => ChapterWatch[] | undefined
 }
 
 /** Shared by every adapter (generic activity_tracker AND youtube.ts, which
  * tracks play/pause instead of mouse/keyboard) so segment shape and the
  * message contract to the service worker live in exactly one place. */
 export function emitSegment(options: TrackerOptions, start: number, end: number, active: boolean) {
+  const content = options.getContent?.()
+  const chapters = options.getChapterProgress?.()
   const segment: Segment = {
     surface: options.surface,
     url_domain: options.url_domain,
     title_metadata: options.getTitle(),
     start,
     end,
-    active
+    active,
+    ...(content ? { content } : {}),
+    ...(chapters && chapters.length > 0 ? { chapters } : {}),
   }
   chrome.runtime.sendMessage({ type: 'SEGMENT_EMIT', segment })
 }
@@ -28,6 +43,10 @@ export function startActivityTracking(options: TrackerOptions) {
   let isTracking = false
   let currentSegmentStart = 0
   let lastActivityTime = Date.now()
+  // User-controlled, global (pause_state.ts) — a page mixing personal notes
+  // and study material (Notion) needs a manual off switch, since there is no
+  // way to infer intent from the DOM alone.
+  let paused = false
 
   function sendSegment(start: number, end: number, active: boolean) {
     emitSegment(options, start, end, active)
@@ -35,9 +54,9 @@ export function startActivityTracking(options: TrackerOptions) {
 
   function checkActivity() {
     const now = Date.now()
-    if (document.hidden || now - lastActivityTime > INACTIVITY_TIMEOUT_MS) {
+    if (paused || document.hidden || now - lastActivityTime > INACTIVITY_TIMEOUT_MS) {
       if (isTracking) {
-        // We became inactive (backgrounded tab or genuine idle). Close the segment.
+        // We became inactive (paused, backgrounded tab, or genuine idle). Close the segment.
         sendSegment(currentSegmentStart, lastActivityTime, true)
         isTracking = false
       }
@@ -51,10 +70,16 @@ export function startActivityTracking(options: TrackerOptions) {
   }
 
   function handleActivity() {
-    if (document.hidden) return // a backgrounded tab firing timers isn't "activity"
+    if (paused || document.hidden) return // a backgrounded tab firing timers isn't "activity"
     lastActivityTime = Date.now()
     checkActivity()
   }
+
+  isTrackingPaused().then((initial) => { paused = initial })
+  onTrackingPausedChanged((next) => {
+    paused = next
+    checkActivity() // closes the open segment immediately if the user just paused
+  })
 
   // Throttle event listeners to avoid performance issues
   let throttleTimer: number | null = null

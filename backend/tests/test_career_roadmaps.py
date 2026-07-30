@@ -1,10 +1,22 @@
 """Attaching roadmaps to a career goal (IMPLEMENTATION-career-attached-roadmaps.md).
 
-The feature is "make catalog + personal roadmaps visible to the planner", and the
-mechanism is node_meta sidecars — the planner INNER JOINs node_meta and cannot
-score a node without subject/priority/effort. So most of what's worth pinning
-here is about the sidecars: that they get created, that attaching never copies
-nodes, that detaching removes exactly its own and no evidence.
+The feature is "make catalog + personal roadmaps visible to the planner". As of
+the A1 fix (BUGFIX-career-coach-docs-review.md, Q1 option b) the mechanism is
+NOT a per-node node_meta sidecar — it's the CareerGoalRoadmap link itself,
+applied uniformly to every node in the roadmap at /today read time. The
+original sidecar design had `node_meta.node_id` globally unique with no user
+column, so two users attaching the same shared catalog roadmap collided: one
+user's detach deleted sidecars a second user's plan depended on. Since
+attachments never carried real per-node information anyway (subject/priority
+were always the same for every node in one attachment; embedding was never
+set), removing the sidecar removes the shared-state bug at the root instead of
+narrowing it.
+
+So most of what's worth pinning here is now: attaching writes NO node_meta
+rows at all; two different users can independently attach the same catalog
+roadmap without collision; detaching only ever removes the caller's own link,
+never a sidecar (there isn't one); and attached nodes still reach the plan and
+the balance window despite carrying no sidecar.
 """
 import uuid
 from datetime import datetime, timedelta
@@ -28,22 +40,26 @@ async def _make_roadmap(db, *, title, owner=None, audience="career", slug=None, 
     return rm
 
 
-async def test_attach_inbuilt_roadmap_creates_sidecars_and_reaches_the_plan(client, db):
+async def test_attach_inbuilt_roadmap_writes_no_sidecars_and_reaches_the_plan(client, db):
     stable_to_node = await _commit_backend_tree(client, db, title="Attach inbuilt")
     rm = await _make_roadmap(db, title="DSA Catalog", slug="dsa-cat", nodes=4)
 
     resp = await client.post("/api/career/roadmaps/", json={"roadmap_id": str(rm.id)})
     assert resp.status_code == 201, resp.text
     body = resp.json()
-    assert body["nodes_added"] == 4
+    assert body["node_count"] == 4
     assert body["subject"] == "dsa-cat"          # derived from slug — one-click, no form
     assert body["default_priority"] == 3
 
-    metas = (await db.execute(
-        select(NodeMeta).where(NodeMeta.stable_key.like("attached.dsa-cat.%"))
-    )).scalars().all()
-    assert len(metas) == 4
-    assert {m.subject for m in metas} == {"dsa-cat"}
+    # The A1 fix: attaching writes NO node_meta rows at all. The
+    # CareerGoalRoadmap link (asserted below) is the only new state.
+    assert (await db.execute(
+        select(NodeMeta).where(NodeMeta.node_id.in_(select(RoadmapNode.id).where(RoadmapNode.roadmap_id == rm.id)))
+    )).scalars().all() == []
+    link = (await db.execute(
+        select(CareerGoalRoadmap).where(CareerGoalRoadmap.roadmap_id == rm.id)
+    )).scalar_one()
+    assert link.subject == "dsa-cat"
 
     # Nodes were NOT copied — they still live in their own roadmap.
     assert (await db.execute(
@@ -139,7 +155,7 @@ async def test_available_excludes_attached_own_tree_and_other_audiences(client, 
     assert goal["roadmap_id"] not in ids
 
 
-async def test_detach_removes_sidecars_but_never_evidence(client, db):
+async def test_detach_removes_only_the_link_and_never_evidence(client, db):
     await _commit_backend_tree(client, db, title="Detach check")
     user_id = uuid.UUID(USER_A.id)
     rm = await _make_roadmap(db, title="Detachable", slug="detachable", nodes=3)
@@ -161,8 +177,10 @@ async def test_detach_removes_sidecars_but_never_evidence(client, db):
     assert (await db.execute(
         select(CareerGoalRoadmap).where(CareerGoalRoadmap.roadmap_id == rm.id)
     )).scalars().all() == []
+    # No sidecar ever existed to remove (A1 fix) — this pins that nothing
+    # reintroduces one.
     assert (await db.execute(
-        select(NodeMeta).where(NodeMeta.stable_key.like("attached.detachable.%"))
+        select(NodeMeta).where(NodeMeta.node_id == node.id)
     )).scalars().all() == []
 
     # Evidence survives — detaching stops planning, it does not rewrite history.
@@ -174,23 +192,58 @@ async def test_detach_removes_sidecars_but_never_evidence(client, db):
     )).scalars().all()) == 1
 
 
-async def test_detach_leaves_a_user_edited_sidecar_alone(client, db):
-    await _commit_backend_tree(client, db, title="User-edited sidecar")
-    rm = await _make_roadmap(db, title="Edited", slug="edited", nodes=2)
-    assert (await client.post("/api/career/roadmaps/", json={"roadmap_id": str(rm.id)})).status_code == 201
+async def test_two_users_attaching_the_same_catalog_roadmap_do_not_collide(client, db, as_user):
+    """The actual A1 regression test. Before the fix: node_meta.node_id was
+    globally unique with no user column, so B's attach found A's sidecars
+    already there (nodes_added=0) and inherited A's subject/priority; A's
+    detach then deleted the sidecars B's plan depended on, and B's nodes
+    silently vanished from /today with no error anywhere. After the fix there
+    is no shared row to collide over — each user's CareerGoalRoadmap link is
+    independent."""
+    await _commit_backend_tree(client, db, title="Shared attach — user A")
+    rm = await _make_roadmap(db, title="Shared DSA", slug="shared-dsa", nodes=3)
 
-    meta = (await db.execute(
-        select(NodeMeta).where(NodeMeta.stable_key.like("attached.edited.%"))
-    )).scalars().first()
-    meta.user_edited = True
-    db.add(meta)
+    resp_a = await client.post("/api/career/roadmaps/", json={"roadmap_id": str(rm.id)})
+    assert resp_a.status_code == 201
+    assert resp_a.json()["subject"] == "shared-dsa"
+
+    as_user(USER_B)
+    b_stable_to_node = await _commit_backend_tree(client, db, title="Shared attach — user B")
+    resp_b = await client.post(
+        "/api/career/roadmaps/", json={"roadmap_id": str(rm.id), "subject": "b-own-label"}
+    )
+    assert resp_b.status_code == 201, resp_b.text
+    # B is not blocked by A's prior attach, and does not inherit A's subject.
+    assert resp_b.json()["node_count"] == 3
+    assert resp_b.json()["subject"] == "b-own-label"
+
+    # Master B's own tree so the attached roadmap is what remains schedulable
+    # (same isolation technique as the first test above).
+    for node_id in b_stable_to_node.values():
+        db.add(NodeMastery(user_id=uuid.UUID(USER_B.id), node_id=node_id, m_learned=0.95, weights_version="v1"))
     await db.commit()
 
+    before = await client.get("/api/career/today")
+    assert before.status_code == 200
+    labels_before = {i["label"] for i in before.json()["items"]}
+    assert any(l.startswith("Shared DSA node") for l in labels_before), (
+        "B's plan must include the shared roadmap's nodes before A touches anything"
+    )
+
+    # A detaches. Must not affect B.
+    as_user(USER_A)
     assert (await client.delete(f"/api/career/roadmaps/{rm.id}")).status_code == 204
-    survivors = (await db.execute(
-        select(NodeMeta).where(NodeMeta.stable_key.like("attached.edited.%"))
-    )).scalars().all()
-    assert len(survivors) == 1 and survivors[0].user_edited is True
+
+    as_user(USER_B)
+    after = await client.get("/api/career/today")
+    assert after.status_code == 200
+    labels_after = {i["label"] for i in after.json()["items"]}
+    assert any(l.startswith("Shared DSA node") for l in labels_after), (
+        "A's detach must not remove B's attached-roadmap nodes from B's plan"
+    )
+    assert (await db.execute(
+        select(CareerGoalRoadmap).where(CareerGoalRoadmap.roadmap_id == rm.id)
+    )).scalars().all().__len__() == 1, "only A's link should be gone; B's link survives"
 
 
 async def test_attached_roadmap_minutes_reach_the_balance_window(client, db):

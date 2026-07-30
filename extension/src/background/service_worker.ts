@@ -1,11 +1,24 @@
-import { partitionClosedSessions, stitchSegments } from './stitcher'
+import { planSync, stitchSegments } from './stitcher'
 import type { Segment, Session, CompanionSessionIn } from '../types'
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier } from '../consent'
 import { storageLocalGet, storageLocalSet } from '../browser_api'
 
 // Constants
-const SESSION_GAP_MS = 15 * 60 * 1000 // 15 mins
+// Two different questions, two different numbers (2026-07-27 follow-up):
+// "has this genuinely stopped" (kill) vs. "how long can real progress go
+// unsynced" (checkpoint). Previously one 15-min constant did both jobs, which
+// meant a multi-hour continuous session (a long video, a long LeetCode
+// session) never synced anything until it finally ended — nothing showed up
+// in the popup or the server for hours despite continuous activity.
+const INACTIVITY_KILL_MS = 20 * 60 * 1000 // session is dead — stop counting, safe to close for good
+const CHECKPOINT_MS = 15 * 60 * 1000 // still live, but sync progress-so-far on this cadence
+// A checkpoint must only fire on a session that is genuinely STILL running.
+// activity_tracker.ts emits every 5 min while active, so a last segment older
+// than one interval plus a margin means activity has already stopped — that
+// session must be left alone to close via INACTIVITY_KILL_MS rather than
+// being checkpointed away (see planSync).
+const CHECKPOINT_ACTIVITY_RECENCY_MS = 6 * 60 * 1000
 const ALARM_NAME = 'companion-tick'
 // Chrome clamps repeating alarms below 1 min anyway; this also matches the
 // gap-check/queue-flush cadence the old setInterval used.
@@ -29,6 +42,7 @@ interface QueuedSession {
 // is what wakes the worker back up.
 const STORAGE_KEY_BUFFER = 'segmentBuffer'
 const STORAGE_KEY_QUEUE = 'syncQueue'
+const STORAGE_KEY_LAST_SYNC = 'lastSyncedAt'
 
 // We'll read these from process.env when bundled by Vite, or you can hardcode for the skeleton
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://kvmymvimlkvepatrlgsf.supabase.co'
@@ -83,7 +97,24 @@ async function setBuffer(segments: Segment[]): Promise<void> {
   await storageLocalSet({ [STORAGE_KEY_BUFFER]: segments })
 }
 
-function sessionToPayload(session: Session): CompanionSessionIn {
+/**
+ * `includeContent: false` for a CHECKPOINT flush of a still-live session.
+ *
+ * chat_extract.ts returns the whole visible conversation every time, not a
+ * delta — so a 50-minute chat checkpointed every 15 minutes would send three
+ * cumulative snapshots ("turns 1-6", "turns 1-12", "turns 1-18"), and the
+ * backend would segment and record turns 1-6 three separate times: the same
+ * topics duplicated in the evidence log, at 3x the Gemini cost. Content
+ * therefore rides only the session that genuinely CLOSED, which describes a
+ * finished conversation exactly once.
+ *
+ * Tradeoff, accepted: the closing session covers only the time since the last
+ * checkpoint, so the whole conversation's topics attach to that shorter
+ * duration. These are weight-0 TIME_BLOCK rows (they can't move mastery
+ * either way), so an understated duration is strictly better than the same
+ * topic credited three times.
+ */
+function sessionToPayload(session: Session, includeContent: boolean): CompanionSessionIn {
   return {
     session_id: session.session_id,
     duration_min: session.duration_min,
@@ -94,7 +125,17 @@ function sessionToPayload(session: Session): CompanionSessionIn {
     payload: {
       sources: session.sources,
       title_sample: session.title_bag, // title bag becomes title_sample for metadata
-    }
+    },
+    // SIBLING of payload, never nested inside it — mirrors
+    // schemas/companion.py's CompanionSessionIn.content exactly. payload
+    // keeps extra="forbid" specifically so raw chat text can never land
+    // there even by accident.
+    ...(includeContent && session.content ? { content: session.content } : {}),
+    // `chapters` is NOT gated by includeContent — unlike content it's a sum
+    // of per-segment deltas, not a repeated cumulative snapshot, so it's
+    // exactly as safe on a checkpoint flush as on a closed one (see
+    // stitcher.ts's stitchSegments).
+    ...(session.chapters && session.chapters.length > 0 ? { chapters: session.chapters } : {}),
   }
 }
 
@@ -109,19 +150,24 @@ async function flushClosedSessions(): Promise<void> {
   const buffer = await getBuffer()
   if (buffer.length === 0) return
 
-  const { closed, live } = partitionClosedSessions(buffer, SESSION_GAP_MS, Date.now())
-  if (closed.length === 0) {
-    await setBuffer(live)
+  // planSync decides both WHAT to send and which groups may carry chat
+  // content — see its docstring for why that flag matters.
+  const { toSync, remainingLive } = planSync(
+    buffer, INACTIVITY_KILL_MS, CHECKPOINT_MS, CHECKPOINT_ACTIVITY_RECENCY_MS, Date.now()
+  )
+
+  if (toSync.length === 0) {
+    await setBuffer(remainingLive)
     return
   }
 
   const data = await storageLocalGet([STORAGE_KEY_QUEUE])
   const queue: QueuedSession[] = (data[STORAGE_KEY_QUEUE] as QueuedSession[] | undefined) || []
 
-  for (const group of closed) {
+  for (const { group, isClosed } of toSync) {
     const sessionId = crypto.randomUUID()
     const session = stitchSegments(group, sessionId)
-    queue.push({ payload: sessionToPayload(session), attempts: 0 })
+    queue.push({ payload: sessionToPayload(session, isClosed), attempts: 0 })
   }
 
   const overflow = queue.length - MAX_QUEUE_SIZE
@@ -130,8 +176,21 @@ async function flushClosedSessions(): Promise<void> {
     queue.splice(0, overflow)
   }
 
-  await storageLocalSet({ [STORAGE_KEY_QUEUE]: queue })
-  await setBuffer(live)
+  // Chat content took a queued session from ~200 bytes to as much as 16KB, so
+  // a full 300-session offline backlog can approach Chrome's 10MB
+  // storage.local quota. An over-quota set() REJECTS — and an unhandled
+  // rejection here would abort the flush and silently stop syncing forever,
+  // which is a far worse outcome than losing the topic split. Content is an
+  // attribution nicety; the session record is the actual data. So on a write
+  // failure, drop every content field and retry once.
+  try {
+    await storageLocalSet({ [STORAGE_KEY_QUEUE]: queue })
+  } catch (error) {
+    console.error('Failed to persist companion sync queue; retrying without chat content', error)
+    for (const item of queue) delete item.payload.content
+    await storageLocalSet({ [STORAGE_KEY_QUEUE]: queue })
+  }
+  await setBuffer(remainingLive)
 
   processQueue()
 }
@@ -164,7 +223,9 @@ async function processQueue(): Promise<void> {
 
     if (response.ok) {
       console.log(`Successfully synced ${chunk.length} session(s)`)
-      await storageLocalSet({ [STORAGE_KEY_QUEUE]: rest })
+      // Read by the popup to show "last upload N min ago" — the only proof a
+      // user has that anything reached the server, short of opening the app.
+      await storageLocalSet({ [STORAGE_KEY_QUEUE]: rest, [STORAGE_KEY_LAST_SYNC]: Date.now() })
       // More may be waiting behind this chunk — keep draining.
       if (rest.length > 0) processQueue()
       return
@@ -253,6 +314,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
     })()
     return true // keep the message channel open for the async sendResponse
+  } else if (message.type === 'TRACKING_PAUSED_CHANGED') {
+    // The popup owns the toggle and has already written pause_state.ts's
+    // storage flag by the time this arrives — this only updates the icon so
+    // the paused state is visible without opening the popup.
+    if (message.paused) {
+      chrome.action.setBadgeText({ text: '❚❚' })
+      chrome.action.setBadgeBackgroundColor({ color: '#64748B' })
+      chrome.action.setTitle({ title: 'RetainHQ Companion: tracking paused' })
+    } else {
+      chrome.action.setBadgeText({ text: '' })
+      chrome.action.setTitle({ title: 'RetainHQ Companion' })
+      maybeShowConsentNudgeBadge()
+    }
   } else if (message.type === 'LEETCODE_BACKFILL') {
     ;(async () => {
       const { data: { session: sbSession } } = await supabase.auth.getSession()
