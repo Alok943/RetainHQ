@@ -166,7 +166,8 @@ roles in India, 2026 hiring cycle, to build curriculum trees for a learning app.
 Output must be evidence-ranked, not vibes-ranked.
 
 ROLES TO COVER: (1) Backend Engineer, (2) AI Engineer (LLM/GenAI application
-engineer, NOT ML researcher), (3) SDE Generalist, (4) Data Engineer.
+engineer, NOT ML researcher), (3) SDE Generalist, (4) Data Engineer, (5) Data Scientist,
+(6) Data Analyst.
 
 SOURCES — in priority order, cite every claim:
 1. Real job postings (Naukri, LinkedIn India, Internshala, company career pages —
@@ -202,11 +203,21 @@ CONSTRAINTS:
 - For Data Engineer: establish whether fresher DE roles in India genuinely exist
   at meaningful volume, or whether the realistic entry path is backend/analyst →
   DE; the tree's framing depends on the answer.
+- For Data Scientist: establish whether fresher DS roles in India exist at meaningful
+  volume or whether most DS-titled fresher postings are analyst work under an inflated
+  title — same framing question as Data Engineer, same consequence for the tree's shape.
+- For Data Analyst: the app already assumes SQL depth is the primary filter and Python is
+  notebook-level only. Verify or refute both. Also settle the spreadsheet question with
+  a segment breakdown — whether Excel is a genuine screen in IT-services/GCC and
+  de-emphasized in product/startup, which decides whether spreadsheets deserves
+  default_priority 4 or 2.
+- For Data Analyst: confirm which single BI tool dominates fresher postings in India
+  (Power BI vs Tableau), since §3 authors exactly one.
 - Flag every claim you could NOT verify with a primary source as UNVERIFIED
   rather than silently including it.
 
 CURRENT TEMPLATE SUMMARIES (for section D):
-[paste the subjects + node-title lists from content/career-templates/*.v2.json]
+[paste the subjects + node-title lists from content/career-templates/*.v2.json and data_analyst.v1.json]
 ```
 
 ---

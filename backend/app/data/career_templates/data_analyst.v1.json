@@ -1,0 +1,647 @@
+{
+  "role_key": "data_analyst",
+  "version": "v1",
+  "title": "Data Analyst",
+  "subjects": [
+    {
+      "key": "sql_core",
+      "title": "SQL Foundations",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "sql_core.select_filtering",
+          "title": "SELECT, WHERE, ORDER BY",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "What is the execution order between WHERE, GROUP BY, and HAVING in SQL?",
+          "diagnostic_answer": "WHERE filters individual rows before grouping occurs. GROUP BY aggregates the remaining rows into groups. HAVING filters the grouped aggregations after GROUP BY has run."
+        },
+        {
+          "stable_key": "sql_core.group_by_aggregates",
+          "title": "GROUP BY & Aggregate Functions",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.inner_joins",
+          "title": "INNER JOIN & Table Aliasing",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.outer_joins",
+          "title": "LEFT & RIGHT JOINs",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "sql_core.inner_joins"
+          ]
+        },
+        {
+          "stable_key": "sql_core.null_handling",
+          "title": "NULL Values & COALESCE",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.case_when",
+          "title": "Conditional Logic with CASE WHEN",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.subqueries",
+          "title": "Subqueries & IN / EXISTS",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.string_functions",
+          "title": "String Functions & Matching",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.date_time",
+          "title": "Date & Time Operations",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.math_rounding",
+          "title": "Numeric Functions & Rounding",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.union_sets",
+          "title": "UNION & Set Operations",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ]
+        },
+        {
+          "stable_key": "sql_core.distinct_counting",
+          "title": "DISTINCT & COUNT(DISTINCT)",
+          "est_effort_min": 30,
+          "priority": 4,
+          "depends_on": [
+            "sql_core.group_by_aggregates"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "sql_advanced",
+      "title": "Advanced SQL",
+      "default_priority": 5,
+      "nodes": [
+        {
+          "stable_key": "sql_advanced.row_number_rank",
+          "title": "ROW_NUMBER, RANK, DENSE_RANK",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ],
+          "diagnostic_probe": "How do RANK() and DENSE_RANK() differ when two rows tie for 2nd place?",
+          "diagnostic_answer": "RANK() leaves gaps in sequence (assigning 1, 2, 2, 4 for the next row). DENSE_RANK() assigns consecutive ranks without gaps (assigning 1, 2, 2, 3)."
+        },
+        {
+          "stable_key": "sql_advanced.window_aggregates",
+          "title": "Window Aggregations & PARTITION BY",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "sql_advanced.row_number_rank"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.lag_lead",
+          "title": "LAG and LEAD Functions",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "sql_advanced.row_number_rank"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.ctes",
+          "title": "Common Table Expressions (CTEs)",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [
+            "sql_core.select_filtering"
+          ],
+          "diagnostic_probe": "Why use a CTE over a deeply nested subquery in production SQL?",
+          "diagnostic_answer": "CTEs improve code readability and maintainability by structuring complex queries into named, sequential blocks. They also allow a CTE to be referenced multiple times within the same statement."
+        },
+        {
+          "stable_key": "sql_advanced.recursive_ctes",
+          "title": "Recursive CTEs",
+          "est_effort_min": 60,
+          "priority": 3,
+          "depends_on": [
+            "sql_advanced.ctes"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.query_execution_plans",
+          "title": "Query Execution Plans & EXPLAIN",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "sql_advanced.ctes"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.index_aware_queries",
+          "title": "Index-Aware Query Writing",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "sql_advanced.query_execution_plans"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.self_joins",
+          "title": "Self Joins & Hierarchical Data",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "sql_core.inner_joins"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.pivot_unpivot",
+          "title": "Pivoting & Unpivoting Data",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "sql_advanced.ctes"
+          ]
+        },
+        {
+          "stable_key": "sql_advanced.multi_stage_aggregation",
+          "title": "Multi-Stage Data Aggregation",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "sql_advanced.ctes"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "statistics",
+      "title": "Statistics for Analysis",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "statistics.descriptive_stats",
+          "title": "Mean, Median, Mode, Outliers",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [],
+          "diagnostic_probe": "When should median be reported instead of mean for central tendency?",
+          "diagnostic_answer": "Report median when data is skewed or contains extreme outliers (such as income or housing prices), because the mean is heavily distorted by extreme values while median represents the middle observation."
+        },
+        {
+          "stable_key": "statistics.variance_std_dev",
+          "title": "Variance & Standard Deviation",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "statistics.descriptive_stats"
+          ]
+        },
+        {
+          "stable_key": "statistics.percentiles_quartiles",
+          "title": "Percentiles & Interquartile Range",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "statistics.descriptive_stats"
+          ]
+        },
+        {
+          "stable_key": "statistics.probability_distributions",
+          "title": "Normal & Binomial Distributions",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "statistics.descriptive_stats"
+          ]
+        },
+        {
+          "stable_key": "statistics.sampling_methods",
+          "title": "Sampling Methods & Bias",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "statistics.descriptive_stats"
+          ]
+        },
+        {
+          "stable_key": "statistics.hypothesis_testing",
+          "title": "Hypothesis Testing & Null Hypothesis",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "statistics.probability_distributions"
+          ]
+        },
+        {
+          "stable_key": "statistics.p_values_significance",
+          "title": "P-Values & Statistical Significance",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "statistics.hypothesis_testing"
+          ]
+        },
+        {
+          "stable_key": "statistics.confidence_intervals",
+          "title": "Confidence Intervals",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "statistics.p_values_significance"
+          ]
+        },
+        {
+          "stable_key": "statistics.correlation_causation",
+          "title": "Correlation vs Causation",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "statistics.descriptive_stats"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "bi_dashboards",
+      "title": "BI & Dashboards",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "bi_dashboards.powerbi_import_transform",
+          "title": "Power BI & Power Query ETL",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What is the primary role of Power Query before loading data into Power BI?",
+          "diagnostic_answer": "Power Query cleans, transforms, and reshapes raw data sources (filtering rows, changing types, splitting columns) before loading the cleaned data into Power BI's tabular model."
+        },
+        {
+          "stable_key": "bi_dashboards.powerbi_data_modeling",
+          "title": "Power BI Relationships & Star Schema",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "bi_dashboards.powerbi_import_transform"
+          ]
+        },
+        {
+          "stable_key": "bi_dashboards.dax_columns_vs_measures",
+          "title": "DAX Calculated Columns vs Measures",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "bi_dashboards.powerbi_data_modeling"
+          ],
+          "diagnostic_probe": "How do DAX calculated columns and DAX measures differ in memory and evaluation?",
+          "diagnostic_answer": "Calculated columns are evaluated row-by-row during data refresh and stored directly in RAM. Measures are evaluated dynamically at query time based on the active visual filter context, consuming minimal RAM."
+        },
+        {
+          "stable_key": "bi_dashboards.dax_calculate_filter",
+          "title": "DAX CALCULATE & Filter Context",
+          "est_effort_min": 60,
+          "priority": 5,
+          "depends_on": [
+            "bi_dashboards.dax_columns_vs_measures"
+          ]
+        },
+        {
+          "stable_key": "bi_dashboards.dax_time_intelligence",
+          "title": "DAX Time Intelligence Functions",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "bi_dashboards.dax_calculate_filter"
+          ]
+        },
+        {
+          "stable_key": "bi_dashboards.dashboard_visual_design",
+          "title": "Dashboard Layout & Visual Hierarchy",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "bi_dashboards.powerbi_import_transform"
+          ]
+        },
+        {
+          "stable_key": "bi_dashboards.interactive_filters_slicers",
+          "title": "Slicers, Drill-Downs & Interactions",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "bi_dashboards.dashboard_visual_design"
+          ]
+        },
+        {
+          "stable_key": "bi_dashboards.row_level_security",
+          "title": "Row-Level Security (RLS) in Power BI",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "bi_dashboards.powerbi_data_modeling"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "spreadsheets",
+      "title": "Spreadsheet Analysis",
+      "default_priority": 4,
+      "nodes": [
+        {
+          "stable_key": "spreadsheets.lookup_formulas",
+          "title": "VLOOKUP, XLOOKUP & INDEX-MATCH",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [
+            "spreadsheets.data_cleaning"
+          ],
+          "diagnostic_probe": "Why is XLOOKUP preferred over VLOOKUP in spreadsheet analysis?",
+          "diagnostic_answer": "XLOOKUP searches in any direction (left or right), defaults to exact match, does not break when columns are inserted, and avoids referencing static column numbers."
+        },
+        {
+          "stable_key": "spreadsheets.nested_logic",
+          "title": "Nested IF & Logical Functions",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "spreadsheets.lookup_formulas"
+          ]
+        },
+        {
+          "stable_key": "spreadsheets.pivottables",
+          "title": "PivotTables & Summary Reports",
+          "est_effort_min": 45,
+          "priority": 5,
+          "depends_on": [
+            "spreadsheets.data_cleaning"
+          ],
+          "diagnostic_probe": "How do calculated fields in a PivotTable differ from cell formulas?",
+          "diagnostic_answer": "Calculated fields perform arithmetic on the aggregated sums of fields within the PivotTable view rather than evaluating raw underlying rows before aggregation."
+        },
+        {
+          "stable_key": "spreadsheets.data_cleaning",
+          "title": "Spreadsheet Cleaning & Text-to-Columns",
+          "est_effort_min": 30,
+          "priority": 4,
+          "depends_on": []
+        },
+        {
+          "stable_key": "spreadsheets.conditional_formatting",
+          "title": "Conditional Formatting Rules",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": [
+            "spreadsheets.data_cleaning"
+          ]
+        },
+        {
+          "stable_key": "spreadsheets.data_validation",
+          "title": "Data Validation & Dropdown Lists",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": [
+            "spreadsheets.data_cleaning"
+          ]
+        },
+        {
+          "stable_key": "spreadsheets.error_checking",
+          "title": "Formula Auditing & IFERROR Handling",
+          "est_effort_min": 30,
+          "priority": 3,
+          "depends_on": [
+            "spreadsheets.lookup_formulas"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "python_analysis",
+      "title": "Python for Analysis",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "python_analysis.pandas_series_dataframe",
+          "title": "Pandas Series & DataFrames",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What is the difference between .loc and .iloc in pandas?",
+          "diagnostic_answer": ".loc selects rows and columns using explicit labels or boolean indices. .iloc selects rows and columns strictly by zero-based integer positions."
+        },
+        {
+          "stable_key": "python_analysis.data_loading",
+          "title": "Reading CSV & Excel into Pandas",
+          "est_effort_min": 30,
+          "priority": 4,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        },
+        {
+          "stable_key": "python_analysis.filtering_indexing",
+          "title": "Filtering & Subsetting DataFrames",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        },
+        {
+          "stable_key": "python_analysis.missing_data",
+          "title": "Handling Missing Values in Pandas",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        },
+        {
+          "stable_key": "python_analysis.groupby_aggregations",
+          "title": "Pandas GroupBy & Aggregations",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        },
+        {
+          "stable_key": "python_analysis.merging_joining",
+          "title": "Merging & Concatenating DataFrames",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        },
+        {
+          "stable_key": "python_analysis.column_transformations",
+          "title": "DataFrame Apply & Vectorized Ops",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        },
+        {
+          "stable_key": "python_analysis.exploratory_plotting",
+          "title": "Exploratory Plotting with Seaborn",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "python_analysis.pandas_series_dataframe"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "data_modeling",
+      "title": "Data Modeling & Joins",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "data_modeling.er_diagrams",
+          "title": "ER Diagrams & Relational Entities",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": []
+        },
+        {
+          "stable_key": "data_modeling.star_schema",
+          "title": "Star Schema & Dimensional Modeling",
+          "est_effort_min": 60,
+          "priority": 4,
+          "depends_on": [
+            "data_modeling.er_diagrams"
+          ],
+          "diagnostic_probe": "How do Fact tables and Dimension tables differ in a star schema?",
+          "diagnostic_answer": "Fact tables hold numeric measurements and foreign keys recording business events. Dimension tables hold descriptive text attributes used to filter, slice, and group fact data."
+        },
+        {
+          "stable_key": "data_modeling.snowflake_schema",
+          "title": "Snowflake Schema Normalization",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "data_modeling.star_schema"
+          ]
+        },
+        {
+          "stable_key": "data_modeling.fact_dimension_design",
+          "title": "Fact vs Dimension Table Design",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "data_modeling.star_schema"
+          ]
+        },
+        {
+          "stable_key": "data_modeling.primary_foreign_keys",
+          "title": "Primary Keys, Foreign Keys & Integrity",
+          "est_effort_min": 30,
+          "priority": 4,
+          "depends_on": [
+            "data_modeling.er_diagrams"
+          ]
+        },
+        {
+          "stable_key": "data_modeling.scd_concepts",
+          "title": "Slowly Changing Dimensions (SCD) Concepts",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "data_modeling.fact_dimension_design"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "analyst_craft",
+      "title": "Metrics & Communication",
+      "default_priority": 3,
+      "nodes": [
+        {
+          "stable_key": "analyst_craft.defining_kpis",
+          "title": "Defining Business Metrics & KPIs",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [],
+          "diagnostic_probe": "What two essential components make a business metric actionable and testable?",
+          "diagnostic_answer": "A clear numerator/denominator formula specifying exact calculation logic, and a defined time window or cohort boundary."
+        },
+        {
+          "stable_key": "analyst_craft.root_cause_analysis",
+          "title": "Root Cause Analysis Framework",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "analyst_craft.defining_kpis"
+          ]
+        },
+        {
+          "stable_key": "analyst_craft.translating_business_questions",
+          "title": "Translating Business Questions to SQL",
+          "est_effort_min": 45,
+          "priority": 4,
+          "depends_on": [
+            "analyst_craft.defining_kpis"
+          ]
+        },
+        {
+          "stable_key": "analyst_craft.data_storytelling",
+          "title": "Data Storytelling & Summaries",
+          "est_effort_min": 45,
+          "priority": 3,
+          "depends_on": [
+            "analyst_craft.defining_kpis"
+          ]
+        }
+      ]
+    }
+  ]
+}

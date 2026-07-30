@@ -16,6 +16,27 @@ logger = logging.getLogger(__name__)
 
 CONTENT_DIR = Path(__file__).parent.parent.parent / "content" / "leetcode-catalog"
 
+# Teaching-scaffold slugs — content/PROMPT-leetcode-mapping.md §"NOT EVERY SLUG IS
+# A LEGAL primary". They explain fundamentals; they do not name a problem-solving
+# pattern. Legal as `supporting`, NEVER as `primary`.
+#
+# The v1 run violated this 66 times (28 at confidence 0.9) and nothing caught it,
+# because the contract lived only in the prompt. #418 Sentence Screen Fitting came
+# back as "String traversal", #326 Power of Three as "Base case". Fixed by
+# scripts/sql/2026-07-30_fix_scaffold_primaries.sql; enforced here so the next
+# mapping run cannot reintroduce it.
+SCAFFOLD_SLUGS = frozenset({
+    "amortized-analysis", "arrays-and-memory", "base-case", "big-o-notation",
+    "brute-force-first", "common-complexities", "counting-operations",
+    "graph-representations", "hash-sets-vs-maps", "in-place-operations",
+    "iteration-and-traversal", "linear-search", "logarithms-and-powers-of-two",
+    "optimal-substructure", "overlapping-subproblems", "pattern-recognition-drill",
+    "precomputation", "recognizing-divide-and-conquer", "recognizing-graph-problems",
+    "recognizing-greedy-vs-dp", "recognizing-sliding-window", "recognizing-two-pointers",
+    "string-traversal", "the-call-stack", "tracing-state-and-invariants",
+    "what-is-an-algorithm",
+})
+
 async def import_catalog(db: AsyncSession):
     catalog_path = CONTENT_DIR / "catalog.v1.json"
     if not catalog_path.exists():
@@ -188,6 +209,7 @@ async def import_catalog(db: AsyncSession):
         concepts_upserted = 0
         out_of_scope = 0
         unknown_slugs: dict[str, int] = {}
+        scaffold_primaries: dict[str, int] = {}
         for processed, m_data in enumerate(mapping_data, start=1):
             if processed % 250 == 0:
                 await db.commit()
@@ -202,11 +224,18 @@ async def import_catalog(db: AsyncSession):
             _p = m_data.get("primary")
             if _p == _OUT_OF_SCOPE:
                 out_of_scope += 1
+            elif _p in SCAFFOLD_SLUGS:
+                # Collected, not raised here — one report of every offender beats
+                # failing on the first and re-running to discover the next.
+                scaffold_primaries[_p] = scaffold_primaries.get(_p, 0) + 1
             elif _p and _p not in slug_to_node_id:
                 unknown_slugs[_p] = unknown_slugs.get(_p, 0) + 1
-            
-            # Map primary concept
+
+            # Map primary concept. A scaffold slug is skipped outright: writing it
+            # and cleaning up later is how the 66 bad rows reached prod.
             primary_slug = m_data.get("primary")
+            if primary_slug in SCAFFOLD_SLUGS:
+                primary_slug = None
             if primary_slug and primary_slug in slug_to_node_id:
                 node_id = slug_to_node_id[primary_slug]
                 pc = existing_pcs.get((problem_id, node_id))
@@ -260,6 +289,18 @@ async def import_catalog(db: AsyncSession):
         # imported but quietly dropped whole concepts is the failure this phase has
         # already hit twice. An unrecognised primary slug is a vocabulary drift bug,
         # not an out-of-scope problem, so refuse to exit 0 on it.
+        # A scaffold slug as `primary` is a contract violation, not a data quirk:
+        # it puts a "what is Big-O" node in front of a learner as the thing a
+        # problem taught them, and it silently pollutes the concept the Log
+        # Activity chip auto-fills. Refuse the import rather than clean up after.
+        if scaffold_primaries:
+            raise RuntimeError(
+                f"{sum(scaffold_primaries.values())} problems name a TEACHING-SCAFFOLD "
+                "concept as `primary`. PROMPT-leetcode-mapping.md forbids this - if "
+                "nothing else fits, the answer is 'out_of_scope'. Their primary was "
+                "skipped; re-run the mapping for these before trusting the import:\n  "
+                + "\n  ".join(f"{s} ({n} problems)" for s, n in sorted(scaffold_primaries.items()))
+            )
         if unknown_slugs:
             raise RuntimeError(
                 f"{sum(unknown_slugs.values())} problems name a primary concept that is "

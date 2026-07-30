@@ -3,7 +3,13 @@ from typing import Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field
 import uuid
 
-VALID_SOURCES = Literal["problem", "lecture", "video", "book", "article", "course", "project", "lesson", "other"]
+# Must stay in sync with SOURCE_TYPES in frontend/src/LogActivity.jsx. `self_learn`
+# was offered by that dropdown for months while missing here, so picking
+# "Self Learning" 422'd the whole capture. Added 2026-07-30.
+VALID_SOURCES = Literal[
+    "problem", "self_learn", "lecture", "video", "book", "article",
+    "course", "project", "lesson", "other",
+]
 
 class ActivityCreate(BaseModel):
     topic: str = Field(max_length=300)
