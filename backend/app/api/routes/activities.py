@@ -7,11 +7,12 @@ import uuid
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.models.models import Activity
+from app.models.models import Activity, ProblemAttempt, ProblemConcept
 from app.schemas.activity import (
     ActivityCreate, ActivityResponse, ActivityListItem,
     KeyPointsRequest, KeyPointsResponse,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.services.scheduler import initial_review_for_activity
 from app.services.grader import suggest_key_points, GraderError
 from app.services import analytics
@@ -74,6 +75,7 @@ def _existing_card_response(existing: Activity) -> ActivityResponse:
         roadmap_id=existing.roadmap_id, topic=existing.topic, notes=existing.notes,
         difficulty=existing.difficulty, needed_hint=existing.needed_hint,
         key_memory=existing.key_memory, mistake=existing.mistake,
+        problem_id=existing.problem_id, language=existing.language,
         created_at=existing.created_at, reviews_scheduled=0, review_due_now=False,
     )
 
@@ -106,6 +108,28 @@ async def log_activity(
     ).scalar_one()
     is_first = existing_count == 0
 
+    node_id = activity_in.node_id
+    if activity_in.source_type == "problem" and activity_in.problem_id is not None:
+        if not node_id:
+            primary_node_id = (await db.execute(
+                select(ProblemConcept.node_id)
+                .where(ProblemConcept.problem_id == activity_in.problem_id, ProblemConcept.role == 'primary')
+            )).scalar_one_or_none()
+            if primary_node_id:
+                node_id = primary_node_id
+                
+        stmt = pg_insert(ProblemAttempt).values(
+            user_id=user_id,
+            problem_id=activity_in.problem_id,
+            status="solved",
+            language=activity_in.language
+        )
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["user_id", "problem_id"],
+            set_={"status": "solved", "language": activity_in.language},
+        )
+        await db.execute(stmt)
+
     # Create the activity
     activity = Activity(
         user_id=user_id,
@@ -117,7 +141,9 @@ async def log_activity(
         mistake=activity_in.mistake,
         source_type=activity_in.source_type,
         roadmap_id=activity_in.roadmap_id,
-        node_id=activity_in.node_id,
+        node_id=node_id,
+        problem_id=activity_in.problem_id,
+        language=activity_in.language,
     )
     db.add(activity)
 
@@ -164,6 +190,8 @@ async def log_activity(
         needed_hint=activity.needed_hint,
         key_memory=activity.key_memory,
         mistake=activity.mistake,
+        problem_id=activity.problem_id,
+        language=activity.language,
         created_at=activity.created_at,
         reviews_scheduled=1,
         review_due_now=is_first,

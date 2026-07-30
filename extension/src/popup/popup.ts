@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier, switchConsentTier, CONSENT_COPY_VERSION, type ConsentTier } from '../consent'
-import { getRedirectURL, launchWebAuthFlow, storageLocalGet } from '../browser_api'
+import { storageLocalGet, runtimeSendMessage } from '../browser_api'
 import { isTrackingPaused, setTrackingPaused } from '../pause_state'
 import type { Segment } from '../types'
 
@@ -235,49 +235,31 @@ async function updateUI() {
 
 loginBtn.addEventListener('click', async () => {
   setStatus('Opening Google sign-in…')
+  // The ENTIRE flow (launchWebAuthFlow, token parsing, setSession) runs in the
+  // background script, not here — see service_worker.ts's 'SIGN_IN' handler
+  // for why. Firefox closes this popup the instant the OAuth window it opens
+  // takes focus, which used to kill everything below this line mid-flight:
+  // the auth completed successfully server-side every time (confirmed via
+  // Supabase's own logs), but this popup's code never survived to consume the
+  // result, so nothing ever appeared to happen. The background has no such
+  // lifecycle, so it always gets to finish and persist the session to the
+  // SAME chrome.storage.local this popup's own supabase client reads —
+  // durable even if this exact popup instance doesn't survive to see the
+  // response below. If it doesn't, reopening the popup shows signed-in
+  // immediately, since renderConsentUI().then(updateUI) at the bottom of this
+  // file re-reads that storage on every fresh open.
   try {
-    const redirectUrl = getRedirectURL()
-    // Derived from the extension/add-on id, so it differs by browser
-    // (chromiumapp.org vs Firefox's own redirect domain) — logged rather
-    // than guessed so the real Firefox value can be added to Supabase's
-    // allowed-redirect list (IMPLEMENTATION-companion-firefox.md §5).
-    console.log('[RetainHQ] OAuth redirect URL for this build/browser:', redirectUrl)
-    const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`
-
-    // Promise form, NOT the callback form. Firefox's launchWebAuthFlow is
-    // promise-only: a callback is accepted and then never invoked, so the OAuth
-    // window opens, the user picks an account, and nothing happens — no error,
-    // no session. See browser_api.ts.
-    const redirectUri = await launchWebAuthFlow({ url: authUrl, interactive: true })
-    if (!redirectUri) {
-      setStatus('Sign in failed')
-      return
-    }
-
-    // Supabase returns tokens in the hash on implicit flow, but in the query
-    // string when it hands back an error — read both so a real failure surfaces
-    // its reason instead of the generic "failed to parse tokens".
-    const url = new URL(redirectUri)
-    const params = new URLSearchParams(url.hash.substring(1))
-    const query = url.searchParams
-    const authError = params.get('error_description') || query.get('error_description')
-      || params.get('error') || query.get('error')
-    if (authError) {
-      console.error('[RetainHQ] OAuth error:', authError)
-      setStatus(`Sign in failed: ${authError}`)
-      return
-    }
-
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-    if (accessToken && refreshToken) {
-      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+    const response = await runtimeSendMessage<{ ok: boolean; reason?: string }>({ type: 'SIGN_IN' })
+    if (response?.ok) {
       setStatus(null)
       updateUI()
     } else {
-      setStatus('Failed to parse tokens')
+      console.error('[RetainHQ] Sign-in failed:', response?.reason)
+      setStatus(`Sign in failed: ${response?.reason ?? 'unknown error'}`)
     }
   } catch (error) {
+    // Only reached if THIS popup instance is still alive to catch it — a
+    // closed popup silently drops this, which is fine per the comment above.
     console.error(error)
     setStatus(`Sign in error: ${(error as Error)?.message ?? error}`)
   }

@@ -2,7 +2,7 @@ import { planSync, stitchSegments } from './stitcher'
 import type { Segment, Session, CompanionSessionIn } from '../types'
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier } from '../consent'
-import { storageLocalGet, storageLocalSet } from '../browser_api'
+import { storageLocalGet, storageLocalSet, getRedirectURL, launchWebAuthFlow } from '../browser_api'
 
 // Constants
 // Two different questions, two different numbers (2026-07-27 follow-up):
@@ -283,6 +283,58 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       // recording badge above has cleared, so it never fights that indicator.
       maybeShowConsentNudgeBadge()
     }
+  } else if (message.type === 'SIGN_IN') {
+    // Runs the WHOLE interactive OAuth flow here, never in the popup. Firefox
+    // (confirmed 2026-07-30) closes a toolbar popup the instant a competing
+    // window takes focus — which is exactly what launchWebAuthFlow's own auth
+    // window does the moment it opens. That kills the popup's JS mid-flow
+    // before it can ever parse the returned tokens, even though the OAuth
+    // round-trip itself completes successfully server-side (confirmed via
+    // Supabase auth logs: repeated successful `Login` events with no visible
+    // change in the popup — the user's own retries chasing a UI that never
+    // updated). The background page has no such lifecycle; it isn't torn down
+    // by the popup closing, so the flow's continuation always gets to run.
+    // popup.ts now only sends this message and re-renders on the response —
+    // see its `loginBtn` handler for why nothing here should move back there.
+    ;(async () => {
+      try {
+        const redirectUrl = getRedirectURL()
+        const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`
+
+        const redirectUri = await launchWebAuthFlow({ url: authUrl, interactive: true })
+        if (!redirectUri) {
+          sendResponse({ ok: false, reason: 'no-redirect' })
+          return
+        }
+
+        // Supabase returns tokens in the hash on implicit flow, but in the query
+        // string when it hands back an error — read both so a real failure surfaces
+        // its reason instead of a generic parse failure.
+        const url = new URL(redirectUri)
+        const params = new URLSearchParams(url.hash.substring(1))
+        const query = url.searchParams
+        const authError = params.get('error_description') || query.get('error_description')
+          || params.get('error') || query.get('error')
+        if (authError) {
+          console.error('[RetainHQ] OAuth error:', authError)
+          sendResponse({ ok: false, reason: authError })
+          return
+        }
+
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          sendResponse({ ok: true })
+        } else {
+          sendResponse({ ok: false, reason: 'no-tokens' })
+        }
+      } catch (error) {
+        console.error('[RetainHQ] Sign-in error:', error)
+        sendResponse({ ok: false, reason: String((error as Error)?.message ?? error) })
+      }
+    })()
+    return true // keep the message channel open for the async sendResponse
   } else if (message.type === 'LEETCODE_SOLVED') {
     // Must report success back: the content script keeps the solve in a durable queue
     // and only drops it once we confirm delivery. Answering optimistically (or not at

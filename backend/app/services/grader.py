@@ -214,14 +214,20 @@ _QGEN_SET_SYSTEM_PROMPT = (
     "with the topic's core facets.\n"
     "2. If the input has ONLY a KEY MEMORY block, every question must be answerable SOLELY "
     "from that note — nothing not stated or directly implied by it. No outside trivia.\n"
+    "3. If a PROBLEM CONTEXT is given, NEVER restate, quote, or paraphrase the problem statement. "
+    "The title is a label, not content to quiz on. If a LANGUAGE is given, language questions must be about "
+    "semantics and complexity, never syntax lookup (e.g. if the answer is a one-line docs lookup, it is not a question). "
+    "Only emit a language question when the language is explicitly provided.\n"
     "Question rules:\n"
-    "3. DEPTH=main → 2-3 questions covering the core: the definition/statement and the why. "
-    "DEPTH=deep → 4-5 questions: the core PLUS apply/derive/compare/edge-case probes.\n"
-    "4. Each question is ONE sentence, open-ended short-answer — never yes/no, never "
+    "4. DEPTH=main → 2-3 questions covering the core: the definition/statement and the why. "
+    "If PROBLEM CONTEXT is present: 1 concept (why the pattern works) + 1 trigger (what signals this pattern) + 1 implementation (in the card's language, if provided, else complexity).\n"
+    "DEPTH=deep → 4-5 questions: the core PLUS apply/derive/compare/edge-case probes. "
+    "If PROBLEM CONTEXT is present: core PLUS 1 complexity/transfer (about alternative approaches) + 1 edge case/discriminating question.\n"
+    "5. Each question is ONE sentence, open-ended short-answer — never yes/no, never "
     "multiple choice. Force specific retrieval ('Why does X…', 'What happens when Y…'), "
     "no generic padding.\n"
-    "5. Probe DIFFERENT facets — no two questions testing the same fact reworded.\n"
-    "6. Each reference_answer is 1-3 sentences: the complete, correct expected answer. It is "
+    "6. Probe DIFFERENT facets — no two questions testing the same fact reworded.\n"
+    "7. Each reference_answer is 1-3 sentences: the complete, correct expected answer. It is "
     "the grading ground truth, so it must be self-contained and factually precise — never "
     "invent specifics you are unsure about.\n"
     'Respond ONLY as JSON: {"questions": [{"question": "...", "reference_answer": "..."}]}'
@@ -236,6 +242,7 @@ async def generate_question_items(
     node_description: Optional[str] = None,
     unit: Optional[str] = None,
     mistake: Optional[str] = None,
+    problem_context: Optional[dict] = None,
 ) -> List[QuestionItem]:
     """Generate a persistable question set ({question, reference_answer} items).
 
@@ -259,6 +266,18 @@ async def generate_question_items(
         parts.append(f"TOPIC: {topic}\n\nKEY MEMORY:\n{key_memory.strip()}")
     if mistake and mistake.strip():
         parts.append(f"A MISTAKE THE STUDENT PREVIOUSLY MADE (good to probe):\n{mistake.strip()}")
+        
+    if problem_context:
+        ctx = "PROBLEM CONTEXT:\n"
+        ctx += f"Problem: {problem_context.get('problem_title', 'Unknown')}\n"
+        if problem_context.get('primary_node_title'):
+            ctx += f"Primary Concept: {problem_context['primary_node_title']}\n"
+        alt = problem_context.get('alternative_node_titles')
+        if alt:
+            ctx += f"Alternative Concepts: {', '.join(alt)}\n"
+        if problem_context.get('language'):
+            ctx += f"Language: {problem_context['language']}\n"
+        parts.append(ctx)
 
     raw = await _groq_json(_QGEN_SET_SYSTEM_PROMPT, "\n\n".join(parts), max_tokens=1200)
     try:

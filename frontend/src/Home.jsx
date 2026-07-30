@@ -6,7 +6,6 @@ import { track, trackOnce, EVENTS } from './lib/analytics';
 import FirstCapture from './FirstCapture';
 import AudiencePicker from './AudiencePicker';
 import PushPromptBanner from './PushPromptBanner';
-import CompanionInstallBanner from './CompanionInstallBanner';
 import { useAuth } from './lib/AuthContext';
 import { useToast } from './lib/ToastContext';
 import ReviewHeatmap from './ReviewHeatmap';
@@ -318,7 +317,6 @@ function Home({ onStartReviews }) {
               reviews to be reminded about). Self-hides per its own frequency
               policy; renders nothing when already on, denied, or asked today. */}
           {session && <PushPromptBanner />}
-          <CompanionInstallBanner />
 
           {/* Due-session card */}
           <section>

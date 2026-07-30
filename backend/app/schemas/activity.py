@@ -24,6 +24,8 @@ class ActivityCreate(BaseModel):
     source_type: Optional[VALID_SOURCES] = None
     roadmap_id: Optional[uuid.UUID] = None  # optional link to the roadmap it belongs to
     node_id: Optional[uuid.UUID] = None  # lesson-level link (roadmap_nodes.id) for "Add to reviews"
+    problem_id: Optional[uuid.UUID] = None
+    language: Optional[Literal["python", "java", "cpp", "javascript", "go", "rust", "sql"]] = None
 
 
 class KeyPointsRequest(BaseModel):
@@ -42,6 +44,8 @@ class ActivityResponse(BaseModel):
     user_id: uuid.UUID
     track_id: Optional[uuid.UUID] = None
     roadmap_id: Optional[uuid.UUID] = None
+    problem_id: Optional[uuid.UUID] = None
+    language: Optional[str] = None
     topic: str
     notes: Optional[str] = None
     difficulty: int
@@ -68,6 +72,8 @@ class ActivityListItem(BaseModel):
     mistake: Optional[str] = None
     source_type: Optional[str] = None
     roadmap_id: Optional[uuid.UUID] = None
+    problem_id: Optional[uuid.UUID] = None
+    language: Optional[str] = None
     created_at: datetime
     repetitions: int
     next_review_at: Optional[datetime] = None

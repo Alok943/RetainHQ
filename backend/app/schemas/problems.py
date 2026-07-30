@@ -19,3 +19,18 @@ class ProblemOut(BaseModel):
 
 class ProblemMarkIn(BaseModel):
     status: str = "solved"  # 'solved' | 'attempted'
+
+
+class ProblemSearchOut(BaseModel):
+    id: uuid.UUID
+    external_id: int
+    title: str
+    slug: str
+    difficulty: str
+    url: Optional[str] = None
+    paid_only: bool = False
+    node_id: Optional[uuid.UUID] = None
+    node_title: Optional[str] = None
+    confidence_band: Optional[str] = None
+    already_logged: bool = False
+    reason: Optional[str] = None

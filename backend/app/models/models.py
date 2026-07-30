@@ -87,6 +87,8 @@ class Activity(SQLModel, table=True):
     # "Add to reviews" (source_type='lesson'). Lets the review surface the lesson's
     # recall items and dedupes one card per (user, node). Migration a4b2e9f1c8d3.
     node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
+    problem_id: Optional[uuid.UUID] = Field(default=None, foreign_key="problems.id")
+    language: Optional[str] = None
     topic: str
     notes: Optional[str] = None
     difficulty: int = Field(ge=1, le=5)
@@ -492,4 +494,5 @@ class ProblemAttempt(SQLModel, table=True):
     user_id: uuid.UUID = Field(index=True)
     problem_id: uuid.UUID = Field(foreign_key="problems.id", ondelete="CASCADE", index=True)
     status: str = Field(default="solved")     # 'solved' | 'attempted'
+    language: Optional[str] = None
     marked_at: datetime = Field(default_factory=datetime.utcnow)

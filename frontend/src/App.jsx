@@ -19,6 +19,7 @@ import Logo from './Logo';
 import WelcomeModal from './WelcomeModal';
 import JoinClassroom from './JoinClassroom';
 import PrivacyCompanion from './PrivacyCompanion';
+import CompanionInstallBanner from './CompanionInstallBanner';
 
 const Home = lazy(() => import('./Home'));
 const Review = lazy(() => import('./Review'));
@@ -314,6 +315,8 @@ function AppLayout() {
         >
           <Plus size={24} strokeWidth={2.5} />
         </button>
+        
+        <CompanionInstallBanner />
       </div>
     </div>
   );

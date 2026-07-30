@@ -11,7 +11,7 @@ from typing import List, Optional
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.models.models import Review, Activity, RoadmapNode, Roadmap, QuestionSet
+from app.models.models import Review, Activity, RoadmapNode, Roadmap, QuestionSet, Problem, ProblemConcept
 from app.schemas.review import (
     ReviewResponse,
     ReviewComplete,
@@ -347,6 +347,28 @@ async def get_review_questions(
             ).scalars().first()
             if node:
                 node_title, node_description, unit = node.title, node.description, node.section
+                
+        problem_context = None
+        if getattr(activity, 'problem_id', None):
+            problem = (await db.execute(select(Problem).where(Problem.id == activity.problem_id))).scalars().first()
+            if problem:
+                concepts = (await db.execute(select(ProblemConcept).where(ProblemConcept.problem_id == activity.problem_id))).scalars().all()
+                primary_node_title = None
+                alt_node_titles = []
+                for c in concepts:
+                    node = (await db.execute(select(RoadmapNode).where(RoadmapNode.id == c.node_id))).scalars().first()
+                    if node:
+                        if c.role == "primary":
+                            primary_node_title = node.title
+                        elif c.role == "alternative":
+                            alt_node_titles.append(node.title)
+                problem_context = {
+                    "problem_title": problem.title,
+                    "primary_node_title": primary_node_title,
+                    "alternative_node_titles": alt_node_titles,
+                    "language": getattr(activity, 'language', None),
+                }
+
         try:
             items = await generate_question_items(
                 topic=activity.topic,
@@ -356,6 +378,7 @@ async def get_review_questions(
                 node_description=node_description,
                 unit=unit,
                 mistake=activity.mistake,
+                problem_context=problem_context,
             )
         except GraderError as e:
             raise HTTPException(
