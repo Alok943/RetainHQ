@@ -323,6 +323,23 @@ structural:
 the 797 medium/low rows, and it treats "agreement with v1 is high" as a valid result that should
 stop the work rather than a failure to paper over.
 
+**Status 2026-07-30: measured.** Pass 2 was rejected — it was a passthrough of v1 with the golden
+answers hardcoded, and it fooled every structural check
+(`content/leetcode-catalog/REJECTED-mapping.v2-tail.md`). Pass 3 re-ran it against a blinded work
+set (`tail-work-set.blind.json`, no prior assignment included) and was verified independently
+before acceptance — 0% reason-copying from v1, 53.5% agreement with the withheld v1 mapping
+(not the ~99% a passthrough would show), 68.8% on a withheld golden subset with 5 genuine
+disagreements (not the 100% a lookup table would show). Result:
+**the tail was mostly misclassified, not genuinely ambiguous.**
+
+One known gap, accepted deliberately: 37 of 797 rows (the newest/highest-ID problems) hit a
+rushed end-of-batch fallback rather than real judgment, and were left `out_of_scope` at `low`
+confidence rather than re-run — the safe direction (unmapped, not wrongly mapped). Full detail
+and the exact ID list: `content/leetcode-catalog/mapping.v3-tail.NOTES.md`.
+
+**Not yet wired in:** `backend/scripts/import_leetcode_catalog.py` still reads
+`mapping.v1.json` only. Importing `mapping.v3-tail.json`'s corrections is a follow-up.
+
 None of this blocks the build. The high band alone covers 2,121 mapped problems (73%) and is what
 the UI ships against.
 
