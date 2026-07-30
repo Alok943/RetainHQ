@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import AttachedRoadmaps from './AttachRoadmaps';
+import CompanionInstallBanner from './CompanionInstallBanner';
 
 // Career tree view + unmapped triage (SPEC-career-coach-phase2.md §8). Renders
 // the committed tree grouped by subject with phase-1 mastery state badges;
@@ -484,6 +485,10 @@ function CareerTree({ goal, onGoalChanged }) {
           <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </header>
+
+      <div className="mb-4">
+        <CompanionInstallBanner />
+      </div>
 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 font-sans text-sm text-red-700">{error}</div>

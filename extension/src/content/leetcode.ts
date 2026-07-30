@@ -118,6 +118,12 @@ function showReflectionPanel(submissionId: string, slug: string): void {
   host.id = 'rhq-reflect-host'
   host.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:2147483647;'
   const root = host.attachShadow({ mode: 'open' })
+  // No interpolation anywhere in this template — AMO's linter (no-unsanitized/property)
+  // flags an innerHTML sink the moment it sees a `${}` substitution, even one that's
+  // provably a hardcoded literal (the old version's `${n}` from a fixed [1,2,3,4,5]
+  // array). The confidence buttons are appended below via createElement/textContent
+  // instead, so this string is 100% static and the sink is genuinely safe, not just
+  // safe-by-inspection.
   root.innerHTML = `
     <style>
       .card{width:300px;font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -142,9 +148,7 @@ function showReflectionPanel(submissionId: string, slug: string): void {
       <p class="t">Solved — 10 seconds of recall?</p>
       <p class="s">Logged either way. This is what makes the review worth doing.</p>
       <label class="l">Confidence</label>
-      <div class="row" id="conf">
-        ${[1, 2, 3, 4, 5].map((n) => `<button data-v="${n}">${n}</button>`).join('')}
-      </div>
+      <div class="row" id="conf"></div>
       <label class="l">Needed a hint?</label>
       <div class="row" id="hint">
         <button data-v="no">No</button><button data-v="yes">Yes</button>
@@ -156,6 +160,14 @@ function showReflectionPanel(submissionId: string, slug: string): void {
         <button class="skip" id="skip">Skip</button>
       </div>
     </div>`
+
+  const confRow = root.getElementById('conf')!
+  for (const n of [1, 2, 3, 4, 5]) {
+    const btn = document.createElement('button')
+    btn.dataset.v = String(n)
+    btn.textContent = String(n)
+    confRow.appendChild(btn)
+  }
 
   let confidence: number | undefined
   let neededHint: boolean | undefined

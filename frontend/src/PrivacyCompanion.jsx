@@ -48,7 +48,27 @@ function PrivacyCompanion() {
       <main className="max-w-3xl mx-auto px-6 py-12">
         <p className="text-xs font-semibold uppercase tracking-wide text-[#0891B2] mb-2">RetainHQ Companion</p>
         <h1 className="text-3xl font-semibold tracking-tight text-[#0F172A] mb-1">Privacy Policy</h1>
-        <p className="text-sm text-[#64748B] mb-10">Last updated 2026-07-27</p>
+        <p className="text-sm text-[#64748B] mb-8">Last updated 2026-07-27</p>
+
+        {/* Unlisted self-host install (IMPLEMENTATION-amo-submission.md §0.1) — Mozilla still
+            signs the .xpi, it's just not on the public AMO listing yet. Firefox reads
+            Content-Type: application/x-xpinstall on this URL and offers to install directly
+            rather than downloading the file. */}
+        <div className="mb-10 rounded-2xl border border-[#0891B2]/25 bg-[#0891B2]/[0.04] p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[#0F172A]">Install RetainHQ Companion for Firefox</p>
+            <p className="text-sm text-[#64748B] mt-1">
+              Requires Firefox 140 or later. Not yet listed on addons.mozilla.org — this is a
+              Mozilla-signed direct install, same review process, no public listing.
+            </p>
+          </div>
+          <a
+            href="/companion.xpi"
+            className="shrink-0 inline-flex items-center justify-center rounded-xl bg-[#0891B2] hover:bg-[#0E7490] text-white text-sm font-semibold px-5 py-2.5 transition-colors"
+          >
+            Add to Firefox
+          </a>
+        </div>
 
         <Section title="Two ways to track AI chats">
           <p>
