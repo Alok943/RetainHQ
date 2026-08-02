@@ -25,17 +25,33 @@ Output: `dist-firefox/` — this is what was submitted to AMO.
    the `postinstall` script (`patch-package`), which applies
    `patches/@supabase+supabase-js+2.110.7.patch`. That patch changes exactly one line
    in the installed copy of `@supabase/supabase-js` — see "Third-party patch" below.
-2. `npm run build:firefox` runs two steps back to back:
-   - `npm run build` → `tsc` (typecheck) then `vite build` (via `@crxjs/vite-plugin`),
-     producing `dist/` — a standard Chrome-shape MV3 build.
+2. `npm run build:firefox` runs three steps back to back:
+   - `tsc` — typecheck only, emits nothing.
+   - `vite build --mode firefox` (via `@crxjs/vite-plugin`), producing `dist/` — a
+     standard Chrome-shape MV3 build. The `--mode firefox` flag makes Vite load
+     `.env.firefox` (checked in, alongside this file) on top of any `.env`, pinning
+     `VITE_API_BASE_URL` to `https://retainhq.onrender.com`. That file exists so the
+     distributed build cannot inherit a developer's local `.env` — without it, a
+     machine with `VITE_API_BASE_URL=http://localhost:8000` would silently produce a
+     "distribution" build pointing every request at the builder's own machine. There
+     is no `.env` in this source archive, so the pin is the only value in play and the
+     output is deterministic.
    - `node scripts/build-firefox.mjs` → copies `dist/` to `dist-firefox/` and rewrites
      `dist-firefox/manifest.json`: the `background` key changes from
      `{ service_worker: "..." }` to `{ scripts: ["..."], type: "module" }` (the
      background JS itself is untouched — Firefox loads the same bundled file as an
-     event page instead of a service worker), and `http://localhost:8000/*` is
+     event page instead of a service worker), `http://localhost:8000/*` is
      removed from `host_permissions` (a dev-only permission with no purpose in a
-     distributed build). See the comments at the top of `scripts/build-firefox.mjs`
-     for both.
+     distributed build), and `use_dynamic_url` is stripped from
+     `web_accessible_resources` (a Chrome-only key Firefox logs a warning for). See
+     the comments at the top of `scripts/build-firefox.mjs` for each.
+
+`npm run build:chrome` exists alongside it for the Chrome Web Store / Edge Add-ons
+build (`dist-chrome/`, via `.env.chrome` and `scripts/build-chrome.mjs`). It is not
+part of the Firefox submission and can be ignored for this review; it is mentioned
+only so its presence in the archive is not surprising. Note that it also writes
+`dist/` as a byproduct, so run `npm run build:firefox` last (or on a clean tree) when
+reproducing the submitted artifact.
 
 No obfuscation is used anywhere in the build. `vite build`'s default minification
 (esbuild) only shortens identifiers and strips whitespace/comments — it does not
