@@ -37,6 +37,30 @@ export const permissionsContains = (permissions: chrome.permissions.Permissions)
 export const runtimeSendMessage = <T = unknown>(message: unknown): Promise<T> =>
   getApi().runtime.sendMessage(message)
 
+// Tabs + scripting go through getApi() for the exact reason documented at the
+// top of this file, and it bites HARDER here than anywhere else: every call
+// below is awaited FOR ITS RETURN VALUE. Elsewhere in this codebase
+// `chrome.tabs.*` is called fire-and-forget, where Firefox's callback-only
+// alias resolving to `undefined` is harmless. `await chrome.tabs.query(...)`
+// on Firefox would resolve to `undefined` and the import would report "open a
+// LeetCode tab" with one sitting right there.
+export const tabsQuery = (query: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab[]> =>
+  getApi().tabs.query(query)
+
+export const tabsCreate = (props: chrome.tabs.CreateProperties): Promise<chrome.tabs.Tab> =>
+  getApi().tabs.create(props)
+
+export const tabsGet = (tabId: number): Promise<chrome.tabs.Tab> =>
+  getApi().tabs.get(tabId)
+
+export const tabsRemove = (tabId: number): Promise<void> =>
+  getApi().tabs.remove(tabId)
+
+export const scriptingExecuteScript = <Args extends unknown[], Result>(
+  injection: chrome.scripting.ScriptInjection<Args, Result>,
+): Promise<chrome.scripting.InjectionResult<chrome.scripting.Awaited<Result>>[]> =>
+  getApi().scripting.executeScript(injection)
+
 /**
  * Firefox implements `identity.launchWebAuthFlow` as PROMISE-ONLY. Passing a
  * callback there does not throw — the callback is simply never invoked, so the

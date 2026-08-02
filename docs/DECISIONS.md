@@ -758,3 +758,30 @@ The second fix is the more important one, because it is why the first bug shippe
 **The diagnostic lesson is the load-bearing part.** The first rejection was assessed as "just AMO's error formatting" on the strength of a `zipfile.namelist()` check reporting zero backslashes — and that check was worthless, because **Python's `zipfile` normalizes backslashes to forward slashes on read**. The library reports a clean archive while the bytes on disk are malformed. Only parsing the local file headers directly exposes it, which is why the verification in this script does exactly that. Generalisation worth keeping: when validating an artifact against an external validator's complaint, read the artifact's bytes, not a library's interpretation of them — the library's convenience normalization is precisely what hides the class of bug the validator is objecting to.
 
 **Tradeoffs / rejected:** Python rather than Node — Node has no stdlib zip writer, and hand-rolling a ZIP container or adding a dependency to package three files is worse than using the stdlib of a language this repo already builds on. Not wired into an npm script, because packaging is a release-time action rather than part of `build:firefox`, and `REVIEWER-BUILD.md` deliberately defines `dist-firefox/` (not the zip) as the reproducible artifact — so the zip step stays outside the reproduction path a reviewer follows. The hidden-dot-entry skip duplicates D-068's build-script strip on purpose: one is the fix, the other is the guard that fails loudly if a future build step reintroduces it.
+
+
+## D-070 — The LeetCode import runs inside a leetcode.com tab, not in the service worker (2026-08-02)
+
+**Decision:** `scanRecentSolves` no longer fetches anything itself from the background context. New `extension/src/background/leetcode_tab_fetch.ts` acquires a real leetcode.com tab — reusing an already-open one, otherwise opening a background tab it closes again afterwards — and satisfies each page request via `scripting.executeScript({ world: 'MAIN' })`. The injected function is three lines: fetch a URL with `credentials: 'include'`, return `{status, ok, body}` as raw text. New `scripting` permission. `scanRecentSolves`'s `fetchImpl` parameter lost its `= fetch` default and is now required.
+
+**Why:** The import had never once succeeded. It failed with `LeetCode returned 403`, and the decisive measurement was running the identical request from the page's own console:
+
+```
+page console    GET /api/submissions/?offset=0&limit=5  ->  200 + JSON
+service worker  the same URL, same cookies, host permission granted, `credentials: 'include'`  ->  403
+```
+
+`/api/submissions/` returns the full **source code** of every submission, so LeetCode guards it far more tightly than `/api/problems/all/` — which the pre-D-060 import used and which answers a background fetch happily. That difference is why the endpoint swap in D-060 (needed for the language/date filters, which `/problems/all/` cannot support) silently traded a working import for a broken one. No header could have fixed it: `Referer` is a forbidden header name that no extension can set, and an extension-initiated request is cross-site for SameSite cookie purposes. The context itself is what's rejected, so the fix is to stop using that context.
+
+Borrowing the page makes the fix correct **by construction** rather than by guessing which header was missing — the injected `fetch` runs in byte-for-byte the same context that returned 200 in the console test.
+
+**Tradeoffs / rejected:**
+- *Keeping the scan logic in the page:* rejected. Only transport is injected; the cutoff, language filter, stop conditions and earliest-solve-wins rule all stay in `leetcode_backfill.ts`, pure and unit-tested. Nothing that decides *what gets imported* runs inside a page we don't control, and the existing tests kept applying unchanged.
+- *`declarativeNetRequest` header rewriting to fake a `Referer`:* rejected. It needs another permission, is a guess at the actual check, and does nothing about SameSite cookies.
+- *Erroring with "open a LeetCode tab first":* rejected. The button worked from anywhere before this change; demanding a tab would be a user-visible regression caused purely by an internal fix. Auto-opening a background tab (closed again in a `finally`) preserves the old behaviour.
+- *Erroring on a still-loading tab instead of polling:* the poll re-reads truth each tick, which `tabs.onUpdated` cannot — a listener registered before an `await` does not survive service-worker eviction.
+- *Keeping `fetchImpl`'s default:* rejected. The default **was** the bug; leaving it would put the broken call one forgotten argument away from returning. Requiring it forces every caller to state which context the request runs in.
+
+New `tabs*`/`scripting` wrappers went into `browser_api.ts` rather than calling `chrome.*` directly as the existing `chrome.tabs` calls do. Those are fire-and-forget, where Firefox's callback-only alias resolving to `undefined` is harmless; every call added here is awaited **for its return value**, so `await chrome.tabs.query(...)` on Firefox would resolve to `undefined` and report "no LeetCode tab" with one sitting right there.
+
+Extension v1.2.4. 116 extension tests (up from 102), `addons-linter` clean on `dist-firefox/`.

@@ -5,6 +5,7 @@ import { getConsentTier } from '../consent'
 import { storageLocalGet, storageLocalSet, getRedirectURL, launchWebAuthFlow } from '../browser_api'
 import { API_BASE_URL } from '../config'
 import { scanRecentSolves } from './leetcode_backfill'
+import { acquireLeetCodeTab, pageFetchVia, releaseTab } from './leetcode_tab_fetch'
 import { DEFAULT_WINDOW_DAYS } from '../leetcode_langs'
 
 // Constants
@@ -455,13 +456,23 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const cutoffMs = windowDays === null ? 0 : Date.now() - windowDays * 24 * 60 * 60 * 1000
         const langs: Set<string> | null = Array.isArray(message.langs) ? new Set(message.langs) : null
 
-        // `credentials: 'include'` (inside scanRecentSolves) is what makes the
-        // scan see the user's own submissions at all — without cookies
-        // LeetCode answers as signed-out, which cost this codebase a full
-        // debugging session. Throws a message-bearing Error on a bad status or
-        // a login page; the outer catch turns it into the popup's error text
-        // verbatim.
-        const { solves, partial } = await scanRecentSolves(cutoffMs, langs)
+        // The scan CANNOT run from this service worker: LeetCode answers
+        // /api/submissions/ with 403 for any extension-context request, cookies
+        // and host permission notwithstanding (measured 2026-08-02 — the same
+        // URL returns 200 from the page). So the requests are made inside a
+        // real leetcode.com tab instead; see leetcode_tab_fetch.ts. Everything
+        // that decides WHAT gets imported still runs here.
+        //
+        // Wrapped in try/finally so a thrown scan still closes a tab this code
+        // opened — otherwise every failed import would leave one behind.
+        const scanTab = await acquireLeetCodeTab()
+        let solves: Map<string, number>
+        let partial: boolean
+        try {
+          ;({ solves, partial } = await scanRecentSolves(cutoffMs, langs, pageFetchVia(scanTab.tabId)))
+        } finally {
+          await releaseTab(scanTab)
+        }
 
         const solvedSlugs = [...solves.keys()]
         if (solvedSlugs.length > 0) {

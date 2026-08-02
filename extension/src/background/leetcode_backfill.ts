@@ -49,6 +49,19 @@ export interface SubmissionsPage {
 }
 
 /**
+ * The subset of `fetch` this module actually uses.
+ *
+ * Deliberately narrower than `typeof fetch` so a page-borrowed fetch
+ * (leetcode_tab_fetch.ts) can satisfy it without faking a whole `Response`.
+ * Real `fetch` still satisfies it structurally, so the existing tests pass
+ * their mocks unchanged.
+ */
+export type PageFetch = (
+  url: string,
+  init?: RequestInit,
+) => Promise<{ status: number; ok: boolean; json(): Promise<any> }>
+
+/**
  * Folds one newest-first page into `acc` (slug → earliest accepted-in-window
  * epoch ms) and reports whether this page crossed the cutoff.
  *
@@ -118,13 +131,18 @@ export interface BackfillScanResult {
  * scan — every real submission timestamp is well above zero, so this still
  * short-circuits correctly and stays a valid epoch ms value throughout.
  *
- * `fetchImpl` is injectable purely so the pagination/stop logic is testable
- * without a network or a logged-in browser.
+ * `fetchImpl` is REQUIRED, with no default — deliberately. It used to default
+ * to the global `fetch`, i.e. the service worker's own, and that default was
+ * the bug: LeetCode answers `/api/submissions/` with 403 for any
+ * extension-context request (see leetcode_tab_fetch.ts for the measurement).
+ * Leaving a default here would leave the broken call one forgotten argument
+ * away from coming back; requiring it makes the caller state which context the
+ * request runs in. Tests pass their own mock, as they already did.
  */
 export async function scanRecentSolves(
   cutoffMs: number,
   langs: Set<string> | null,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: PageFetch,
   delayMs: number = PAGE_DELAY_MS,
 ): Promise<BackfillScanResult> {
   const solves = new Map<string, number>()

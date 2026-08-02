@@ -10,6 +10,14 @@ describe('manifest — dual Chrome/Firefox target', () => {
     expect(manifest.background.scripts).toContain(manifest.background.service_worker)
   })
 
+  it('declares the scripting permission the LeetCode import cannot work without', () => {
+    // The import fetches /api/submissions/ from inside a leetcode.com tab via
+    // scripting.executeScript({world:'MAIN'}) — the service worker's own fetch
+    // gets 403 from that endpoint (leetcode_tab_fetch.ts). Drop this permission
+    // and Import fails at runtime with nothing in the type system to catch it.
+    expect(manifest.permissions).toContain('scripting')
+  })
+
   it('sets a gecko id for Firefox signing', () => {
     expect(manifest.browser_specific_settings?.gecko?.id).toBe('companion@retainhq.app')
   })

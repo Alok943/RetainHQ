@@ -374,6 +374,10 @@ const SYNC_BTN_IDLE_LABEL = syncBtn.textContent ?? 'Import solved LeetCode probl
 // merely cookie-less, it's blocked outright: "NetworkError when attempting to
 // fetch resource". Same missing grant also stops leetcode.ts injecting, which
 // is why live solve capture and backfill failed together.
+// Still required after the import moved into the page (leetcode_tab_fetch.ts):
+// both tabs.query({url}) and scripting.executeScript need host access to the
+// tab they touch, so an ungranted origin now fails as "no LeetCode tab" rather
+// than as a network error — a different symptom, same missing grant.
 // The API origin rides along because the backfill makes TWO cross-origin
 // calls, and the second one — the POST to our own backend — is the one that
 // actually failed (`TypeError: NetworkError`, verified 2026-08-02 from the
