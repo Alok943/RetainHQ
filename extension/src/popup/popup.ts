@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier, switchConsentTier, CONSENT_COPY_VERSION, type ConsentTier } from '../consent'
-import { storageLocalGet, runtimeSendMessage, permissionsRequest } from '../browser_api'
+import { storageLocalGet, storageLocalSet, runtimeSendMessage, permissionsRequest } from '../browser_api'
 import { isTrackingPaused, setTrackingPaused } from '../pause_state'
 import type { Segment } from '../types'
 import { API_BASE_URL, API_ORIGIN_PATTERN } from '../config'
+import { LANGUAGE_GROUPS, WINDOW_OPTIONS, type LeetCodeImportPrefs } from '../leetcode_langs'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://kvmymvimlkvepatrlgsf.supabase.co'
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_c2R4IoLBwDgSFPwbfkqIog_HIFEF4Ej'
@@ -269,6 +270,87 @@ logoutBtn.addEventListener('click', async () => {
   updateUI()
 })
 
+// --- LeetCode import options -------------------------------------------
+// Was hardcoded to Python/60-days as a single-user shortcut — wrong the
+// moment a second install exists, since it would silently drop every
+// non-Python solve for every OTHER user with no setting to recover it. The
+// panel below asks instead of assuming, and the checked-by-everything /
+// all-time starting state is the SAME behavior as no filter at all, so a
+// user who ignores the panel entirely still gets the safe default.
+
+const STORAGE_KEY_IMPORT_PREFS = 'leetcodeImportPrefs'
+
+const importOptionsToggle = el('importOptionsToggle')
+const importOptionsEl = el('importOptions')
+const importWindowSelect = el<HTMLSelectElement>('importWindowSelect')
+const importLangGrid = el('importLangGrid')
+
+importWindowSelect.innerHTML = WINDOW_OPTIONS
+  .map((opt) => `<option value="${opt.value}">${opt.label}</option>`)
+  .join('')
+// "All time" — the no-filter starting point — not DEFAULT_WINDOW_DAYS, so an
+// untouched panel matches "no filter" exactly rather than one particular window.
+importWindowSelect.value = 'all'
+
+const langCheckboxes: HTMLInputElement[] = LANGUAGE_GROUPS.map((group, i) => {
+  const label = document.createElement('label')
+  const input = document.createElement('input')
+  input.type = 'checkbox'
+  input.checked = true // starting state = everything, i.e. no filter
+  input.dataset.groupIndex = String(i)
+  label.appendChild(input)
+  label.appendChild(document.createTextNode(group.label))
+  importLangGrid.appendChild(label)
+  return input
+})
+
+el('importLangAllBtn').addEventListener('click', () => {
+  langCheckboxes.forEach((cb) => { cb.checked = true })
+})
+el('importLangNoneBtn').addEventListener('click', () => {
+  langCheckboxes.forEach((cb) => { cb.checked = false })
+})
+
+// Pure DOM toggle — no permission-sensitive call lives here, so this is safe
+// to make async-adjacent to anything without spending a Firefox gesture.
+importOptionsToggle.addEventListener('click', () => {
+  importOptionsEl.classList.toggle('hidden')
+})
+
+/** Reads the panel's current state SYNCHRONOUSLY — called from the very top
+ * of the import click handler, before the gesture-sensitive permission
+ * request, so this must never await. */
+function readImportPrefsFromForm(): LeetCodeImportPrefs {
+  const opt = WINDOW_OPTIONS.find((o) => o.value === importWindowSelect.value)
+  const checkedGroups = LANGUAGE_GROUPS.filter((_, i) => langCheckboxes[i].checked)
+  const langs = checkedGroups.length === LANGUAGE_GROUPS.length
+    ? null // everything checked = no filter, not "here's every group we know about"
+    : checkedGroups.flatMap((g) => g.langs)
+  return { windowDays: opt?.days ?? null, langs }
+}
+
+function applyImportPrefsToForm(prefs: LeetCodeImportPrefs): void {
+  const opt = WINDOW_OPTIONS.find((o) => o.days === prefs.windowDays)
+  importWindowSelect.value = opt?.value ?? 'all'
+  LANGUAGE_GROUPS.forEach((group, i) => {
+    langCheckboxes[i].checked = prefs.langs === null || group.langs.every((l) => prefs.langs!.includes(l))
+  })
+}
+
+/** Loads any saved choice on popup open; if there is none, this is a
+ * never-imported install, and the panel opens expanded so the choice is
+ * visible before the first scan ever runs rather than buried behind
+ * "Options". */
+async function initImportOptions(): Promise<void> {
+  const data = await storageLocalGet([STORAGE_KEY_IMPORT_PREFS])
+  const saved = data[STORAGE_KEY_IMPORT_PREFS] as LeetCodeImportPrefs | undefined
+  if (saved) {
+    applyImportPrefsToForm(saved)
+  } else {
+    importOptionsEl.classList.remove('hidden')
+  }
+}
+
 const syncBtn = el('syncLeetCodeBtn')
 const SYNC_BTN_IDLE_LABEL = syncBtn.textContent ?? 'Import solved LeetCode problems'
 
@@ -291,6 +373,16 @@ const SYNC_BTN_IDLE_LABEL = syncBtn.textContent ?? 'Import solved LeetCode probl
 const LEETCODE_ORIGIN = '*://*.leetcode.com/*'
 
 syncBtn.addEventListener('click', async () => {
+  // Synchronous DOM reads, not awaits — safe before the gesture-sensitive
+  // call below. An explicit "select at least one language" guard here, not a
+  // disabled button kept in sync with checkbox state: simpler, and it still
+  // fails before any permission prompt or network call.
+  const prefs = readImportPrefsFromForm()
+  if (prefs.langs !== null && prefs.langs.length === 0) {
+    setStatus('Select at least one language to import')
+    return
+  }
+
   // FIRST await in this handler, deliberately — Firefox only honours
   // permissions.request() inside a live user-gesture context, and any earlier
   // await spends it (the same trap documented on cachedTier above and in
@@ -312,15 +404,19 @@ syncBtn.addEventListener('click', async () => {
     return
   }
 
+  setStatus(null)
   syncBtn.textContent = 'Importing…'
   syncBtn.setAttribute('disabled', 'true')
-  chrome.runtime.sendMessage({ type: 'LEETCODE_BACKFILL' })
+  // Not awaited — nothing downstream depends on this write landing before the
+  // message send, and awaiting it would only delay the scan starting.
+  storageLocalSet({ [STORAGE_KEY_IMPORT_PREFS]: prefs })
+  chrome.runtime.sendMessage({ type: 'LEETCODE_BACKFILL', windowDays: prefs.windowDays, langs: prefs.langs })
 })
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'LEETCODE_BACKFILL_COMPLETE') {
-    // 0 is a real, valid result (nothing solved in Python inside the window) —
-    // say so plainly rather than the slightly odd "Imported 0 solves".
+    // 0 is a real, valid result (nothing matched the chosen filters) — say so
+    // plainly rather than the slightly odd "Imported 0 solves".
     // `partial` means the scan was cut short by LeetCode's rate limiter, so the
     // window is only partly covered; reporting that as a clean import would be
     // a lie the user can't detect, and re-running picks up the rest.
@@ -329,7 +425,7 @@ chrome.runtime.onMessage.addListener((message) => {
         ? `Imported ${message.count} — run again for more`
         : `Imported ${message.count} solves`
     } else {
-      syncBtn.textContent = message.partial ? 'Rate-limited — try again' : 'No recent Python solves'
+      syncBtn.textContent = message.partial ? 'Rate-limited — try again' : 'No solves matched your filters'
     }
     syncBtn.removeAttribute('disabled')
     setTimeout(() => { syncBtn.textContent = SYNC_BTN_IDLE_LABEL }, 3000)
@@ -357,3 +453,4 @@ el('version').textContent = `v${chrome.runtime.getManifest().version}`
 
 // Consent first: renderActivity's pill depends on cachedTier being resolved.
 renderConsentUI().then(updateUI)
+initImportOptions()

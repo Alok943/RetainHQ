@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { getConsentTier } from '../consent'
 import { storageLocalGet, storageLocalSet, getRedirectURL, launchWebAuthFlow } from '../browser_api'
 import { API_BASE_URL } from '../config'
-import { scanRecentPythonSolves, DEFAULT_WINDOW_DAYS } from './leetcode_backfill'
+import { scanRecentSolves } from './leetcode_backfill'
+import { DEFAULT_WINDOW_DAYS } from '../leetcode_langs'
 
 // Constants
 // Two different questions, two different numbers (2026-07-27 follow-up):
@@ -407,17 +408,30 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           return
         }
 
-        // Window and language are the caller's to choose so the popup can offer
-        // them later without touching this file; both fall back to the module
-        // defaults. `credentials: 'include'` is what makes the scan see the
-        // user's own submissions at all — without cookies LeetCode answers as
-        // signed-out, which cost this codebase a full debugging session.
-        const windowDays = typeof message.windowDays === 'number' ? message.windowDays : DEFAULT_WINDOW_DAYS
-        const cutoffMs = Date.now() - windowDays * 24 * 60 * 60 * 1000
+        // Window and language are the CALLER's choice, sent by the popup's
+        // import-options panel — this file has no hardcoded language. `null`
+        // for either means no filter, matching the pre-filter behavior; that's
+        // also what a stale/older popup build gets by omitting the fields
+        // entirely, so an unfiltered "everything" import is the safe fallback,
+        // never a silently narrowed one.
+        //
+        // windowDays: null is "all time" and must NOT fall through to
+        // DEFAULT_WINDOW_DAYS — `typeof null === 'object'`, so that check is
+        // what tells an explicit "no window" apart from "field omitted".
+        const windowDays: number | null =
+          message.windowDays === null ? null
+          : typeof message.windowDays === 'number' ? message.windowDays
+          : DEFAULT_WINDOW_DAYS
+        const cutoffMs = windowDays === null ? 0 : Date.now() - windowDays * 24 * 60 * 60 * 1000
+        const langs: Set<string> | null = Array.isArray(message.langs) ? new Set(message.langs) : null
 
-        // Throws a message-bearing Error on a bad status or a login page; the
-        // outer catch turns it into the popup's error text verbatim.
-        const { solves, partial } = await scanRecentPythonSolves(cutoffMs)
+        // `credentials: 'include'` (inside scanRecentSolves) is what makes the
+        // scan see the user's own submissions at all — without cookies
+        // LeetCode answers as signed-out, which cost this codebase a full
+        // debugging session. Throws a message-bearing Error on a bad status or
+        // a login page; the outer catch turns it into the popup's error text
+        // verbatim.
+        const { solves, partial } = await scanRecentSolves(cutoffMs, langs)
 
         const solvedSlugs = [...solves.keys()]
         if (solvedSlugs.length > 0) {
@@ -446,12 +460,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             notifyPopup({ type: 'LEETCODE_BACKFILL_ERROR', error: `RetainHQ returned ${res.status}` })
             return
           }
-          console.log(`[RetainHQ] Backfilled ${solvedSlugs.length} Python solves from the last ${windowDays} days`)
+          const windowLabel = windowDays === null ? 'all time' : `the last ${windowDays} days`
+          console.log(`[RetainHQ] Backfilled ${solvedSlugs.length} solve(s) from ${windowLabel}`)
         }
 
         // Always report completion, even at 0 solved — 0 is a real, valid
-        // result (nothing solved in Python in the window), not an error, and
-        // the button must resolve either way. `partial` rides along so a
+        // result (nothing matched the filters in the window), not an error,
+        // and the button must resolve either way. `partial` rides along so a
         // rate-limited scan can't be reported as a clean full import.
         notifyPopup({ type: 'LEETCODE_BACKFILL_COMPLETE', count: solvedSlugs.length, partial })
       } catch (error) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { collectPythonSolves, scanRecentPythonSolves, PYTHON_LANGS } from './leetcode_backfill'
+import { collectSolves, scanRecentSolves } from './leetcode_backfill'
 
 const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
@@ -15,67 +15,94 @@ const row = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-describe('collectPythonSolves', () => {
+const PYTHON = new Set(['python', 'python3'])
+
+describe('collectSolves', () => {
   const cutoff = () => Date.now() - 60 * DAY
 
-  it('keeps an accepted python3 solve inside the window', () => {
+  it('keeps an accepted solve inside the window when it matches the language filter', () => {
     const acc = new Map<string, number>()
-    collectPythonSolves([row()], cutoff(), acc)
+    collectSolves([row()], cutoff(), acc, PYTHON)
     expect([...acc.keys()]).toEqual(['two-sum'])
   })
 
-  it('drops non-python languages — the whole point of the filter', () => {
+  it('null langs means no filter at all — every language is kept', () => {
     const acc = new Map<string, number>()
-    collectPythonSolves(
+    collectSolves(
       [row({ lang: 'cpp', title_slug: 'old-cpp' }), row({ lang: 'java', title_slug: 'old-java' })],
       cutoff(),
       acc,
+      null,
+    )
+    expect(acc.size).toBe(2)
+  })
+
+  it('a non-null filter drops languages outside it — the whole point of the option', () => {
+    const acc = new Map<string, number>()
+    collectSolves(
+      [row({ lang: 'cpp', title_slug: 'old-cpp' }), row({ lang: 'java', title_slug: 'old-java' })],
+      cutoff(),
+      acc,
+      PYTHON,
     )
     expect(acc.size).toBe(0)
   })
 
   it('accepts either spelling of python and is case-insensitive', () => {
     const acc = new Map<string, number>()
-    collectPythonSolves(
+    collectSolves(
       [row({ lang: 'Python3', title_slug: 'a' }), row({ lang: 'python', title_slug: 'b' })],
       cutoff(),
       acc,
+      PYTHON,
     )
     expect([...acc.keys()].sort()).toEqual(['a', 'b'])
-    // Guards the constant itself against a well-meaning "tidy-up" that drops
-    // plain 'python' — LeetCode still reports Python 2 submissions that way.
-    expect(PYTHON_LANGS.has('python')).toBe(true)
   })
 
-  it('drops submissions that were not accepted', () => {
+  it('drops submissions that were not accepted, filter or no filter', () => {
     const acc = new Map<string, number>()
-    collectPythonSolves(
+    collectSolves(
       [row({ status_display: 'Wrong Answer' }), row({ status_display: 'Time Limit Exceeded' })],
       cutoff(),
       acc,
+      null,
     )
     expect(acc.size).toBe(0)
   })
 
   it('drops anything older than the cutoff and reports crossing it', () => {
     const acc = new Map<string, number>()
-    const result = collectPythonSolves(
+    const result = collectSolves(
       [row({ title_slug: 'recent' }), row({ title_slug: 'ancient', timestamp: secondsAgo(200 * DAY) })],
       cutoff(),
       acc,
+      null,
     )
     expect([...acc.keys()]).toEqual(['recent'])
     expect(result.crossedCutoff).toBe(true)
+  })
+
+  it('cutoffMs=0 (all-time scan) never crosses, since every real timestamp is positive', () => {
+    const acc = new Map<string, number>()
+    const result = collectSolves(
+      [row({ timestamp: secondsAgo(2000 * DAY) })],
+      0,
+      acc,
+      null,
+    )
+    expect(acc.size).toBe(1)
+    expect(result.crossedCutoff).toBe(false)
   })
 
   it('keeps the EARLIEST solve when a problem was re-solved in the window', () => {
     // Re-solving is one act of learning; taking the latest would re-date old
     // work to whenever it was last revisited.
     const acc = new Map<string, number>()
-    collectPythonSolves(
+    collectSolves(
       [row({ timestamp: secondsAgo(2 * DAY) }), row({ timestamp: secondsAgo(30 * DAY) })],
       cutoff(),
       acc,
+      null,
     )
     const solvedMs = acc.get('two-sum')!
     expect(Math.round((Date.now() - solvedMs) / DAY)).toBe(30)
@@ -83,10 +110,11 @@ describe('collectPythonSolves', () => {
 
   it('skips rows with an unusable timestamp rather than guessing', () => {
     const acc = new Map<string, number>()
-    const result = collectPythonSolves(
+    const result = collectSolves(
       [row({ timestamp: undefined }), row({ timestamp: 'not-a-number' })],
       cutoff(),
       acc,
+      null,
     )
     expect(acc.size).toBe(0)
     // Must NOT be read as "we reached the end of the window" — that would stop
@@ -96,12 +124,12 @@ describe('collectPythonSolves', () => {
 
   it('accepts a string timestamp, which LeetCode sometimes sends', () => {
     const acc = new Map<string, number>()
-    collectPythonSolves([row({ timestamp: String(secondsAgo(3 * DAY)) })], cutoff(), acc)
+    collectSolves([row({ timestamp: String(secondsAgo(3 * DAY)) })], cutoff(), acc, null)
     expect(acc.size).toBe(1)
   })
 })
 
-describe('scanRecentPythonSolves', () => {
+describe('scanRecentSolves', () => {
   const page = (rows: unknown[], has_next = true) => ({
     ok: true,
     status: 200,
@@ -114,8 +142,8 @@ describe('scanRecentPythonSolves', () => {
       .mockResolvedValueOnce(page([row({ title_slug: 'b', timestamp: secondsAgo(400 * DAY) })]))
       .mockResolvedValueOnce(page([row({ title_slug: 'c' })]))
 
-    const { solves, partial } = await scanRecentPythonSolves(
-      Date.now() - 60 * DAY, fetchImpl as unknown as typeof fetch, 0,
+    const { solves, partial } = await scanRecentSolves(
+      Date.now() - 60 * DAY, null, fetchImpl as unknown as typeof fetch, 0,
     )
 
     expect([...solves.keys()]).toEqual(['a'])
@@ -123,10 +151,21 @@ describe('scanRecentPythonSolves', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2) // never fetched the third page
   })
 
+  it('applies the language filter across the whole scan', async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(page(
+      [row({ title_slug: 'py', lang: 'python3' }), row({ title_slug: 'cpp', lang: 'cpp' })],
+      false,
+    ))
+    const { solves } = await scanRecentSolves(
+      Date.now() - 60 * DAY, PYTHON, fetchImpl as unknown as typeof fetch, 0,
+    )
+    expect([...solves.keys()]).toEqual(['py'])
+  })
+
   it('stops on has_next=false', async () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(page([row({ title_slug: 'a' })], false))
-    const { solves, partial } = await scanRecentPythonSolves(
-      Date.now() - 60 * DAY, fetchImpl as unknown as typeof fetch, 0,
+    const { solves, partial } = await scanRecentSolves(
+      Date.now() - 60 * DAY, null, fetchImpl as unknown as typeof fetch, 0,
     )
     expect(solves.size).toBe(1)
     expect(partial).toBe(false)
@@ -138,8 +177,8 @@ describe('scanRecentPythonSolves', () => {
       .mockResolvedValueOnce(page([row({ title_slug: 'a' })]))
       .mockResolvedValueOnce({ ok: false, status: 429 } as Response)
 
-    const { solves, partial } = await scanRecentPythonSolves(
-      Date.now() - 60 * DAY, fetchImpl as unknown as typeof fetch, 0,
+    const { solves, partial } = await scanRecentSolves(
+      Date.now() - 60 * DAY, null, fetchImpl as unknown as typeof fetch, 0,
     )
     expect([...solves.keys()]).toEqual(['a'])
     expect(partial).toBe(true)
@@ -151,13 +190,13 @@ describe('scanRecentPythonSolves', () => {
     } as unknown as Response)
 
     await expect(
-      scanRecentPythonSolves(Date.now() - 60 * DAY, fetchImpl as unknown as typeof fetch, 0),
+      scanRecentSolves(Date.now() - 60 * DAY, null, fetchImpl as unknown as typeof fetch, 0),
     ).rejects.toThrow('login page')
   })
 
   it('sends cookies — without them LeetCode answers as signed-out', async () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(page([], false))
-    await scanRecentPythonSolves(Date.now() - 60 * DAY, fetchImpl as unknown as typeof fetch, 0)
+    await scanRecentSolves(Date.now() - 60 * DAY, null, fetchImpl as unknown as typeof fetch, 0)
     expect(fetchImpl).toHaveBeenCalledWith(expect.any(String), { credentials: 'include' })
   })
 })

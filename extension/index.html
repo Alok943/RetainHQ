@@ -223,6 +223,32 @@
     }
     select:focus-visible { outline: 2px solid var(--action); outline-offset: 1px; }
 
+    /* --- LeetCode import options -------------------------------------------
+       Collapsed by default once configured; auto-expanded the first time
+       there's no stored choice, so a new install is ASKED rather than
+       silently defaulted to one language/window (see leetcode_langs.ts). */
+    .import-header { display: flex; align-items: center; justify-content: space-between; }
+    #importOptions { display: flex; flex-direction: column; gap: 10px; }
+    .opt-field { display: flex; flex-direction: column; gap: 4px; }
+    .opt-sublabel {
+      font-size: 11px; font-weight: 500; color: var(--ink-muted);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .opt-sublabel .quick-actions { display: flex; gap: 8px; }
+    .opt-sublabel .quick-actions button {
+      background: none; border: none; padding: 0; width: auto;
+      color: var(--action); font-size: 11px; font-weight: 500; cursor: pointer;
+    }
+    .opt-sublabel .quick-actions button:hover { color: var(--action-hover); }
+    .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+    .lang-grid label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--ink); cursor: pointer;
+    }
+    .lang-grid input[type="checkbox"] {
+      width: 14px; height: 14px; margin: 0; accent-color: var(--action); cursor: pointer;
+    }
+
     .foot {
       border-top: 1px solid var(--hairline);
       padding: 10px 16px;
@@ -274,7 +300,36 @@
         </div>
       </div>
 
-      <button id="syncLeetCodeBtn" class="btn-secondary" type="button">Import solved LeetCode problems</button>
+      <div class="section">
+        <div class="import-header">
+          <span class="label">LeetCode import</span>
+          <button id="importOptionsToggle" class="btn-ghost" type="button">Options</button>
+        </div>
+
+        <!-- Auto-expanded by popup.ts on a never-configured install (no stored
+             leetcodeImportPrefs) so a fresh user is ASKED what to import before
+             the first scan ever runs, rather than defaulted to one person's
+             choice of language/window. -->
+        <div class="card hidden" id="importOptions">
+          <div class="opt-field">
+            <span class="opt-sublabel">Time window</span>
+            <select id="importWindowSelect"></select>
+          </div>
+          <div class="opt-field">
+            <span class="opt-sublabel">
+              Languages
+              <span class="quick-actions">
+                <button type="button" id="importLangAllBtn">All</button>
+                <button type="button" id="importLangNoneBtn">None</button>
+              </span>
+            </span>
+            <div class="lang-grid" id="importLangGrid"></div>
+          </div>
+          <p class="fine-print">Everything checked imports every solve, same as no filter at all. Saved after your next import — reopen "Options" anytime to change it.</p>
+        </div>
+
+        <button id="syncLeetCodeBtn" class="btn-secondary" type="button">Import solved LeetCode problems</button>
+      </div>
 
       <div class="account">
         <span class="who" id="accountEmail"></span>
