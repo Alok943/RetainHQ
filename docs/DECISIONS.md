@@ -842,3 +842,26 @@ T3 states exactly that and is already enforced: `is_capped()` routes it to the c
 - *Skipping the import to avoid the tiering question:* rejected — 22 real completions invisible to the app is a worse answer than capped, honestly-labelled evidence.
 
 Extension v1.2.5. 133 extension tests (up from 116), 459 backend tests (up from 450), `addons-linter` clean.
+
+
+## D-073 — The evidence page speaks English, and says what it does NOT know (2026-08-03)
+
+**Decision:** `/evidence` rewritten from a raw dev instrument into a per-topic evidence trail. Model variables (`m_learned` / `r` / `m` / `w`), the summary JSON dump, per-event delete and the recompute button all move behind one **"Show raw numbers"** toggle; nothing is removed. Topics sort strongest-first and show only those with evidence, with the ~120 untouched ones behind a "show N topics with nothing recorded yet" disclosure. Each event renders as a sentence ("Solved a medium problem on LeetCode on your own") over a translation layer keyed to the same thresholds `services/evidence.py` uses.
+
+**Why:** the page was admin-gated (D-063 un-gated it for everyone) without a redesign, which left every user facing `m_learned`/`r`/`m`/`w` column headers and a `POST /recompute` button. Founder review, in full: *"wtf is this, how will a user understand??"*
+
+**Three rules it is built on, in priority order:**
+
+1. **Translate, don't hide.** Every number the old page showed is still reachable. This page's only job is trust; a page that quietly drops the number it can't explain has failed at that job. Hence a toggle, not a deletion — and the toggle's panel explains what the three numbers mean in one sentence each.
+2. **State the negative space.** Removed evidence, evidence that counted for zero, and captured activity that matched no topic are each said out loud. The old page marked soft-deleted rows with `line-through` *alone* — invisible at a glance and, as the founder found, stripped entirely on copy-paste, so a fully purged 115-row import read as live data scoring `0.000`. Now a `REMOVED — NOT COUNTED` badge. Likewise `DIDN'T CHANGE THE NUMBER` for legitimate zero-weight events (TIME_BLOCK, T4 claims, short failed attempts) which previously looked identical to evidence that counted, and a **"Not yet matched"** stat for `evidence_unmapped` — real captures that move nothing and appear nowhere else in the app, so omitting the count would make the trail look complete when it isn't.
+3. **Never inflate.** State and confidence labels come from `evidence.node_state()` / `evidence.confidence()` thresholds directly, so tuning those without touching this file cannot silently make the copy lie. Sub-`high` confidence is printed next to the number, never instead of it.
+
+**Copy findings from verifying against mock data in a real browser** (all three shipped as bugs first, caught by reading the rendered page rather than the source): `"Solved a easy problem"`; `"Recall review from a RetainHQ review"`, because the preposition was hardcoded into the sentence template instead of belonging to the source — `SOURCE_COPY` (names) became `SOURCE_PHRASE` (full prepositional phrases); and a browser-companion study session labelled *"Marked complete — no judged run to confirm it"*, since the T3 wording assumed a problem. Tier copy must stay event-type-agnostic — T3 covers both a NeetCode checkmark and tracked study time — so it is now `"Observed, not verified"`.
+
+**Tradeoffs / rejected:**
+- *Dropping the raw numbers entirely:* rejected, see rule 1.
+- *Hiding removed events instead of badging them:* rejected. The trail is an audit surface; a deletion is part of the history and hiding it is the same class of dishonesty as hiding a zero-weight event.
+- *A separate "advanced" route:* rejected — a toggle keeps one page and one mental model, and the raw view is a lens on the same rows rather than a different screen.
+- *Surfacing the unmapped events themselves:* only the COUNT is shown; there is no endpoint listing them, and inventing one was out of scope. Logged to BACKLOG.
+
+Verified in-browser at desktop and mobile widths, in both themes: card/heading/badge colours all resolve through the existing `html.dark` remap layer (no new colour utilities were introduced, which is what buys dark mode for free), and no element exceeds the viewport at 375px.
