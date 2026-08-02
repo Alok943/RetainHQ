@@ -42,6 +42,30 @@ MAX_CHAPTER_SESSIONS_PER_BATCH = 3
 MAX_CHAPTERS_PER_SESSION = 15
 
 
+def utc_start_of_day() -> datetime:
+    """Midnight UTC today, as a NAIVE datetime.
+
+    Load-bearing, and the cause of a total production outage of this endpoint
+    (fixed 2026-08-02): every timestamp column in this schema is naive-UTC
+    (CLAUDE.md convention), and asyncpg REFUSES to bind a timezone-aware
+    datetime to a `timestamp without time zone` parameter —
+    `DataError: can't subtract offset-naive and offset-aware datetimes`. The
+    previous inline `datetime(..., tzinfo=timezone.utc)` therefore made the
+    rate-limit query below raise on every single request, 500ing the whole
+    batch sync.
+
+    It went unnoticed for the endpoint's entire existence for two compounding
+    reasons: the test suite runs SQLite, which silently accepts an aware
+    datetime against a naive column, and until the Firefox host-permission fix
+    (D-054) no real request had ever reached this endpoint at all.
+
+    Returned naive rather than aware deliberately — `.replace(tzinfo=None)` on
+    an already-UTC value is the same convention `routes/problems.py` uses.
+    """
+    today = datetime.now(timezone.utc).date()
+    return datetime(today.year, today.month, today.day)
+
+
 def _has_llm_source(sources: list[str]) -> bool:
     return any(src.endswith(_LLM_ORIGIN_SUFFIXES) for src in sources)
 
@@ -156,8 +180,7 @@ async def sync_sessions(
     # not LearningEvent rows. Content-bearing sessions can fan out into
     # several rows each, so counting rows would silently divide the real cap
     # by however many topics a session happened to split into.
-    today = datetime.now(timezone.utc).date()
-    start_of_day = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+    start_of_day = utc_start_of_day()
 
     stmt = select(func.count(MetricEvent.id)).where(
         MetricEvent.user_id == user_uuid,
