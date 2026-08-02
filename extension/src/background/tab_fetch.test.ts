@@ -14,7 +14,7 @@ vi.mock('../browser_api', () => ({
   scriptingExecuteScript: (...a: unknown[]) => scriptingExecuteScript(...a),
 }))
 
-const { pageFetchVia, acquireLeetCodeTab, releaseTab } = await import('./leetcode_tab_fetch')
+const { pageFetchVia, acquireTab, releaseTab, LEETCODE_TAB, NEETCODE_TAB } = await import('./tab_fetch')
 
 beforeEach(() => {
   for (const m of [tabsQuery, tabsCreate, tabsGet, tabsRemove, scriptingExecuteScript]) m.mockReset()
@@ -32,7 +32,10 @@ describe('pageFetchVia', () => {
     const injection = scriptingExecuteScript.mock.calls[0][0] as Record<string, unknown>
     expect(injection.world).toBe('MAIN')
     expect(injection.target).toEqual({ tabId: 7 })
-    expect(injection.args).toEqual(['https://leetcode.com/api/submissions/?offset=0&limit=20'])
+    // [url, method, body] — method/body undefined for a plain GET.
+    expect(injection.args).toEqual([
+      'https://leetcode.com/api/submissions/?offset=0&limit=20', undefined, undefined,
+    ])
   })
 
   it('presents the injection result as the Response shape scanRecentSolves expects', async () => {
@@ -58,16 +61,57 @@ describe('pageFetchVia', () => {
     await expect(res.json()).rejects.toThrow()
   })
 
-  it('names the failure when injection returns nothing (tab navigated away mid-scan)', async () => {
+  it('names the site in the failure when injection returns nothing (tab navigated away mid-scan)', async () => {
     scriptingExecuteScript.mockResolvedValue([])
-    await expect(pageFetchVia(1)('https://leetcode.com/api/submissions/')).rejects.toThrow(/Lost the LeetCode tab/)
+    await expect(pageFetchVia(1, 'LeetCode')('https://leetcode.com/api/submissions/'))
+      .rejects.toThrow(/Lost the LeetCode tab/)
+  })
+
+  it('reads correctly with no label rather than "Lost the the tab"', async () => {
+    scriptingExecuteScript.mockResolvedValue([])
+    await expect(pageFetchVia(1)('https://leetcode.com/api/submissions/'))
+      .rejects.toThrow(/^Lost the tab during the import/)
   })
 })
 
-describe('acquireLeetCodeTab', () => {
+describe('POST support (NeetCode calls a callable function, LeetCode does a plain GET)', () => {
+  it('forwards method and body across the injection boundary', async () => {
+    scriptingExecuteScript.mockResolvedValue([{ result: { status: 200, ok: true, body: '{}' } }])
+    await pageFetchVia(3)('https://neetcode.io/api/callableFunctionHttp', {
+      method: 'POST',
+      body: JSON.stringify({ data: { functionId: 'getCompletedProblems' } }),
+    })
+    const injection = scriptingExecuteScript.mock.calls[0][0] as Record<string, any>
+    expect(injection.args[1]).toBe('POST')
+    expect(JSON.parse(injection.args[2])).toEqual({ data: { functionId: 'getCompletedProblems' } })
+  })
+
+  it('sends no method or body for a plain GET, keeping the LeetCode path unchanged', async () => {
+    scriptingExecuteScript.mockResolvedValue([{ result: { status: 200, ok: true, body: '{}' } }])
+    await pageFetchVia(3)('https://leetcode.com/api/submissions/', { credentials: 'include' })
+    const injection = scriptingExecuteScript.mock.calls[0][0] as Record<string, any>
+    expect(injection.args[1]).toBeUndefined()
+    expect(injection.args[2]).toBeUndefined()
+  })
+})
+
+describe('tab targets', () => {
+  it('each names the site it borrows and a fallback page on that same site', () => {
+    // The fallback must be on the matched origin — opening a tab somewhere else
+    // would inject into a page with none of the user's session for that site.
+    for (const target of [LEETCODE_TAB, NEETCODE_TAB]) {
+      const host = new URL(target.fallbackUrl).hostname
+      const pattern = target.match.replace('*://', '').replace('/*', '').replace('*.', '')
+      expect(host.endsWith(pattern)).toBe(true)
+      expect(target.label.length).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('acquireTab', () => {
   it("reuses a loaded tab and does NOT mark it ours to close", async () => {
     tabsQuery.mockResolvedValue([{ id: 42, status: 'complete' }])
-    expect(await acquireLeetCodeTab()).toEqual({ tabId: 42, opened: false })
+    expect(await acquireTab(LEETCODE_TAB)).toEqual({ tabId: 42, opened: false })
     expect(tabsCreate).not.toHaveBeenCalled()
   })
 
@@ -76,7 +120,7 @@ describe('acquireLeetCodeTab', () => {
     tabsCreate.mockResolvedValue({ id: 99 })
     tabsGet.mockResolvedValue({ id: 99, status: 'complete' })
 
-    expect(await acquireLeetCodeTab()).toEqual({ tabId: 99, opened: true })
+    expect(await acquireTab(LEETCODE_TAB)).toEqual({ tabId: 99, opened: true })
   })
 
   it('opens the tab in the background so the import never steals focus', async () => {
@@ -84,7 +128,7 @@ describe('acquireLeetCodeTab', () => {
     tabsCreate.mockResolvedValue({ id: 99 })
     tabsGet.mockResolvedValue({ id: 99, status: 'complete' })
 
-    await acquireLeetCodeTab()
+    await acquireTab(LEETCODE_TAB)
     expect(tabsCreate).toHaveBeenCalledWith(expect.objectContaining({ active: false }))
   })
 
@@ -95,12 +139,12 @@ describe('acquireLeetCodeTab', () => {
       .mockResolvedValueOnce({ id: 99, status: 'loading' })
       .mockResolvedValueOnce({ id: 99, status: 'complete' })
 
-    expect(await acquireLeetCodeTab()).toEqual({ tabId: 99, opened: true })
+    expect(await acquireTab(LEETCODE_TAB)).toEqual({ tabId: 99, opened: true })
     expect(tabsGet).toHaveBeenCalledTimes(2)
   })
 })
 
-describe('acquireLeetCodeTab when the page never loads', () => {
+describe('acquireTab when the page never loads', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
 
@@ -110,7 +154,7 @@ describe('acquireLeetCodeTab when the page never loads', () => {
     tabsGet.mockResolvedValue({ id: 99, status: 'loading' })
     tabsRemove.mockResolvedValue(undefined)
 
-    const pending = acquireLeetCodeTab()
+    const pending = acquireTab(LEETCODE_TAB)
     const assertion = expect(pending).rejects.toThrow(/did not finish loading/)
     await vi.advanceTimersByTimeAsync(25_000)
     await assertion

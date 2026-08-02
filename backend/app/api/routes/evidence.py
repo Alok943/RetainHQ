@@ -18,6 +18,7 @@ from app.schemas.evidence import (
     RecomputeOut,
     LeetCodeSolveIn,
     NeetCodeSolveIn,
+    NeetCodeBackfillIn,
     LeetCodeBackfillIn
 )
 from app.models.models import Problem, ProblemAlias, ProblemConcept
@@ -473,5 +474,88 @@ async def log_leetcode_backfill(
             occurred_at=solved_at,
             payload={"problem_slug": problem_slug, "backfilled": True}
         )
-        
+
+    await db.commit()
+
+
+@router.post("/neetcode/backfill", status_code=status.HTTP_204_NO_CONTENT)
+async def log_neetcode_backfill(
+    body: NeetCodeBackfillIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Bulk import of NeetCode's completed-problem list.
+
+    **T3_observed, NOT T1_verified_external — the one thing to not "simplify"
+    here.** /leetcode/backfill and /neetcode/solve both earn T1 because
+    something actually watched a judge run: LeetCode's submission log records
+    a real verdict, and the live probe watches one happen. NeetCode's
+    `getCompletedProblems` records neither. It returns LeetCode URLs, because
+    NeetCode sends you to LeetCode to solve — so a "completed" entry may be a
+    real run in NeetCode's own editor, or a checkbox ticked after solving
+    elsewhere, or ticked after reading the solution. Nothing in the response
+    distinguishes them.
+
+    T3 is the tier that says exactly that. `evidence_weights.is_capped()` puts
+    it in the capped fold stream, so the whole import can lift a node to at
+    most T3_EXPOSURE_CAP (0.35) — real credit for engagement, never a claim of
+    mastery — and `apply_event_weight`'s `max(m_learned_before, cap)` means it
+    can never drag a node that genuine T1 evidence already pushed higher back
+    down. Promote this only if a way to tell judged runs from checkmarks turns
+    up; until then, tiering it T1 would put fiction into the review scheduler.
+    """
+    user_id = uuid.UUID(current_user.id)
+    if not body.leetcode_slugs:
+        return
+
+    # LeetCode catalog rows, not NeetCode ones — see NeetCodeBackfillIn. The
+    # alias table isn't consulted at all on this path: the slugs already ARE
+    # LeetCode's.
+    problems = (await db.execute(
+        select(Problem.id, Problem.slug, Problem.difficulty).where(
+            Problem.slug.in_(body.leetcode_slugs), Problem.source == "leetcode"
+        )
+    )).all()
+    if not problems:
+        return
+
+    slug_map = {p.id: p.slug for p in problems}
+    difficulty_map = {p.id: p.difficulty for p in problems}
+
+    mappings = (await db.execute(
+        select(ProblemConcept.problem_id, ProblemConcept.node_id).where(
+            ProblemConcept.problem_id.in_(list(slug_map)), ProblemConcept.role == "primary"
+        )
+    )).all()
+
+    now = datetime.utcnow()
+    occurred_at = body.occurred_at or now
+    if occurred_at.tzinfo is not None:
+        occurred_at = occurred_at.astimezone(timezone.utc).replace(tzinfo=None)
+    if occurred_at > now:
+        occurred_at = now
+
+    for mapping in mappings:
+        await evidence.record_event(
+            db, user_id,
+            event_type="PROBLEM_SOLVED",
+            trust_tier="T3_observed",
+            source="neetcode",
+            node_id=mapping.node_id,
+            outcome="pass",
+            difficulty=difficulty_map[mapping.problem_id],
+            # Same understate-never-overstate default as every other backfill:
+            # "none" is the most generous row in the weight table and we know
+            # nothing about how this was solved.
+            assistance="llm_assisted",
+            # Problem-scoped, so re-importing cannot farm mastery. Scoped to
+            # source="neetcode" by the dedupe index, so a problem solved on BOTH
+            # sites records both — deliberate: `source` stays truthful about
+            # where the work happened, and T3's cap bounds what the NeetCode
+            # half can contribute anyway.
+            entity_id=mapping.problem_id,
+            occurred_at=occurred_at,
+            payload={"problem_slug": slug_map[mapping.problem_id], "backfilled": True, "via": "getCompletedProblems"},
+        )
+
     await db.commit()

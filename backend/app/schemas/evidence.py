@@ -87,3 +87,26 @@ class LeetCodeBackfillIn(BaseModel):
     # log claim it all happened in one afternoon — the same overstating this
     # module refuses when it defaults `assistance` to "llm_assisted".
     solved_at: dict[str, datetime] = Field(default_factory=dict)
+
+
+class NeetCodeBackfillIn(BaseModel):
+    """NeetCode's `getCompletedProblems`, normalised by the extension.
+
+    Deliberately NOT shaped like LeetCodeBackfillIn, because the data isn't
+    comparable:
+
+    `leetcode_slugs`, not NeetCode ones — that endpoint returns LeetCode URLs
+    (`https://leetcode.com/problems/valid-palindrome/`), since NeetCode links out
+    to LeetCode to solve. The extension extracts the slug, so this resolves
+    against the LeetCode catalog directly and needs no alias lookup.
+
+    ONE `occurred_at` for the whole batch, not a per-slug map. NeetCode exposes
+    no per-problem completion date anywhere — `getUserStreakData` gives daily
+    activity COUNTS but never says which problem — so a per-slug map would be
+    fabricated precision. The extension sends the user's EARLIEST recorded
+    activity date instead: that understates recency (more decay, review comes
+    sooner) rather than claiming today, which is the direction this codebase
+    errs in deliberately.
+    """
+    leetcode_slugs: list[str]
+    occurred_at: Optional[datetime] = None

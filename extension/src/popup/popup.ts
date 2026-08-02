@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { getConsentTier, switchConsentTier, CONSENT_COPY_VERSION, type ConsentTier } from '../consent'
+import { getConsentTier, switchConsentTier, CONSENT_COPY_VERSION, NEETCODE_ORIGIN, type ConsentTier } from '../consent'
 import { storageLocalGet, storageLocalSet, runtimeSendMessage, permissionsRequest } from '../browser_api'
 import { isTrackingPaused, setTrackingPaused } from '../pause_state'
 import type { Segment } from '../types'
@@ -450,6 +450,50 @@ chrome.runtime.onMessage.addListener((message) => {
     syncBtn.textContent = message.error ? `Failed: ${message.error}` : 'Import failed — try again'
     syncBtn.removeAttribute('disabled')
     setTimeout(() => { syncBtn.textContent = SYNC_BTN_IDLE_LABEL }, 3000)
+  }
+})
+
+// NeetCode import. Separate button rather than a mode on the LeetCode one:
+// they read different sources, produce different trust tiers, and this one has
+// no window/language options because getCompletedProblems is an undated,
+// unfiltered list — there is nothing to filter on.
+const neetSyncBtn = el('syncNeetCodeBtn')
+const NEET_BTN_IDLE_LABEL = neetSyncBtn.textContent ?? 'Import completed NeetCode problems'
+
+neetSyncBtn.addEventListener('click', async () => {
+  // FIRST await, for the gesture reason documented on the LeetCode handler.
+  // neetcode.io is in host_permissions but Firefox does not grant those at
+  // install (D-053/054), and the consent flow only asks on a FIRST install —
+  // so an existing install reaching this button may still not have it.
+  let granted = true
+  try {
+    granted = await permissionsRequest({ origins: [NEETCODE_ORIGIN, API_ORIGIN_PATTERN] })
+  } catch (error) {
+    console.debug('[RetainHQ] NeetCode origin request not applicable', error)
+  }
+  if (!granted) {
+    neetSyncBtn.textContent = 'Failed: NeetCode access denied'
+    setTimeout(() => { neetSyncBtn.textContent = NEET_BTN_IDLE_LABEL }, 3000)
+    return
+  }
+
+  setStatus(null)
+  neetSyncBtn.textContent = 'Importing…'
+  neetSyncBtn.setAttribute('disabled', 'true')
+  chrome.runtime.sendMessage({ type: 'NEETCODE_BACKFILL' })
+})
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === 'NEETCODE_BACKFILL_COMPLETE') {
+    neetSyncBtn.textContent = message.count > 0
+      ? `Imported ${message.count} problems`
+      : 'No completed problems found'
+    neetSyncBtn.removeAttribute('disabled')
+    setTimeout(() => { neetSyncBtn.textContent = NEET_BTN_IDLE_LABEL }, 3000)
+  } else if (message.type === 'NEETCODE_BACKFILL_ERROR') {
+    neetSyncBtn.textContent = message.error ? `Failed: ${message.error}` : 'Import failed — try again'
+    neetSyncBtn.removeAttribute('disabled')
+    setTimeout(() => { neetSyncBtn.textContent = NEET_BTN_IDLE_LABEL }, 3000)
   }
 })
 

@@ -5,7 +5,8 @@ import { getConsentTier } from '../consent'
 import { storageLocalGet, storageLocalSet, getRedirectURL, launchWebAuthFlow } from '../browser_api'
 import { API_BASE_URL } from '../config'
 import { scanRecentSolves } from './leetcode_backfill'
-import { acquireLeetCodeTab, pageFetchVia, releaseTab } from './leetcode_tab_fetch'
+import { acquireTab, pageFetchVia, releaseTab, LEETCODE_TAB, NEETCODE_TAB } from './tab_fetch'
+import { scanCompletedProblems } from './neetcode_backfill'
 import { DEFAULT_WINDOW_DAYS } from '../leetcode_langs'
 
 // Constants
@@ -465,11 +466,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         //
         // Wrapped in try/finally so a thrown scan still closes a tab this code
         // opened — otherwise every failed import would leave one behind.
-        const scanTab = await acquireLeetCodeTab()
+        const scanTab = await acquireTab(LEETCODE_TAB)
         let solves: Map<string, number>
         let partial: boolean
         try {
-          ;({ solves, partial } = await scanRecentSolves(cutoffMs, langs, pageFetchVia(scanTab.tabId)))
+          ;({ solves, partial } = await scanRecentSolves(
+            cutoffMs, langs, pageFetchVia(scanTab.tabId, LEETCODE_TAB.label),
+          ))
         } finally {
           await releaseTab(scanTab)
         }
@@ -513,6 +516,61 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       } catch (error) {
         console.error('Failed to backfill LeetCode solves', error)
         notifyPopup({ type: 'LEETCODE_BACKFILL_ERROR', error: String(error) })
+      }
+    })()
+  } else if (message.type === 'NEETCODE_BACKFILL') {
+    // Same contract as LEETCODE_BACKFILL: the popup disables its button on
+    // send and only re-enables on _COMPLETE or _ERROR, so every exit path
+    // below must send exactly one of them.
+    ;(async () => {
+      try {
+        const { data: { session: sbSession } } = await supabase.auth.getSession()
+        if (!sbSession) {
+          notifyPopup({ type: 'NEETCODE_BACKFILL_ERROR', error: 'Sign in first' })
+          return
+        }
+
+        // No window/language options, deliberately: getCompletedProblems is an
+        // undated, unfiltered list — there is nothing to filter ON. Offering a
+        // date window here would be a control that silently does nothing.
+        const scanTab = await acquireTab(NEETCODE_TAB)
+        let slugs: string[]
+        let earliestActivity: string | null
+        try {
+          ;({ slugs, earliestActivity } = await scanCompletedProblems(
+            pageFetchVia(scanTab.tabId, NEETCODE_TAB.label),
+          ))
+        } finally {
+          await releaseTab(scanTab)
+        }
+
+        if (slugs.length > 0) {
+          const res = await fetch(`${API_BASE_URL}/api/evidence/neetcode/backfill`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sbSession.access_token}`,
+            },
+            // occurred_at omitted entirely when NeetCode reported no activity
+            // dates — the backend then falls back to import time, which is a
+            // worse date but an honest one. Never send a made-up date.
+            body: JSON.stringify({
+              leetcode_slugs: slugs,
+              ...(earliestActivity ? { occurred_at: earliestActivity } : {}),
+            }),
+          })
+          if (!res.ok) {
+            console.error('NeetCode backfill rejected by RetainHQ', res.status, await res.text())
+            notifyPopup({ type: 'NEETCODE_BACKFILL_ERROR', error: `RetainHQ returned ${res.status}` })
+            return
+          }
+          console.log(`[RetainHQ] Imported ${slugs.length} NeetCode completion(s)`)
+        }
+
+        notifyPopup({ type: 'NEETCODE_BACKFILL_COMPLETE', count: slugs.length })
+      } catch (error) {
+        console.error('Failed to import NeetCode completions', error)
+        notifyPopup({ type: 'NEETCODE_BACKFILL_ERROR', error: String(error) })
       }
     })()
   }

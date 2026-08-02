@@ -814,3 +814,31 @@ Problem TEXT differing doesn't matter, because mastery attaches to the concept, 
 - *Idempotency:* `entity_id` is the resolved problem id and the dedupe index is `(user_id, source, entity_id)`, so solving Two Sum on both sites still records two events. Deliberate — `source` stays truthful about where the work happened.
 
 **Still open:** there is no known way to read a user's NeetCode solve HISTORY. LeetCode's import works because `/api/submissions/` exists; NeetCode's equivalent sits behind the auth boundary this codebase cannot cross (it cannot create accounts). So NeetCode ingest is live-capture-forward only, with no backfill — logged to BACKLOG.
+
+
+## D-072 — NeetCode completions import at T3_observed, not T1 (2026-08-02)
+
+**Decision:** New `POST /api/evidence/neetcode/backfill` + a second popup button. The extension reads NeetCode's own `getCompletedProblems` from inside a signed-in neetcode.io tab (the D-070 mechanism, generalised: `leetcode_tab_fetch.ts` -> `tab_fetch.ts`, site as an argument, POST support added). Imported completions are recorded **`T3_observed`**, every other backfill in this codebase is `T1_verified_external`.
+
+**Why the endpoint exists at all:** found 2026-08-02 by recording API traffic in a signed-in tab, since NeetCode's auth boundary can't be crossed by this codebase (no account creation):
+
+```
+POST /api/callableFunctionHttp  {"data":{"functionId":"getCompletedProblems"}}
+-> {"Two Pointers":["https://leetcode.com/problems/valid-palindrome/", ...], ...}
+```
+
+It returns **LeetCode URLs** — NeetCode links out to LeetCode to solve — so the import resolves against the existing LeetCode catalog directly and never touches D-071's alias table. (Aliases still earn their keep for LIVE capture, where the slug is NeetCode's own.)
+
+**Why T3 and not T1 — the load-bearing decision.** `/leetcode/backfill` and `/neetcode/solve` earn T1 because something actually observed a judge run: LeetCode's submission log records a real verdict, and the live probe watches one happen. `getCompletedProblems` observes neither. A "completed" entry may be a real run in NeetCode's own editor, a checkbox ticked after solving on LeetCode, or a checkbox ticked after reading the solution — and **nothing in the response distinguishes them**. The user's own numbers hint at the mixture (`userSolvedCount: 22` vs `totalSolvedOrSubmissions: 24`).
+
+T3 states exactly that and is already enforced: `is_capped()` routes it to the capped fold stream, so the entire import can lift a node to at most `T3_EXPOSURE_CAP` (0.35) — real credit for engagement, never a claim of mastery — and `apply_event_weight`'s `max(m_learned_before, cap)` means it can never drag down a node genuine T1 evidence already raised. Tiering it T1 would have put fiction into the review scheduler on ~22 real nodes, which is the failure this product cannot afford.
+
+**Dates.** NeetCode exposes no per-problem completion date anywhere; `getUserStreakData` gives daily activity COUNTS but never says which problem. Rather than fabricate per-slug precision, the extension sends the account's EARLIEST activity date for the whole batch, and `NeetCodeBackfillIn` takes a single `occurred_at` instead of LeetCode's per-slug map. Backdating understates recency — more decay, review sooner — which is the direction this codebase errs in on purpose. When NeetCode reports no dates at all the field is omitted and the backend falls back to import time; a made-up date is never sent.
+
+**Tradeoffs / rejected:**
+- *Distributing solves across `activityByDate` to look precise:* rejected outright. The counts don't say which problem, so any assignment is invented.
+- *A window/language filter like the LeetCode import:* rejected — the list is undated and unfiltered, so those controls would be UI that silently does nothing.
+- *One shared Import button with a site toggle:* rejected. Different sources, different trust tiers, different options; one button would blur exactly the distinction this decision is about. The popup copy says "count as practice, not verified solves" for the same reason.
+- *Skipping the import to avoid the tiering question:* rejected — 22 real completions invisible to the app is a worse answer than capped, honestly-labelled evidence.
+
+Extension v1.2.5. 133 extension tests (up from 116), 459 backend tests (up from 450), `addons-linter` clean.
