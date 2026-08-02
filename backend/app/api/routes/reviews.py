@@ -352,22 +352,51 @@ async def get_review_questions(
         if getattr(activity, 'problem_id', None):
             problem = (await db.execute(select(Problem).where(Problem.id == activity.problem_id))).scalars().first()
             if problem:
-                concepts = (await db.execute(select(ProblemConcept).where(ProblemConcept.problem_id == activity.problem_id))).scalars().all()
-                primary_node_title = None
-                alt_node_titles = []
-                for c in concepts:
-                    node = (await db.execute(select(RoadmapNode).where(RoadmapNode.id == c.node_id))).scalars().first()
-                    if node:
-                        if c.role == "primary":
-                            primary_node_title = node.title
-                        elif c.role == "alternative":
-                            alt_node_titles.append(node.title)
+                rows = (
+                    await db.execute(
+                        select(ProblemConcept.role, RoadmapNode.title)
+                        .join(RoadmapNode, RoadmapNode.id == ProblemConcept.node_id)
+                        .where(ProblemConcept.problem_id == activity.problem_id)
+                    )
+                ).all()
+                primary_node_title = next((r.title for r in rows if r.role == "primary"), None)
+                alt_node_titles = [r.title for r in rows if r.role == "alternative"]
+
+                # What the user actually wrote, inferred once at log time from
+                # their pasted solution (services/approach_inference.py). Absent
+                # for every card logged without code — then this block is empty
+                # and generation behaves exactly as it did before.
+                summary = getattr(activity, 'approach_summary', None) or {}
+                approach_title = summary.get("node_title")
+                approach_facts = summary.get("facts") or []
+
                 problem_context = {
                     "problem_title": problem.title,
                     "primary_node_title": primary_node_title,
                     "alternative_node_titles": alt_node_titles,
                     "language": getattr(activity, 'language', None),
+                    "user_approach_title": approach_title,
+                    "user_approach_facts": approach_facts,
                 }
+
+                # Re-ground the SYLLABUS TOPIC on the approach the user took, but
+                # ONLY on a high-confidence read. Rule 1 of the prompt makes the
+                # topic block a hard boundary ("never quiz neighboring topics"),
+                # so leaving it on the catalog primary while the facts describe a
+                # different approach hands the model two contradictory contracts.
+                # Medium/low bands keep the catalog primary as the topic and let
+                # the facts sharpen the implementation questions only — the
+                # asymmetry is deliberate: a wrong topic swap costs a whole
+                # question set, a wrong fact costs one question.
+                if getattr(activity, 'approach_confidence', None) == "high" and getattr(activity, 'approach_node_id', None):
+                    approach_node = (
+                        await db.execute(
+                            select(RoadmapNode).where(RoadmapNode.id == activity.approach_node_id)
+                        )
+                    ).scalars().first()
+                    if approach_node:
+                        node_title, node_description = approach_node.title, approach_node.description
+                        unit = approach_node.section
 
         try:
             items = await generate_question_items(

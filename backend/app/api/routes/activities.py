@@ -7,7 +7,7 @@ import uuid
 from app.api.deps import get_db, get_current_user
 from app.core.security import SupabaseUser
 from app.core.config import settings
-from app.models.models import Activity, ProblemAttempt, ProblemConcept
+from app.models.models import Activity, Problem, ProblemAttempt, ProblemConcept, RoadmapNode
 from app.schemas.activity import (
     ActivityCreate, ActivityResponse, ActivityListItem,
     KeyPointsRequest, KeyPointsResponse,
@@ -15,9 +15,32 @@ from app.schemas.activity import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.services.scheduler import initial_review_for_activity
 from app.services.grader import suggest_key_points, GraderError
+from app.services.approach_inference import infer_approach, InferredApproach
 from app.services import analytics
 
 router = APIRouter()
+
+
+async def _approach_candidates(db: AsyncSession, problem_id: uuid.UUID) -> list[dict]:
+    """The closed set this problem's solution may be classified onto: every
+    roadmap node already mapped to it, whatever the role.
+
+    Deliberately includes `supporting` and `alternative`, not just `primary` —
+    the whole point is that the user may have taken a path the catalog does not
+    call canonical. Anything outside this set resolves to "other"; the classifier
+    is never allowed to name a concept of its own (SPEC-leetcode-retention.md §2).
+    """
+    rows = (
+        await db.execute(
+            select(ProblemConcept.node_id, ProblemConcept.role, RoadmapNode.title, RoadmapNode.description)
+            .join(RoadmapNode, RoadmapNode.id == ProblemConcept.node_id)
+            .where(ProblemConcept.problem_id == problem_id)
+        )
+    ).all()
+    return [
+        {"node_id": r.node_id, "role": r.role, "title": r.title, "description": r.description}
+        for r in rows
+    ]
 
 @router.get("/", response_model=List[ActivityListItem])
 async def list_activities(
@@ -109,7 +132,26 @@ async def log_activity(
     is_first = existing_count == 0
 
     node_id = activity_in.node_id
+    approach: Optional[InferredApproach] = None
     if activity_in.source_type == "problem" and activity_in.problem_id is not None:
+        # Read the pasted solution ONCE, here, and store the result. Doing it at
+        # review time instead would re-pay the call on every review and let the
+        # reading drift under a card whose questions were written against the
+        # old one. Purely additive: a failure returns None and the card behaves
+        # exactly as it did before this feature existed.
+        if activity_in.solution_code and activity_in.solution_code.strip():
+            problem_title = (
+                await db.execute(
+                    select(Problem.title).where(Problem.id == activity_in.problem_id)
+                )
+            ).scalar_one_or_none()
+            approach = await infer_approach(
+                code=activity_in.solution_code,
+                language=activity_in.language,
+                problem_title=problem_title or activity_in.topic,
+                candidates=await _approach_candidates(db, activity_in.problem_id),
+            )
+
         if not node_id:
             primary_node_id = (await db.execute(
                 select(ProblemConcept.node_id)
@@ -144,6 +186,14 @@ async def log_activity(
         node_id=node_id,
         problem_id=activity_in.problem_id,
         language=activity_in.language,
+        solution_code=activity_in.solution_code,
+        # Inference lives beside node_id, never in it. node_id above is still the
+        # catalog's role='primary' node and remains the sole mastery-routing key;
+        # these three fields only reframe question generation
+        # (SPEC-leetcode-retention.md §3.2.-1).
+        approach_node_id=approach.node_id if approach else None,
+        approach_confidence=approach.confidence_band if approach else None,
+        approach_summary=approach.to_summary() if approach else None,
     )
     db.add(activity)
 
@@ -193,6 +243,9 @@ async def log_activity(
         problem_id=activity.problem_id,
         language=activity.language,
         created_at=activity.created_at,
+        approach_node_title=approach.node_title if approach else None,
+        approach_confidence=approach.confidence_band if approach else None,
+        approach_facts=approach.facts if approach else [],
         reviews_scheduled=1,
         review_due_now=is_first,
     )

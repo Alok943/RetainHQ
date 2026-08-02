@@ -26,6 +26,11 @@ class ActivityCreate(BaseModel):
     node_id: Optional[uuid.UUID] = None  # lesson-level link (roadmap_nodes.id) for "Add to reviews"
     problem_id: Optional[uuid.UUID] = None
     language: Optional[Literal["python", "java", "cpp", "javascript", "go", "rust", "sql"]] = None
+    # The user's own solution (optional). Its only job is question generation:
+    # without it the LLM has no idea which of several valid approaches the user
+    # took and quizzes them on the canonical one. Cap mirrors
+    # settings.APPROACH_CODE_MAX_CHARS — over-length is a 422, never a silent trim.
+    solution_code: Optional[str] = Field(default=None, max_length=8000)
 
 
 class KeyPointsRequest(BaseModel):
@@ -53,6 +58,12 @@ class ActivityResponse(BaseModel):
     key_memory: str
     mistake: Optional[str] = None
     created_at: datetime
+    # What we read the pasted solution as. Echoed back so the user can audit the
+    # inference at capture time — an unauditable inference is one they won't
+    # trust, and this is what their questions will be written against.
+    approach_node_title: Optional[str] = None
+    approach_confidence: Optional[str] = None
+    approach_facts: list[str] = []
     reviews_scheduled: int = 0
     # True only for a user's first-ever activity, which gets a demo review due
     # now; the UI uses this to send them straight into that review. Later

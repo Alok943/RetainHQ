@@ -125,3 +125,79 @@ async def test_grading_injects_stored_reference_answers(client, grader_on, fake_
     assert resp.status_code == 200, resp.text
     # Every pair must carry the stored (server-side) reference answer.
     assert all(p.get("reference_answer") for p in seen["pairs"])
+
+
+# --------------------------------------------------------------------------- #
+# Prompt assembly: the student's approach must reach the model as its own block.
+# Asserting on the constructed user message is the only way to catch a silent
+# regression here — a dropped block still produces perfectly plausible questions,
+# just about the textbook solution instead of the user's code.
+# --------------------------------------------------------------------------- #
+
+async def test_user_approach_block_is_sent_to_the_model(monkeypatch):
+    from app.services import grader as grader_module
+
+    seen = {}
+
+    async def fake_call(system_prompt, user_msg, **kwargs):
+        seen["system"] = system_prompt
+        seen["user"] = user_msg
+        return '{"questions": [{"question": "Q?", "reference_answer": "A."}]}'
+
+    monkeypatch.setattr(grader_module, "_grader_json", fake_call)
+
+    await grader_module.generate_question_items(
+        topic="LeetCode 567: Permutation in String",
+        depth="main",
+        key_memory="Fixed window, compare frequencies.",
+        node_title="Sliding window (fixed)",
+        node_description="A fixed-size window sliding across the array.",
+        problem_context={
+            "problem_title": "Permutation in String",
+            "primary_node_title": "Sliding window (fixed)",
+            "alternative_node_titles": [],
+            "language": "python",
+            "user_approach_title": "Sliding window (fixed)",
+            "user_approach_facts": [
+                "Compares two dicts for equality on every slide, O(k) per step.",
+                "Deletes zero-count keys so dict equality stays valid.",
+            ],
+        },
+    )
+
+    msg = seen["user"]
+    assert "THE STUDENT'S APPROACH" in msg
+    assert "Compares two dicts for equality on every slide" in msg
+    assert "Deletes zero-count keys" in msg
+    # And the rule that makes the block binding.
+    assert "overrides the canonical" in seen["system"]
+
+
+async def test_no_approach_block_when_the_user_shared_no_code(monkeypatch):
+    from app.services import grader as grader_module
+
+    seen = {}
+
+    async def fake_call(system_prompt, user_msg, **kwargs):
+        seen["user"] = user_msg
+        return '{"questions": [{"question": "Q?", "reference_answer": "A."}]}'
+
+    monkeypatch.setattr(grader_module, "_grader_json", fake_call)
+
+    await grader_module.generate_question_items(
+        topic="LeetCode 1: Two Sum",
+        depth="main",
+        key_memory="Hash map of complements.",
+        node_title="Hash Tables",
+        problem_context={
+            "problem_title": "Two Sum",
+            "primary_node_title": "Hash Tables",
+            "alternative_node_titles": [],
+            "language": "python",
+            "user_approach_title": None,
+            "user_approach_facts": [],
+        },
+    )
+
+    assert "PROBLEM CONTEXT" in seen["user"]
+    assert "THE STUDENT'S APPROACH" not in seen["user"]

@@ -6,6 +6,10 @@ import { useAuth } from './lib/AuthContext';
 import { track, EVENTS } from './lib/analytics';
 
 const KEY_MEMORY_MAX = 500; // ~6 lines: one testable claim, not a paragraph dump
+// Mirrors APPROACH_CODE_MAX_CHARS in backend/app/core/config.py. Far above any
+// interview-length solution; the cap exists so an accidental paste of a whole
+// file doesn't 422 after the fact.
+const SOLUTION_CODE_MAX = 8000;
 
 
 const LANGUAGES = [
@@ -49,6 +53,13 @@ function LogActivity() {
   const [problemOptions, setProblemOptions] = useState([]);
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [language, setLanguage] = useState(localStorage.getItem('retainhq_lc_lang') || 'python');
+  // The user's own solution. Optional, and the single highest-signal input on
+  // this form: without it the reviewer knows the pattern but not which of
+  // several valid implementations you wrote, so it quizzes the canonical one.
+  const [solutionCode, setSolutionCode] = useState('');
+  // What the backend read that code as — echoed back so the inference is
+  // auditable at capture time rather than a surprise at first review.
+  const [approachRead, setApproachRead] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchTimeout = React.useRef(null);
 
@@ -91,6 +102,7 @@ function LogActivity() {
         if (parsed.difficulty) setDifficulty(parsed.difficulty);
         if (parsed.neededHint !== undefined) setNeededHint(parsed.neededHint);
         if (parsed.roadmapId) setRoadmapId(parsed.roadmapId);
+        if (parsed.solutionCode) setSolutionCode(parsed.solutionCode);
       } catch (e) {}
     }
     // Arriving from a roadmap node ("Log what you learned") pre-fills the topic
@@ -121,9 +133,9 @@ function LogActivity() {
   const otherRoadmaps = roadmaps.filter((r) => (r.progress_pct || 0) === 0);
 
   useEffect(() => {
-    const draft = { topic, sourceType, keyMemory, mistake, difficulty, neededHint, roadmapId };
+    const draft = { topic, sourceType, keyMemory, mistake, difficulty, neededHint, roadmapId, solutionCode };
     localStorage.setItem('retainhq_log_draft', JSON.stringify(draft));
-  }, [topic, sourceType, keyMemory, mistake, difficulty, neededHint, roadmapId]);
+  }, [topic, sourceType, keyMemory, mistake, difficulty, neededHint, roadmapId, solutionCode]);
 
   const canSubmit = (isLeetCode ? selectedProblem !== null : topic.trim().length > 0) && keyMemory.trim().length > 0 && !submitting;
 
@@ -137,6 +149,8 @@ function LogActivity() {
     setRoadmapId('');
     setSelectedProblem(null);
     setProblemSearch('');
+    setSolutionCode('');
+    setApproachRead(null);
     setError(null);
     setLogged(false);
     setSuggestions([]);
@@ -170,6 +184,7 @@ function LogActivity() {
       roadmap_id: isLeetCode ? null : (roadmapId || null),
       problem_id: isLeetCode ? selectedProblem.id : null,
       language: isLeetCode ? language : null,
+      solution_code: isLeetCode && solutionCode.trim() ? solutionCode : null,
     };
 
     try {
@@ -201,6 +216,13 @@ function LogActivity() {
         return;
       }
 
+      if (res?.approach_node_title || res?.approach_facts?.length) {
+        setApproachRead({
+          title: res.approach_node_title,
+          confidence: res.approach_confidence,
+          facts: res.approach_facts || [],
+        });
+      }
       setLogged(true);
       if (isLeetCode) localStorage.setItem('retainhq_lc_lang', language);
     } catch (err) {
@@ -272,6 +294,39 @@ function LogActivity() {
           Recalling it after a day is what actually builds memory — quizzing you right now
           would only test short-term recall.
         </p>
+
+        {/* What we read your code as. Shown because these are the facts your
+            questions get written against — if the read is wrong, you want to
+            know now, not at the first review. */}
+        {approachRead && (
+          <div className="w-full text-left rounded-lg border border-[rgba(15,23,42,0.12)] bg-[rgba(15,23,42,0.02)] p-4 flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Code size={13} className="text-[#0891B2]" />
+              <span className="font-sans text-[11px] font-bold text-[#0891B2] uppercase tracking-widest">
+                Read as
+              </span>
+              {approachRead.title && (
+                <span className="font-sans text-xs font-semibold text-[#0F172A]">{approachRead.title}</span>
+              )}
+              {approachRead.confidence && (
+                <span className="bg-[rgba(15,23,42,0.05)] text-[#64748B] px-1.5 py-0.5 rounded font-mono text-[9px]">
+                  {approachRead.confidence} confidence
+                </span>
+              )}
+            </div>
+            {approachRead.facts.length > 0 && (
+              <ul className="flex flex-col gap-1 pl-1">
+                {approachRead.facts.map((f, i) => (
+                  <li key={i} className="font-sans text-xs text-[#64748B] leading-relaxed">— {f}</li>
+                ))}
+              </ul>
+            )}
+            <p className="font-sans text-[11px] text-[#94a3b8]">
+              Your reviews will ask about this, not the textbook solution.
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-2">
           <button
             onClick={resetForm}
@@ -505,6 +560,39 @@ function LogActivity() {
             </div>
           )}
         </div>
+
+        {/* ROW 3 (LeetCode only): the solution you actually wrote.
+            This is what makes the review ask about YOUR code. Without it the
+            reviewer knows the pattern but not your implementation, so it
+            quizzes the canonical one — right concept, wrong details. */}
+        {isLeetCode && (
+          <div className="flex flex-col gap-2 pt-6 border-t border-[rgba(15,23,42,0.08)]">
+            <label className="font-sans text-[11px] font-bold text-[#64748B] uppercase tracking-widest">
+              Your Solution
+            </label>
+            <p className="font-sans text-xs text-[#64748B] mb-1">
+              Paste the code you submitted. Your reviews then ask about the approach{' '}
+              <span className="italic">you</span> took — not the textbook one.
+            </p>
+            <textarea
+              rows="6"
+              value={solutionCode}
+              maxLength={SOLUTION_CODE_MAX}
+              onChange={(e) => setSolutionCode(e.target.value)}
+              spellCheck="false"
+              placeholder={"class Solution:\n    def checkInclusion(self, s1: str, s2: str) -> bool:\n        ..."}
+              className="w-full px-4 py-3 bg-[rgba(15,23,42,0.02)] border border-[rgba(15,23,42,0.12)] rounded font-mono text-xs leading-relaxed text-[#0F172A] focus:outline-none focus:border-[#0891B2] transition-colors resize-y placeholder-[#94a3b8]"
+            ></textarea>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="font-sans text-[11px] text-[#94a3b8]">
+                Sent to the question generator. Stays on this card.
+              </span>
+              <span className={`font-mono text-[11px] ${solutionCode.length >= SOLUTION_CODE_MAX ? 'text-[#B45309]' : 'text-[#94a3b8]'}`}>
+                {solutionCode.length}/{SOLUTION_CODE_MAX}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* ROW 4: Mistake Made & Hints */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

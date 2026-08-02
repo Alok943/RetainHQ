@@ -34,13 +34,23 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 10
     DB_POOL_TIMEOUT: int = 30
 
-    # Groq LLM recall grader (EXPERIMENT — frozen, off the launch path).
-    # gpt-oss-120b: strong instruction-following + JSON for question gen/grading.
-    # It's a reasoning model — grader._groq_json pins reasoning_effort=low for it.
-    # Override via env (GROQ_MODEL) to fall back to e.g. llama-3.3-70b-versatile.
-    GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "openai/gpt-oss-120b"
+    # ---------------------------------------------------------------- #
+    # MODEL IDS. Every model this app calls is named HERE and nowhere else.
+    # `services/llm.py` derives the provider from the id (`gemini*` → Google,
+    # anything else → Groq), so switching a feature between providers is a
+    # one-line change in this block — no call site tests a model prefix.
+    # ---------------------------------------------------------------- #
+
+    # Recall grader + question generation (services/grader.py). Moved off
+    # Groq's openai/gpt-oss-120b to Gemini's lite tier on 2026-08-02 (D-058). Set to a
+    # non-"gemini*" id (e.g. "openai/gpt-oss-120b") to route back to Groq —
+    # both keys stay wired, so this is an env flip, not a code change. That is
+    # deliberate: it is what makes the A/B in D-058 cheap to run.
+    GRADER_MODEL: str = "gemini-3.5-flash-lite"
     GRADER_ENABLED: bool = False
+    # Keys for both providers. Which one is required follows from the ids above;
+    # llm.is_configured() answers it per-model so features gate off cleanly.
+    GROQ_API_KEY: str = ""
     # A generated question set is served for this many review sessions (shuffled
     # each time) before a fresh set is generated — amortizes the LLM cost and
     # keeps the quiz stable while the memory is forming.
@@ -117,6 +127,21 @@ class Settings(BaseSettings):
     # env once a newer lite-tier id is confirmed to actually exist; don't
     # guess one in.
     COMPANION_LITE_MODEL: str = "gemini-3.5-flash-lite"
+
+    # Solution-approach inference (services/approach_inference.py): read a user's
+    # pasted LeetCode solution and pick which of THIS PROBLEM's already-mapped
+    # concepts they actually implemented, plus 2-4 concrete facts about the code.
+    # Constrained structured labelling — squarely the lite tier's job.
+    APPROACH_MODEL: str = "gemini-3.5-flash-lite"
+
+    # Node/session embeddings (services/embeddings.py). Was the one model id
+    # still written as a literal in a service file. Changing it invalidates
+    # every stored `node_meta.embedding` — vectors from two models are not
+    # comparable — so this is a re-embed, never just an env flip.
+    EMBEDDING_MODEL: str = "gemini-embedding-001"
+    # Bound on the pasted solution. ~8 KB is far above any interview-length
+    # answer and well under anything that would make the inference call slow.
+    APPROACH_CODE_MAX_CHARS: int = 8000
 
     # Due-review reminder emails (Resend). Feature is a no-op until RESEND_API_KEY
     # is set, so it's safe to deploy gated-off. CRON_SECRET guards the trigger

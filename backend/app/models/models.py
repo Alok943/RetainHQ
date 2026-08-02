@@ -89,6 +89,19 @@ class Activity(SQLModel, table=True):
     node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
     problem_id: Optional[uuid.UUID] = Field(default=None, foreign_key="problems.id")
     language: Optional[str] = None
+    # The user's own solution, pasted at log time. Optional; NULL = not shared.
+    # Immutable per card — the card's questions are generated against it, so
+    # editing it would leave them describing code that no longer exists.
+    solution_code: Optional[str] = None
+    # What that code actually does, inferred once at log time and resolved
+    # against the closed roadmap vocabulary (services/approach_inference.py).
+    # INFERENCE, deliberately kept out of `node_id`: `node_id` stays the
+    # catalog's role='primary' concept and remains the only mastery-routing key
+    # (SPEC-leetcode-retention.md §3.2.-1 defers approach-based routing until
+    # shadow-mode validation). This pair only reframes question generation.
+    approach_node_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
+    approach_confidence: Optional[str] = None  # 'high' | 'medium' | 'low' — band, never a float
+    approach_summary: Optional[dict] = Field(default=None, sa_column=Column(_JSONB))
     topic: str
     notes: Optional[str] = None
     difficulty: int = Field(ge=1, le=5)

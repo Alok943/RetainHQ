@@ -39,7 +39,7 @@ def _embed_batch_call(clean_texts: list[str]) -> list[list[float]]:
     client = _get_client()
     try:
         response = client.models.embed_content(
-            model="gemini-embedding-001",
+            model=settings.EMBEDDING_MODEL,
             contents=clean_texts
         )
         return [list(emb.values) for emb in response.embeddings]

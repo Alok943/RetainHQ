@@ -1,7 +1,7 @@
 """
 LLM recall grader — EXPERIMENT (frozen per the design doc: §5/§6, ships post-validation).
 
-One Groq call. Grades a user's FREE-RECALL answer against the stored `key_memory`
+One model call. Grades a user's FREE-RECALL answer against the stored `key_memory`
 (the rubric) and returns an objective verdict + short feedback. This is the
 machine version of the `recalled` signal we already capture by self-report —
 the gap between the two is the calibration metric.
@@ -20,48 +20,38 @@ from typing import Literal, Optional, List
 from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
+from app.services import llm
 
 
 # --------------------------------------------------------------------------- #
-# Helper: a single configured AsyncGroq call returning the raw JSON string.
-# Centralizes the client construction + error wrapping shared by every grader
-# function so each one is just a prompt + a Pydantic model.
+# Every grader call goes through services/llm.py, which picks the provider from
+# settings.GRADER_MODEL's id. This function is now just the error translation —
+# the rest of this module raises GraderError and knows nothing about providers.
+#
+# `reasoning`: honoured on Groq's gpt-oss (hidden reasoning tokens count against
+# max_tokens, so generation passes "low" to stay fast and GRADING passes "medium"
+# — at "low" it rubber-stamps answers that merely use the right words). On a
+# Gemini id the model manages its own thinking budget and the argument is a
+# documented no-op, so the strictness of grading rides on the model itself. Kept
+# at the call sites regardless: it is the standing statement of which calls need
+# real judgment, and it becomes live again the moment GRADER_MODEL routes to Groq.
 # --------------------------------------------------------------------------- #
-async def _groq_json(system_prompt: str, user_msg: str, max_tokens: int = 700, reasoning: str = "low") -> str:
-    if not settings.GROQ_API_KEY:
-        raise GraderError("GROQ_API_KEY is not set — grader is disabled.")
+async def _grader_json(system_prompt: str, user_msg: str, max_tokens: int = 700, reasoning: str = "low") -> str:
     try:
-        from groq import AsyncGroq
-    except ImportError as e:
-        raise GraderError("The 'groq' package is not installed (pip install groq).") from e
-
-    # gpt-oss is a REASONING model: its hidden reasoning tokens count against
-    # max_tokens (and add latency). Generation tasks (question/key-point gen) pass
-    # reasoning="low" to stay fast; GRADING passes "medium" because judging whether
-    # an answer is actually correct (not just keyword-similar) needs real reasoning —
-    # at "low" it rubber-stamps answers that merely use the right words. The flag is
-    # gpt-oss-only; sending it to a llama model would 400, so gate it on the model
-    # name. We rely on json_object (not json_schema strict mode, which gpt-oss ignores).
-    extra = {}
-    if settings.GROQ_MODEL.startswith("openai/gpt-oss"):
-        extra["reasoning_effort"] = reasoning
-
-    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
-    try:
-        resp = await client.chat.completions.create(
-            model=settings.GROQ_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_msg},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0,
+        return await llm.call_json(
+            model=settings.GRADER_MODEL,
+            system_prompt=system_prompt,
+            user_msg=user_msg,
             max_tokens=max_tokens,
-            **extra,
+            reasoning=reasoning,
         )
-        return resp.choices[0].message.content
-    except Exception as e:  # network / API / rate-limit
-        raise GraderError(f"Grader call failed: {e}") from e
+    except llm.LLMError as e:
+        raise GraderError(str(e)) from e
+
+
+def is_configured() -> bool:
+    """Whether the grader's selected model has its provider key set."""
+    return llm.is_configured(settings.GRADER_MODEL)
 
 
 class RelatedSubtopic(BaseModel):
@@ -118,8 +108,8 @@ class GraderError(RuntimeError):
 
 async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderVerdict:
     """Grade a single recall attempt. Raises GraderError if not configured."""
-    if not settings.GROQ_API_KEY:
-        raise GraderError("GROQ_API_KEY is not set — grader is disabled.")
+    if not is_configured():
+        raise GraderError("No provider key set for GRADER_MODEL — grader is disabled.")
 
     # Skip the call entirely if the user committed "I don't know" / left it blank.
     if not user_answer or not user_answer.strip():
@@ -136,7 +126,7 @@ async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderV
         f"STUDENT ANSWER (from memory):\n{user_answer.strip()}"
     )
 
-    raw = await _groq_json(_SYSTEM_PROMPT, user_msg, max_tokens=1100, reasoning="medium")
+    raw = await _grader_json(_SYSTEM_PROMPT, user_msg, max_tokens=1100, reasoning="medium")
     try:
         return GraderVerdict.model_validate_json(raw)
     except ValidationError as e:
@@ -218,6 +208,14 @@ _QGEN_SET_SYSTEM_PROMPT = (
     "The title is a label, not content to quiz on. If a LANGUAGE is given, language questions must be about "
     "semantics and complexity, never syntax lookup (e.g. if the answer is a one-line docs lookup, it is not a question). "
     "Only emit a language question when the language is explicitly provided.\n"
+    "3b. If the PROBLEM CONTEXT contains THE STUDENT'S APPROACH, it overrides the canonical "
+    "solution as the subject of every implementation, complexity, and edge-case question. Quiz "
+    "the code they actually wrote — the listed WHAT THEIR CODE DOES facts are ground truth about "
+    "it. Do NOT ask about a data structure, variable, or optimization the facts do not mention: "
+    "if the facts say they compared two dictionaries, asking about a fixed count array or a match "
+    "counter is asking about someone else's solution. The one legitimate way to raise a technique "
+    "they did not use is an explicit comparison ('you did X — what would Y buy you here?'), and "
+    "that counts as the transfer question, not the implementation one.\n"
     "Question rules:\n"
     "4. DEPTH=main → 2-3 questions covering the core: the definition/statement and the why. "
     "If PROBLEM CONTEXT is present: 1 concept (why the pattern works) + 1 trigger (what signals this pattern) + 1 implementation (in the card's language, if provided, else complexity).\n"
@@ -277,9 +275,22 @@ async def generate_question_items(
             ctx += f"Alternative Concepts: {', '.join(alt)}\n"
         if problem_context.get('language'):
             ctx += f"Language: {problem_context['language']}\n"
+        # The student's own implementation, when they shared it. This is the block
+        # that stops the model defaulting to the textbook solution — without it,
+        # "Sliding window (fixed)" + a problem title is all it has, so it invents
+        # the canonical count-array version and quizzes code the user never wrote.
+        approach_title = problem_context.get('user_approach_title')
+        approach_facts = problem_context.get('user_approach_facts') or []
+        if approach_title or approach_facts:
+            ctx += "\nTHE STUDENT'S APPROACH (what they actually wrote — quiz THIS):\n"
+            if approach_title:
+                ctx += f"Approach taken: {approach_title}\n"
+            if approach_facts:
+                ctx += "WHAT THEIR CODE DOES:\n"
+                ctx += "".join(f"- {f}\n" for f in approach_facts)
         parts.append(ctx)
 
-    raw = await _groq_json(_QGEN_SET_SYSTEM_PROMPT, "\n\n".join(parts), max_tokens=1200)
+    raw = await _grader_json(_QGEN_SET_SYSTEM_PROMPT, "\n\n".join(parts), max_tokens=1200)
     try:
         result = GeneratedQuestionItems.model_validate_json(raw)
     except ValidationError as e:
@@ -369,7 +380,7 @@ async def suggest_key_points(topic: str, draft: Optional[str] = None) -> KeyPoin
     extra = f"\n\nTHEIR DRAFT SO FAR:\n{draft.strip()}" if draft and draft.strip() else ""
     user_msg = f"TOPIC: {topic.strip()}{extra}"
 
-    raw = await _groq_json(_KEYPOINTS_SYSTEM_PROMPT, user_msg, max_tokens=600)
+    raw = await _grader_json(_KEYPOINTS_SYSTEM_PROMPT, user_msg, max_tokens=600)
     try:
         result = KeyPointSuggestions.model_validate_json(raw)
     except ValidationError as e:
@@ -397,7 +408,7 @@ async def grade_question_set(
         f"STUDENT'S ANSWERS:\n{qa_block}"
     )
 
-    raw = await _groq_json(_QGRADE_SYSTEM_PROMPT, user_msg, max_tokens=1300, reasoning="medium")
+    raw = await _grader_json(_QGRADE_SYSTEM_PROMPT, user_msg, max_tokens=1300, reasoning="medium")
     try:
         return QuestionSetGrade.model_validate_json(raw)
     except ValidationError as e:
@@ -435,8 +446,8 @@ _FILLUP_SYSTEM_PROMPT = (
 
 async def grade_fillup(question: str, reference_answer: str, student_answer: str) -> FillupVerdict:
     """Grade a single Test-section fill-up answer. Raises GraderError if not configured."""
-    if not settings.GROQ_API_KEY:
-        raise GraderError("GROQ_API_KEY is not set — grader is disabled.")
+    if not is_configured():
+        raise GraderError("No provider key set for GRADER_MODEL — grader is disabled.")
 
     if not student_answer or not student_answer.strip():
         return FillupVerdict(verdict="incorrect", feedback="No answer given.")
@@ -447,7 +458,7 @@ async def grade_fillup(question: str, reference_answer: str, student_answer: str
         f"STUDENT ANSWER:\n{student_answer.strip()}"
     )
 
-    raw = await _groq_json(_FILLUP_SYSTEM_PROMPT, user_msg, max_tokens=300, reasoning="low")
+    raw = await _grader_json(_FILLUP_SYSTEM_PROMPT, user_msg, max_tokens=300, reasoning="low")
     try:
         return FillupVerdict.model_validate_json(raw)
     except ValidationError as e:
