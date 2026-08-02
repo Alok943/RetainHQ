@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from './lib/api';
 
-// Dev-only instrument (SPEC-career-coach-phase1 §7) — the "why is this
-// mastery number what it is" surface. Not a product page: no design-system
-// polish, no nav entry, admin-gated in App.jsx same as /admin.
+// The "why is this mastery number what it is" surface (SPEC-career-coach-phase1
+// §7). Was admin-gated in App.jsx (dev-only instrument) until 2026-08-02 — that
+// also made it the ONLY place a user could see companion sessions/imported
+// solves, since they never appear in Home's activity rail. Un-gated for every
+// signed-in user; layout intentionally left as-is (no design-system polish yet
+// — see BACKLOG for a friendlier redesign).
 
 function fmt(d) {
   return d ? new Date(d).toLocaleString() : '—';
