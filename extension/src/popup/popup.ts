@@ -145,6 +145,7 @@ const SURFACE_LABELS: Record<string, string> = {
   youtube: 'YouTube',
   coursera: 'Coursera',
   leetcode: 'LeetCode',
+  neetcode: 'NeetCode',
   chatgpt: 'ChatGPT',
   claude: 'Claude',
   gemini: 'Gemini',

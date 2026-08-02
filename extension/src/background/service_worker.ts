@@ -379,6 +379,36 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
     })()
     return true // keep the message channel open for the async sendResponse
+  } else if (message.type === 'NEETCODE_SOLVED') {
+    // Same durable-queue contract as LEETCODE_SOLVED above — the content
+    // script only drops the item once this confirms delivery.
+    ;(async () => {
+      try {
+        const { data: { session: sbSession } } = await supabase.auth.getSession()
+        if (!sbSession) {
+          sendResponse({ ok: false, reason: 'no-session' })
+          return
+        }
+        const res = await fetch(`${API_BASE_URL}/api/evidence/neetcode/solve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sbSession.access_token}`
+          },
+          body: JSON.stringify(message.payload)
+        })
+        if (!res.ok) {
+          console.error('NeetCode solve rejected', res.status)
+          sendResponse({ ok: false, reason: `http-${res.status}` })
+          return
+        }
+        sendResponse({ ok: true })
+      } catch (error) {
+        console.error('Failed to log NeetCode solve', error)
+        sendResponse({ ok: false, reason: 'network' })
+      }
+    })()
+    return true // keep the message channel open for the async sendResponse
   } else if (message.type === 'TRACKING_PAUSED_CHANGED') {
     // The popup owns the toggle and has already written pause_state.ts's
     // storage flag by the time this arrives — this only updates the icon so

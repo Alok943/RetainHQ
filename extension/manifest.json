@@ -17,6 +17,7 @@
   "host_permissions": [
     "*://*.youtube.com/*",
     "*://*.leetcode.com/*",
+    "*://neetcode.io/*",
     "*://*.coursera.org/*",
     "*://*.notion.so/*",
     "https://retainhq.onrender.com/*",
@@ -76,6 +77,24 @@
       ],
       "js": [
         "src/content/leetcode.ts"
+      ]
+    },
+    {
+      "matches": [
+        "*://neetcode.io/problems/*"
+      ],
+      "js": [
+        "src/content/neetcode_probe.ts"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://neetcode.io/problems/*"
+      ],
+      "js": [
+        "src/content/neetcode.ts"
       ]
     },
     {

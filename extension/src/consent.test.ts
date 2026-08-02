@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { getConsentTier, switchConsentTier, hasLlmOriginPermission, LLM_ORIGINS } from './consent'
+import { getConsentTier, switchConsentTier, hasLlmOriginPermission, LLM_ORIGINS, NEETCODE_ORIGIN } from './consent'
 import { API_ORIGIN_PATTERN } from './config'
 import { CONSENT_COPY_VERSION } from './consent'
 
@@ -64,16 +64,16 @@ describe('switchConsentTier', () => {
     // privacy claim the copy actually makes — no LLM-origin access.
     const result = await switchConsentTier('titles', null)
     expect(result).toBe('titles')
-    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: [API_ORIGIN_PATTERN] })
+    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: [API_ORIGIN_PATTERN, NEETCODE_ORIGIN] })
     expect(await getConsentTier()).toBe('titles')
     expect(await hasLlmOriginPermission()).toBe(false)
   })
 
-  it('choosing cloud requests the LLM origins alongside the backend origin', async () => {
+  it('choosing cloud requests the LLM origins alongside the backend and NeetCode origins', async () => {
     const result = await switchConsentTier('cloud', null)
     expect(result).toBe('cloud')
     expect(chrome.permissions.request).toHaveBeenCalledWith({
-      origins: [API_ORIGIN_PATTERN, ...LLM_ORIGINS],
+      origins: [API_ORIGIN_PATTERN, NEETCODE_ORIGIN, ...LLM_ORIGINS],
     })
     expect(await getConsentTier()).toBe('cloud')
     expect(await hasLlmOriginPermission()).toBe(true)

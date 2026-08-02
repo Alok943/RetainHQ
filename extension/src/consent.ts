@@ -41,6 +41,15 @@ export const LLM_ORIGINS = [
   '*://gemini.google.com/*',
 ]
 
+// Requested alongside API_ORIGIN_PATTERN below for the identical reason: on
+// Firefox, required host_permissions are NOT granted at install (D-053/054),
+// and nothing else in the extension ever requests this one — unlike
+// leetcode.com, neetcode.io has no backfill button to piggyback a
+// permissions.request() call onto. Without this, neetcode.ts/neetcode_probe.ts
+// never inject on a Firefox install and NeetCode capture silently never
+// starts, the same failure mode LeetCode had before this session.
+export const NEETCODE_ORIGIN = '*://neetcode.io/*'
+
 const STORAGE_KEY_CONSENT = 'consentTier'
 const STORAGE_KEY_COPY_VERSION = 'consentCopyVersion'
 
@@ -94,8 +103,10 @@ export async function switchConsentTier(
   // captures locally and can never upload a byte. This is the mandatory
   // onboarding gesture, so it's the one place guaranteed to run for every
   // user; see API_ORIGIN_PATTERN for why the grant is what makes our own API
-  // reachable at all on Firefox.
-  const origins = needsOrigins ? [API_ORIGIN_PATTERN, ...LLM_ORIGINS] : [API_ORIGIN_PATTERN]
+  // reachable at all on Firefox. NEETCODE_ORIGIN rides along for the same
+  // "guaranteed gesture, no other button to attach to" reason.
+  const baseOrigins = [API_ORIGIN_PATTERN, NEETCODE_ORIGIN]
+  const origins = needsOrigins ? [...baseOrigins, ...LLM_ORIGINS] : baseOrigins
 
   // permissions.request() must be the FIRST await anywhere in this call
   // chain. Firefox requires it to run within a direct user-gesture context
