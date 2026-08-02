@@ -20,7 +20,7 @@ from app.schemas.evidence import (
     NeetCodeSolveIn,
     LeetCodeBackfillIn
 )
-from app.models.models import Problem, ProblemConcept
+from app.models.models import Problem, ProblemAlias, ProblemConcept
 from app.services import evidence
 from app.services.metrics import record_metric_event
 from app.services.evidence_weights import WEIGHTS_VERSION
@@ -248,6 +248,39 @@ async def delete_event(
     await db.commit()
 
 
+async def resolve_problem(db: AsyncSession, source: str, slug: str) -> Optional[Problem]:
+    """The catalog row a solve on `source` is evidence about.
+
+    Two steps, in order:
+
+    1. A native row for that source. This is the whole story for LeetCode and
+       must stay first — a site's own slug always wins over an alias.
+    2. `problem_aliases`. NeetCode has NO catalog rows of its own by design
+       (D-071): its problems are LeetCode's re-slugged, so `two-integer-sum`
+       resolves to the existing Two Sum row and inherits the roadmap-node
+       mapping the curated LeetCode pass already produced. Importing a parallel
+       NeetCode catalog would have needed its own curation pass and would drift
+       from this one as mappings improve.
+
+    Returns None when neither matches — the caller records `evidence_unmapped`
+    rather than guessing, which is what keeps an unrecognised slug a visible
+    gap instead of silently-wrong mastery on some other node.
+    """
+    native = (
+        await db.execute(select(Problem).where(Problem.slug == slug, Problem.source == source))
+    ).scalars().first()
+    if native is not None:
+        return native
+
+    return (
+        await db.execute(
+            select(Problem)
+            .join(ProblemAlias, ProblemAlias.problem_id == Problem.id)
+            .where(ProblemAlias.source == source, ProblemAlias.alias_slug == slug)
+        )
+    ).scalars().first()
+
+
 async def _record_verified_solve(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -262,7 +295,7 @@ async def _record_verified_solve(
     became a second source — see the source-scoping fix below for why this
     couldn't just stay copy-pasted.
     """
-    # 1. Lookup problem — SCOPED BY SOURCE. Before NeetCode existed, `slug` was
+    # 1. Lookup problem — see resolve_problem. Scoped by source; before NeetCode existed, `slug` was
     # unique enough in practice that this went unscoped and nothing noticed. It
     # was always a latent bug: `problems` has no uniqueness constraint on slug
     # alone (only `(source, external_id)`), and NeetCode's own slugs are a
@@ -271,8 +304,7 @@ async def _record_verified_solve(
     # exhaustively checked for the other ~250). An unscoped lookup risks
     # attributing a solve to the wrong catalog problem — silently wrong mastery
     # on a real node, not a loud failure.
-    stmt = select(Problem).where(Problem.slug == body.problem_slug, Problem.source == source)
-    problem = (await db.execute(stmt)).scalars().first()
+    problem = await resolve_problem(db, source, body.problem_slug)
     if not problem:
         # We don't have this problem in our catalog, log as unmapped
         await record_metric_event(

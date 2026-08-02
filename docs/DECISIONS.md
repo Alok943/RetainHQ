@@ -785,3 +785,32 @@ Borrowing the page makes the fix correct **by construction** rather than by gues
 New `tabs*`/`scripting` wrappers went into `browser_api.ts` rather than calling `chrome.*` directly as the existing `chrome.tabs` calls do. Those are fire-and-forget, where Firefox's callback-only alias resolving to `undefined` is harmless; every call added here is awaited **for its return value**, so `await chrome.tabs.query(...)` on Firefox would resolve to `undefined` and report "no LeetCode tab" with one sitting right there.
 
 Extension v1.2.4. 116 extension tests (up from 102), `addons-linter` clean on `dist-firefox/`.
+
+
+## D-071 — NeetCode aliases onto the LeetCode catalog; no separate NeetCode catalog (2026-08-02, reverses D-064)
+
+**Decision:** New `problem_aliases` table (`source`, `alias_slug` -> `problem_id`, plus `resolved_by`). A NeetCode solve resolves its slug to an **existing LeetCode `problems` row** and inherits that row's curated `problem_concepts` mapping. No `source='neetcode'` catalog rows are created; `import_neetcode_catalog.py` is deleted. New `backend/scripts/sync_neetcode_aliases.py` populates the table. `evidence.resolve_problem()` tries a native row for the source first, then the alias table.
+
+**Why:** D-064 asserted NeetCode "has its own problem catalog, entirely separate from LeetCode's — different slugs, different problem text even for 'the same' interview question". The first half is true and the conclusion drawn from it was wrong. NeetCode's problems ARE LeetCode's problems, re-slugged: `two-integer-sum` is Two Sum, `duplicate-integer` is Contains Duplicate. Measured against the live catalog, not assumed:
+
+```
+NeetCode150 problems              588
+  resolved to a LeetCode row      588  (100%)
+      slug identical              514      no network call needed
+      title match                  55      via getProblemMetadataFunctionHttp
+      hand override                19      NeetCode renamed the problem itself
+  landing on a mapped node        533  (90.6%)
+  leetcode problems targeted >1x    0
+```
+
+Problem TEXT differing doesn't matter, because mastery attaches to the concept, not the prose — and the concept mapping is the expensive artifact. `problem_concepts` cost a curated LLM pass to build for LeetCode (`reviewed_by='pass3-blind:gemini-3.1-pro'`, 2828 problems). Aliasing inherits all of it and keeps inheriting it: the 55 resolved-but-unmapped problems are gaps in the LeetCode mapping itself, and fixing them there fixes NeetCode for free. A parallel catalog would have needed its own pass and then drifted from this one as each improved separately.
+
+**Two bugs in the deleted importer, found while measuring** — it was never run against prod, so neither reached the DB. `getProblemListFunctionHttp` returns `name` for only 350 of 938 entries (absent on *every* NeetCode150 one), so `meta.get("name", slug)` would have titled 588 problems with their raw slug — "two-integer-sum", not "Two Sum". And it discarded `topics`, the per-problem LeetCode-style topic list, which is the only field in that response with any mapping signal. The docstring's documented response shape was simply wrong about both.
+
+**Tradeoffs / rejected:**
+- *Keeping the separate catalog and generating its `problem_concepts` by inheriting the matched LeetCode row's nodes:* rejected. Same 90.6% coverage, but it duplicates 588 rows that must then be kept in sync, and re-forks the moment either mapping is edited.
+- *Fuzzy/embedding title matching for the last 15:* rejected in favour of a hand-listed `OVERRIDES` map. 15 entries is small enough to state exactly, and every target was confirmed present in the live catalog before being written down — a wrong alias is silently-wrong mastery on a real node, which is worse than leaving it unmapped. `resolve()` skips (with a warning) any override whose target is missing, so a stale entry degrades to unmapped rather than mis-mapped.
+- *Aliasing NeetCode's ~350 non-problem entries* (SQL, Python For Beginners, ML, Design Patterns courses): out of scope — they have no LeetCode counterpart. Counted and reported by the sync, never silently dropped.
+- *Idempotency:* `entity_id` is the resolved problem id and the dedupe index is `(user_id, source, entity_id)`, so solving Two Sum on both sites still records two events. Deliberate — `source` stays truthful about where the work happened.
+
+**Still open:** there is no known way to read a user's NeetCode solve HISTORY. LeetCode's import works because `/api/submissions/` exists; NeetCode's equivalent sits behind the auth boundary this codebase cannot cross (it cannot create accounts). So NeetCode ingest is live-capture-forward only, with no backfill — logged to BACKLOG.

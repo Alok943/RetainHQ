@@ -459,6 +459,30 @@ class Problem(SQLModel, table=True):
     concept_cards: List["ConceptCard"] = Relationship(back_populates="problem")
 
 
+class ProblemAlias(SQLModel, table=True):
+    """Another site's slug for a problem this catalog already holds.
+
+    NeetCode's problems ARE LeetCode's, re-slugged (`two-integer-sum` is Two
+    Sum) — so a NeetCode solve is evidence about an existing `problems` row
+    that the curated LeetCode mapping pass has already attached to a roadmap
+    node. Aliasing inherits that mapping instead of importing a parallel
+    catalog that would need its own curation and would drift from this one
+    (D-071, reversing D-064's separate-catalog design).
+
+    Generic on `source`, not NeetCode-specific: the next site is the same shape.
+    """
+    __tablename__ = "problem_aliases"
+    __table_args__ = (UniqueConstraint("source", "alias_slug", name="uq_problem_alias_source_slug"),)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    problem_id: uuid.UUID = Field(foreign_key="problems.id", index=True)
+    source: str
+    alias_slug: str
+    # 'slug_identical' | 'title_match' | 'override' — a wrong alias silently
+    # attributes one problem's evidence to another, so keep how it was derived.
+    resolved_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class ProblemConcept(SQLModel, table=True):
     """Mapping between a Problem and a RoadmapNode. Hand-curated via a versioned classification run."""
     __tablename__ = "problem_concepts"
