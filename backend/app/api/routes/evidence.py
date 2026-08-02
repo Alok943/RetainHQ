@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -287,7 +287,6 @@ async def log_leetcode_solve(
     occurred_at = body.occurred_at or datetime.utcnow()
     # Normalize naive-UTC
     if occurred_at.tzinfo is not None:
-        from datetime import timezone
         occurred_at = occurred_at.astimezone(timezone.utc).replace(tzinfo=None)
         
     # Difficulty comes from OUR catalog, never from the client - the extension cannot be
@@ -364,7 +363,20 @@ async def log_leetcode_backfill(
     now = datetime.utcnow()
     for mapping in mappings:
         problem_slug = slug_map[mapping.problem_id]
-        
+
+        # The real solve date when the client knows it, import time otherwise.
+        # A windowed import (e.g. "Python solves from the last 60 days") is
+        # meaningless if every row lands on today — see LeetCodeBackfillIn.
+        solved_at = body.solved_at.get(problem_slug, now)
+        if solved_at.tzinfo is not None:
+            # Naive-UTC in the DB, per repo convention; the extension sends ISO
+            # strings with a Z, so this branch is the normal path here.
+            solved_at = solved_at.astimezone(timezone.utc).replace(tzinfo=None)
+        # A clock-skewed or hand-crafted future date would park the event beyond
+        # every review window and quietly never come due.
+        if solved_at > now:
+            solved_at = now
+
         await evidence.record_event(
             db, user_id,
             event_type="PROBLEM_SOLVED",
@@ -381,7 +393,7 @@ async def log_leetcode_backfill(
             # (evidence_weights._DEFAULT_ASSISTANCE).
             assistance="llm_assisted",
             entity_id=mapping.problem_id,
-            occurred_at=now,
+            occurred_at=solved_at,
             payload={"problem_slug": problem_slug, "backfilled": True}
         )
         

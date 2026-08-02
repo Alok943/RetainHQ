@@ -219,6 +219,53 @@ async def test_backfill_uses_catalog_difficulty_and_understated_assistance(
     assert ev.assistance == "llm_assisted"
 
 
+async def test_backfill_uses_the_real_solve_date_when_given_one(
+    client: AsyncClient, db: AsyncSession, mapped_problem: Problem
+):
+    """A windowed import (e.g. Python solves from the last 60 days) is pointless
+    if every row lands on import day — the evidence log would claim two months
+    of work happened in one afternoon."""
+    resp = await client.post("/api/evidence/leetcode/backfill", json={
+        "solved_slugs": ["two-sum"],
+        "solved_at": {"two-sum": "2026-06-15T09:30:00Z"},
+    })
+    assert resp.status_code == 204
+
+    ev = (await _events(db, USER_A.id))[0]
+    assert ev.occurred_at == datetime(2026, 6, 15, 9, 30, 0)
+    assert ev.occurred_at.tzinfo is None, "naive-UTC in the DB, per repo convention"
+
+
+async def test_backfill_falls_back_to_now_for_slugs_without_a_date(
+    client: AsyncClient, db: AsyncSession, mapped_problem: Problem
+):
+    """Back-compat: an older extension build sends no solved_at at all."""
+    before = datetime.utcnow()
+    resp = await client.post("/api/evidence/leetcode/backfill", json={
+        "solved_slugs": ["two-sum"],
+        "solved_at": {"some-other-problem": "2026-06-15T09:30:00Z"},
+    })
+    assert resp.status_code == 204
+
+    ev = (await _events(db, USER_A.id))[0]
+    assert ev.occurred_at >= before.replace(microsecond=0)
+
+
+async def test_backfill_clamps_a_future_solve_date(
+    client: AsyncClient, db: AsyncSession, mapped_problem: Problem
+):
+    """Clock skew or a hand-crafted payload must not park an event beyond every
+    review window, where it would silently never come due."""
+    resp = await client.post("/api/evidence/leetcode/backfill", json={
+        "solved_slugs": ["two-sum"],
+        "solved_at": {"two-sum": "2099-01-01T00:00:00Z"},
+    })
+    assert resp.status_code == 204
+
+    ev = (await _events(db, USER_A.id))[0]
+    assert ev.occurred_at <= datetime.utcnow()
+
+
 async def test_backfill_empty_payload_is_a_noop(client: AsyncClient, db: AsyncSession):
     resp = await client.post("/api/evidence/leetcode/backfill", json={"solved_slugs": []})
     assert resp.status_code == 204

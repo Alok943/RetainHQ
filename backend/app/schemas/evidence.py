@@ -70,3 +70,13 @@ class LeetCodeSolveIn(BaseModel):
 
 class LeetCodeBackfillIn(BaseModel):
     solved_slugs: list[str]
+    # slug -> when it was actually solved. Optional and defaulting to empty so
+    # an older extension build keeps working unchanged; any slug missing from
+    # the map still falls back to import time.
+    #
+    # Worth carrying rather than stamping everything `now`: the companion now
+    # imports a *window* (e.g. Python solves from the last 60 days), and
+    # collapsing two months of work onto the import date would make the evidence
+    # log claim it all happened in one afternoon — the same overstating this
+    # module refuses when it defaults `assistance` to "llm_assisted".
+    solved_at: dict[str, datetime] = Field(default_factory=dict)
