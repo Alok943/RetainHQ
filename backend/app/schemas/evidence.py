@@ -68,6 +68,13 @@ class LeetCodeSolveIn(BaseModel):
     mistake: Optional[str] = Field(default=None, max_length=500)
 
 
+class NeetCodeSolveIn(LeetCodeSolveIn):
+    """Identical producer contract to LeetCodeSolveIn (Producer C — verified-external
+    solve, reflection optional) — a different `source` string, not a different shape.
+    Kept as its own class rather than reusing LeetCodeSolveIn directly so the route
+    signature/OpenAPI docs read as what they are, not as a LeetCode-specific type."""
+
+
 class LeetCodeBackfillIn(BaseModel):
     solved_slugs: list[str]
     # slug -> when it was actually solved. Optional and defaulting to empty so

@@ -17,6 +17,7 @@ from app.schemas.evidence import (
     NodeMasteryOut,
     RecomputeOut,
     LeetCodeSolveIn,
+    NeetCodeSolveIn,
     LeetCodeBackfillIn
 )
 from app.models.models import Problem, ProblemConcept
@@ -247,24 +248,37 @@ async def delete_event(
     await db.commit()
 
 
-@router.post("/leetcode/solve", status_code=status.HTTP_204_NO_CONTENT)
-async def log_leetcode_solve(
-    body: LeetCodeSolveIn,
-    db: AsyncSession = Depends(get_db),
-    current_user: SupabaseUser = Depends(get_current_user),
-):
-    """Producer C (LeetCode Extension) — EXTERNAL_SOLVE/T1_verified_external."""
-    user_id = uuid.UUID(current_user.id)
-    
-    # 1. Lookup problem
-    stmt = select(Problem).where(Problem.slug == body.problem_slug)
+async def _record_verified_solve(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    source: str,
+    body: LeetCodeSolveIn,  # NeetCodeSolveIn is a same-shape subclass — see its docstring
+) -> None:
+    """Producer C (verified-external solve, any source) — EXTERNAL_SOLVE/T1_verified_external.
+
+    Shared by /leetcode/solve and /neetcode/solve; the only thing that varies per
+    source is which catalog `source` string scopes the Problem lookup and what
+    gets stamped onto the resulting event. Extracted 2026-08-02 when NeetCode
+    became a second source — see the source-scoping fix below for why this
+    couldn't just stay copy-pasted.
+    """
+    # 1. Lookup problem — SCOPED BY SOURCE. Before NeetCode existed, `slug` was
+    # unique enough in practice that this went unscoped and nothing noticed. It
+    # was always a latent bug: `problems` has no uniqueness constraint on slug
+    # alone (only `(source, external_id)`), and NeetCode's own slugs are a
+    # DIFFERENT namespace with no promise of never colliding with LeetCode's
+    # (confirmed different for at least "two-sum" vs "two-integer-sum", not
+    # exhaustively checked for the other ~250). An unscoped lookup risks
+    # attributing a solve to the wrong catalog problem — silently wrong mastery
+    # on a real node, not a loud failure.
+    stmt = select(Problem).where(Problem.slug == body.problem_slug, Problem.source == source)
     problem = (await db.execute(stmt)).scalars().first()
     if not problem:
         # We don't have this problem in our catalog, log as unmapped
         await record_metric_event(
             db, user_id,
             event_type="evidence_unmapped",
-            payload={"problem_slug": body.problem_slug, "duration_min": body.duration_min, "source": "leetcode"}
+            payload={"problem_slug": body.problem_slug, "duration_min": body.duration_min, "source": source}
         )
         await db.commit()
         return
@@ -272,23 +286,23 @@ async def log_leetcode_solve(
     # 2. Lookup primary concept mapping
     stmt = select(ProblemConcept).where(ProblemConcept.problem_id == problem.id, ProblemConcept.role == "primary")
     pc = (await db.execute(stmt)).scalars().first()
-    
+
     if not pc:
         # Problem exists but has no primary mapping
         await record_metric_event(
             db, user_id,
             event_type="evidence_unmapped",
-            payload={"problem_slug": body.problem_slug, "problem_id": str(problem.id), "duration_min": body.duration_min, "source": "leetcode"}
+            payload={"problem_slug": body.problem_slug, "problem_id": str(problem.id), "duration_min": body.duration_min, "source": source}
         )
         await db.commit()
         return
-        
+
     # 3. Log the event
     occurred_at = body.occurred_at or datetime.utcnow()
     # Normalize naive-UTC
     if occurred_at.tzinfo is not None:
         occurred_at = occurred_at.astimezone(timezone.utc).replace(tzinfo=None)
-        
+
     # Difficulty comes from OUR catalog, never from the client - the extension cannot be
     # trusted to report it and the weight table is keyed on (difficulty, assistance).
     difficulty = problem.difficulty
@@ -309,7 +323,7 @@ async def log_leetcode_solve(
         db, user_id,
         event_type="PROBLEM_SOLVED",
         trust_tier="T1_verified_external",
-        source="leetcode",
+        source=source,
         node_id=pc.node_id,
         duration_min=body.duration_min,
         difficulty=difficulty,
@@ -329,6 +343,31 @@ async def log_leetcode_solve(
     await db.commit()
 
 
+@router.post("/leetcode/solve", status_code=status.HTTP_204_NO_CONTENT)
+async def log_leetcode_solve(
+    body: LeetCodeSolveIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    await _record_verified_solve(db, uuid.UUID(current_user.id), "leetcode", body)
+
+
+@router.post("/neetcode/solve", status_code=status.HTTP_204_NO_CONTENT)
+async def log_neetcode_solve(
+    body: NeetCodeSolveIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Producer C (NeetCode extension). The verdict this is fed comes from a
+    best-effort, unverified-past-the-auth-boundary probe (neetcode_probe.ts) —
+    see that file's module doc. Trust tier is still T1_verified_external
+    because the CONTRACT is the same (a real judge run, not a self-reported
+    claim); if the probe's verdict detection turns out to be unreliable once
+    tested live, that's a probe bug to fix, not a reason to downgrade the tier
+    for solves it does correctly detect."""
+    await _record_verified_solve(db, uuid.UUID(current_user.id), "neetcode", body)
+
+
 @router.post("/leetcode/backfill", status_code=status.HTTP_204_NO_CONTENT)
 async def log_leetcode_backfill(
     body: LeetCodeBackfillIn,
@@ -344,7 +383,13 @@ async def log_leetcode_backfill(
     # Difficulty comes from OUR catalog for the same reason it does in /solve:
     # the weight table is keyed on (difficulty, assistance), and omitting it
     # silently folds every backfilled solve at _DEFAULT_DIFFICULTY.
-    stmt = select(Problem.id, Problem.slug, Problem.difficulty).where(Problem.slug.in_(body.solved_slugs))
+    # Source-scoped for the same reason _record_verified_solve's lookup is
+    # (2026-08-02, when NeetCode became a second source with its own,
+    # non-guaranteed-disjoint slug namespace): `problems` has no uniqueness
+    # constraint on slug alone.
+    stmt = select(Problem.id, Problem.slug, Problem.difficulty).where(
+        Problem.slug.in_(body.solved_slugs), Problem.source == "leetcode"
+    )
     problems = (await db.execute(stmt)).all()
     problem_ids = [p.id for p in problems]
     slug_map = {p.id: p.slug for p in problems}
