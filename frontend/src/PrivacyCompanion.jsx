@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
 import { useSeo } from './lib/useSeo';
+import { useTheme } from './lib/theme';
 
 /**
  * Public privacy policy for the RetainHQ Companion browser extension —
@@ -29,6 +30,9 @@ import { useSeo } from './lib/useSeo';
  * policy, not as infrastructure.
  */
 function PrivacyCompanion() {
+  const { theme } = useTheme();
+  const logoVariant = theme === 'dark' ? 'light' : 'dark';
+
   useSeo(
     'Privacy Policy — RetainHQ Companion | RetainHQ',
     'What the RetainHQ Companion browser extension collects, what it never collects, where data goes, and how to delete it.'
@@ -39,7 +43,7 @@ function PrivacyCompanion() {
       <header className="border-b border-[rgba(15,23,42,0.08)] px-6 py-5">
         <div className="max-w-3xl mx-auto flex items-center gap-2.5">
           <Link to="/" className="flex items-center gap-2.5">
-            <Logo variant="dark" className="h-6 w-auto" />
+            <Logo variant={logoVariant} className="h-6 w-auto" />
             <span className="font-semibold text-lg tracking-tight text-[#0F172A]">RetainHQ</span>
           </Link>
         </div>

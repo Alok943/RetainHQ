@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Flame, CalendarDays } from 'lucide-react';
+import { Flame, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiFetch } from './lib/api';
 import { useAuth } from './lib/AuthContext';
 
@@ -32,11 +32,34 @@ function cellClass(count) {
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+const TOTAL_WEEKS = 53;         // a full year of columns
+
+// Month labels for a slice of weeks: label a column when its Sunday belongs to a
+// different month than the previous column's Sunday.
+function monthLabelsFor(weeks) {
+  const labels = [];
+  for (let wi = 0; wi < weeks.length; wi++) {
+    const d = new Date(weeks[wi][0].dateStr + 'T00:00:00'); // parse as local
+    const prev = wi > 0 ? new Date(weeks[wi - 1][0].dateStr + 'T00:00:00') : null;
+    if (!prev || prev.getMonth() !== d.getMonth()) {
+      // Skip the leading column if its month label would immediately repeat at
+      // the next column (a stub week of 1-2 days reads as a mislabelled month).
+      if (wi === 0 && weeks.length > 1) {
+        const next = new Date(weeks[1][0].dateStr + 'T00:00:00');
+        if (next.getMonth() !== d.getMonth()) continue;
+      }
+      labels.push({ wi, label: MONTH_NAMES[d.getMonth()] });
+    }
+  }
+  return labels;
+}
+
 function ReviewHeatmap() {
   const { session } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -63,61 +86,55 @@ function ReviewHeatmap() {
       dayMap.set(d.date, { count: d.count, recalled: d.recalled });
     }
 
-    // End = today; start = the Sunday of the week 52 full weeks ago
+    // The grid runs up to *today* and stops — no trailing strip of future
+    // cells. The API only knows about completed reviews, so future days would
+    // be permanently blank filler.
     const today = new Date();
     const todayStr = toLocalDateStr(today);
     const todayDow = today.getDay(); // 0=Sun
 
-    // The grid ends at the last day of the current week (Saturday)
-    const endOfGrid = addDays(today, 6 - todayDow);
-    // Start = 52 weeks before the first day of the current week
-    const startOfCurrentWeek = addDays(today, -todayDow);
-    const startOfGrid = addDays(startOfCurrentWeek, -52 * 7); // 53 weeks total
+    // Start = 52 weeks before the Sunday of the current week (53 columns total)
+    const startOfGrid = addDays(addDays(today, -todayDow), -(TOTAL_WEEKS - 1) * 7);
 
-    // Build columns: each column = one week (7 days Sun..Sat)
+    // Build columns: each column = one week (7 days Sun..Sat). The last column
+    // is a partial week, holding Sunday..today only.
     const weeks = [];
     let cursor = new Date(startOfGrid);
 
-    while (cursor <= endOfGrid) {
+    while (cursor <= today) {
       const week = [];
-      for (let dow = 0; dow < 7; dow++) {
+      for (let dow = 0; dow < 7 && cursor <= today; dow++) {
         const dateStr = toLocalDateStr(cursor);
         const entry = dayMap.get(dateStr) ?? null;
         week.push({
           dateStr,
           count: entry?.count ?? 0,
           recalled: entry?.recalled ?? 0,
-          isFuture: cursor > today,
         });
         cursor = addDays(cursor, 1);
       }
       weeks.push(week);
     }
 
-    // Month labels: figure out which week column each month starts at
-    const monthLabels = [];
-    for (let wi = 0; wi < weeks.length; wi++) {
-      const firstDay = weeks[wi][0]; // Sunday of that week
-      const d = new Date(firstDay.dateStr + 'T00:00:00'); // parse as local
-      if (wi === 0 || d.getDate() <= 7) {
-        // Show the month label if this is the first week where that month appears
-        const prevWeekFirst = wi > 0 ? new Date(weeks[wi - 1][0].dateStr + 'T00:00:00') : null;
-        if (!prevWeekFirst || prevWeekFirst.getMonth() !== d.getMonth()) {
-          monthLabels.push({ wi, label: MONTH_NAMES[d.getMonth()] });
-        }
-      }
-    }
-
-    return { weeks, monthLabels, todayStr };
+    return { weeks, todayStr };
   }, [data]);
 
-  // Default the scroll position to the rightmost edge (today) so the card
-  // opens showing current progress, not the oldest (mostly empty) weeks.
+  // Every column is always rendered. Collapsed, the track is right-aligned
+  // inside an overflow-hidden box, so the browser itself shows exactly the
+  // most recent weeks that fit and clips the rest off the left edge — no
+  // measuring, and it re-fits on any container change for free.
+  const view = useMemo(() => {
+    if (!grid) return null;
+    return { weeks: grid.weeks, monthLabels: monthLabelsFor(grid.weeks) };
+  }, [grid]);
+
+  // When expanded, the full year usually overflows — pin the scroll to the
+  // right edge (today) so it opens on current progress, not the oldest weeks.
   useEffect(() => {
-    if (grid && scrollRef.current) {
+    if (expanded && scrollRef.current) {
       scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
     }
-  }, [grid]);
+  }, [expanded, view]);
 
   if (loading) {
     return (
@@ -147,7 +164,9 @@ function ReviewHeatmap() {
   const isEmpty = !data || data.total_reviews === 0;
 
   return (
-    <div className="kinetic-card bg-white p-5 flex flex-col gap-4">
+    // min-w-0: the card is a grid item, whose automatic minimum size would
+    // otherwise let the full-year track widen the card past its column.
+    <div className="kinetic-card bg-white p-5 flex flex-col gap-4 min-w-0">
       {/* Stats row */}
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-1.5">
@@ -163,19 +182,66 @@ function ReviewHeatmap() {
         <StatPill label="Active days" value={data?.active_days ?? 0} />
       </div>
 
-      {grid && (
-      <div className="flex flex-col gap-1.5">
-      <div ref={scrollRef} className="overflow-x-auto max-w-[150px] sm:max-w-[170px]">
-        <div className="inline-block min-w-max">
-            {/* Month labels row — scrolls with the grid, so whatever's in view
-                (today's month, by default) is what's labeled */}
-            <div className="flex mb-1 ml-7">
-              {grid.weeks.map((_, wi) => {
-                const label = grid.monthLabels.find((m) => m.wi === wi);
+      {view && (
+      <div className="flex flex-col gap-1.5 min-w-0">
+      {/* Day-of-week labels sit outside the clipped track so they are never the
+          thing that gets cut off; the spacer aligns them under the month row. */}
+      <div className="flex min-w-0">
+        <div className="shrink-0 flex flex-col mr-1">
+          <div className="h-[12px] mb-1" aria-hidden="true" />
+          <div className="flex flex-col gap-[2px]">
+            {DAY_LABELS.map((label, i) => (
+              <div
+                key={label}
+                className="h-[11px] flex items-center"
+                style={{ visibility: i % 2 === 1 ? 'visible' : 'hidden' }}
+              >
+                <span className="font-sans text-[8px] text-[#94a3b8] leading-none w-6 text-right pr-0.5">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Collapsed: justify-end + overflow-hidden makes the browser show the
+            most recent weeks that fit and clip the older ones off the left —
+            the "fit to the card" sizing, done in CSS rather than measured.
+            Expanded: a plain scroller, pinned to today on open. */}
+        <div
+          ref={scrollRef}
+          id="review-heatmap-grid"
+          className={
+            expanded
+              ? 'min-w-0 flex-1 overflow-x-auto'
+              : 'min-w-0 flex-1 overflow-hidden flex justify-end cursor-pointer'
+          }
+          {...(expanded
+            ? {}
+            : {
+                role: 'button',
+                tabIndex: 0,
+                'aria-expanded': false,
+                'aria-label': 'Show the full year of review activity',
+                onClick: () => setExpanded(true),
+                onKeyDown: (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setExpanded(true);
+                  }
+                },
+              })}
+        >
+          <div className="shrink-0 min-w-max">
+            {/* Month labels — same 11px + 2px stride as the grid below, so the
+                two rows stay pixel-aligned at any clip point. */}
+            <div className="flex gap-[2px] h-[12px] mb-1">
+              {view.weeks.map((week, wi) => {
+                const label = view.monthLabels.find((m) => m.wi === wi);
                 return (
-                  <div key={wi} className="w-[13px] mr-[2px] shrink-0">
+                  <div key={week[0].dateStr} className="w-[11px] shrink-0">
                     {label ? (
-                      <span className="font-sans text-[9px] text-[#94a3b8] whitespace-nowrap">
+                      <span className="font-sans text-[9px] text-[#94a3b8] leading-none whitespace-nowrap">
                         {label.label}
                       </span>
                     ) : null}
@@ -184,38 +250,14 @@ function ReviewHeatmap() {
               })}
             </div>
 
-            {/* Grid: 7 rows (day of week) × N cols (weeks) */}
+            {/* Grid: 7 rows (day of week) × 53 cols (weeks) */}
             <div className="flex gap-[2px]">
-              {/* Day-of-week labels — pinned to the left edge of the scroll
-                  viewport (bg-white masks cells scrolling underneath), since
-                  the grid defaults to scrolled-right and these would
-                  otherwise scroll out of view along with the oldest weeks */}
-              <div className="flex flex-col gap-[2px] mr-1 sticky left-0 z-10 bg-white">
-                {DAY_LABELS.map((label, i) => (
-                  <div
-                    key={label}
-                    className="h-[11px] flex items-center"
-                    style={{ visibility: i % 2 === 1 ? 'visible' : 'hidden' }}
-                  >
-                    <span className="font-sans text-[8px] text-[#94a3b8] leading-none w-6 text-right pr-0.5">
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Week columns */}
-              {grid.weeks.map((week, wi) => (
-                <div key={wi} className="flex flex-col gap-[2px]">
+              {view.weeks.map((week) => (
+                <div key={week[0].dateStr} className="flex flex-col gap-[2px]">
                   {week.map((cell) => (
                     <div
                       key={cell.dateStr}
-                      className={[
-                        'w-[11px] h-[11px] rounded-[2px]',
-                        cell.isFuture
-                          ? 'bg-[rgba(15,23,42,0.03)]'
-                          : cellClass(cell.count),
-                      ].join(' ')}
+                      className={`w-[11px] h-[11px] rounded-[2px] ${cellClass(cell.count)}`}
                       title={
                         cell.count === 0
                           ? `No reviews on ${cell.dateStr}`
@@ -226,21 +268,33 @@ function ReviewHeatmap() {
                 </div>
               ))}
             </div>
-
+          </div>
         </div>
       </div>
 
-      {/* Legend — outside the scroll container so it stays visible regardless
-          of scroll position, instead of scrolling off with the oldest weeks */}
-      <div className="flex items-center gap-1 ml-7">
-        <span className="font-sans text-[9px] text-[#94a3b8]">Less</span>
-        {[0, 1, 2, 4, 7].map((count) => (
-          <div
-            key={count}
-            className={`w-[11px] h-[11px] rounded-[2px] ${cellClass(count)}`}
-          />
-        ))}
-        <span className="font-sans text-[9px] text-[#94a3b8]">More</span>
+      {/* Footer — outside the track so the legend and toggle stay put
+          regardless of scroll position */}
+      <div className="flex items-center justify-between gap-2 ml-7">
+        <div className="flex items-center gap-1">
+          <span className="font-sans text-[9px] text-[#94a3b8]">Less</span>
+          {[0, 1, 2, 4, 7].map((count) => (
+            <div
+              key={count}
+              className={`w-[11px] h-[11px] rounded-[2px] ${cellClass(count)}`}
+            />
+          ))}
+          <span className="font-sans text-[9px] text-[#94a3b8]">More</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-controls="review-heatmap-grid"
+          className="flex items-center gap-0.5 font-sans text-[10px] text-[#64748B] hover:text-[#0891B2] transition-colors"
+        >
+          {expanded ? 'Show less' : 'Full year'}
+          {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+        </button>
       </div>
       </div>
       )}

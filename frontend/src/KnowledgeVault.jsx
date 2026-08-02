@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Database, Search, AlertCircle, Plus, Key, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Database, Search, AlertCircle, Plus, Key, Clock, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from './lib/api';
 import ComingSoon from './ComingSoon';
@@ -32,7 +32,9 @@ function KnowledgeVault() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const { session, requireAuth } = useAuth();
+  const toast = useToast();
 
   useEffect(() => {
     if (!session) {
@@ -54,6 +56,21 @@ function KnowledgeVault() {
         (a.key_memory && a.key_memory.toLowerCase().includes(q))
     );
   }, [activities, query]);
+
+  const handleDelete = async (activity) => {
+    if (!window.confirm(
+      `Delete "${activity.topic}"? This removes the card and its review history — irreversible.`
+    )) return;
+    setDeletingId(activity.id);
+    try {
+      await apiFetch(`/api/activities/${activity.id}`, { method: 'DELETE' });
+      setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+    } catch (err) {
+      toast.error(`Couldn't delete: ${err.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 max-w-4xl mx-auto w-full pb-20 md:pb-8 animate-in fade-in duration-300">
@@ -131,6 +148,15 @@ function KnowledgeVault() {
                   <span className="font-mono text-[10px] font-bold text-[#64748B] bg-[rgba(15,23,42,0.05)] px-2 py-1 rounded uppercase tracking-wider">
                     Difficulty {a.difficulty}/5
                   </span>
+                  <button
+                    onClick={() => handleDelete(a)}
+                    disabled={deletingId === a.id}
+                    title="Delete this card"
+                    aria-label={`Delete "${a.topic}"`}
+                    className="text-[#94a3b8] hover:text-[#ba1a1a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors p-1 -m-1"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
 
@@ -161,9 +187,9 @@ function KnowledgeVault() {
       )}
 
       <ComingSoon
-        id="vault-edit-delete"
-        title="Edit & Delete"
-        description="Edit your key memories and remove entries directly from the Vault."
+        id="vault-edit"
+        title="Edit"
+        description="Edit your key memories directly from the Vault."
         onFeedback={() => setShowFeedback(true)}
       />
 
