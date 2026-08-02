@@ -286,9 +286,18 @@ const importOptionsEl = el('importOptions')
 const importWindowSelect = el<HTMLSelectElement>('importWindowSelect')
 const importLangGrid = el('importLangGrid')
 
-importWindowSelect.innerHTML = WINDOW_OPTIONS
-  .map((opt) => `<option value="${opt.value}">${opt.label}</option>`)
-  .join('')
+// createElement/textContent, not `innerHTML = \`<option>...\``: AMO's linter
+// (no-unsanitized/property) flags an innerHTML sink the instant it sees a
+// `${}` substitution, even one that's provably a hardcoded literal —
+// WINDOW_OPTIONS is a static const in leetcode_langs.ts, never touched by
+// user input, but the linter can't see that far. Same fix already applied in
+// leetcode.ts/neetcode.ts's reflection panel for the identical warning.
+for (const opt of WINDOW_OPTIONS) {
+  const option = document.createElement('option')
+  option.value = opt.value
+  option.textContent = opt.label
+  importWindowSelect.appendChild(option)
+}
 // "All time" — the no-filter starting point — not DEFAULT_WINDOW_DAYS, so an
 // untouched panel matches "no filter" exactly rather than one particular window.
 importWindowSelect.value = 'all'
