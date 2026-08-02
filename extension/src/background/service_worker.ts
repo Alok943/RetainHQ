@@ -3,6 +3,8 @@ import type { Segment, Session, CompanionSessionIn } from '../types'
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier } from '../consent'
 import { storageLocalGet, storageLocalSet, getRedirectURL, launchWebAuthFlow } from '../browser_api'
+import { API_BASE_URL } from '../config'
+import { scanRecentPythonSolves, DEFAULT_WINDOW_DAYS } from './leetcode_backfill'
 
 // Constants
 // Two different questions, two different numbers (2026-07-27 follow-up):
@@ -47,14 +49,6 @@ const STORAGE_KEY_LAST_SYNC = 'lastSyncedAt'
 // We'll read these from process.env when bundled by Vite, or you can hardcode for the skeleton
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://kvmymvimlkvepatrlgsf.supabase.co'
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_c2R4IoLBwDgSFPwbfkqIog_HIFEF4Ej'
-// Defaults to PRODUCTION, unlike frontend/src/lib/api.js's localhost default —
-// the frontend's prod build always gets VITE_API_BASE_URL injected by Vercel,
-// but nothing yet enforces that at extension-package time. A forgotten env
-// var when building for the Chrome Web Store must not silently ship an
-// extension that points every real user at localhost:8000; a forgotten
-// override for local dev only breaks dev, which is loud and immediate.
-// Local dev: set VITE_API_BASE_URL=http://localhost:8000 in extension/.env.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://retainhq.onrender.com'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -79,6 +73,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     }
   }
 })
+
+/**
+ * Fire-and-forget message to the popup, safe when no popup is listening.
+ *
+ * Firefox REJECTS `runtime.sendMessage` with "Could not establish connection.
+ * Receiving end does not exist." when nothing is open to receive it, and every
+ * backfill notification below was an unhandled rejection waiting to happen.
+ * Not hypothetical: a cold Render instance answered the backfill POST in 90s
+ * (observed 2026-08-02), by which point the popup was long gone — the import
+ * had fully succeeded and the console still showed an uncaught error.
+ *
+ * Swallowing is correct here rather than lazy: these messages only drive
+ * transient button text. The durable result is already on the server, and the
+ * popup re-reads real state on every open.
+ */
+function notifyPopup(message: unknown): void {
+  Promise.resolve(chrome.runtime.sendMessage(message)).catch(() => {})
+}
 
 async function maybeShowConsentNudgeBadge(): Promise<void> {
   const tier = await getConsentTier()
@@ -380,47 +392,71 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       maybeShowConsentNudgeBadge()
     }
   } else if (message.type === 'LEETCODE_BACKFILL') {
+    // The popup sets its button to "Importing…" + disabled the instant this
+    // message is sent (see popup.ts), and only ever undoes that on receiving
+    // LEETCODE_BACKFILL_COMPLETE or _ERROR. Every exit path below MUST send
+    // one or the other — three of them silently didn't (no session, LeetCode
+    // fetch failing, and genuinely finding 0 solved problems all fell through
+    // with no message at all), which left the button stuck disabled forever,
+    // no way to retry short of reopening the popup. Confirmed 2026-07-30.
     ;(async () => {
-      const { data: { session: sbSession } } = await supabase.auth.getSession()
-      if (!sbSession) return
-
       try {
-        // Fetch from LeetCode
-        const lcRes = await fetch('https://leetcode.com/api/problems/all/')
-        if (!lcRes.ok) {
-          console.error('Failed to fetch from LeetCode API')
+        const { data: { session: sbSession } } = await supabase.auth.getSession()
+        if (!sbSession) {
+          notifyPopup({ type: 'LEETCODE_BACKFILL_ERROR', error: 'Sign in first' })
           return
         }
-        const lcData = await lcRes.json()
-        
-        // Find solved slugs
-        const solvedSlugs = []
-        if (lcData.stat_status_pairs) {
-          for (const pair of lcData.stat_status_pairs) {
-            if (pair.status === 'ac') {
-              solvedSlugs.push(pair.stat.question__title_slug)
-            }
-          }
-        }
 
+        // Window and language are the caller's to choose so the popup can offer
+        // them later without touching this file; both fall back to the module
+        // defaults. `credentials: 'include'` is what makes the scan see the
+        // user's own submissions at all — without cookies LeetCode answers as
+        // signed-out, which cost this codebase a full debugging session.
+        const windowDays = typeof message.windowDays === 'number' ? message.windowDays : DEFAULT_WINDOW_DAYS
+        const cutoffMs = Date.now() - windowDays * 24 * 60 * 60 * 1000
+
+        // Throws a message-bearing Error on a bad status or a login page; the
+        // outer catch turns it into the popup's error text verbatim.
+        const { solves, partial } = await scanRecentPythonSolves(cutoffMs)
+
+        const solvedSlugs = [...solves.keys()]
         if (solvedSlugs.length > 0) {
-          // Send to backend
-          await fetch(`${API_BASE_URL}/api/evidence/leetcode/backfill`, {
+          // Response deliberately checked — this was fire-and-forget, so a 401
+          // (expired Supabase token) or 422 (schema drift) sent the popup a
+          // cheerful "Imported N solves" while the backend stored nothing.
+          const res = await fetch(`${API_BASE_URL}/api/evidence/leetcode/backfill`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${sbSession.access_token}`
             },
-            body: JSON.stringify({ solved_slugs: solvedSlugs })
+            // solved_at carries the REAL solve date per slug. Without it the
+            // backend stamps every historic solve with import time, which
+            // stacks two months of work onto today in the evidence log and
+            // makes the whole point of a windowed import invisible.
+            body: JSON.stringify({
+              solved_slugs: solvedSlugs,
+              solved_at: Object.fromEntries(
+                [...solves].map(([slug, ms]) => [slug, new Date(ms).toISOString()])
+              ),
+            })
           })
-          console.log(`[RetainHQ] Backfilled ${solvedSlugs.length} LeetCode solves`)
-          
-          // Let the popup know we finished
-          chrome.runtime.sendMessage({ type: 'LEETCODE_BACKFILL_COMPLETE', count: solvedSlugs.length })
+          if (!res.ok) {
+            console.error('Backfill rejected by RetainHQ', res.status, await res.text())
+            notifyPopup({ type: 'LEETCODE_BACKFILL_ERROR', error: `RetainHQ returned ${res.status}` })
+            return
+          }
+          console.log(`[RetainHQ] Backfilled ${solvedSlugs.length} Python solves from the last ${windowDays} days`)
         }
+
+        // Always report completion, even at 0 solved — 0 is a real, valid
+        // result (nothing solved in Python in the window), not an error, and
+        // the button must resolve either way. `partial` rides along so a
+        // rate-limited scan can't be reported as a clean full import.
+        notifyPopup({ type: 'LEETCODE_BACKFILL_COMPLETE', count: solvedSlugs.length, partial })
       } catch (error) {
         console.error('Failed to backfill LeetCode solves', error)
-        chrome.runtime.sendMessage({ type: 'LEETCODE_BACKFILL_ERROR', error: String(error) })
+        notifyPopup({ type: 'LEETCODE_BACKFILL_ERROR', error: String(error) })
       }
     })()
   }

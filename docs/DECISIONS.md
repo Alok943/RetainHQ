@@ -634,7 +634,7 @@ The seed also became **id-preserving**. The old script did `DELETE FROM roadmap_
 - *Leave Modules 12/13 (RetainHQ drills, interview questions) out of the tree.* Rejected. They're 13 of the 74 nodes and they're the part that makes the roadmap placement-shaped rather than tutorial-shaped; putting them in the tree gives the drills a home to be authored into.
 - *Keep `Indexes - what & when` under Modeling & Constraints.* Rejected - the source doc makes indexes their own module (M9), and grouping index nodes together is also what makes the M9/M10 split (structure vs. plan-reading) legible.
 
-## D-055 — The Firefox distribution build pins its API URL via a committed `.env.firefox`, not the developer's `.env` (2026-08-02)
+## D-059 — The Firefox distribution build pins its API URL via a committed `.env.firefox`, not the developer's `.env` (2026-08-02)
 
 **Decision:** `build:firefox` runs `vite build --mode firefox`, which loads the committed `extension/.env.firefox` (`VITE_API_BASE_URL=https://retainhq.onrender.com`) on top of the untracked `.env`. `.gitignore` gains an `!.env.firefox` exception alongside the existing `!.env.example`.
 
@@ -659,7 +659,7 @@ On the model itself: the published comparisons favour Gemini's lite tier. Even t
 - **Accepted risk, stated plainly:** the honesty of grading now rides on flash-lite's own thinking rather than an explicit `reasoning_effort="medium"`. The failure mode is asymmetric and quiet - a lenient grader inflates `recalled`, which inflates FSRS intervals, and the user forgets while the app reports health. The `reasoning=` argument is retained at every call site as the standing record of which calls need real judgment, and it becomes live again the instant `GRADER_MODEL` routes back to Groq. Watch the self-report-vs-LLM calibration gap, which is what the grader was built to measure in the first place.
 
 
-## D-056 — The LeetCode import reads the submission log, filtered to Python and a 60-day window (2026-08-02)
+## D-060 — The LeetCode import reads the submission log, filtered to Python and a 60-day window (2026-08-02)
 
 **Decision:** Backfill no longer reads `/api/problems/all/`. It walks the paginated `/api/submissions/` log newest-first, keeping rows where `status_display === "Accepted"`, `lang ∈ {python, python3}`, and `timestamp >= now - 60d`, and stops paginating the moment a page crosses the cutoff. Per slug it keeps the **earliest** in-window solve. New `extension/src/background/leetcode_backfill.ts` holds the filter as a pure, separately-tested function; `LeetCodeBackfillIn` gained `solved_at: {slug: datetime}` so each event carries its real date.
 

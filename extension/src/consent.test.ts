@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getConsentTier, switchConsentTier, hasLlmOriginPermission, LLM_ORIGINS } from './consent'
+import { API_ORIGIN_PATTERN } from './config'
 import { CONSENT_COPY_VERSION } from './consent'
 
 // chrome.* isn't available under vitest's Node environment — a minimal mock
@@ -53,20 +54,39 @@ describe('consentTier === null (unasked)', () => {
 })
 
 describe('switchConsentTier', () => {
-  it('choosing titles requests no origins at all', async () => {
+  it('choosing titles requests the backend origin but no LLM origins', async () => {
+    // Was "requests no origins at all" until 2026-08-02. That contract was
+    // wrong, not merely incomplete: 'titles' uploads page titles to the same
+    // API 'cloud' does, and on Firefox an ungranted host permission means our
+    // own backend is unreachable (CORS, since a moz-extension:// origin can
+    // never be on main.py's allow-list). A 'titles' user therefore captured
+    // locally and uploaded nothing, forever. What must stay true is the
+    // privacy claim the copy actually makes — no LLM-origin access.
     const result = await switchConsentTier('titles', null)
     expect(result).toBe('titles')
-    expect(chrome.permissions.request).not.toHaveBeenCalled()
+    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: [API_ORIGIN_PATTERN] })
     expect(await getConsentTier()).toBe('titles')
     expect(await hasLlmOriginPermission()).toBe(false)
   })
 
-  it('choosing cloud requests the LLM origins and grants them', async () => {
+  it('choosing cloud requests the LLM origins alongside the backend origin', async () => {
     const result = await switchConsentTier('cloud', null)
     expect(result).toBe('cloud')
-    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: LLM_ORIGINS })
+    expect(chrome.permissions.request).toHaveBeenCalledWith({
+      origins: [API_ORIGIN_PATTERN, ...LLM_ORIGINS],
+    })
     expect(await getConsentTier()).toBe('cloud')
     expect(await hasLlmOriginPermission()).toBe(true)
+  })
+
+  it('a denied backend-origin grant still records the titles choice', async () => {
+    // Denial must not strand the user on the consent screen — the tier is a
+    // real choice regardless of whether syncing ends up working, and there is
+    // no other way past this screen.
+    (chrome.permissions.request as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false)
+    const result = await switchConsentTier('titles', null)
+    expect(result).toBe('titles')
+    expect(await getConsentTier()).toBe('titles')
   })
 
   it('a denied permission prompt persists titles, not the requested tier', async () => {

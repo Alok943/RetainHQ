@@ -1,14 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { getConsentTier, switchConsentTier, CONSENT_COPY_VERSION, type ConsentTier } from '../consent'
-import { storageLocalGet, runtimeSendMessage } from '../browser_api'
+import { storageLocalGet, runtimeSendMessage, permissionsRequest } from '../browser_api'
 import { isTrackingPaused, setTrackingPaused } from '../pause_state'
 import type { Segment } from '../types'
+import { API_BASE_URL, API_ORIGIN_PATTERN } from '../config'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://kvmymvimlkvepatrlgsf.supabase.co'
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_c2R4IoLBwDgSFPwbfkqIog_HIFEF4Ej'
-// Mirrors service_worker.ts's default — see its comment for why the prod
-// fallback (not localhost) is deliberate.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://retainhq.onrender.com'
 
 // Must match service_worker.ts. The popup only ever READS these — the worker
 // owns every write, so a popup that is open while a session closes simply sees
@@ -273,7 +271,47 @@ logoutBtn.addEventListener('click', async () => {
 
 const syncBtn = el('syncLeetCodeBtn')
 const SYNC_BTN_IDLE_LABEL = syncBtn.textContent ?? 'Import solved LeetCode problems'
-syncBtn.addEventListener('click', () => {
+
+// `*://*.leetcode.com/*` sits in manifest host_permissions, which Chrome grants
+// at install — so nothing ever requested it at runtime. Firefox MV3 does NOT:
+// host permissions there are user-granted, and MDN is explicit that "if an
+// extension update requests new host permissions, these are not shown to the
+// user" — so an updating Firefox install can sit permanently ungranted with no
+// prompt ever shown. leetcode.com/api/problems/all/ returns NO CORS headers at
+// all (verified 2026-08-02), so without the grant the background fetch isn't
+// merely cookie-less, it's blocked outright: "NetworkError when attempting to
+// fetch resource". Same missing grant also stops leetcode.ts injecting, which
+// is why live solve capture and backfill failed together.
+// The API origin rides along because the backfill makes TWO cross-origin
+// calls, and the second one — the POST to our own backend — is the one that
+// actually failed (`TypeError: NetworkError`, verified 2026-08-02 from the
+// background console: both LeetCode fetches returned 200, credentialed
+// included). See API_ORIGIN_PATTERN for why our own API needs a host grant
+// when leetcode.com's doesn't strictly.
+const LEETCODE_ORIGIN = '*://*.leetcode.com/*'
+
+syncBtn.addEventListener('click', async () => {
+  // FIRST await in this handler, deliberately — Firefox only honours
+  // permissions.request() inside a live user-gesture context, and any earlier
+  // await spends it (the same trap documented on cachedTier above and in
+  // consent.ts's switchConsentTier). Resolves true with no dialog when the
+  // origin is already granted, so calling it unconditionally is safe.
+  let granted = true
+  try {
+    granted = await permissionsRequest({ origins: [LEETCODE_ORIGIN, API_ORIGIN_PATTERN] })
+  } catch (error) {
+    // Chrome rejects request() for an origin that isn't in
+    // optional_host_permissions — but Chrome already granted it at install,
+    // so treat the throw as "nothing to ask for" rather than a failure.
+    console.debug('[RetainHQ] LeetCode origin request not applicable', error)
+  }
+
+  if (!granted) {
+    syncBtn.textContent = 'Failed: LeetCode access denied'
+    setTimeout(() => { syncBtn.textContent = SYNC_BTN_IDLE_LABEL }, 3000)
+    return
+  }
+
   syncBtn.textContent = 'Importing…'
   syncBtn.setAttribute('disabled', 'true')
   chrome.runtime.sendMessage({ type: 'LEETCODE_BACKFILL' })
@@ -281,11 +319,25 @@ syncBtn.addEventListener('click', () => {
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'LEETCODE_BACKFILL_COMPLETE') {
-    syncBtn.textContent = `Imported ${message.count} solves`
+    // 0 is a real, valid result (nothing solved in Python inside the window) —
+    // say so plainly rather than the slightly odd "Imported 0 solves".
+    // `partial` means the scan was cut short by LeetCode's rate limiter, so the
+    // window is only partly covered; reporting that as a clean import would be
+    // a lie the user can't detect, and re-running picks up the rest.
+    if (message.count > 0) {
+      syncBtn.textContent = message.partial
+        ? `Imported ${message.count} — run again for more`
+        : `Imported ${message.count} solves`
+    } else {
+      syncBtn.textContent = message.partial ? 'Rate-limited — try again' : 'No recent Python solves'
+    }
     syncBtn.removeAttribute('disabled')
     setTimeout(() => { syncBtn.textContent = SYNC_BTN_IDLE_LABEL }, 3000)
   } else if (message.type === 'LEETCODE_BACKFILL_ERROR') {
-    syncBtn.textContent = 'Import failed — try again'
+    // Surface the actual reason (e.g. "Sign in first") rather than a generic
+    // "try again" — service_worker.ts now sends one on every failure path,
+    // never silently drops the button in "Importing…" forever.
+    syncBtn.textContent = message.error ? `Failed: ${message.error}` : 'Import failed — try again'
     syncBtn.removeAttribute('disabled')
     setTimeout(() => { syncBtn.textContent = SYNC_BTN_IDLE_LABEL }, 3000)
   }

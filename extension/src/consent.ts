@@ -28,6 +28,7 @@
 // no injection — without a broken build or the extra "scripting" permission.
 
 import { storageLocalGet, storageLocalSet, permissionsRequest, permissionsRemove, permissionsContains } from './browser_api'
+import { API_ORIGIN_PATTERN } from './config'
 
 // 'nano' (on-device AI) was removed 2026-07-27 — no on-device classification
 // path was ever implemented, so it was a relabelled 'titles' that requested
@@ -87,27 +88,45 @@ export async function switchConsentTier(
 ): Promise<ConsentTier> {
   const needsOrigins = newTier === 'cloud'
 
+  // BOTH tiers need the backend origin — 'titles' uploads page titles to the
+  // same API 'cloud' does, it just sends less. Requesting it only for 'cloud'
+  // (or, as before, not at all) leaves a 'titles' user with an extension that
+  // captures locally and can never upload a byte. This is the mandatory
+  // onboarding gesture, so it's the one place guaranteed to run for every
+  // user; see API_ORIGIN_PATTERN for why the grant is what makes our own API
+  // reachable at all on Firefox.
+  const origins = needsOrigins ? [API_ORIGIN_PATTERN, ...LLM_ORIGINS] : [API_ORIGIN_PATTERN]
+
+  // permissions.request() must be the FIRST await anywhere in this call
+  // chain. Firefox requires it to run within a direct user-gesture context
+  // (confirmed 2026-07-30: "permissions.request may only be called from a
+  // user input handler"), and awaiting ANYTHING first — even a fast,
+  // non-gesture-sensitive call like permissions.contains() below — already
+  // spends that gesture before request() ever runs. The popup's click
+  // handler already avoids an await before calling switchConsentTier (see
+  // cachedTier in popup.ts); this was the same mistake one level deeper.
+  // No need to check hasLlmOriginPermission() first to skip a redundant
+  // prompt — request() is documented to resolve true with no dialog at all
+  // when the permission is already granted, so calling it unconditionally
+  // here is both simpler and gesture-safe.
+  const granted = await permissionsRequest({ origins })
+
   if (needsOrigins) {
-    // permissions.request() must be the FIRST await anywhere in this call
-    // chain. Firefox requires it to run within a direct user-gesture context
-    // (confirmed 2026-07-30: "permissions.request may only be called from a
-    // user input handler"), and awaiting ANYTHING first — even a fast,
-    // non-gesture-sensitive call like permissions.contains() below — already
-    // spends that gesture before request() ever runs. The popup's click
-    // handler already avoids an await before calling switchConsentTier (see
-    // cachedTier in popup.ts); this was the same mistake one level deeper.
-    // No need to check hasLlmOriginPermission() first to skip a redundant
-    // prompt — request() is documented to resolve true with no dialog at all
-    // when the permission is already granted, so calling it unconditionally
-    // here is both simpler and gesture-safe.
-    const granted = await permissionsRequest({ origins: LLM_ORIGINS })
     if (!granted) {
       // A denied permission prompt is still a choice, and must be logged as
       // one — the requested tier never took effect, so record what's true.
+      // Note this cannot re-request the API origin alone: the gesture is
+      // already spent, and a second request() here throws on Firefox. The
+      // backfill button asks again on its own gesture, so a user who lands
+      // here isn't stranded.
       await setConsentTier('titles')
       return 'titles'
     }
   } else {
+    // A denied API-origin grant does NOT block the tier — 'titles' is a valid
+    // choice whether or not syncing works, and refusing to record it would
+    // strand the user on the consent screen with no way past it.
+
     // Queried live rather than trusted from the caller's cached `currentTier`:
     // getConsentTier() returns null for a tier stored under a stale
     // CONSENT_COPY_VERSION (§ above) even though the browser permission grant
@@ -115,7 +134,8 @@ export async function switchConsentTier(
     // actual permission state — not the possibly-stale cached tier — is what
     // guarantees a re-prompted v1 'cloud' user who now picks 'titles' actually
     // has the dangling grant revoked instead of silently keeping it. Safe to
-    // await here, unlike above: this branch never calls permissions.request().
+    // await here: request() has already run above, so the gesture it needed is
+    // spent either way and nothing below this point is gesture-sensitive.
     const hadOrigins = await hasLlmOriginPermission()
     if (hadOrigins) {
       await permissionsRemove({ origins: LLM_ORIGINS })
