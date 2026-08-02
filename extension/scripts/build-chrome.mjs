@@ -11,7 +11,7 @@
 import { cpSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { dirname, join } from 'node:path'
-import { LOCALHOST_HOST_PERMISSION } from './build-firefox.mjs'
+import { LOCALHOST_HOST_PERMISSION, VITE_METADATA_DIR } from './build-firefox.mjs'
 
 const extensionRoot = dirname(dirname(fileURLToPath(import.meta.url)))
 const distDir = join(extensionRoot, 'dist')
@@ -47,6 +47,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
   if (existsSync(chromeDir)) rmSync(chromeDir, { recursive: true })
   cpSync(distDir, chromeDir, { recursive: true })
+
+  // Vite's own build metadata — unread at runtime, and a stray dot-directory
+  // in a store package is noise at best. See VITE_METADATA_DIR in
+  // build-firefox.mjs for the AMO rejection that surfaced it.
+  const viteMetaDir = join(chromeDir, VITE_METADATA_DIR)
+  if (existsSync(viteMetaDir)) rmSync(viteMetaDir, { recursive: true })
 
   const manifestPath = join(chromeDir, 'manifest.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))

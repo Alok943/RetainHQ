@@ -34,6 +34,20 @@ const firefoxDir = join(extensionRoot, 'dist-firefox')
 // submission regardless — cheaper to never ship it.
 export const LOCALHOST_HOST_PERMISSION = 'http://localhost:8000/*'
 
+// Vite writes its own build manifest to `.vite/manifest.json` (a source->output
+// filename map for server-side asset resolution). Nothing in a packaged
+// extension reads it — verified: zero references to it anywhere in the built
+// output — but AMO REJECTS an archive containing it outright:
+//
+//   Invalid file name in archive: .vite/manifest.json
+//
+// Mozilla's validator refuses hidden dot-entries in a submitted package. Removed
+// from the distribution directory rather than merely excluded at zip time, so
+// that `dist-firefox/` stays byte-identical to what REVIEWER-BUILD.md tells an
+// AMO reviewer they'll reproduce; excluding it only while zipping would make the
+// submitted archive and a reviewer's own build disagree.
+export const VITE_METADATA_DIR = '.vite'
+
 /** Pure transform, unit-tested directly (build-firefox.test.mjs) without
  * touching the filesystem — the two prior crxjs-quirk patches below were
  * each discovered by inspecting build output by hand; this one has a test
@@ -96,6 +110,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
   if (existsSync(firefoxDir)) rmSync(firefoxDir, { recursive: true })
   cpSync(distDir, firefoxDir, { recursive: true })
+
+  // See VITE_METADATA_DIR — AMO rejects the whole archive over this one file.
+  const viteMetaDir = join(firefoxDir, VITE_METADATA_DIR)
+  if (existsSync(viteMetaDir)) rmSync(viteMetaDir, { recursive: true })
 
   const manifestPath = join(firefoxDir, 'manifest.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
