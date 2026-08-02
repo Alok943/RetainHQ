@@ -40,6 +40,12 @@
  */
 
 const CODE_EXEC_URL_RE = /FunctionHttp\/?$/
+// Endpoints confirmed (2026-08-02, live) to be plain data reads that fire on
+// page load and navigation — they end in `FunctionHttp` too, so without this
+// they'd match CODE_EXEC_URL_RE and be mistaken for judge traffic. NeetCode's
+// SPA calls at least getProblemMetadata on navigation, which lands well inside
+// the arm window after a Submit click.
+const NON_JUDGE_URL_RE = /(getProblemList|getProblemMetadata)FunctionHttp/
 const SUBMIT_ARM_MS = 20_000 // generous — covers a slow judge run, not indefinite
 
 let armedUntil = 0
@@ -108,11 +114,21 @@ function parseVerdict(bodyText: string): ParsedVerdict {
 }
 
 function report(url: string, verdict: ParsedVerdict): void {
-  reportedForThisClick = true
   // Always logged, verdict or not — this IS the diagnostic capture the module
   // doc promises, and it's the fastest path to fixing parseVerdict for real.
   console.log('[RetainHQ][neetcode-probe] captured response for', url, verdict)
-  if (verdict.accepted === null) return // nothing to forward — inconclusive
+
+  // Disarm ONLY on a conclusive verdict. Setting this unconditionally meant
+  // the FIRST matching response after a Submit click permanently consumed
+  // that click — so one inconclusive body (an unrecognised shape, a
+  // non-judge endpoint that slipped the filter, an error envelope) would
+  // silently swallow the real verdict arriving right behind it, and the
+  // solve would never be logged. Staying armed until something conclusive
+  // arrives, or the window expires, is strictly safer: the worst case is a
+  // duplicate postMessage, which the backend already dedupes on entity_id.
+  if (verdict.accepted === null) return
+  reportedForThisClick = true
+
   window.postMessage(
     { source: 'retainhq-neetcode-probe', accepted: verdict.accepted },
     window.location.origin,
@@ -122,6 +138,7 @@ function report(url: string, verdict: ParsedVerdict): void {
 function maybeHandle(url: string, bodyText: string): void {
   if (Date.now() > armedUntil || reportedForThisClick) return
   if (!CODE_EXEC_URL_RE.test(url)) return
+  if (NON_JUDGE_URL_RE.test(url)) return
   report(url, parseVerdict(bodyText))
 }
 

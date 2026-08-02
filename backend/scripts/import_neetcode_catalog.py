@@ -56,13 +56,26 @@ CATALOG_URL = "https://neetcode.io/api/getProblemListFunctionHttp"
 CATALOG_VERSION = "v1"
 
 
+# `problems.external_id` is a Postgres INTEGER (int4, max 2_147_483_647) —
+# verified against prod, not assumed. Bare zlib.crc32 returns a full unsigned
+# 32-bit value (up to 4_294_967_295), so 453 of the 938 real NeetCode slugs
+# (48.3%, measured) would have raised NumericValueOutOfRange on INSERT.
+# Masking to 31 bits keeps every id inside int4 and positive.
+#
+# This was NOT caught by the importer's own --dry-run, and could not have
+# been: the dry-run calls db.add() then rollback() without ever flushing, so
+# no INSERT is attempted and no column constraint is exercised. A dry-run here
+# proves the fetch and the create/update split, nothing about whether the
+# write would succeed.
+_INT4_MASK = 0x7FFFFFFF
+
+
 def slug_to_external_id(slug: str) -> int:
     """Deterministic, source-scoped synthetic id — NeetCode gives us none.
-    CRC32 collisions across ~250 distinct slugs are astronomically unlikely;
-    a real collision would surface immediately as a duplicate-row upsert
-    silently overwriting the wrong problem, so this is not "good enough and
-    unchecked" — it's cheap to verify (see fetch_catalog's collision check)."""
-    return zlib.crc32(slug.encode("utf-8"))
+    A collision would silently upsert one problem's data onto another's row,
+    so it is checked against the real slug set rather than assumed unlikely
+    (see fetch_catalog)."""
+    return zlib.crc32(slug.encode("utf-8")) & _INT4_MASK
 
 
 async def fetch_catalog(client: httpx.AsyncClient) -> dict[str, dict]:
@@ -120,12 +133,20 @@ async def import_catalog(db: AsyncSession, catalog: dict[str, dict], commit: boo
             problem.catalog_version = CATALOG_VERSION
             updated += 1
 
+    # FLUSH even on a dry run, then roll back. Without this the dry run never
+    # sends a single INSERT, so it cannot surface a column-constraint failure
+    # (int4 overflow, a too-long string, a NOT NULL violation) — which is
+    # exactly how a 48%-failure-rate external_id scheme passed a "clean" dry
+    # run. Flushing inside the transaction exercises every constraint for
+    # real; the rollback still guarantees nothing is persisted.
+    await db.flush()
     logger.info(f"{'Would create' if not commit else 'Created'} {created}, {'would update' if not commit else 'updated'} {updated}")
 
     if commit:
         await db.commit()
     else:
         await db.rollback()
+        logger.info("Rolled back — the INSERTs above were executed and validated, then discarded.")
 
 
 async def main() -> None:
