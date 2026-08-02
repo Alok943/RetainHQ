@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal, Presentation, Compass } from 'lucide-react';
+import { LayoutDashboard, Brain, GraduationCap, Library, TrendingUp, PlusSquare, LogOut, ShieldCheck, LogIn, Plus, Route as RouteIcon, MoreHorizontal, Presentation, Compass, ScrollText } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './lib/theme';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -144,6 +144,13 @@ function AppLayout() {
             <SidebarItem isCollapsed={isCollapsed} icon={<Library size={20} />} label="Vault" active={activeTab === 'vault'} to="/vault" />
             <SidebarItem isCollapsed={isCollapsed} icon={<TrendingUp size={20} />} label="Analytics" active={activeTab === 'analytics'} to="/analytics" />
             {teachingCount > 0 && <SidebarItem isCollapsed={isCollapsed} icon={<Presentation size={20} />} label="Teach" active={activeTab === 'teach'} to="/teach" />}
+            {/* The Evidence page has had a <Route> since Career Coach phase 1 but was
+                never linked from anywhere — reachable only by typing the URL. It is the
+                ONLY surface that shows companion sessions and imported LeetCode solves
+                (they write learning_events, not activities, so the Home rail and "Total
+                captured" stat deliberately never show them), so in practice a working
+                extension looked like it had captured nothing at all. */}
+            {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ScrollText size={20} />} label="Evidence" active={activeTab === 'evidence'} to="/evidence" />}
             {isAdmin && <SidebarItem isCollapsed={isCollapsed} icon={<ShieldCheck size={20} />} label="Admin" active={activeTab === 'admin'} to="/admin" />}
           </nav>
           
@@ -298,6 +305,7 @@ function AppLayout() {
                   <MenuButton icon={<Library size={16} />} label="Vault" active={activeTab === 'vault'} onClick={() => setShowMoreMenu(false)} to="/vault" />
                   <MenuButton icon={<TrendingUp size={16} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => setShowMoreMenu(false)} to="/analytics" />
                   {teachingCount > 0 && <MenuButton icon={<Presentation size={16} />} label="Teach" active={activeTab === 'teach'} onClick={() => setShowMoreMenu(false)} to="/teach" />}
+                  {isAdmin && <MenuButton icon={<ScrollText size={16} />} label="Evidence" active={activeTab === 'evidence'} onClick={() => setShowMoreMenu(false)} to="/evidence" />}
                   {isAdmin && <MenuButton icon={<ShieldCheck size={16} />} label="Admin" active={activeTab === 'admin'} onClick={() => setShowMoreMenu(false)} to="/admin" />}
                 </div>
               </>
