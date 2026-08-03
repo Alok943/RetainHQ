@@ -16,7 +16,7 @@ Design constraints baked in here (do not "improve" away):
 Not wired into the live review endpoint. Call it as a non-blocking step AFTER
 reveal once the launch loop is validated.
 """
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Type
 from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
@@ -36,7 +36,13 @@ from app.services import llm
 # at the call sites regardless: it is the standing statement of which calls need
 # real judgment, and it becomes live again the moment GRADER_MODEL routes to Groq.
 # --------------------------------------------------------------------------- #
-async def _grader_json(system_prompt: str, user_msg: str, max_tokens: int = 700, reasoning: str = "low") -> str:
+async def _grader_json(
+    system_prompt: str, 
+    user_msg: str, 
+    max_tokens: int = 700, 
+    reasoning: str = "low",
+    schema: Optional[Type[BaseModel]] = None
+) -> str:
     try:
         return await llm.call_json(
             model=settings.GRADER_MODEL,
@@ -44,6 +50,7 @@ async def _grader_json(system_prompt: str, user_msg: str, max_tokens: int = 700,
             user_msg=user_msg,
             max_tokens=max_tokens,
             reasoning=reasoning,
+            schema=schema,
         )
     except llm.LLMError as e:
         raise GraderError(str(e)) from e
@@ -126,7 +133,7 @@ async def grade_recall(topic: str, key_memory: str, user_answer: str) -> GraderV
         f"STUDENT ANSWER (from memory):\n{user_answer.strip()}"
     )
 
-    raw = await _grader_json(_SYSTEM_PROMPT, user_msg, max_tokens=1100, reasoning="medium")
+    raw = await _grader_json(_SYSTEM_PROMPT, user_msg, max_tokens=1100, reasoning="medium", schema=GraderVerdict)
     try:
         return GraderVerdict.model_validate_json(raw)
     except ValidationError as e:
@@ -290,7 +297,7 @@ async def generate_question_items(
                 ctx += "".join(f"- {f}\n" for f in approach_facts)
         parts.append(ctx)
 
-    raw = await _grader_json(_QGEN_SET_SYSTEM_PROMPT, "\n\n".join(parts), max_tokens=1200)
+    raw = await _grader_json(_QGEN_SET_SYSTEM_PROMPT, "\n\n".join(parts), max_tokens=1200, schema=GeneratedQuestionItems)
     try:
         result = GeneratedQuestionItems.model_validate_json(raw)
     except ValidationError as e:
@@ -380,7 +387,7 @@ async def suggest_key_points(topic: str, draft: Optional[str] = None) -> KeyPoin
     extra = f"\n\nTHEIR DRAFT SO FAR:\n{draft.strip()}" if draft and draft.strip() else ""
     user_msg = f"TOPIC: {topic.strip()}{extra}"
 
-    raw = await _grader_json(_KEYPOINTS_SYSTEM_PROMPT, user_msg, max_tokens=600)
+    raw = await _grader_json(_KEYPOINTS_SYSTEM_PROMPT, user_msg, max_tokens=600, schema=KeyPointSuggestions)
     try:
         result = KeyPointSuggestions.model_validate_json(raw)
     except ValidationError as e:
@@ -408,7 +415,7 @@ async def grade_question_set(
         f"STUDENT'S ANSWERS:\n{qa_block}"
     )
 
-    raw = await _grader_json(_QGRADE_SYSTEM_PROMPT, user_msg, max_tokens=1300, reasoning="medium")
+    raw = await _grader_json(_QGRADE_SYSTEM_PROMPT, user_msg, max_tokens=1300, reasoning="medium", schema=QuestionSetGrade)
     try:
         return QuestionSetGrade.model_validate_json(raw)
     except ValidationError as e:
@@ -458,7 +465,7 @@ async def grade_fillup(question: str, reference_answer: str, student_answer: str
         f"STUDENT ANSWER:\n{student_answer.strip()}"
     )
 
-    raw = await _grader_json(_FILLUP_SYSTEM_PROMPT, user_msg, max_tokens=300, reasoning="low")
+    raw = await _grader_json(_FILLUP_SYSTEM_PROMPT, user_msg, max_tokens=300, reasoning="low", schema=FillupVerdict)
     try:
         return FillupVerdict.model_validate_json(raw)
     except ValidationError as e:

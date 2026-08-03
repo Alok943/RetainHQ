@@ -41,6 +41,7 @@ os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/test_never_c
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
@@ -67,6 +68,21 @@ async def db_env():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    # SQLite does not enforce foreign keys (or act on their ON DELETE clauses)
+    # unless told to per-connection — off by default. Without this, an
+    # ondelete="CASCADE" FK is silently a no-op under test: a parent delete
+    # "succeeds" but leaves every child row orphaned, and the gap only shows up
+    # against real Postgres. Turning it on here is what let
+    # test_activity_delete.py catch a real ORM bug (Activity.reviews cascading
+    # by nulling the FK in Python instead of trusting the DB) before it could
+    # ever reach prod.
+    @event.listens_for(engine.sync_engine, "connect")
+    def _enable_sqlite_fk(dbapi_connection, _record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
     maker = async_sessionmaker(engine, expire_on_commit=False)

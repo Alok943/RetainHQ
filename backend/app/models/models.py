@@ -128,7 +128,15 @@ class Activity(SQLModel, table=True):
     concept_card_id: Optional[uuid.UUID] = Field(default=None, foreign_key="concept_cards.id")
 
     track: Optional[Track] = Relationship(back_populates="activities")
-    reviews: List["Review"] = Relationship(back_populates="activity")
+    # passive_deletes=True: on an Activity delete, let the DB's ON DELETE CASCADE
+    # (reviews.activity_id's FK) remove the child rows. Without this,
+    # SQLAlchemy's default ORM cascade tries to disassociate children itself by
+    # UPDATE-ing reviews.activity_id to NULL before the parent delete — and that
+    # column is NOT NULL, so every activity delete would fail with an
+    # IntegrityError the moment its reviews were loaded into the session.
+    reviews: List["Review"] = Relationship(
+        back_populates="activity", sa_relationship_kwargs={"passive_deletes": True}
+    )
 
 class Review(SQLModel, table=True):
     __tablename__ = "reviews"

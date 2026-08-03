@@ -57,6 +57,43 @@ async def list_activities(
     result = await db.execute(stmt)
     return result.scalars().all()
 
+@router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_activity(
+    activity_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: SupabaseUser = Depends(get_current_user),
+):
+    """Delete a captured card. Irreversible — no undo, no soft-delete.
+
+    Ownership-scoped (`user_id == current_user`) so a wrong or stale ID can
+    never probe or delete another user's card (IDOR) — a miss and someone
+    else's card both 404 identically, so existence isn't leaked either.
+
+    `reviews` and `question_sets` CASCADE on `activity_id` (models.py), so
+    they go with it. Nothing else references the row: the manual-log evidence
+    boundary (`IMPLEMENTATION-leetcode-log-capture.md` §1) means a plain log
+    never wrote a `learning_event`, and completed reviews wrote their
+    `RECALL_GRADED` event against `entity_id=review.id` with no FK back to the
+    activity — that evidence is a historical fact and deleting the card that
+    prompted it does not retract mastery already earned from it (D-038: once
+    written, evidence stands). `problem_attempts` also survives (it is the
+    LeetCode roadmap's separate "solved" checkbox, `IMPLEMENTATION-problem-
+    capture.md`) — deleting a mislabeled review card should not un-mark a
+    problem as solved.
+    """
+    user_id = uuid.UUID(current_user.id)
+    activity = (
+        await db.execute(
+            select(Activity).where(Activity.id == activity_id, Activity.user_id == user_id)
+        )
+    ).scalars().first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
+
+    await db.delete(activity)
+    await db.commit()
+
+
 @router.post("/suggest-key-points", response_model=KeyPointsResponse)
 async def suggest_key_points_endpoint(
     body: KeyPointsRequest,
