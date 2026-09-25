@@ -2,334 +2,513 @@
 
 **Track what you remember, not what you complete.**
 
-RetainHQ is a learning-retention web app built on spaced repetition + active recall. It owns the entire learning loop — **Log → Capture → Schedule → Recall → Retain** — so knowledge actually sticks instead of evaporating a week after you study it.
+RetainHQ is an engineering learning-retention platform designed to solve the "learning evaporation" problem — where developers study for dozens of hours only to forget 80%+ of concepts within weeks. It combines automated study capture via browser extensions, structured roadmaps with client-side interactive code runtimes, a mathematically rigorous spaced repetition engine (**FSRS-4.5**), and an evidence-based career mastery tracking system.
 
-Live at **[retainhq.app](https://retainhq.app)**.
-
----
-
-## The core loop
-
-The whole product is one loop, and every feature serves it:
-
-1. **Log** an activity (something you just learned) → captures the single **Key Memory** worth keeping.
-2. **Schedule** — logging schedules the first review for **tomorrow** (recall after a delay is what builds memory; an instant quiz just measures short-term recall and breeds review fatigue). The one exception: a user's **first-ever** activity gets a demo review *due now*, so a brand-new user sees the loop instantly. Reviews are capped per day (overflow rolls forward) so a backlog never balloons into a demoralizing "23 due".
-3. **Recall** — the Review screen makes you commit a free-recall answer *before* revealing the key memory (retrieval practice, not recognition).
-4. **Rate** how it went (Missed / Hard / Good / Easy) → this drives the **FSRS** scheduler, which spaces the next review based on how well you recalled.
-5. **Retain** — each review is rescheduled to land right before you'd forget. The spacing widens as the memory strengthens.
-
-> **Design rule:** *Ship the mechanic, freeze the intelligence.* The immediate goal is validating the core loop with ~20 real users — not piling on features.
+- **Web Application**: [retainhq.app](https://retainhq.app)
+- **Browser Companion**: Available for [Chrome Web Store](https://chromewebstore.google.com) and [Firefox AMO](https://addons.mozilla.org/firefox/addon/retainhq-companion/) (`companion@retainhq.app`)
+- **API Health**: [`https://retainhq.onrender.com/health`](https://retainhq.onrender.com/health)
 
 ---
 
-## Architecture
+## System Implementation Status
+
+To provide an honest and transparent view for users, evaluators, and interviewers, the platform's features are classified by implementation state based on direct source-code analysis:
+
+| Subsystem / Feature | Implementation Status | Technical Details |
+|---|---|---|
+| **Spaced Repetition (FSRS-4.5)** | **Implemented & Live** | 19-weight parameter set, target retention 0.9, continuous stability & difficulty, 10-review daily session cap with rollover. (SM-2 columns are vestigial). |
+| **Authentication & Authorization** | **Implemented & Live** | Google OAuth via Supabase Auth → Asymmetric ES256 JWT → Server-side JWKS validation via `PyJWKClient` (3600s key cache). |
+| **Browser Companion Extension** | **Implemented & Live** | Manifest V3 (TypeScript 6.0 + Vite CRXJS) for Chrome and Firefox. Captures LeetCode, NeetCode, YouTube, Coursera, Notion, LLM chats, and PDFs. |
+| **Interactive Roadmaps & Lessons** | **Implemented & Live** | 10 seeded curricula. List view, React Flow map view, PDF progress export. Client-side WASM runtimes (Pyodide for Python, PGlite for SQL) and SVG process animations. |
+| **Lesson-to-Review Bridge** | **Implemented & Live** | Idempotent "Add to reviews" button on lessons creates FSRS cards linked via `activities.node_id`. |
+| **Classroom & Teacher Dashboard** | **Implemented & Live** | Teacher-created classrooms, invite/join codes, student rosters, and aggregate "Gap Map" class weakness analysis. Fully tested in [`backend/tests/test_classrooms.py`](backend/tests/test_classrooms.py). |
+| **LeetCode Problem Retention** | **Implemented & Live** | Problem catalog, alias resolution (NeetCode → LeetCode), concept mapping, and solution approach inference. |
+| **Automated Operations (CI/CD)** | **Implemented & Live** | GitHub Actions workflows for Render free-tier keep-alive (10-min ping), encrypted daily database backups (AES-256 + canary), daily reminder cron, and content validation. |
+| **LLM Recall Grader & Question Mode** | **Feature-Flagged (Off by default)** | Complete multi-mode grading in [`backend/app/services/grader.py`](backend/app/services/grader.py) (Gemini / Groq), but gated by `GRADER_ENABLED=False` (`EXPERIMENT (frozen)`). UI falls back gracefully to self-reported recall. |
+| **Interactive Test Runtime** | **Partially Flagged** | Test attempts and objective scoring are live; fill-in-the-blank freeform LLM grading is gated behind `GRADER_ENABLED`. |
+| **Career Coach & Evidence Engine** | **Live Core / Partial UX** | Evidence-based mastery engine ([`backend/app/services/evidence.py`](backend/app/services/evidence.py), T1–T4 trust tiers, status folding) is live. Daily planner service ([`backend/app/services/planner.py`](backend/app/services/planner.py)) exists, but full daily sprint UX integration is in progress. |
+| **Syllabus PDF Extraction** | **Partially Implemented** | PDF extraction via LLM into structured roadmaps is implemented with daily/lifetime quotas; model-dependent. |
+| **Automated Test CI Pipeline** | **Unimplemented / Local-Only** | 30 test files exist in [`backend/tests/`](backend/tests), but no GitHub Actions CI workflow currently runs them automatically on push. Frontend has no automated CI test pipeline. |
+
+---
+
+## The Core Learning Loop
+
+Every feature in RetainHQ directly feeds or protects the central learning loop:
 
 ```
-React SPA (Vercel)
-  ├─ Supabase Auth (Google OAuth) ──► ES256 JWT
-  └─ apiFetch + Bearer JWT ──► FastAPI (Render) ──asyncpg──► Supabase Postgres
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│     LOG      │ ───► │   SCHEDULE   │ ───► │    RECALL    │ ───► │     RATE     │ ───► │    RETAIN    │
+│ Capture core │      │ Tomorrow (+1)│      │ Active gate  │      │ FSRS grade   │      │ Dynamic next │
+│  key memory  │      │  Session cap │      │ before reveal│      │ (Again..Easy)│      │   interval   │
+└──────────────┘      └──────────────┘      └──────────────┘      └──────────────┘      └──────────────┘
 ```
 
-- The frontend talks **only** to FastAPI. Supabase is used purely as an **identity provider** (Google OAuth) and a **managed Postgres** database.
-- FastAPI is the **single gateway** to the database — there are no direct `supabase.from(...)` DB calls in React.
-- Auth is **ES256 JWT**, verified server-side via JWKS (`PyJWKClient`). Never HS256, never a hand-rolled OAuth.
-
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture.
+1. **Log & Capture**:
+   - **Manual**: Log what was learned into a single, focused **Key Memory** (capped at 500 characters).
+   - **From Lessons**: Click "Add to reviews" on any roadmap lesson to convert it into a tracking card (`source_type='lesson'`).
+   - **Browser Companion**: Automatically detect LeetCode solves, YouTube lectures, or Coursera modules and ingest them as study sessions.
+2. **Schedule**:
+   - New cards are scheduled for **tomorrow (+1 day)** by default. Immediate testing only tests short-term working memory and leads to review fatigue.
+   - **Onboarding Exception**: A user's very first card receives a demo review *due now* so they experience the full loop immediately upon signing up.
+   - **Daily Session Cap (`REVIEW_SESSION_CAP = 10`)**: The due queue and dashboard badge are capped at 10 reviews per day (oldest-first). Overdue items roll forward rather than accumulating into a demoralizing backlog of 50+ cards.
+3. **Recall**:
+   - The review screen enforces retrieval practice: the user must actively commit a written answer *before* revealing the reference Key Memory.
+4. **Rate**:
+   - The user rates their recall (`Again`, `Hard`, `Good`, `Easy`), driving the FSRS scheduler. (If `GRADER_ENABLED` is active, advisory AI feedback suggests a rating chip, but the user always has the final word).
+5. **Retain**:
+   - FSRS recalculates memory stability and schedules the next review date to target a 90% retention rate. The spacing interval expands as memory consolidates.
 
 ---
 
-## Tech stack
+## System Architecture
 
-| Layer | Stack |
-|---|---|
-| **Frontend** | React 19 + Vite + Tailwind CSS, React Router, React Flow + dagre (roadmap flowchart), jsPDF (roadmap export). Deployed on **Vercel** (root = `frontend/`). |
-| **Backend** | FastAPI (Python 3.10+), SQLModel + Alembic + asyncpg, pydantic-settings, PyJWT (crypto). Deployed on **Render** (keep the region close to Supabase Mumbai for latency). |
-| **Database / Auth** | Supabase — Postgres (UUID PKs, naive-UTC timestamps) + Google OAuth. |
-| **AI (advisory)** | Groq (`openai/gpt-oss-120b` by default) for the optional LLM recall grader + question mode. |
+The following diagram illustrates the complete, deployed full-stack architecture:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                         CLIENTS                                          │
+│                                                                                          │
+│   React 19 SPA (Vercel)                                   Browser Companion (MV3)        │
+│   - Vite 8.0, Tailwind, React Router                      - Chrome Web Store             │
+│   - React Flow, Pyodide/PGlite WASM                       - Firefox AMO                  │
+│   - In-memory auth session                                - Content scripts & background │
+└───────────────────────────┬──────────────────────────────────────────┬───────────────────┘
+                            │                                          │
+                            ▼                                          ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                AUTHENTICATION & IDENTITY                                 │
+│                                                                                          │
+│   Supabase Auth (Google OAuth on web / chrome.identity in extension)                     │
+│   └─► Issues Asymmetric ES256 JWT (ECDSA P-256 + SHA-256)                                │
+└───────────────────────────┬──────────────────────────────────────────┬───────────────────┘
+                            │ Bearer <ES256 JWT>                       │ Bearer <ES256 JWT>
+                            └────────────────────┬─────────────────────┘
+                                                 ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                            BACKEND API GATEWAY (FastAPI / Render)                        │
+│                                                                                          │
+│   CORSMiddleware: Explicit origin allow-list (https://retainhq.app)                      │
+│   Security Layer: PyJWKClient fetches & caches Supabase JWKS (3600s TTL)                 │
+│   JWT Verification: Enforces ES256, audience="authenticated", role="authenticated"       │
+│   Dependencies: get_current_user, get_optional_user, get_admin_user                      │
+│   17 API Routers mounted under /api/*                                                    │
+└────────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                         │
+                 ┌───────────────────────┴────────────────────────┐
+                 ▼                                                ▼
+┌──────────────────────────────────────────────┐   ┌──────────────────────────────────────────────┐
+│             CORE DOMAIN SERVICES             │   │            AI & LLM ROUTING GATEWAY          │
+│                                              │   │                                              │
+│ ├─ FSRS-4.5 Scheduler                        │   │ Central Provider Dispatch (llm.py):          │
+│ │  (19 parameters, S & D update, cap=10)     │   │                                              │
+│ ├─ Career Coach & Evidence Engine            │   │ ├─ Google Gemini (Primary)                   │
+│ │  (LearningEvent, T1-T4 tiers, NodeMastery) │   │ │  ├─ gemini-3.5-flash-lite (Grader,         │
+│ ├─ Classroom & Teacher Service               │   │ │  │     Companion classifier, Approach)     │
+│ │  (Join codes, student rosters, Gap Map)    │   │ │  ├─ gemini-3.6-flash (Syllabus, Career)    │
+│ ├─ LeetCode Retention Service                │   │ │  └─ gemini-embedding-001 (Embeddings)     │
+│ │  (Problem catalog, aliases, approach infer)│   │ ├─ Groq (Grader Fallback)                    │
+│ ├─ Interactive Lesson Runtime Engine         │   │ │  └─ openai/gpt-oss-120b (low reasoning)    │
+│ │  (Pyodide / PGlite / SVG animations)       │   │ ├─ Anthropic (Syllabus Fallback)             │
+│ ├─ Interactive Test Runtime                  │   │ │  └─ claude-* via syllabus.py               │
+│ │  (Objective scoring + fillup evaluation)   │   │ └─ OpenAI-Compatible Gateway                 │
+│ └─ Syllabus PDF Processor                    │   │    └─ DeepSeek / Qwen via httpx (Career tree)│
+│    (PDF extraction with rate limits)         │   │                                              │
+│                                              │   │ * Note: Grader is gated by GRADER_ENABLED    │
+└──────────────────────┬───────────────────────┘   └──────────────────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 DATA & PERSISTENCE LAYER                                 │
+│                                                                                          │
+│   SQLModel ORM (SQLAlchemy 2 core) + Alembic database migrations                         │
+│   asyncpg async Postgres driver (statement_cache_size=0, pool_pre_ping=True)             │
+│   Supabase Managed PostgreSQL (AWS ap-south-1 Mumbai, Transaction Pooler :6543)          │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Repository layout
+## Detailed Tech Stack
 
-```
-RetainHQ/
-├── frontend/                 # React SPA (Vercel root)
-│   ├── src/
-│   │   ├── App.jsx           # shell, routing, sidebar/mobile nav (+ due-count badge)
-│   │   ├── Login.jsx         # landing + Google sign-in (intentionally always-dark)
-│   │   ├── Home.jsx          # dashboard: due review, recent captures, stats
-│   │   ├── FirstCapture.jsx  # full-screen first-capture gate for brand-new users
-│   │   ├── LogActivity.jsx   # capture form → POST /api/activities/
-│   │   ├── Review.jsx        # retrieval gate → reveal → rate (+ AI feedback box)
-│   │   ├── Hint.jsx          # one-time contextual tutorial hints
-│   │   ├── Roadmaps.jsx      # roadmap list with server-computed progress
-│   │   ├── RoadmapDetail.jsx # List view (default) + Map view (React Flow) + PDF export
-│   │   ├── LessonView.jsx    # node-anchored lessons; renders by `kind` (+ Pyodide/PGlite/SVG anim)
-│   │   ├── KnowledgeVault.jsx# browse captured key-memories (client-side search)
-│   │   ├── Analytics.jsx     # real stats + honest Phase-2 placeholders
-│   │   ├── Admin.jsx         # founder-only funnel + feedback tabs
-│   │   ├── Profile.jsx
-│   │   └── lib/
-│   │       ├── api.js        # apiFetch (Bearer JWT) + optionalAuth (guest reads)
-│   │       ├── supabase.js
-│   │       ├── theme.jsx     # dark-mode ThemeProvider
-│   │       └── AuthContext.jsx  # PLG guest-exploration + requireAuth() gating
-│   └── vercel.json           # SPA rewrite (fixes deep-link / OAuth 404s)
-│
-├── backend/                  # FastAPI (Render root)
-│   └── app/
-│       ├── main.py           # app, CORS allow-list, router mounts, /health, /me
-│       ├── core/
-│       │   ├── config.py     # pydantic-settings (env)
-│       │   ├── database.py   # async engine + session maker (expire_on_commit=False)
-│       │   └── security.py   # SupabaseUser, verify_token (JWKS / ES256)
-│       ├── api/
-│       │   ├── deps.py       # get_db, get_current_user, get_admin_user
-│       │   └── routes/       # activities, reviews, dashboard, roadmaps, feedback, admin
-│       ├── schemas/          # Pydantic request/response models
-│       ├── services/
-│       │   ├── scheduler.py  # FSRS scheduling logic
-│       │   └── grader.py     # LLM recall grader (Groq)
-│       ├── models/models.py  # single source of truth for the schema
-│       ├── alembic/versions/ # migrations
-│       └── seed_*.py         # idempotent roadmap seed scripts (dev)
-│
-├── content/                  # lesson JSON (one per node) + validate.py + PROMPT-*.md contracts
-│   └── roadmaps/<key>/<slug>.json
-│
-└── docs/                     # ARCHITECTURE, API, FLOWS, CONTRIBUTING, funnel.sql, …
-```
+### Frontend Application
+- **Core Framework**: React 19.2 + Vite 8.0
+- **Styling**: Tailwind CSS 3.4 with centralized dark mode class overrides
+- **Routing**: react-router-dom 7.16
+- **Visuals & 3D**: framer-motion 12.42, Three.js 0.185 with @react-three/fiber 9.6 and @react-three/drei 10.7
+- **Roadmap Visualization**: reactflow 11.11 + dagre 0.8
+- **Client Runtimes**: Pyodide (CPython in WebAssembly), PGlite (Postgres in WebAssembly), KaTeX (math rendering)
+- **Export & Icons**: jsPDF 4.2, lucide-react 1.17, simple-icons 16.23
+- **Auth & Analytics**: @supabase/supabase-js 2.106, posthog-js 1.396, @sentry/react 10.65, @vercel/analytics 2.0
+
+### Backend API
+- **Framework**: FastAPI ≥0.111 running on Uvicorn ≥0.30 (Python 3.10+)
+- **ORM & Migrations**: SQLModel ≥0.0.19 (SQLAlchemy 2 wrapper) + Alembic ≥1.13
+- **Database Driver**: asyncpg ≥0.29 (asynchronous PostgreSQL)
+- **Configuration & Security**: pydantic-settings ≥2.3, PyJWT ≥2.8 with `cryptography`
+- **Communications & Monitoring**: resend ≥2.0 (email), pywebpush ≥2.0 (VAPID web push), posthog ≥3.7, sentry-sdk ≥2.0
+
+### Browser Companion Extension
+- **Manifest**: Manifest V3 (MV3) targeting Chrome and Firefox
+- **Languages & Tooling**: TypeScript 6.0, Vite 8.1 with @crxjs/vite-plugin 2.0-beta
+- **Auth Client**: @supabase/supabase-js 2.110
 
 ---
 
-## Local development
+## Authentication & Security Architecture
+
+RetainHQ uses a hardened token-based authentication flow where the frontend and browser extension never communicate directly with the database.
+
+```
+Browser / Extension           Supabase Auth                 FastAPI Gateway               Database
+        │                           │                              │                         │
+   1. Google OAuth                  │                              │                         │
+   ────────────────────────────────►│                              │                         │
+        │    2. Issues ES256 JWT    │                              │                         │
+        │◄──────────────────────────│                              │                         │
+        │                                                          │                         │
+        │  3. API Request: Bearer <ES256 JWT>                      │                         │
+        │─────────────────────────────────────────────────────────►│                         │
+        │                           │  4. Fetch JWKS (.well-known) │                         │
+        │                           │◄─────────────────────────────│                         │
+        │                           │  5. Public Keys Cached (1 hr)│                         │
+        │                           │─────────────────────────────►│                         │
+        │                           │                              │  6. Query with user_id  │
+        │                           │                              │────────────────────────►│
+        │                           │                              │◄────────────────────────│
+        │  7. Response Data         │                              │                         │
+        │◄─────────────────────────────────────────────────────────│                         │
+```
+
+1. **Provider**: Supabase Auth handles Google OAuth (via `supabase.auth.signInWithOAuth` in web, `chrome.identity` in the extension).
+2. **Asymmetric ES256 Verification**:
+   - The backend validates tokens using **ES256** (ECDSA using P-256 and SHA-256). HS256 is explicitly removed to prevent algorithm-confusion attacks.
+   - Public keys are fetched from Supabase's JWKS endpoint (`/auth/v1/.well-known/jwks.json`) via `PyJWKClient` and cached for 3,600 seconds (`lifespan=3600`).
+   - If the JWKS endpoint is unreachable, a retry-friendly 503 is returned.
+3. **Claims Verification**:
+   - Strict validation of `audience="authenticated"` and `role="authenticated"`.
+   - Expired tokens raise 401 Unauthorized; mismatched roles raise 403 Forbidden.
+4. **Client Session Handling**:
+   - The frontend's `apiFetch()` helper pulls the current token via `supabase.auth.getSession()` and injects it as an `Authorization: Bearer <token>` header.
+   - On receiving a 401 response, `apiFetch` dispatches a `retainhq:unauthorized` event, clearing the session and cleanly returning to the sign-in screen.
+5. **Development Auth Bypass Guard**:
+   - For local offline development, a `DEV_AUTH_BYPASS` flag exists.
+   - **Production Guard**: A Pydantic `@model_validator` in [`backend/app/core/config.py`](backend/app/core/config.py) crashes the backend process immediately on startup if `DEV_AUTH_BYPASS=true` is set without `DEBUG=true`.
+   - On the frontend, dev auth is gated behind `import.meta.env.DEV`, which is completely tree-shaken by Vite in production builds.
+
+---
+
+## Spaced Repetition Engine (FSRS-4.5)
+
+RetainHQ uses the **FSRS-4.5 (Free Spaced Repetition Scheduler)** algorithm. **It does not use SM-2.**
+
+Implementation: [`backend/app/services/scheduler.py`](backend/app/services/scheduler.py)
+
+### FSRS-4.5 vs SM-2
+Unlike SM-2's discrete, rigid ease ladder ($1 \to 6 \to \text{interval} \times \text{EF}$), FSRS models human memory as a continuous forgetting curve determined by two core parameters per card:
+- **Stability ($S$)**: The number of days required for predicted recall probability (retrievability) to fall to the target retention level ($R = 0.9$).
+- **Difficulty ($D$, scale 1–10)**: The intrinsic cognitive difficulty of the concept.
+
+Both parameters remain `NULL` until a card's first completed review (`NULL` denotes an uncalibrated card). FSRS achieves ~30% fewer reviews than SM-2 for the same long-term retention rate.
+
+### Parameters & Formulae
+The engine uses the published 19-weight parameter set (`FSRS_WEIGHTS`):
+```python
+FSRS_WEIGHTS = (
+    0.4072, 1.1829, 3.1262, 15.4722, 7.2102, 0.5316, 1.0651, 0.0234,
+    1.616, 0.1544, 1.0824, 1.9813, 0.0953, 0.2975, 2.2042, 0.2407,
+    2.9466, 0.5034, 0.6567,
+)
+DESIRED_RETENTION = 0.9
+```
+
+- **Retrievability**:
+  $$R(t, S) = \left(1 + \text{factor} \cdot \frac{t}{S}\right)^{\text{decay}}$$
+- **Outcome Mapping**:
+  User feedback (`rating`, `recalled`) maps directly into the FSRS 1–4 scale:
+  - Missed recall $\to$ Grade 1 (Again)
+  - Rating 'hard' $\to$ Grade 2 (Hard)
+  - Rating 'medium' $\to$ Grade 3 (Good)
+  - Rating 'easy' $\to$ Grade 4 (Easy)
+
+### Vestigial SM-2 Fields
+The `activities` database table retains legacy SM-2 columns (`ease_factor`, `repetitions`). These are vestigial fields written during updates solely to satisfy historical database `NOT NULL` constraints and maintain backward compatibility. They have **no influence** on scheduling intervals.
+
+### Anti-Fatigue Safeguards
+- **Deliberate Delay**: The first review is scheduled for tomorrow (+1 day). Testing immediately after logging measures working memory, not retention.
+- **Session Cap (`REVIEW_SESSION_CAP = 10`)**: Daily due reviews are capped at 10 cards (oldest first). Overdue cards beyond 10 roll forward to subsequent sessions, preventing the classic "50 overdue reviews" SRS burnout cycle.
+
+---
+
+## AI & Multi-Provider LLM Architecture
+
+RetainHQ features a unified multi-provider routing layer that dispatches requests based on model identifier strings:
+
+Routing Module: [`backend/app/services/llm.py`](backend/app/services/llm.py)
+
+| Provider | Model ID / Branch | Usage in RetainHQ | Protocol / Integration |
+|---|---|---|---|
+| **Google Gemini (Primary)** | Starts with `gemini*` | • Grader: `gemini-3.5-flash-lite`<br>• Syllabus extraction: `gemini-3.6-flash`<br>• Career tree generation: `gemini-3.6-flash`<br>• Companion classifier: `gemini-3.5-flash-lite`<br>• Approach inference: `gemini-3.5-flash-lite`<br>• Embeddings: `gemini-embedding-001` | Native SDK (`google-genai`), enforces strict JSON output schemas via `response_schema`. |
+| **Groq (Grader Fallback)** | Non-Gemini grader IDs (e.g. `openai/gpt-oss-120b`) | Optional fallback for recall grader and question generation. | Groq SDK with `reasoning_effort=low` and `response_format={"type":"json_object"}`. |
+| **Anthropic (Syllabus Fallback)** | `SYLLABUS_MODEL=claude-*` | Fallback for complex academic syllabus PDF structuring. | Dedicated Anthropic API client in `syllabus.py`. |
+| **OpenAI-Compatible** | Non-Gemini / non-Claude career models | Career tree generation fallback for DeepSeek, Qwen, or local vLLM instances. | Direct `httpx` HTTP requests sending JSON schemas in prompt instructions. |
+
+### LLM Grader Status: Feature-Flagged / Disabled by Default
+The LLM recall grader in [`backend/app/services/grader.py`](backend/app/services/grader.py) is **fully implemented in code, but explicitly feature-flagged off by default** (`GRADER_ENABLED = False`). In the codebase, it is marked as `EXPERIMENT (frozen)`.
+
+When disabled:
+- Grader endpoints return HTTP 404.
+- The frontend gracefully skips AI grading and uses direct user self-evaluation (`Again`, `Hard`, `Good`, `Easy`).
+
+When enabled in development/evaluation environments:
+1. **Free-Recall Grader** (`POST /api/reviews/{id}/grade`): Evaluates user recall strictly against the stored `key_memory` ground truth (never outside model knowledge). Returns `{verdict, recalled, feedback, revision_note, related_subtopics}` validated with Pydantic. It is advisory only — the user makes the final rating decision.
+2. **Question Mode** (`POST /api/reviews/{id}/questions` + `/grade-questions`): Deconstructs `key_memory` into 2–3 short-answer questions to probe concept boundaries.
+3. **Capture Assist** (`POST /api/activities/suggest-key-points`): Suggests recognized sub-points for a topic at log time.
+
+---
+
+## Career Coach & Evidence-Based Mastery System
+
+The **Career Coach** is a distinct evaluation system independent of the card-level FSRS scheduler. While FSRS manages micro-retention for discrete flashcards, the Career Coach tracks macroscopic engineering competency across full skill trees.
+
+Implementation: [`backend/app/services/evidence.py`](backend/app/services/evidence.py), [`backend/app/services/evidence_weights.py`](backend/app/services/evidence_weights.py), [`backend/app/services/mastery.py`](backend/app/services/mastery.py)
+
+### Evidence Aggregation & Trust Tiers
+Every interaction produces a `LearningEvent` assigned to a verifiable trust tier:
+- **T1 (Verified External)**: Verified external data (e.g. LeetCode problem solve synced via browser companion).
+- **T2 (Verified Internal)**: Objective internal test attempts and runtime code execution.
+- **T3 (Observed)**: Passive study events (e.g. YouTube watch time, documentation reading). T3 evidence is capped at 0.35 mastery weight and cannot advance a node beyond "developing".
+- **T4 (Claimed)**: Unverified self-reported completion.
+
+### Node Mastery Calculation
+The mastery engine calculates node status as one of four discrete levels:
+$$\text{Status} \in \{\text{"untouched"}, \text{"weak"}, \text{"developing"}, \text{"strong"}\}$$
+- If objective test results exist ($\ge 2$ attempts), accuracy dictates status ($< 50\%$ weak, $< 80\%$ developing, $\ge 80\%$ strong).
+- If test evidence is below the floor, status falls back to FSRS stability and recall history (stability $< 7$ days marks a concept as weak/at-risk).
+
+### Daily Planner Status
+The daily study planning service ([`backend/app/services/planner.py`](backend/app/services/planner.py)) calculates targeted daily study sprints based on target career goal deadlines. The service logic is implemented and covered by unit tests, but full frontend integration into the primary dashboard is **partially implemented**.
+
+---
+
+## Browser Companion Extension
+
+The RetainHQ Companion is a Manifest V3 browser extension built with TypeScript 6.0 and Vite.
+
+Source Directory: [`extension/`](extension/)
+
+- **Target Platforms**: Distributed for both Chrome (Chrome Web Store) and Firefox (Firefox Add-on / AMO with Gecko ID `companion@retainhq.app`).
+- **Target Sites**:
+  - **Coding Platforms**: LeetCode (`/problems/*`), NeetCode (`/problems/*`).
+  - **Learning Platforms**: Coursera (`/learn/*`), YouTube (`/watch*`).
+  - **Tools & Docs**: Notion (`notion.so`), PDF viewers (`*.pdf`).
+  - **LLM Interfaces**: ChatGPT, Claude, Gemini (captures study session metadata).
+- **Functionality**:
+  - Automatically captures study duration and problem completions.
+  - Ingests LeetCode and NeetCode submissions into the backend problem catalog.
+  - Synchronizes session logs to `/api/companion/sessions` using the user's Supabase JWT.
+
+---
+
+## Specialized Domain Systems
+
+### Teacher & Classroom Dashboard
+- **Implementation**: [`backend/app/api/routes/classrooms.py`](backend/app/api/routes/classrooms.py) (tested in [`backend/tests/test_classrooms.py`](backend/tests/test_classrooms.py)).
+- **Models**: `Classroom`, `ClassroomMember`, `ClassroomRoadmap`.
+- **Capabilities**: Instructors create classrooms, issue join codes, assign roadmaps, and view a class-wide **Gap Map** that visualizes collective conceptual weak points across enrolled students.
+
+### LeetCode Problem Retention & Concept Mapping
+- **Implementation**: [`backend/app/api/routes/problems.py`](backend/app/api/routes/problems.py), [`backend/app/models/models.py`](backend/app/models/models.py).
+- **Models**: `Problem`, `ProblemConcept`, `ProblemAlias`, `ConceptCard`.
+- **Capabilities**: Curated LeetCode problem catalog mapped to roadmap nodes. NeetCode problems are resolved to existing LeetCode IDs via `ProblemAlias` rather than duplicating the catalog. Ingested solutions undergo automated approach inference (`gemini-3.5-flash-lite`) to classify implemented patterns (e.g. Two Pointers vs Hash Map).
+
+### Syllabus Extraction
+- **Implementation**: [`backend/app/api/routes/syllabus.py`](backend/app/api/routes/syllabus.py).
+- **Capabilities**: Converts uploaded course syllabi (PDF up to 10MB) into structured roadmaps using `gemini-3.6-flash` or Anthropic Claude. Protected by budget safeguards: max 5 extractions per user/day, max 3 lifetime personal roadmaps.
+
+### Interactive Lessons & In-Browser Runtimes
+Lessons are authored as static JSON in `content/roadmaps/`, validated by [`content/validate.py`](content/validate.py), and rendered dynamically by `kind`:
+
+| Lesson Kind | Primary Domain | Interactive Runtime / Technology |
+|---|---|---|
+| `concept` (python) | Python for SWE | **Pyodide** (CPython compiled to WebAssembly) client-side step execution |
+| `concept` (sql) | SQL Curriculum | **PGlite** (PostgreSQL compiled to WebAssembly) reactive in-browser DB |
+| `theory` | Core CS (OS, Networks, DBMS) | Dependency-free animated SVG diagrams (sequence and cycle flows) |
+| `aptitude` | Quantitative Reasoning | Mental models, formula reference, and recall checks |
+| `reasoning` | Logical Reasoning | Worked examples and method breakdowns |
+
+All runtime code execution happens **100% client-side** in the browser with zero server compute overhead.
+
+---
+
+## Database & Data Model
+
+Database: Supabase PostgreSQL (AWS `ap-south-1` Mumbai). Managed via **Alembic migrations** (current head `a4b2e9f1c8d3`). `supabase/schema.sql` is a legacy seed file; Alembic is the authoritative schema manager.
+
+Key Tables:
+- **`activities`**: Core cards carrying FSRS memory state (`stability`, `difficulty_fsrs`, `interval_days`, `next_review_at`). Legacy SM-2 fields (`ease_factor`, `repetitions`) are vestigial.
+- **`reviews`**: Historical log of completed reviews (`rating`, `recalled`, `scheduled_for`, `completed_at`, AI grading results).
+- **`roadmaps` & `roadmap_nodes`**: Learning paths and hierarchical topic nodes.
+- **`user_progress`**: Node completion status per user.
+- **`classrooms`**, **`classroom_members`**, **`classroom_roadmaps`**: Teacher dashboard structure.
+- **`problems`**, **`problem_concepts`**, **`problem_aliases`**, **`concept_cards`**: LeetCode catalog and concept mapping.
+- **`learning_events`**, **`node_mastery`**: Career Coach evidence and competency logs.
+- **`test_attempts`**: Objective test runs and scoring.
+- **`feedbacks`**: User feedback submissions.
+
+---
+
+## API Summary (17 Routers)
+
+All routes are mounted under `/api` in [`backend/app/main.py`](backend/app/main.py):
+
+| Route Prefix | Purpose | Auth Requirement |
+|---|---|---|
+| `/api/activities` | CRUD for captured cards, FSRS card creation, capture assist | `Bearer JWT` |
+| `/api/reviews` | Due queue (`/due`, capped at 10), complete review, FSRS calculation, LLM grading | `Bearer JWT` |
+| `/api/dashboard` | Due count, daily stats, consistency window, next review timestamp | `Bearer JWT` |
+| `/api/roadmaps` | Roadmap list, node hierarchies, node progress upsert | Optional / Authenticated |
+| `/api/classrooms` | Teacher classrooms, join codes, rosters, Gap Map analytics | `Bearer JWT` |
+| `/api/career` | Career goals, target role skill trees, daily plan generation | `Bearer JWT` |
+| `/api/evidence` | Evidence trail logging and node mastery inspection | `Bearer JWT` |
+| `/api/companion` | Extension sync, study session logging, LeetCode ingest | `Bearer JWT` |
+| `/api/problems` | LeetCode problem catalog search and concept mapping | `Bearer JWT` |
+| `/api/syllabus` | PDF upload and LLM roadmap extraction | `Bearer JWT` |
+| `/api/tests` | Interactive test generation and submission grading | `Bearer JWT` |
+| `/api/push` | Web Push VAPID key delivery and subscription management | `Bearer JWT` |
+| `/api/metrics` | User retention and study consistency metrics | `Bearer JWT` |
+| `/api/prefs` | User settings and notification preferences | `Bearer JWT` |
+| `/api/feedback` | User feedback submission | `Bearer JWT` |
+| `/api/admin` | Founder activation funnel and feedback management | Admin Email Gate |
+| `/api/internal` | Secret-gated endpoint (`CRON_SECRET`) for automated reminder dispatch | Bearer Cron Secret |
+
+---
+
+## Deployment & Infrastructure
+
+```
+┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
+│     VERCEL (Apex)       │     │     RENDER (Free Tier)  │     │     SUPABASE (Mumbai)   │
+│                         │     │                         │     │                         │
+│ • retainhq.app          │     │ • retainhq.onrender.com │     │ • Managed PostgreSQL    │
+│ • React 19 SPA          │────►│ • FastAPI (Docker)      │────►│ • Transaction Pooler    │
+│ • 648 redirect rules    │     │ • 10-min keep-alive ping│     │   (Port 6543, aws-1)    │
+│ • SPA rewrite fallback  │     │ • Cold boot ~30-50s     │     │ • Auth / JWKS Issuer    │
+└─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘
+```
+
+- **Frontend (Vercel)**: Deployed at `retainhq.app`. [`frontend/vercel.json`](frontend/vercel.json) handles SPA client-side routing rewrites and 648 redirect rules. Auto-deploys on push to `main`.
+- **Backend (Render)**: Deployed at `retainhq.onrender.com` via a root [`backend/Dockerfile`](backend/Dockerfile). Operates on Render's free tier (cold boot latency ~30–50s, kept warm via GitHub Actions ping).
+- **Database (Supabase)**: Hosted in AWS `ap-south-1` (Mumbai). Connected via Supabase's transaction pooler (`aws-1-ap-south-1.pooler.supabase.com:6543`). The engine sets `statement_cache_size=0`, `prepared_statement_cache_size=0`, and `pool_pre_ping=True`.
+- **Browser Extension**: Built via CRXJS and packaged for Chrome Web Store and Firefox AMO.
+
+---
+
+## Testing & CI/CD Pipeline
+
+### Automated GitHub Actions Workflows
+The repository currently runs 4 scheduled and event-driven GitHub Actions workflows:
+
+| Workflow | Trigger | Description | Evidence |
+|---|---|---|---|
+| `keep-alive.yml` | Every 10 min | Pings `https://retainhq.onrender.com/health` to prevent Render free-tier instance sleep | [`.github/workflows/keep-alive.yml`](.github/workflows/keep-alive.yml) |
+| `backup-db.yml` | Daily at 19:00 UTC | Dumps database via `pg_dump`, encrypts with AES-256, verifies table-count canary, retains for 90 days | [`.github/workflows/backup-db.yml`](.github/workflows/backup-db.yml) |
+| `reminders.yml` | Daily at 01:30 UTC | POSTs to `/api/internal/send-reminders` using `CRON_SECRET` to dispatch email and push notifications | [`.github/workflows/reminders.yml`](.github/workflows/reminders.yml) |
+| `validate-content.yml` | Push to `content/**` | Runs `validate.py` and `validate_career_templates.py` on roadmap JSON content | [`.github/workflows/validate-content.yml`](.github/workflows/validate-content.yml) |
+
+### Current CI/CD Limitations (Honest Assessment)
+- **No Automated CI Test Suite**: While 30 test files exist in [`backend/tests/`](backend/tests) (covering FSRS scheduling, evidence computation, classrooms, companion sessions, and LLM routing), **there is currently no GitHub Actions workflow configured to run `pytest` on push or pull request**. Tests are executed locally by developers.
+- **No Frontend CI Pipeline**: The frontend has no automated CI testing or linting workflow in GitHub Actions. Build verification occurs on Vercel deployment.
+- **Single-Container Deployment**: No multi-container orchestration (Docker Compose or Kubernetes); backend runs as a single Render container.
+
+---
+
+## Local Development Setup
 
 ### Prerequisites
-- Node 18+ and npm
+- Node.js 18+ and npm
 - Python 3.10+
-- A Supabase project (Postgres + Google OAuth configured)
+- A Supabase project (PostgreSQL + Google OAuth provider configured)
 
-### Frontend
-
+### 1. Frontend Setup
 ```bash
 cd frontend
 npm install
-npm run dev          # http://localhost:5173
+npm run dev   # Runs Vite dev server at http://localhost:5173
 ```
 
 `frontend/.env`:
-```
+```env
 VITE_API_BASE_URL=http://localhost:8000
-VITE_SUPABASE_URL=https://<your-ref>.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=<anon/publishable key>   # VITE_SUPABASE_ANON_KEY also accepted
+VITE_SUPABASE_URL=https://<your-project>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
 ```
 
-### Backend
-
+### 2. Backend Setup
 ```bash
 cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1        # Windows PowerShell  (use source .venv/bin/activate on macOS/Linux)
-pip install -e .
-alembic upgrade head                 # apply migrations
-uvicorn app.main:app --reload        # http://localhost:8000/docs
+# Activate virtual environment:
+# Windows PowerShell: .\.venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+
+pip install -e ".[dev]"
+alembic upgrade head
+uvicorn app.main:app --reload   # Interactive docs at http://localhost:8000/docs
 ```
 
 `backend/.env`:
-```
-DATABASE_URL=postgresql+asyncpg://postgres.<ref>:<pw>@aws-1-ap-south-1.pooler.supabase.com:6543/postgres
-SUPABASE_URL=https://<your-ref>.supabase.co
-SUPABASE_JWT_SECRET=<jwt secret>           # JWKS-based ES256 verification
-ADMIN_EMAIL=you@example.com                # founder-only Admin gate
-# Optional AI grader + question mode (off by default):
+```env
+DATABASE_URL=postgresql+asyncpg://postgres.<ref>:<password>@aws-1-ap-south-1.pooler.supabase.com:6543/postgres
+SUPABASE_URL=https://<your-project>.supabase.co
+ADMIN_EMAIL=you@example.com
+
+# Multi-Provider LLM Keys:
+GEMINI_API_KEY=<gemini-key>          # Primary provider
+GROQ_API_KEY=<groq-key>              # Grader fallback
+ANTHROPIC_API_KEY=<anthropic-key>    # Syllabus fallback
+OPENAI_COMPAT_BASE_URL=              # Optional (DeepSeek / Qwen)
+OPENAI_COMPAT_API_KEY=
+
+# Feature Flags (Keep False in production):
 GRADER_ENABLED=false
-GROQ_API_KEY=<groq key>
-GROQ_MODEL=openai/gpt-oss-120b      # any Groq model; reasoning models get reasoning_effort=low
+DEBUG=false
+DEV_AUTH_BYPASS=false
 ```
 
-> **DB connection gotchas** (hard-won while deploying): use the Supabase **transaction pooler** (`...pooler.supabase.com:6543`) — the engine sets `statement_cache_size=0` + `prepared_statement_cache_size=0` and `pool_pre_ping=True`. The host shard is **`aws-1`**, not `aws-0`. Use an **alphanumeric** DB password (special chars break the URL). The direct `db.<ref>.supabase.co` host is IPv6-only — avoid it.
+> **Database Connection Gotchas**:
+> - Always connect via the Supabase **Transaction Pooler** (`...pooler.supabase.com:6543`), not the direct database host (direct is IPv6-only).
+> - Shard host is `aws-1`, not `aws-0`.
+> - Use an alphanumeric database password (special characters can cause URL encoding issues).
 
-### Seeding roadmaps (dev)
+### 3. Browser Extension Setup
+```bash
+cd extension
+npm install
+npm run build:chrome    # Outputs unpacked extension to extension/dist
+npm run build:firefox   # Builds Firefox target
+```
+Load the unpacked extension directory into `chrome://extensions` or `about:debugging` in Firefox.
 
+### Running Backend Tests Locally
 ```bash
 cd backend
-python seed_striver_a2z.py    # each roadmap has its own idempotent seed_*.py with a fixed UUID
+pytest
 ```
 
 ---
 
-## Data model
+## Project Documentation Directory
 
-Postgres, UUID primary keys, naive-UTC timestamps.
-
-- **activities** — `user_id`, `topic`, `key_memory` (capped at 500 chars on create), `mistake?`, `difficulty(1–5)`, `needed_hint`, `source_type?` (incl. `lesson`), `roadmap_id?` (optional FK → `roadmaps`, ON DELETE SET NULL), `node_id?` (optional FK → `roadmap_nodes` — set when a card is created from a lesson via "Add to reviews"; dedupes one card per lesson), `created_at`, plus FSRS card state: `stability?`, `difficulty_fsrs?` (both NULL until the first graded review = a new card), `interval_days`, `last_reviewed_at?`, `next_review_at?`. Legacy SM-2 columns `ease_factor`/`repetitions` are still written so old rows keep working.
-- **reviews** — `user_id`, `activity_id`, `status('due'|'completed')`, `scheduled_for`, `completed_at?`, `rating?('easy'|'medium'|'hard')`, `recalled?` (objective got-it/missed-it), `quality?` (0–5 SM-2 grade), and AI grader output `ai_verdict?` / `ai_recalled?` / `ai_feedback?`.
-- **roadmaps** — `slug` (unique, human-readable URL id — e.g. `aptitude`, `python-swe`; matches the content folder key), `title`, `description`.
-- **roadmap_nodes** — `roadmap_id`, `phase`, `section`, `title`, `tier(easy|medium|hard)`, `order_index`, `description?`, `parent_id?` (self-ref → subtopics are completable child nodes).
-- **user_progress** — `user_id`, `node_id`, `status`.
-- **feedbacks** — `user_id`, `message`, `status('new'|'reviewed'|'resolved')`, `created_at`.
-
-> **Schema changes always go through Alembic migrations** — never hand-edit the live DB. Current DB head: `a4b2e9f1c8d3` (adds `activities.node_id`); recent migrations also add the FSRS `stability`/`difficulty_fsrs` columns (`a1b2c3d4e5f6`), node prerequisites (`b2c3d4e5f6a7`), and `roadmaps.slug` (`a3f1c0d4e7b2`).
-
----
-
-## API
-
-All routes are under `/api` and require a Bearer JWT (some support `optionalAuth` for guest reads).
-
-| Method & Path | Purpose |
+| Document | Purpose |
 |---|---|
-| `GET /api/activities/` | List the user's captured activities (Knowledge Vault), newest first |
-| `POST /api/activities/` | Create activity (optional `roadmap_id`/`node_id`); init FSRS card + schedule the first review (tomorrow; *now* for the user's first-ever activity). Returns `review_due_now`. A `source_type='lesson'` card is idempotent per `node_id` (powers the lesson "Add to reviews" button). |
-| `POST /api/activities/suggest-key-points` | **Capture assist** (gated): `{topic, draft?}` → `{points[]}` — core sub-points under the topic so a stuck user can recognize + keep what they learned. Suggestion only, never auto-applied. |
-| `GET /api/reviews/due` | Due reviews (`status='due'`, `scheduled_for ≤ now`) with activity eager-loaded. Capped to one session (overflow rolls forward). |
-| `POST /api/reviews/{id}/complete` | Complete with `rating` + optional `recalled`; advances FSRS and schedules the next review (IDOR-protected) |
-| `POST /api/reviews/{id}/grade` | LLM grader (gated on `GRADER_ENABLED`): grades free recall vs `key_memory` → `{verdict, recalled, feedback, revision_note, related_subtopics}`. Advisory only. |
-| `POST /api/reviews/{id}/questions` | **Question mode** (gated): generate 2–3 short-answer questions grounded in `key_memory`. 404 when disabled → UI falls back to free recall. |
-| `POST /api/reviews/{id}/grade-questions` | **Question mode** (gated): grade the answer set vs `key_memory` → `{recalled, feedback, items[], related_subtopics}`. Advisory only. |
-| `GET /api/dashboard/` | `due_count`, `consistency_window`, `daily_progress`, `total_activities`, `total_reviews_completed`, `next_review_at` |
-| `GET /api/roadmaps/` | List roadmaps (with `slug`) and server-computed progress |
-| `GET /api/roadmaps/{id-or-slug}` | Roadmap + nodes + per-node user status (resolves by slug or UUID; old UUID links keep working) |
-| `PUT /api/roadmaps/nodes/{id}/progress` | Idempotent upsert of `done` / `not_started` |
-| `POST /api/feedback/` | Submit a feedback message |
-| `GET /api/admin/funnel` | **Admin-only** activation funnel (signups → logged → reviewed → returned) |
-| `GET /api/admin/feedback` | **Admin-only** list of submitted feedback |
-
-Full detail in [`docs/API.md`](docs/API.md). Interactive docs at `/docs` when the backend is running.
-
-**Conventions that matter:**
-- Every query is scoped by `current_user.id`; mutating endpoints verify ownership (`WHERE id = :id AND user_id = :uid`) for IDOR protection.
-- Collection POST routes use a **trailing slash** (`/api/activities/`) — call exact paths to avoid 307 redirects.
-- Async DB: eager-load relationships with `selectinload` (lazy access on a closed async session → `MissingGreenlet` crash). Cast the JWT `sub` string to `uuid.UUID` before queries.
-
----
-
-## How scheduling works (FSRS)
-
-Every logged activity is a single **FSRS** "card" — its memory state lives on the `activities` row. Logic is in [`backend/app/services/scheduler.py`](backend/app/services/scheduler.py). FSRS (the successor to SM-2) models two continuous variables per card instead of a fixed ease ladder:
-
-- **stability** — days until predicted recall decays to the target retention
-- **difficulty** (`difficulty_fsrs`, 1–10) — how intrinsically hard the card is
-
-Both are `NULL` until the **first graded review** (`NULL` == a brand-new card with no memory yet). Published studies put FSRS at ~30% fewer reviews than SM-2 for the same retention, because well-remembered cards space out faster and shaky ones come back sooner.
-
-- **First review timing is unchanged:** logging schedules the first review for **tomorrow** (+1 day); a user's **first-ever** activity instead gets a demo review *due now* (the onboarding aha — one-time, not per-log).
-- **Each completion** maps `rating` + `recalled` → an FSRS grade (1=Again / 2=Hard / 3=Good / 4=Easy; a miss is always Again). FSRS updates stability + difficulty from the *elapsed* time and the grade, then picks the next interval so predicted recall equals `DESIRED_RETENTION` (0.9). The next review is scheduled immediately.
-- **Legacy SM-2 columns** (`ease_factor`, `repetitions`) are still written so old rows and NOT NULL constraints keep working, but `stability`/`difficulty_fsrs`/`interval_days` are the live fields. The `quality` (0–5) on each review is still persisted for analytics continuity; FSRS scheduling uses the 1–4 grade.
-- **Daily session cap** (`REVIEW_SESSION_CAP`, default 10): the due queue and the dashboard `due_count` are both capped at one session's worth, oldest-first. Overdue cards beyond the cap stay `due` and roll forward — a fallen-behind user always sees a bounded, finishable set instead of the classic unbounded-backlog death spiral.
-
----
-
-## The LLM recall grader + question mode (advisory)
-
-[`backend/app/services/grader.py`](backend/app/services/grader.py) — **shipped and wired, gated by `GRADER_ENABLED`** (off in prod until the env is set). One Groq call per step; default model `openai/gpt-oss-120b`. gpt-oss is a *reasoning* model, so `_groq_json` pins `reasoning_effort=low` for it (gpt-oss-only flag) to bound latency and stop reasoning tokens from truncating the JSON. Uses `json_object` mode (not the stricter `json_schema`, which gpt-oss ignores).
-
-**Free-recall grader** (`/grade`):
-- Grades the user's answer **only against the stored `key_memory`** (the reference), never the model's outside knowledge.
-- Returns strict JSON `{verdict, recalled, feedback, revision_note, related_subtopics}`, validated with Pydantic.
-- **Advisory only** — it judges *recalled vs missed* and writes a short revision note, then suggests a rating chip. The user always makes the final call; the AI **never** auto-submits and never proposes "Hard" (felt difficulty is subjective).
-
-**Question mode** (`/questions` + `/grade-questions`, prototype):
-- Instead of one open "describe the topic" prompt, the LLM turns the `key_memory` into **2–3 short-answer questions**, then grades the answer set. This probes the forgettable *edges* of what was captured rather than letting a two-line summary skate by.
-- Guardrail: questions must be answerable **solely from the `key_memory`** — no un-captured "gotcha" trivia (an unfair failure is exactly the friction that breeds fatigue). Open-ended short answer, never multiple choice. `key_memory` stays the single grading ground truth.
-- **Additive, not a replacement** — the UI probes `/questions` per card; a 404 (disabled) or any failure falls back to the single free-recall box, so the live path stays pristine.
-
-**Related subtopics** (both modes): each grade also returns 1–2 `related_subtopics` (`title` + one-line `explainer`) — adjacent topics worth learning next. These are **suggestions, never graded** — the constructive answer to "what about material they didn't capture?": surface it as a nudge, don't quiz them on it. Highlighted as a distinct callout in the Review UI.
-
-**Capture assist** (`/suggest-key-points`, prototype): the LLM also runs at *log* time, not just review time. When a user is stuck summarizing what they learned, an on-demand "Suggest key points" button returns the core sub-points under the topic so they can **recognize and keep** the ones they actually studied (recognition is far easier than blank-page recall). It's a suggestion the user curates — **never auto-applied** — so they never end up capturing (and later being quizzed on) material they didn't learn.
-
-- Failures degrade silently (`GraderError` → 503 → frontend skips the AI box).
-- The gap between the AI's `ai_recalled` and the user's self-reported `recalled` is the calibration metric we care about.
-
----
-
-## Roadmaps
-
-10 seeded learning paths (Python for SWE, DSA — Striver A2Z, DSA — NeetCode 150, Core CS, Aptitude, Web Dev, System Design, Python Backend, SQL, AI Engineering). Each has an idempotent `seed_*.py` with a fixed UUID.
-
-- **List view (default)** — collapsible phases with `done/total` counts (completed phases auto-collapse), explicit checkboxes, tier dots, indented subtopics, and inline notes/links. Scans fast and works on touch.
-- **Map view** — the original React Flow + dagre flowchart, available via a toggle.
-- **Download PDF** — styled jsPDF export reflecting your progress.
-- **Complete → Log** — checking a node off prompts a "Log what you learned" toast that pre-fills the capture form, closing the roadmap → loop.
-
-`phase` = sub-track (step spine), `tier` ∈ {easy, medium, hard}. Roadmap progress counts subtopics as nodes. Roadmaps are addressed by **slug** (`/roadmaps/aptitude`), not UUID.
-
----
-
-## Lessons & content
-
-Roadmap nodes aren't just checkboxes — many carry a **lesson**, rendered at `/roadmaps/<slug>/learn/<lesson-slug>` (e.g. [`/roadmaps/aptitude/learn/percentages`](https://retainhq.app/roadmaps/aptitude/learn/percentages)). Lessons are authored as **static JSON** at `content/roadmaps/<roadmap>/<slug>.json`, validated by [`content/validate.py`](content/validate.py), and synced into the frontend by [`frontend/scripts/sync-content.mjs`](frontend/scripts/sync-content.mjs) — so a new topic ships with **no code change**. `LessonView.jsx` fetches the JSON and renders by `kind`.
-
-Each lesson declares a **`kind`** that sets its shape (and optional client-side runtime):
-
-| `kind` | for | shape | runtime |
-|---|---|---|---|
-| `concept` (python) | Python for SWE | overview · aha-moment · code_walkthrough · understanding-checks | **Pyodide** (CPython → WASM) step-scrubber |
-| `concept` (sql) | SQL | query_walkthrough · row-set flow · JOIN viz | **PGlite** (Postgres → WASM) |
-| `aptitude` | Quant aptitude | hook · mental_model · *pattern_discovery?* · formula · shortcuts · recall · OA | — *(deliberately thin; the review queue does the retaining)* |
-| `reasoning` | Logical / Verbal | mental_model · method · worked_example · recall · OA | — |
-| `theory` | Core CS (OS / DBMS / Networks) | analogy · *process animation?* · **deep explanation** · key_points · recall · OA | — |
-
-- **Runtimes load lazily from CDN** (Pyodide / PGlite) — zero bundle cost until a learner runs code; all execution is **client-side** (no server compute).
-- **Thin vs deep, by design:** `aptitude` lessons are intentionally thin (one intuition + rule + trick — retention is the engine's job). `theory` lessons are the opposite: the `explanation` must *teach a beginner from scratch*, because for Core CS the lesson **is** the learning resource.
-- **Process animations** (`theory`): for flow concepts (TCP handshake, paging, deadlock) the JSON carries structured `animation` metadata — `actors` + directed `steps` — rendered as a **dependency-free animated SVG** (`sequence` row, or `cycle` ring that closes into a loop). The data is the single source of truth, so the same metadata can drive static diagrams later.
-- **Add to reviews:** a button on any lesson turns it into an FSRS card (`source_type='lesson'`, linked via `activities.node_id`) — so what you learn in a lesson enters the same spaced-repetition loop. Idempotent (one card per lesson).
-- **Bulk content** is generated against these contracts (`content/PROMPT-*.md` + `content/_TODO-*.md`) by a separate agentic tool; `validate.py` is the gate. Content roadmaps live so far: **Python for SWE**, **SQL**, **Aptitude** (quant + logical reasoning), **Core CS** (in progress).
-
----
-
-## Deployment
-
-- **Frontend → Vercel** (root = `frontend/`). `vercel.json` SPA rewrite is **required** (fixes 404s on deep links / OAuth redirects). Auto-deploys on push to `main`.
-- **Backend → Render** (root = `backend/`). Env includes `DATABASE_URL`, `SUPABASE_*`, `ADMIN_EMAIL`, the CORS allow-list (apex + www), `GROQ_API_KEY` / `GRADER_ENABLED`, and (for syllabus upload) `SYLLABUS_MODEL` + `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Run `alembic upgrade head` against the DB.
-- **CORS** is an explicit allow-list (`https://retainhq.app`, `https://www.retainhq.app`), never `*`.
-- **Secrets** live only in `.env` (git-ignored) — never committed.
-
-> Deploy-time note: repeated DB auth failures can trip Supabase's **ECIRCUITBREAKER** — stop redeploying and wait a few minutes for it to re-arm (redeploying keeps it tripped).
-
----
-
-## Conventions
-
-- **Commits** are authored solely by the user — no `Co-Authored-By` trailer. Work goes on `main` (solo, deploys from main).
-- **One data path** — React → `apiFetch` → FastAPI → DB. No direct Supabase DB calls in the client.
-- **Pydantic v2** — response schemas serializing ORM objects use `model_config = ConfigDict(from_attributes=True)`.
-- **Dark mode** is a centralized override layer in `index.css` that remaps the app's color utilities under `html.dark` — new components inherit dark mode for free **if they reuse existing color classes**.
-- **Admin gate (interim)** — founder-only access is an email check (`current_user.email == ADMIN_EMAIL`), not a full admin auth system. Good enough for the first cohort.
-
----
-
-## Documentation
-
-| Doc | Contents |
-|---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, data flow, auth |
-| [`docs/API.md`](docs/API.md) | Full endpoint reference |
-| [`docs/FLOWS.md`](docs/FLOWS.md) | User + data flows |
-| [`docs/walkthrough-guide.md`](docs/walkthrough-guide.md) | Product walkthrough |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Contribution notes |
-| [`docs/hardening-plan.md`](docs/hardening-plan.md) | Security / robustness backlog |
-| [`docs/funnel.sql`](docs/funnel.sql) | Activation-funnel query (Supabase SQL editor) |
-| [`CLAUDE.md`](CLAUDE.md) | Full project context + conventions (source of truth for agents) |
-
----
-
-## Status & roadmap
-
-**Phase 1 (core loop) is live end-to-end and deployed to production.** A real user can sign up, log an activity, run the scheduled review, and exercise the full spaced-repetition loop.
-
-**Latest — the learning layer:** node-anchored **lessons** with multiple `kind`s (`aptitude`, `reasoning`, `theory` on top of the runtime-backed `python`/`sql`), client-side execution (Pyodide / PGlite), **process animations** for Core CS, clean **slug URLs** (`/roadmaps/<slug>/learn/<lesson>`), and the **content→review bridge** ("Add to reviews" → an FSRS card via `activities.node_id`). Earlier: anti-fatigue redesign (first review deferred to tomorrow, daily session cap with rollover) and an LLM **question mode** + **related-subtopics** (gated behind `GRADER_ENABLED`; free recall stays the fallback).
-
-**Next, in order of leverage:**
-1. Flip the AI grader + question mode on in prod (`GRADER_ENABLED=true`, `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` on Render) and validate question/subtopic quality on real cards.
-2. Expand seed content (e.g. a proper Git section; fine-tuning + evals for AI Engineering).
-3. Logged Reviews Vault (review history).
-4. Real Track / Roadmap pickers on the log form (currently capture-only).
-5. Feedback status workflow + full admin auth.
-6. Rate limiting (slowapi) on write endpoints.
-
-**Phase 2:** real momentum / retention-strength metrics, Re-entry Mode, custom user roadmaps ("Bring Your Own Path"). *(FSRS scheduling — originally Phase 2 — is now live.)*
-
----
-
-*Solo-founder build. The product advertises itself by working — so the loop comes first.*
+| [`technical_report.md`](technical_report.md) | Exhaustive technical audit report with source code line citations |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, database topology, and request flows |
+| [`docs/API.md`](docs/API.md) | Endpoint specifications and parameter schemas |
+| [`docs/FLOWS.md`](docs/FLOWS.md) | User interaction and data lifecycles |
+| [`docs/SPEC-teacher-dashboard.md`](docs/SPEC-teacher-dashboard.md) | Classroom and Gap Map technical specification |
+| [`docs/SPEC-leetcode-retention.md`](docs/SPEC-leetcode-retention.md) | LeetCode retention, problem aliases, and concept cards |
+| [`docs/SPEC-career-coach-phase1.md`](docs/SPEC-career-coach-phase1.md) | Evidence engine, trust tiers, and weighting specifications |
+| [`docs/SPEC-career-coach-phase2.md`](docs/SPEC-career-coach-phase2.md) | Career tree generation specification |
+| [`docs/SPEC-career-coach-phase3.md`](docs/SPEC-career-coach-phase3.md) | Daily study planner specification |
+| [`CLAUDE.md`](CLAUDE.md) | Architectural invariants, code guidelines, and development conventions |
