@@ -24,8 +24,8 @@ To provide an honest and transparent view for users, evaluators, and interviewer
 | **Classroom & Teacher Dashboard** | **Implemented & Live** | Teacher-created classrooms, invite/join codes, student rosters, and aggregate "Gap Map" class weakness analysis. Fully tested in [`backend/tests/test_classrooms.py`](backend/tests/test_classrooms.py). |
 | **LeetCode Problem Retention** | **Implemented & Live** | Problem catalog, alias resolution (NeetCode → LeetCode), concept mapping, and solution approach inference. |
 | **Automated Operations (CI/CD)** | **Implemented & Live** | GitHub Actions workflows for Render free-tier keep-alive (10-min ping), encrypted daily database backups (AES-256 + canary), daily reminder cron, and content validation. |
-| **LLM Recall Grader & Question Mode** | **Feature-Flagged (Off by default)** | Complete multi-mode grading in [`backend/app/services/grader.py`](backend/app/services/grader.py) (Gemini / Groq), but gated by `GRADER_ENABLED=False` (`EXPERIMENT (frozen)`). UI falls back gracefully to self-reported recall. |
-| **Interactive Test Runtime** | **Partially Flagged** | Test attempts and objective scoring are live; fill-in-the-blank freeform LLM grading is gated behind `GRADER_ENABLED`. |
+| **LLM Recall Grader & Question Mode** | **Implemented & Live** | Multi-mode AI evaluation in [`backend/app/services/grader.py`](backend/app/services/grader.py) (Gemini / Groq) is active in production (`GRADER_ENABLED = True`). Evaluates free-recall against key memories, generates short-answer questions, and provides advisory rating chips. |
+| **Interactive Test Runtime** | **Implemented & Live** | Test attempts, objective scoring, and fill-in-the-blank freeform LLM grading are live and active with `GRADER_ENABLED = True`. |
 | **Career Coach & Evidence Engine** | **Live Core / Partial UX** | Evidence-based mastery engine ([`backend/app/services/evidence.py`](backend/app/services/evidence.py), T1–T4 trust tiers, status folding) is live. Daily planner service ([`backend/app/services/planner.py`](backend/app/services/planner.py)) exists, but full daily sprint UX integration is in progress. |
 | **Syllabus PDF Extraction** | **Partially Implemented** | PDF extraction via LLM into structured roadmaps is implemented with daily/lifetime quotas; model-dependent. |
 | **Automated Test CI Pipeline** | **Unimplemented / Local-Only** | 30 test files exist in [`backend/tests/`](backend/tests), but no GitHub Actions CI workflow currently runs them automatically on push. Frontend has no automated CI test pipeline. |
@@ -55,7 +55,7 @@ Every feature in RetainHQ directly feeds or protects the central learning loop:
 3. **Recall**:
    - The review screen enforces retrieval practice: the user must actively commit a written answer *before* revealing the reference Key Memory.
 4. **Rate**:
-   - The user rates their recall (`Again`, `Hard`, `Good`, `Easy`), driving the FSRS scheduler. (If `GRADER_ENABLED` is active, advisory AI feedback suggests a rating chip, but the user always has the final word).
+   - The user rates their recall (`Again`, `Hard`, `Good`, `Easy`), driving the FSRS scheduler. Advisory AI feedback (`GRADER_ENABLED = True`) evaluates the user's free-recall response against the stored key memory and suggests a rating chip, while the user retains the final rating decision.
 5. **Retain**:
    - FSRS recalculates memory stability and schedules the next review date to target a 90% retention rate. The spacing interval expands as memory consolidates.
 
@@ -114,7 +114,8 @@ The following diagram illustrates the complete, deployed full-stack architecture
 │ │  (Objective scoring + fillup evaluation)   │   │ └─ OpenAI-Compatible Gateway                 │
 │ └─ Syllabus PDF Processor                    │   │    └─ DeepSeek / Qwen via httpx (Career tree)│
 │    (PDF extraction with rate limits)         │   │                                              │
-│                                              │   │ * Note: Grader is gated by GRADER_ENABLED    │
+│                                              │   │ * LLM Grader is LIVE in production           │
+│                                              │   │   (GRADER_ENABLED = True)                    │
 └──────────────────────┬───────────────────────┘   └──────────────────────────────────────────────┘
                        │
                        ▼
@@ -253,17 +254,14 @@ Routing Module: [`backend/app/services/llm.py`](backend/app/services/llm.py)
 | **Anthropic (Syllabus Fallback)** | `SYLLABUS_MODEL=claude-*` | Fallback for complex academic syllabus PDF structuring. | Dedicated Anthropic API client in `syllabus.py`. |
 | **OpenAI-Compatible** | Non-Gemini / non-Claude career models | Career tree generation fallback for DeepSeek, Qwen, or local vLLM instances. | Direct `httpx` HTTP requests sending JSON schemas in prompt instructions. |
 
-### LLM Grader Status: Feature-Flagged / Disabled by Default
-The LLM recall grader in [`backend/app/services/grader.py`](backend/app/services/grader.py) is **fully implemented in code, but explicitly feature-flagged off by default** (`GRADER_ENABLED = False`). In the codebase, it is marked as `EXPERIMENT (frozen)`.
+### LLM Grader Status: Implemented & Live in Production
+The LLM recall grader in [`backend/app/services/grader.py`](backend/app/services/grader.py) is **implemented, live, and enabled in production** (`GRADER_ENABLED = True`). Powered primarily by Google Gemini (`gemini-3.5-flash-lite`, with Groq `openai/gpt-oss-120b` fallback), it runs automatically during review sessions.
 
-When disabled:
-- Grader endpoints return HTTP 404.
-- The frontend gracefully skips AI grading and uses direct user self-evaluation (`Again`, `Hard`, `Good`, `Easy`).
-
-When enabled in development/evaluation environments:
-1. **Free-Recall Grader** (`POST /api/reviews/{id}/grade`): Evaluates user recall strictly against the stored `key_memory` ground truth (never outside model knowledge). Returns `{verdict, recalled, feedback, revision_note, related_subtopics}` validated with Pydantic. It is advisory only — the user makes the final rating decision.
+Live Capabilities:
+1. **Free-Recall Grader** (`POST /api/reviews/{id}/grade`): Evaluates user recall strictly against the stored `key_memory` ground truth (never outside model knowledge). Returns `{verdict, recalled, feedback, revision_note, related_subtopics}` validated with Pydantic. It is advisory — the user confirms the final rating decision.
 2. **Question Mode** (`POST /api/reviews/{id}/questions` + `/grade-questions`): Deconstructs `key_memory` into 2–3 short-answer questions to probe concept boundaries.
 3. **Capture Assist** (`POST /api/activities/suggest-key-points`): Suggests recognized sub-points for a topic at log time.
+4. **Graceful Fallback**: If an LLM call fails or times out, the UI gracefully degrades to manual self-reported recall without interrupting the review flow.
 
 ---
 
@@ -470,8 +468,8 @@ ANTHROPIC_API_KEY=<anthropic-key>    # Syllabus fallback
 OPENAI_COMPAT_BASE_URL=              # Optional (DeepSeek / Qwen)
 OPENAI_COMPAT_API_KEY=
 
-# Feature Flags (Keep False in production):
-GRADER_ENABLED=false
+# Feature Flags:
+GRADER_ENABLED=true
 DEBUG=false
 DEV_AUTH_BYPASS=false
 ```

@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     # both keys stay wired, so this is an env flip, not a code change. That is
     # deliberate: it is what makes the A/B in D-058 cheap to run.
     GRADER_MODEL: str = "gemini-3.5-flash-lite"
-    GRADER_ENABLED: bool = False
+    GRADER_ENABLED: bool = True
     # Keys for both providers. Which one is required follows from the ids above;
     # llm.is_configured() answers it per-model so features gate off cleanly.
     GROQ_API_KEY: str = ""
