@@ -26,7 +26,9 @@ from app.services.scheduler import (
     quality_from_outcome,
     fsrs_rating_from_outcome,
     apply_fsrs,
+    current_retrievability,
     REVIEW_SESSION_CAP,
+    DUE_QUEUE_FETCH_CAP,
 )
 from app.services.grader import (
     grade_recall,
@@ -34,7 +36,8 @@ from app.services.grader import (
     grade_question_set,
     GraderError,
 )
-from app.services import analytics, evidence, metrics
+from app.services import analytics, evidence, metrics, recall_answer_key
+from app.services.topic_key import resolve_topic_keys
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +51,14 @@ async def get_due_reviews(
 ):
     user_id = uuid.UUID(current_user.id)
     now = datetime.utcnow()
-    
+
     # Crucial: selectinload is required for AsyncSession to avoid MissingGreenlet error.
-    # Cap the session (oldest-first) so a long-overdue backlog surfaces as a bounded,
-    # finishable set — the rest stay 'due' and roll forward to the next session.
+    # Ranking is by each card's CURRENT retrievability (docs/IMPLEMENTATION-quiz-
+    # capture-v2.md Step 5.1), an FSRS decay computation SQL can't order by — so
+    # the final cap to REVIEW_SESSION_CAP happens in Python, not SQL. The SQL
+    # LIMIT here is only an outer safety bound (DUE_QUEUE_FETCH_CAP) so a huge
+    # backlog still can't force an unbounded fetch; ties within that bound keep
+    # the old oldest-scheduled-first order.
     stmt = (
         select(Review, Roadmap.slug.label("roadmap_slug"), RoadmapNode.title.label("node_title"))
         .join(Activity, Review.activity_id == Activity.id)
@@ -64,12 +71,42 @@ async def get_due_reviews(
         )
         .options(selectinload(Review.activity))
         .order_by(Review.scheduled_for.asc())
-        .limit(REVIEW_SESSION_CAP)
+        .limit(DUE_QUEUE_FETCH_CAP)
     )
-    
+
     result = await db.execute(stmt)
     rows = result.all()
-    
+
+    # Lowest retrievability = most at risk of being forgotten = surfaces first.
+    # Tie-break on scheduled_for so cards with equal retrievability (e.g.
+    # several brand-new cards, all 0.0) still sort deterministically instead
+    # of in whatever order Postgres happened to return them.
+    rows.sort(key=lambda row: (current_retrievability(row.Review.activity, now), row.Review.scheduled_for))
+    rows = rows[:REVIEW_SESSION_CAP]
+
+    # Rotation hint: the most recent COMPLETED review's question_served per
+    # activity, so the client can avoid repeating the same item this session.
+    activity_ids = [row.Review.activity_id for row in rows]
+    last_served_by_activity: dict = {}
+    if activity_ids:
+        served_rows = (
+            await db.execute(
+                select(Review.activity_id, Review.question_served)
+                .where(
+                    Review.activity_id.in_(activity_ids),
+                    Review.status == "completed",
+                    Review.question_served.is_not(None),
+                )
+                .order_by(Review.completed_at.desc())
+            )
+        ).all()
+        for r in served_rows:
+            last_served_by_activity.setdefault(r.activity_id, r.question_served)
+
+    # Batched: every activity needing the embedding fallback is embedded in
+    # ONE call (services/topic_key.py), not one blocking call per card.
+    topics_by_activity = await resolve_topic_keys(db, [row.Review.activity for row in rows])
+
     reviews = []
     for row in rows:
         # Review (SQLModel, table=True) has no roadmap_slug/node_title fields —
@@ -77,7 +114,16 @@ async def get_due_reviews(
         review = ReviewResponse.model_validate(row.Review)
         review.roadmap_slug = row.roadmap_slug
         review.node_title = row.node_title
+        review.last_question_served = last_served_by_activity.get(row.Review.activity_id)
+        topic = topics_by_activity[row.Review.activity_id]
+        review.topic_key = topic.key
+        review.topic_label = topic.label
         reviews.append(review)
+
+    # topic_key resolution may have written the embedding-fallback derived
+    # cache onto some activities (services/topic_key.py) — commit that once
+    # for the whole batch rather than per-card.
+    await db.commit()
 
     return reviews
 
@@ -90,10 +136,32 @@ async def complete_review(
 ):
     user_id = uuid.UUID(current_user.id)
     now = datetime.utcnow()
+
+    rating = review_in.rating
+    recalled = review_in.recalled
+
+    # Server-side MCQ verification (docs/IMPLEMENTATION-quiz-capture-v2.md
+    # Step 5.3): "never trust a client `correct: true`". Only lesson-sourced
+    # MCQs can be verified today — services/recall_answer_key.py is synced from
+    # content/roadmaps, the backend's only view into which option is correct.
+    # A manual/QuestionSet MCQ (Step 6) or a missing/stale manifest entry falls
+    # back to trusting the client, same as every other path today — this must
+    # never fail a completion, only skip the extra check.
+    if review_in.question_format == "mcq" and review_in.question_source == "lesson" and review_in.question_served:
+        entry = recall_answer_key.lookup(review_in.question_served)
+        if entry is not None:
+            server_correct = (
+                review_in.selected_option_index is not None
+                and review_in.selected_option_index == entry["correct_index"]
+            )
+            recalled = server_correct
+            rating = "medium" if server_correct and not review_in.hint_used else "hard"
+
     # quality (0-5) is persisted for analytics continuity; the FSRS grade (1-4)
-    # drives scheduling. Both derive from the same (rating, recalled) signals.
-    quality = quality_from_outcome(review_in.rating, review_in.recalled)
-    fsrs_rating = fsrs_rating_from_outcome(review_in.rating, review_in.recalled)
+    # drives scheduling. Both derive from the same (rating, recalled) signals —
+    # server-verified above when applicable, the client's own otherwise.
+    quality = quality_from_outcome(rating, recalled)
+    fsrs_rating = fsrs_rating_from_outcome(rating, recalled)
 
     # A client-measured timer is trust-but-verify: clamp to a plausible single-
     # card range (30 min ceiling) rather than reject the completion outright —
@@ -101,6 +169,9 @@ async def complete_review(
     duration_ms = review_in.duration_ms
     if duration_ms is not None and not (0 < duration_ms <= 1_800_000):
         duration_ms = None
+    think_ms = review_in.think_ms
+    if think_ms is not None and not (0 < think_ms <= 1_800_000):
+        think_ms = None
 
     # Atomic: only transition due→completed once. Prevents double-completion race
     # where two concurrent requests both schedule a next review.
@@ -114,10 +185,17 @@ async def complete_review(
         .values(
             status="completed",
             completed_at=now,
-            rating=review_in.rating,
-            recalled=review_in.recalled,
+            rating=rating,
+            recalled=recalled,
             quality=quality,
             duration_ms=duration_ms,
+            mode=review_in.mode,
+            question_format=review_in.question_format,
+            question_tier=review_in.question_tier,
+            question_source=review_in.question_source,
+            question_served=review_in.question_served,
+            hint_used=review_in.hint_used,
+            think_ms=think_ms,
         )
     )
     result = await db.execute(atomic_stmt)
@@ -161,7 +239,7 @@ async def complete_review(
     if review.activity.node_id is not None:
         try:
             async with db.begin_nested():
-                grade = evidence.recall_grade(review_in.recalled, review_in.rating, review.quality)
+                grade = evidence.recall_grade(recalled, rating, review.quality)
                 if grade is not None:
                     await evidence.record_event(
                         db, user_id,
@@ -170,12 +248,12 @@ async def complete_review(
                         source="retainhq_review",
                         node_id=review.activity.node_id,
                         grade=grade,
-                        outcome="pass" if review_in.recalled else "fail",
+                        outcome="pass" if recalled else "fail",
                         duration_min=round(duration_ms / 60000) if duration_ms else 0,
                         entity_id=review.id,
                         payload={
-                            "rating": review_in.rating,
-                            "recalled": review_in.recalled,
+                            "rating": rating,
+                            "recalled": recalled,
                             "quality": review.quality,
                             "ai_verdict": review.ai_verdict,
                         },
@@ -202,8 +280,8 @@ async def complete_review(
         "review_scheduled",
         {
             "first_review": False,
-            "rating": review_in.rating,
-            "recalled": review_in.recalled,
+            "rating": rating,
+            "recalled": recalled,
             "interval_days": review.activity.interval_days,
         },
     )

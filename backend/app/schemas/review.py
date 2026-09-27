@@ -21,15 +21,36 @@ class ReviewResponse(BaseModel):
     ai_feedback: Optional[str] = None
     duration_ms: Optional[int] = None
     created_at: datetime
-    
+
+    # Quiz v2 persisted fields (Step 5.5) — real Review columns, all nullable.
+    mode: Optional[str] = None
+    question_format: Optional[str] = None
+    question_tier: Optional[str] = None
+    question_source: Optional[str] = None
+    question_served: Optional[str] = None
+    hint_used: Optional[bool] = None
+    think_ms: Optional[int] = None
+
     # Attached fields for lesson card resolution
     roadmap_slug: Optional[str] = None
     node_title: Optional[str] = None
+
+    # Quiz v2 (docs/IMPLEMENTATION-quiz-capture-v2.md Step 5.1/5.4) — attached,
+    # not real ORM columns on Review. `topic_key`/`topic_label` group/order the
+    # due queue by topic (services/topic_key.py). `last_question_served` is the
+    # most recent COMPLETED review's `question_served` for this same activity,
+    # so the client can avoid repeating the same item this session.
+    topic_key: Optional[str] = None
+    topic_label: Optional[str] = None
+    last_question_served: Optional[str] = None
 
     activity: ActivityResponse
 
 class ReviewComplete(BaseModel):
     # Subjective signal: how hard it felt. Constrained to the documented scale.
+    # For an MCQ completion verified server-side, this is a client HINT only —
+    # the server derives the real rating/recalled from its own verification
+    # (see complete_review) and ignores what's sent here in that path.
     rating: Literal["easy", "medium", "hard"]
     # Objective signal: did they actually reconstruct the answer? (got-it / missed-it)
     recalled: Optional[bool] = None
@@ -37,6 +58,24 @@ class ReviewComplete(BaseModel):
     # outcome-submitted). Server clamps to (0, 1_800_000] — anything outside
     # that lands as NULL rather than failing the completion.
     duration_ms: Optional[int] = None
+
+    # --- Quiz v2 (Step 5.5), all optional — old clients keep working unchanged ---
+    mode: Optional[Literal["quick", "typed"]] = None
+    question_format: Optional[Literal["mcq", "typed", "free"]] = None
+    question_tier: Optional[Literal["tier1", "tier2", "tier3"]] = None
+    question_source: Optional[Literal["lesson", "question_set", "none"]] = None
+    # Stable id of the specific item served, e.g. "<roadmap>/<slug>#<index>".
+    question_served: Optional[str] = Field(default=None, max_length=200)
+    hint_used: bool = False
+    think_ms: Optional[int] = None
+
+    # Input-only (never persisted as its own column): which option the learner
+    # picked, as an index into the AUTHORED (pre-shuffle) options array. None
+    # means "I don't know". Only meaningful when question_format == "mcq" —
+    # ignored otherwise. The server looks this up against its own synced
+    # answer key (services/recall_answer_key.py) rather than trusting a
+    # client-computed `correct` — see complete_review.
+    selected_option_index: Optional[int] = None
 
 class ReviewGradeRequest(BaseModel):
     # The user's free-recall attempt. Capped to bound LLM cost/latency.

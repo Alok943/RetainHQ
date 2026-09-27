@@ -127,6 +127,17 @@ class Activity(SQLModel, table=True):
 
     concept_card_id: Optional[uuid.UUID] = Field(default=None, foreign_key="concept_cards.id")
 
+    # Quiz v2 topic-key derived cache (docs/IMPLEMENTATION-quiz-capture-v2.md
+    # Step 5.4) — an embedding-match GUESS at which roadmap node this card is
+    # about, used ONLY to group/order cards by topic in the review queue. Set
+    # only when node_id/roadmap_id/a problem_concepts mapping are all absent.
+    # `topic_cache_version` lets the matching logic change thresholds later
+    # without silently trusting a stale guess. NEVER promoted to `node_id` —
+    # that stays a fact set by the user or the catalog, never an inference
+    # (docs/ARCHITECTURE-learning-system.md §0). Migration d3e5f7a9b214.
+    topic_node_cache_id: Optional[uuid.UUID] = Field(default=None, foreign_key="roadmap_nodes.id")
+    topic_cache_version: Optional[int] = None
+
     track: Optional[Track] = Relationship(back_populates="activities")
     # passive_deletes=True: on an Activity delete, let the DB's ON DELETE CASCADE
     # (reviews.activity_id's FK) remove the child rows. Without this,
@@ -159,6 +170,22 @@ class Review(SQLModel, table=True):
     # values land as NULL rather than failing the completion.
     duration_ms: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Quiz v2 (docs/IMPLEMENTATION-quiz-capture-v2.md Step 5.5) — all nullable/
+    # additive; old rows and old /complete callers are unaffected. `mode`:
+    # 'quick' | 'typed'. `question_format`: 'mcq' | 'typed' | 'free' (today's
+    # behavior when no v2 data exists anywhere). `question_source`: 'lesson' |
+    # 'question_set' | 'none'. `question_served`: a stable id of the specific
+    # item served (e.g. "<roadmap>/<slug>#<index>"), so the next session can
+    # avoid repeating it. `hint_used`/`think_ms` feed the MCQ rating table and
+    # analytics. Migration d3e5f7a9b214.
+    mode: Optional[str] = None
+    question_format: Optional[str] = None
+    question_tier: Optional[str] = None
+    question_source: Optional[str] = None
+    question_served: Optional[str] = None
+    hint_used: Optional[bool] = None
+    think_ms: Optional[int] = None
 
     activity: Optional[Activity] = Relationship(back_populates="reviews")
 

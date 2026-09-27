@@ -77,17 +77,14 @@ async def candidate_nodes_for_active_goal(db: AsyncSession, user_id: uuid.UUID) 
     ]
 
 
-def suggest_node(topic_text: str, candidate_nodes: list) -> Optional[MappingSuggestion]:
-    """Best-matching node for `topic_text` among `candidate_nodes` (a user's
-    committed career tree). Returns None if nothing scores >= TRIAGE_THRESHOLD
-    — i.e. Tier 3, the unmapped bucket, is where this belongs."""
-    if not candidate_nodes:
-        return None
-        
-    try:
-        topic_embedding = embeddings.embed(topic_text)
-    except Exception:
-        # If embedding fails (e.g. rate limit, config missing), we fall back to no-match
+def suggest_node_for_embedding(topic_embedding: list, candidate_nodes: list) -> Optional[MappingSuggestion]:
+    """Same matching logic as `suggest_node`, but takes an ALREADY-COMPUTED
+    embedding vector instead of raw text. Lets a caller batch-embed many
+    topics in one `embeddings.embed_batch()` call and match each locally
+    afterward, instead of paying one `embed()` round trip per topic (see
+    `services/topic_key.py`'s batch resolver, docs/IMPLEMENTATION-quiz-capture-v2.md
+    Step 5.4)."""
+    if not candidate_nodes or not topic_embedding:
         return None
 
     best = None
@@ -96,7 +93,7 @@ def suggest_node(topic_text: str, candidate_nodes: list) -> Optional[MappingSugg
         # Fallback to 0 if node was created before embeddings were added
         if not node.get("embedding"):
             continue
-            
+
         score = embeddings.similarity(topic_embedding, node["embedding"])
         if score > best_score:
             best_score = score
@@ -110,6 +107,22 @@ def suggest_node(topic_text: str, candidate_nodes: list) -> Optional[MappingSugg
         node_id=best["node_id"], stable_key=best["stable_key"], title=best["title"],
         description=best["description"], confidence=best_score, tier=tier,
     )
+
+
+def suggest_node(topic_text: str, candidate_nodes: list) -> Optional[MappingSuggestion]:
+    """Best-matching node for `topic_text` among `candidate_nodes` (a user's
+    committed career tree). Returns None if nothing scores >= TRIAGE_THRESHOLD
+    — i.e. Tier 3, the unmapped bucket, is where this belongs."""
+    if not candidate_nodes:
+        return None
+
+    try:
+        topic_embedding = embeddings.embed(topic_text)
+    except Exception:
+        # If embedding fails (e.g. rate limit, config missing), we fall back to no-match
+        return None
+
+    return suggest_node_for_embedding(topic_embedding, candidate_nodes)
 
 async def candidate_nodes_for_user(db: AsyncSession, user_id: uuid.UUID) -> list:
     """Returns ALL nodes a user has access to (their active career goal + any personal roadmaps)."""

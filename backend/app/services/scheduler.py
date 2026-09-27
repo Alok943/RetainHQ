@@ -36,6 +36,17 @@ DEFAULT_EASE_FACTOR = 2.5  # legacy SM-2 column; still written to satisfy NOT NU
 # count is the classic SRS death spiral: people see it and stop opening the app.
 REVIEW_SESSION_CAP = 10
 
+# Outer SQL-side safety bound for /reviews/due (docs/IMPLEMENTATION-quiz-
+# capture-v2.md Step 5.1): the due set is re-ranked by CURRENT retrievability
+# in Python (an FSRS decay computation, not something SQL can order by), so
+# it can't be capped to REVIEW_SESSION_CAP at the query level the way the
+# old oldest-first query was — but fetching an UNBOUNDED backlog before
+# ranking regresses the original "bounded, finishable session" guarantee for
+# a user who's fallen far behind. This bounds the fetch generously (30x the
+# session cap) while still leaving Python plenty of rows to re-rank within;
+# ties within that bound break on oldest-scheduled-first, same as before.
+DUE_QUEUE_FETCH_CAP = 300
+
 
 def initial_review_for_activity(
     activity: Activity, now: Optional[datetime] = None, immediate: bool = False
@@ -158,6 +169,22 @@ def _next_difficulty(difficulty: float, rating: int) -> float:
 def _retrievability(elapsed_days: float, stability: float) -> float:
     # Predicted probability of recall after `elapsed_days` given current stability.
     return (1 + _FACTOR * elapsed_days / stability) ** _DECAY
+
+
+def current_retrievability(activity: Activity, now: Optional[datetime] = None) -> float:
+    """Predicted probability of recall for this card RIGHT NOW — for ordering
+    the due queue by urgency (docs/IMPLEMENTATION-quiz-capture-v2.md Step 5.1),
+    distinct from `_retrievability`'s use inside `apply_fsrs`, which computes it
+    at the moment a review is being graded. A brand-new card (no stability yet)
+    has no memory-decay curve to evaluate — treated as maximally at-risk (0.0)
+    so it always sorts first, the same "new card" case `apply_fsrs` special-cases
+    for scheduling.
+    """
+    if activity.stability is None or activity.last_reviewed_at is None:
+        return 0.0
+    now = now or datetime.utcnow()
+    elapsed = max(0.0, (now - activity.last_reviewed_at).total_seconds() / 86400.0)
+    return _retrievability(elapsed, activity.stability)
 
 
 def _next_stability(stability: float, difficulty: float, retrievability: float, rating: int) -> float:
