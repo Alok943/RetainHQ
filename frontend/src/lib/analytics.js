@@ -113,3 +113,17 @@ export function resetAnalytics() {
   if (!enabled) return;
   posthog.reset();
 }
+
+// Landing-page theme A/B: a PostHog feature flag ("landing-theme", variants
+// "light"/"dark") decides what a first-time, no-preference visitor sees on
+// the marketing page. It's independent of the user's own dark-mode toggle —
+// lib/theme.jsx never calls this once an explicit preference is stored.
+// PostHog resolves flags asynchronously after init, so callers subscribe
+// rather than read a value synchronously on mount.
+export function onLandingThemeVariant(callback) {
+  if (!enabled) return;
+  posthog.onFeatureFlags(() => {
+    const variant = posthog.getFeatureFlag('landing-theme');
+    if (variant === 'light' || variant === 'dark') callback(variant);
+  });
+}

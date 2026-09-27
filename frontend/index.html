@@ -18,7 +18,7 @@
     <meta name="keywords" content="automatically track what you study, study tracker, learning log, study log app, track your learning, browser extension study tracker, remember what you learn, active recall, spaced repetition for developers, coding interview prep, DSA practice, learning retention app" />
     <meta name="author" content="RetainHQ" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#0b0f1a" />
+    <meta name="theme-color" content="#FBFBFA" />
     <link rel="canonical" href="https://retainhq.app/" />
 
     <!-- Open Graph -->
@@ -87,10 +87,13 @@
     </script>
     <script>
       // Apply theme before first paint to avoid a flash of the wrong theme.
+      // Warm white is the default for everyone — a first-time visitor with no
+      // stored preference stays light here; the landing-theme experiment
+      // (lib/theme.jsx) may switch a no-preference visitor to dark after
+      // PostHog resolves, which is an acceptable one-time flip post-mount.
       (function () {
         try {
-          var t = localStorage.getItem('retainhq-theme');
-          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          if (localStorage.getItem('retainhq-theme') === 'dark') {
             document.documentElement.classList.add('dark');
           }
         } catch (e) {}
