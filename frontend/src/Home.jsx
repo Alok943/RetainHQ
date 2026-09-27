@@ -87,6 +87,24 @@ function Home({ onStartReviews }) {
   const [resumeLesson, setResumeLesson] = useState(null);
   // null = still loading; true = show the one-time catalog picker (no pref row yet).
   const [needsAudiencePick, setNeedsAudiencePick] = useState(null);
+  // Render's free instance sleeps after idle; apiFetch retries GETs silently
+  // and fires these events so the loading skeleton can say why it's slow
+  // instead of the user seeing an error toast on a cold start.
+  // Home fires several GETs at once on load, so this counts in-flight retries
+  // rather than storing a bool — the first one to succeed must not hide the
+  // message while the others are still waking the server up.
+  const [wakingCount, setWakingCount] = useState(0);
+  useEffect(() => {
+    const onWaking = () => setWakingCount((c) => c + 1);
+    const onWakingDone = () => setWakingCount((c) => Math.max(0, c - 1));
+    window.addEventListener('retainhq:waking-up', onWaking);
+    window.addEventListener('retainhq:waking-up-done', onWakingDone);
+    return () => {
+      window.removeEventListener('retainhq:waking-up', onWaking);
+      window.removeEventListener('retainhq:waking-up-done', onWakingDone);
+    };
+  }, []);
+  const wakingUp = wakingCount > 0;
 
   useEffect(() => {
     if (!session) {
@@ -326,9 +344,15 @@ function Home({ onStartReviews }) {
               <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-lg p-4 flex items-center gap-4">
                 <div className="skeleton w-12 h-12 rounded-full shrink-0" />
                 <div className="flex-1 flex flex-col gap-2">
-                  <div className="skeleton h-2.5 w-20" />
-                  <div className="skeleton h-4 w-2/3" />
-                  <div className="skeleton h-2.5 w-16" />
+                  {wakingUp ? (
+                    <span className="font-sans text-xs text-[#64748B]">Waking up the server — first load of the day can take a few extra seconds…</span>
+                  ) : (
+                    <>
+                      <div className="skeleton h-2.5 w-20" />
+                      <div className="skeleton h-4 w-2/3" />
+                      <div className="skeleton h-2.5 w-16" />
+                    </>
+                  )}
                 </div>
                 <div className="skeleton h-10 w-24 rounded shrink-0" />
               </div>

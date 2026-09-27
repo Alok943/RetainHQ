@@ -21,6 +21,14 @@ const FRIENDLY_STATUS_MESSAGES = {
 
 const shouldAutoToast = (status) => status === 401 || status === 403 || status === 429 || status >= 500;
 
+// Render's free/hobby instances sleep after idle and take ~20-40s to wake on
+// the first request — that showed up as 4 simultaneous network-error toasts
+// on sign-in. GET requests (safe to retry) get 3 attempts with backoff before
+// giving up; mutations are never auto-retried. Total wait ≈ 20s.
+const NETWORK_RETRY_DELAYS_MS = [3000, 6000, 11000];
+const isRetryableMethod = (method) => !method || method.toUpperCase() === 'GET';
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // DEV ONLY: bypass Supabase auth locally so the authenticated app can be reviewed
 // without Google OAuth. `import.meta.env.DEV` is false in production builds, so this
 // whole branch is dead-code-eliminated from any deployed bundle — it cannot ship.
@@ -62,14 +70,35 @@ export const apiFetch = async (endpoint, options = {}) => {
   }
 
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  const retryable = isRetryableMethod(fetchOptions.method);
+  const maxAttempts = retryable ? NETWORK_RETRY_DELAYS_MS.length + 1 : 1;
 
   let response;
-  try {
-    response = await fetch(url, {
-      ...fetchOptions,
-      headers
-    });
-  } catch (networkErr) {
+  let networkErr = null;
+  let signaledWaking = false;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      response = await fetch(url, { ...fetchOptions, headers });
+      networkErr = null;
+      break;
+    } catch (err) {
+      networkErr = err;
+      if (attempt < maxAttempts) {
+        // Only signal once per call (not once per retry) so listeners can
+        // treat waking-up/waking-up-done as a matched start/end pair.
+        if (!signaledWaking) {
+          signaledWaking = true;
+          window.dispatchEvent(new CustomEvent('retainhq:waking-up', { detail: { endpoint } }));
+        }
+        await sleep(NETWORK_RETRY_DELAYS_MS[attempt - 1]);
+      }
+    }
+  }
+  if (signaledWaking) {
+    window.dispatchEvent(new CustomEvent('retainhq:waking-up-done', { detail: { endpoint, succeeded: !networkErr } }));
+  }
+
+  if (networkErr) {
     const err = new Error("Can't reach the server — check your connection and try again.");
     err.status = 0;
     err.isNetworkError = true;

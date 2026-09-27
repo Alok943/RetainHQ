@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from './supabase';
 import AuthModal from '../AuthModal';
 import { identifyUser, resetAnalytics, track, trackOnce, EVENTS } from './analytics';
@@ -33,6 +33,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(!DEV_AUTH_BYPASS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  // Supabase fires 'SIGNED_IN' not just on a real sign-in but also on tab
+  // focus / token refresh for an already-signed-in user (was 5x/minute in
+  // PostHog). Track the last known user id so signed_in only fires when it
+  // actually changed from none/other — a genuine sign-in.
+  const lastUserIdRef = useRef(null);
 
   useEffect(() => {
     // Dev bypass: skip all Supabase auth wiring.
@@ -40,18 +45,22 @@ export function AuthProvider({ children }) {
 
     // Initial fetch
     supabase.auth.getSession().then(({ data: { session } }) => {
+      lastUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
       setLoading(false);
     });
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const newUserId = session?.user?.id ?? null;
+      const isGenuineSignIn = _event === 'SIGNED_IN' && newUserId && newUserId !== lastUserIdRef.current;
+      lastUserIdRef.current = newUserId;
       setSession(session);
       setLoading(false);
-      if (_event === 'SIGNED_IN') {
+      if (isGenuineSignIn) {
         track(EVENTS.SIGNED_IN);
-        // Fire signed_up once per new account (SIGNED_IN also fires on tab focus /
-        // token refresh, so dedupe on the user id to avoid re-counting).
+        // Fire signed_up once per new account (dedupe on user id since a fresh
+        // signup can still route through more than one auth-state change).
         if (isFirstSignup(session?.user)) {
           trackOnce(`signed_up:${session.user.id}`, EVENTS.SIGNED_UP);
         }
