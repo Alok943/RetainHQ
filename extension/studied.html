@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What I've studied — RetainHQ Companion</title>
+  <style>
+    /* Same design tokens as index.html (popup) — docs/design-bible.md §04/§05. */
+    :root {
+      --paper: #f9f9f6;
+      --surface: #ffffff;
+      --ink: #0F172A;
+      --ink-muted: #64748B;
+      --ink-faint: #94A3B8;
+      --hairline: #E2E8F0;
+      --action: #0891B2;
+      --action-hover: #0E7490;
+      --error: #ba1a1a;
+      --caution: #F59E0B;
+      --success: #0F766E;
+      --curve: cubic-bezier(0.22, 1, 0.36, 1);
+      --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #0F172A;
+        --surface: #1E293B;
+        --ink: #F1F5F9;
+        --ink-muted: #94A3B8;
+        --ink-faint: #64748B;
+        --hairline: #334155;
+        --action: #22D3EE;
+        --action-hover: #67E8F9;
+        --error: #F87171;
+        --success: #2DD4BF;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 60px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+    h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+    .subtitle { color: var(--ink-muted); font-size: 13px; margin: 4px 0 24px; }
+
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--hairline); }
+    .tab {
+      font: inherit; font-size: 13px; font-weight: 500; color: var(--ink-muted);
+      background: none; border: none; padding: 8px 12px; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 150ms var(--curve), border-color 150ms var(--curve);
+    }
+    .tab:hover { color: var(--ink); }
+    .tab[aria-selected="true"] { color: var(--action); border-bottom-color: var(--action); font-weight: 600; }
+
+    .group { margin-bottom: 20px; }
+    .group-label {
+      font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .group-total { font-weight: 400; text-transform: none; letter-spacing: normal; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px;
+      padding: 12px 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+    }
+    .card .info { flex: 1; min-width: 0; }
+    .card .title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card .meta { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+    .badge {
+      font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 2px 7px; border-radius: 999px; border: 1px solid var(--hairline); color: var(--ink-muted);
+      white-space: nowrap; flex: none;
+    }
+    .badge.pending { color: var(--caution); border-color: color-mix(in srgb, var(--caution) 45%, transparent); }
+    .badge.failed { color: var(--error); border-color: color-mix(in srgb, var(--error) 40%, transparent); }
+    .del-btn {
+      background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px;
+      line-height: 1; padding: 4px; flex: none; border-radius: 4px;
+    }
+    .del-btn:hover { color: var(--error); background: color-mix(in srgb, var(--error) 8%, transparent); }
+
+    .empty { text-align: center; padding: 48px 16px; color: var(--ink-muted); }
+    .empty p { margin: 4px 0; font-size: 13px; }
+
+    .footnote { margin-top: 28px; font-size: 12px; color: var(--ink-faint); text-align: center; }
+    .footnote button {
+      font: inherit; font-size: 12px; color: var(--error); background: none; border: none;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>What I've studied</h1>
+    </header>
+    <p class="subtitle" id="subtitle">Loading…</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" data-group="day" role="tab" aria-selected="true" type="button">By day</button>
+      <button class="tab" data-group="surface" role="tab" aria-selected="false" type="button">By surface</button>
+      <button class="tab" data-group="topic" role="tab" aria-selected="false" type="button">By topic</button>
+    </div>
+
+    <div id="list"></div>
+
+    <div class="footnote">
+      Kept on this browser only, for 90 days — this is the only place per-session detail exists.
+      <br>
+      <button id="clearAllBtn" type="button">Delete all history</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/studied/studied.ts"></script>
+</body>
+</html>

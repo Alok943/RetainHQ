@@ -5,6 +5,7 @@ import { isTrackingPaused, setTrackingPaused } from '../pause_state'
 import type { Segment } from '../types'
 import { API_BASE_URL, API_ORIGIN_PATTERN } from '../config'
 import { LANGUAGE_GROUPS, WINDOW_OPTIONS, type LeetCodeImportPrefs } from '../leetcode_langs'
+import { SURFACE_LABELS, relativeTime } from '../lib/format'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://kvmymvimlkvepatrlgsf.supabase.co'
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_c2R4IoLBwDgSFPwbfkqIog_HIFEF4Ej'
@@ -141,28 +142,6 @@ tierSelectEl.addEventListener('change', () => chooseTier(tierSelectEl.value as C
 // the only signal that anything worked and there was no way to see that a
 // session was still buffered locally rather than lost.
 
-const SURFACE_LABELS: Record<string, string> = {
-  youtube: 'YouTube',
-  coursera: 'Coursera',
-  leetcode: 'LeetCode',
-  neetcode: 'NeetCode',
-  chatgpt: 'ChatGPT',
-  claude: 'Claude',
-  gemini: 'Gemini',
-  pdf: 'PDF',
-  llm: 'AI chat',
-  notion: 'Notion',
-}
-
-function relativeTime(ms: number): string {
-  const mins = Math.round((Date.now() - ms) / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins} min ago`
-  const hrs = Math.round(mins / 60)
-  if (hrs < 24) return `${hrs} h ago`
-  return `${Math.round(hrs / 24)} d ago`
-}
-
 async function renderActivity(): Promise<void> {
   const data = await storageLocalGet([STORAGE_KEY_BUFFER, STORAGE_KEY_QUEUE, STORAGE_KEY_LAST_SYNC])
   const buffer = (data[STORAGE_KEY_BUFFER] as Segment[] | undefined) ?? []
@@ -269,6 +248,10 @@ logoutBtn.addEventListener('click', async () => {
   await supabase.auth.signOut()
   setStatus(null)
   updateUI()
+})
+
+el<HTMLButtonElement>('studiedLinkBtn').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('studied.html') })
 })
 
 // --- LeetCode import options -------------------------------------------

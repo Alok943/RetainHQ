@@ -8,6 +8,7 @@ import { scanRecentSolves } from './leetcode_backfill'
 import { acquireTab, pageFetchVia, releaseTab, LEETCODE_TAB, NEETCODE_TAB } from './tab_fetch'
 import { scanCompletedProblems } from './neetcode_backfill'
 import { DEFAULT_WINDOW_DAYS } from '../leetcode_langs'
+import { addSession as addSessionRecord, markSessionsSyncStatus } from '../lib/session_store'
 
 // Constants
 // Two different questions, two different numbers (2026-07-27 follow-up):
@@ -183,6 +184,22 @@ async function flushClosedSessions(): Promise<void> {
     const sessionId = crypto.randomUUID()
     const session = stitchSegments(group, sessionId)
     queue.push({ payload: sessionToPayload(session, isClosed), attempts: 0 })
+
+    // Local-first history (docs/SPEC-core-loop-v2.md Phase 4) — written here
+    // regardless of sync outcome, so "what I studied" reflects everything
+    // this browser tracked, not just what successfully reached the server.
+    // Fire-and-forget: a local-history write must never block or fail a sync.
+    addSessionRecord({
+      id: sessionId,
+      sources: session.sources,
+      title: session.title_bag,
+      startedAt: session.start,
+      endedAt: session.end,
+      durationMin: session.duration_min,
+      syncStatus: 'pending',
+      topicLabel: null,
+      createdAt: session.end,
+    }).catch((err) => console.error('[RetainHQ] failed to record local session history', err))
   }
 
   const overflow = queue.length - MAX_QUEUE_SIZE
@@ -241,6 +258,8 @@ async function processQueue(): Promise<void> {
       // Read by the popup to show "last upload N min ago" — the only proof a
       // user has that anything reached the server, short of opening the app.
       await storageLocalSet({ [STORAGE_KEY_QUEUE]: rest, [STORAGE_KEY_LAST_SYNC]: Date.now() })
+      markSessionsSyncStatus(chunk.map((item) => item.payload.session_id), 'synced')
+        .catch((err) => console.error('[RetainHQ] failed to update local session history', err))
       // More may be waiting behind this chunk — keep draining.
       if (rest.length > 0) processQueue()
       return
@@ -265,6 +284,11 @@ async function processQueue(): Promise<void> {
       }
       return true
     })
+    const droppedIds = aged.filter((item) => item.attempts >= MAX_ATTEMPTS).map((item) => item.payload.session_id)
+    if (droppedIds.length > 0) {
+      markSessionsSyncStatus(droppedIds, 'failed')
+        .catch((err) => console.error('[RetainHQ] failed to update local session history', err))
+    }
     await storageLocalSet({ [STORAGE_KEY_QUEUE]: [...survivors, ...rest] })
   } catch (error) {
     // Network error (offline, DNS, etc.) — transient, don't burn attempts.

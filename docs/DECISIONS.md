@@ -890,6 +890,14 @@ Verified in-browser at desktop and mobile widths, in both themes: card/heading/b
 
 **Tradeoffs:** MCQ recognition is weaker than free recall unless distractors are real misconceptions — hence the content pass + `mcq_items` eval. MCQ never yields Easy, so intervals grow more slowly than self-graded Easy would. Generated LeetCode statements can describe the wrong problem for obscure titles — mitigated by the eval, pre-authored top ~150, and user flagging.
 
+## D-077 — Companion "What I studied": local history + view first, server-contract change deferred (2026-09-27)
+
+**Decision:** Of SPEC-core-loop-v2.md Phase 4's three parts (local IndexedDB history, a "What I studied" view, and changing the server to receive only daily topic summaries instead of full per-session detail), built only the first two now. The extension still syncs full session payloads to `POST /api/companion/sessions` exactly as before — nothing server-side changed. 90-day local retention (the spec's own default), 5000-record size cap, oldest-first eviction, in a new IndexedDB store (`extension/src/lib/session_store.ts`), surfaced via a new full extension page (`studied.html`) grouping by day/surface/topic.
+
+**Why:** the founder's explicit call, given the full phase's "Done when: no per-session row is written server-side" bar requires moving today's server-side classification (topic matching, LLM calls) client-side — a much bigger, riskier change than "let the user see what they've recorded," which the local-only increment delivers with zero risk to the live sync pipeline. The spec itself already flagged two founder decisions blocking the full phase (retention default; what happens to already-synced session rows) — only the first was needed for this increment.
+
+**Tradeoffs / rejected:** Rejected building the full phase in one pass — correct per the spec eventually, but conflates a safe, additive UI feature with an unrelated backend/privacy architecture change that deserves its own review. The "By topic" grouping in the new view is honest, not complete: since the sync response doesn't return resolved topics, most sessions show "Not yet matched" — real per-session topic labels wait on either the deferred server-contract change or a smaller, separate change to the `/companion/sessions` response shape (not attempted here).
+
 ## D-076 — Quiz v2 Step 5 backend: content-sync answer key for server-side MCQ verification; NodeMeta widened to catalog nodes (2026-09-27)
 
 **Decision:** Two calls made while implementing docs/IMPLEMENTATION-quiz-capture-v2.md Step 5, both flagged in the doc as "your call, justify it":
