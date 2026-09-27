@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onLandingThemeVariant } from './analytics';
 
 const STORAGE_KEY = 'retainhq-theme';
+// Set by the pre-paint script in index.html for first-time logged-out visitors
+// on "/" (landing-theme A/B). Read-only here.
+const VARIANT_KEY = 'retainhq-landing-variant';
 
 const ThemeContext = createContext({
   theme: 'light',
@@ -9,25 +11,17 @@ const ThemeContext = createContext({
   setTheme: () => {},
 });
 
-function hasStoredTheme() {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'light' || localStorage.getItem(STORAGE_KEY) === 'dark';
-  } catch {
-    return false;
-  }
-}
-
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light';
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
+    const variant = localStorage.getItem(VARIANT_KEY);
+    if (variant === 'light' || variant === 'dark') return variant;
   } catch {
     /* localStorage unavailable (private mode) */
   }
   // Warm white is the default for everyone — never the OS/system preference.
-  // Dark is opt-in, either via the toggle or (for a first-time visitor with no
-  // stored preference) the landing-page theme experiment below.
   return 'light';
 }
 
@@ -43,15 +37,6 @@ export function ThemeProvider({ children }) {
       /* ignore persistence failures */
     }
   }, [theme]);
-
-  // First-time, no-preference visitors only: let the PostHog "landing-theme"
-  // experiment pick light/dark. Anyone who already has a stored preference
-  // (including a returning visitor who was previously bucketed) is untouched —
-  // this never fights the user's own toggle.
-  useEffect(() => {
-    if (hasStoredTheme()) return;
-    onLandingThemeVariant((variant) => setThemeState(variant));
-  }, []);
 
   const value = {
     theme,

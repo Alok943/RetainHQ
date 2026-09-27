@@ -87,15 +87,29 @@
     </script>
     <script>
       // Apply theme before first paint to avoid a flash of the wrong theme.
-      // Warm white is the default for everyone — a first-time visitor with no
-      // stored preference stays light here; the landing-theme experiment
-      // (lib/theme.jsx) may switch a no-preference visitor to dark after
-      // PostHog resolves, which is an acceptable one-time flip post-mount.
+      // Warm white is the default. Landing-theme A/B: a first-time, logged-out
+      // visitor on "/" (no stored theme yet) is bucketed light/dark here, before
+      // paint, so neither variant flashes. lib/theme.jsx adopts the bucket and
+      // lib/analytics.js tags events with it.
       (function () {
         try {
-          if (localStorage.getItem('retainhq-theme') === 'dark') {
-            document.documentElement.classList.add('dark');
+          var t = localStorage.getItem('retainhq-theme');
+          if (t !== 'light' && t !== 'dark' && location.pathname === '/') {
+            var signedIn = false;
+            for (var i = 0; i < localStorage.length; i++) {
+              var k = localStorage.key(i);
+              if (k && k.indexOf('sb-') === 0 && k.slice(-11) === '-auth-token') signedIn = true;
+            }
+            if (!signedIn) {
+              var v = localStorage.getItem('retainhq-landing-variant');
+              if (v !== 'light' && v !== 'dark') {
+                v = Math.random() < 0.5 ? 'light' : 'dark';
+                localStorage.setItem('retainhq-landing-variant', v);
+              }
+              t = v;
+            }
           }
+          if (t === 'dark') document.documentElement.classList.add('dark');
         } catch (e) {}
       })();
     </script>

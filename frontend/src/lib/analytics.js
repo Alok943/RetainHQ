@@ -78,6 +78,15 @@ export function initAnalytics() {
       persistence: 'localStorage',  // cookieless
       disable_session_recording: true,
     });
+    // Landing-theme A/B: tag every event with the visitor's bucket (assigned
+    // before first paint in index.html) so LANDING_CTA / SIGNED_UP can be
+    // broken down by variant.
+    try {
+      const variant = localStorage.getItem('retainhq-landing-variant');
+      if (variant) posthog.register({ landing_theme_variant: variant });
+    } catch {
+      /* localStorage unavailable */
+    }
     enabled = true;
   });
 }
@@ -112,18 +121,4 @@ export function identifyUser(id) {
 export function resetAnalytics() {
   if (!enabled) return;
   posthog.reset();
-}
-
-// Landing-page theme A/B: a PostHog feature flag ("landing-theme", variants
-// "light"/"dark") decides what a first-time, no-preference visitor sees on
-// the marketing page. It's independent of the user's own dark-mode toggle —
-// lib/theme.jsx never calls this once an explicit preference is stored.
-// PostHog resolves flags asynchronously after init, so callers subscribe
-// rather than read a value synchronously on mount.
-export function onLandingThemeVariant(callback) {
-  if (!enabled) return;
-  posthog.onFeatureFlags(() => {
-    const variant = posthog.getFeatureFlag('landing-theme');
-    if (variant === 'light' || variant === 'dark') callback(variant);
-  });
 }
