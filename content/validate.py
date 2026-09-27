@@ -36,6 +36,18 @@ RUNTIMES = {"python", "sql", "none"}
 
 DIAGRAM_TYPES = {"ray", "circuit", "graph", "free-body", "image", "schematic"}
 
+# Recall-question contract v2 (docs/IMPLEMENTATION-quiz-capture-v2.md Step 3) — all
+# fields below are OPTIONAL additions to a recall_questions item; old items (just
+# q/answer/tier) stay valid untouched.
+RECALL_FORMATS = {"mcq", "typed"}
+RECALL_CONTEXT_TYPES = {"code", "array", "table", "tree", "graph"}
+# Size caps keep a context block a short, at-a-glance aid — not a data dump the
+# learner has to study. "Answerable without the lesson open" means small.
+MAX_CONTEXT_CODE_CHARS = 800
+MAX_CONTEXT_ARRAY_VALUES = 30
+MAX_CONTEXT_TABLE_ROWS = 12
+MAX_CONTEXT_TABLES = 2
+
 # Test-section question banks (content/PROMPT-tests.md, docs/SPEC-test-runtime.md).
 TEST_TYPES = {"fillup", "numeric", "code-output", "code-fix", "code-write", "query-write", "mcq"}
 RAY_OPTICS = {"concave-mirror", "convex-mirror", "concave-lens", "convex-lens"}
@@ -268,6 +280,112 @@ def _validate_diagram3d(diag, path, rel):
         _validate_physics_diagram(poster, f"{path}.poster", rel)
 
 
+def _validate_recall_context(ctx, path, rel):
+    """One `context` block on a v2 recall_questions item — rendered by the existing
+    DSA/SQL renderers (array/tree/graph/code), never a new visual system. Plain
+    data only, no images; size caps keep it a glance, not a dataset."""
+    if not isinstance(ctx, dict):
+        err(rel, f"{path} must be an object")
+        return
+    ctype = ctx.get("type")
+    if ctype not in RECALL_CONTEXT_TYPES:
+        err(rel, f"{path}.type must be one of {sorted(RECALL_CONTEXT_TYPES)}")
+        return
+    if ctype == "code":
+        src = ctx.get("source")
+        if not ctx.get("lang") or not isinstance(src, str) or not src.strip():
+            err(rel, f"{path} (code) needs non-empty 'lang' and 'source'")
+        elif len(src) > MAX_CONTEXT_CODE_CHARS:
+            err(rel, f"{path}.source is {len(src)} chars — keep under {MAX_CONTEXT_CODE_CHARS} (a glance, not a file)")
+    elif ctype == "array":
+        vals = ctx.get("values")
+        if not isinstance(vals, list) or not vals:
+            err(rel, f"{path} (array) needs a non-empty 'values' list")
+        elif len(vals) > MAX_CONTEXT_ARRAY_VALUES:
+            err(rel, f"{path}.values has {len(vals)} items — keep under {MAX_CONTEXT_ARRAY_VALUES}")
+        hl = ctx.get("highlight")
+        if hl is not None and not (isinstance(hl, list) and all(isinstance(x, int) for x in hl)):
+            err(rel, f"{path}.highlight, if present, must be a list of integer indices")
+    elif ctype == "table":
+        tables = ctx.get("tables")
+        if tables is not None:
+            if not isinstance(tables, list) or not (1 <= len(tables) <= MAX_CONTEXT_TABLES):
+                err(rel, f"{path}.tables must be a list of 1-{MAX_CONTEXT_TABLES} tables")
+            else:
+                for i, t in enumerate(tables):
+                    if not isinstance(t, dict) or not isinstance(t.get("columns"), list) or not t.get("columns") \
+                            or not isinstance(t.get("rows"), list) or not t.get("rows"):
+                        err(rel, f"{path}.tables[{i}] needs non-empty 'columns' and 'rows'")
+                    elif len(t["rows"]) > MAX_CONTEXT_TABLE_ROWS:
+                        err(rel, f"{path}.tables[{i}].rows has {len(t['rows'])} rows — keep under {MAX_CONTEXT_TABLE_ROWS}")
+        else:
+            cols, rows = ctx.get("columns"), ctx.get("rows")
+            if not isinstance(cols, list) or not cols:
+                err(rel, f"{path} (table) needs a non-empty 'columns' list (or a 'tables' list for a join)")
+            if not isinstance(rows, list) or not rows:
+                err(rel, f"{path} (table) needs a non-empty 'rows' list")
+            elif len(rows) > MAX_CONTEXT_TABLE_ROWS:
+                err(rel, f"{path}.rows has {len(rows)} rows — keep under {MAX_CONTEXT_TABLE_ROWS}")
+    elif ctype == "tree":
+        lo = ctx.get("level_order")
+        if not isinstance(lo, list) or not lo:
+            err(rel, f"{path} (tree) needs a non-empty 'level_order' list")
+    elif ctype == "graph":
+        nodes, edges = ctx.get("nodes"), ctx.get("edges")
+        if not isinstance(nodes, list) or not nodes:
+            err(rel, f"{path} (graph) needs a non-empty 'nodes' list")
+        if not isinstance(edges, list):
+            err(rel, f"{path} (graph) needs an 'edges' list")
+        if not isinstance(ctx.get("directed"), bool):
+            err(rel, f"{path} (graph) needs boolean 'directed'")
+
+
+def validate_recall_question_v2(q, path, rel):
+    """Validate the OPTIONAL v2 fields on one recall_questions item (format, context,
+    hint, options) — called in addition to each kind's existing required q/answer
+    check. An item with none of these fields is untouched v1 content and passes
+    through here with nothing to check."""
+    tier = q.get("tier")
+    if tier is not None and tier not in TIER:
+        err(rel, f"{path}.tier must be one of {sorted(TIER)}")
+
+    fmt = q.get("format")
+    if fmt is not None and fmt not in RECALL_FORMATS:
+        err(rel, f"{path}.format must be one of {sorted(RECALL_FORMATS)}")
+
+    ctx = q.get("context")
+    if ctx is not None:
+        _validate_recall_context(ctx, f"{path}.context", rel)
+
+    hint = q.get("hint")
+    if hint is not None and (not isinstance(hint, str) or not hint.strip()):
+        err(rel, f"{path}.hint, if present, must be a non-empty string")
+
+    opts = q.get("options")
+    if fmt == "mcq" and opts is None:
+        err(rel, f"{path} has format='mcq' but no 'options'")
+    if opts is not None:
+        if not isinstance(opts, list) or len(opts) != 4:
+            err(rel, f"{path}.options must be a list of exactly 4 items")
+            return
+        correct_count = 0
+        seen_texts = set()
+        for j, o in enumerate(opts):
+            if not isinstance(o, dict) or not o.get("text") or not o.get("why"):
+                err(rel, f"{path}.options[{j}] needs non-empty 'text' and 'why'")
+                continue
+            if not isinstance(o.get("correct"), bool):
+                err(rel, f"{path}.options[{j}].correct must be a boolean")
+            elif o["correct"]:
+                correct_count += 1
+            norm = o["text"].strip().lower()
+            if norm in seen_texts:
+                err(rel, f"{path}.options[{j}] duplicates another option's text")
+            seen_texts.add(norm)
+        if correct_count != 1:
+            err(rel, f"{path}.options needs exactly one 'correct: true', found {correct_count}")
+
+
 def validate_sections(d, rel):
     """Optional 'illustration' (a hero image) + 'sections' (the born-visual interleaved
     layout: each block = a short body + optional image/animation + optional recap). Both
@@ -291,6 +409,70 @@ def validate_sections(d, rel):
         an = s.get("animation")
         if an is not None and (not isinstance(an, dict) or an.get("type") not in {"sequence", "cycle", "vector-space"}):
             err(rel, f"sections[{i}].animation.type must be one of sequence|cycle|vector-space")
+
+
+def print_v2_coverage(docs):
+    """`--v2-coverage`: per-roadmap recall_questions v2 adoption + tier-target report
+    (docs/IMPLEMENTATION-quiz-capture-v2.md Step 3). Informational only — never
+    affects the exit code."""
+    from collections import defaultdict
+
+    per_roadmap = defaultdict(lambda: {
+        "lessons": 0, "questions": 0, "with_options": 0, "typed": 0,
+        "tier1": 0, "tier2": 0, "tier3": 0, "untiered": 0, "lessons_on_target": 0,
+    })
+
+    for path, d in docs.items():
+        if d.get("kind") in ("numericals", "test"):
+            continue
+        rqs = d.get("recall_questions")
+        if not isinstance(rqs, list) or not rqs:
+            continue
+        roadmap = d.get("roadmap") or path.parent.name
+        s = per_roadmap[roadmap]
+        s["lessons"] += 1
+        by_tier = {"tier1": 0, "tier2": 0, "tier3": 0}
+        has_typed = False
+        for q in rqs:
+            if not isinstance(q, dict):
+                continue
+            s["questions"] += 1
+            tier = q.get("tier")
+            if tier in by_tier:
+                by_tier[tier] += 1
+                s[tier] += 1
+            else:
+                s["untiered"] += 1
+            if q.get("options"):
+                s["with_options"] += 1
+            if q.get("format") == "typed":
+                s["typed"] += 1
+                has_typed = True
+        if by_tier["tier1"] >= 2 and by_tier["tier2"] >= 2 and by_tier["tier3"] >= 1 and has_typed:
+            s["lessons_on_target"] += 1
+
+    print("\n=== recall_questions v2 coverage (--v2-coverage) ===")
+    print("target per lesson: >=2 tier1, >=2 tier2, >=1 tier3, >=1 typed\n")
+    totals = defaultdict(int)
+    for roadmap in sorted(per_roadmap):
+        s = per_roadmap[roadmap]
+        for k, v in s.items():
+            totals[k] += v
+        pct_options = (s["with_options"] * 100 // s["questions"]) if s["questions"] else 0
+        print(
+            f"- {roadmap}: {s['lessons']} lessons, {s['questions']} questions, "
+            f"{pct_options}% with options, {s['typed']} typed, "
+            f"tiers t1={s['tier1']} t2={s['tier2']} t3={s['tier3']} untiered={s['untiered']}, "
+            f"{s['lessons_on_target']}/{s['lessons']} lessons on target"
+        )
+    if totals["questions"]:
+        pct_options = totals["with_options"] * 100 // totals["questions"]
+        print(
+            f"\nTOTAL: {totals['lessons']} lessons, {totals['questions']} questions, "
+            f"{pct_options}% with options, {totals['typed']} typed, "
+            f"tiers t1={totals['tier1']} t2={totals['tier2']} t3={totals['tier3']} "
+            f"untiered={totals['untiered']}, {totals['lessons_on_target']}/{totals['lessons']} lessons on target"
+        )
 
 
 def main():
@@ -443,6 +625,8 @@ def main():
                 for i, q in enumerate(rq):
                     if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
                         err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+                    else:
+                        validate_recall_question_v2(q, f"recall_questions[{i}]", rel)
             oq = d.get("oa_questions")
             if not isinstance(oq, list) or len(oq) < 2:
                 err(rel, "oa_questions is required: >=2 OA-style items")
@@ -533,6 +717,8 @@ def main():
                 for i, q in enumerate(rq):
                     if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
                         err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+                    else:
+                        validate_recall_question_v2(q, f"recall_questions[{i}]", rel)
             oq = d.get("oa_questions")
             if not isinstance(oq, list) or len(oq) < 2:
                 err(rel, "oa_questions is required: >=2 interview-style items")
@@ -622,6 +808,8 @@ def main():
                 for i, q in enumerate(rq):
                     if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
                         err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+                    else:
+                        validate_recall_question_v2(q, f"recall_questions[{i}]", rel)
             oq = d.get("oa_questions")
             if not isinstance(oq, list) or len(oq) < 2:
                 err(rel, "oa_questions is required: >=2 interview-style items")
@@ -757,6 +945,8 @@ def main():
                 for i, q in enumerate(rq):
                     if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
                         err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+                    else:
+                        validate_recall_question_v2(q, f"recall_questions[{i}]", rel)
             oq = d.get("oa_questions")
             if not isinstance(oq, list) or len(oq) < 2:
                 err(rel, "oa_questions is required: >=2 interview-style items")
@@ -891,6 +1081,8 @@ def main():
                 for i, q in enumerate(rq):
                     if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
                         err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+                    else:
+                        validate_recall_question_v2(q, f"recall_questions[{i}]", rel)
             oq = d.get("oa_questions")
             if not isinstance(oq, list) or len(oq) < 2:
                 err(rel, "oa_questions is required: >=2 OA-style items")
@@ -981,6 +1173,8 @@ def main():
                 for i, q in enumerate(rq):
                     if not isinstance(q, dict) or not q.get("q") or not q.get("answer"):
                         err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+                    else:
+                        validate_recall_question_v2(q, f"recall_questions[{i}]", rel)
             oq = d.get("oa_questions")
             if not isinstance(oq, list) or len(oq) < 2:
                 err(rel, "oa_questions is required: >=2 board/school-exam items")
@@ -1153,9 +1347,11 @@ def main():
             if not isinstance(s, str) or not s.startswith("http"):
                 err(rel, f"sources[{i}] is not a URL: {s!r}")
 
-        for i, rq in enumerate(d.get("recall_questions", []) or []):
-            if not isinstance(rq, dict) or not rq.get("q") or not rq.get("answer"):
+        for i, rqi in enumerate(d.get("recall_questions", []) or []):
+            if not isinstance(rqi, dict) or not rqi.get("q") or not rqi.get("answer"):
                 err(rel, f"recall_questions[{i}] needs both 'q' and 'answer'")
+            else:
+                validate_recall_question_v2(rqi, f"recall_questions[{i}]", rel)
 
         # Execution block branches on runtime: python -> code_walkthrough, sql -> query_walkthrough.
         runtime = d.get("runtime", "python")
@@ -1236,6 +1432,9 @@ def main():
                         err(rel, f"lessons[{i}] references missing file {l['roadmap']}/{l['slug']}.json")
 
     print(f"Checked {len(files)} topic file(s).\n")
+    if "--v2-coverage" in sys.argv:
+        print_v2_coverage(docs)
+        print()
     if warnings:
         print("Warnings (unresolved refs - fine while curating):")
         print("\n".join(warnings), "\n")
