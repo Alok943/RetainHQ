@@ -35,6 +35,7 @@ const KnowledgeVault = lazy(() => import('./KnowledgeVault'));
 const Admin = lazy(() => import('./Admin'));
 const Evidence = lazy(() => import('./Evidence')); // Dev-only instrument (SPEC-career-coach-phase1 §7-8)
 const DsaDev = lazy(() => import('./dsa/DsaDev')); // TEMP: DSA pilot harness (/dsa-dev)
+const QuestionContextDev = lazy(() => import('./QuestionContextDev')); // TEMP: recall_questions v2 context renderer harness (/context-dev)
 const PhysicsNumericals = lazy(() => import('./PhysicsNumericals'));
 const Tests = lazy(() => import('./Tests'));
 const Teach = lazy(() => import('./Teach'));
@@ -252,6 +253,7 @@ function AppLayout() {
             <Route path="paths" element={<CareerPaths />} />
             <Route path="coach" element={<CareerCoach />} />
             <Route path="dsa-dev" element={<DsaDev />} />
+            <Route path="context-dev" element={<QuestionContextDev />} />
             <Route path="vault" element={<KnowledgeVault />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="teach" element={<Teach />} />
