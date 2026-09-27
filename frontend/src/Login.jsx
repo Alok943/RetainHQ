@@ -1,13 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Logo from './Logo';
 import { track, EVENTS } from './lib/analytics';
 import { useTheme } from './lib/theme';
 import { Sun, Moon } from 'lucide-react';
 
-function Login() {
+// Defined outside Login: Login re-renders every trace step (~1.1s), and an
+// inline component would remount each time, dropping keyboard focus.
+function TryALesson() {
   const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => { track(EVENTS.LANDING_CTA, { action: 'try_a_lesson' }); navigate('/roadmaps/dsa/learn/merge-sort'); }}
+      className="inline-flex items-center justify-center rounded-lg font-sans font-semibold px-6 py-3 text-sm
+        bg-[#1E293B] text-white hover:bg-[#0F172A]
+        dark:bg-[#EDEDEB] dark:text-[#0F1113] dark:hover:bg-white
+        transition-colors"
+    >
+      Try a lesson
+    </button>
+  );
+}
+
+function Login() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -20,19 +36,6 @@ function Login() {
     });
     if (error) console.error('Error logging in:', error.message);
   };
-
-  // Single CTA verb everywhere — no "Get Started"/"Sign In" ambiguity.
-  const TryALesson = ({ className = '' }) => (
-    <button
-      onClick={() => { track(EVENTS.LANDING_CTA, { action: 'try_a_lesson' }); navigate('/roadmaps/dsa/learn/merge-sort'); }}
-      className={`inline-flex items-center justify-center rounded-lg font-sans font-semibold px-6 py-3 text-sm
-        bg-[#1E293B] text-white hover:bg-[#0F172A]
-        dark:bg-[#EDEDEB] dark:text-[#0F1113] dark:hover:bg-white
-        transition-colors ${className}`}
-    >
-      Try a lesson
-    </button>
-  );
 
   // Subject-neutral breadth row — quiet proof the method isn't code-only.
   const subjects = ['DSA', 'Python', 'SQL', 'System Design', 'Aptitude', 'Core CS'];
@@ -53,7 +56,7 @@ function Login() {
     'M 38 30 C 58 78, 88 128, 122 152 C 152 172, 190 180, 230 182 L 328 184';
 
   const features = [
-    { n: '01', title: 'Capture', body: 'Anchor the core idea while reading, watching or solving.' },
+    { n: '01', title: 'Capture', body: 'Log a topic in seconds — or let the Companion extension capture what you study.' },
     { n: '02', title: 'Review', body: 'Short sessions, ordered by how soon you’d forget.' },
     { n: '03', title: 'Recall', body: 'Answer before the reveal — real recall, not recognition.' },
     { n: '04', title: 'Retain', body: 'Intervals stretch out automatically as it sticks.' },
@@ -129,7 +132,7 @@ function Login() {
 
   return (
     <div className="min-h-screen w-full bg-[#FBFBFA] dark:bg-[#0F1113] transition-colors">
-      <div className="max-w-5xl mx-auto px-5 md:px-8">
+      <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:border-x lg:border-[#E5E5E2] dark:lg:border-white/10">
 
         {/* ---------- Top nav ---------- */}
         <nav className="flex items-center justify-between py-6">
@@ -171,7 +174,7 @@ function Login() {
                 <span style={{ color: accent }}>forget by Friday.</span>
               </h1>
               <p className="hero-reveal font-sans text-[#45474C] dark:text-[#9A9CA3] text-base leading-relaxed mb-7 max-w-md" style={{ animationDelay: '140ms' }}>
-                Step through execution traces line by line, then let timed recall sessions return concepts right before your memory decays.
+                RetainHQ is a spaced-repetition system for engineers. Learn from step-through lessons, then short reviews return right before you&rsquo;d forget &mdash; so it stays.
               </p>
 
               <div className="hero-reveal mb-7" style={{ animationDelay: '280ms' }}>
@@ -260,10 +263,9 @@ function Login() {
                 ))}
               </svg>
 
-              <div className="flex items-center justify-between border-t border-[#E5E5E2] dark:border-white/10 mt-1 pt-3">
-                <span className="font-mono text-[10px] text-[#71717A] dark:text-[#9A9CA3]">Retention index</span>
-                <span className="font-mono text-[10px] font-semibold" style={{ color: accent }}>94.2%</span>
-              </div>
+              <p className="border-t border-[#E5E5E2] dark:border-white/10 mt-1 pt-3 font-sans text-[11px] text-[#71717A] dark:text-[#9A9CA3]">
+                Illustrative &mdash; your intervals adapt to how well you actually recall.
+              </p>
             </div>
           </section>
 
@@ -366,7 +368,7 @@ function Login() {
             <h2 className="font-sans text-2xl md:text-3xl font-semibold text-[#18181B] dark:text-[#EDEDEB] tracking-tight max-w-md">
               Build knowledge that outlasts the sprint.
             </h2>
-            <p className="font-sans text-[#45474C] dark:text-[#9A9CA3] text-sm">No subscription trap, no AI gimmicks. Just spaced retrieval for engineers.</p>
+            <p className="font-sans text-[#45474C] dark:text-[#9A9CA3] text-sm">Free to start. Learn it once, still know it when the interview comes.</p>
             <div className="mt-2">
               <TryALesson />
             </div>
@@ -384,6 +386,7 @@ function Login() {
           <div className="flex items-center gap-5">
             <a href="#learn" className="font-mono text-[11px] text-[#71717A] dark:text-[#9A9CA3] hover:text-[#18181B] dark:hover:text-[#EDEDEB] transition-colors">Features</a>
             <a href="#how" className="font-mono text-[11px] text-[#71717A] dark:text-[#9A9CA3] hover:text-[#18181B] dark:hover:text-[#EDEDEB] transition-colors">How it works</a>
+            <Link to="/privacy/companion" className="font-mono text-[11px] text-[#71717A] dark:text-[#9A9CA3] hover:text-[#18181B] dark:hover:text-[#EDEDEB] transition-colors">Privacy</Link>
             <span className="font-mono text-[11px] text-[#A1A1AA] dark:text-[#5A5D63]">&copy; {new Date().getFullYear()} RetainHQ</span>
           </div>
         </footer>
